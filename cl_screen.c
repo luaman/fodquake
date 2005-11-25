@@ -30,6 +30,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "rulesets.h"
 #include "modules.h"
 
+#include "config.h"
+
 #ifdef GLQUAKE
 #include "gl_local.h"
 #else
@@ -1105,7 +1107,7 @@ static image_format_t SShot_FormatForName(char *name) {
 		return IMAGE_PCX;
 #endif
 
-#ifdef WITH_PNG
+#if USE_PNG
 	else if (!Q_strcasecmp(ext, "png"))
 		return IMAGE_PNG;
 #endif
@@ -1115,7 +1117,7 @@ static image_format_t SShot_FormatForName(char *name) {
 		return IMAGE_JPEG;
 #endif
 
-#ifdef WITH_PNG
+#if USE_PNG
 	else if (!Q_strcasecmp(scr_sshot_format.string, "png"))
 		return IMAGE_PNG;
 #endif
@@ -1163,7 +1165,7 @@ int SCR_Screenshot(char *name) {
 	buffer = Q_Malloc (buffersize);
 	glReadPixels (glx, gly, glwidth, glheight, GL_RGB, GL_UNSIGNED_BYTE, buffer); 
 
-#ifdef WITH_PNG
+#if USE_PNG
 	if (format == IMAGE_PNG) {
 		if (QLib_isModuleLoaded(qlib_libpng)) {
 			applyHWGamma(buffer, buffersize);
@@ -1225,7 +1227,7 @@ int SCR_Screenshot(char *name) {
 
 	D_EnableBackBufferAccess ();	// enable direct drawing of console to back buffer
 
-#ifdef WITH_PNG
+#if USE_PNG
 	if (format == IMAGE_PNG) {
 		if (QLib_isModuleLoaded(qlib_libpng)) {
 			success = Image_WritePNGPLTE(name, image_png_compression_level.value,
@@ -1265,7 +1267,7 @@ void SCR_ScreenShot_f (void) {
 		Q_strncpyz (name, Cmd_Argv(1), sizeof(name));
 	} else if (Cmd_Argc() == 1) {
 		// find a file name to save it to
-#ifdef WITH_PNG
+#if USE_PNG
 		if (!Q_strcasecmp(scr_sshot_format.string, "png"))
 			Q_strncpyz(ext, "png", 4);
 #endif
@@ -1351,7 +1353,7 @@ sshot_taken:
 
 	D_EnableBackBufferAccess ();
 
-#ifdef WITH_PNG
+#if USE_PNG
 	if (QLib_isModuleLoaded(qlib_libpng)) {
 		success = Image_WritePNGPLTE(filename, 9, vid.buffer, vid.width, vid.height, vid.rowbytes, current_pal)
 			? SSHOT_SUCCESS : SSHOT_FAILED;

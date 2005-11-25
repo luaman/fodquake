@@ -35,6 +35,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <proto/exec.h>
 #endif
 
+#include "config.h"
+
 #define	IMAGE_MAX_DIMENSIONS	4096
 
 int image_width, image_height;

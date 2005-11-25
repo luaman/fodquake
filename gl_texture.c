@@ -23,6 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "image.h"
 #include "gl_local.h"
 
+#include "config.h"
 
 qboolean OnChange_gl_max_size (cvar_t *var, char *string);
 qboolean OnChange_gl_texturemode (cvar_t *var, char *string);
@@ -458,7 +459,7 @@ byte *GL_LoadImagePixels (char *filename, int matchwidth, int matchheight, int m
 			return data;
 	}
 
-#ifdef WITH_PNG
+#if USE_PNG
 	Q_snprintfz (name, sizeof(name), "%s.png", basename);
 	if (FS_FOpenFile (name, &f) != -1) {
 		CHECK_TEXTURE_ALREADY_LOADED;
