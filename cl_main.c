@@ -42,6 +42,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "modules.h"
 #include "config_manager.h"
 #include "mp3_player.h"
+#include "r_shared.h"
 
 #ifndef _WIN32
 #include <unistd.h>
@@ -798,10 +799,70 @@ void CL_InitLocal (void) {
 	Cmd_AddMacro("matchstatus", CL_Macro_Serverstatus);
 }
 
-void CL_Init (void) {
+void CL_Init (void)
+{
+	int width, height, depth;
+	int argnum;
+
 	if (dedicated)
 		return;
 
+#ifdef GLQUAKE
+	width = 640;
+	height = 480;
+	depth = 24;
+#else
+	width = 320;
+	height = 240;
+	depth = 8;
+#endif
+	
+	argnum = COM_CheckParm("-width");
+	if (argnum)
+	{
+		if (argnum >= com_argc - 1)
+			Sys_Error("-width <width>");
+
+		width = Q_atoi(com_argv[argnum+1]);
+
+		if (width == 0)
+			Sys_Error("Bad width");
+#warning Fix this.
+#ifndef GLQUAKE
+		if (width > MAXWIDTH)
+			Sys_Error("Maximum supported width is %d", MAXWIDTH);
+#endif
+	}
+
+	argnum = COM_CheckParm("-height");
+	if (argnum)
+	{
+		if (argnum >= com_argc - 1)
+			Sys_Error("-height <height>");
+
+		height = Q_atoi(com_argv[argnum+1]);
+
+		if (height == 0)
+			Sys_Error("Bad height");
+#warning Fix this.
+#ifndef GLQUAKE
+		if (height > MAXHEIGHT)
+			Sys_Error("Maximum supported height is %d", MAXHEIGHT);
+#endif
+	}
+
+	argnum = COM_CheckParm("-depth");
+	if (argnum)
+	{
+		if (argnum >= com_argc - 1)
+			Sys_Error("-depth <depth>");
+
+		depth = Q_atoi(com_argv[argnum+1]);
+
+		if (depth != 15 && depth != 16 && depth != 24)
+			Sys_Error("Bad depth");
+	}
+		
 	cls.state = ca_disconnected;
 
 	strcpy (cls.gamedirfile, com_gamedirfile);
@@ -834,7 +895,7 @@ void CL_Init (void) {
 	IN_Init ();
 #endif
 
-	VID_Init (host_basepal);
+	VID_Init(width, height, depth, host_basepal);
 
 #ifndef __linux__
 	IN_Init ();

@@ -35,47 +35,19 @@ cvar_t _windowed_mouse = {"_windowed_mouse", "1", CVAR_ARCHIVE};
 
 static unsigned int lastwindowedmouse;
 
-void VID_Init(unsigned char *palette)
+void VID_Init(int width, int height, int depth, unsigned char *palette)
 {
 	int argnum;
 	int i;
 
 	Cvar_Register(&_windowed_mouse);
 
-	vid.width = 320;
-	vid.height = 240;
+	vid.width = width;
+	vid.height = height;
 	vid.maxwarpwidth = WARP_WIDTH;
 	vid.maxwarpheight = WARP_HEIGHT;
 	vid.colormap = host_colormap;
 	vid.fullbright = 256 - LittleLong (*((int *)vid.colormap + 2048));
-
-	argnum = COM_CheckParm("-width");
-	if (argnum)
-	{
-		if (argnum >= com_argc - 1)
-			Sys_Error("VID: -width <width>");
-
-		vid.width = Q_atoi(com_argv[argnum+1]);
-
-		if (vid.width == 0)
-			Sys_Error("VID: Bad width");
-		if (vid.width > MAXWIDTH)
-			Sys_Error("VID: Maximum supported width is %d", MAXWIDTH);
-	}
-
-	argnum = COM_CheckParm("-height");
-	if (argnum)
-	{
-		if (argnum >= com_argc - 1)
-			Sys_Error("VID: -height <height>");
-
-		vid.height = Q_atoi(com_argv[argnum+1]);
-
-		if (vid.height == 0)
-			Sys_Error("VID: Bad height");
-		if (vid.height > MAXHEIGHT)
-			Sys_Error("VID: Maximum supported height is %d", MAXHEIGHT);
-	}
 
 	buffer = AllocVec(vid.width*vid.height, MEMF_ANY);
 	if (buffer == 0)

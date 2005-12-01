@@ -61,15 +61,13 @@ static unsigned int lastwindowedmouse;
 
 int real_width, real_height;
 
-void VID_Init(unsigned char *palette)
+void VID_Init(int width, int height, int depth, unsigned char *palette)
 {
 	int argnum;
 
 	int r;
 
 	int i;
-
-	int depth = 24;
 
 	Cvar_Register(&_windowed_mouse);
 
@@ -80,49 +78,13 @@ void VID_Init(unsigned char *palette)
 			vid_hwgamma_enabled = 1;
 	}
 
-	vid.width = 640;
-	vid.height = 480;
+	vid.width = width;
+	vid.height = height;
 	vid.maxwarpwidth = WARP_WIDTH;
 	vid.maxwarpheight = WARP_HEIGHT;
 	vid.numpages = 1;
 	vid.colormap = host_colormap;
 	vid.fullbright = 256 - LittleLong (*((int *)vid.colormap + 2048));
-
-	argnum = COM_CheckParm("-width");
-	if (argnum)
-	{
-		if (argnum >= com_argc - 1)
-			Sys_Error("VID: -width <width>");
-
-		vid.width = Q_atoi(com_argv[argnum+1]);
-
-		if (vid.width == 0)
-			Sys_Error("VID: Bad width");
-	}
-
-	argnum = COM_CheckParm("-height");
-	if (argnum)
-	{
-		if (argnum >= com_argc - 1)
-			Sys_Error("VID: -height <height>");
-
-		vid.height = Q_atoi(com_argv[argnum+1]);
-
-		if (vid.height == 0)
-			Sys_Error("VID: Bad height");
-	}
-
-	argnum = COM_CheckParm("-depth");
-	if (argnum)
-	{
-		if (argnum >= com_argc - 1)
-			Sys_Error("VID: -depth <depth>");
-
-		depth = Q_atoi(com_argv[argnum+1]);
-
-		if (depth != 15 && depth != 16 && depth != 24)
-			Sys_Error("VID: Bad depth");
-	}
 
 	if (vid.width <= 640)
 	{

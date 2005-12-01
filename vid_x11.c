@@ -400,7 +400,8 @@ void ResetSharedFrameBuffers(void) {
 // the palette data will go away after the call, so it must be copied off if
 // the video driver will need it again
 
-void VID_Init (unsigned char *palette) {
+void VID_Init(int width, int height, int depth, unsigned char *palette)
+{
 	int pnum, i, num_visuals, template_mask;
 	XVisualInfo template;
 
@@ -409,8 +410,8 @@ void VID_Init (unsigned char *palette) {
 	Cvar_ResetCurrentGroup();
 
 	ignorenext=0;
-	vid.width = 320;
-	vid.height = 200;
+	vid.width = width;
+	vid.height = height;
 	vid.maxwarpwidth = WARP_WIDTH;
 	vid.maxwarpheight = WARP_HEIGHT;
 	vid.numpages = 2;
@@ -446,35 +447,6 @@ void VID_Init (unsigned char *palette) {
 
 	// for debugging only
 	XSynchronize(x_disp, True);
-
-	// check for command-line window size
-	if ((pnum = COM_CheckParm("-winsize"))) {
-		if (pnum >= com_argc-2)
-			Sys_Error("VID: -winsize <width> <height>\n");
-		vid.width = Q_atoi(com_argv[pnum+1]);
-		vid.height = Q_atoi(com_argv[pnum+2]);
-		if (!vid.width || !vid.height)
-			Sys_Error("VID: Bad window width/height\n");
-	}
-	if ((pnum = COM_CheckParm("-width"))) {
-		if (pnum >= com_argc - 1)
-			Sys_Error("VID: -width <width>\n");
-		vid.width = Q_atoi(com_argv[pnum + 1]);
-		if (!vid.width)
-			Sys_Error("VID: Bad window width\n");
-		if (vid.width > MAXWIDTH)
-			Sys_Error("VID: Maximum supported width is %d", MAXWIDTH);
-
-	}
-	if ((pnum = COM_CheckParm("-height"))) {
-		if (pnum >= com_argc - 1)
-			Sys_Error("VID: -height <height>\n");
-		vid.height = Q_atoi(com_argv[pnum + 1]);
-		if (!vid.height)
-			Sys_Error("VID: Bad window height\n");
-		if (vid.height > MAXHEIGHT)
-			Sys_Error("VID: Maximum supported height is %d", MAXHEIGHT);
-	}
 
 	template_mask = 0;
 
