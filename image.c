@@ -21,8 +21,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "quakedef.h"
 #include "image.h"
 #include "modules.h"
+#include "config.h"
 
-#ifdef WITH_PNG
+#if USE_PNG
 #include "png.h"
 #endif
 
@@ -34,8 +35,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifdef __MORPHOS__
 #include <proto/exec.h>
 #endif
-
-#include "config.h"
 
 #define	IMAGE_MAX_DIMENSIONS	4096
 
@@ -415,7 +414,7 @@ void Image_MipReduce (byte *in, byte *out, int *width, int *height, int bpp) {
 
 /************************************ PNG ************************************/
 
-#ifdef WITH_PNG
+#if USE_PNG
 
 #ifdef __MORPHOS__
 struct Library *PNGBase;
@@ -1463,7 +1462,7 @@ int Image_WritePCX (char *filename, byte *data, int width, int height, int rowby
 
 void Image_Init(void) {
 	Cvar_SetCurrentGroup(CVAR_GROUP_SCREENSHOTS);
-#ifdef WITH_PNG
+#if USE_PNG
 	if (PNG_LoadLibrary())
 		QLib_RegisterModule(qlib_libpng, PNG_FreeLibrary);
 	Cvar_Register (&image_png_compression_level);

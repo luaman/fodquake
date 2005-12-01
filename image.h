@@ -22,8 +22,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #define _IMAGE_H
 
-#if defined(WITH_PNG) && !defined(WITH_ZLIB)
-#error WITH_PNG requires WITH_ZLIB
+#if USE_PNG && !USE_ZLIB
+#error USE_PNG requires USE_ZLIB
 #endif
 
 void Image_Init(void);
