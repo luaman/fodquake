@@ -400,7 +400,7 @@ void ResetSharedFrameBuffers(void) {
 // the palette data will go away after the call, so it must be copied off if
 // the video driver will need it again
 
-void VID_Init(int width, int height, int depth, unsigned char *palette)
+void Sys_Video_Init(int width, int height, int depth, unsigned char *palette)
 {
 	int pnum, i, num_visuals, template_mask;
 	XVisualInfo template;

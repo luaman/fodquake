@@ -184,6 +184,7 @@ QWCL_OBJS = \
     $(BUILDDIR)/build/version.o \
     $(BUILDDIR)/build/wad.o \
     $(BUILDDIR)/build/zone.o \
+    $(BUILDDIR)/build/vid.o \
 \
     $(BUILDDIR)/build/modules.o \
     $(BUILDDIR)/build/cl_ignore.o \
@@ -518,6 +519,9 @@ $(BUILDDIR)/build/wad.o :            $(SOURCE_DIR)/wad.c
 $(BUILDDIR)/build/zone.o :           $(SOURCE_DIR)/zone.c
 	$(DO_CC)
 
+$(BUILDDIR)/build/vid.o :            $(SOURCE_DIR)/vid.c
+	$(DO_CC)
+
 #ASM FILES
 $(BUILDDIR)/build/d_draw.o :         $(SOURCE_DIR)/d_draw.s
 	$(DO_AS)
@@ -663,6 +667,7 @@ GLQWCL_OBJS = \
     $(BUILDDIR)/build-gl/version.o \
     $(BUILDDIR)/build-gl/wad.o \
     $(BUILDDIR)/build-gl/zone.o \
+    $(BUILDDIR)/build-gl/vid.o \
 \
     $(BUILDDIR)/build-gl/cl_ignore.o \
     $(BUILDDIR)/build-gl/cl_logging.o \
@@ -929,6 +934,9 @@ $(BUILDDIR)/build-gl/wad.o :            $(SOURCE_DIR)/wad.c
 	$(DO_GL_CC)
 
 $(BUILDDIR)/build-gl/zone.o :           $(SOURCE_DIR)/zone.c
+	$(DO_GL_CC)
+
+$(BUILDDIR)/build-gl/vid.o :            $(SOURCE_DIR)/vid.o
 	$(DO_GL_CC)
 
 #ASM FILES
