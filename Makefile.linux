@@ -59,30 +59,30 @@ release: svga_release x11_release glx_release
 
 svga_release:
 	@-mkdir -p $(BUILD_RELEASE_DIR)/build
-	$(MAKE) svga_targets BUILDDIR=$(BUILD_RELEASE_DIR) CFLAGS="$(RELEASE_CFLAGS)" BINARY_TYPE=SVGA
+	$(MAKE) -f Makefile.linux svga_targets BUILDDIR=$(BUILD_RELEASE_DIR) CFLAGS="$(RELEASE_CFLAGS)" BINARY_TYPE=SVGA
 	$(STRIP) $(BUILD_RELEASE_DIR)/fuhquake.svga
 
 svga_debug:
 	@-mkdir -p $(BUILD_DEBUG_DIR)/build
-	$(MAKE) svga_targets BUILDDIR=$(BUILD_DEBUG_DIR) CFLAGS="$(DEBUG_CFLAGS)" BINARY_TYPE=SVGA
+	$(MAKE) -f Makefile.linux svga_targets BUILDDIR=$(BUILD_DEBUG_DIR) CFLAGS="$(DEBUG_CFLAGS)" BINARY_TYPE=SVGA
 
 x11_release:
 	@-mkdir -p $(BUILD_RELEASE_DIR)/build
-	$(MAKE) x11_targets BUILDDIR=$(BUILD_RELEASE_DIR) CFLAGS="$(RELEASE_CFLAGS)" BINARY_TYPE=X11
+	$(MAKE) -f Makefile.linux x11_targets BUILDDIR=$(BUILD_RELEASE_DIR) CFLAGS="$(RELEASE_CFLAGS)" BINARY_TYPE=X11
 	$(STRIP) $(BUILD_RELEASE_DIR)/fuhquake.x11
 
 x11_debug:
 	@-mkdir -p $(BUILD_DEBUG_DIR)/build
-	$(MAKE) x11_targets BUILDDIR=$(BUILD_DEBUG_DIR) CFLAGS="$(DEBUG_CFLAGS)" BINARY_TYPE=X11
+	$(MAKE) -f Makefile.linux x11_targets BUILDDIR=$(BUILD_DEBUG_DIR) CFLAGS="$(DEBUG_CFLAGS)" BINARY_TYPE=X11
 
 glx_release:
 	@-mkdir -p $(BUILD_RELEASE_DIR)/build-gl
-	$(MAKE) glx_targets BUILDDIR="$(BUILD_RELEASE_DIR)" CFLAGS="$(RELEASE_CFLAGS)" BINARY_TYPE=GLX
+	$(MAKE) -f Makefile.linux glx_targets BUILDDIR="$(BUILD_RELEASE_DIR)" CFLAGS="$(RELEASE_CFLAGS)" BINARY_TYPE=GLX
 	$(STRIP) $(BUILD_RELEASE_DIR)/fuhquake-gl.glx
 
 glx_debug:
 	@-mkdir -p $(BUILD_DEBUG_DIR)/build-gl
-	$(MAKE) glx_targets BUILDDIR="$(BUILD_DEBUG_DIR)" CFLAGS="$(DEBUG_CFLAGS)" BINARY_TYPE=GLX
+	$(MAKE) -f Makefile.linux glx_targets BUILDDIR="$(BUILD_DEBUG_DIR)" CFLAGS="$(DEBUG_CFLAGS)" BINARY_TYPE=GLX
 
 targets: $(TARGETS)
 x11_targets: $(X11_TARGETS)
