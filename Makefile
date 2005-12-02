@@ -138,6 +138,9 @@ all:
 	mkdir -p objects/$(TARGETSYSTEM)
 	(cd objects/$(TARGETSYSTEM); make -f ../../Makefile release)
 
+clean:
+	rm -rf objects
+
 release: fodquake-sw
 
 fodquake-sw: $(OBJS) $(SWOBJS)
