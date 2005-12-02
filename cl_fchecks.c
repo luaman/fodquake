@@ -34,10 +34,10 @@ extern cvar_t r_fullbrightSkins;
 void FChecks_VersionResponse(void) {
 #ifdef SECURITY_NONSENSE
 	if (Modules_SecurityLoaded())
-		Cbuf_AddText (va("say FuhQuake version %s " QW_PLATFORM ":" QW_RENDERER "  crc: %s\n", VersionString(), Auth_Generate_Crc()));
+		Cbuf_AddText (va("say FodQuake version %s " QW_PLATFORM ":" QW_RENDERER "  crc: %s\n", VersionString(), Auth_Generate_Crc()));
 	else
 #endif
-		Cbuf_AddText (va("say FuhQuake version %s " QW_PLATFORM ":" QW_RENDERER "\n", VersionString()));
+		Cbuf_AddText (va("say FodQuake version %s " QW_PLATFORM ":" QW_RENDERER "\n", VersionString()));
 }
 
 void FChecks_FServerResponse (void) {
@@ -51,10 +51,10 @@ void FChecks_FServerResponse (void) {
 
 #ifdef SECURITY_NONSENSE
 	if (Modules_SecurityLoaded())
-		Cbuf_AddText(va("say FuhQuake f_server response: %s  crc: %s\n", NET_AdrToString(adr), Auth_Generate_Crc()));
+		Cbuf_AddText(va("say FodQuake f_server response: %s  crc: %s\n", NET_AdrToString(adr), Auth_Generate_Crc()));
 	else
 #endif
-		Cbuf_AddText(va("say FuhQuake f_server response: %s\n", NET_AdrToString(adr)));
+		Cbuf_AddText(va("say FodQuake f_server response: %s\n", NET_AdrToString(adr)));
 }
 
 void FChecks_SkinsResponse(float fbskins) {
@@ -119,7 +119,7 @@ qboolean FChecks_CheckFRulesetRequest (char *s) {
 		return false;
 
 	if (Util_F_Match(s, "f_ruleset"))	{
-		Cbuf_AddText(va("say FuhQuake Ruleset: %s\n", Rulesets_Ruleset() ));
+		Cbuf_AddText(va("say FodQuake Ruleset: %s\n", Rulesets_Ruleset() ));
 		f_ruleset_reply_time = cls.realtime;
 		return true;
 	}
