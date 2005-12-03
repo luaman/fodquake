@@ -9,16 +9,16 @@ STRIPFLAGS=--strip-unneeded --remove-section=.comment
 
 TARGETSYSTEM?=$(shell echo `uname -m`-`uname`)
 
-OS=$(shell echo $(TARGETSYSTEM) | cut -d '-' -f 2)
-CPU=$(shell echo $(TARGETSYSTEM) | cut -d '-' -f 1)
+OS=$(shell echo $(TARGETSYSTEM) | cut -d '-' -f 2 | tr [A-Z] [a-z])
+CPU=$(shell echo $(TARGETSYSTEM) | cut -d '-' -f 1 | tr [A-Z] [a-z])
 
 # OS specific settings
 
-ifeq ($(OS), MorphOS)
+ifeq ($(OS), morphos)
 	OSCFLAGS=-noixemul
 endif
 
-ifeq ($(OS), Linux)
+ifeq ($(OS), linux)
 	OSOBJS= \
 		sys_linux.o \
 		cd_linux.o \
