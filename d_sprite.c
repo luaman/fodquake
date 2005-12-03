@@ -23,10 +23,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "quakedef.h"
 #include "d_local.h"
 
-static int		sprite_height;
-static int		minindex, maxindex;
-static sspan_t	*sprite_spans;
-
 #if	!id386
 
 /*
@@ -196,15 +192,13 @@ NextSpan:
 D_SpriteScanLeftEdge
 =====================
 */
-void D_SpriteScanLeftEdge (void)
+void D_SpriteScanLeftEdge(sspan_t *pspan, int minindex, int maxindex)
 {
 	int			i, v, itop, ibottom, lmaxindex;
 	emitpoint_t	*pvert, *pnext;
-	sspan_t		*pspan;
 	float		du, dv, vtop, vbottom, slope;
 	fixed16_t	u, u_step;
 
-	pspan = sprite_spans;
 	i = minindex;
 	if (i == 0)
 		i = r_spritedesc.nump;
@@ -258,15 +252,13 @@ void D_SpriteScanLeftEdge (void)
 D_SpriteScanRightEdge
 =====================
 */
-void D_SpriteScanRightEdge (void)
+void D_SpriteScanRightEdge (sspan_t *pspan, int minindex, int maxindex)
 {
 	int			i, v, itop, ibottom;
 	emitpoint_t	*pvert, *pnext;
-	sspan_t		*pspan;
 	float		du, dv, vtop, vbottom, slope, uvert, unext, vvert, vnext;
 	fixed16_t	u, u_step;
 
-	pspan = sprite_spans;
 	i = minindex;
 
 	vvert = r_spritedesc.pverts[i].v;
@@ -340,7 +332,7 @@ void D_SpriteScanRightEdge (void)
 D_SpriteCalculateGradients
 =====================
 */
-void D_SpriteCalculateGradients (void)
+void D_SpriteCalculateGradients(int sprite_height)
 {
 	vec3_t		p_normal, p_saxis, p_taxis, p_temp1;
 	float		distinv;
@@ -392,8 +384,7 @@ void D_DrawSprite (void)
 	float		ymin, ymax;
 	emitpoint_t	*pverts;
 	sspan_t		spans[MAXHEIGHT+1];
-
-	sprite_spans = spans;
+	int minindex = 0, maxindex = 0;
 
 // find the top and bottom vertices, and make sure there's at least one scan to
 // draw
@@ -425,7 +416,6 @@ void D_DrawSprite (void)
 		return;		// doesn't cross any scans at all
 
 	cachewidth = r_spritedesc.pspriteframe->width;
-	sprite_height = r_spritedesc.pspriteframe->height;
 	cacheblock = (byte *)&r_spritedesc.pspriteframe->pixels[0];
 
 // copy the first vertex to the last vertex, so we don't have to deal with
@@ -434,9 +424,9 @@ void D_DrawSprite (void)
 	pverts = r_spritedesc.pverts;
 	pverts[nump] = pverts[0];
 
-	D_SpriteCalculateGradients ();
-	D_SpriteScanLeftEdge ();
-	D_SpriteScanRightEdge ();
-	D_SpriteDrawSpans (sprite_spans);
+	D_SpriteCalculateGradients(r_spritedesc.pspriteframe->height);
+	D_SpriteScanLeftEdge (spans, minindex, maxindex);
+	D_SpriteScanRightEdge (spans, minindex, maxindex);
+	D_SpriteDrawSpans (spans);
 }
 
