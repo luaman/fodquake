@@ -16,6 +16,9 @@ CPU=$(shell echo $(TARGETSYSTEM) | cut -d '-' -f 1 | tr [A-Z] [a-z])
 
 ifeq ($(OS), morphos)
 	OSCFLAGS=-noixemul
+
+	OSOBJS=sys_morphos.o cd_morphos.o snd_morphos.o in_morphos.o
+	OSSWOBJS=vid_morphos.o
 endif
 
 ifeq ($(OS), linux)

@@ -35,7 +35,7 @@ cvar_t _windowed_mouse = {"_windowed_mouse", "1", CVAR_ARCHIVE};
 
 static unsigned int lastwindowedmouse;
 
-void VID_Init(int width, int height, int depth, unsigned char *palette)
+void Sys_Video_Init(int width, int height, int depth, unsigned char *palette)
 {
 	int argnum;
 	int i;
