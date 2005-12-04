@@ -831,15 +831,7 @@ void CL_Init (void)
 	Key_Init ();
 	V_Init ();
  
-#ifdef __linux__
-	IN_Init ();
-#endif
-
 	VID_Init(host_basepal);
-
-#ifndef __linux__
-	IN_Init ();
-#endif
 
 	Image_Init();
 	Draw_Init ();
@@ -966,7 +958,7 @@ void CL_Frame (double time) {
 	Sys_SendKeyEvents();
 
 	// allow mice or other external controllers to add commands
-	IN_Commands();
+	VID_GetEvents();
 
 	// process console commands
 	Cbuf_Execute();
@@ -1038,7 +1030,6 @@ void CL_Shutdown (void) {
 	CDAudio_Shutdown();
 	S_Shutdown();
 	MP3_Shutdown();
-	IN_Shutdown ();
 #ifdef SECURITY_NONSENSE
 	Modules_Shutdown();
 #endif

@@ -75,3 +75,18 @@ void VID_Shutdown()
 	Sys_Video_Close(display);
 }
 
+void VID_Update (vrect_t *rects)
+{
+	Sys_Video_Update(display, rects);
+}
+
+void VID_SetPalette(byte *palette)
+{
+	Sys_Video_SetPalette(display, palette);
+}
+
+void VID_GetEvents()
+{
+	Sys_Video_GetEvents(display);
+}
+

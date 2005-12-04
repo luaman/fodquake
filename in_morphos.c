@@ -13,14 +13,18 @@
 
 #include "in_morphos.h"
 
+struct inputdata
+{
+	struct Screen *screen;
+	struct Window *window;
+};
+
 #ifndef SA_Displayed
 #define SA_Displayed (SA_Dummy + 101)
 #endif
 
 struct InputEvent imsgs[MAXIMSGS];
 extern struct IntuitionBase *IntuitionBase;
-extern struct Window *window;
-extern struct Screen *screen;
 
 int imsglow = 0;
 int imsghigh = 0;
@@ -34,7 +38,7 @@ static struct MsgPort *inputport = 0;
 static struct IOStdReq *inputreq = 0;
 static BYTE inputret = -1;
 
-cvar_t m_filter = {"m_filter", "1", CVAR_ARCHIVE};
+cvar_t m_filter = { "m_filter", "1", CVAR_ARCHIVE };
 
 extern cvar_t _windowed_mouse;
 
@@ -43,8 +47,10 @@ float old_mouse_x, old_mouse_y;
 
 #define DEBUGRING(x)
 
-void IN_Shutdown(void)
+void Sys_Input_Shutdown(void *inputdata)
 {
+	struct inputdata *id = inputdata;
+
 	if (inputret == 0)
 	{
 		inputreq->io_Data = (void *)&InputHandler;
@@ -70,148 +76,144 @@ void IN_Shutdown(void)
 		inputport = 0;
 	}
 
+	FreeVec(id);
 }
 
-void IN_Init()
+void *Sys_Input_Init(struct Screen *screen, struct Window *window)
 {
-	inputport = CreateMsgPort();
-	if (inputport == 0)
+	struct inputdata *id;
+
+	id = AllocVec(sizeof(*id), MEMF_ANY);
+	if (id)
 	{
-		IN_Shutdown();
-		Sys_Error("Unable to create message port");
+		id->screen = screen;
+		id->window = window;
+
+		inputport = CreateMsgPort();
+		if (inputport == 0)
+		{
+			Sys_Input_Shutdown(id);
+			Sys_Error("Unable to create message port");
+		}
+
+		inputreq = CreateIORequest(inputport, sizeof(*inputreq));
+		if (inputreq == 0)
+		{
+			Sys_Input_Shutdown(id);
+			Sys_Error("Unable to create IO request");
+		}
+
+		inputret = OpenDevice("input.device", 0, (struct IORequest *)inputreq, 0);
+		if (inputret != 0)
+		{
+			Sys_Input_Shutdown(id);
+			Sys_Error("Unable to open input.device");
+		}
+
+		InputHandler.is_Node.ln_Type = NT_INTERRUPT;
+		InputHandler.is_Node.ln_Pri = 100;
+		InputHandler.is_Node.ln_Name = "Fuhquake input handler";
+		InputHandler.is_Data = id;
+		InputHandler.is_Code = (void (*)())&myinputhandler;
+		inputreq->io_Data = (void *)&InputHandler;
+		inputreq->io_Command = IND_ADDHANDLER;
+		DoIO((struct IORequest *)inputreq);
 	}
 
-	inputreq = CreateIORequest(inputport, sizeof(*inputreq));
-	if (inputreq == 0)
-	{
-		IN_Shutdown();
-		Sys_Error("Unable to create IO request");
-	}
-
-	inputret = OpenDevice("input.device", 0, (struct IORequest *)inputreq, 0);
-	if (inputret != 0)
-	{
-		IN_Shutdown();
-		Sys_Error("Unable to open input.device");
-	}
-
-	InputHandler.is_Node.ln_Type = NT_INTERRUPT;
-	InputHandler.is_Node.ln_Pri = 100;
-	InputHandler.is_Node.ln_Name = "Fuhquake input handler";
-	InputHandler.is_Data = 0;
-	InputHandler.is_Code = (void(*)())&myinputhandler;
-	inputreq->io_Data = (void *)&InputHandler;
-	inputreq->io_Command = IND_ADDHANDLER;
-	DoIO((struct IORequest *)inputreq);
-
+	return id;
 }
 
 static void ExpireRingBuffer()
 {
 	int i = 0;
 
-	while(imsgs[imsglow].ie_Class == IECLASS_NULL && imsglow != imsghigh)
+	while (imsgs[imsglow].ie_Class == IECLASS_NULL && imsglow != imsghigh)
 	{
 		imsglow++;
 		i++;
-		imsglow%= MAXIMSGS;
+		imsglow %= MAXIMSGS;
 	}
 
 	DEBUGRING(dprintf("Expired %d messages\n", i));
 }
 
-void IN_Commands(void)
+void Sys_Input_GetEvents(void *inputdata)
 {
+	struct inputdata *id = inputdata;
 	char key;
 	int i;
 	int down;
 	struct InputEvent ie;
 
-	for(i = imsglow;i != imsghigh;i++, i%= MAXIMSGS)
+	for (i = imsglow; i != imsghigh; i++, i %= MAXIMSGS)
 	{
 		DEBUGRING(dprintf("%d %d\n", i, imsghigh));
 		if (imsgs[i].ie_Class == IECLASS_NEWMOUSE)
 		{
-			if ((window->Flags & WFLG_WINDOWACTIVE))
+			key = 0;
+
+			if (imsgs[i].ie_Code == NM_WHEEL_UP)
+				key = K_MWHEELUP;
+			else if (imsgs[i].ie_Code == NM_WHEEL_DOWN)
+				key = K_MWHEELDOWN;
+
+			if (imsgs[i].ie_Code == NM_BUTTON_FOURTH)
 			{
-				key = 0;
-
-				if (imsgs[i].ie_Code == NM_WHEEL_UP)
-					key = K_MWHEELUP;
-				else if (imsgs[i].ie_Code == NM_WHEEL_DOWN)
-					key = K_MWHEELDOWN;
-
-				if (imsgs[i].ie_Code == NM_BUTTON_FOURTH)
-				{
-					Key_Event(K_MOUSE4, true);
-				}
-				else if (imsgs[i].ie_Code == (NM_BUTTON_FOURTH|IECODE_UP_PREFIX))
-				{
-					Key_Event(K_MOUSE4, false);
-				}
-
-				if (key)
-				{
-					Key_Event(key, 1);
-					Key_Event(key, 0);
-				}
-
+				Key_Event(K_MOUSE4, true);
+			}
+			else if (imsgs[i].ie_Code == (NM_BUTTON_FOURTH | IECODE_UP_PREFIX))
+			{
+				Key_Event(K_MOUSE4, false);
 			}
 
-			imsgs[i].ie_Class = IECLASS_NULL;
-		}	
+			if (key)
+			{
+				Key_Event(key, 1);
+				Key_Event(key, 0);
+			}
+		}
 		else if (imsgs[i].ie_Class == IECLASS_RAWKEY)
 		{
-			if ((window->Flags & WFLG_WINDOWACTIVE))
+			down = !(imsgs[i].ie_Code & IECODE_UP_PREFIX);
+			imsgs[i].ie_Code &= ~IECODE_UP_PREFIX;
+
+			memcpy(&ie, &imsgs[i], sizeof(ie));
+
+			key = 0;
+			if (imsgs[i].ie_Code <= 255)
+				key = keyconv[imsgs[i].ie_Code];
+
+			if (key)
+				Key_Event(key, down);
+			else
 			{
-				down = !(imsgs[i].ie_Code&IECODE_UP_PREFIX);
-				imsgs[i].ie_Code&=~IECODE_UP_PREFIX;
-
-				memcpy(&ie, &imsgs[i], sizeof(ie));
-
-				key = 0;
-				if (imsgs[i].ie_Code <= 255)
-					key = keyconv[imsgs[i].ie_Code];
-
-				if (key)
-					Key_Event(key, down);
-				else
-				{
-					if (developer.value)
-						Com_Printf("Unknown key %d\n", imsgs[i].ie_Code);
-				}
+				if (developer.value)
+					Com_Printf("Unknown key %d\n", imsgs[i].ie_Code);
 			}
-
-			imsgs[i].ie_Class = IECLASS_NULL;
 		}
 		else if (imsgs[i].ie_Class == IECLASS_RAWMOUSE)
 		{
-			if ((window->Flags & WFLG_WINDOWACTIVE))
-			{
-				if (imsgs[i].ie_Code == IECODE_LBUTTON)
-					Key_Event(K_MOUSE1, true);
-				else if (imsgs[i].ie_Code == (IECODE_LBUTTON|IECODE_UP_PREFIX))
-					Key_Event(K_MOUSE1, false);
-				else if (imsgs[i].ie_Code == IECODE_RBUTTON)
-					Key_Event(K_MOUSE2, true);
-				else if (imsgs[i].ie_Code == (IECODE_RBUTTON|IECODE_UP_PREFIX))
-					Key_Event(K_MOUSE2, false);
-				else if (imsgs[i].ie_Code == IECODE_MBUTTON)
-					Key_Event(K_MOUSE3, true);
-				else if (imsgs[i].ie_Code == (IECODE_MBUTTON|IECODE_UP_PREFIX))
-					Key_Event(K_MOUSE3, false);
+			if (imsgs[i].ie_Code == IECODE_LBUTTON)
+				Key_Event(K_MOUSE1, true);
+			else if (imsgs[i].ie_Code == (IECODE_LBUTTON | IECODE_UP_PREFIX))
+				Key_Event(K_MOUSE1, false);
+			else if (imsgs[i].ie_Code == IECODE_RBUTTON)
+				Key_Event(K_MOUSE2, true);
+			else if (imsgs[i].ie_Code == (IECODE_RBUTTON | IECODE_UP_PREFIX))
+				Key_Event(K_MOUSE2, false);
+			else if (imsgs[i].ie_Code == IECODE_MBUTTON)
+				Key_Event(K_MOUSE3, true);
+			else if (imsgs[i].ie_Code == (IECODE_MBUTTON | IECODE_UP_PREFIX))
+				Key_Event(K_MOUSE3, false);
 
-				mouse_x+= imsgs[i].ie_position.ie_xy.ie_x;
-				mouse_y+= imsgs[i].ie_position.ie_xy.ie_y;
-			}
-
-			imsgs[i].ie_Class = IECLASS_NULL;
+			mouse_x += imsgs[i].ie_position.ie_xy.ie_x;
+			mouse_y += imsgs[i].ie_position.ie_xy.ie_y;
 		}
 
+		imsgs[i].ie_Class = IECLASS_NULL;
 	}
 
 	ExpireRingBuffer();
-
 }
 
 void IN_Move(usercmd_t *cmd)
@@ -224,8 +226,8 @@ void IN_Move(usercmd_t *cmd)
 	if (m_filter.value)
 	{
 		filterfrac = bound(0, m_filter.value, 1) / 2.0;
-	        mouse_x = (tx * (1 - filterfrac) + old_mouse_x * filterfrac);
-        	mouse_y = (ty * (1 - filterfrac) + old_mouse_y * filterfrac);
+		mouse_x = (tx * (1 - filterfrac) + old_mouse_x * filterfrac);
+		mouse_y = (ty * (1 - filterfrac) + old_mouse_y * filterfrac);
 	}
 
 	old_mouse_x = tx;
@@ -240,7 +242,7 @@ void IN_Move(usercmd_t *cmd)
 		cl.viewangles[YAW] -= m_yaw.value * mouse_x;
 
 	if (mlook_active)
-		V_StopPitchDrift ();
+		V_StopPitchDrift();
 
 	if (mlook_active && !(in_strafe.state & 1))
 	{
@@ -255,9 +257,8 @@ void IN_Move(usercmd_t *cmd)
 	mouse_x = mouse_y = 0.0;
 }
 
-char keyconv[] =
-{
-	'`', /* 0 */
+static char keyconv[] = {
+	'`',			/* 0 */
 	'1',
 	'2',
 	'3',
@@ -267,7 +268,7 @@ char keyconv[] =
 	'7',
 	'8',
 	'9',
-	'0', /* 10 */
+	'0',			/* 10 */
 	'-',
 	'=',
 	0,
@@ -277,7 +278,7 @@ char keyconv[] =
 	'w',
 	'e',
 	'r',
-	't', /* 20 */
+	't',			/* 20 */
 	'y',
 	'u',
 	'i',
@@ -287,7 +288,7 @@ char keyconv[] =
 	']',
 	0,
 	KP_END,
-	KP_DOWNARROW, /* 30 */
+	KP_DOWNARROW,		/* 30 */
 	KP_PGDN,
 	'a',
 	's',
@@ -297,7 +298,7 @@ char keyconv[] =
 	'h',
 	'j',
 	'k',
-	'l', /* 40 */
+	'l',			/* 40 */
 	';',
 	'\'',
 	'\\',
@@ -307,7 +308,7 @@ char keyconv[] =
 	KP_RIGHTARROW,
 	'<',
 	'z',
-	'x', /* 50 */
+	'x',			/* 50 */
 	'c',
 	'v',
 	'b',
@@ -317,7 +318,7 @@ char keyconv[] =
 	'.',
 	'/',
 	0,
-	KP_DEL, /* 60 */
+	KP_DEL,			/* 60 */
 	KP_HOME,
 	KP_UPARROW,
 	KP_PGUP,
@@ -327,7 +328,7 @@ char keyconv[] =
 	KP_ENTER,
 	K_ENTER,
 	K_ESCAPE,
-	K_DEL, /* 70 */
+	K_DEL,			/* 70 */
 	K_INS,
 	K_PGUP,
 	K_PGDN,
@@ -337,7 +338,7 @@ char keyconv[] =
 	K_DOWNARROW,
 	K_RIGHTARROW,
 	K_LEFTARROW,
-	K_F1, /* 80 */
+	K_F1,			/* 80 */
 	K_F2,
 	K_F3,
 	K_F4,
@@ -347,7 +348,7 @@ char keyconv[] =
 	K_F8,
 	K_F9,
 	K_F10,
-	0, /* 90 */
+	0,			/* 90 */
 	0,
 	KP_SLASH,
 	0,
@@ -357,7 +358,7 @@ char keyconv[] =
 	K_RSHIFT,
 	0,
 	K_RCTRL,
-	K_ALT, /* 100 */
+	K_ALT,			/* 100 */
 	K_ALT,
 	0,
 	0,
@@ -367,7 +368,7 @@ char keyconv[] =
 	0,
 	0,
 	0,
-	K_PAUSE, /* 110 */
+	K_PAUSE,		/* 110 */
 	K_F12,
 	K_HOME,
 	K_END,
@@ -377,7 +378,7 @@ char keyconv[] =
 	0,
 	0,
 	0,
-	0, /* 120 */
+	0,			/* 120 */
 	0,
 	0,
 	0,
@@ -387,7 +388,7 @@ char keyconv[] =
 	0,
 	0,
 	0,
-	0, /* 130 */
+	0,			/* 130 */
 	0,
 	0,
 	0,
@@ -397,7 +398,7 @@ char keyconv[] =
 	0,
 	0,
 	0,
-	0, /* 140 */
+	0,			/* 140 */
 	0,
 	0,
 	0,
@@ -407,7 +408,7 @@ char keyconv[] =
 	0,
 	0,
 	0,
-	0, /* 150 */
+	0,			/* 150 */
 	0,
 	0,
 	0,
@@ -417,7 +418,7 @@ char keyconv[] =
 	0,
 	0,
 	0,
-	0, /* 160 */
+	0,			/* 160 */
 	0,
 	0,
 	0,
@@ -427,7 +428,7 @@ char keyconv[] =
 	0,
 	0,
 	0,
-	0, /* 170 */
+	0,			/* 170 */
 	0,
 	0,
 	0,
@@ -437,7 +438,7 @@ char keyconv[] =
 	0,
 	0,
 	0,
-	0, /* 180 */
+	0,			/* 180 */
 	0,
 	0,
 	0,
@@ -447,7 +448,7 @@ char keyconv[] =
 	0,
 	0,
 	0,
-	0, /* 190 */
+	0,			/* 190 */
 	0,
 	0,
 	0,
@@ -457,7 +458,7 @@ char keyconv[] =
 	0,
 	0,
 	0,
-	0, /* 200 */
+	0,			/* 200 */
 	0,
 	0,
 	0,
@@ -467,7 +468,7 @@ char keyconv[] =
 	0,
 	0,
 	0,
-	0, /* 210 */
+	0,			/* 210 */
 	0,
 	0,
 	0,
@@ -477,7 +478,7 @@ char keyconv[] =
 	0,
 	0,
 	0,
-	0, /* 220 */
+	0,			/* 220 */
 	0,
 	0,
 	0,
@@ -487,7 +488,7 @@ char keyconv[] =
 	0,
 	0,
 	0,
-	0, /* 230 */
+	0,			/* 230 */
 	0,
 	0,
 	0,
@@ -497,7 +498,7 @@ char keyconv[] =
 	0,
 	0,
 	0,
-	0, /* 240 */
+	0,			/* 240 */
 	0,
 	0,
 	0,
@@ -507,7 +508,7 @@ char keyconv[] =
 	0,
 	0,
 	0,
-	0, /* 250 */
+	0,			/* 250 */
 	0,
 	0,
 	0,
@@ -519,29 +520,33 @@ char keyconv[] =
 	0
 };
 
-struct InputEvent *myinputhandler_real(void);
+static struct InputEvent *myinputhandler_real(void);
 
-struct EmulLibEntry myinputhandler =
+static struct EmulLibEntry myinputhandler =
 {
-	TRAP_LIB, 0, (void(*)(void))myinputhandler_real
+	TRAP_LIB, 0, (void (*)(void))myinputhandler_real
 };
 
-struct InputEvent *myinputhandler_real()
+static struct InputEvent *myinputhandler_real()
 {
 	struct InputEvent *moo = (struct InputEvent *)REG_A0;
+	struct inputdata *id = (struct inputdata *)REG_A1;
 
 	struct InputEvent *coin;
 
 	int screeninfront;
 
+	if (!(id->window->Flags & WFLG_WINDOWACTIVE))
+		return moo;
+
 	coin = moo;
 
-	if (screen)
+	if (id->screen)
 	{
 		if (IntuitionBase->LibNode.lib_Version > 50 || (IntuitionBase->LibNode.lib_Version == 50 && IntuitionBase->LibNode.lib_Revision >= 56))
-			GetAttr(SA_Displayed, screen, &screeninfront);
+			GetAttr(SA_Displayed, id->screen, &screeninfront);
 		else
-			screeninfront = screen==IntuitionBase->FirstScreen;
+			screeninfront = id->screen == IntuitionBase->FirstScreen;
 	}
 	else
 		screeninfront = 1;
@@ -550,18 +555,18 @@ struct InputEvent *myinputhandler_real()
 	{
 		if (coin->ie_Class == IECLASS_RAWMOUSE || coin->ie_Class == IECLASS_RAWKEY || coin->ie_Class == IECLASS_NEWMOUSE)
 		{
-			if ((imsghigh > imsglow && !(imsghigh == MAXIMSGS-1 && imsglow == 0)) || (imsghigh < imsglow && imsghigh != imsglow-1) || imsglow == imsghigh)
+			if ((imsghigh > imsglow && !(imsghigh == MAXIMSGS - 1 && imsglow == 0)) || (imsghigh < imsglow && imsghigh != imsglow - 1) || imsglow == imsghigh)
 			{
 				memcpy(&imsgs[imsghigh], coin, sizeof(imsgs[0]));
 				imsghigh++;
-				imsghigh%= MAXIMSGS;
+				imsghigh %= MAXIMSGS;
 			}
 			else
 			{
 				DEBUGRING(kprintf("FodQuake: message dropped, imsglow = %d, imsghigh = %d\n", imsglow, imsghigh));
 			}
 
-			if (/*mouse_active && */(window->Flags & WFLG_WINDOWACTIVE) && coin->ie_Class == IECLASS_RAWMOUSE && screeninfront && window->MouseX > 0 && window->MouseY > 0)
+			if ( /*mouse_active && */ (id->window->Flags & WFLG_WINDOWACTIVE) && coin->ie_Class == IECLASS_RAWMOUSE && screeninfront && id->window->MouseX > 0 && id->window->MouseY > 0)
 			{
 				if (_windowed_mouse.value)
 				{
@@ -572,8 +577,7 @@ struct InputEvent *myinputhandler_real()
 		}
 
 		coin = coin->ie_NextEvent;
-	} while(coin);
+	} while (coin);
 
 	return moo;
 }
-

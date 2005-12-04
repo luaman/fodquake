@@ -15,257 +15,257 @@
 
 extern viddef_t vid;
 
-char *buffer = 0;
-short *zbuffer = 0;
-char *sbuffer = 0;
-
-struct Screen *screen = 0;
-struct Window *window = 0;
-
-static struct ScreenBuffer *screenbuffers[3] = { 0, 0, 0 };
-static int currentbuffer;
-
-static void *pointermem;
-
-static struct RastPort rastport;
-
-char pal[256*4];
-
-cvar_t _windowed_mouse = {"_windowed_mouse", "1", CVAR_ARCHIVE};
-
-static unsigned int lastwindowedmouse;
-
-void Sys_Video_Init(int width, int height, int depth, unsigned char *palette)
+struct display
 {
+	void *inputdata;
+
+	char *buffer;
+	short *zbuffer;
+	char *sbuffer;
+
+	struct Screen *screen;
+	struct Window *window;
+
+	struct ScreenBuffer *screenbuffers[3];
+	int currentbuffer;
+
+	void *pointermem;
+
+	struct RastPort rastport;
+
+	char pal[256 * 4];
+
+	unsigned int lastwindowedmouse;
+};
+
+cvar_t _windowed_mouse = { "_windowed_mouse", "1", CVAR_ARCHIVE };
+
+void *Sys_Video_Open(int width, int height, int depth, unsigned char *palette)
+{
+	struct display *d;
 	int argnum;
 	int i;
 
 	Cvar_Register(&_windowed_mouse);
 
-	vid.width = width;
-	vid.height = height;
-	vid.maxwarpwidth = WARP_WIDTH;
-	vid.maxwarpheight = WARP_HEIGHT;
-	vid.colormap = host_colormap;
-	vid.fullbright = 256 - LittleLong (*((int *)vid.colormap + 2048));
-
-	buffer = AllocVec(vid.width*vid.height, MEMF_ANY);
-	if (buffer == 0)
+	d = AllocMem(sizeof(*d), MEMF_CLEAR);
+	if (d)
 	{
-		Sys_Error("VID: Couldn't allocate frame buffer");
-	}
+		vid.width = width;
+		vid.height = height;
+		vid.maxwarpwidth = WARP_WIDTH;
+		vid.maxwarpheight = WARP_HEIGHT;
+		vid.colormap = host_colormap;
+		vid.fullbright = 256 - LittleLong(*((int *)vid.colormap + 2048));
 
-	zbuffer = AllocVec(vid.width*vid.height*sizeof(*d_pzbuffer), MEMF_ANY);
-	if (zbuffer == 0)
-	{
-		Sys_Error("VID: Couldn't allocate zbuffer");
-	}
-
-	sbuffer = AllocVec(D_SurfaceCacheForRes(vid.width, vid.height), MEMF_ANY);
-	if (sbuffer == 0)
-	{
-		Sys_Error("VID: Couldn't allocate surface cache");
-	}
-
-	D_InitCaches(sbuffer, D_SurfaceCacheForRes(vid.width, vid.height));
-
-	d_pzbuffer = zbuffer;
-
-	vid.rowbytes = vid.width;
-	vid.buffer = buffer;
-	vid.direct = 0; /* Isn't used anywhere, but whatever. */
-	vid.conwidth = vid.width;
-	vid.conheight = vid.height;
-	vid.aspect = ((float)vid.height / (float)vid.width) * (320.0 / 240.0);
-
-	argnum = COM_CheckParm("-window");
-
-	if (argnum == 0)
-	{
-		screen = OpenScreenTags(0,
-			SA_Width, vid.width,
-			SA_Height, vid.height,
-			SA_Depth, 8,
-			SA_Quiet, TRUE,
-			TAG_DONE);
-	}
-	
-
-	window = OpenWindowTags(0,
-		WA_InnerWidth, vid.width,
-		WA_InnerHeight, vid.height,
-		WA_Title, "Fuhquake",
-		WA_DragBar, screen?FALSE:TRUE,
-		WA_DepthGadget, screen?FALSE:TRUE,
-		WA_Borderless, screen?TRUE:FALSE,
-		WA_RMBTrap, TRUE,
-		screen?WA_PubScreen:TAG_IGNORE, (ULONG)screen,
-		WA_Activate, TRUE,
-		WA_ReportMouse, TRUE,
-		TAG_DONE);
-
-	if (window == 0)
-		Sys_Error("Unable to open window");
-
-	pointermem = AllocVec(256, MEMF_ANY|MEMF_CLEAR);
-	if (pointermem == 0)
-	{
-		Sys_Error("Unable to allocate memory for mouse pointer");
-	}
-
-	SetPointer(window, pointermem, 16, 16, 0, 0);
-
-	lastwindowedmouse = 1;
-
-	vid.numpages = screen?3:1;
-
-	if (screen)
-	{
-		for(i=0;i<3;i++)
+		d->buffer = AllocVec(vid.width * vid.height, MEMF_ANY);
+		if (d->buffer == 0)
 		{
-			screenbuffers[i] = AllocScreenBuffer(screen, 0, i?SB_COPY_BITMAP:SB_SCREEN_BITMAP);
-			if (screenbuffers[i] == 0)
+			Sys_Error("VID: Couldn't allocate frame buffer");
+		}
+
+		d->zbuffer = AllocVec(vid.width * vid.height * sizeof(*d_pzbuffer), MEMF_ANY);
+		if (d->zbuffer == 0)
+		{
+			Sys_Error("VID: Couldn't allocate zbuffer");
+		}
+
+		d->sbuffer = AllocVec(D_SurfaceCacheForRes(vid.width, vid.height), MEMF_ANY);
+		if (d->sbuffer == 0)
+		{
+			Sys_Error("VID: Couldn't allocate surface cache");
+		}
+
+		D_InitCaches(d->sbuffer, D_SurfaceCacheForRes(vid.width, vid.height));
+
+		d_pzbuffer = d->zbuffer;
+
+		vid.rowbytes = vid.width;
+		vid.buffer = d->buffer;
+		vid.direct = 0;	/* Isn't used anywhere, but whatever. */
+		vid.conwidth = vid.width;
+		vid.conheight = vid.height;
+		vid.aspect = ((float)vid.height / (float)vid.width) * (320.0 / 240.0);
+
+		argnum = COM_CheckParm("-window");
+
+		if (argnum == 0)
+		{
+			d->screen = OpenScreenTags(0, SA_Width, vid.width, SA_Height, vid.height, SA_Depth, 8, SA_Quiet, TRUE, TAG_DONE);
+		}
+
+
+		d->window = OpenWindowTags(0, WA_InnerWidth, vid.width, WA_InnerHeight, vid.height, WA_Title, "Fuhquake", WA_DragBar, d->screen ? FALSE : TRUE, WA_DepthGadget, d->screen ? FALSE : TRUE, WA_Borderless, d->screen ? TRUE : FALSE, WA_RMBTrap, TRUE, d->screen ? WA_PubScreen : TAG_IGNORE, (ULONG) d->screen, WA_Activate, TRUE, WA_ReportMouse, TRUE, TAG_DONE);
+
+		if (d->window == 0)
+			Sys_Error("Unable to open window");
+
+		d->pointermem = AllocVec(256, MEMF_ANY | MEMF_CLEAR);
+		if (d->pointermem == 0)
+		{
+			Sys_Error("Unable to allocate memory for mouse pointer");
+		}
+
+		SetPointer(d->window, d->pointermem, 16, 16, 0, 0);
+
+		d->lastwindowedmouse = 1;
+
+		vid.numpages = d->screen ? 3 : 1;
+
+		if (d->screen)
+		{
+			for (i = 0; i < 3; i++)
 			{
-				Sys_Error("Unable to set up triplebuffering");
+				d->screenbuffers[i] = AllocScreenBuffer(d->screen, 0, i ? SB_COPY_BITMAP : SB_SCREEN_BITMAP);
+				if (d->screenbuffers[i] == 0)
+				{
+					Sys_Error("Unable to set up triplebuffering");
+				}
 			}
 		}
+
+		d->currentbuffer = 0;
+
+		InitRastPort(&d->rastport);
+
+		Sys_Video_SetPalette(d, palette);
+
+		d->inputdata = Sys_Input_Init(d->screen, d->window);
 	}
 
-	currentbuffer = 0;
-
-	InitRastPort(&rastport);
-
-	VID_SetPalette(palette);
+	return d;
 }
 
-void VID_Shutdown()
+void Sys_Video_Close(void *display)
 {
+	struct display *d = display;
 	int i;
 
-	if (buffer)
-	{
-		FreeVec(buffer);
-		buffer = 0;
-	}
+	if (d->inputdata)
+		Sys_Input_Shutdown(d->inputdata);
 
-	if (zbuffer)
-	{
-		FreeVec(zbuffer);
-		zbuffer = 0;
-	}
+	if (d->buffer)
+		FreeVec(d->buffer);
 
-	if (sbuffer)
-	{
-		FreeVec(sbuffer);
-		sbuffer = 0;
-	}
+	if (d->zbuffer)
+		FreeVec(d->zbuffer);
 
-	for(i=0;i<3;i++)
+	if (d->sbuffer)
+		FreeVec(d->sbuffer);
+
+	for (i = 0; i < 3; i++)
 	{
-		if (screenbuffers[i])
+		if (d->screenbuffers[i])
 		{
-			FreeScreenBuffer(screen, screenbuffers[i]);
-			screenbuffers[i] = 0;
+			FreeScreenBuffer(d->screen, d->screenbuffers[i]);
+			d->screenbuffers[i] = 0;
 		}
 	}
 
-	if (window)
+	if (d->window)
 	{
-		CloseWindow(window);
-		window = 0;
+		CloseWindow(d->window);
+		d->window = 0;
 	}
 
-	if (pointermem)
+	if (d->pointermem)
 	{
-		FreeVec(pointermem);
-		pointermem = 0;
+		FreeVec(d->pointermem);
+		d->pointermem = 0;
 	}
 
-	if (screen)
+	if (d->screen)
 	{
-		CloseScreen(screen);
-		screen = 0;
+		CloseScreen(d->screen);
+		d->screen = 0;
 	}
+
+	FreeVec(d);
 }
 
-void VID_Update(vrect_t *rects)
+void Sys_Video_GetEvents(void *display)
 {
-	while(rects)
+	struct display *d;
+
+	Sys_Input_GetEvents(d->inputdata);
+}
+
+void Sys_Video_Update(void *display, vrect_t * rects)
+{
+	struct display *d = display;
+
+	while (rects)
 	{
-		if (screen)
+		if (d->screen)
 		{
-			rastport.BitMap = screenbuffers[currentbuffer]->sb_BitMap;
-			WritePixelArray(buffer, rects->x, rects->y, vid.rowbytes, &rastport, rects->x, rects->y, rects->width, rects->height, RECTFMT_LUT8);
+			d->rastport.BitMap = d->screenbuffers[d->currentbuffer]->sb_BitMap;
+			WritePixelArray(d->buffer, rects->x, rects->y, vid.rowbytes, &d->rastport, rects->x, rects->y, rects->width, rects->height, RECTFMT_LUT8);
 		}
 		else
 		{
-			WriteLUTPixelArray(buffer, rects->x, rects->y, vid.rowbytes, window->RPort, pal, window->BorderLeft+rects->x, window->BorderTop+rects->y, rects->width, rects->height, CTABFMT_XRGB8);
+			WriteLUTPixelArray(d->buffer, rects->x, rects->y, vid.rowbytes, d->window->RPort, d->pal, d->window->BorderLeft + rects->x, d->window->BorderTop + rects->y, rects->width, rects->height, CTABFMT_XRGB8);
 		}
 
 
 		rects = rects->pnext;
 	}
 
-	if (screen)
+	if (d->screen)
 	{
-		ChangeScreenBuffer(screen, screenbuffers[currentbuffer]);
-		currentbuffer++;
-		currentbuffer%= 3;
+		ChangeScreenBuffer(d->screen, d->screenbuffers[d->currentbuffer]);
+		d->currentbuffer++;
+		d->currentbuffer %= 3;
 	}
 
 	/* Check for the windowed mouse setting here */
-	if (lastwindowedmouse != _windowed_mouse.value && !screen)
+	if (d->lastwindowedmouse != _windowed_mouse.value && !d->screen)
 	{
-		lastwindowedmouse = _windowed_mouse.value;
+		d->lastwindowedmouse = _windowed_mouse.value;
 
-		if (lastwindowedmouse == 1)
+		if (d->lastwindowedmouse == 1)
 		{
 			/* Hide pointer */
 
-			SetPointer(window, pointermem, 16, 16, 0, 0);
+			SetPointer(d->window, d->pointermem, 16, 16, 0, 0);
 		}
 		else
 		{
 			/* Show pointer */
 
-			ClearPointer(window);
+			ClearPointer(d->window);
 		}
 	}
 }
 
-void VID_ShiftPalette(unsigned char *p)
+void Sys_Video_SetPalette(void *display, unsigned char *palette)
 {
-	VID_SetPalette(p);
-}
-
-void VID_SetPalette(unsigned char *palette)
-{
+	struct display *d = display;
 	int i;
 
-	ULONG spal[1+(256*3)+1];
+	ULONG spal[1 + (256 * 3) + 1];
 
-	if (screen)
+	if (d->screen)
 	{
-		spal[0] = 256<<16;
+		spal[0] = 256 << 16;
 
-		for(i=0;i<256;i++)
+		for (i = 0; i < 256; i++)
 		{
-			spal[1+(i*3)] = ((unsigned int)palette[i*3])<<24;
-			spal[2+(i*3)] = ((unsigned int)palette[i*3+1])<<24;
-			spal[3+(i*3)] = ((unsigned int)palette[i*3+2])<<24;
+			spal[1 + (i * 3)] = ((unsigned int)palette[i * 3]) << 24;
+			spal[2 + (i * 3)] = ((unsigned int)palette[i * 3 + 1]) << 24;
+			spal[3 + (i * 3)] = ((unsigned int)palette[i * 3 + 2]) << 24;
 		}
 
-		spal[1+(3*256)] = 0;
+		spal[1 + (3 * 256)] = 0;
 
-		LoadRGB32(&screen->ViewPort, spal);
+		LoadRGB32(&d->screen->ViewPort, spal);
 	}
 
-	for(i=0;i<256;i++)
+	for (i = 0; i < 256; i++)
 	{
-		pal[i*4] = 0;
-		pal[i*4+1] = palette[i*3+0];
-		pal[i*4+2] = palette[i*3+1];
-		pal[i*4+3] = palette[i*3+2];
+		d->pal[i * 4] = 0;
+		d->pal[i * 4 + 1] = palette[i * 3 + 0];
+		d->pal[i * 4 + 2] = palette[i * 3 + 1];
+		d->pal[i * 4 + 3] = palette[i * 3 + 2];
 	}
 }
 
@@ -297,4 +297,3 @@ void D_EndDirectRect(int x, int y, int width, int height)
 void VID_SetCaption(char *text)
 {
 }
-
