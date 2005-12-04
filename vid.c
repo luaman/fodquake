@@ -2,6 +2,8 @@
 #include "common.h"
 #include "r_shared.h"
 
+static void *display;
+
 void VID_Init(unsigned char *palette)
 {
 	int width, height, depth;
@@ -63,5 +65,13 @@ void VID_Init(unsigned char *palette)
 			Sys_Error("VID: Bad depth");
 	}
 
-	Sys_Video_Init(width, height, depth);
+	display = Sys_Video_Open(width, height, depth, host_basepal);
+	if (display == 0)
+		Sys_Error("VID: Unable to open a display\n");
 }
+
+void VID_Shutdown()
+{
+	Sys_Video_Close(display);
+}
+

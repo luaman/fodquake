@@ -46,10 +46,12 @@ typedef unsigned int PIXEL24;
 #include "input.h"
 #include "keys.h"
 
-static XF86VidModeModeInfo **vidmodes;
-static int num_vidmodes;
-static int scrnum;
-static qboolean vidmode_active = false;
+struct display
+{
+	XF86VidModeModeInfo **vidmodes;
+	int scrnum;
+	qboolean vidmode_active;
+};
 
 cvar_t vid_ref = { "vid_ref", "soft", CVAR_ROM };
 cvar_t _windowed_mouse = { "_windowed_mouse", "1", CVAR_ARCHIVE };
@@ -440,272 +442,281 @@ void ResetSharedFrameBuffers(void)
 // the palette data will go away after the call, so it must be copied off if
 // the video driver will need it again
 
-void Sys_Video_Init(int width, int height, int depth, unsigned char *palette)
+void *Sys_Video_Open(int width, int height, int depth, unsigned char *palette)
 {
 	int pnum, i, num_visuals, template_mask;
 	XVisualInfo template;
 	int fullscreen = 0;
+	struct display *display;
 
-	Cvar_SetCurrentGroup(CVAR_GROUP_VIDEO);
-	Cvar_Register(&vid_ref);
-	Cvar_ResetCurrentGroup();
-
-	ignorenext = 0;
-	vid.width = width;
-	vid.height = height;
-	vid.maxwarpwidth = WARP_WIDTH;
-	vid.maxwarpheight = WARP_HEIGHT;
-	vid.numpages = 2;
-	vid.colormap = host_colormap;
-	//      vid.cbits = VID_CBITS;
-	//      vid.grades = VID_GRADES;
-	vid.fullbright = 256 - LittleLong(*((int *) vid.colormap + 2048));
-
-	srandom(getpid());
-
-	verbose = COM_CheckParm("-verbose");
-
-	// open the display
-	x_disp = XOpenDisplay(0);
-	if (!x_disp)
+	display = malloc(sizeof(*display));
+	if (display)
 	{
-		if (getenv("DISPLAY"))
-			Sys_Error("VID: Could not open display [%s]\n", getenv("DISPLAY"));
-		else
-			Sys_Error("VID: Could not open local display\n");
-	}
+		display->vidmode_active = 0;
 
-	// catch signals so i can turn on auto-repeat
-	{
-		struct sigaction sa;
-		sigaction(SIGINT, 0, &sa);
-		sa.sa_handler = TragicDeath;
-		sigaction(SIGINT, &sa, 0);
-		sigaction(SIGTERM, &sa, 0);
-	}
+		Cvar_SetCurrentGroup(CVAR_GROUP_VIDEO);
+		Cvar_Register(&vid_ref);
+		Cvar_ResetCurrentGroup();
 
-	XAutoRepeatOff(x_disp);
+		ignorenext = 0;
+		vid.width = width;
+		vid.height = height;
+		vid.maxwarpwidth = WARP_WIDTH;
+		vid.maxwarpheight = WARP_HEIGHT;
+		vid.numpages = 2;
+		vid.colormap = host_colormap;
+		//      vid.cbits = VID_CBITS;
+		//      vid.grades = VID_GRADES;
+		vid.fullbright = 256 - LittleLong(*((int *) vid.colormap + 2048));
 
-	// for debugging only
-	XSynchronize(x_disp, True);
+		srandom(getpid());
 
-	scrnum = DefaultScreen(x_disp);
+		verbose = COM_CheckParm("-verbose");
 
-	if (COM_CheckParm("-fullscreen"))
-		fullscreen = true;
-
-	if (fullscreen)
-	{
-		int version, revision;
-		int best_fit, best_dist, dist, x, y;
-
-		if (XF86VidModeQueryVersion(x_disp, &version, &revision))
+		// open the display
+		x_disp = XOpenDisplay(0);
+		if (!x_disp)
 		{
-			Com_Printf("Using XF86-VidModeExtension Ver. %d.%d\n", version, revision);
-
-			scrnum = DefaultScreen(x_disp);
-
-			XF86VidModeGetAllModeLines(x_disp, scrnum, &num_vidmodes, &vidmodes);
-
-			best_dist = 9999999;
-			best_fit = -1;
-
-			for (i = 0; i < num_vidmodes; i++)
-			{
-				if (width > vidmodes[i]->hdisplay || height > vidmodes[i]->vdisplay)
-					continue;
-
-				x = width - vidmodes[i]->hdisplay;
-				y = height - vidmodes[i]->vdisplay;
-				dist = x * x + y * y;
-				if (dist < best_dist)
-				{
-					best_dist = dist;
-					best_fit = i;
-				}
-			}
-
-			if (best_fit != -1)
-			{
-/*
-				actualWidth = vidmodes[best_fit]->hdisplay;
-				actualHeight = vidmodes[best_fit]->vdisplay;
-*/
-				// change to the mode
-				XF86VidModeSwitchToMode(x_disp, scrnum, vidmodes[best_fit]);
-				vidmode_active = true;
-				// Move the viewport to top left
-				XF86VidModeSetViewPort(x_disp, scrnum, 0, 0);
-			}
+			if (getenv("DISPLAY"))
+				Sys_Error("VID: Could not open display [%s]\n", getenv("DISPLAY"));
 			else
-			{
-				fullscreen = 0;
-			}
+				Sys_Error("VID: Could not open local display\n");
 		}
-	}
 
-	template_mask = 0;
+		// catch signals so i can turn on auto-repeat
+		{
+			struct sigaction sa;
+			sigaction(SIGINT, 0, &sa);
+			sa.sa_handler = TragicDeath;
+			sigaction(SIGINT, &sa, 0);
+			sigaction(SIGTERM, &sa, 0);
+		}
 
-	// specify a visual id
-	if ((pnum = COM_CheckParm("-visualid")))
-	{
-		if (pnum >= com_argc - 1)
-			Sys_Error("VID: -visualid <id#>\n");
-		template.visualid = Q_atoi(com_argv[pnum + 1]);
-		template_mask = VisualIDMask;
-	}
-	else
-	{			// If not specified, use default visual
-		int screen;
-		screen = XDefaultScreen(x_disp);
-		template.visualid = XVisualIDFromVisual(XDefaultVisual(x_disp, screen));
-		template_mask = VisualIDMask;
-	}
+		XAutoRepeatOff(x_disp);
 
-	// pick a visual- warn if more than one was available
-	x_visinfo = XGetVisualInfo(x_disp, template_mask, &template, &num_visuals);
-	if (num_visuals > 1)
-	{
-		printf("Found more than one visual id at depth %d:\n", template.depth);
-		for (i = 0; i < num_visuals; i++)
-			printf("	-visualid %d\n", (int) (x_visinfo[i].visualid));
-	}
-	else if (num_visuals == 0)
-	{
-		if (template_mask == VisualIDMask)
-			Sys_Error("VID: Bad visual id %d\n", template.visualid);
-		else
-			Sys_Error("VID: No visuals at depth %d\n", template.depth);
-	}
+		// for debugging only
+		XSynchronize(x_disp, True);
 
-	if (verbose)
-	{
-		printf("Using visualid %d:\n", (int) (x_visinfo->visualid));
-		printf("	screen %d\n", x_visinfo->screen);
-		printf("	red_mask 0x%x\n", (int) (x_visinfo->red_mask));
-		printf("	green_mask 0x%x\n", (int) (x_visinfo->green_mask));
-		printf("	blue_mask 0x%x\n", (int) (x_visinfo->blue_mask));
-		printf("	colormap_size %d\n", x_visinfo->colormap_size);
-		printf("	bits_per_rgb %d\n", x_visinfo->bits_per_rgb);
-	}
+		display->scrnum = DefaultScreen(x_disp);
 
-	x_vis = x_visinfo->visual;
-
-	// setup attributes for main window
-	{
-		int attribmask = CWEventMask | CWColormap | CWBorderPixel;
-		XSetWindowAttributes attribs;
-		Colormap tmpcmap;
-
-		tmpcmap = XCreateColormap(x_disp, XRootWindow(x_disp, x_visinfo->screen), x_vis, AllocNone);
-
-		attribs.event_mask = StructureNotifyMask | KeyPressMask | KeyReleaseMask | ExposureMask | PointerMotionMask | ButtonPressMask | ButtonReleaseMask;
-		attribs.border_pixel = 0;
-		attribs.colormap = tmpcmap;
+		if (COM_CheckParm("-fullscreen"))
+			fullscreen = true;
 
 		if (fullscreen)
 		{
-			attribmask |= CWOverrideRedirect | CWSaveUnder | CWBackingStore;
-			attribmask = CWColormap | CWEventMask | CWSaveUnder | CWBackingStore | CWOverrideRedirect;
-			attribs.override_redirect = 1;
-			attribs.backing_store = NotUseful;
-			attribs.save_under = 0;
+			int version, revision;
+			int best_fit, best_dist, dist, x, y;
+			int num_vidmodes;
+
+			if (XF86VidModeQueryVersion(x_disp, &version, &revision))
+			{
+				Com_Printf("Using XF86-VidModeExtension Ver. %d.%d\n", version, revision);
+
+				XF86VidModeGetAllModeLines(x_disp, display->scrnum, &num_vidmodes, &display->vidmodes);
+
+				best_dist = 9999999;
+				best_fit = -1;
+
+				for (i = 0; i < num_vidmodes; i++)
+				{
+					if (width > display->vidmodes[i]->hdisplay || height > display->vidmodes[i]->vdisplay)
+						continue;
+
+					x = width - display->vidmodes[i]->hdisplay;
+					y = height - display->vidmodes[i]->vdisplay;
+					dist = x * x + y * y;
+					if (dist < best_dist)
+					{
+						best_dist = dist;
+						best_fit = i;
+					}
+				}
+
+				if (best_fit != -1)
+				{
+/*
+				actualWidth = display->vidmodes[best_fit]->hdisplay;
+				actualHeight = display->vidmodes[best_fit]->vdisplay;
+*/
+					// change to the mode
+					XF86VidModeSwitchToMode(x_disp, display->scrnum, display->vidmodes[best_fit]);
+					display->vidmode_active = true;
+					// Move the viewport to top left
+					XF86VidModeSetViewPort(x_disp, display->scrnum, 0, 0);
+				}
+				else
+				{
+					fullscreen = 0;
+				}
+			}
 		}
+
+		template_mask = 0;
+
+		// specify a visual id
+		if ((pnum = COM_CheckParm("-visualid")))
+		{
+			if (pnum >= com_argc - 1)
+				Sys_Error("VID: -visualid <id#>\n");
+			template.visualid = Q_atoi(com_argv[pnum + 1]);
+			template_mask = VisualIDMask;
+		}
+		else
+		{		// If not specified, use default visual
+			int screen;
+			screen = XDefaultScreen(x_disp);
+			template.visualid = XVisualIDFromVisual(XDefaultVisual(x_disp, screen));
+			template_mask = VisualIDMask;
+		}
+
+		// pick a visual- warn if more than one was available
+		x_visinfo = XGetVisualInfo(x_disp, template_mask, &template, &num_visuals);
+		if (num_visuals > 1)
+		{
+			printf("Found more than one visual id at depth %d:\n", template.depth);
+			for (i = 0; i < num_visuals; i++)
+				printf("	-visualid %d\n", (int) (x_visinfo[i].visualid));
+		}
+		else if (num_visuals == 0)
+		{
+			if (template_mask == VisualIDMask)
+				Sys_Error("VID: Bad visual id %d\n", template.visualid);
+			else
+				Sys_Error("VID: No visuals at depth %d\n", template.depth);
+		}
+
+		if (verbose)
+		{
+			printf("Using visualid %d:\n", (int) (x_visinfo->visualid));
+			printf("	screen %d\n", x_visinfo->screen);
+			printf("	red_mask 0x%x\n", (int) (x_visinfo->red_mask));
+			printf("	green_mask 0x%x\n", (int) (x_visinfo->green_mask));
+			printf("	blue_mask 0x%x\n", (int) (x_visinfo->blue_mask));
+			printf("	colormap_size %d\n", x_visinfo->colormap_size);
+			printf("	bits_per_rgb %d\n", x_visinfo->bits_per_rgb);
+		}
+
+		x_vis = x_visinfo->visual;
+
+		// setup attributes for main window
+		{
+			int attribmask = CWEventMask | CWColormap | CWBorderPixel;
+			XSetWindowAttributes attribs;
+			Colormap tmpcmap;
+
+			tmpcmap = XCreateColormap(x_disp, XRootWindow(x_disp, x_visinfo->screen), x_vis, AllocNone);
+
+			attribs.event_mask = StructureNotifyMask | KeyPressMask | KeyReleaseMask | ExposureMask | PointerMotionMask | ButtonPressMask | ButtonReleaseMask;
+			attribs.border_pixel = 0;
+			attribs.colormap = tmpcmap;
+
+			if (fullscreen)
+			{
+				attribmask |= CWOverrideRedirect | CWSaveUnder | CWBackingStore;
+				attribmask = CWColormap | CWEventMask | CWSaveUnder | CWBackingStore | CWOverrideRedirect;
+				attribs.override_redirect = 1;
+				attribs.backing_store = NotUseful;
+				attribs.save_under = 0;
+			}
 
 // create the main window
-		x_win = XCreateWindow(x_disp, XRootWindow(x_disp, x_visinfo->screen), 0, 0,	// x, y
-				      vid.width, vid.height, 0,	// borderwidth
-				      x_visinfo->depth, InputOutput, x_vis, attribmask, &attribs);
-		XStoreName(x_disp, x_win, "FuhQuake");
+			x_win = XCreateWindow(x_disp, XRootWindow(x_disp, x_visinfo->screen), 0, 0,	// x, y
+					      vid.width, vid.height, 0,	// borderwidth
+					      x_visinfo->depth, InputOutput, x_vis, attribmask, &attribs);
+			XStoreName(x_disp, x_win, "FuhQuake");
 
-		if (x_visinfo->class != TrueColor)
-			XFreeColormap(x_disp, tmpcmap);
+			if (x_visinfo->class != TrueColor)
+				XFreeColormap(x_disp, tmpcmap);
 
-	}
-
-
-	if (x_visinfo->depth == 8)
-	{
-		// create and upload the palette
-		if (x_visinfo->class == PseudoColor)
-		{
-			x_cmap = XCreateColormap(x_disp, x_win, x_vis, AllocAll);
-			VID_SetPalette(palette);
-			XSetWindowColormap(x_disp, x_win, x_cmap);
 		}
 
-	}
 
-	// inviso cursor
-	XDefineCursor(x_disp, x_win, CreateNullCursor(x_disp, x_win));
-
-	// create the GC
-	{
-		XGCValues xgcvalues;
-		int valuemask = GCGraphicsExposures;
-		xgcvalues.graphics_exposures = False;
-		x_gc = XCreateGC(x_disp, x_win, valuemask, &xgcvalues);
-	}
-
-	// map the window
-	XMapWindow(x_disp, x_win);
-
-	if (fullscreen)
-	{
-		XRaiseWindow(x_disp, x_win);
-		XWarpPointer(x_disp, None, x_win, 0, 0, 0, 0, vid.width / 2, vid.height / 2);
-		XFlush(x_disp);
-		XF86VidModeSetViewPort(x_disp, scrnum, 0, 0);
-		XGrabKeyboard(x_disp, x_win, False, GrabModeAsync, GrabModeAsync, CurrentTime);
-	}
-
-	// wait for first exposure event
-	{
-		XEvent event;
-		do
+		if (x_visinfo->depth == 8)
 		{
-			XNextEvent(x_disp, &event);
-			if (event.type == Expose && !event.xexpose.count)
-				oktodraw = true;
-		}
-		while (!oktodraw);
-	}
-	// now safe to draw
+			// create and upload the palette
+			if (x_visinfo->class == PseudoColor)
+			{
+				x_cmap = XCreateColormap(x_disp, x_win, x_vis, AllocAll);
+				VID_SetPalette(palette);
+				XSetWindowColormap(x_disp, x_win, x_cmap);
+			}
 
-	// even if MITSHM is available, make sure it's a local connection
-	if (XShmQueryExtension(x_disp))
-	{
-		char displayname[MAX_OSPATH], *d;
-		doShm = true;
-		if ((d = (char *) getenv("DISPLAY")))
+		}
+
+		// inviso cursor
+		XDefineCursor(x_disp, x_win, CreateNullCursor(x_disp, x_win));
+
+		// create the GC
 		{
-			Q_strncpyz(displayname, d, sizeof(displayname));
-			for (d = displayname; *d && (*d != ':'); d++)
-				;
-			*d = 0;
-			if (!(!Q_strcasecmp(displayname, "unix") || !*displayname))
-				doShm = false;
+			XGCValues xgcvalues;
+			int valuemask = GCGraphicsExposures;
+			xgcvalues.graphics_exposures = False;
+			x_gc = XCreateGC(x_disp, x_win, valuemask, &xgcvalues);
 		}
-	}
-	if (doShm)
-	{
-		x_shmeventtype = XShmGetEventBase(x_disp) + ShmCompletion;
-		ResetSharedFrameBuffers();
-	}
-	else
-	{
-		ResetFrameBuffer();
+
+		// map the window
+		XMapWindow(x_disp, x_win);
+
+		if (fullscreen)
+		{
+			XRaiseWindow(x_disp, x_win);
+			XWarpPointer(x_disp, None, x_win, 0, 0, 0, 0, vid.width / 2, vid.height / 2);
+			XFlush(x_disp);
+			XF86VidModeSetViewPort(x_disp, display->scrnum, 0, 0);
+			XGrabKeyboard(x_disp, x_win, False, GrabModeAsync, GrabModeAsync, CurrentTime);
+		}
+
+		// wait for first exposure event
+		{
+			XEvent event;
+			do
+			{
+				XNextEvent(x_disp, &event);
+				if (event.type == Expose && !event.xexpose.count)
+					oktodraw = true;
+			}
+			while (!oktodraw);
+		}
+		// now safe to draw
+
+		// even if MITSHM is available, make sure it's a local connection
+		if (XShmQueryExtension(x_disp))
+		{
+			char displayname[MAX_OSPATH], *d;
+			doShm = true;
+			if ((d = (char *) getenv("DISPLAY")))
+			{
+				Q_strncpyz(displayname, d, sizeof(displayname));
+				for (d = displayname; *d && (*d != ':'); d++)
+					;
+				*d = 0;
+				if (!(!Q_strcasecmp(displayname, "unix") || !*displayname))
+					doShm = false;
+			}
+		}
+		if (doShm)
+		{
+			x_shmeventtype = XShmGetEventBase(x_disp) + ShmCompletion;
+			ResetSharedFrameBuffers();
+		}
+		else
+		{
+			ResetFrameBuffer();
+		}
+
+		current_framebuffer = 0;
+		vid.rowbytes = x_framebuffer[0]->bytes_per_line;
+		vid.buffer = x_framebuffer[0]->data;
+		vid.direct = 0;
+		vid.conwidth = vid.width;
+		vid.conheight = vid.height;
+		vid.aspect = ((float) vid.height / (float) vid.width) * (320.0 / 240.0);
+
+		//XSynchronize(x_disp, False);
+		return display;
 	}
 
-	current_framebuffer = 0;
-	vid.rowbytes = x_framebuffer[0]->bytes_per_line;
-	vid.buffer = x_framebuffer[0]->data;
-	vid.direct = 0;
-	vid.conwidth = vid.width;
-	vid.conheight = vid.height;
-	vid.aspect = ((float) vid.height / (float) vid.width) * (320.0 / 240.0);
-
-	//XSynchronize(x_disp, False);
+	return 0;
 }
 
 void VID_ShiftPalette(unsigned char *p)
@@ -741,14 +752,16 @@ void VID_SetPalette(unsigned char *palette)
 }
 
 // Called at shutdown
-void VID_Shutdown(void)
+void Sys_Video_Close(void *display)
 {
+	struct display *d = display;
+
 	if (!x_disp)
 		return;
 	Com_Printf("VID_Shutdown\n");
 	XAutoRepeatOn(x_disp);
-	if (vidmode_active)
-		XF86VidModeSwitchToMode(x_disp, scrnum, vidmodes[0]);
+	if (d->vidmode_active)
+		XF86VidModeSwitchToMode(x_disp, d->scrnum, d->vidmodes[0]);
 	XCloseDisplay(x_disp);
 }
 
