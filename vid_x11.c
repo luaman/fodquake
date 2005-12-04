@@ -39,11 +39,17 @@ typedef unsigned int	PIXEL24;
 #include <X11/Xatom.h>
 #include <X11/keysym.h>
 #include <X11/extensions/XShm.h>
+#include <X11/extensions/xf86vmode.h>
 
 #include "quakedef.h"
 #include "d_local.h"
 #include "input.h"
 #include "keys.h"
+
+static XF86VidModeModeInfo **vidmodes;
+static int num_vidmodes;
+static int scrnum;
+static qboolean vidmode_active = false;
 
 cvar_t		vid_ref = {"vid_ref", "soft", CVAR_ROM};
 cvar_t		_windowed_mouse = {"_windowed_mouse", "1", CVAR_ARCHIVE};
@@ -404,6 +410,7 @@ void Sys_Video_Init(int width, int height, int depth, unsigned char *palette)
 {
 	int pnum, i, num_visuals, template_mask;
 	XVisualInfo template;
+	int fullscreen = 0;
 
 	Cvar_SetCurrentGroup(CVAR_GROUP_VIDEO);
 	Cvar_Register (&vid_ref);
@@ -447,6 +454,56 @@ void Sys_Video_Init(int width, int height, int depth, unsigned char *palette)
 
 	// for debugging only
 	XSynchronize(x_disp, True);
+
+	scrnum = DefaultScreen(x_disp);
+
+	if (COM_CheckParm("-fullscreen"))
+		fullscreen = true;
+
+	if (fullscreen)
+	{
+		int version, revision;
+		int best_fit, best_dist, dist, x, y;
+		
+		if (XF86VidModeQueryVersion(x_disp, &version, &revision))
+		{
+			Com_Printf("Using XF86-VidModeExtension Ver. %d.%d\n", version, revision);
+
+			scrnum = DefaultScreen(x_disp);
+
+			XF86VidModeGetAllModeLines(x_disp, scrnum, &num_vidmodes, &vidmodes);
+
+			best_dist = 9999999;
+			best_fit = -1;
+
+			for (i = 0; i < num_vidmodes; i++) {
+				if (width > vidmodes[i]->hdisplay || height > vidmodes[i]->vdisplay)
+					continue;
+
+				x = width - vidmodes[i]->hdisplay;
+				y = height - vidmodes[i]->vdisplay;
+				dist = x * x + y * y;
+				if (dist < best_dist) {
+					best_dist = dist;
+					best_fit = i;
+				}
+			}
+
+			if (best_fit != -1) {
+/*
+				actualWidth = vidmodes[best_fit]->hdisplay;
+				actualHeight = vidmodes[best_fit]->vdisplay;
+*/
+				// change to the mode
+				XF86VidModeSwitchToMode(x_disp, scrnum, vidmodes[best_fit]);
+				vidmode_active = true;
+				// Move the viewport to top left
+				XF86VidModeSetViewPort(x_disp, scrnum, 0, 0);
+			} else {
+				fullscreen = 0;
+			}
+		}
+	}
 
 	template_mask = 0;
 
@@ -500,6 +557,15 @@ void Sys_Video_Init(int width, int height, int depth, unsigned char *palette)
 		attribs.border_pixel = 0;
 		attribs.colormap = tmpcmap;
 
+		if (fullscreen)
+		{
+			attribmask|= CWOverrideRedirect|CWSaveUnder|CWBackingStore;
+			attribmask = CWColormap | CWEventMask | CWSaveUnder | CWBackingStore | CWOverrideRedirect;
+			attribs.override_redirect = 1;
+			attribs.backing_store = NotUseful;
+			attribs.save_under = 0;
+		}
+
 // create the main window
 		x_win = XCreateWindow(	x_disp,
 			XRootWindow(x_disp, x_visinfo->screen),
@@ -517,6 +583,7 @@ void Sys_Video_Init(int width, int height, int depth, unsigned char *palette)
 			XFreeColormap(x_disp, tmpcmap);
 
 	}
+
 
 	if (x_visinfo->depth == 8) {
 		// create and upload the palette
@@ -542,6 +609,15 @@ void Sys_Video_Init(int width, int height, int depth, unsigned char *palette)
 	// map the window
 	XMapWindow(x_disp, x_win);
 
+	if (fullscreen)
+	{
+		XRaiseWindow(x_disp, x_win);
+		XWarpPointer(x_disp, None, x_win, 0, 0, 0, 0, vid.width/2, vid.height/2);
+		XFlush(x_disp);
+		XF86VidModeSetViewPort(x_disp, scrnum, 0, 0);
+		XGrabKeyboard(x_disp, x_win, False, GrabModeAsync, GrabModeAsync, CurrentTime);
+	}
+	
 	// wait for first exposure event
 	{
 		XEvent event;
@@ -617,6 +693,8 @@ void VID_Shutdown (void) {
 		return;
 	Com_Printf ("VID_Shutdown\n");
 	XAutoRepeatOn(x_disp);
+	if (vidmode_active)
+		XF86VidModeSwitchToMode(x_disp, scrnum, vidmodes[0]);	
 	XCloseDisplay(x_disp);
 }
 
