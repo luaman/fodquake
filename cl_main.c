@@ -362,7 +362,7 @@ void CL_DNS_f (void) {
 		return;
 	}
 	Q_strncpyz(address, Cmd_Argv(1), sizeof(address));
-	if (s = strchr(address, ':'))
+	if ((s = strchr(address, ':')))
 		*s = 0;
 	if ((addr.s_addr = inet_addr(address)) == INADDR_NONE) {
 		//forward lookup
