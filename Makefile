@@ -28,7 +28,7 @@ ifeq ($(OS), linux)
 		snd_linux.o
 
 	OSSWOBJS=vid_x11.o
-	OSSWLDFLAGS=-L/usr/X11R6/lib -lX11 -lXext
+	OSSWLDFLAGS=-L/usr/X11R6/lib -lX11 -lXext -lXxf86vm
 endif
 
 # CPU specific settings
