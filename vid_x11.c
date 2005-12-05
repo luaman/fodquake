@@ -48,10 +48,19 @@ typedef unsigned int PIXEL24;
 
 struct display
 {
+	void *inputdata;
 	XF86VidModeModeInfo **vidmodes;
 	int scrnum;
 	qboolean vidmode_active;
 };
+
+struct inputdata
+{
+	int dummy;
+};
+
+void *Sys_Input_Init(void);
+void Sys_Input_Shutdown(void *dislpay);
 
 cvar_t vid_ref = { "vid_ref", "soft", CVAR_ROM };
 cvar_t _windowed_mouse = { "_windowed_mouse", "1", CVAR_ARCHIVE };
@@ -713,18 +722,20 @@ void *Sys_Video_Open(int width, int height, int depth, unsigned char *palette)
 		vid.aspect = ((float) vid.height / (float) vid.width) * (320.0 / 240.0);
 
 		//XSynchronize(x_disp, False);
+
+		display->inputdata = Sys_Input_Init();
+		
 		return display;
 	}
 
 	return 0;
 }
 
-void VID_ShiftPalette(unsigned char *p)
+void Sys_Video_GetEvents(void *display)
 {
-	VID_SetPalette(p);
 }
 
-void VID_SetPalette(unsigned char *palette)
+void Sys_Video_SetPalette(void *display, unsigned char *palette)
 {
 	int i;
 	XColor colors[256];
@@ -756,6 +767,8 @@ void Sys_Video_Close(void *display)
 {
 	struct display *d = display;
 
+	Sys_Input_Shutdown(d->inputdata);
+	
 	if (!x_disp)
 		return;
 	Com_Printf("VID_Shutdown\n");
@@ -763,6 +776,8 @@ void Sys_Video_Close(void *display)
 	if (d->vidmode_active)
 		XF86VidModeSwitchToMode(x_disp, d->scrnum, d->vidmodes[0]);
 	XCloseDisplay(x_disp);
+
+	free(d);
 }
 
 int XLateKey(XKeyEvent * ev)
@@ -1106,7 +1121,7 @@ void GetEvent(void)
 
 // flushes the given rectangles from the view buffer to the screen
 
-void VID_Update(vrect_t * rects)
+void Sys_Video_Update(void *display, vrect_t *rects)
 {
 	// if the window changes dimension, skip this frame
 	if (config_notify)
@@ -1231,25 +1246,34 @@ void Force_CenterView_f(void)
 	cl.viewangles[PITCH] = 0;
 }
 
-void IN_Init(void)
+void *Sys_Input_Init(void)
 {
-	Cvar_SetCurrentGroup(CVAR_GROUP_INPUT_KEYBOARD);
-	Cvar_Register(&cl_keypad);
-	Cvar_ResetCurrentGroup();
-	Cmd_AddCommand("force_centerview", Force_CenterView_f);
-	if (COM_CheckParm("-nomouse"))
-		return;
-	Cvar_SetCurrentGroup(CVAR_GROUP_INPUT_MOUSE);
-	Cvar_Register(&m_filter);
-	Cvar_Register(&_windowed_mouse);
-	Cvar_ResetCurrentGroup();
-	mouse_x = mouse_y = 0.0;
-	mouse_avail = 1;
+	struct inputdata *id;
+	id = malloc(sizeof(*id));
+	if (id)
+	{
+		Cvar_SetCurrentGroup(CVAR_GROUP_INPUT_KEYBOARD);
+		Cvar_Register(&cl_keypad);
+		Cvar_ResetCurrentGroup();
+		Cmd_AddCommand("force_centerview", Force_CenterView_f);
+		if (COM_CheckParm("-nomouse"))
+			return;
+		Cvar_SetCurrentGroup(CVAR_GROUP_INPUT_MOUSE);
+		Cvar_Register(&m_filter);
+		Cvar_Register(&_windowed_mouse);
+		Cvar_ResetCurrentGroup();
+		mouse_x = mouse_y = 0.0;
+		mouse_avail = 1;
+	}
+
+	return id;
 }
 
-void IN_Shutdown(void)
+void Sys_Input_Shutdown(void *inputdata)
 {
 	mouse_avail = 0;
+
+	free(inputdata);
 }
 
 void IN_Commands(void)
