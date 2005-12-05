@@ -68,10 +68,6 @@ cvar_t m_filter = { "m_filter", "1", CVAR_ARCHIVE };
 cvar_t cl_keypad = { "cl_keypad", "1" };
 float old_windowed_mouse;
 
-// not used
-int VGA_width, VGA_height, VGA_rowbytes, VGA_bufferrowbytes, VGA_planar;
-byte *VGA_pagebase;
-
 qboolean mouse_avail;
 int mouse_buttons = 3;
 int mouse_oldbuttonstate;
