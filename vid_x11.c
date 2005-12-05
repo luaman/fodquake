@@ -37,7 +37,6 @@ typedef unsigned int PIXEL24;
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <X11/Xatom.h>
-#include <X11/keysym.h>
 #include <X11/extensions/XShm.h>
 #include <X11/extensions/xf86vmode.h>
 
@@ -59,194 +58,145 @@ struct display
 	GC x_gc;
 	Visual *x_vis;
 	XVisualInfo *x_visinfo;
-};
+	int current_framebuffer;
+	XImage *x_framebuffer[2];
+	XShmSegmentInfo x_shminfo[2];
 
-struct inputdata
-{
-	Display *x_disp;
-};
+	byte current_palette[768];
 
-#warning Move input into a seperate file.
-void *Sys_Input_Init(Display *x_disp);
-void Sys_Input_Shutdown(void *dislpay);
-void Sys_Input_GetEvents(void *inputdata);
+	long X11_highhunkmark;
+	long X11_buffersize;
+
+	void *vid_surfcache;
+
+	PIXEL16 st2d_8to16table[256];
+	PIXEL24 st2d_8to24table[256];
+	long r_shift, g_shift, b_shift;
+	unsigned long r_mask, g_mask, b_mask;
+};
 
 cvar_t vid_ref = { "vid_ref", "soft", CVAR_ROM };
-cvar_t _windowed_mouse = { "_windowed_mouse", "1", CVAR_ARCHIVE };
-cvar_t m_filter = { "m_filter", "1", CVAR_ARCHIVE };
-cvar_t cl_keypad = { "cl_keypad", "1" };
-float old_windowed_mouse;
-
-qboolean mouse_avail;
-int mouse_buttons = 3;
-int mouse_oldbuttonstate;
-float mouse_x, mouse_y;
-float old_mouse_x, old_mouse_y;
-int p_mouse_x;
-int p_mouse_y;
-int ignorenext;
-int bits_per_pixel;
-
-typedef struct
-{
-	int input;
-	int output;
-} keymap_t;
 
 extern viddef_t vid;		// global video state
-unsigned short d_8to16table[256];
-
-int num_shades = 32;
-int vid_buffersize;
-
-//static XImage                 *x_image;
-
-static int x_shmeventtype;
-//static XShmSegmentInfo        x_shminfo;
-
-static qboolean oktodraw = false;
 
 int XShmQueryExtension(Display *);
 int XShmGetEventBase(Display *);
 
-int current_framebuffer;
-static XImage *x_framebuffer[2] = { 0, 0 };
-static XShmSegmentInfo x_shminfo[2];
-
-static int verbose = 0;
-
-static byte current_palette[768];
-
-static long X11_highhunkmark;
-static long X11_buffersize;
-
-int vid_surfcachesize;
-void *vid_surfcache;
-
-void (*vid_menudrawfn) (void);
-void (*vid_menukeyfn) (int key);
-void VID_MenuKey(int key);
-
-static PIXEL16 st2d_8to16table[256];
-static PIXEL24 st2d_8to24table[256];
-static long r_shift, g_shift, b_shift;
-static unsigned long r_mask, g_mask, b_mask;
-
 void shiftmask_init(struct display *d)
 {
 	unsigned int x;
-	r_mask = d->x_vis->red_mask;
-	g_mask = d->x_vis->green_mask;
-	b_mask = d->x_vis->blue_mask;
+	d->r_mask = d->x_vis->red_mask;
+	d->g_mask = d->x_vis->green_mask;
+	d->b_mask = d->x_vis->blue_mask;
 
-	if (r_mask > (1 << 31) || g_mask > (1 << 31) || b_mask > (1 << 31))
+	if (d->r_mask > (1 << 31) || d->g_mask > (1 << 31) || d->b_mask > (1 << 31))
 		Sys_Error("XGetVisualInfo returned bogus rgb mask");
 
-	for (r_shift = -8, x = 1; x < r_mask; x = x << 1)
-		r_shift++;
-	for (g_shift = -8, x = 1; x < g_mask; x = x << 1)
-		g_shift++;
-	for (b_shift = -8, x = 1; x < b_mask; x = x << 1)
-		b_shift++;
+	for (d->r_shift = -8, x = 1; x < d->r_mask; x = x << 1)
+		d->r_shift++;
+	for (d->g_shift = -8, x = 1; x < d->g_mask; x = x << 1)
+		d->g_shift++;
+	for (d->b_shift = -8, x = 1; x < d->b_mask; x = x << 1)
+		d->b_shift++;
 }
 
-PIXEL16 xlib_rgb16(int r, int g, int b)
+PIXEL16 xlib_rgb16(struct display *d, int r, int g, int b)
 {
 	PIXEL16 p;
 
 	p = 0;
 
-	if (r_shift > 0)
+	if (d->r_shift > 0)
 	{
-		p = (r << (r_shift)) & r_mask;
+		p = (r << (d->r_shift)) & d->r_mask;
 	}
-	else if (r_shift < 0)
+	else if (d->r_shift < 0)
 	{
-		p = (r >> (-r_shift)) & r_mask;
+		p = (r >> (-d->r_shift)) & d->r_mask;
 	}
 	else
 	{
-		p |= (r & r_mask);
+		p |= (r & d->r_mask);
 	}
 
-	if (g_shift > 0)
+	if (d->g_shift > 0)
 	{
-		p |= (g << (g_shift)) & g_mask;
+		p |= (g << (d->g_shift)) & d->g_mask;
 	}
-	else if (g_shift < 0)
+	else if (d->g_shift < 0)
 	{
-		p |= (g >> (-g_shift)) & g_mask;
+		p |= (g >> (-d->g_shift)) & d->g_mask;
 	}
 	else
 	{
-		p |= (g & g_mask);
+		p |= (g & d->g_mask);
 	}
 
-	if (b_shift > 0)
+	if (d->b_shift > 0)
 	{
-		p |= (b << (b_shift)) & b_mask;
+		p |= (b << (d->b_shift)) & d->b_mask;
 	}
-	else if (b_shift < 0)
+	else if (d->b_shift < 0)
 	{
-		p |= (b >> (-b_shift)) & b_mask;
+		p |= (b >> (-d->b_shift)) & d->b_mask;
 	}
 	else
 	{
-		p |= (b & b_mask);
+		p |= (b & d->b_mask);
 	}
 
 	return p;
 }
 
-PIXEL24 xlib_rgb24(int r, int g, int b)
+PIXEL24 xlib_rgb24(struct display *d, int r, int g, int b)
 {
 	PIXEL24 p;
 
 	p = 0;
 
-	if (r_shift > 0)
+	if (d->r_shift > 0)
 	{
-		p = (r << (r_shift)) & r_mask;
+		p = (r << (d->r_shift)) & d->r_mask;
 	}
-	else if (r_shift < 0)
+	else if (d->r_shift < 0)
 	{
-		p = (r >> (-r_shift)) & r_mask;
+		p = (r >> (-d->r_shift)) & d->r_mask;
 	}
 	else
 	{
-		p |= (r & r_mask);
+		p |= (r & d->r_mask);
 	}
 
-	if (g_shift > 0)
+	if (d->g_shift > 0)
 	{
-		p |= (g << (g_shift)) & g_mask;
+		p |= (g << (d->g_shift)) & d->g_mask;
 	}
-	else if (g_shift < 0)
+	else if (d->g_shift < 0)
 	{
-		p |= (g >> (-g_shift)) & g_mask;
+		p |= (g >> (-d->g_shift)) & d->g_mask;
 	}
 	else
 	{
-		p |= (g & g_mask);
+		p |= (g & d->g_mask);
 	}
 
-	if (b_shift > 0)
+	if (d->b_shift > 0)
 	{
-		p |= (b << (b_shift)) & b_mask;
+		p |= (b << (d->b_shift)) & d->b_mask;
 	}
-	else if (b_shift < 0)
+	else if (d->b_shift < 0)
 	{
-		p |= (b >> (-b_shift)) & b_mask;
+		p |= (b >> (-d->b_shift)) & d->b_mask;
 	}
 	else
 	{
-		p |= (b & b_mask);
+		p |= (b & d->b_mask);
 	}
 
 	return p;
 }
 
-void st2_fixup(XImage * framebuf, int x, int y, int width, int height)
+void st2_fixup(struct display *d, XImage * framebuf, int x, int y, int width, int height)
 {
 	int xi, yi;
 	unsigned char *src;
@@ -261,12 +211,12 @@ void st2_fixup(XImage * framebuf, int x, int y, int width, int height)
 		dest = (PIXEL16 *) src;
 		for (xi = (x + width - 1); xi >= x; xi--)
 		{
-			dest[xi] = st2d_8to16table[src[xi]];
+			dest[xi] = d->st2d_8to16table[src[xi]];
 		}
 	}
 }
 
-void st3_fixup(XImage * framebuf, int x, int y, int width, int height)
+void st3_fixup(struct display *d, XImage * framebuf, int x, int y, int width, int height)
 {
 	int xi, yi;
 	unsigned char *src;
@@ -281,7 +231,7 @@ void st3_fixup(XImage * framebuf, int x, int y, int width, int height)
 		dest = (PIXEL24 *) src;
 		for (xi = (x + width - 1); xi >= x; xi--)
 		{
-			dest[xi] = st2d_8to24table[src[xi]];
+			dest[xi] = d->st2d_8to24table[src[xi]];
 		}
 	}
 }
@@ -329,113 +279,119 @@ void ResetFrameBuffer(struct display *d)
 {
 	int mem, pwidth;
 
-	if (x_framebuffer[0])
+	int vid_surfcachesize;
+
+	if (d->x_framebuffer[0])
 	{
-		free(x_framebuffer[0]->data);
-		free(x_framebuffer[0]);
+		free(d->x_framebuffer[0]->data);
+		free(d->x_framebuffer[0]);
 	}
 
 	if (d_pzbuffer)
 	{
 		D_FlushCaches();
-		Hunk_FreeToHighMark(X11_highhunkmark);
+		Hunk_FreeToHighMark(d->X11_highhunkmark);
 		d_pzbuffer = NULL;
 	}
-	X11_highhunkmark = Hunk_HighMark();
+	d->X11_highhunkmark = Hunk_HighMark();
 
 	// alloc an extra line in case we want to wrap, and allocate the z-buffer
-	X11_buffersize = vid.width * vid.height * sizeof(*d_pzbuffer);
+	d->X11_buffersize = vid.width * vid.height * sizeof(*d_pzbuffer);
 
 	vid_surfcachesize = D_SurfaceCacheForRes(vid.width, vid.height);
 
-	X11_buffersize += vid_surfcachesize;
+	d->X11_buffersize += vid_surfcachesize;
 
-	d_pzbuffer = Hunk_HighAllocName(X11_buffersize, "video");
+	d_pzbuffer = Hunk_HighAllocName(d->X11_buffersize, "video");
 	if (d_pzbuffer == NULL)
 		Sys_Error("Not enough memory for video mode\n");
 
-	vid_surfcache = (byte *) d_pzbuffer + vid.width * vid.height * sizeof(*d_pzbuffer);
+	d->vid_surfcache = (byte *) d_pzbuffer + vid.width * vid.height * sizeof(*d_pzbuffer);
 
-	D_InitCaches(vid_surfcache, vid_surfcachesize);
+	D_InitCaches(d->vid_surfcache, vid_surfcachesize);
 
 	pwidth = d->x_visinfo->depth / 8;
 	if (pwidth == 3)
 		pwidth = 4;
 	mem = ((vid.width * pwidth + 7) & ~7) * vid.height;
 
-	x_framebuffer[0] = XCreateImage(d->x_disp, d->x_vis, d->x_visinfo->depth, ZPixmap, 0, Q_Malloc(mem), vid.width, vid.height, 32, 0);
+	d->x_framebuffer[0] = XCreateImage(d->x_disp, d->x_vis, d->x_visinfo->depth, ZPixmap, 0, Q_Malloc(mem), vid.width, vid.height, 32, 0);
 
-	if (!x_framebuffer[0])
+	if (!d->x_framebuffer[0])
 		Sys_Error("VID: XCreateImage failed\n");
 
-	vid.buffer = (byte *) (x_framebuffer[0]);
+	vid.buffer = (byte *) (d->x_framebuffer[0]);
 }
 
 void ResetSharedFrameBuffers(struct display *d)
 {
 	int size, key, minsize = getpagesize(), frm;
 
+	int vid_surfcachesize;
+
 	if (d_pzbuffer)
 	{
 		D_FlushCaches();
-		Hunk_FreeToHighMark(X11_highhunkmark);
+		Hunk_FreeToHighMark(d->X11_highhunkmark);
 		d_pzbuffer = NULL;
 	}
 
-	X11_highhunkmark = Hunk_HighMark();
+	d->X11_highhunkmark = Hunk_HighMark();
 
 	// alloc an extra line in case we want to wrap, and allocate the z-buffer
-	X11_buffersize = vid.width * vid.height * sizeof(*d_pzbuffer);
+	d->X11_buffersize = vid.width * vid.height * sizeof(*d_pzbuffer);
 
 	vid_surfcachesize = D_SurfaceCacheForRes(vid.width, vid.height);
 
-	X11_buffersize += vid_surfcachesize;
+	d->X11_buffersize += vid_surfcachesize;
 
-	d_pzbuffer = Hunk_HighAllocName(X11_buffersize, "video");
+	d_pzbuffer = Hunk_HighAllocName(d->X11_buffersize, "video");
 	if (d_pzbuffer == NULL)
 		Sys_Error("Not enough memory for video mode\n");
 
-	vid_surfcache = (byte *) d_pzbuffer + vid.width * vid.height * sizeof(*d_pzbuffer);
+	d->vid_surfcache = (byte *) d_pzbuffer + vid.width * vid.height * sizeof(*d_pzbuffer);
 
-	D_InitCaches(vid_surfcache, vid_surfcachesize);
+	D_InitCaches(d->vid_surfcache, vid_surfcachesize);
 
 	for (frm = 0; frm < 2; frm++)
 	{
 		// free up old frame buffer memory
-		if (x_framebuffer[frm])
+		if (d->x_framebuffer[frm])
 		{
-			XShmDetach(d->x_disp, &x_shminfo[frm]);
-			free(x_framebuffer[frm]);
-			shmdt(x_shminfo[frm].shmaddr);
+			XShmDetach(d->x_disp, &d->x_shminfo[frm]);
+			free(d->x_framebuffer[frm]);
+			shmdt(d->x_shminfo[frm].shmaddr);
 		}
 
 		// create the image
-		x_framebuffer[frm] = XShmCreateImage(d->x_disp, d->x_vis, d->x_visinfo->depth, ZPixmap, 0, &x_shminfo[frm], vid.width, vid.height);
+		d->x_framebuffer[frm] = XShmCreateImage(d->x_disp, d->x_vis, d->x_visinfo->depth, ZPixmap, 0, &d->x_shminfo[frm], vid.width, vid.height);
 
 		// grab shared memory
-		size = x_framebuffer[frm]->bytes_per_line * x_framebuffer[frm]->height;
+		size = d->x_framebuffer[frm]->bytes_per_line * d->x_framebuffer[frm]->height;
 		if (size < minsize)
 			Sys_Error("VID: Window must use at least %d bytes\n", minsize);
 
 		key = random();
-		x_shminfo[frm].shmid = shmget((key_t) key, size, IPC_CREAT | 0777);
-		if (x_shminfo[frm].shmid == -1)
+		d->x_shminfo[frm].shmid = shmget((key_t) key, size, IPC_CREAT | 0777);
+		if (d->x_shminfo[frm].shmid == -1)
 			Sys_Error("VID: Could not get any shared memory\n");
 
 		// attach to the shared memory segment
-		x_shminfo[frm].shmaddr = (void *) shmat(x_shminfo[frm].shmid, 0, 0);
+		d->x_shminfo[frm].shmaddr = (void *) shmat(d->x_shminfo[frm].shmid, 0, 0);
 
+#if 0
 		if (verbose)
-			printf("VID: shared memory id=%d, addr=0x%lx\n", x_shminfo[frm].shmid, (long) x_shminfo[frm].shmaddr);
+			printf("VID: shared memory id=%d, addr=0x%lx\n", d->x_shminfo[frm].shmid, (long) d->x_shminfo[frm].shmaddr);
+#endif
 
-		x_framebuffer[frm]->data = x_shminfo[frm].shmaddr;
+		d->x_framebuffer[frm]->data = d->x_shminfo[frm].shmaddr;
 
 		// get the X server to attach to it
 
-		if (!XShmAttach(d->x_disp, &x_shminfo[frm]))
+		if (!XShmAttach(d->x_disp, &d->x_shminfo[frm]))
 			Sys_Error("VID: XShmAttach() failed\n");
 		XSync(d->x_disp, 0);
-		shmctl(x_shminfo[frm].shmid, IPC_RMID, 0);
+		shmctl(d->x_shminfo[frm].shmid, IPC_RMID, 0);
 	}
 
 }
@@ -450,17 +406,17 @@ void *Sys_Video_Open(int width, int height, int depth, unsigned char *palette)
 	XVisualInfo template;
 	int fullscreen = 0;
 	struct display *d;
+	int x_shmeventtype;
 
 	d = malloc(sizeof(*d));
 	if (d)
 	{
-		d->vidmode_active = 0;
+		bzero(d, sizeof(*d));
 
 		Cvar_SetCurrentGroup(CVAR_GROUP_VIDEO);
 		Cvar_Register(&vid_ref);
 		Cvar_ResetCurrentGroup();
 
-		ignorenext = 0;
 		vid.width = width;
 		vid.height = height;
 		vid.maxwarpwidth = WARP_WIDTH;
@@ -472,8 +428,6 @@ void *Sys_Video_Open(int width, int height, int depth, unsigned char *palette)
 		vid.fullbright = 256 - LittleLong(*((int *) vid.colormap + 2048));
 
 		srandom(getpid());
-
-		verbose = COM_CheckParm("-verbose");
 
 		// open the display
 		d->x_disp = XOpenDisplay(0);
@@ -585,6 +539,7 @@ void *Sys_Video_Open(int width, int height, int depth, unsigned char *palette)
 				Sys_Error("VID: No visuals at depth %d\n", template.depth);
 		}
 
+#if 0
 		if (verbose)
 		{
 			printf("Using visualid %d:\n", (int) (d->x_visinfo->visualid));
@@ -595,6 +550,7 @@ void *Sys_Video_Open(int width, int height, int depth, unsigned char *palette)
 			printf("	colormap_size %d\n", d->x_visinfo->colormap_size);
 			printf("	bits_per_rgb %d\n", d->x_visinfo->bits_per_rgb);
 		}
+#endif
 
 		d->x_vis = d->x_visinfo->visual;
 
@@ -669,13 +625,12 @@ void *Sys_Video_Open(int width, int height, int depth, unsigned char *palette)
 		// wait for first exposure event
 		{
 			XEvent event;
-			do
+			while(1)
 			{
 				XNextEvent(d->x_disp, &event);
 				if (event.type == Expose && !event.xexpose.count)
-					oktodraw = true;
+					break;
 			}
-			while (!oktodraw);
 		}
 		// now safe to draw
 
@@ -701,12 +656,13 @@ void *Sys_Video_Open(int width, int height, int depth, unsigned char *palette)
 		}
 		else
 		{
+			x_shmeventtype = 0;
 			ResetFrameBuffer(d);
 		}
 
-		current_framebuffer = 0;
-		vid.rowbytes = x_framebuffer[0]->bytes_per_line;
-		vid.buffer = x_framebuffer[0]->data;
+		d->current_framebuffer = 0;
+		vid.rowbytes = d->x_framebuffer[0]->bytes_per_line;
+		vid.buffer = d->x_framebuffer[0]->data;
 		vid.direct = 0;
 		vid.conwidth = vid.width;
 		vid.conheight = vid.height;
@@ -716,7 +672,7 @@ void *Sys_Video_Open(int width, int height, int depth, unsigned char *palette)
 
 		shiftmask_init(d);
 		
-		d->inputdata = Sys_Input_Init(d->x_disp);
+		d->inputdata = Sys_Input_Init(d->x_disp, d->x_win, x_shmeventtype);
 		
 		return d;
 	}
@@ -731,24 +687,29 @@ void Sys_Video_GetEvents(void *display)
 	Sys_Input_GetEvents(d->inputdata);
 }
 
+void Sys_Video_GetMouseMovement(void *display, int *mousex, int *mousey)
+{
+	struct display *d = display;
+
+	Sys_Input_GetMouseMovement(d->inputdata, mousex, mousey);
+}
+
 void Sys_Video_SetPalette(void *display, unsigned char *palette)
 {
 	struct display *d = display;
 	int i;
 	XColor colors[256];
-
-	
 	
 	for (i = 0; i < 256; i++)
 	{
-		st2d_8to16table[i] = xlib_rgb16(palette[i * 3], palette[i * 3 + 1], palette[i * 3 + 2]);
-		st2d_8to24table[i] = xlib_rgb24(palette[i * 3], palette[i * 3 + 1], palette[i * 3 + 2]);
+		d->st2d_8to16table[i] = xlib_rgb16(d, palette[i * 3], palette[i * 3 + 1], palette[i * 3 + 2]);
+		d->st2d_8to24table[i] = xlib_rgb24(d, palette[i * 3], palette[i * 3 + 1], palette[i * 3 + 2]);
 	}
 
 	if (d->x_visinfo->class == PseudoColor && d->x_visinfo->depth == 8)
 	{
-		if (palette != current_palette)
-			memcpy(current_palette, palette, 768);
+		if (palette != d->current_palette)
+			memcpy(d->current_palette, palette, 768);
 		for (i = 0; i < 256; i++)
 		{
 			colors[i].pixel = i;
@@ -777,351 +738,18 @@ void Sys_Video_Close(void *display)
 	free(d);
 }
 
-int XLateKey(XKeyEvent * ev)
-{
-	int key, kp;
-	char buf[64];
-	KeySym keysym;
-
-	key = 0;
-	kp = (int) cl_keypad.value;
-
-	XLookupString(ev, buf, sizeof buf, &keysym, 0);
-
-	switch (keysym)
-	{
-		case XK_Scroll_Lock:
-			key = K_SCRLCK;
-			break;
-
-		case XK_Caps_Lock:
-			key = K_CAPSLOCK;
-			break;
-
-		case XK_Num_Lock:
-			key = kp ? KP_NUMLOCK : K_PAUSE;
-			break;
-
-		case XK_KP_Page_Up:
-			key = kp ? KP_PGUP : K_PGUP;
-			break;
-		case XK_Page_Up:
-			key = K_PGUP;
-			break;
-
-		case XK_KP_Page_Down:
-			key = kp ? KP_PGDN : K_PGDN;
-			break;
-		case XK_Page_Down:
-			key = K_PGDN;
-			break;
-
-		case XK_KP_Home:
-			key = kp ? KP_HOME : K_HOME;
-			break;
-		case XK_Home:
-			key = K_HOME;
-			break;
-
-		case XK_KP_End:
-			key = kp ? KP_END : K_END;
-			break;
-		case XK_End:
-			key = K_END;
-			break;
-
-		case XK_KP_Left:
-			key = kp ? KP_LEFTARROW : K_LEFTARROW;
-			break;
-		case XK_Left:
-			key = K_LEFTARROW;
-			break;
-
-		case XK_KP_Right:
-			key = kp ? KP_RIGHTARROW : K_RIGHTARROW;
-			break;
-		case XK_Right:
-			key = K_RIGHTARROW;
-			break;
-
-		case XK_KP_Down:
-			key = kp ? KP_DOWNARROW : K_DOWNARROW;
-			break;
-
-		case XK_Down:
-			key = K_DOWNARROW;
-			break;
-
-		case XK_KP_Up:
-			key = kp ? KP_UPARROW : K_UPARROW;
-			break;
-
-		case XK_Up:
-			key = K_UPARROW;
-			break;
-
-		case XK_Escape:
-			key = K_ESCAPE;
-			break;
-
-		case XK_KP_Enter:
-			key = kp ? KP_ENTER : K_ENTER;
-			break;
-
-		case XK_Return:
-			key = K_ENTER;
-			break;
-
-		case XK_Tab:
-			key = K_TAB;
-			break;
-
-		case XK_F1:
-			key = K_F1;
-			break;
-
-		case XK_F2:
-			key = K_F2;
-			break;
-
-		case XK_F3:
-			key = K_F3;
-			break;
-
-		case XK_F4:
-			key = K_F4;
-			break;
-
-		case XK_F5:
-			key = K_F5;
-			break;
-
-		case XK_F6:
-			key = K_F6;
-			break;
-
-		case XK_F7:
-			key = K_F7;
-			break;
-
-		case XK_F8:
-			key = K_F8;
-			break;
-
-		case XK_F9:
-			key = K_F9;
-			break;
-
-		case XK_F10:
-			key = K_F10;
-			break;
-
-		case XK_F11:
-			key = K_F11;
-			break;
-
-		case XK_F12:
-			key = K_F12;
-			break;
-
-		case XK_BackSpace:
-			key = K_BACKSPACE;
-			break;
-
-		case XK_KP_Delete:
-			key = kp ? KP_DEL : K_DEL;
-			break;
-		case XK_Delete:
-			key = K_DEL;
-			break;
-
-		case XK_Pause:
-			key = K_PAUSE;
-			break;
-
-		case XK_Shift_L:
-			key = K_LSHIFT;
-			break;
-		case XK_Shift_R:
-			key = K_RSHIFT;
-			break;
-
-		case XK_Execute:
-		case XK_Control_L:
-			key = K_LCTRL;
-			break;
-		case XK_Control_R:
-			key = K_RCTRL;
-			break;
-
-		case XK_Alt_L:
-		case XK_Meta_L:
-			key = K_LALT;
-			break;
-		case XK_Alt_R:
-		case XK_Meta_R:
-			key = K_RALT;
-			break;
-
-		case XK_Super_L:
-			key = K_LWIN;
-			break;
-		case XK_Super_R:
-			key = K_RWIN;
-			break;
-		case XK_Menu:
-			key = K_MENU;
-			break;
-
-		case XK_KP_Begin:
-			key = kp ? KP_5 : '5';
-			break;
-
-		case XK_KP_Insert:
-			key = kp ? KP_INS : K_INS;
-			break;
-		case XK_Insert:
-			key = K_INS;
-			break;
-
-		case XK_KP_Multiply:
-			key = kp ? KP_STAR : '*';
-			break;
-
-		case XK_KP_Add:
-			key = kp ? KP_PLUS : '+';
-			break;
-
-		case XK_KP_Subtract:
-			key = kp ? KP_MINUS : '-';
-			break;
-
-		case XK_KP_Divide:
-			key = kp ? KP_SLASH : '/';
-			break;
-
-		default:
-			key = *(unsigned char *) buf;
-			if (key >= 'A' && key <= 'Z')
-				key = key - 'A' + 'a';
-//                      fprintf(stdout, "case 0x0%x: key = ___;break;/* [%c] */\n", keysym);
-			break;
-	}
-	return key;
-}
-
-struct
-{
-	int key;
-	int down;
-} keyq[64];
-int keyq_head = 0;
-int keyq_tail = 0;
-
-int config_notify = 0;
-int config_notify_width;
-int config_notify_height;
-
-void GetEvent(struct display *d)
-{
-	XEvent event;
-
-	XNextEvent(d->x_disp, &event);
-	switch (event.type)
-	{
-		case KeyPress:
-			keyq[keyq_head].key = XLateKey(&event.xkey);
-			keyq[keyq_head].down = true;
-			keyq_head = (keyq_head + 1) & 63;
-			break;
-		case KeyRelease:
-			keyq[keyq_head].key = XLateKey(&event.xkey);
-			keyq[keyq_head].down = false;
-			keyq_head = (keyq_head + 1) & 63;
-			break;
-
-		case MotionNotify:
-			if (_windowed_mouse.value)
-			{
-				mouse_x = (float) ((int) event.xmotion.x - (int) (vid.width / 2));
-				mouse_y = (float) ((int) event.xmotion.y - (int) (vid.height / 2));
-
-				/* move the mouse to the window center again */
-				XSelectInput(d->x_disp, d->x_win, StructureNotifyMask | KeyPressMask | KeyReleaseMask | ExposureMask | ButtonPressMask | ButtonReleaseMask);
-				XWarpPointer(d->x_disp, None, d->x_win, 0, 0, 0, 0, (vid.width / 2), (vid.height / 2));
-				XSelectInput(d->x_disp, d->x_win, StructureNotifyMask | KeyPressMask | KeyReleaseMask | ExposureMask | PointerMotionMask | ButtonPressMask | ButtonReleaseMask);
-			}
-			else
-			{
-				mouse_x = (float) (event.xmotion.x - p_mouse_x);
-				mouse_y = (float) (event.xmotion.y - p_mouse_y);
-				p_mouse_x = event.xmotion.x;
-				p_mouse_y = event.xmotion.y;
-			}
-			break;
-
-		case ButtonPress:
-		case ButtonRelease:
-			switch (event.xbutton.button)
-			{
-				case 1:
-					Key_Event(K_MOUSE1, event.type == ButtonPress);
-					break;
-				case 2:
-					Key_Event(K_MOUSE3, event.type == ButtonPress);
-					break;
-				case 3:
-					Key_Event(K_MOUSE2, event.type == ButtonPress);
-					break;
-				case 4:
-					Key_Event(K_MWHEELUP, event.type == ButtonPress);
-					break;
-				case 5:
-					Key_Event(K_MWHEELDOWN, event.type == ButtonPress);
-					break;
-				case 6:
-					Key_Event(K_MOUSE4, event.type == ButtonPress);
-					break;
-				case 7:
-					Key_Event(K_MOUSE5, event.type == ButtonPress);
-					break;
-			}
-			break;
-
-		case ConfigureNotify:
-			config_notify_width = event.xconfigure.width;
-			config_notify_height = event.xconfigure.height;
-			config_notify = 1;
-			break;
-
-		default:
-			if (d->doShm && event.type == x_shmeventtype)
-				oktodraw = true;
-	}
-
-	if (old_windowed_mouse != _windowed_mouse.value)
-	{
-		old_windowed_mouse = _windowed_mouse.value;
-
-		if (!_windowed_mouse.value)
-		{
-			/* ungrab the pointer */
-			XUngrabPointer(d->x_disp, CurrentTime);
-		}
-		else
-		{
-			/* grab the pointer */
-			XGrabPointer(d->x_disp, d->x_win, True, 0, GrabModeAsync, GrabModeAsync, d->x_win, None, CurrentTime);
-		}
-	}
-}
-
 // flushes the given rectangles from the view buffer to the screen
 
 void Sys_Video_Update(void *display, vrect_t *rects)
 {
 	struct display *d = display;
 
+	int config_notify;
+	int config_notify_width;
+	int config_notify_height;
+
+	Sys_Input_GetConfigNotify(d->inputdata, &config_notify, &config_notify_width, &config_notify_height);
+	
 	// if the window changes dimension, skip this frame
 	if (config_notify)
 	{
@@ -1133,8 +761,8 @@ void Sys_Video_Update(void *display, vrect_t *rects)
 			ResetSharedFrameBuffers(d);
 		else
 			ResetFrameBuffer(d);
-		vid.rowbytes = x_framebuffer[0]->bytes_per_line;
-		vid.buffer = x_framebuffer[current_framebuffer]->data;
+		vid.rowbytes = d->x_framebuffer[0]->bytes_per_line;
+		vid.buffer = d->x_framebuffer[d->current_framebuffer]->data;
 		vid.conwidth = vid.width;
 		vid.conheight = vid.height;
 		vid.recalc_refdef = 1;	// force a surface cache flush
@@ -1148,18 +776,18 @@ void Sys_Video_Update(void *display, vrect_t *rects)
 		while (rects)
 		{
 			if (d->x_visinfo->depth == 24)
-				st3_fixup(x_framebuffer[current_framebuffer], rects->x, rects->y, rects->width, rects->height);
+				st3_fixup(d, d->x_framebuffer[d->current_framebuffer], rects->x, rects->y, rects->width, rects->height);
 			else if (d->x_visinfo->depth == 16)
-				st2_fixup(x_framebuffer[current_framebuffer], rects->x, rects->y, rects->width, rects->height);
-			if (!XShmPutImage(d->x_disp, d->x_win, d->x_gc, x_framebuffer[current_framebuffer], rects->x, rects->y, rects->x, rects->y, rects->width, rects->height, True))
+				st2_fixup(d, d->x_framebuffer[d->current_framebuffer], rects->x, rects->y, rects->width, rects->height);
+			if (!XShmPutImage(d->x_disp, d->x_win, d->x_gc, d->x_framebuffer[d->current_framebuffer], rects->x, rects->y, rects->x, rects->y, rects->width, rects->height, True))
 				Sys_Error("VID_Update: XShmPutImage failed\n");
-			oktodraw = false;
-			while (!oktodraw)
-				GetEvent(d);
+				
+			Sys_Input_WaitForShmMsg(d->inputdata);
+
 			rects = rects->pnext;
 		}
-		current_framebuffer = !current_framebuffer;
-		vid.buffer = x_framebuffer[current_framebuffer]->data;
+		d->current_framebuffer = !d->current_framebuffer;
+		vid.buffer = d->x_framebuffer[d->current_framebuffer]->data;
 		XSync(d->x_disp, False);
 	}
 	else
@@ -1167,54 +795,14 @@ void Sys_Video_Update(void *display, vrect_t *rects)
 		while (rects)
 		{
 			if (d->x_visinfo->depth == 24)
-				st3_fixup(x_framebuffer[current_framebuffer], rects->x, rects->y, rects->width, rects->height);
+				st3_fixup(d, d->x_framebuffer[d->current_framebuffer], rects->x, rects->y, rects->width, rects->height);
 			else if (d->x_visinfo->depth == 16)
-				st2_fixup(x_framebuffer[current_framebuffer], rects->x, rects->y, rects->width, rects->height);
-			XPutImage(d->x_disp, d->x_win, d->x_gc, x_framebuffer[0], rects->x, rects->y, rects->x, rects->y, rects->width, rects->height);
+				st2_fixup(d, d->x_framebuffer[d->current_framebuffer], rects->x, rects->y, rects->width, rects->height);
+			XPutImage(d->x_disp, d->x_win, d->x_gc, d->x_framebuffer[0], rects->x, rects->y, rects->x, rects->y, rects->width, rects->height);
 			rects = rects->pnext;
 		}
 		XSync(d->x_disp, False);
 	}
-
-        while (XPending(d->x_disp))
-		GetEvent(d);
-}
-
-static int dither;
-
-void VID_DitherOn(void)
-{
-	if (dither == 0)
-	{
-		vid.recalc_refdef = 1;
-		dither = 1;
-	}
-}
-
-void VID_DitherOff(void)
-{
-	if (dither)
-	{
-		vid.recalc_refdef = 1;
-		dither = 0;
-	}
-}
-
-int Sys_OpenWindow(void)
-{
-	return 0;
-}
-
-void Sys_EraseWindow(int window)
-{
-}
-
-void Sys_DrawCircle(int window, int x, int y, int r)
-{
-}
-
-void Sys_DisplayWindow(int window)
-{
 }
 
 void D_BeginDirectRect(int x, int y, byte * pbitmap, int width, int height)
@@ -1230,99 +818,6 @@ void D_EndDirectRect(int x, int y, int width, int height)
 void Force_CenterView_f(void)
 {
 	cl.viewangles[PITCH] = 0;
-}
-
-void *Sys_Input_Init(Display *x_disp)
-{
-	struct inputdata *id;
-	id = malloc(sizeof(*id));
-	if (id)
-	{
-		id->x_disp = x_disp;
-
-		Cvar_SetCurrentGroup(CVAR_GROUP_INPUT_KEYBOARD);
-		Cvar_Register(&cl_keypad);
-		Cvar_ResetCurrentGroup();
-		Cmd_AddCommand("force_centerview", Force_CenterView_f);
-		Cvar_SetCurrentGroup(CVAR_GROUP_INPUT_MOUSE);
-		Cvar_Register(&m_filter);
-		Cvar_Register(&_windowed_mouse);
-		Cvar_ResetCurrentGroup();
-		mouse_x = mouse_y = 0.0;
-		mouse_avail = 1;
-	}
-
-	return id;
-}
-
-void Sys_Input_Shutdown(void *inputdata)
-{
-	mouse_avail = 0;
-
-	free(inputdata);
-}
-
-void Sys_Input_GetEvents(void *inputdata)
-{
-	struct inputdata *id = inputdata;
-
-	while (keyq_head != keyq_tail)
-	{
-		Key_Event(keyq[keyq_tail].key, keyq[keyq_tail].down);
-		keyq_tail = (keyq_tail + 1) & 63;
-	}
-}
-
-void IN_Move(usercmd_t * cmd)
-{
-	float tx, ty, filterfrac, mousespeed;
-
-	if (!mouse_avail)
-		return;
-
-	tx = mouse_x;
-	ty = mouse_y;
-
-	if (m_filter.value)
-	{
-		filterfrac = bound(0, m_filter.value, 1) / 2.0;
-		mouse_x = (tx * (1 - filterfrac) + old_mouse_x * filterfrac);
-		mouse_y = (ty * (1 - filterfrac) + old_mouse_y * filterfrac);
-	}
-
-	old_mouse_x = tx;
-	old_mouse_y = ty;
-
-	if (m_accel.value)
-	{
-		mousespeed = sqrt(tx * tx + ty * ty);
-		mouse_x *= (mousespeed * m_accel.value + sensitivity.value);
-		mouse_y *= (mousespeed * m_accel.value + sensitivity.value);
-	}
-	else
-	{
-		mouse_x *= sensitivity.value;
-		mouse_y *= sensitivity.value;
-	}
-
-	if ((in_strafe.state & 1) || (lookstrafe.value && mlook_active))
-		cmd->sidemove += m_side.value * mouse_x;
-	else
-		cl.viewangles[YAW] -= m_yaw.value * mouse_x;
-
-	if (mlook_active)
-		V_StopPitchDrift();
-
-	if (mlook_active && !(in_strafe.state & 1))
-	{
-		cl.viewangles[PITCH] += m_pitch.value * mouse_y;
-		cl.viewangles[PITCH] = bound(-70, cl.viewangles[PITCH], 80);
-	}
-	else
-	{
-		cmd->forwardmove -= m_forward.value * mouse_y;
-	}
-	mouse_x = mouse_y = 0.0;
 }
 
 void VID_LockBuffer(void)

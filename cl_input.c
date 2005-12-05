@@ -308,6 +308,7 @@ cvar_t	m_yaw = {"m_yaw","0.022"};
 cvar_t	m_forward = {"m_forward","1"};
 cvar_t	m_side = {"m_side","0.8"};
 cvar_t	m_accel = {"m_accel", "0"};
+cvar_t  m_filter = {"m_filter", "0"};
 
 
 void CL_Rotate_f (void) {
@@ -319,6 +320,11 @@ void CL_Rotate_f (void) {
 		return;
 	cl.viewangles[YAW] += atof(Cmd_Argv(1));
 	cl.viewangles[YAW] = anglemod(cl.viewangles[YAW]);
+}
+
+void CL_Force_CenterView_f (void)
+{
+	cl.viewangles[PITCH] = 0;
 }
 
 //Moves the local angle positions
@@ -451,6 +457,62 @@ void CL_FinishMove (usercmd_t *cmd) {
 		cmd->angles[i] = (Q_rint(cmd->angles[i] * 65536.0 / 360.0) & 65535) * (360.0 / 65536.0);
 }
 
+void CL_Move(usercmd_t *cmd)
+{
+	int mx, my;
+	static int oldmousex, oldmousey;
+	int mousex, mousey;
+	float filterfrac;
+	float mousespeed;
+
+	VID_GetMouseMovement(&mousex, &mousey);
+
+	if (m_filter.value)
+	{
+		filterfrac = bound(0, m_filter.value, 1) / 2.0;
+		mx = (mousex * (1 - filterfrac) + oldmousex * filterfrac);
+		my = (mousex * (1 - filterfrac) + oldmousey * filterfrac);
+	}
+	else
+	{
+		mx = mousex;
+		my = mousey;
+	}
+	
+	oldmousex = mousex;
+	oldmousey = mousey;
+
+	if (m_accel.value)
+	{
+		mousespeed = sqrt(mousex * mousex + mousey * mousey);
+		mx *= (mousespeed * m_accel.value + sensitivity.value);
+		my *= (mousespeed * m_accel.value + sensitivity.value);
+	}   
+	else
+	{
+		mx *= sensitivity.value;
+		my *= sensitivity.value;
+	}
+
+	if ((in_strafe.state & 1) || (lookstrafe.value && mlook_active))
+		cmd->sidemove += m_side.value * mx;
+	else
+		cl.viewangles[YAW] -= m_yaw.value * mx;
+
+	if (mlook_active)
+		V_StopPitchDrift();
+
+	if (mlook_active && !(in_strafe.state & 1))
+	{
+		cl.viewangles[PITCH] += m_pitch.value * my;
+		cl.viewangles[PITCH] = bound(-70, cl.viewangles[PITCH], 80);
+        }
+	else
+	{   
+		cmd->forwardmove -= m_forward.value * my;
+	}
+}
+
 void CL_SendCmd (void) {
 	sizebuf_t buf;
 	byte data[128];
@@ -473,7 +535,7 @@ void CL_SendCmd (void) {
 	CL_BaseMove (cmd);
 
 	// allow mice or other external controllers to add to the move
-	IN_Move (cmd);
+	CL_Move (cmd);
 
 	// if we are spectator, try autocam
 	if (cl.spectator)
@@ -617,6 +679,8 @@ void CL_InitInput (void) {
 	
 	Cmd_AddCommand ("rotate",CL_Rotate_f);
 
+	Cmd_AddCommand ("force_centerview", CL_Force_CenterView_f);
+
 	Cvar_SetCurrentGroup(CVAR_GROUP_INPUT_KEYBOARD);
 
 	Cvar_Register (&cl_smartjump);
@@ -643,6 +707,7 @@ void CL_InitInput (void) {
 	Cvar_Register (&m_forward);
 	Cvar_Register (&m_side);
 	Cvar_Register (&m_accel);
+	Cvar_Register (&m_filter);
 
 	Cvar_SetCurrentGroup(CVAR_GROUP_NETWORK);
 	Cvar_Register (&cl_nodelta);

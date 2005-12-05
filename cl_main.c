@@ -954,9 +954,6 @@ void CL_Frame (double time) {
 		cl.gametime += cls.frametime;
 	}
 
-	// get new key events
-	Sys_SendKeyEvents();
-
 	// allow mice or other external controllers to add commands
 	VID_GetEvents();
 

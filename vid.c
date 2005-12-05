@@ -90,3 +90,8 @@ void VID_GetEvents()
 	Sys_Video_GetEvents(display);
 }
 
+VID_GetMouseMovement(int *mousex, int *mousey)
+{
+	Sys_Video_GetMouseMovement(display, mousex, mousey);
+}
+

@@ -27,7 +27,7 @@ ifeq ($(OS), linux)
 		cd_linux.o \
 		snd_linux.o
 
-	OSSWOBJS=vid_x11.o
+	OSSWOBJS=vid_x11.o in_x11.o
 	OSSWLDFLAGS=-L/usr/X11R6/lib -lX11 -lXext -lXxf86vm
 endif
 
