@@ -185,9 +185,16 @@ void Sys_Video_Close(void *display)
 
 void Sys_Video_GetEvents(void *display)
 {
-	struct display *d;
+	struct display *d = display;
 
 	Sys_Input_GetEvents(d->inputdata);
+}
+
+void Sys_Video_GetMouseMovement(void *display)
+{
+	struct display *d = display;
+	
+	Sys_Input_GetMouseMovement(d->inputdata);
 }
 
 void Sys_Video_Update(void *display, vrect_t * rects)

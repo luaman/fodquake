@@ -17,33 +17,26 @@ struct inputdata
 {
 	struct Screen *screen;
 	struct Window *window;
+
+	struct Interrupt InputHandler;
+	struct MsgPort *inputport;
+	struct IOStdReq *inputreq;
+	BYTE inputopen;
+
+	struct InputEvent imsgs[MAXIMSGS];
+	int imsglow;
+	int imsghigh;
+
+	int mousex, mousey;
 };
 
 #ifndef SA_Displayed
 #define SA_Displayed (SA_Dummy + 101)
 #endif
 
-struct InputEvent imsgs[MAXIMSGS];
 extern struct IntuitionBase *IntuitionBase;
 
-int imsglow = 0;
-int imsghigh = 0;
-
-extern qboolean mouse_active;
-
-static struct Interrupt InputHandler;
-
-static struct Interrupt InputHandler;
-static struct MsgPort *inputport = 0;
-static struct IOStdReq *inputreq = 0;
-static BYTE inputret = -1;
-
-cvar_t m_filter = { "m_filter", "1", CVAR_ARCHIVE };
-
 extern cvar_t _windowed_mouse;
-
-float mouse_x, mouse_y;
-float old_mouse_x, old_mouse_y;
 
 #define DEBUGRING(x)
 
@@ -51,29 +44,29 @@ void Sys_Input_Shutdown(void *inputdata)
 {
 	struct inputdata *id = inputdata;
 
-	if (inputret == 0)
+	if (id->inputopen)
 	{
-		inputreq->io_Data = (void *)&InputHandler;
-		inputreq->io_Command = IND_REMHANDLER;
-		DoIO((struct IORequest *)inputreq);
+		id->inputreq->io_Data = (void *)&id->InputHandler;
+		id->inputreq->io_Command = IND_REMHANDLER;
+		DoIO((struct IORequest *)id->inputreq);
 
-		CloseDevice((struct IORequest *)inputreq);
+		CloseDevice((struct IORequest *)id->inputreq);
 
-		inputret = -1;
+		id->inputopen = 0;
 	}
 
-	if (inputreq)
+	if (id->inputreq)
 	{
-		DeleteIORequest(inputreq);
+		DeleteIORequest(id->inputreq);
 
-		inputreq = 0;
+		id->inputreq = 0;
 	}
 
-	if (inputport)
+	if (id->inputport)
 	{
-		DeleteMsgPort(inputport);
+		DeleteMsgPort(id->inputport);
 
-		inputport = 0;
+		id->inputport = 0;
 	}
 
 	FreeVec(id);
@@ -89,49 +82,49 @@ void *Sys_Input_Init(struct Screen *screen, struct Window *window)
 		id->screen = screen;
 		id->window = window;
 
-		inputport = CreateMsgPort();
-		if (inputport == 0)
+		id->inputport = CreateMsgPort();
+		if (id->inputport == 0)
 		{
 			Sys_Input_Shutdown(id);
 			Sys_Error("Unable to create message port");
 		}
 
-		inputreq = CreateIORequest(inputport, sizeof(*inputreq));
-		if (inputreq == 0)
+		id->inputreq = CreateIORequest(id->inputport, sizeof(*id->inputreq));
+		if (id->inputreq == 0)
 		{
 			Sys_Input_Shutdown(id);
 			Sys_Error("Unable to create IO request");
 		}
 
-		inputret = OpenDevice("input.device", 0, (struct IORequest *)inputreq, 0);
-		if (inputret != 0)
+		id->inputopen = !OpenDevice("input.device", 0, (struct IORequest *)id->inputreq, 0);
+		if (id->inputopen == 0)
 		{
 			Sys_Input_Shutdown(id);
 			Sys_Error("Unable to open input.device");
 		}
 
-		InputHandler.is_Node.ln_Type = NT_INTERRUPT;
-		InputHandler.is_Node.ln_Pri = 100;
-		InputHandler.is_Node.ln_Name = "Fuhquake input handler";
-		InputHandler.is_Data = id;
-		InputHandler.is_Code = (void (*)())&myinputhandler;
-		inputreq->io_Data = (void *)&InputHandler;
-		inputreq->io_Command = IND_ADDHANDLER;
-		DoIO((struct IORequest *)inputreq);
+		id->InputHandler.is_Node.ln_Type = NT_INTERRUPT;
+		id->InputHandler.is_Node.ln_Pri = 100;
+		id->InputHandler.is_Node.ln_Name = "FodQuake input handler";
+		id->InputHandler.is_Data = id;
+		id->InputHandler.is_Code = (void (*)())&myinputhandler;
+		id->inputreq->io_Data = (void *)&id->InputHandler;
+		id->inputreq->io_Command = IND_ADDHANDLER;
+		DoIO((struct IORequest *)id->inputreq);
 	}
 
 	return id;
 }
 
-static void ExpireRingBuffer()
+static void ExpireRingBuffer(struct inputdata *id)
 {
 	int i = 0;
 
-	while (imsgs[imsglow].ie_Class == IECLASS_NULL && imsglow != imsghigh)
+	while (id->imsgs[id->imsglow].ie_Class == IECLASS_NULL && id->imsglow != id->imsghigh)
 	{
-		imsglow++;
+		id->imsglow++;
 		i++;
-		imsglow %= MAXIMSGS;
+		id->imsglow %= MAXIMSGS;
 	}
 
 	DEBUGRING(dprintf("Expired %d messages\n", i));
@@ -145,23 +138,23 @@ void Sys_Input_GetEvents(void *inputdata)
 	int down;
 	struct InputEvent ie;
 
-	for (i = imsglow; i != imsghigh; i++, i %= MAXIMSGS)
+	for (i = id->imsglow; i != id->imsghigh; i++, i %= MAXIMSGS)
 	{
-		DEBUGRING(dprintf("%d %d\n", i, imsghigh));
-		if (imsgs[i].ie_Class == IECLASS_NEWMOUSE)
+		DEBUGRING(dprintf("%d %d\n", i, id->imsghigh));
+		if (id->imsgs[i].ie_Class == IECLASS_NEWMOUSE)
 		{
 			key = 0;
 
-			if (imsgs[i].ie_Code == NM_WHEEL_UP)
+			if (id->imsgs[i].ie_Code == NM_WHEEL_UP)
 				key = K_MWHEELUP;
-			else if (imsgs[i].ie_Code == NM_WHEEL_DOWN)
+			else if (id->imsgs[i].ie_Code == NM_WHEEL_DOWN)
 				key = K_MWHEELDOWN;
 
-			if (imsgs[i].ie_Code == NM_BUTTON_FOURTH)
+			if (id->imsgs[i].ie_Code == NM_BUTTON_FOURTH)
 			{
 				Key_Event(K_MOUSE4, true);
 			}
-			else if (imsgs[i].ie_Code == (NM_BUTTON_FOURTH | IECODE_UP_PREFIX))
+			else if (id->imsgs[i].ie_Code == (NM_BUTTON_FOURTH | IECODE_UP_PREFIX))
 			{
 				Key_Event(K_MOUSE4, false);
 			}
@@ -172,89 +165,58 @@ void Sys_Input_GetEvents(void *inputdata)
 				Key_Event(key, 0);
 			}
 		}
-		else if (imsgs[i].ie_Class == IECLASS_RAWKEY)
+		else if (id->imsgs[i].ie_Class == IECLASS_RAWKEY)
 		{
-			down = !(imsgs[i].ie_Code & IECODE_UP_PREFIX);
-			imsgs[i].ie_Code &= ~IECODE_UP_PREFIX;
+			down = !(id->imsgs[i].ie_Code & IECODE_UP_PREFIX);
+			id->imsgs[i].ie_Code &= ~IECODE_UP_PREFIX;
 
-			memcpy(&ie, &imsgs[i], sizeof(ie));
+			memcpy(&ie, &id->imsgs[i], sizeof(ie));
 
 			key = 0;
-			if (imsgs[i].ie_Code <= 255)
-				key = keyconv[imsgs[i].ie_Code];
+			if (id->imsgs[i].ie_Code <= 255)
+				key = keyconv[id->imsgs[i].ie_Code];
 
 			if (key)
 				Key_Event(key, down);
 			else
 			{
 				if (developer.value)
-					Com_Printf("Unknown key %d\n", imsgs[i].ie_Code);
+					Com_Printf("Unknown key %d\n", id->imsgs[i].ie_Code);
 			}
 		}
-		else if (imsgs[i].ie_Class == IECLASS_RAWMOUSE)
+		else if (id->imsgs[i].ie_Class == IECLASS_RAWMOUSE)
 		{
-			if (imsgs[i].ie_Code == IECODE_LBUTTON)
+			if (id->imsgs[i].ie_Code == IECODE_LBUTTON)
 				Key_Event(K_MOUSE1, true);
-			else if (imsgs[i].ie_Code == (IECODE_LBUTTON | IECODE_UP_PREFIX))
+			else if (id->imsgs[i].ie_Code == (IECODE_LBUTTON | IECODE_UP_PREFIX))
 				Key_Event(K_MOUSE1, false);
-			else if (imsgs[i].ie_Code == IECODE_RBUTTON)
+			else if (id->imsgs[i].ie_Code == IECODE_RBUTTON)
 				Key_Event(K_MOUSE2, true);
-			else if (imsgs[i].ie_Code == (IECODE_RBUTTON | IECODE_UP_PREFIX))
+			else if (id->imsgs[i].ie_Code == (IECODE_RBUTTON | IECODE_UP_PREFIX))
 				Key_Event(K_MOUSE2, false);
-			else if (imsgs[i].ie_Code == IECODE_MBUTTON)
+			else if (id->imsgs[i].ie_Code == IECODE_MBUTTON)
 				Key_Event(K_MOUSE3, true);
-			else if (imsgs[i].ie_Code == (IECODE_MBUTTON | IECODE_UP_PREFIX))
+			else if (id->imsgs[i].ie_Code == (IECODE_MBUTTON | IECODE_UP_PREFIX))
 				Key_Event(K_MOUSE3, false);
 
-			mouse_x += imsgs[i].ie_position.ie_xy.ie_x;
-			mouse_y += imsgs[i].ie_position.ie_xy.ie_y;
+			id->mousex += id->imsgs[i].ie_position.ie_xy.ie_x;
+			id->mousey += id->imsgs[i].ie_position.ie_xy.ie_y;
 		}
 
-		imsgs[i].ie_Class = IECLASS_NULL;
+		id->imsgs[i].ie_Class = IECLASS_NULL;
 	}
 
-	ExpireRingBuffer();
+	ExpireRingBuffer(id);
 }
 
-void IN_Move(usercmd_t *cmd)
+Sys_Input_GetMouseMovement(void *inputdata, int *mousex, int *mousey)
 {
-	float tx, ty, filterfrac;
+	struct inputdata *id = inputdata;
 
-	tx = mouse_x;
-	ty = mouse_y;
-
-	if (m_filter.value)
-	{
-		filterfrac = bound(0, m_filter.value, 1) / 2.0;
-		mouse_x = (tx * (1 - filterfrac) + old_mouse_x * filterfrac);
-		mouse_y = (ty * (1 - filterfrac) + old_mouse_y * filterfrac);
-	}
-
-	old_mouse_x = tx;
-	old_mouse_y = ty;
-
-	mouse_x *= sensitivity.value;
-	mouse_y *= sensitivity.value;
-
-	if ((in_strafe.state & 1) || (lookstrafe.value && mlook_active))
-		cmd->sidemove += m_side.value * mouse_x;
-	else
-		cl.viewangles[YAW] -= m_yaw.value * mouse_x;
-
-	if (mlook_active)
-		V_StopPitchDrift();
-
-	if (mlook_active && !(in_strafe.state & 1))
-	{
-		cl.viewangles[PITCH] += m_pitch.value * mouse_y;
-		cl.viewangles[PITCH] = bound(-70, cl.viewangles[PITCH], 80);
-	}
-	else
-	{
-		cmd->forwardmove -= m_forward.value * mouse_y;
-	}
-
-	mouse_x = mouse_y = 0.0;
+	*mousex = id->mousex;
+	*mousey = id->mousey;
+	id->mousex = 0;
+	id->mousey = 0;
 }
 
 static char keyconv[] = {
@@ -555,18 +517,18 @@ static struct InputEvent *myinputhandler_real()
 	{
 		if (coin->ie_Class == IECLASS_RAWMOUSE || coin->ie_Class == IECLASS_RAWKEY || coin->ie_Class == IECLASS_NEWMOUSE)
 		{
-			if ((imsghigh > imsglow && !(imsghigh == MAXIMSGS - 1 && imsglow == 0)) || (imsghigh < imsglow && imsghigh != imsglow - 1) || imsglow == imsghigh)
+			if ((id->imsghigh > id->imsglow && !(id->imsghigh == MAXIMSGS - 1 && id->imsglow == 0)) || (id->imsghigh < id->imsglow && id->imsghigh != id->imsglow - 1) || id->imsglow == id->imsghigh)
 			{
-				memcpy(&imsgs[imsghigh], coin, sizeof(imsgs[0]));
-				imsghigh++;
-				imsghigh %= MAXIMSGS;
+				memcpy(&id->imsgs[id->imsghigh], coin, sizeof(id->imsgs[0]));
+				id->imsghigh++;
+				id->imsghigh %= MAXIMSGS;
 			}
 			else
 			{
-				DEBUGRING(kprintf("FodQuake: message dropped, imsglow = %d, imsghigh = %d\n", imsglow, imsghigh));
+				DEBUGRING(kprintf("FodQuake: message dropped, imsglow = %d, imsghigh = %d\n", id->imsglow, id->imsghigh));
 			}
 
-			if ( /*mouse_active && */ (id->window->Flags & WFLG_WINDOWACTIVE) && coin->ie_Class == IECLASS_RAWMOUSE && screeninfront && id->window->MouseX > 0 && id->window->MouseY > 0)
+			if ((id->window->Flags & WFLG_WINDOWACTIVE) && coin->ie_Class == IECLASS_RAWMOUSE && screeninfront && id->window->MouseX > 0 && id->window->MouseY > 0)
 			{
 				if (_windowed_mouse.value)
 				{
@@ -581,3 +543,4 @@ static struct InputEvent *myinputhandler_real()
 
 	return moo;
 }
+
