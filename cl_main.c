@@ -198,7 +198,7 @@ void CL_MakeActive(void) {
 	}
 
 	if (!cls.demoplayback)
-		VID_SetCaption (va("FuhQuake: %s", cls.servername));
+		VID_SetCaption (va("FodQuake: %s", cls.servername));
 
 	Con_ClearNotify ();
 	TP_ExecTrigger ("f_spawn");
@@ -426,7 +426,7 @@ void CL_Disconnect (void) {
 	connect_time = 0;
 	cl.teamfortress = false;
 
-	VID_SetCaption("FuhQuake");
+	VID_SetCaption("FodQuake");
 
 	// stop sounds (especially looping!)
 	S_StopAllSounds (true);
