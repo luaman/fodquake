@@ -44,6 +44,7 @@ typedef unsigned int PIXEL24;
 #include "d_local.h"
 #include "input.h"
 #include "keys.h"
+#include "in_x11.h"
 
 struct display
 {
