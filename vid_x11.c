@@ -82,7 +82,7 @@ extern viddef_t vid;		// global video state
 int XShmQueryExtension(Display *);
 int XShmGetEventBase(Display *);
 
-void shiftmask_init(struct display *d)
+static void shiftmask_init(struct display *d)
 {
 	unsigned int x;
 	d->r_mask = d->x_vis->red_mask;
@@ -100,7 +100,7 @@ void shiftmask_init(struct display *d)
 		d->b_shift++;
 }
 
-PIXEL16 xlib_rgb16(struct display *d, int r, int g, int b)
+static PIXEL16 xlib_rgb16(struct display *d, int r, int g, int b)
 {
 	PIXEL16 p;
 
@@ -148,7 +148,7 @@ PIXEL16 xlib_rgb16(struct display *d, int r, int g, int b)
 	return p;
 }
 
-PIXEL24 xlib_rgb24(struct display *d, int r, int g, int b)
+static PIXEL24 xlib_rgb24(struct display *d, int r, int g, int b)
 {
 	PIXEL24 p;
 
@@ -196,7 +196,7 @@ PIXEL24 xlib_rgb24(struct display *d, int r, int g, int b)
 	return p;
 }
 
-void st2_fixup(struct display *d, XImage * framebuf, int x, int y, int width, int height)
+static void st2_fixup(struct display *d, XImage * framebuf, int x, int y, int width, int height)
 {
 	int xi, yi;
 	unsigned char *src;
@@ -216,7 +216,7 @@ void st2_fixup(struct display *d, XImage * framebuf, int x, int y, int width, in
 	}
 }
 
-void st3_fixup(struct display *d, XImage * framebuf, int x, int y, int width, int height)
+static void st3_fixup(struct display *d, XImage * framebuf, int x, int y, int width, int height)
 {
 	int xi, yi;
 	unsigned char *src;
@@ -240,7 +240,7 @@ void st3_fixup(struct display *d, XImage * framebuf, int x, int y, int width, in
 // Tragic death handler
 // ========================================================================
 
-void TragicDeath(int signal_num)
+static void TragicDeath(int signal_num)
 {
 #warning fixme
 #if 0
@@ -275,7 +275,7 @@ static Cursor CreateNullCursor(Display * display, Window root)
 	return cursor;
 }
 
-void ResetFrameBuffer(struct display *d)
+static void ResetFrameBuffer(struct display *d)
 {
 	int mem, pwidth;
 
@@ -323,7 +323,7 @@ void ResetFrameBuffer(struct display *d)
 	vid.buffer = (byte *) (d->x_framebuffer[0]);
 }
 
-void ResetSharedFrameBuffers(struct display *d)
+static void ResetSharedFrameBuffers(struct display *d)
 {
 	int size, key, minsize = getpagesize(), frm;
 
@@ -751,7 +751,7 @@ void Sys_Video_Update(void *display, vrect_t *rects)
 	Sys_Input_GetConfigNotify(d->inputdata, &config_notify, &config_notify_width, &config_notify_height);
 	
 	// if the window changes dimension, skip this frame
-	if (config_notify)
+	if (config_notify && (config_notify_width&~7 != vid.width || config_notify_height != vid.height))
 	{
 		fprintf(stderr, "config notify\n");
 		config_notify = 0;
