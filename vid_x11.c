@@ -751,7 +751,7 @@ void Sys_Video_Update(void *display, vrect_t *rects)
 	Sys_Input_GetConfigNotify(d->inputdata, &config_notify, &config_notify_width, &config_notify_height);
 	
 	// if the window changes dimension, skip this frame
-	if (config_notify && (config_notify_width&~7 != vid.width || config_notify_height != vid.height))
+	if (config_notify && ((config_notify_width&~7) != vid.width || config_notify_height != vid.height))
 	{
 		fprintf(stderr, "config notify\n");
 		config_notify = 0;
@@ -767,7 +767,6 @@ void Sys_Video_Update(void *display, vrect_t *rects)
 		vid.conheight = vid.height;
 		vid.recalc_refdef = 1;	// force a surface cache flush
 		Con_CheckResize();
-		Con_Clear_f();
 		return;
 	}
 
