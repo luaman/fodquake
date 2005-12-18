@@ -224,6 +224,9 @@ static void Auth_Verify_Clients_f(void) {
 	}
 	if ((auth_validateclients.value != 2 && authClientsCount + unauthClientsCount + otherClientsCount > 0) || auth_validateclients.value == 2)
 		Com_Printf("\n");
+#else
+#warning Maybe find a better location for these pictures?
+	Com_Printf("See http://bigfoot.morphos-team.net/test/fuhquake_has_no_security_1.jpeg and http://bigfoot.morphos-team.net/test/fuhquake_has_no_security_2.jpeg\n");
 #endif
 }
 
