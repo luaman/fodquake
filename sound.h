@@ -86,6 +86,7 @@ typedef struct
 	int		dataofs;		// chunk starts this many bytes from file start
 } wavinfo_t;
 
+void S_CvarInit(void);
 void S_Init (void);
 void S_Startup (void);
 void S_Shutdown (void);

@@ -482,7 +482,7 @@ void Cam_TryLock (void) {
 	}
 }
 
-void CL_InitCam(void) {
+void CL_CvarInitCam(void) {
 	Cvar_SetCurrentGroup(CVAR_GROUP_SPECTATOR);
 	Cvar_Register (&cl_chasecam);
 

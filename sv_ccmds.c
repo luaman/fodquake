@@ -624,3 +624,4 @@ void SV_InitOperatorCommands (void) {
 
 	cl_warncmd.value = 1;
 }
+

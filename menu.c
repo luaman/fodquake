@@ -3396,7 +3396,7 @@ void M_Quit_Draw (void) {
 //=============================================================================
 /* Menu Subsystem */
 
-void M_Init (void) {
+void M_CvarInit (void) {
 
 	Cvar_SetCurrentGroup(CVAR_GROUP_SCREEN);
 	Cvar_Register (&scr_centerMenu);

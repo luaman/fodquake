@@ -1047,10 +1047,8 @@ char *Macro_MatchType(void) {
 	return matchcvars[matchinfo->matchtype].nickname;
 }
 
-void MT_Init(void) {
-	Sys_mkdir(va("%s/fuhquake/temp", com_basedir));
-	MT_ClearClientState();
-
+void MT_CvarInit(void)
+{
 	Cmd_AddMacro("matchname", Macro_MatchName);
 	Cmd_AddMacro("matchtype", Macro_MatchType);
 
@@ -1088,6 +1086,13 @@ void MT_Init(void) {
 	Cvar_Register(&match_auto_spectating);
 
 	Cvar_ResetCurrentGroup();
+}
+
+void MT_Init(void)
+{
+	Sys_mkdir(va("%s/fuhquake/temp", com_basedir));
+	MT_ClearClientState();
 
 	MT_AddMapGroups();
 }
+

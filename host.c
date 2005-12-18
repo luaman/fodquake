@@ -24,6 +24,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "pmove.h"
 #include "version.h"
 #include "modules.h"
+#include "sound.h"
+#include "d_iface.h"
+#include "image.h"
 #include <setjmp.h>
 
 
@@ -156,6 +159,9 @@ char *Host_PrintBars(char *s, int len) {
 
 void CL_SaveArgv(int, char **);
 
+static cvar_t dummycvar = { "dummycvar", "0" };
+int cvarsregged;
+
 void Host_Init (int argc, char **argv, int default_memsize) {
 	FILE *f;
 
@@ -168,15 +174,74 @@ void Host_Init (int argc, char **argv, int default_memsize) {
 	Cvar_Init ();
 	COM_Init ();
 
+	VID_CvarInit();
+	S_CvarInit();
+	D_CvarInit();
+	Image_CvarInit();
+	R_CvarInit();
+	Con_CvarInit();
+	SCR_CvarInit();
+	CL_CvarInit();
+	CL_CvarInitInput();
+	ConfigManager_CvarInit();
+	Movie_CvarInit();
+	MT_CvarInit();
+	SV_CvarInit();
+	SBar_CvarInit();
+	TP_CvarInit();
+	Ignore_CvarInit();
+	Auth_CvarInit();
+	V_CvarInit();
+	Log_CvarInit();
+	CL_CvarInitPrediction();
+	Netchan_CvarInit();
+	Stats_CvarInit();
+	Draw_CvarInit();
+	Key_CvarInit();
+	CL_CvarInitCam();
+	M_CvarInit();
+	CL_CvarDemoInit();
+	PR_CvarInit();
+	FMod_CvarInit();
+	FChecks_CvarInit();
+
+	cvarsregged = 1;
+	Cvar_Register(&dummycvar);
+	Cmd_AddCommand("Dummy", 0);
+	
 	FS_InitFilesystem ();
 	COM_CheckRegistered ();
 
-	Cbuf_AddEarlyCommands ();
+	if (dedicated) {
+		Cbuf_AddText ("exec server.cfg\n");
+		Cmd_StuffCmds_f ();		// process command line arguments
+		Cbuf_Execute ();
+
+		// if a map wasn't specified on the command line, spawn start map
+		if (!com_serveractive)
+			Cmd_ExecuteString ("map start");
+		if (!com_serveractive)
+			Host_Error ("Couldn't spawn a server");
+	} else {
+		Cbuf_AddText ("exec default.cfg\n");
+		if (FS_FOpenFile("config.cfg", &f) != -1) {
+			Cbuf_AddText ("exec config.cfg\n");
+			fclose(f);
+		}
+		if (FS_FOpenFile("autoexec.cfg", &f) != -1) {
+			Cbuf_AddText ("exec autoexec.cfg\n");
+			fclose(f);
+		}
+		Cmd_StuffCmds_f ();		// process command line arguments
+		Cbuf_AddText ("cl_warncmd 1\n");
+	}
+
+	Cmd_ParseLegacyCmdLineCmds();
+
 	Cbuf_Execute ();
 
 	Con_Init ();
 	NET_Init ();
-	Netchan_Init ();
 	QLib_Init();
 	Sys_Init ();
 	PM_Init ();
@@ -210,29 +275,7 @@ void Host_Init (int argc, char **argv, int default_memsize) {
 		Com_Printf("\n");
 	}
 
-	if (dedicated) {
-		Cbuf_AddText ("exec server.cfg\n");
-		Cmd_StuffCmds_f ();		// process command line arguments
-		Cbuf_Execute ();
-
-		// if a map wasn't specified on the command line, spawn start map
-		if (!com_serveractive)
-			Cmd_ExecuteString ("map start");
-		if (!com_serveractive)
-			Host_Error ("Couldn't spawn a server");
-	} else {
-		Cbuf_AddText ("exec default.cfg\n");
-		if (FS_FOpenFile("config.cfg", &f) != -1) {
-			Cbuf_AddText ("exec config.cfg\n");
-			fclose(f);
-		}
-		if (FS_FOpenFile("autoexec.cfg", &f) != -1) {
-			Cbuf_AddText ("exec autoexec.cfg\n");
-			fclose(f);
-		}
-		Cmd_StuffCmds_f ();		// process command line arguments
-		Cbuf_AddText ("cl_warncmd 1\n");
-	}
+	VID_Open();
 }
 
 //FIXME: this is a callback from Sys_Quit and Sys_Error.  It would be better

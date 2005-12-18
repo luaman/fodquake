@@ -218,10 +218,12 @@ out:
 	cl.waterlevel = pmove.waterlevel;
 }
 
-void CL_InitPrediction (void) {
+void CL_CvarInitPrediction(void)
+{
 	Cvar_SetCurrentGroup(CVAR_GROUP_NETWORK);
 	Cvar_Register(&cl_nopred);
 	Cvar_Register(&cl_pushlatency);
 
 	Cvar_ResetCurrentGroup();
 }
+

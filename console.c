@@ -191,7 +191,23 @@ static void Con_InitConsoleBuffer(console_t *conbuffer, int size) {
 	con.text = Hunk_AllocName(con.maxsize, "console_buffer");
 }
 
-void Con_Init (void) {
+void Con_CvarInit(void)
+{
+	Cvar_SetCurrentGroup(CVAR_GROUP_CONSOLE);
+	Cvar_Register (&_con_notifylines);
+	Cvar_Register (&con_notifytime);
+	Cvar_Register (&con_wordwrap);
+	Cvar_Register (&con_clearnotify);
+	Cvar_ResetCurrentGroup();
+
+	Cmd_AddCommand ("toggleconsole", Con_ToggleConsole_f);
+	Cmd_AddCommand ("messagemode", Con_MessageMode_f);
+	Cmd_AddCommand ("messagemode2", Con_MessageMode2_f);
+	Cmd_AddCommand ("clear", Con_Clear_f);
+}
+
+void Con_Init(void)
+{
 	int i, conbufsize;
 
 	if (dedicated)
@@ -215,20 +231,6 @@ void Con_Init (void) {
 
 	con_initialized = true;
 	Com_Printf ("Console initialized\n");
-
-	Cvar_SetCurrentGroup(CVAR_GROUP_CONSOLE);
-	// register our commands and cvars
-	Cvar_Register (&_con_notifylines);
-	Cvar_Register (&con_notifytime);
-	Cvar_Register (&con_wordwrap);
-	Cvar_Register (&con_clearnotify);
-
-	Cvar_ResetCurrentGroup();
-
-	Cmd_AddCommand ("toggleconsole", Con_ToggleConsole_f);
-	Cmd_AddCommand ("messagemode", Con_MessageMode_f);
-	Cmd_AddCommand ("messagemode2", Con_MessageMode2_f);
-	Cmd_AddCommand ("clear", Con_Clear_f);
 }
 
 void Con_Shutdown (void) {

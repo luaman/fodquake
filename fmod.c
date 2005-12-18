@@ -102,10 +102,13 @@ void FMod_CheckModel(char *name, void *buf, int len) {
 	check_models[i].checked = true;
 }
 
-void FMod_Init(void) {
-
+void FMod_CvarInit(void)
+{
 	Cmd_AddCommand("f_modified", FMod_Response);
+}
 
+void FMod_Init(void)
+{
 	FMod_AddModel("progs/armor.mdl", FMOD_DM | FMOD_TF);
 	FMod_AddModel("progs/backpack.mdl", FMOD_DM | FMOD_TF);
 	FMod_AddModel("progs/bolt2.mdl", FMOD_DM | FMOD_TF);

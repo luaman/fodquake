@@ -76,8 +76,6 @@ struct display
 	unsigned long r_mask, g_mask, b_mask;
 };
 
-cvar_t vid_ref = { "vid_ref", "soft", CVAR_ROM };
-
 extern viddef_t vid;		// global video state
 
 int XShmQueryExtension(Display *);
@@ -413,10 +411,6 @@ void *Sys_Video_Open(int width, int height, int depth, unsigned char *palette)
 	if (d)
 	{
 		bzero(d, sizeof(*d));
-
-		Cvar_SetCurrentGroup(CVAR_GROUP_VIDEO);
-		Cvar_Register(&vid_ref);
-		Cvar_ResetCurrentGroup();
 
 		vid.width = width;
 		vid.height = height;

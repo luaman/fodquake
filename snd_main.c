@@ -121,9 +121,8 @@ void S_Startup (void) {
 
 void SND_Restart_f (void) {}
 
-void S_Init (void) {
-//	Com_Printf ("\nSound Initialization\n");
-
+void S_CvarInit(void)
+{
 	Cvar_SetCurrentGroup(CVAR_GROUP_SOUND);
 	Cvar_Register(&bgmvolume);
 	Cvar_Register(&s_volume);
@@ -170,7 +169,10 @@ void S_Init (void) {
 	}
 
 	snd_initialized = true;
+}
 
+void S_Init(void)
+{
 	S_Startup ();
 
 	SND_InitScaletable ();

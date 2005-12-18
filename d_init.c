@@ -39,14 +39,17 @@ extern int		d_aflatcolor;
 
 void (*d_drawspans) (espan_t *pspan);
 
-void D_Init (void) {
+void D_CvarInit(void)
+{
 	Cvar_SetCurrentGroup(CVAR_GROUP_TEXTURES);
 	Cvar_Register (&d_subdiv16);
 	Cvar_Register (&d_mipcap);
 	Cvar_Register (&d_mipscale);
-
 	Cvar_ResetCurrentGroup();
+}
 
+void D_Init(void)
+{
 	r_aliasuvscale = 1.0;
 }
 

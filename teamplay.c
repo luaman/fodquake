@@ -2953,7 +2953,8 @@ void TP_DumpMsgFilters(FILE *f) {
 
 /************************************ INIT ************************************/
 
-void TP_Init (void) {
+void TP_CvarInit(void)
+{
 	TP_AddMacros();
 
 	Cvar_SetCurrentGroup(CVAR_GROUP_CHAT);
@@ -3054,3 +3055,4 @@ void TP_Init (void) {
 	Cmd_AddCommand ("tp_pickup", TP_Pickup_f);
 	Cmd_AddCommand ("tp_point", TP_Point_f);
 }
+

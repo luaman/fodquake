@@ -687,7 +687,8 @@ void CL_SaveArgv(int argc, char **argv) {
 
 void CL_InitCommands (void);
 
-void CL_InitLocal (void) {
+void CL_CvarInit(void)
+{
 	extern cvar_t baseskin, noskins;
 
 	Cvar_SetCurrentGroup(CVAR_GROUP_CHAT);
@@ -776,18 +777,15 @@ void CL_InitLocal (void) {
 
 	Cvar_Register (&cl_confirmquit);
 
- 	Info_SetValueForStarKey (cls.userinfo, "*FodQuake", FODQUAKE_VERSION, MAX_INFO_STRING);
-
 	Cmd_AddLegacyCommand ("demotimescale", "cl_demospeed");
 
-	CL_InitCommands ();
+	CL_InitCommands();
 
 	Cmd_AddCommand ("disconnect", CL_Disconnect_f);
 	Cmd_AddCommand ("connect", CL_Connect_f);
 
 	Cmd_AddCommand ("join", CL_Join_f);
 	Cmd_AddCommand ("observe", CL_Observe_f);
-
 
 	Cmd_AddCommand ("dns", CL_DNS_f);
 
@@ -796,6 +794,11 @@ void CL_InitLocal (void) {
 	Cmd_AddMacro("connectiontype", CL_Macro_ConnectionType);
 	Cmd_AddMacro("demoplayback", CL_Macro_Demoplayback);
 	Cmd_AddMacro("matchstatus", CL_Macro_Serverstatus);
+}
+
+void CL_InitLocal()
+{
+ 	Info_SetValueForStarKey (cls.userinfo, "*FodQuake", FODQUAKE_VERSION, MAX_INFO_STRING);
 }
 
 void CL_Init (void)
@@ -844,15 +847,10 @@ void CL_Init (void)
 
 	CL_InitLocal ();
 	CL_FixupModelNames ();
-	CL_InitInput ();
 	CL_InitEnts ();
 	CL_InitTEnts ();
-	CL_InitPrediction ();
-	CL_InitCam ();
 	Rulesets_Init();
-	TP_Init ();
 	Sbar_Init ();
-	M_Init ();
 
 	NET_ClientConfig (true);
 
@@ -863,10 +861,6 @@ void CL_Init (void)
 	MT_Init();
 	CL_Demo_Init();
 	Ignore_Init();
-	Auth_Init();
-	Log_Init();
-	Movie_Init();
-	ConfigManager_Init();
 	Stats_Init();
 	MP3_Init();
 }

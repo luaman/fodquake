@@ -138,8 +138,14 @@ void FChecks_CheckRequest(char *s) {
 		f_reply_time = cls.realtime;
 }
 
-void FChecks_Init(void) {
-	FMod_Init();
+void FChecks_CvarInit(void)
+{
 	Cmd_AddCommand ("fuh_version", FChecks_VersionResponse);
 	Cmd_AddCommand ("f_server", FChecks_FServerResponse);
 }
+
+void FChecks_Init(void)
+{
+	FMod_Init();
+}
+

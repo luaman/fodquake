@@ -1004,8 +1004,8 @@ void SV_Frame (double time) {
 	}
 }
 
-void SV_InitLocal (void) {
-	int i;
+void SV_CvarInit(void)
+{
 	extern cvar_t sv_spectalk, sv_mapcheck, sv_aim, sv_nailhack, sv_loadentfiles, sv_maxvelocity, sv_gravity;
 	extern cvar_t pm_stopspeed, pm_spectatormaxspeed, pm_accelerate, pm_airaccelerate, pm_wateraccelerate;
 	extern cvar_t pm_friction, pm_waterfriction, pm_bunnyspeedcap, pm_ktjump, pm_slidefix;
@@ -1080,6 +1080,10 @@ void SV_InitLocal (void) {
 	Cmd_AddCommand ("removeip", SV_RemoveIP_f);
 	Cmd_AddCommand ("listip", SV_ListIP_f);
 	Cmd_AddCommand ("writeip", SV_WriteIP_f);
+}
+
+void SV_InitLocal (void) {
+	int i;
 
 	if (!dedicated)
 		Cvar_SetDefault(&sv_mintic, 0);
@@ -1103,7 +1107,6 @@ void SV_InitLocal (void) {
 	SZ_Init (&svs.log[1], svs.log_buf[1], sizeof(svs.log_buf[1]));
 	svs.log[1].allowoverflow = true;
 }
-
 
 //============================================================================
 
@@ -1254,7 +1257,6 @@ void SV_ExtractFromUserinfo (client_t *cl) {
 //============================================================================
 
 void SV_Init (void) {
-	PR_Init ();
 	SV_InitLocal ();
 
 	if (dedicated)

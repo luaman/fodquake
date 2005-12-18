@@ -992,7 +992,22 @@ void Key_WriteBindings (FILE *f) {
 	}
 }
 
-void Key_Init (void) {
+void Key_CvarInit(void)
+{
+	// register our functions
+	Cmd_AddCommand ("bindlist",Key_BindList_f);
+	Cmd_AddCommand ("bind",Key_Bind_f);
+	Cmd_AddCommand ("unbind",Key_Unbind_f);
+	Cmd_AddCommand ("unbindall",Key_Unbindall_f);
+
+	Cvar_SetCurrentGroup(CVAR_GROUP_CONSOLE);
+	Cvar_Register (&cl_chatmode);
+
+	Cvar_ResetCurrentGroup();
+}
+
+void Key_Init(void)
+{
 	int i;
 
 	for (i = 0; i < 32; i++) {
@@ -1060,17 +1075,6 @@ void Key_Init (void) {
 	menubound[K_ESCAPE] = true;
 	for (i = 0; i < 12; i++)
 		menubound[K_F1 + i] = true;
-
-	// register our functions
-	Cmd_AddCommand ("bindlist",Key_BindList_f);
-	Cmd_AddCommand ("bind",Key_Bind_f);
-	Cmd_AddCommand ("unbind",Key_Unbind_f);
-	Cmd_AddCommand ("unbindall",Key_Unbindall_f);
-
-	Cvar_SetCurrentGroup(CVAR_GROUP_CONSOLE);
-	Cvar_Register (&cl_chatmode);
-
-	Cvar_ResetCurrentGroup();
 }
 
 //Called by the system between frames for both key up and key down events Should NOT be called during an interrupt!

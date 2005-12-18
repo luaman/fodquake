@@ -134,7 +134,7 @@ void Cmd_ForwardToServer (void);
 // things like godmode, noclip, etc, are commands directed to the server,
 // so when they are typed in at the console, they will need to be forwarded.
 
-void Cbuf_AddEarlyCommands (void);
+void Cmd_ParseLegacyCmdLineCmds(void);
 void Cmd_StuffCmds_f (void);
 qboolean Cmd_IsLegacyCommand (char *oldname);
 void Cmd_AddLegacyCommand (char *oldname, char *newname);

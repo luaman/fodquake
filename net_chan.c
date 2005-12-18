@@ -83,7 +83,8 @@ cvar_t	showpackets = {"showpackets", "0"};
 cvar_t	showdrop	= {"showdrop", "0"};
 cvar_t	qport		= {"qport", "0"};
 
-void Netchan_Init (void) {
+void Netchan_CvarInit(void)
+{
 	int port;
 
 	// pick a port value that should be nice and random

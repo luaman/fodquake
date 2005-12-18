@@ -532,7 +532,7 @@ void CL_ParseProjectiles(qboolean indexed);
 
 
 // cl_pred.c
-void CL_InitPrediction (void);
+void CL_CvarInitPrediction (void);
 void CL_PredictMove (void);
 void CL_PredictUsercmd (player_state_t *from, player_state_t *to, usercmd_t *u);
 
@@ -549,7 +549,7 @@ void Cam_Track (usercmd_t *cmd);
 void Cam_FinishMove (usercmd_t *cmd);
 void Cam_Reset (void);
 void Cam_SetViewPlayer (void);
-void CL_InitCam (void);
+void CL_CvarInitCam (void);
 void Cam_TryLock (void);
 
 

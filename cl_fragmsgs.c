@@ -699,10 +699,15 @@ qboolean Stats_IsFlagsParsed(void) {
 	return (Stats_IsActive() && fragdefs.flagalerts) ? true : false;
 }
 
-void Stats_Init(void) {
-	InitFragDefs();
-
+void Stats_CvarInit(void)
+{
 	Cvar_Register(&cl_parsefrags);
 	Cvar_Register(&cl_loadFragfiles);
 	Cmd_AddCommand("loadFragfile", Load_FragFile_f);
 }
+
+void Stats_Init(void)
+{
+	InitFragDefs();
+}
+

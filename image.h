@@ -26,6 +26,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #error USE_PNG requires USE_ZLIB
 #endif
 
+void Image_CvarInit(void);
 void Image_Init(void);
 
 void Image_Resample (void *indata, int inwidth, int inheight,

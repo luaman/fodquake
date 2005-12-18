@@ -45,7 +45,7 @@ extern kbutton_t	in_mlook, in_klook;
 extern kbutton_t 	in_strafe;
 extern kbutton_t 	in_speed;
 
-void CL_InitInput (void);
+void CL_CvarInitInput (void);
 void CL_SendCmd (void);
 void CL_BaseMove (usercmd_t *cmd);
 float CL_KeyState (kbutton_t *key);

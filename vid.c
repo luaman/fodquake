@@ -4,10 +4,35 @@
 
 static void *display;
 
+#warning Fixme
+cvar_t vid_ref = { "vid_ref", "soft", CVAR_ROM };
+
+cvar_t vid_width = { "vid_width", "640", CVAR_ARCHIVE };
+cvar_t vid_height = { "vid_height", "480", CVAR_ARCHIVE };
+
+#ifdef GLQUAKE
+cvar_t vid_depth = { "vid_depth", "24", CVAR_ARCHIVE };
+#endif
+
 void VID_Init(unsigned char *palette)
 {
+}
+
+void VID_CvarInit()
+{
+	Cvar_SetCurrentGroup(CVAR_GROUP_VIDEO);
+	Cvar_Register(&vid_ref);
+	Cvar_Register(&vid_width);
+	Cvar_Register(&vid_height);
+#ifdef GLQUAKE
+	Cvar_Register(&vid_depth);
+#endif
+	Cvar_ResetCurrentGroup();
+}
+
+void VID_Open()
+{
 	int width, height, depth;
-	int argnum;
 
 #ifdef GLQUAKE
 	width = 640;
@@ -18,52 +43,34 @@ void VID_Init(unsigned char *palette)
 	height = 240;
 	depth = 8;
 #endif
-	
-	argnum = COM_CheckParm("-width");
-	if (argnum)
-	{
-		if (argnum >= com_argc - 1)
-			Sys_Error("VID: -width <width>");
 
-		width = Q_atoi(com_argv[argnum+1]);
+	width = vid_width.value;
+	height = vid_height.value;
+#ifdef GLQUAKE
+	depth = vid_depth.value;
+#endif
 
-		if (width == 0)
-			Sys_Error("VID: Bad width");
 #warning Fix this.
 #ifndef GLQUAKE
-		if (width > MAXWIDTH)
-			Sys_Error("VID: Maximum supported width is %d", MAXWIDTH);
-#endif
-	}
-
-	argnum = COM_CheckParm("-height");
-	if (argnum)
+	if (width > MAXWIDTH)
 	{
-		if (argnum >= com_argc - 1)
-			Sys_Error("VID: -height <height>");
-
-		height = Q_atoi(com_argv[argnum+1]);
-
-		if (height == 0)
-			Sys_Error("VID: Bad height");
-#warning Fix this.
-#ifndef GLQUAKE
-		if (height > MAXHEIGHT)
-			Sys_Error("VID: Maximum supported height is %d", MAXHEIGHT);
-#endif
+		Com_Printf("VID: Maximum supported width is %d\n", MAXWIDTH);
+		width = MAXWIDTH;
 	}
-
-	argnum = COM_CheckParm("-depth");
-	if (argnum)
+	if (height > MAXHEIGHT)
 	{
-		if (argnum >= com_argc - 1)
-			Sys_Error("VID: -depth <depth>");
-
-		depth = Q_atoi(com_argv[argnum+1]);
-
-		if (depth != 15 && depth != 16 && depth != 24)
-			Sys_Error("VID: Bad depth");
+		Com_Printf("VID: Maximum supported heigfht is %d\n", MAXHEIGHT);
+		height = MAXHEIGHT;
 	}
+#endif
+
+#ifdef GLQUAKE
+	if (depth != 15 && depth != 16 && depth != 24)
+	{
+		Sys_Printf("VID: Bad depth\n");
+		depth = 24;
+	}
+#endif
 
 	display = Sys_Video_Open(width, height, depth, host_basepal);
 	if (display == 0)
@@ -90,7 +97,7 @@ void VID_GetEvents()
 	Sys_Video_GetEvents(display);
 }
 
-VID_GetMouseMovement(int *mousex, int *mousey)
+void VID_GetMouseMovement(int *mousex, int *mousey)
 {
 	Sys_Video_GetMouseMovement(display, mousex, mousey);
 }

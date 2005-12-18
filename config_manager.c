@@ -723,7 +723,8 @@ void LoadConfig_f(void)	{
 	Cbuf_AddText ("cl_warncmd 1\n");
 }
 
-void ConfigManager_Init(void) {
+void ConfigManager_CvarInit(void)
+{
 	Cmd_AddCommand("cfg_save", SaveConfig_f);
 	Cmd_AddCommand("cfg_load", LoadConfig_f);
 	Cmd_AddCommand("cfg_reset",	ResetConfigs_f);
@@ -743,3 +744,4 @@ void ConfigManager_Init(void) {
 
 	Cvar_ResetCurrentGroup();
 }
+

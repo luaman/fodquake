@@ -1423,11 +1423,8 @@ void SCR_AutoScreenshot(char *matchname) {
 
 /************************************ INIT ************************************/
 
-void SCR_Init (void) {
-	scr_ram = Draw_CacheWadPic ("ram");
-	scr_net = Draw_CacheWadPic ("net");
-	scr_turtle = Draw_CacheWadPic ("turtle");
-
+void SCR_CvarInit (void)
+{
 	Cvar_SetCurrentGroup(CVAR_GROUP_VIEW);
 	Cvar_Register (&scr_fov);
 	Cvar_Register (&scr_viewsize);
@@ -1438,6 +1435,7 @@ void SCR_Init (void) {
 	Cvar_Register (&scr_printspeed);
 
 #ifdef GLQUAKE
+#warning Huh? Here?
 	Cvar_SetCurrentGroup(CVAR_GROUP_OPENGL);
 	Cvar_Register (&gl_triplebuffer);
 #endif
@@ -1481,6 +1479,13 @@ void SCR_Init (void) {
 	Cmd_AddCommand ("screenshot", SCR_ScreenShot_f);
 	Cmd_AddCommand ("sizeup", SCR_SizeUp_f);
 	Cmd_AddCommand ("sizedown", SCR_SizeDown_f);
+}
+
+void SCR_Init(void)
+{
+	scr_ram = Draw_CacheWadPic ("ram");
+	scr_net = Draw_CacheWadPic ("net");
+	scr_turtle = Draw_CacheWadPic ("turtle");
 
 	scr_initialized = true;
 }

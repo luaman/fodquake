@@ -153,14 +153,8 @@ void R_InitTextures (void) {
 	}
 }
 
-void R_Init (void) {
-	int dummy;
-
-	// get stack position so we can guess if we are going to overflow
-	r_stack_start = (byte *) &dummy;
-
-	R_InitTurb ();
-
+void R_CvarInit(void)
+{
 	Cmd_AddCommand ("timerefresh", R_TimeRefresh_f);
 #ifndef CLIENTONLY
 	Cmd_AddCommand ("pointfile", R_ReadPointFile_f);
@@ -213,6 +207,16 @@ void R_Init (void) {
 
 	Cvar_SetValue (&r_maxedges, (float) NUMSTACKEDGES);
 	Cvar_SetValue (&r_maxsurfs, (float) NUMSTACKSURFACES);
+}
+
+void R_Init(void)
+{
+	int dummy;
+
+	// get stack position so we can guess if we are going to overflow
+	r_stack_start = (byte *) &dummy;
+
+	R_InitTurb ();
 
 	view_clipplanes[0].leftedge = true;
 	view_clipplanes[1].rightedge = true;

@@ -881,7 +881,8 @@ void V_RenderView (void) {
 
 //============================================================================
 
-void V_Init (void) {
+void V_CvarInit(void)
+{
 	Cmd_AddCommand ("v_cshift", V_cshift_f);	
 	Cmd_AddCommand ("bf", V_BonusFlash_f);
 	Cmd_AddCommand ("centerview", V_StartPitchDrift);
@@ -949,8 +950,12 @@ void V_Init (void) {
 
 	Cmd_AddLegacyCommand ("gamma", v_gamma.name);
 	Cmd_AddLegacyCommand ("contrast", v_contrast.name);
+}
 
+void V_Init(void)
+{
 #ifndef GLQUAKE
 	BuildGammaTable (v_gamma.value, v_contrast.value);
 #endif
 }
+

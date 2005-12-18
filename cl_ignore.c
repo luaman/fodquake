@@ -392,13 +392,8 @@ void Ignore_ResetFloodList(void) {
 	floodindex = 0;
 }
 
-void Ignore_Init(void) {
-	int i;
-
-	for (i = 0; i < MAX_TEAMIGNORELIST; i++)
-		ignoreteamlist[i][0] = 0;
-	Ignore_ResetFloodList();
-
+void Ignore_CvarInit(void)
+{
 	Cvar_SetCurrentGroup(CVAR_GROUP_CHAT);
 	Cvar_Register (&ignore_flood_duration);
 	Cvar_Register (&ignore_flood);
@@ -418,3 +413,13 @@ void Ignore_Init(void) {
 	Cmd_AddCommand ("unignore_id", Unignore_ID_f);		
 	Cmd_AddCommand ("ignore_id", Ignore_ID_f);			
 }
+
+void Ignore_Init(void)
+{
+	int i;
+
+	for (i = 0; i < MAX_TEAMIGNORELIST; i++)
+		ignoreteamlist[i][0] = 0;
+	Ignore_ResetFloodList();
+}
+

@@ -127,7 +127,7 @@ static void Log_log_f(void) {
 	}
 }
 
-void Log_Init(void) {
+void Log_CvarInit(void) {
 	Cvar_SetCurrentGroup(CVAR_GROUP_CONSOLE);
 	Cvar_Register (&log_dir);
 	Cvar_Register (&log_readable);

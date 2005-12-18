@@ -301,11 +301,18 @@ Adds a freestanding variable to the variable list.
 If the variable already exists, the value will not be set
 The flags will be or'ed in if the variable exists.
 */
+
+extern cvarsregged;
+
 void Cvar_Register (cvar_t *var) {
 	char string[512];
 	int key;
 	cvar_t *old;
 
+	if (cvarsregged)
+	{
+		printf("Cvar \"%s\" registered too late\n", var->name);
+	}
 	// first check to see if it has already been defined
 	old = Cvar_FindVar (var->name);
 	if (old && !(old->flags & CVAR_USER_CREATED)) {

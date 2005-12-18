@@ -117,6 +117,35 @@ void Sbar_Changed (void) {
 
 /************************************ INIT ************************************/
 
+void SBar_CvarInit(void)
+{
+	Cvar_SetCurrentGroup(CVAR_GROUP_SBAR);
+	Cvar_Register (&scr_centerSbar);
+
+	Cvar_Register (&scr_compactHud);
+	Cvar_Register (&scr_compactHudAlign);
+
+	Cvar_Register (&scr_drawHFrags);
+	Cvar_Register (&scr_drawVFrags);
+	Cvar_Register (&scr_scoreboard_teamsort);
+	Cvar_Register (&scr_scoreboard_forcecolors);
+	Cvar_Register (&scr_scoreboard_showfrags);
+	Cvar_Register (&scr_scoreboard_drawtitle);
+	Cvar_Register (&scr_scoreboard_borderless);
+#ifdef GLQUAKE
+	Cvar_Register (&scr_scoreboard_fillalpha);
+	Cvar_Register (&scr_scoreboard_fillcolored);
+#endif
+
+	Cvar_ResetCurrentGroup();
+
+	Cmd_AddCommand ("+showscores", Sbar_ShowScores);
+	Cmd_AddCommand ("-showscores", Sbar_DontShowScores);
+		
+	Cmd_AddCommand ("+showteamscores", Sbar_ShowTeamScores);
+	Cmd_AddCommand ("-showteamscores", Sbar_DontShowTeamScores);
+}
+
 void Sbar_Init (void) {
 	int i;
 
@@ -197,32 +226,6 @@ void Sbar_Init (void) {
 	sb_sbar = Draw_CacheWadPic ("sbar");
 	sb_ibar = Draw_CacheWadPic ("ibar");
 	sb_scorebar = Draw_CacheWadPic ("scorebar");
-
-	Cvar_SetCurrentGroup(CVAR_GROUP_SBAR);
-	Cvar_Register (&scr_centerSbar);
-
-	Cvar_Register (&scr_compactHud);
-	Cvar_Register (&scr_compactHudAlign);
-
-	Cvar_Register (&scr_drawHFrags);
-	Cvar_Register (&scr_drawVFrags);
-	Cvar_Register (&scr_scoreboard_teamsort);
-	Cvar_Register (&scr_scoreboard_forcecolors);
-	Cvar_Register (&scr_scoreboard_showfrags);
-	Cvar_Register (&scr_scoreboard_drawtitle);
-	Cvar_Register (&scr_scoreboard_borderless);
-#ifdef GLQUAKE
-	Cvar_Register (&scr_scoreboard_fillalpha);
-	Cvar_Register (&scr_scoreboard_fillcolored);
-#endif
-
-	Cvar_ResetCurrentGroup();
-
-	Cmd_AddCommand ("+showscores", Sbar_ShowScores);
-	Cmd_AddCommand ("-showscores", Sbar_DontShowScores);
-		
-	Cmd_AddCommand ("+showteamscores", Sbar_ShowTeamScores);
-	Cmd_AddCommand ("-showteamscores", Sbar_DontShowTeamScores);
 }
 
 /****************************** SUPPORT ROUTINES ******************************/

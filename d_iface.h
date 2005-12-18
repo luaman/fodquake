@@ -128,6 +128,7 @@ void D_DrawSprite (void);
 void D_DrawSurfaces (void);
 void D_DrawZPoint (void);
 void D_EnableBackBufferAccess (void);
+void D_CvarInit(void);
 void D_Init (void);
 void D_ViewChanged (void);
 void D_SetupFrame (void);

@@ -23,7 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define __LOGGING_H_
 
 qboolean Log_IsLogging(void);
-void Log_Init(void);
+void Log_CvarInit(void);
 void Log_Shutdown(void);
 void Log_Write(char *s);
 

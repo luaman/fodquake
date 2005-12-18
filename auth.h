@@ -22,7 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #define __AUTH_H_
 
-void Auth_Init(void);
+void Auth_CvarInit(void);
 char *Auth_Generate_Crc(void);
 void Auth_CheckResponse (char *, int, int);
 

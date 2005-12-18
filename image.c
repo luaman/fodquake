@@ -1460,18 +1460,29 @@ int Image_WritePCX (char *filename, byte *data, int width, int height, int rowby
 
 /*********************************** INIT ************************************/
 
-void Image_Init(void) {
+void Image_CvarInit(void)
+{
 	Cvar_SetCurrentGroup(CVAR_GROUP_SCREENSHOTS);
+
 #if USE_PNG
-	if (PNG_LoadLibrary())
-		QLib_RegisterModule(qlib_libpng, PNG_FreeLibrary);
 	Cvar_Register (&image_png_compression_level);
 #endif
 #ifdef WITH_JPEG
-	if (JPEG_LoadLibrary())
-		QLib_RegisterModule(qlib_libjpeg, JPEG_FreeLibrary);
 	Cvar_Register (&image_jpeg_quality_level);
 #endif
 
 	Cvar_ResetCurrentGroup();
 }
+
+void Image_Init(void)
+{
+#if USE_PNG
+	if (PNG_LoadLibrary())
+		QLib_RegisterModule(qlib_libpng, PNG_FreeLibrary);
+#endif
+#ifdef WITH_JPEG
+	if (JPEG_LoadLibrary())
+		QLib_RegisterModule(qlib_libjpeg, JPEG_FreeLibrary);
+#endif
+}
+

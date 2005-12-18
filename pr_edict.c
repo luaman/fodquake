@@ -882,7 +882,7 @@ progs_loaded:
 	SV_ParseClientCommand = (f = ED_FindFunction ("SV_ParseClientCommand")) ? (func_t) (f - pr_functions) : 0;
 }
 
-void PR_Init (void) {
+void PR_CvarInit (void) {
 	Cmd_AddCommand ("edict", ED_PrintEdict_f);
 	Cmd_AddCommand ("edicts", ED_PrintEdicts);
 	Cmd_AddCommand ("edictcount", ED_Count);

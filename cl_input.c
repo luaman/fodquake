@@ -639,7 +639,8 @@ void CL_SendCmd (void) {
 	Netchan_Transmit (&cls.netchan, buf.cursize, buf.data);	
 }
 
-void CL_InitInput (void) {
+void CL_CvarInitInput(void)
+{
 	Cmd_AddCommand ("+moveup",IN_UpDown);
 	Cmd_AddCommand ("-moveup",IN_UpUp);
 	Cmd_AddCommand ("+movedown",IN_DownDown);

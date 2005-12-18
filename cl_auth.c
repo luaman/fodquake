@@ -231,7 +231,7 @@ static void Auth_Verify_Clients_f(void) {
 }
 
 
-void Auth_Init(void) {
+void Auth_CvarInit(void) {
 	Cvar_SetCurrentGroup(CVAR_GROUP_CHAT);
 	Cvar_Register(&auth_viewcrc);
 

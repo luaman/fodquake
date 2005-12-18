@@ -116,7 +116,7 @@ void Movie_Demo_Capture_f(void) {
 	Movie_Start(time);
 }
 
-void Movie_Init(void) {
+void Movie_CvarInit(void) {
 	Cvar_SetCurrentGroup(CVAR_GROUP_DEMO);
 	Cvar_Register(&movie_fps);
 	Cvar_Register(&movie_dir);
@@ -174,3 +174,4 @@ static qboolean OnChange_movie_dir(cvar_t *var, char *string) {
 	}
 	return false;
 }
+

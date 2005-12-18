@@ -1316,7 +1316,24 @@ void CL_Demo_Jump_f (void) {
 	cls.demotime = newdemotime;
 }
 
-void CL_Demo_Init (void) {
+void CL_CvarDemoInit(void)
+{
+	Cmd_AddCommand ("record", CL_Record_f);
+	Cmd_AddCommand ("stop", CL_Stop_f);
+	Cmd_AddCommand ("playdemo", CL_Play_f);
+	Cmd_AddCommand ("timedemo", CL_TimeDemo_f);
+	Cmd_AddCommand ("easyrecord", CL_EasyRecord_f);
+
+	Cmd_AddCommand("demo_setspeed", CL_Demo_SetSpeed_f);
+	Cmd_AddCommand("demo_jump", CL_Demo_Jump_f);
+
+	Cvar_SetCurrentGroup(CVAR_GROUP_DEMO);
+	Cvar_Register(&demo_dir);
+	Cvar_ResetCurrentGroup();
+}
+
+void CL_Demo_Init(void)
+{
 	int parm, democache_size;
 	byte *democache_buffer;
 
@@ -1333,18 +1350,5 @@ void CL_Demo_Init (void) {
 			Com_Printf("\x02" "Democache allocation failed\n");
 		}
 	}
-
-	Cmd_AddCommand ("record", CL_Record_f);
-	Cmd_AddCommand ("stop", CL_Stop_f);
-	Cmd_AddCommand ("playdemo", CL_Play_f);
-	Cmd_AddCommand ("timedemo", CL_TimeDemo_f);
-	Cmd_AddCommand ("easyrecord", CL_EasyRecord_f);
-
-	Cmd_AddCommand("demo_setspeed", CL_Demo_SetSpeed_f);
-	Cmd_AddCommand("demo_jump", CL_Demo_Jump_f);
-
-	Cvar_SetCurrentGroup(CVAR_GROUP_DEMO);
-	Cvar_Register(&demo_dir);
-
-	Cvar_ResetCurrentGroup();
 }
+

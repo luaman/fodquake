@@ -83,7 +83,7 @@ qboolean TP_NeedRefreshSkins(void);
 extern char *skinforcing_team;
 
 
-void TP_Init (void);
+void TP_CvarInit(void);
 
 //#define FPD_NO_TEAM_MACROS	1
 #define FPD_NO_FORCE_SKIN	256

@@ -69,6 +69,9 @@ void	VID_Init(unsigned char *palette);
 // the palette data will go away after the call, so it must be copied off if
 // the video driver will need it again
 
+void VID_CvarInit(void);
+void VID_Open(void);
+
 void	VID_Shutdown (void);
 // Called at shutdown
 

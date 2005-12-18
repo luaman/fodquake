@@ -24,6 +24,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "rulesets.h"
 #endif
 
+extern cvar_t vid_width;
+extern cvar_t vid_height;
+
+#ifdef GLQUAKE
+extern cvar_t vid_depth;
+#endif
+
 #ifndef SERVERONLY
 qboolean CL_CheckServerCommand (void);
 #endif
@@ -234,23 +241,22 @@ void Cbuf_ExecuteEx (cbuf_t *cbuf) {
 ==============================================================================
 */
 
-/*
-Set commands are added early, so they are guaranteed to be set before
-the client and server initialize for the first time.
-
-Other commands are added late, after all initialization is complete.
-*/
-void Cbuf_AddEarlyCommands (void) {
+void Cmd_ParseLegacyCmdLineCmds()
+{
 	int i;
-
-	for (i = 0; i < COM_Argc() - 2; i++) {
-		if (Q_strcasecmp(COM_Argv(i), "+set"))
-			continue;
-		Cbuf_AddText (va("set %s %s\n", COM_Argv(i+1), COM_Argv(i+2)));
-		i += 2;
+	
+	for(i=1;i<com_argc;i++)
+	{
+		if (strcmp(com_argv[i], "-width") == 0 && i+1 < com_argc)
+			Cvar_Set(&vid_width, com_argv[i+1]);
+		else if (strcmp(com_argv[i], "-height") == 0 && i+1 < com_argc)
+			Cvar_Set(&vid_height, com_argv[i+1]);
+#ifdef GLQUAKE
+		else if (strcmp(com_argv[i], "-depth") == 0) && i+1 < com_argc)
+			Cvar_Set(&vid_depth, com_argv[i+1]);
+#endif
 	}
 }
-
 
 /*
 Adds command line parameters as script statements
@@ -288,8 +294,7 @@ void Cmd_StuffCmds_f (void) {
 				token[k++] = s[0];
 			token[k++] = '\n';
 			token[k] = 0;
-			if (Q_strncasecmp(token, "set ", 4))
-				Cbuf_AddText (token);
+			Cbuf_AddText (token);
 		} else if (*s == '-') {
 			for (s = s + 1; s[0] && s[0] != ' '; s++)
 				;
@@ -750,9 +755,15 @@ void Cmd_TokenizeString (char *text) {
 	}	
 }
 
+extern int cvarsregged;
 void Cmd_AddCommand (char *cmd_name, xcommand_t function) {
 	cmd_function_t *cmd;
 	int	key;
+
+	if (cvarsregged)
+	{
+		printf("Command \"%s\" registered too late\n", cmd_name);
+	}
 
 	if (host_initialized)	// because hunk allocation would get stomped
 		assert (!"Cmd_AddCommand after host_initialized");

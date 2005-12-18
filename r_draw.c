@@ -104,7 +104,8 @@ mpic_t *Draw_CachePic (char *path) {
 	return (mpic_t *)dat;
 }
 
-void Draw_Init (void) {
+void Draw_CvarInit(void)
+{
 	Cvar_SetCurrentGroup(CVAR_GROUP_CONSOLE);
 	Cvar_Register(&scr_conalpha);
 
@@ -112,7 +113,10 @@ void Draw_Init (void) {
 	Cvar_Register(&scr_menualpha);
 
 	Cvar_ResetCurrentGroup();
+}
 
+void Draw_Init(void)
+{
 	draw_chars = (byte *) Draw_CacheWadPic ("conchars");
 	draw_disc = Draw_CacheWadPic ("disc");
 	draw_backtile = Draw_CacheWadPic ("backtile");
