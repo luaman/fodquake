@@ -119,7 +119,11 @@ void S_Startup (void) {
 	sound_started = 1;
 }
 
-void SND_Restart_f (void) {}
+void SND_Restart_f (void)
+{
+	S_Shutdown();
+	S_Init();
+}
 
 void S_CvarInit(void)
 {
