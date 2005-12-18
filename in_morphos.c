@@ -136,7 +136,6 @@ void Sys_Input_GetEvents(void *inputdata)
 	char key;
 	int i;
 	int down;
-	struct InputEvent ie;
 
 	for (i = id->imsglow; i != id->imsghigh; i++, i %= MAXIMSGS)
 	{
@@ -169,8 +168,6 @@ void Sys_Input_GetEvents(void *inputdata)
 		{
 			down = !(id->imsgs[i].ie_Code & IECODE_UP_PREFIX);
 			id->imsgs[i].ie_Code &= ~IECODE_UP_PREFIX;
-
-			memcpy(&ie, &id->imsgs[i], sizeof(ie));
 
 			key = 0;
 			if (id->imsgs[i].ie_Code <= 255)
