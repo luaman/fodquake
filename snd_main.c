@@ -29,7 +29,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 void S_Play_f (void);
 void S_PlayVol_f (void);
 void S_SoundList_f (void);
-void S_Update_ ();
+static void S_Update_ ();
 void S_StopAllSounds (qboolean clear);
 void S_StopAllSounds_f (void);
 
@@ -205,7 +205,7 @@ void S_Shutdown (void) {
 // Load a sound
 // =======================================================================
 
-sfx_t *S_FindName (char *name) {
+static sfx_t *S_FindName (char *name) {
 	int i;
 	sfx_t *sfx;
 
@@ -230,16 +230,6 @@ sfx_t *S_FindName (char *name) {
 	num_sfx++;
 
 	return sfx;
-}
-
-void S_TouchSound (char *name) {
-	sfx_t *sfx;
-	
-	if (!sound_started)
-		return;
-
-	sfx = S_FindName (name);
-	Cache_Check (&sfx->cache);
 }
 
 sfx_t *S_PrecacheSound (char *name) {
@@ -515,7 +505,7 @@ void S_StaticSound (sfx_t *sfx, vec3_t origin, float vol, float attenuation) {
 
 //=============================================================================
 
-void S_UpdateAmbientSounds (void) {
+static void S_UpdateAmbientSounds (void) {
 	mleaf_t *l;
 	float vol;
 	int ambient_channel;
@@ -668,7 +658,7 @@ void S_ExtraUpdate (void) {
 	S_Update_();
 }
 
-void S_Update_ (void) {
+static void S_Update_ (void) {
 	unsigned endtime;
 	int samps;
 	
@@ -786,8 +776,3 @@ void S_LocalSound (char *sound) {
 	S_StartSound (cl.playernum+1, -1, sfx, vec3_origin, 1, 0);
 }
 
-void S_ClearPrecache (void) {}
-
-void S_BeginPrecaching (void) {}
-
-void S_EndPrecaching (void) {}
