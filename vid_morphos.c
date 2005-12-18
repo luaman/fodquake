@@ -40,10 +40,9 @@ struct display
 
 cvar_t _windowed_mouse = { "_windowed_mouse", "1", CVAR_ARCHIVE };
 
-void *Sys_Video_Open(int width, int height, int depth, unsigned char *palette)
+void *Sys_Video_Open(int width, int height, int depth, int fullscreen, unsigned char *palette)
 {
 	struct display *d;
-	int argnum;
 	int i;
 
 	Cvar_Register(&_windowed_mouse);
@@ -87,15 +86,29 @@ void *Sys_Video_Open(int width, int height, int depth, unsigned char *palette)
 		vid.conheight = vid.height;
 		vid.aspect = ((float)vid.height / (float)vid.width) * (320.0 / 240.0);
 
-		argnum = COM_CheckParm("-window");
-
-		if (argnum == 0)
+		if (fullscreen)
 		{
-			d->screen = OpenScreenTags(0, SA_Width, vid.width, SA_Height, vid.height, SA_Depth, 8, SA_Quiet, TRUE, TAG_DONE);
+			d->screen = OpenScreenTags(0,
+				SA_Width, vid.width,
+				SA_Height, vid.height,
+				SA_Depth, 8,
+				SA_Quiet, TRUE,
+				TAG_DONE);
 		}
 
 
-		d->window = OpenWindowTags(0, WA_InnerWidth, vid.width, WA_InnerHeight, vid.height, WA_Title, "Fuhquake", WA_DragBar, d->screen ? FALSE : TRUE, WA_DepthGadget, d->screen ? FALSE : TRUE, WA_Borderless, d->screen ? TRUE : FALSE, WA_RMBTrap, TRUE, d->screen ? WA_PubScreen : TAG_IGNORE, (ULONG) d->screen, WA_Activate, TRUE, WA_ReportMouse, TRUE, TAG_DONE);
+		d->window = OpenWindowTags(0,
+			WA_InnerWidth, vid.width,
+			WA_InnerHeight, vid.height,
+			WA_Title, "Fuhquake",
+			WA_DragBar, d->screen ? FALSE : TRUE,
+			WA_DepthGadget, d->screen ? FALSE : TRUE,
+			WA_Borderless, d->screen ? TRUE : FALSE,
+			WA_RMBTrap, TRUE, d->screen ?
+			WA_PubScreen : TAG_IGNORE, (ULONG) d->screen,
+			WA_Activate, TRUE,
+			WA_ReportMouse, TRUE,
+			TAG_DONE);
 
 		if (d->window == 0)
 			Sys_Error("Unable to open window");

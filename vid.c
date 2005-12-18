@@ -7,6 +7,7 @@ static void *display;
 #warning Fixme
 cvar_t vid_ref = { "vid_ref", "soft", CVAR_ROM };
 
+cvar_t vid_fullscreen = { "vid_fullscreen", "1", CVAR_ARCHIVE };
 cvar_t vid_width = { "vid_width", "640", CVAR_ARCHIVE };
 cvar_t vid_height = { "vid_height", "480", CVAR_ARCHIVE };
 
@@ -22,6 +23,7 @@ void VID_CvarInit()
 {
 	Cvar_SetCurrentGroup(CVAR_GROUP_VIDEO);
 	Cvar_Register(&vid_ref);
+	Cvar_Register(&vid_fullscreen);
 	Cvar_Register(&vid_width);
 	Cvar_Register(&vid_height);
 #ifdef GLQUAKE
@@ -32,18 +34,9 @@ void VID_CvarInit()
 
 void VID_Open()
 {
-	int width, height, depth;
+	int width, height, depth, fullscreen;
 
-#ifdef GLQUAKE
-	width = 640;
-	height = 480;
-	depth = 24;
-#else
-	width = 320;
-	height = 240;
-	depth = 8;
-#endif
-
+	fullscreen = vid_fullscreen.value;
 	width = vid_width.value;
 	height = vid_height.value;
 #ifdef GLQUAKE
@@ -72,7 +65,7 @@ void VID_Open()
 	}
 #endif
 
-	display = Sys_Video_Open(width, height, depth, host_basepal);
+	display = Sys_Video_Open(width, height, depth, fullscreen, host_basepal);
 	if (display == 0)
 		Sys_Error("VID: Unable to open a display\n");
 }

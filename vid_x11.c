@@ -399,11 +399,10 @@ static void ResetSharedFrameBuffers(struct display *d)
 // the palette data will go away after the call, so it must be copied off if
 // the video driver will need it again
 
-void *Sys_Video_Open(int width, int height, int depth, unsigned char *palette)
+void *Sys_Video_Open(int width, int height, int depth, int fullscreen, unsigned char *palette)
 {
 	int pnum, i, num_visuals, template_mask;
 	XVisualInfo template;
-	int fullscreen = 0;
 	struct display *d;
 	int x_shmeventtype;
 
@@ -449,9 +448,6 @@ void *Sys_Video_Open(int width, int height, int depth, unsigned char *palette)
 		XSynchronize(d->x_disp, True);
 
 		d->scrnum = DefaultScreen(d->x_disp);
-
-		if (COM_CheckParm("-fullscreen"))
-			fullscreen = true;
 
 		if (fullscreen)
 		{

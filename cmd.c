@@ -24,6 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "rulesets.h"
 #endif
 
+extern cvar_t vid_fullscreen;
 extern cvar_t vid_width;
 extern cvar_t vid_height;
 
@@ -251,6 +252,10 @@ void Cmd_ParseLegacyCmdLineCmds()
 			Cvar_Set(&vid_width, com_argv[i+1]);
 		else if (strcmp(com_argv[i], "-height") == 0 && i+1 < com_argc)
 			Cvar_Set(&vid_height, com_argv[i+1]);
+		else if (strcmp(com_argv[i], "-fullscreen") == 0)
+			Cvar_Set(&vid_fullscreen, "1");
+		else if (strcmp(com_argv[i], "-window") == 0)
+			Cvar_Set(&vid_fullscreen, "0");
 #ifdef GLQUAKE
 		else if (strcmp(com_argv[i], "-depth") == 0) && i+1 < com_argc)
 			Cvar_Set(&vid_depth, com_argv[i+1]);

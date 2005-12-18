@@ -56,7 +56,7 @@ void Sys_Init (void);
 char *Sys_GetClipboardData(void);
 void Sys_CopyToClipboard(char *);
 
-void *Sys_Video_Open(int width, int height, int depth, unsigned char *palette);
+void *Sys_Video_Open(int width, int height, int depth, int fullscreen, unsigned char *palette);
 void Sys_Video_Close(void *display);
 void Sys_Video_Update(void *display, vrect_t *rects);
 
