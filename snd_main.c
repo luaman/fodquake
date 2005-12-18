@@ -84,13 +84,6 @@ cvar_t s_swapstereo = {"s_swapstereo", "0"};
 // User-setable variables
 // ====================================================================
 
-// Fake dma is a synchronous faking of the DMA progress used for
-// isolating performance in the renderer.  The fakedma_updates is
-// number of times S_Update() is called per second.
-
-qboolean fakedma = false;
-int fakedma_updates = 15;
-
 void S_AmbientOff (void) {
 	snd_ambient = false;
 }
@@ -121,16 +114,14 @@ void S_Startup (void) {
 	if (!snd_initialized)
 		return;
 
-	if (!fakedma) {
-		rc = SNDDMA_Init();
+	rc = SNDDMA_Init();
 
-		if (!rc) {
+	if (!rc) {
 #ifndef	_WIN32
-			Com_Printf ("S_Startup: SNDDMA_Init failed.\n");
+		Com_Printf ("S_Startup: SNDDMA_Init failed.\n");
 #endif
-			sound_started = 0;
-			return;
-		}
+		sound_started = 0;
+		return;
 	}
 
 	sound_started = 1;
@@ -174,9 +165,6 @@ void S_Init (void) {
 		return;
 	}
 
-	if (COM_CheckParm("-simsound"))
-		fakedma = true;
-
 	Cmd_AddCommand("snd_restart", SND_Restart_f);
 	Cmd_AddCommand("play", S_Play_f);
 	Cmd_AddCommand("playvol", S_PlayVol_f);
@@ -198,22 +186,6 @@ void S_Init (void) {
 	known_sfx = Hunk_AllocName (MAX_SFX*sizeof(sfx_t), "sfx_t");
 	num_sfx = 0;
 
-	// create a piece of DMA memory
-
-	if (fakedma) {
-		shm = (void *) Hunk_AllocName(sizeof(*shm), "shm");
-		shm->splitbuffer = 0;
-		shm->samplebits = 16;
-		shm->speed = 22050;
-		shm->channels = 2;
-		shm->samples = 32768;
-		shm->samplepos = 0;
-		shm->soundalive = true;
-		shm->gamealive = true;
-		shm->submission_chunk = 1;
-		shm->buffer = Hunk_AllocName(1<<16, "shmbuf");
-	}
-
 	ambient_sfx[AMBIENT_WATER] = S_PrecacheSound ("ambience/water1.wav");
 	ambient_sfx[AMBIENT_SKY] = S_PrecacheSound ("ambience/wind2.wav");
 
@@ -234,8 +206,7 @@ void S_Shutdown (void) {
 	shm = 0;
 	sound_started = 0;
 
-	if (!fakedma)
-		SNDDMA_Shutdown();
+	SNDDMA_Shutdown();
 }
 
 // =======================================================================
