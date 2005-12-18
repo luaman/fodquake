@@ -84,14 +84,6 @@ cvar_t s_swapstereo = {"s_swapstereo", "0"};
 // User-setable variables
 // ====================================================================
 
-void S_AmbientOff (void) {
-	snd_ambient = false;
-}
-
-void S_AmbientOn (void) {
-	snd_ambient = true;
-}
-
 void S_SoundInfo_f (void) {
 	if (!sound_started || !shm) {
 		Com_Printf ("sound system not started\n");
