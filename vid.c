@@ -15,8 +15,17 @@ cvar_t vid_height = { "vid_height", "480", CVAR_ARCHIVE };
 cvar_t vid_depth = { "vid_depth", "24", CVAR_ARCHIVE };
 #endif
 
+static unsigned char pal[768];
+
 void VID_Init(unsigned char *palette)
 {
+	memcpy(pal, palette, sizeof(pal));
+}
+
+void VID_Restart_f(void)
+{
+	VID_Shutdown();
+	VID_Open();
 }
 
 void VID_CvarInit()
@@ -30,6 +39,8 @@ void VID_CvarInit()
 	Cvar_Register(&vid_depth);
 #endif
 	Cvar_ResetCurrentGroup();
+
+	Cmd_AddCommand("vid_restart", VID_Restart_f);
 }
 
 void VID_Open()
@@ -68,6 +79,8 @@ void VID_Open()
 	display = Sys_Video_Open(width, height, depth, fullscreen, host_basepal);
 	if (display == 0)
 		Sys_Error("VID: Unable to open a display\n");
+
+	Sys_Video_SetPalette(display, pal);
 }
 
 void VID_Shutdown()
@@ -82,6 +95,7 @@ void VID_Update (vrect_t *rects)
 
 void VID_SetPalette(byte *palette)
 {
+	memcpy(pal, palette, sizeof(pal));
 	Sys_Video_SetPalette(display, palette);
 }
 

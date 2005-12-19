@@ -584,7 +584,7 @@ void *Sys_Video_Open(int width, int height, int depth, int fullscreen, unsigned 
 			if (d->x_visinfo->class == PseudoColor)
 			{
 				d->x_cmap = XCreateColormap(d->x_disp, d->x_win, d->x_vis, AllocAll);
-				VID_SetPalette(palette);
+				Sys_Video_SetPalette(d, palette);
 				XSetWindowColormap(d->x_disp, d->x_win, d->x_cmap);
 			}
 
