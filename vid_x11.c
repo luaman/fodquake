@@ -720,7 +720,6 @@ void Sys_Video_Close(void *display)
 
 	Sys_Input_Shutdown(d->inputdata);
 	
-	Com_Printf("VID_Shutdown\n");
 	XAutoRepeatOn(d->x_disp);
 	if (d->vidmode_active)
 		XF86VidModeSwitchToMode(d->x_disp, d->scrnum, d->vidmodes[0]);
