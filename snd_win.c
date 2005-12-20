@@ -72,7 +72,7 @@ LPDIRECTSOUNDBUFFER pDSBuf, pDSPBuf;
 
 HINSTANCE hInstDS;
 
-qboolean SNDDMA_InitDirect (void);
+sndinitstat SNDDMA_InitDirect (void);
 qboolean SNDDMA_InitWav (void);
 
 BOOL CALLBACK DS_EnumDevices(LPGUID lpGUID, LPCTSTR lpszDesc, LPCTSTR lpszDrvName, LPVOID lpContext) {
@@ -487,7 +487,7 @@ qboolean SNDDMA_InitWav (void) {
 
 //Try to find a sound device to mix for.
 //Returns false if nothing is found.
-int SNDDMA_Init(void) {
+qboolean SNDDMA_Init(void) {
 	sndinitstat	stat;
 
 	if (COM_CheckParm ("-wavonly"))

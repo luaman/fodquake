@@ -36,6 +36,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define PAUSE_SLEEP		50				// sleep time on pause or minimization
 #define NOT_FOCUS_SLEEP	20				// sleep time when not focus
 
+int do_stdin = 0;
+qboolean stdin_ready;
+
 qboolean		ActiveApp, Minimized;
 qboolean		WinNT, Win2K;
 
@@ -348,20 +351,6 @@ char *Sys_ConsoleInput (void) {
 	return NULL;
 }
 
-void Sys_SendKeyEvents (void) {
-    MSG msg;
-
-	while (PeekMessage (&msg, NULL, 0, 0, PM_NOREMOVE)) {
-		// we always update if there are any event, even if we're paused
-		scr_skipupdate = 0;
-
-		if (!GetMessage (&msg, NULL, 0, 0))
-			Host_Quit ();
-      	TranslateMessage (&msg);
-      	DispatchMessage (&msg);
-	}
-}
-
 BOOL WINAPI HandlerRoutine (DWORD dwCtrlType) {
 	switch (dwCtrlType) {
 		case CTRL_C_EVENT:		
@@ -411,8 +400,10 @@ void Sys_Init_ (void) {
 			"qwcl");	//Semaphore name
 	}
 
+#if 0
 	MaskExceptions ();
 	Sys_SetFPCW ();
+#endif
 
 	Sys_InitDoubleTime ();
 

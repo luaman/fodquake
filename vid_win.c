@@ -36,8 +36,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 qboolean	dibonly;
 
-extern int	Minimized;
-
 HWND		mainwindow;
 
 HWND WINAPI InitializeWindow (HINSTANCE hInstance, int nCmdShow);
@@ -66,8 +64,6 @@ extern qboolean mouseactive; // from in_win.c
 #define MODE_SETTABLE_WINDOW	2
 #define NO_MODE					(MODE_WINDOWED - 1)
 #define MODE_FULLSCREEN_DEFAULT	(MODE_WINDOWED + 3)
-
-cvar_t		vid_ref = {"vid_ref", "soft", CVAR_ROM};
 
 // Note that 0 is MODE_WINDOWED
 cvar_t		vid_mode = {"vid_mode","0"};
@@ -1459,7 +1455,7 @@ void VID_UnlockBuffer (void) {
 	vid.buffer = vid.direct = d_viewbuffer = NULL;
 }
 
-void VID_SetPalette (unsigned char *palette) {
+void Sys_Video_SetPalette(void *display, unsigned char *palette) {
 	INT i;
 	palette_t pal[256];
     HDC hdc;
@@ -1589,12 +1585,11 @@ void VID_ForceMode_f (void) {
 	}
 }
 
-void VID_Init (unsigned char *palette) {
+void *Sys_Video_Open(int width, int height, int depth, int fullscreen, unsigned char *palette) {
 	int i, bestmatch, bestmatchmetric, t, dr, dg, db, basenummodes;
 	byte *ptmp;
 
 	Cvar_SetCurrentGroup(CVAR_GROUP_VIDEO);
-	Cvar_Register (&vid_ref);
 	Cvar_Register (&vid_mode);
 	Cvar_Register (&vid_nopageflip);
 	Cvar_Register (&_vid_default_mode);
@@ -1693,16 +1688,19 @@ void VID_Init (unsigned char *palette) {
 
 	vid_realmode = vid_modenum;
 
-	VID_SetPalette (palette);
+	Sys_Video_SetPalette(0, palette);
 
 	vid_menudrawfn = VID_MenuDraw;
 	vid_menukeyfn = VID_MenuKey;
 
 	strcpy (badmode.modedesc, "Bad mode");
+
+	Sys_Input_Init();
+	return 1;
 }
 
 
-void VID_Shutdown (void) {
+void Sys_Video_Close(void *display) {
 	if (!vid_initialized)
 		return;
 
@@ -1800,7 +1798,7 @@ void FlipScreen(vrect_t *rects) {
 	}
 }
 
-void VID_Update (vrect_t *rects) { 
+void Sys_Video_Update(void *display, vrect_t *rects) { 
 	vrect_t rect;
 	RECT trect;
 
@@ -2609,3 +2607,9 @@ void VID_MenuKey (int key) {
 		break;
 	}
 }
+
+void Sys_Video_GetMouseMovement(void *display, int *mousex, int *mousey)
+{
+	Sys_Input_GetMouseMovement(0, mousex, mousey);
+}
+

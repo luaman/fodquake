@@ -7,7 +7,7 @@ STRIP=strip
 CFLAGS=-O2 -Wall -fno-strict-aliasing $(OSCFLAGS) $(CPUCFLAGS)
 STRIPFLAGS=--strip-unneeded --remove-section=.comment
 
-TARGETSYSTEM?=$(shell echo `uname -m`-`uname`)
+TARGETSYSTEM?=$(shell $(CC) -dumpmachine)
 
 OS=$(shell echo $(TARGETSYSTEM) | cut -d '-' -f 2 | tr [A-Z] [a-z])
 CPU=$(shell echo $(TARGETSYSTEM) | cut -d '-' -f 1 | tr [A-Z] [a-z])
@@ -29,6 +29,17 @@ ifeq ($(OS), linux)
 
 	OSSWOBJS=vid_x11.o in_x11.o
 	OSSWLDFLAGS=-L/usr/X11R6/lib -lX11 -lXext -lXxf86vm
+endif
+
+ifeq ($(OS), mingw32)
+	OSOBJS= \
+		sys_win.o \
+		snd_win.o \
+		cd_win.o \
+		in_win.o \
+
+	OSSWOBJS=vid_win.o
+	OSSWLDFLAGS=-lmgllt -lwsock32 -lgdi32 -ldxguid -lwinmm
 endif
 
 # CPU specific settings
@@ -147,6 +158,6 @@ clean:
 release: fodquake-sw
 
 fodquake-sw: $(OBJS) $(SWOBJS)
-	$(CC) $(CFLAGS) $^ -lm $(OSSWLDFLAGS) -lpng -o $@.db
+	$(CC) $(CFLAGS) $^ -lm $(OSSWLDFLAGS) -o $@.db
 	$(STRIP) $(STRIPFLAGS) $@.db -o $@
 	

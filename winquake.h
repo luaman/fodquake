@@ -37,14 +37,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define LLKHF_UP			(KF_UP >> 8)
 #define KF_UP				0x8000
 
-typedef struct {
-    DWORD   vkCode;
-    DWORD   scanCode;
-    DWORD   flags;
-    DWORD   time;
-    ULONG_PTR dwExtraInfo;
-} *PKBDLLHOOKSTRUCT;
-
 #endif
 
 #include <ddraw.h>

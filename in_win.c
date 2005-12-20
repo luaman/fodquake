@@ -34,9 +34,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 static HRESULT (WINAPI *pDirectInputCreateEx)(HINSTANCE hinst,
 		DWORD dwVersion, REFIID riidltf, LPVOID *ppvOut, LPUNKNOWN punkOuter) = NULL;
 
-// mouse variables
-cvar_t	m_filter = {"m_filter", "0"};
-
 // compatibility with old Quake -- setting to 0 disables KP_* codes
 cvar_t	cl_keypad = {"cl_keypad", "1"};
 
@@ -701,11 +698,9 @@ void IN_StartupMouse (void) {
 		IN_ActivateMouse ();
 }
 
-void IN_Init (void) {
+void Sys_Input_Init (void) {
 	Cvar_SetCurrentGroup(CVAR_GROUP_INPUT_MOUSE);
 	// mouse variables
-	Cvar_Register (&m_filter);
-
 	Cvar_Register (&m_forcewheel);
 
 
@@ -760,6 +755,7 @@ void IN_MouseEvent (int mstate) {
 }
 
 void IN_MouseMove (usercmd_t *cmd) {
+#if 0
 	int mx, my, i;
 	float filterfrac;
 	DIDEVICEOBJECTDATA od;
@@ -834,14 +830,8 @@ void IN_MouseMove (usercmd_t *cmd) {
 		mx_accum = my_accum = 0;
 	}
 
-	if (m_filter.value) {
-        filterfrac = bound(0, m_filter.value, 1) / 2.0;
-        mouse_x = (mx * (1 - filterfrac) + old_mouse_x * filterfrac);
-        mouse_y = (my * (1 - filterfrac) + old_mouse_y * filterfrac);
-	} else {
 		mouse_x = mx;
 		mouse_y = my;
-	}
 
 	old_mouse_x = mx;
 	old_mouse_y = my;
@@ -874,6 +864,7 @@ void IN_MouseMove (usercmd_t *cmd) {
 	// if the mouse has moved, force it to the center, so there's room to move
 	if (mx || my)
 		SetCursorPos (window_center_x, window_center_y);
+#endif
 }
 
 void IN_Move (usercmd_t *cmd) {
@@ -884,6 +875,8 @@ void IN_Move (usercmd_t *cmd) {
 }
 
 void IN_Accumulate (void) {
+	POINT current_pos;
+
 	if (mouseactive) {
 		GetCursorPos (&current_pos);
 
@@ -1331,3 +1324,34 @@ int IN_MapKey (int key) {
 
 	return key;
 }
+
+void Sys_Video_GetEvents()
+{
+	MSG msg;
+
+	while (PeekMessage (&msg, NULL, 0, 0, PM_NOREMOVE))
+	{
+		// we always update if there are any event, even if we're paused
+		scr_skipupdate = 0;
+		if (!GetMessage (&msg, NULL, 0, 0))
+			Host_Quit ();
+		TranslateMessage (&msg);
+		DispatchMessage (&msg);
+	}
+
+	IN_Commands();
+}
+
+void Sys_Input_GetMouseMovement(void *inputdata, int *mousex, int *mousey)
+{
+	POINT current_pos;
+
+	GetCursorPos (&current_pos);
+	*mousex = current_pos.x - window_center_x + mx_accum;
+	*mousey = current_pos.y - window_center_y + my_accum;
+	mx_accum = my_accum = 0;
+
+	if (*mousex || *mousey)
+		SetCursorPos (window_center_x, window_center_y);
+}
+

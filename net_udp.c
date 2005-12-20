@@ -20,6 +20,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // net_udp.c
 
 #include "quakedef.h"
+#ifndef _WIN32
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <unistd.h>
@@ -31,6 +32,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <sys/uio.h>
 #include <arpa/inet.h>
 #include <errno.h>
+#endif
 
 #ifdef sun
 #include <sys/filio.h>
@@ -43,6 +45,20 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifdef __MORPHOS__
 #define ioctl IoctlSocket
 #define close CloseSocket
+#endif
+
+#ifdef _WIN32
+#define ioctl ioctlsocket
+#define close closesocket
+
+#define EWOULDBLOCK WSAEWOULDBLOCK
+#define ECONNREFUSED WSAECONNREFUSED
+
+#include "winquake.h"
+
+WSADATA winsockdata;
+
+#define errno WSAGetLastError()
 #endif
 
 #ifndef INADDR_LOOPBACK
@@ -323,6 +339,8 @@ void NET_ClientConfig (qboolean enable) {
 		if (ip_sockets[NS_CLIENT] == -1) {
 			ip_sockets[NS_CLIENT] = UDP_OpenSocket (PORT_CLIENT);
 			if (ip_sockets[NS_CLIENT] == -1)
+				ip_sockets[NS_CLIENT] = UDP_OpenSocket(PORT_ANY);
+			if (ip_sockets[NS_CLIENT] == -1)
 				Sys_Error ("Couldn't allocate client socket");
 		}
 	} else {
@@ -358,6 +376,10 @@ void NET_ServerConfig (qboolean enable) {
 				Com_Printf ("WARNING: Couldn't allocate server socket.\n");
 #endif
 		}
+#ifdef _WIN32
+		if (dedicated)
+			SetConsoleTitle (va("fqds: %i", port));
+#endif
 	} else {
 		if (ip_sockets[NS_SERVER] != -1) {
 			close (ip_sockets[NS_SERVER]);
@@ -388,6 +410,15 @@ void NET_Sleep (int msec) {
 }
 
 void NET_Init (void) {
+#ifdef _WIN32
+	WORD wVersionRequested; 
+	int r;
+
+	wVersionRequested = MAKEWORD(1, 1); 
+	r = WSAStartup (wVersionRequested, &winsockdata);
+	if (r)
+		Sys_Error ("Winsock initialization failed.");
+#endif
 	// init the message buffer
 	SZ_Init (&net_message, net_message_buffer, sizeof(net_message_buffer));
 }
@@ -395,4 +426,7 @@ void NET_Init (void) {
 void NET_Shutdown (void) {
 	NET_ClientConfig (false);
 	NET_ServerConfig (false);
+#ifdef _WIN32
+	WSACleanup();
+#endif
 }
