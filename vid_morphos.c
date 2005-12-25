@@ -47,7 +47,7 @@ void *Sys_Video_Open(int width, int height, int depth, int fullscreen, unsigned 
 
 	Cvar_Register(&_windowed_mouse);
 
-	d = AllocMem(sizeof(*d), MEMF_CLEAR);
+	d = AllocVec(sizeof(*d), MEMF_CLEAR);
 	if (d)
 	{
 		vid.width = width;
@@ -169,29 +169,17 @@ void Sys_Video_Close(void *display)
 	for (i = 0; i < 3; i++)
 	{
 		if (d->screenbuffers[i])
-		{
 			FreeScreenBuffer(d->screen, d->screenbuffers[i]);
-			d->screenbuffers[i] = 0;
-		}
 	}
 
 	if (d->window)
-	{
 		CloseWindow(d->window);
-		d->window = 0;
-	}
 
 	if (d->pointermem)
-	{
 		FreeVec(d->pointermem);
-		d->pointermem = 0;
-	}
 
 	if (d->screen)
-	{
 		CloseScreen(d->screen);
-		d->screen = 0;
-	}
 
 	FreeVec(d);
 }
@@ -206,7 +194,7 @@ void Sys_Video_GetEvents(void *display)
 void Sys_Video_GetMouseMovement(void *display)
 {
 	struct display *d = display;
-	
+
 	Sys_Input_GetMouseMovement(d->inputdata);
 }
 
