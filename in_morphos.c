@@ -51,23 +51,13 @@ void Sys_Input_Shutdown(void *inputdata)
 		DoIO((struct IORequest *)id->inputreq);
 
 		CloseDevice((struct IORequest *)id->inputreq);
-
-		id->inputopen = 0;
 	}
 
 	if (id->inputreq)
-	{
 		DeleteIORequest(id->inputreq);
 
-		id->inputreq = 0;
-	}
-
 	if (id->inputport)
-	{
 		DeleteMsgPort(id->inputport);
-
-		id->inputport = 0;
-	}
 
 	FreeVec(id);
 }
