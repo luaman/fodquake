@@ -196,7 +196,7 @@ void Sys_Input_GetEvents(void *inputdata)
 	ExpireRingBuffer(id);
 }
 
-Sys_Input_GetMouseMovement(void *inputdata, int *mousex, int *mousey)
+void Sys_Input_GetMouseMovement(void *inputdata, int *mousex, int *mousey)
 {
 	struct inputdata *id = inputdata;
 

@@ -19,6 +19,7 @@ ifeq ($(OS), morphos)
 
 	OSOBJS=sys_morphos.o cd_morphos.o snd_morphos.o in_morphos.o
 	OSSWOBJS=vid_morphos.o
+	OSSWLDFLAGS=-lsyscall
 endif
 
 ifeq ($(OS), linux)
