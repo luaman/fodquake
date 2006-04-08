@@ -257,7 +257,7 @@ void Cmd_ParseLegacyCmdLineCmds()
 		else if (strcmp(com_argv[i], "-window") == 0)
 			Cvar_Set(&vid_fullscreen, "0");
 #ifdef GLQUAKE
-		else if (strcmp(com_argv[i], "-depth") == 0) && i+1 < com_argc)
+		else if (strcmp(com_argv[i], "-depth") == 0 && i+1 < com_argc)
 			Cvar_Set(&vid_depth, com_argv[i+1]);
 #endif
 	}
