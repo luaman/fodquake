@@ -1,6 +1,8 @@
 #include "quakedef.h"
 #include "common.h"
+#ifndef GLQUAKE
 #include "r_shared.h"
+#endif
 
 static void *display;
 
