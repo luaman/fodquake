@@ -277,4 +277,3 @@ void R_TimeRefresh_f (void) {
 	GL_EndRendering ();
 }
 
-void D_FlushCaches (void) {}

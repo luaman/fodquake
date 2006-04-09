@@ -25,7 +25,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "version.h"
 #include "modules.h"
 #include "sound.h"
+#ifndef GLQUAKE
 #include "d_iface.h"
+#endif
 #include "image.h"
 #include <setjmp.h>
 
@@ -114,7 +116,9 @@ void Host_InitMemory (int memsize) {
 //Free hunk memory up to host_hunklevel
 //Can only be called when changing levels!
 void Host_ClearMemory (void) {
+#ifndef GLQUAKE
 	D_FlushCaches ();
+#endif
 	Mod_ClearAll ();
 
 	// any data previously allocated on hunk is no longer valid
