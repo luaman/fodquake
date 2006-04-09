@@ -964,7 +964,7 @@ void SCR_UpdateScreen (void) {
 
 	SCR_CheckAutoScreenshot();	
 
-	GL_EndRendering ();
+	VID_Update(0);
 }
 
 #else

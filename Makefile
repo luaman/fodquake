@@ -1,10 +1,10 @@
 
-VPATH=../../
+VPATH=../../../
 
 CC=gcc
 STRIP=strip
 
-CFLAGS=-O2 -Wall -fno-strict-aliasing $(OSCFLAGS) $(CPUCFLAGS)
+CFLAGS=-O2 -Wall -fno-strict-aliasing $(OSCFLAGS) $(CPUCFLAGS) $(RENDERERCFLAGS)
 STRIPFLAGS=--strip-unneeded --remove-section=.comment
 
 TARGETSYSTEM?=$(shell $(CC) -dumpmachine)
@@ -16,10 +16,12 @@ CPU=$(shell echo $(TARGETSYSTEM) | cut -d '-' -f 1 | tr [A-Z] [a-z])
 
 ifeq ($(OS), morphos)
 	OSCFLAGS=-noixemul
-
 	OSOBJS=sys_morphos.o cd_morphos.o snd_morphos.o in_morphos.o
+	OSLDFLAGS=-lsyscall
+
 	OSSWOBJS=vid_morphos.o
-	OSSWLDFLAGS=-lsyscall
+
+	OSGLOBJS=vid_tinygl.o
 endif
 
 ifeq ($(OS), linux)
@@ -63,6 +65,7 @@ OBJS= \
 	pr_cmds.o \
 	pmove.o \
 	pmovetst.o \
+	r_part.o \
 	sv_ccmds.o \
 	sv_save.o \
 	sv_ents.o \
@@ -74,33 +77,6 @@ OBJS= \
 	sv_send.o \
 	sv_user.o \
 	sv_world.o \
-	r_aclip.o \
-	r_alias.o \
-	r_bsp.o \
-	r_draw.o \
-	r_edge.o \
-	r_efrag.o \
-	r_light.o \
-	r_main.o \
-	r_model.o \
-	r_misc.o \
-	r_part.o \
-	r_sky.o \
-	r_sprite.o \
-	r_surf.o \
-	r_rast.o \
-	r_vars.o \
-	d_edge.o \
-	d_fill.o \
-	d_init.o \
-	d_modech.o \
-	d_polyse.o \
-	d_scan.o \
-	d_sky.o \
-	d_sprite.o \
-	d_surf.o \
-	d_vars.o \
-	d_zpoint.o \
 	cl_auth.o \
 	cl_cam.o \
 	cl_capture.o \
@@ -144,21 +120,73 @@ OBJS= \
 	vid.o \
 	$(OSOBJS)
 
-SWOBJS=$(OSSWOBJS)
+SWOBJS= \
+	d_edge.o \
+	d_fill.o \
+	d_init.o \
+	d_modech.o \
+	d_polyse.o \
+	d_scan.o \
+	d_sky.o \
+	d_sprite.o \
+	d_surf.o \
+	d_vars.o \
+	d_zpoint.o \
+	r_aclip.o \
+	r_alias.o \
+	r_bsp.o \
+	r_draw.o \
+	r_edge.o \
+	r_efrag.o \
+	r_light.o \
+	r_main.o \
+	r_model.o \
+	r_misc.o \
+	r_sky.o \
+	r_sprite.o \
+	r_surf.o \
+	r_rast.o \
+	r_vars.o \
+	$(OSSWOBJS)
+
+GLOBJS= \
+	gl_draw.o \
+	gl_mesh.o \
+	gl_model.o \
+	gl_ngraph.o \
+	gl_refrag.o \
+	gl_rlight.o \
+	gl_rmain.o \
+	gl_rmisc.o \
+	gl_rpart.o \
+	gl_rsurf.o \
+	gl_texture.o \
+	gl_warp.o \
+	vid_common_gl.o \
+	$(OSGLOBJS)
+	
 all:
 	@echo $(TARGETSYSTEM)
 	@echo OS: $(OS)
 	@echo CPU: $(CPU)
 
-	mkdir -p objects/$(TARGETSYSTEM)
-	(cd objects/$(TARGETSYSTEM); make -f ../../Makefile release)
+	mkdir -p objects/$(TARGETSYSTEM)/sw
+	(cd objects/$(TARGETSYSTEM)/sw; make -f $(VPATH)Makefile fodquake-sw)
+
+	mkdir -p objects/$(TARGETSYSTEM)/gl
+	(cd objects/$(TARGETSYSTEM)/gl; make -f $(VPATH)Makefile fodquake-gl RENDERERCFLAGS=-DGLQUAKE)
+
 
 clean:
 	rm -rf objects
 
-release: fodquake-sw
+release: fodquake-sw fodquake-gl
 
 fodquake-sw: $(OBJS) $(SWOBJS)
-	$(CC) $(CFLAGS) $^ -lm $(OSSWLDFLAGS) -o $@.db
+	$(CC) $(CFLAGS) $^ -lm $(OSLDFLAGS) $(OSSWLDFLAGS) -o $@.db
+	$(STRIP) $(STRIPFLAGS) $@.db -o $@
+
+fodquake-gl: $(OBJS) $(GLOBJS)
+	$(CC) $(CFLAGS) $^ -lm $(OSLDFLAGS) $(OSGLLDFLAGS) -o $@.db
 	$(STRIP) $(STRIPFLAGS) $@.db -o $@
 	

@@ -36,238 +36,242 @@
 #define WARP_WIDTH		320
 #define WARP_HEIGHT		200
 
-GLContext *__tglContext;
-
-static int glctx = 0;
-
-extern viddef_t vid;
-
-struct Screen *screen = 0;
-struct Window *window = 0;
-
-static void *pointermem;
-
 struct Library *TinyGLBase = 0;
+GLContext *__tglContext;
 
 qboolean vid_hwgamma_enabled = false;
 
-char pal[256*4];
-
-unsigned char *gammatable;
+extern viddef_t vid;
 
 cvar_t _windowed_mouse = {"_windowed_mouse", "1", CVAR_ARCHIVE};
 
-static unsigned int lastwindowedmouse;
-
 int real_width, real_height;
 
-void VID_Init(int width, int height, int depth, unsigned char *palette)
+struct display
 {
+	void *inputdata;
+
+	struct Screen *screen;
+	struct Window *window;
+
+	void *pointermem;
+
+	char pal[256*4];
+
+	unsigned char *gammatable;
+
+	unsigned int lastwindowedmouse;
+
+};
+
+void *Sys_Video_Open(int width, int height, int depth, int fullscreen, unsigned char *palette)
+{
+	struct display *d;
 	int argnum;
 
 	int r;
 
 	int i;
 
+	dprintf("Sys_Video_Open\n");
 	Cvar_Register(&_windowed_mouse);
 
-	if (IntuitionBase->LibNode.lib_Version > 50 || (IntuitionBase->LibNode.lib_Version == 50 && IntuitionBase->LibNode.lib_Revision >= 74))
+	d = AllocVec(sizeof(*d), MEMF_CLEAR);
 	{
-		gammatable = AllocVec(256*3, MEMF_ANY);
-		if (gammatable)
-			vid_hwgamma_enabled = 1;
-	}
-
-	vid.width = width;
-	vid.height = height;
-	vid.maxwarpwidth = WARP_WIDTH;
-	vid.maxwarpheight = WARP_HEIGHT;
-	vid.numpages = 1;
-	vid.colormap = host_colormap;
-	vid.fullbright = 256 - LittleLong (*((int *)vid.colormap + 2048));
-
-	if (vid.width <= 640)
-	{
-		vid.conwidth = vid.width;
-		vid.conheight = vid.height;
-	}
-	else
-	{
-		vid.conwidth = vid.width/2;
-		vid.conheight = vid.height/2;
-	}
-
-	if ((i = COM_CheckParm("-conwidth")) && i + 1 < com_argc)
-	{
-		vid.conwidth = Q_atoi(com_argv[i + 1]);
-
-		// pick a conheight that matches with correct aspect
-		vid.conheight = vid.conwidth * 3 / 4;
-	}
-
-	vid.conwidth &= 0xfff8; // make it a multiple of eight
-
-	if ((i = COM_CheckParm("-conheight")) && i + 1 < com_argc)
-		vid.conheight = Q_atoi(com_argv[i + 1]);
-
-	if (vid.conwidth < 320)
-		vid.conwidth = 320;
-
-	if (vid.conheight < 200)
-		vid.conheight = 200;
-
-	TinyGLBase = OpenLibrary("tinygl.library", 0);
-	if (TinyGLBase == 0)
-	{
-		Sys_Error("VID: Couldn't open tinygl.library");
-	}
-
-	vid.rowbytes = vid.width;
-	vid.direct = 0; /* Isn't used anywhere, but whatever. */
-	vid.aspect = ((float)vid.height / (float)vid.width) * (320.0 / 240.0);
-
-	argnum = COM_CheckParm("-window");
-
-	if (argnum == 0)
-	{
-		screen = OpenScreenTags(0,
-			SA_Width, vid.width,
-			SA_Height, vid.height,
-			SA_Depth, depth,
-			SA_Quiet, TRUE,
-			SA_GammaControl, TRUE,
-			SA_3DSupport, TRUE,
-			TAG_DONE);
-	}
-
-	window = OpenWindowTags(0,
-		WA_InnerWidth, vid.width,
-		WA_InnerHeight, vid.height,
-		WA_Title, "Fuhquake",
-		WA_DragBar, screen?FALSE:TRUE,
-		WA_DepthGadget, screen?FALSE:TRUE,
-		WA_Borderless, screen?TRUE:FALSE,
-		WA_RMBTrap, TRUE,
-		screen?WA_PubScreen:TAG_IGNORE, (ULONG)screen,
-		WA_Activate, TRUE,
-		TAG_DONE);
-
-	if (window == 0)
-		Sys_Error("Unable to open window");
-
-	if (screen == 0)
-		vid_hwgamma_enabled = 0;
-
-	__tglContext = GLInit();
-	if (__tglContext == 0)
-	{
-		Sys_Error("Unable to create GL context");
-	}
-
-	if (screen && !(TinyGLBase->lib_Version == 0 && TinyGLBase->lib_Revision < 4))
-	{
-		r = glAInitializeContextScreen(screen);
-	}
-	else
-	{
-		r = glAInitializeContextWindowed(window);
-	}
-
-	if (r == 0)
-	{
-		Sys_Error("Unable to initialize GL context");
-	}
-
-	glctx = 1;
-
-	pointermem = AllocVec(256, MEMF_ANY|MEMF_CLEAR);
-	if (pointermem == 0)
-	{
-		Sys_Error("Unable to allocate memory for mouse pointer");
-	}
-
-	SetPointer(window, pointermem, 16, 16, 0, 0);
-
-	lastwindowedmouse = 1;
-
-	real_width = vid.width;
-	real_height = vid.height;
-
-	if (vid.conheight > vid.height)
-		vid.conheight = vid.height;
-	if (vid.conwidth > vid.width)
-		vid.conwidth = vid.width;
-
-	vid.width = vid.conwidth;
-	vid.height = vid.conheight;
-
-	GL_Init();
-
-	VID_SetPalette(palette);
-
-	vid.recalc_refdef = 1;
-}
-
-void VID_Shutdown()
-{
-	if (glctx)
-	{
-		if (screen && !(TinyGLBase->lib_Version == 0 && TinyGLBase->lib_Revision < 4))
+		if (IntuitionBase->LibNode.lib_Version > 50 || (IntuitionBase->LibNode.lib_Version == 50 && IntuitionBase->LibNode.lib_Revision >= 74))
 		{
-			glADestroyContextScreen();
+			d->gammatable = AllocVec(256*3, MEMF_ANY);
+			if (d->gammatable)
+				vid_hwgamma_enabled = 1;
+		}
+
+		vid.width = width;
+		vid.height = height;
+		vid.maxwarpwidth = WARP_WIDTH;
+		vid.maxwarpheight = WARP_HEIGHT;
+		vid.numpages = 1;
+		vid.colormap = host_colormap;
+		vid.fullbright = 256 - LittleLong (*((int *)vid.colormap + 2048));
+
+		if (vid.width <= 640)
+		{
+			vid.conwidth = vid.width;
+			vid.conheight = vid.height;
 		}
 		else
 		{
-			glADestroyContextWindowed();
+			vid.conwidth = vid.width/2;
+			vid.conheight = vid.height/2;
 		}
 
-		glctx = 0;
+		if ((i = COM_CheckParm("-conwidth")) && i + 1 < com_argc)
+		{
+			vid.conwidth = Q_atoi(com_argv[i + 1]);
+
+			// pick a conheight that matches with correct aspect
+			vid.conheight = vid.conwidth * 3 / 4;
+		}
+
+		vid.conwidth &= 0xfff8; // make it a multiple of eight
+
+		if ((i = COM_CheckParm("-conheight")) && i + 1 < com_argc)
+			vid.conheight = Q_atoi(com_argv[i + 1]);
+
+		if (vid.conwidth < 320)
+			vid.conwidth = 320;
+
+		if (vid.conheight < 200)
+			vid.conheight = 200;
+
+		TinyGLBase = OpenLibrary("tinygl.library", 0);
+		if (TinyGLBase)
+		{
+
+			vid.rowbytes = vid.width;
+			vid.direct = 0; /* Isn't used anywhere, but whatever. */
+			vid.aspect = ((float)vid.height / (float)vid.width) * (320.0 / 240.0);
+
+			if (fullscreen)
+			{
+				d->screen = OpenScreenTags(0,
+					SA_Width, vid.width,
+					SA_Height, vid.height,
+					SA_Depth, depth,
+					SA_Quiet, TRUE,
+					SA_GammaControl, TRUE,
+					SA_3DSupport, TRUE,
+					TAG_DONE);
+			}
+
+			d->window = OpenWindowTags(0,
+				WA_InnerWidth, vid.width,
+				WA_InnerHeight, vid.height,
+				WA_Title, "Fodquake",
+				WA_DragBar, d->screen?FALSE:TRUE,
+				WA_DepthGadget, d->screen?FALSE:TRUE,
+				WA_Borderless, d->screen?TRUE:FALSE,
+				WA_RMBTrap, TRUE,
+				d->screen?WA_PubScreen:TAG_IGNORE, (ULONG)d->screen,
+				WA_Activate, TRUE,
+				TAG_DONE);
+
+			if (d->window)
+			{
+				if (d->screen == 0)
+					vid_hwgamma_enabled = 0;
+
+				__tglContext = GLInit();
+				if (__tglContext)
+				{
+					if (d->screen && !(TinyGLBase->lib_Version == 0 && TinyGLBase->lib_Revision < 4))
+					{
+						r = glAInitializeContextScreen(d->screen);
+					}
+					else
+					{
+						r = glAInitializeContextWindowed(d->window);
+					}
+
+					if (r)
+					{
+						d->pointermem = AllocVec(256, MEMF_ANY|MEMF_CLEAR);
+						if (d->pointermem)
+						{
+							SetPointer(d->window, d->pointermem, 16, 16, 0, 0);
+
+							d->lastwindowedmouse = 1;
+
+							real_width = vid.width;
+							real_height = vid.height;
+
+							if (vid.conheight > vid.height)
+								vid.conheight = vid.height;
+							if (vid.conwidth > vid.width)
+								vid.conwidth = vid.width;
+
+							vid.width = vid.conwidth;
+							vid.height = vid.conheight;
+
+							GL_Init();
+
+							VID_SetPalette(palette);
+
+							vid.recalc_refdef = 1;
+
+							d->inputdata = Sys_Input_Init(d->screen, d->window);
+							if (d->inputdata)
+							{
+								dprintf("Sys_Video_Open OK\n");
+								return d;
+							}
+
+							FreeVec(d->pointermem);
+						}
+
+						if (d->screen && !(TinyGLBase->lib_Version == 0 && TinyGLBase->lib_Revision < 4))
+							glADestroyContextScreen();
+						else
+							glADestroyContextWindowed();
+					}
+
+					GLClose(__tglContext);
+				}
+
+				if (d->screen)
+					CloseScreen(d->screen);
+
+				CloseWindow(d->window);
+			}
+
+			CloseLibrary(TinyGLBase);
+		}
+
+		FreeVec(d);
 	}
 
-	if (__tglContext)
-	{
-		GLClose(__tglContext);
-		__tglContext = 0;
-	}
+	dprintf("Sys_Video_Open fail\n");
 
-	if (window)
-	{
-		CloseWindow(window);
-		window = 0;
-	}
-
-	if (pointermem)
-	{
-		FreeVec(pointermem);
-		pointermem = 0;
-	}
-
-	if (screen)
-	{
-		CloseScreen(screen);
-		screen = 0;
-	}
-
-	if (TinyGLBase)
-	{
-		CloseLibrary(TinyGLBase);
-		TinyGLBase = 0;
-	}
-
-	if (gammatable)
-	{
-		FreeVec(gammatable);
-		gammatable = 0;
-	}
+	return 0;
 }
 
-void VID_ShiftPalette(unsigned char *p)
+void Sys_Video_Close(void *display)
 {
-	VID_SetPalette(p);
+	struct display *d = display;
+
+	Sys_Input_Shutdown(d->inputdata);
+
+	if (d->screen && !(TinyGLBase->lib_Version == 0 && TinyGLBase->lib_Revision < 4))
+		glADestroyContextScreen();
+	else
+		glADestroyContextWindowed();
+
+	GLClose(__tglContext);
+
+	CloseWindow(d->window);
+
+	FreeVec(d->pointermem);
+
+	if (d->screen)
+		CloseScreen(d->screen);
+
+	CloseLibrary(TinyGLBase);
+
+	if (d->gammatable)
+		FreeVec(d->gammatable);
 }
 
-void Sys_SendKeyEvents()
+void Sys_Video_GetEvents(void *display)
 {
+	struct display *d = display;
+
+	Sys_Input_GetEvents(d->inputdata);
+}
+
+void Sys_Video_GetMouseMovement(void *display)
+{
+	struct display *d = display;
+
+	Sys_Input_GetMouseMovement(d->inputdata);
 }
 
 void VID_LockBuffer()
@@ -302,45 +306,48 @@ void GL_BeginRendering (int *x, int *y, int *width, int *height)
 	*height = real_height;
 }
 
-void GL_EndRendering(void)
+void Sys_Video_Update(void *display, vrect_t *rects)
 {
-	/* Check for the windowed mouse setting here */
-	if (lastwindowedmouse != _windowed_mouse.value && !screen)
-	{
-		lastwindowedmouse = _windowed_mouse.value;
+	struct display *d = display;
 
-		if (lastwindowedmouse == 1)
+	/* Check for the windowed mouse setting here */
+	if (d->lastwindowedmouse != _windowed_mouse.value && !d->screen)
+	{
+		d->lastwindowedmouse = _windowed_mouse.value;
+
+		if (d->lastwindowedmouse == 1)
 		{
 			/* Hide pointer */
 
-			SetPointer(window, pointermem, 16, 16, 0, 0);
+			SetPointer(d->window, d->pointermem, 16, 16, 0, 0);
 		}
 		else
 		{
 			/* Show pointer */
 
-			ClearPointer(window);
+			ClearPointer(d->window);
 		}
 	}
 
 	glASwapBuffers();
 }
 
-void VID_SetDeviceGammaRamp(unsigned short *ramps)
+void Sys_Video_SetGamma(void *display, unsigned short *ramps)
 {
+	struct display *d = display;
 	int i;
 
-	if (vid_hwgamma_enabled)
+	if (d->screen && vid_hwgamma_enabled)
 	{
 		for(i=0;i<768;i++)
 		{
-			gammatable[i] = ramps[i]>>8;
+			d->gammatable[i] = ramps[i]>>8;
 		}
 
-		SetAttrs(screen,
-			SA_GammaRed, gammatable,
-			SA_GammaGreen, gammatable+256,
-			SA_GammaBlue, gammatable+512,
+		SetAttrs(d->screen,
+			SA_GammaRed, d->gammatable,
+			SA_GammaGreen, d->gammatable+256,
+			SA_GammaBlue, d->gammatable+512,
 			TAG_DONE);
 	}
 }

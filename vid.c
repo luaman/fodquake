@@ -82,7 +82,11 @@ void VID_Open()
 	if (display == 0)
 		Sys_Error("VID: Unable to open a display\n");
 
+#ifdef GLQUAKE
+	VID_SetPalette(pal);
+#else
 	Sys_Video_SetPalette(display, pal);
+#endif
 }
 
 void VID_Shutdown()
@@ -95,11 +99,14 @@ void VID_Update (vrect_t *rects)
 	Sys_Video_Update(display, rects);
 }
 
+#ifndef GLQUAKE
 void VID_SetPalette(byte *palette)
 {
 	memcpy(pal, palette, sizeof(pal));
 	Sys_Video_SetPalette(display, palette);
 }
+#endif
+
 
 void VID_GetEvents()
 {
@@ -110,4 +117,11 @@ void VID_GetMouseMovement(int *mousex, int *mousey)
 {
 	Sys_Video_GetMouseMovement(display, mousex, mousey);
 }
+
+#ifdef GLQUAKE
+void VID_SetDeviceGammaRamp(unsigned short *ramps)
+{
+	Sys_Video_SetGamma(display, ramps);
+}
+#endif
 

@@ -274,6 +274,6 @@ void R_TimeRefresh_f (void) {
 	Com_Printf ("%f seconds (%f fps)\n", time, 128/time);
 
 	glDrawBuffer  (GL_BACK);
-	GL_EndRendering ();
+	VID_Update(0);
 }
 
