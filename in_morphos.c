@@ -27,7 +27,8 @@ struct inputdata
 	int imsglow;
 	int imsghigh;
 
-	int mousex, mousey;
+	int mousebuf;
+	int mousex[3], mousey[3];
 };
 
 #ifndef SA_Displayed
@@ -101,6 +102,8 @@ void *Sys_Input_Init(struct Screen *screen, struct Window *window)
 		id->inputreq->io_Data = (void *)&id->InputHandler;
 		id->inputreq->io_Command = IND_ADDHANDLER;
 		DoIO((struct IORequest *)id->inputreq);
+
+		id->mousebuf = 0;
 	}
 
 	return id;
@@ -185,9 +188,6 @@ void Sys_Input_GetEvents(void *inputdata)
 				Key_Event(K_MOUSE3, true);
 			else if (id->imsgs[i].ie_Code == (IECODE_MBUTTON | IECODE_UP_PREFIX))
 				Key_Event(K_MOUSE3, false);
-
-			id->mousex += id->imsgs[i].ie_position.ie_xy.ie_x;
-			id->mousey += id->imsgs[i].ie_position.ie_xy.ie_y;
 		}
 
 		id->imsgs[i].ie_Class = IECLASS_NULL;
@@ -199,11 +199,15 @@ void Sys_Input_GetEvents(void *inputdata)
 void Sys_Input_GetMouseMovement(void *inputdata, int *mousex, int *mousey)
 {
 	struct inputdata *id = inputdata;
+	unsigned int mbuf;
 
-	*mousex = id->mousex;
-	*mousey = id->mousey;
-	id->mousex = 0;
-	id->mousey = 0;
+	mbuf = id->mousebuf;
+	id->mousebuf = (id->mousebuf+1)%3;
+
+	*mousex = id->mousex[mbuf];
+	*mousey = id->mousey[mbuf];
+	id->mousex[mbuf] = 0;
+	id->mousey[mbuf] = 0;
 }
 
 static char keyconv[] = {
@@ -502,7 +506,12 @@ static struct InputEvent *myinputhandler_real()
 
 	do
 	{
-		if (coin->ie_Class == IECLASS_RAWMOUSE || coin->ie_Class == IECLASS_RAWKEY || coin->ie_Class == IECLASS_NEWMOUSE)
+		if (coin->ie_Class == IECLASS_RAWMOUSE)
+		{
+			id->mousex[id->mousebuf] += coin->ie_position.ie_xy.ie_x;
+			id->mousey[id->mousebuf] += coin->ie_position.ie_xy.ie_y;
+		}
+		if ((coin->ie_Class == IECLASS_RAWMOUSE && coin->ie_Code != 0) || coin->ie_Class == IECLASS_RAWKEY || coin->ie_Class == IECLASS_NEWMOUSE)
 		{
 			if ((id->imsghigh > id->imsglow && !(id->imsghigh == MAXIMSGS - 1 && id->imsglow == 0)) || (id->imsghigh < id->imsglow && id->imsghigh != id->imsglow - 1) || id->imsglow == id->imsghigh)
 			{
@@ -514,17 +523,17 @@ static struct InputEvent *myinputhandler_real()
 			{
 				DEBUGRING(kprintf("FodQuake: message dropped, imsglow = %d, imsghigh = %d\n", id->imsglow, id->imsghigh));
 			}
-
-			if ((id->window->Flags & WFLG_WINDOWACTIVE) && coin->ie_Class == IECLASS_RAWMOUSE && screeninfront && id->window->MouseX > 0 && id->window->MouseY > 0)
-			{
-				if (_windowed_mouse.value)
-				{
-					coin->ie_position.ie_xy.ie_x = 0;
-					coin->ie_position.ie_xy.ie_y = 0;
-				}
-			}
 		}
 
+		if ((id->window->Flags & WFLG_WINDOWACTIVE) && coin->ie_Class == IECLASS_RAWMOUSE && screeninfront && id->window->MouseX > 0 && id->window->MouseY > 0)
+		{
+			if (_windowed_mouse.value)
+			{
+				coin->ie_position.ie_xy.ie_x = 0;
+				coin->ie_position.ie_xy.ie_y = 0;
+			}
+		}
+	
 		coin = coin->ie_NextEvent;
 	} while (coin);
 
