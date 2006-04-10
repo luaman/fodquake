@@ -506,6 +506,8 @@ void *Sys_Video_Open(int width, int height, int depth, int fullscreen, unsigned 
 				}
 			}
 		}
+#else
+		fullscreen = 0;
 #endif
 
 		template_mask = 0;
