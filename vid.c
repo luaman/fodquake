@@ -91,6 +91,7 @@ void VID_Open()
 
 	GL_InitTextureStuff();
 	Draw_Init();
+	Sbar_Init();
 #else
 	Sys_Video_SetPalette(display, pal);
 #endif

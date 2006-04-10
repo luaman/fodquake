@@ -852,7 +852,9 @@ void CL_Init (void)
 	CL_InitEnts ();
 	CL_InitTEnts ();
 	Rulesets_Init();
+#ifndef GLQUAKE
 	Sbar_Init ();
+#endif
 
 	NET_ClientConfig (true);
 
