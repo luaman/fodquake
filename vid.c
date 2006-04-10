@@ -99,6 +99,9 @@ void VID_Open()
 
 void VID_Shutdown()
 {
+#ifdef GLQUAKE
+	GL_FlushTextures();
+#endif
 	Sys_Video_Close(display);
 }
 

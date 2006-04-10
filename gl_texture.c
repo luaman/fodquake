@@ -419,6 +419,23 @@ gltexture_t *GL_FindTexture (char *identifier) {
 	return NULL;
 }
 
+void GL_FlushTextures()
+{
+	gltexture_t *glt;
+	int textures[MAX_GLTEXTURES];
+	int i;
+
+	for(i=0;i<numgltextures;i++)
+	{
+		textures[i] = glt->texnum;
+	}
+
+	glDeleteTextures(numgltextures, textures);
+
+	bzero(gltextures, sizeof(gltextures));
+	numgltextures = 0;
+}
+
 static gltexture_t *current_texture = NULL;
 
 #define CHECK_TEXTURE_ALREADY_LOADED	\
