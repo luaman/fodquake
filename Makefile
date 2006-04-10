@@ -32,6 +32,9 @@ ifeq ($(OS), linux)
 
 	OSSWOBJS=vid_x11.o in_x11.o
 	OSSWLDFLAGS=-L/usr/X11R6/lib -lX11 -lXext -lXxf86vm
+
+	OSGLOBJS=vid_glx.o in_x11.o
+	OSGLLDFLAGS=-L/usr/X11R6/lib -lX11 -lXext -lXxf86vm -lGL -lpthread
 endif
 
 ifeq ($(OS), cygwin)
