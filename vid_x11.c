@@ -25,7 +25,7 @@ typedef unsigned short PIXEL16;
 typedef unsigned int PIXEL24;
 
 #ifndef __CYGWIN__
-#define USE_VMODE
+#define USE_VMODE 1
 #endif
 
 #include <ctype.h>
@@ -42,7 +42,7 @@ typedef unsigned int PIXEL24;
 #include <X11/Xutil.h>
 #include <X11/Xatom.h>
 #include <X11/extensions/XShm.h>
-#ifdef USE_VMODE
+#if USE_VMODE
 #include <X11/extensions/xf86vmode.h>
 #endif
 
@@ -57,9 +57,9 @@ struct display
 	void *inputdata;
 #if USE_VMODE
 	XF86VidModeModeInfo **vidmodes;
+	qboolean vidmode_active;
 #endif
 	int scrnum;
-	qboolean vidmode_active;
 	qboolean doShm; 
 	Display *x_disp;
 	Colormap x_cmap;
@@ -457,7 +457,7 @@ void *Sys_Video_Open(int width, int height, int depth, int fullscreen, unsigned 
 
 		d->scrnum = DefaultScreen(d->x_disp);
 
-#ifdef USE_VMODE
+#if USE_VMODE
 		if (fullscreen)
 		{
 			int version, revision;
@@ -505,6 +505,8 @@ void *Sys_Video_Open(int width, int height, int depth, int fullscreen, unsigned 
 					fullscreen = 0;
 				}
 			}
+			else
+				fullscreen = 0;
 		}
 #else
 		fullscreen = 0;
@@ -621,7 +623,7 @@ void *Sys_Video_Open(int width, int height, int depth, int fullscreen, unsigned 
 			XRaiseWindow(d->x_disp, d->x_win);
 			XWarpPointer(d->x_disp, None, d->x_win, 0, 0, 0, 0, vid.width / 2, vid.height / 2);
 			XFlush(d->x_disp);
-#ifdef USE_VMODE
+#if USE_VMODE
 			XF86VidModeSetViewPort(d->x_disp, d->scrnum, 0, 0);
 #endif
 			XGrabKeyboard(d->x_disp, d->x_win, False, GrabModeAsync, GrabModeAsync, CurrentTime);
