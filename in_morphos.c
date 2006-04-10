@@ -70,6 +70,8 @@ void *Sys_Input_Init(struct Screen *screen, struct Window *window)
 	id = AllocVec(sizeof(*id), MEMF_ANY);
 	if (id)
 	{
+		id->imsglow = id->imsghigh = id->mousebuf = id->mousex[0] = id->mousex[1] = id->mousex[2] = id->mousey[0] = id->mousey[1] = id->mousey[2] = 0;
+
 		id->screen = screen;
 		id->window = window;
 
@@ -102,8 +104,6 @@ void *Sys_Input_Init(struct Screen *screen, struct Window *window)
 		id->inputreq->io_Data = (void *)&id->InputHandler;
 		id->inputreq->io_Command = IND_ADDHANDLER;
 		DoIO((struct IORequest *)id->inputreq);
-
-		id->mousebuf = 0;
 	}
 
 	return id;
@@ -511,7 +511,7 @@ static struct InputEvent *myinputhandler_real()
 			id->mousex[id->mousebuf] += coin->ie_position.ie_xy.ie_x;
 			id->mousey[id->mousebuf] += coin->ie_position.ie_xy.ie_y;
 		}
-		if ((coin->ie_Class == IECLASS_RAWMOUSE && coin->ie_Code != 0) || coin->ie_Class == IECLASS_RAWKEY || coin->ie_Class == IECLASS_NEWMOUSE)
+		if ((coin->ie_Class == IECLASS_RAWMOUSE && coin->ie_Code != IECODE_NOBUTTON) || coin->ie_Class == IECLASS_RAWKEY || coin->ie_Class == IECLASS_NEWMOUSE)
 		{
 			if ((id->imsghigh > id->imsglow && !(id->imsghigh == MAXIMSGS - 1 && id->imsglow == 0)) || (id->imsghigh < id->imsglow && id->imsghigh != id->imsglow - 1) || id->imsglow == id->imsghigh)
 			{
