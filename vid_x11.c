@@ -512,8 +512,6 @@ void *Sys_Video_Open(int width, int height, int depth, int fullscreen, unsigned 
 		fullscreen = 0;
 #endif
 
-		template_mask = 0;
-
 		// specify a visual id
 		if ((pnum = COM_CheckParm("-visualid")))
 		{
