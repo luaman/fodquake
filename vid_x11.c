@@ -24,6 +24,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 typedef unsigned short PIXEL16;
 typedef unsigned int PIXEL24;
 
+#ifndef __CYGWIN__
+#define USE_VMODE
+#endif
+
 #include <ctype.h>
 #include <sys/time.h>
 #include <sys/types.h>
@@ -38,7 +42,9 @@ typedef unsigned int PIXEL24;
 #include <X11/Xutil.h>
 #include <X11/Xatom.h>
 #include <X11/extensions/XShm.h>
+#ifdef USE_VMODE
 #include <X11/extensions/xf86vmode.h>
+#endif
 
 #include "quakedef.h"
 #include "d_local.h"
@@ -49,7 +55,9 @@ typedef unsigned int PIXEL24;
 struct display
 {
 	void *inputdata;
+#if USE_VMODE
 	XF86VidModeModeInfo **vidmodes;
+#endif
 	int scrnum;
 	qboolean vidmode_active;
 	qboolean doShm; 
@@ -449,6 +457,7 @@ void *Sys_Video_Open(int width, int height, int depth, int fullscreen, unsigned 
 
 		d->scrnum = DefaultScreen(d->x_disp);
 
+#ifdef USE_VMODE
 		if (fullscreen)
 		{
 			int version, revision;
@@ -497,6 +506,7 @@ void *Sys_Video_Open(int width, int height, int depth, int fullscreen, unsigned 
 				}
 			}
 		}
+#endif
 
 		template_mask = 0;
 
@@ -609,7 +619,9 @@ void *Sys_Video_Open(int width, int height, int depth, int fullscreen, unsigned 
 			XRaiseWindow(d->x_disp, d->x_win);
 			XWarpPointer(d->x_disp, None, d->x_win, 0, 0, 0, 0, vid.width / 2, vid.height / 2);
 			XFlush(d->x_disp);
+#ifdef USE_VMODE
 			XF86VidModeSetViewPort(d->x_disp, d->scrnum, 0, 0);
+#endif
 			XGrabKeyboard(d->x_disp, d->x_win, False, GrabModeAsync, GrabModeAsync, CurrentTime);
 		}
 
@@ -721,8 +733,10 @@ void Sys_Video_Close(void *display)
 	Sys_Input_Shutdown(d->inputdata);
 	
 	XAutoRepeatOn(d->x_disp);
+#if USE_VMODE
 	if (d->vidmode_active)
 		XF86VidModeSwitchToMode(d->x_disp, d->scrnum, d->vidmodes[0]);
+#endif
 	XCloseDisplay(d->x_disp);
 
 	free(d);
