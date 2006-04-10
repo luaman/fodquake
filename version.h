@@ -9,6 +9,8 @@
 #define QW_PLATFORM	"Linux"
 #elif defined(__MORPHOS__)
 #define QW_PLATFORM     "MorphOS"
+#elif defined(__CYGWIN__)
+#define QW_PLATFORM     "Cygwin"
 #endif
 
 #ifdef GLQUAKE
