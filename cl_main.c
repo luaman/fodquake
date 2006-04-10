@@ -837,7 +837,9 @@ void CL_Init (void)
 	VID_Init(host_basepal);
 
 	Image_Init();
+#ifndef GLQUAKE
 	Draw_Init ();
+#endif
 	SCR_Init ();
 	R_Init ();
 

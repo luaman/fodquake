@@ -7,7 +7,11 @@
 static void *display;
 
 #warning Fixme
+#ifdef GLQUAKE
+cvar_t vid_ref = { "vid_ref", "gl", CVAR_ROM };
+#else
 cvar_t vid_ref = { "vid_ref", "soft", CVAR_ROM };
+#endif
 
 cvar_t vid_fullscreen = { "vid_fullscreen", "1", CVAR_ARCHIVE };
 cvar_t vid_width = { "vid_width", "640", CVAR_ARCHIVE };
@@ -84,6 +88,9 @@ void VID_Open()
 
 #ifdef GLQUAKE
 	VID_SetPalette(pal);
+
+	GL_InitTextureStuff();
+	Draw_Init();
 #else
 	Sys_Video_SetPalette(display, pal);
 #endif

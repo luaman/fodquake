@@ -184,9 +184,7 @@ void Host_Init (int argc, char **argv, int default_memsize) {
 	D_CvarInit();
 #endif
 	Image_CvarInit();
-#ifndef GLQUAKE
 	R_CvarInit();
-#endif
 	Con_CvarInit();
 	SCR_CvarInit();
 	CL_CvarInit();
@@ -204,9 +202,7 @@ void Host_Init (int argc, char **argv, int default_memsize) {
 	CL_CvarInitPrediction();
 	Netchan_CvarInit();
 	Stats_CvarInit();
-#ifndef GLQUAKE
 	Draw_CvarInit();
-#endif
 	Key_CvarInit();
 	CL_CvarInitCam();
 	M_CvarInit();
@@ -258,7 +254,9 @@ void Host_Init (int argc, char **argv, int default_memsize) {
 	Mod_Init ();
 
 	SV_Init ();
+	printf("Running CL_Init\n");
 	CL_Init ();
+	printf("CL_Init done\n");
 
 #ifndef SERVERONLY
 	

@@ -617,7 +617,8 @@ int GL_LoadCharsetImage (char *filename, char *identifier) {
 	return texnum;
 }
 
-void GL_Texture_Init(void) {
+void GL_Texture_CvarInit(void)
+{
 	Cvar_SetCurrentGroup(CVAR_GROUP_TEXTURES);
 	Cvar_Register(&gl_max_size);
 	Cvar_Register(&gl_picmip);
@@ -628,7 +629,12 @@ void GL_Texture_Init(void) {
 	Cvar_Register(&gl_miptexLevel);
 	Cvar_Register(&gl_externalTextures_world);
 	Cvar_Register(&gl_externalTextures_bmodels);
+	Cvar_ResetCurrentGroup();
+}
 
+
+void GL_Texture_Init(void)
+{
 	glGetIntegerv(GL_MAX_TEXTURE_SIZE, &gl_max_size_default);
 	Cvar_SetDefault(&gl_max_size, gl_max_size_default);
 

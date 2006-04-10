@@ -921,8 +921,8 @@ void R_SetupGL (void) {
 	glEnable(GL_DEPTH_TEST);
 }
 
-
-void R_Init (void) {
+void R_CvarInit(void)
+{
 	Cmd_AddCommand ("loadsky", R_LoadSky_f);
 	Cmd_AddCommand ("timerefresh", R_TimeRefresh_f);
 #ifndef CLIENTONLY
@@ -996,17 +996,12 @@ void R_Init (void) {
 	Cvar_Register (&r_netgraph);
 
 	Cvar_ResetCurrentGroup();
+}
 
-	// this minigl driver seems to slow us down if the particles are drawn WITHOUT Z buffer bits 
-	if (!strcmp(gl_vendor, "METABYTE/WICKED3D")) 
-		Cvar_SetDefault(&gl_solidparticles, 1); 
-
-	if (!gl_allow_ztrick)
-		Cvar_SetDefault(&gl_ztrick, 0); 
-
-	R_InitTextures ();
-	R_InitBubble ();
-	R_InitParticles ();
+void R_Init (void)
+{
+	R_InitTextures();
+	R_InitBubble();
 
 	netgraphtexture = texture_extension_number;
 	texture_extension_number++;
@@ -1018,10 +1013,24 @@ void R_Init (void) {
 	texture_extension_number += MAX_CLIENTS;
 	skyboxtextures = texture_extension_number;
 	texture_extension_number += 6;
+}
+
+void GL_InitTextureStuff(void)
+{
+	printf("Setting blah\n");
+	// this minigl driver seems to slow us down if the particles are drawn WITHOUT Z buffer bits 
+	if (!strcmp(gl_vendor, "METABYTE/WICKED3D")) 
+		Cvar_SetDefault(&gl_solidparticles, 1); 
+
+	printf("Bluh\n");
+	if (!gl_allow_ztrick)
+		Cvar_SetDefault(&gl_ztrick, 0); 
+
+	printf("R_InitTextures\n");
+	R_InitParticles ();
 
 	R_InitOtherTextures ();		
 }
-
 
 extern msurface_t	*alphachain;
 void R_RenderScene (void) {

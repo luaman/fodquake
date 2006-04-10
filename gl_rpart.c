@@ -214,7 +214,8 @@ do {																													\
 	count++;																											\
 } while(0);
 
-void QMB_InitParticles (void) {
+void QMB_InitParticles(void)
+{
 	int	i, count = 0, particlefont;
 
 	Cvar_SetCurrentGroup(CVAR_GROUP_PARTICLES);

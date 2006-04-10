@@ -392,38 +392,44 @@ void Draw_InitConback (void) {
 	Hunk_FreeToLowMark (start);
 }
 
-static int Draw_LoadCharset(char *name) {
+static int Draw_LoadCharset(char *name)
+{
 	int texnum;
 
-	if (!Q_strcasecmp(name, "original")) {
+	printf("Draw_LoadCharset()\n");
+
+	if (!Q_strcasecmp(name, "original"))
+	{
 		int i;
 		char buf[128 * 256], *src, *dest;
 
 		memset (buf, 255, sizeof(buf));
 		src = draw_chars;
 		dest = buf;
-		for (i = 0; i < 16; i++) {
+		for (i = 0; i < 16; i++)
+		{
 			memcpy (dest, src, 128 * 8);
 			src += 128 * 8;
 			dest += 128 * 8 * 2;
 		}
 		char_texture = GL_LoadTexture ("pic:charset", 128, 256, buf, TEX_ALPHA, 1);
-		goto done;
 	}
-
-	if ((texnum = GL_LoadCharsetImage (va("textures/charsets/%s", name), "pic:charset"))) {
+	else if ((texnum = GL_LoadCharsetImage (va("textures/charsets/%s", name), "pic:charset")))
+	{
 		char_texture = texnum;
-		goto done;
+	}
+	else
+	{
+		Com_Printf ("Couldn't load charset \"%s\"\n", name);
+		return 1;
 	}
 
-	Com_Printf ("Couldn't load charset \"%s\"\n", name);
-	return 1;
-
-done:
-	if (!gl_smoothfont.value) {
+	if (!gl_smoothfont.value)
+	{
 		glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	}
+
 	return 0;
 }
 
@@ -462,9 +468,8 @@ void Draw_InitCharset(void) {
 		Sys_Error("Draw_InitCharset: Couldn't load charset");
 }
 
-void Draw_Init (void) {
-	int i;
-
+void Draw_CvarInit(void)
+{
 	Cmd_AddCommand("loadcharset", Draw_LoadCharset_f);	
 
 	Cvar_SetCurrentGroup(CVAR_GROUP_CONSOLE);
@@ -480,6 +485,15 @@ void Draw_Init (void) {
 	Cvar_Register (&gl_crosshairalpha);
 
 	Cvar_ResetCurrentGroup();
+
+	GL_Texture_CvarInit();
+}
+
+void Draw_Init (void)
+{
+	int i;
+
+	printf("Draw_Init\n");
 
 	GL_Texture_Init();
 
