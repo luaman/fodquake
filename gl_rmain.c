@@ -996,12 +996,16 @@ void R_CvarInit(void)
 	Cvar_Register (&r_netgraph);
 
 	Cvar_ResetCurrentGroup();
+
+	GL_Particles_CvarInit();
 }
 
 void R_Init (void)
 {
 	R_InitTextures();
 	R_InitBubble();
+
+	R_InitParticles ();
 
 	netgraphtexture = texture_extension_number;
 	texture_extension_number++;
@@ -1027,7 +1031,7 @@ void GL_InitTextureStuff(void)
 		Cvar_SetDefault(&gl_ztrick, 0); 
 
 	printf("R_InitTextures\n");
-	R_InitParticles ();
+	Classic_LoadParticleTextures();
 
 	R_InitOtherTextures ();		
 }

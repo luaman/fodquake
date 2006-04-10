@@ -214,19 +214,26 @@ do {																													\
 	count++;																											\
 } while(0);
 
-void QMB_InitParticles(void)
+void GL_Particles_CvarInit(void)
 {
-	int	i, count = 0, particlefont;
-
 	Cvar_SetCurrentGroup(CVAR_GROUP_PARTICLES);
 	Cvar_Register (&gl_clipparticles);
 	Cvar_Register (&gl_bounceparticles);
 
 	Cvar_ResetCurrentGroup();
+}
+
+void GL_Particles_TextureInit(void)
+{
+	int i, count = 0, particlefont;
 
 	if (!(particlefont = GL_LoadTextureImage ("textures/particles/particlefont", "qmb:particlefont", 256, 256, TEX_ALPHA | TEX_COMPLAIN))) 
+	{
+		qmb_initialized = false;
 		return;		
+	}
 
+	qmb_initialized = true;
 	
 	ADD_PARTICLE_TEXTURE(ptex_none, 0, 0, 1, 0, 0, 0, 0);	
 	ADD_PARTICLE_TEXTURE(ptex_blood1, particlefont, 0, 1, 0, 0, 64, 64);
@@ -240,16 +247,6 @@ void QMB_InitParticles(void)
 	for (i = 0; i < 8; i++)
 		ADD_PARTICLE_TEXTURE(ptex_dpsmoke, particlefont, i, 8, i * 32, 64, (i + 1) * 32, 96);
 
-	
-	if ((i = COM_CheckParm ("-particles")) && i + 1 < com_argc)	{
-		r_numparticles = (int) (Q_atoi(com_argv[i + 1]));
-		r_numparticles = bound(ABSOLUTE_MIN_PARTICLES, r_numparticles, ABSOLUTE_MAX_PARTICLES);
-	} else {
-		r_numparticles = DEFAULT_NUM_PARTICLES;
-	}
-	particles = Hunk_AllocName(r_numparticles * sizeof(particle_t), "qmb:particles");
-
-	
 	ADD_PARTICLE_TYPE(p_spark, pd_spark, GL_SRC_ALPHA, GL_ONE, ptex_none, 255, -32, 0, pm_bounce, 1.3);
 	ADD_PARTICLE_TYPE(p_sparkray, pd_sparkray, GL_SRC_ALPHA, GL_ONE, ptex_none, 255, -0, 0, pm_nophysics, 0);
 	ADD_PARTICLE_TYPE(p_gunblast, pd_spark, GL_SRC_ALPHA, GL_ONE, ptex_none, 255, -16, 0, pm_bounce, 1.3);
@@ -273,8 +270,22 @@ void QMB_InitParticles(void)
 	ADD_PARTICLE_TYPE(p_blood3, pd_billboard, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, ptex_blood3, 255, -20, 0, pm_normal, 0);
 	ADD_PARTICLE_TYPE(p_bubble, pd_billboard, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, ptex_bubble, 204, 8, 0, pm_float, 0);
 	ADD_PARTICLE_TYPE(p_staticbubble, pd_billboard, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, ptex_bubble, 204, 0, 0, pm_static, 0);
+}
 
-	qmb_initialized = true;
+void QMB_InitParticles(void)
+{
+	int i;
+
+	if ((i = COM_CheckParm ("-particles")) && i + 1 < com_argc)
+	{
+		r_numparticles = (int) (Q_atoi(com_argv[i + 1]));
+		r_numparticles = bound(ABSOLUTE_MIN_PARTICLES, r_numparticles, ABSOLUTE_MAX_PARTICLES);
+	}
+	else
+	{
+		r_numparticles = DEFAULT_NUM_PARTICLES;
+	}
+	particles = Hunk_AllocName(r_numparticles * sizeof(particle_t), "qmb:particles");
 }
 
 void QMB_ClearParticles (void) {

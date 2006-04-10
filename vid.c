@@ -90,6 +90,7 @@ void VID_Open()
 	VID_SetPalette(pal);
 
 	GL_InitTextureStuff();
+	GL_Particles_TextureInit();
 	Draw_Init();
 	Sbar_Init();
 #else

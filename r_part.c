@@ -177,7 +177,7 @@ void D_DrawParticle (particle_t *pparticle) {
 #endif	// !id386
 
 #ifdef GLQUAKE
-static void Classic_LoadParticleTexures (void) {
+void Classic_LoadParticleTextures (void) {
 	int	i, x, y;
 	unsigned int data[32][32];
 
@@ -214,10 +214,6 @@ void Classic_InitParticles (void) {
 	}
 
 	particles = (particle_t *) Hunk_AllocName (r_numparticles * sizeof(particle_t), "classic:particles");
-
-#ifdef GLQUAKE
-	Classic_LoadParticleTexures();
-#endif
 }
 
 void Classic_ClearParticles (void) {
