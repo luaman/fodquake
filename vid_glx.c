@@ -218,6 +218,8 @@ void Sys_Video_Close(void *display)
 		XF86VidModeSwitchToMode(d->x_disp, d->scrnum, d->vidmodes[0]);
 
 	XCloseDisplay(d->x_disp);
+
+	free(d);
 }
 
 /************************************* VID INIT *************************************/
@@ -275,7 +277,7 @@ void *Sys_Video_Open(int width, int height, int depth, int fullscreen, unsigned 
 	d = malloc(sizeof(*d));
 	if (d)
 	{
-		bzero(d, sizeof(d));
+		bzero(d, sizeof(*d));
 	d->x_disp = XOpenDisplay(NULL);
 	if (d->x_disp)
 	{
