@@ -34,6 +34,16 @@ ifeq ($(OS), linux)
 	OSSWLDFLAGS=-L/usr/X11R6/lib -lX11 -lXext -lXxf86vm
 endif
 
+ifeq ($(OS), cygwin)
+	OSOBJS= \
+		sys_linux.o \
+		cd_null.o \
+		snd_null.o
+
+	OSSWOBJS=vid_x11.o in_x11.o
+	OSSWLDFLAGS=-L/usr/X11R6/lib -lX11 -lXext
+endif
+
 ifeq ($(OS), mingw32)
 	OSOBJS= \
 		sys_win.o \
