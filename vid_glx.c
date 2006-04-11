@@ -58,10 +58,9 @@ struct display
 
 	qboolean vid_gammaworks;
 	unsigned short systemgammaramp[3][256];
+	unsigned short *currentgammaramp;
 };
 
-
-static float old_windowed_mouse = 0, mouse_x, mouse_y, old_mouse_x, old_mouse_y;
 
 #define WARP_WIDTH		320
 #define WARP_HEIGHT		200
@@ -70,8 +69,6 @@ static float old_windowed_mouse = 0, mouse_x, mouse_y, old_mouse_x, old_mouse_y;
 #define MOUSE_MASK (ButtonPressMask | ButtonReleaseMask | PointerMotionMask)
 
 #define X_MASK (KEY_MASK | MOUSE_MASK | VisibilityChangeMask)
-
-unsigned short *currentgammaramp = NULL;
 
 qboolean vid_hwgamma_enabled = false;
 qboolean customgamma = false;
@@ -157,7 +154,7 @@ void Sys_Video_SetGamma(struct display *display, unsigned short *ramps)
 
 	if (d->vid_gammaworks)
 	{
-		currentgammaramp = ramps;
+		d->currentgammaramp = ramps;
 		if (vid_hwgamma_enabled)
 		{
 			XF86VidModeSetGammaRamp(d->x_disp, d->scrnum, 256, ramps, ramps + 256, ramps + 512);
@@ -194,8 +191,8 @@ void Sys_Video_Update(void *display, vrect_t *rects)
 	vid_hwgamma_enabled = vid_hwgammacontrol.value && d->vid_gammaworks;
 	if (vid_hwgamma_enabled != old_hwgamma_enabled) {
 		old_hwgamma_enabled = vid_hwgamma_enabled;
-		if (vid_hwgamma_enabled && currentgammaramp)
-			VID_SetDeviceGammaRamp (currentgammaramp);
+		if (vid_hwgamma_enabled && d->currentgammaramp)
+			VID_SetDeviceGammaRamp(d->currentgammaramp);
 		else
 			RestoreHWGamma(d);
 	}
