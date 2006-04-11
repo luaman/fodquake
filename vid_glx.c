@@ -55,6 +55,9 @@ struct display
 	Window x_win;
 	GLXContext ctx;
 	int scrnum;
+
+	qboolean vid_gammaworks;
+	unsigned short systemgammaramp[3][256];
 };
 
 
@@ -69,17 +72,11 @@ static float old_windowed_mouse = 0, mouse_x, mouse_y, old_mouse_x, old_mouse_y;
 #define X_MASK (KEY_MASK | MOUSE_MASK | VisibilityChangeMask)
 
 unsigned short *currentgammaramp = NULL;
-static unsigned short systemgammaramp[3][256];
 
-qboolean vid_gammaworks = false;
 qboolean vid_hwgamma_enabled = false;
 qboolean customgamma = false;
 
 static int scr_width, scr_height;
-
-#ifdef WITH_DGA
-static int dgamouse, dgakeyb;
-#endif
 
 void Sys_Video_GetEvents(void *display)
 {
@@ -143,13 +140,13 @@ static void InitHWGamma(struct display *d)
 
 	XF86VidModeGetGammaRampSize(d->x_disp, d->scrnum, &xf86vm_gammaramp_size);
 	
-	vid_gammaworks = (xf86vm_gammaramp_size == 256);
+	d->vid_gammaworks = (xf86vm_gammaramp_size == 256);
 
-	if (vid_gammaworks)
+	if (d->vid_gammaworks)
 	{
-		XF86VidModeGetGammaRamp(d->x_disp, d->scrnum, xf86vm_gammaramp_size, systemgammaramp[0], systemgammaramp[1], systemgammaramp[2]);
+		XF86VidModeGetGammaRamp(d->x_disp, d->scrnum, xf86vm_gammaramp_size, d->systemgammaramp[0], d->systemgammaramp[1], d->systemgammaramp[2]);
 	}
-	vid_hwgamma_enabled = vid_hwgammacontrol.value && vid_gammaworks; // && fullscreen?
+	vid_hwgamma_enabled = vid_hwgammacontrol.value && d->vid_gammaworks; // && fullscreen?
 #endif
 }
 
@@ -158,7 +155,7 @@ void Sys_Video_SetGamma(struct display *display, unsigned short *ramps)
 #if USE_VMODE
 	struct display *d = display;
 
-	if (vid_gammaworks)
+	if (d->vid_gammaworks)
 	{
 		currentgammaramp = ramps;
 		if (vid_hwgamma_enabled)
@@ -173,10 +170,10 @@ void Sys_Video_SetGamma(struct display *display, unsigned short *ramps)
 static void RestoreHWGamma(struct display *d)
 {
 #if USE_VMODE
-	if (vid_gammaworks && customgamma)
+	if (d->vid_gammaworks && customgamma)
 	{
 		customgamma = false;
-		XF86VidModeSetGammaRamp(d->x_disp, d->scrnum, 256, systemgammaramp[0], systemgammaramp[1], systemgammaramp[2]);
+		XF86VidModeSetGammaRamp(d->x_disp, d->scrnum, 256, d->systemgammaramp[0], d->systemgammaramp[1], d->systemgammaramp[2]);
 	}
 #endif
 }
@@ -194,7 +191,7 @@ void Sys_Video_Update(void *display, vrect_t *rects)
 	struct display *d = display;
 	static qboolean old_hwgamma_enabled;
 
-	vid_hwgamma_enabled = vid_hwgammacontrol.value && vid_gammaworks;
+	vid_hwgamma_enabled = vid_hwgammacontrol.value && d->vid_gammaworks;
 	if (vid_hwgamma_enabled != old_hwgamma_enabled) {
 		old_hwgamma_enabled = vid_hwgamma_enabled;
 		if (vid_hwgamma_enabled && currentgammaramp)
@@ -397,6 +394,7 @@ void *Sys_Video_Open(int width, int height, int depth, int fullscreen, unsigned 
 				XFlush(d->x_disp);
 				// Move the viewport to top left
 				XF86VidModeSetViewPort(d->x_disp, d->scrnum, 0, 0);
+				XGrabKeyboard(d->x_disp, d->x_win, False, GrabModeAsync, GrabModeAsync, CurrentTime);
 			}
 #endif
 
