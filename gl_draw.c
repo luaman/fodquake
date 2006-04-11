@@ -396,8 +396,6 @@ static int Draw_LoadCharset(char *name)
 {
 	int texnum;
 
-	printf("Draw_LoadCharset()\n");
-
 	if (!Q_strcasecmp(name, "original"))
 	{
 		int i;
@@ -492,8 +490,6 @@ void Draw_CvarInit(void)
 void Draw_Init (void)
 {
 	int i;
-
-	printf("Draw_Init\n");
 
 	GL_Texture_Init();
 

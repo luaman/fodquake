@@ -1021,16 +1021,13 @@ void R_Init (void)
 
 void GL_InitTextureStuff(void)
 {
-	printf("Setting blah\n");
 	// this minigl driver seems to slow us down if the particles are drawn WITHOUT Z buffer bits 
 	if (!strcmp(gl_vendor, "METABYTE/WICKED3D")) 
 		Cvar_SetDefault(&gl_solidparticles, 1); 
 
-	printf("Bluh\n");
 	if (!gl_allow_ztrick)
 		Cvar_SetDefault(&gl_ztrick, 0); 
 
-	printf("R_InitTextures\n");
 	Classic_LoadParticleTextures();
 
 	R_InitOtherTextures ();		

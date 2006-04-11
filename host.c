@@ -254,9 +254,7 @@ void Host_Init (int argc, char **argv, int default_memsize) {
 	Mod_Init ();
 
 	SV_Init ();
-	printf("Running CL_Init\n");
 	CL_Init ();
-	printf("CL_Init done\n");
 
 #ifndef SERVERONLY
 	
