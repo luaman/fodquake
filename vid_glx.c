@@ -135,6 +135,7 @@ void VID_ShiftPalette(unsigned char *p) {}
 
 static void InitHWGamma(struct display *d)
 {
+#if USE_VMODE
 	int xf86vm_gammaramp_size;
 
 	if (COM_CheckParm("-nohwgamma"))
@@ -149,10 +150,12 @@ static void InitHWGamma(struct display *d)
 		XF86VidModeGetGammaRamp(d->x_disp, d->scrnum, xf86vm_gammaramp_size, systemgammaramp[0], systemgammaramp[1], systemgammaramp[2]);
 	}
 	vid_hwgamma_enabled = vid_hwgammacontrol.value && vid_gammaworks; // && fullscreen?
+#endif
 }
 
 void Sys_Video_SetGamma(struct display *display, unsigned short *ramps)
 {
+#if USE_VMODE
 	struct display *d = display;
 
 	if (vid_gammaworks)
@@ -164,15 +167,18 @@ void Sys_Video_SetGamma(struct display *display, unsigned short *ramps)
 			customgamma = true;
 		}
 	}
+#endif
 }
 
 static void RestoreHWGamma(struct display *d)
 {
+#if USE_VMODE
 	if (vid_gammaworks && customgamma)
 	{
 		customgamma = false;
 		XF86VidModeSetGammaRamp(d->x_disp, d->scrnum, 256, systemgammaramp[0], systemgammaramp[1], systemgammaramp[2]);
 	}
+#endif
 }
 
 /************************************* GL *************************************/
@@ -214,8 +220,10 @@ void Sys_Video_Close(void *display)
 	glXDestroyContext(d->x_disp, d->ctx);
 	XDestroyWindow(d->x_disp, d->x_win);
 
+#ifdef USE_VMODE
 	if (d->vidmode_active)
 		XF86VidModeSwitchToMode(d->x_disp, d->scrnum, d->vidmodes[0]);
+#endif
 
 	XCloseDisplay(d->x_disp);
 
@@ -307,6 +315,7 @@ void *Sys_Video_Open(int width, int height, int depth, int fullscreen, unsigned 
 			if (vid.conheight < 200)
 				vid.conheight = 200;
 
+#ifdef USE_VMODE
 			if (fullscreen)
 			{
 				int version, revision;
@@ -352,7 +361,12 @@ void *Sys_Video_Open(int width, int height, int depth, int fullscreen, unsigned 
 					else
 						fullscreen = 0;
 				}
+				else
+					fullscreen = 0;
 			}
+#else
+			fullscreen = 0;
+#endif
 
 			// window attributes
 			attr.background_pixel = 0;
@@ -375,6 +389,7 @@ void *Sys_Video_Open(int width, int height, int depth, int fullscreen, unsigned 
 
 			XMapWindow(d->x_disp, d->x_win);
 
+#if USE_VMODE
 			if (fullscreen)
 			{
 				XRaiseWindow(d->x_disp, d->x_win);
@@ -383,6 +398,7 @@ void *Sys_Video_Open(int width, int height, int depth, int fullscreen, unsigned 
 				// Move the viewport to top left
 				XF86VidModeSetViewPort(d->x_disp, d->scrnum, 0, 0);
 			}
+#endif
 
 			XFlush(d->x_disp);
 
