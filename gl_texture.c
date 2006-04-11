@@ -39,7 +39,7 @@ extern float vid_gamma;
 
 
 int texture_extension_number = 1;
-int	gl_max_size_default;		
+int	gl_max_size_default;
 int	gl_lightmap_format = 3, gl_solid_format = 3, gl_alpha_format = 4;
 
 
@@ -78,7 +78,7 @@ qboolean OnChange_gl_max_size (cvar_t *var, char *string) {
 	int i;
 	float newvalue = Q_atof(string);
 
-	if (newvalue > gl_max_size_default) {
+	if (gl_max_size_default && newvalue > gl_max_size_default) {
 		Com_Printf("Your hardware doesn't support texture sizes bigger than %dx%d\n", gl_max_size_default, gl_max_size_default);
 		return true;
 	}
@@ -654,8 +654,16 @@ void GL_Texture_CvarInit(void)
 
 void GL_Texture_Init(void)
 {
+	int oldflags;
+
 	glGetIntegerv(GL_MAX_TEXTURE_SIZE, &gl_max_size_default);
 	Cvar_SetDefault(&gl_max_size, gl_max_size_default);
+
+	/* Prevent setting the modified flag */
+	oldflags = Cvar_GetFlags(&gl_max_size);
+	if (gl_max_size.value > gl_max_size_default)
+		Cvar_SetValue(&gl_max_size, gl_max_size_default);
+	Cvar_SetFlags(&gl_max_size, oldflags);
 
 	no24bit = COM_CheckParm("-no24bit") ? true : false;
 	forceTextureReload = COM_CheckParm("-forceTextureReload") ? true : false;
