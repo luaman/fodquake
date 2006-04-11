@@ -25,13 +25,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "cvar_groups.h"
 
 // cvar flags
-#define CVAR_ARCHIVE		1
-#define CVAR_USERINFO		2       // mirrored to userinfo
-#define CVAR_SERVERINFO		4		// mirrored to serverinfo
-#define CVAR_ROM			8		// read only
-#define CVAR_INIT			16		// can only be set during initialization
-#define	CVAR_USER_CREATED	32		// created by a set command
-#define	CVAR_USER_ARCHIVE	64		// created by a seta command
+#define CVAR_ARCHIVE        1
+#define CVAR_USERINFO       2    // mirrored to userinfo
+#define CVAR_SERVERINFO     4    // mirrored to serverinfo
+#define CVAR_ROM            8    // read only
+#define CVAR_INIT           16   // can only be set during initialization
+#define CVAR_USER_CREATED   32   // created by a set command
+#define CVAR_USER_ARCHIVE   64   // created by a seta command
+#define CVAR_CHANGED        128  // Changed from the default value
 
 typedef struct cvar_s {
 	char	*name;

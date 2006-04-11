@@ -51,6 +51,8 @@ cvar_t *Cvar_FindVar (char *var_name) {
 void Cvar_ResetVar (cvar_t *var) {
 	if (var && strcmp(var->string, var->defaultvalue))
 		Cvar_Set(var, var->defaultvalue);
+
+	var->flags&= ~CVAR_CHANGED;
 }
 
 void Cvar_Reset_f (void) {
@@ -86,7 +88,8 @@ void Cvar_SetDefault(cvar_t *var, float value) {
 		val[i] = 0;
 	Z_Free (var->defaultvalue);
 	var->defaultvalue = CopyString(val);
-	Cvar_Set(var, val);
+	if (!(var->flags & CVAR_CHANGED))
+		Cvar_Set(var, val);
 }
 
 
@@ -168,6 +171,8 @@ void Cvar_Set (cvar_t *var, char *value) {
 #endif
 		return;
 	}
+
+	var->flags|= CVAR_CHANGED;
 
 	if (var->OnChange && !changing) {
 		changing = true;
@@ -542,7 +547,7 @@ void Cvar_Set_f (void) {
 			Com_Printf ("\"%s\" is a command\n", var_name);
 			return;
 		}
-		var = Cvar_Create (var_name, Cmd_Argv(2), CVAR_USER_CREATED);
+		var = Cvar_Create (var_name, Cmd_Argv(2), CVAR_USER_CREATED|CVAR_CHANGED);
 	}
 
 	if (cvar_seta)
@@ -592,3 +597,4 @@ void Cvar_Init (void) {
 
 	Cvar_ResetCurrentGroup();
 }
+
