@@ -677,7 +677,7 @@ void *Sys_Video_Open(int width, int height, int depth, int fullscreen, unsigned 
 
 		shiftmask_init(d);
 		
-		d->inputdata = Sys_Input_Init(d->x_disp, d->x_win, x_shmeventtype);
+		d->inputdata = X11_Input_Init(d->x_disp, d->x_win, x_shmeventtype);
 		
 		return d;
 	}
@@ -689,14 +689,14 @@ void Sys_Video_GetEvents(void *display)
 {
 	struct display *d = display;
 
-	Sys_Input_GetEvents(d->inputdata);
+	X11_Input_GetEvents(d->inputdata);
 }
 
 void Sys_Video_GetMouseMovement(void *display, int *mousex, int *mousey)
 {
 	struct display *d = display;
 
-	Sys_Input_GetMouseMovement(d->inputdata, mousex, mousey);
+	X11_Input_GetMouseMovement(d->inputdata, mousex, mousey);
 }
 
 void Sys_Video_SetPalette(void *display, unsigned char *palette)
@@ -732,7 +732,7 @@ void Sys_Video_Close(void *display)
 {
 	struct display *d = display;
 
-	Sys_Input_Shutdown(d->inputdata);
+	X11_Input_Shutdown(d->inputdata);
 	
 	XAutoRepeatOn(d->x_disp);
 #if USE_VMODE
@@ -754,7 +754,7 @@ void Sys_Video_Update(void *display, vrect_t *rects)
 	int config_notify_width;
 	int config_notify_height;
 
-	Sys_Input_GetConfigNotify(d->inputdata, &config_notify, &config_notify_width, &config_notify_height);
+	X11_Input_GetConfigNotify(d->inputdata, &config_notify, &config_notify_width, &config_notify_height);
 	
 	// if the window changes dimension, skip this frame
 	if (config_notify && ((config_notify_width&~7) != vid.width || config_notify_height != vid.height))
@@ -787,7 +787,7 @@ void Sys_Video_Update(void *display, vrect_t *rects)
 			if (!XShmPutImage(d->x_disp, d->x_win, d->x_gc, d->x_framebuffer[d->current_framebuffer], rects->x, rects->y, rects->x, rects->y, rects->width, rects->height, True))
 				Sys_Error("VID_Update: XShmPutImage failed\n");
 				
-			Sys_Input_WaitForShmMsg(d->inputdata);
+			X11_Input_WaitForShmMsg(d->inputdata);
 
 			rects = rects->pnext;
 		}

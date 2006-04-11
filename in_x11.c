@@ -382,7 +382,7 @@ static void GetEvents(struct inputdata *id)
 	}
 }
 
-void *Sys_Input_Init(Display *x_disp, Window x_win, int x_shmeventtype)
+void *X11_Input_Init(Display *x_disp, Window x_win, int x_shmeventtype)
 {
 	struct inputdata *id;
 	id = malloc(sizeof(*id));
@@ -409,12 +409,12 @@ void *Sys_Input_Init(Display *x_disp, Window x_win, int x_shmeventtype)
 	return id;
 }
 
-void Sys_Input_Shutdown(void *inputdata)
+void X11_Input_Shutdown(void *inputdata)
 {
 	free(inputdata);
 }
 
-void Sys_Input_GetEvents(void *inputdata)
+void X11_Input_GetEvents(void *inputdata)
 {
 	struct inputdata *id = inputdata;
 
@@ -428,7 +428,7 @@ void Sys_Input_GetEvents(void *inputdata)
 	}
 }
 
-void Sys_Input_WaitForShmMsg(void *inputdata)
+void X11_Input_WaitForShmMsg(void *inputdata)
 {
 	struct inputdata *id = inputdata;
 	
@@ -438,7 +438,7 @@ void Sys_Input_WaitForShmMsg(void *inputdata)
 	id->gotshmmsg = 0;
 }
 
-void Sys_Input_GetMouseMovement(void *inputdata, int *mousex, int *mousey)
+void X11_Input_GetMouseMovement(void *inputdata, int *mousex, int *mousey)
 {
 	struct inputdata *id = inputdata;
 
@@ -448,7 +448,7 @@ void Sys_Input_GetMouseMovement(void *inputdata, int *mousex, int *mousey)
 	id->mousey = 0;
 }
 
-void Sys_Input_GetConfigNotify(void *inputdata, int *config_notify, int *config_notify_width, int *config_notify_height)
+void X11_Input_GetConfigNotify(void *inputdata, int *config_notify, int *config_notify_width, int *config_notify_height)
 {
 	struct inputdata *id = inputdata;
 

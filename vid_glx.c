@@ -44,6 +44,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <X11/extensions/xf86vmode.h>
 #endif
 
+#include "in_x11.h"
+
 struct display
 {
 	void *inputdata;
@@ -79,14 +81,14 @@ void Sys_Video_GetEvents(void *display)
 {
 	struct display *d = display;
 
-	Sys_Input_GetEvents(d->inputdata);
+	X11_Input_GetEvents(d->inputdata);
 }
 
 void Sys_Video_GetMouseMovement(void *display, int *mousex, int *mousey)
 {
 	struct display *d = display;
 
-	Sys_Input_GetMouseMovement(d->inputdata, mousex, mousey);
+	X11_Input_GetMouseMovement(d->inputdata, mousex, mousey);
 }
 
 cvar_t	vid_hwgammacontrol = {"vid_hwgammacontrol", "1"};
@@ -207,7 +209,7 @@ void Sys_Video_Close(void *display)
 {
 	struct display *d = display;
 
-	Sys_Input_Shutdown(d->inputdata);
+	X11_Input_Shutdown(d->inputdata);
 
 	RestoreHWGamma(d);
 
@@ -431,7 +433,7 @@ void *Sys_Video_Open(int width, int height, int depth, int fullscreen, unsigned 
 
 			vid.recalc_refdef = 1;				// force a surface cache flush
 
-			d->inputdata = Sys_Input_Init(d->x_disp, d->x_win, 0);
+			d->inputdata = X11_Input_Init(d->x_disp, d->x_win, 0);
 			if (d->inputdata)
 				return d;
 		}
