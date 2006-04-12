@@ -10,8 +10,6 @@
 #include "quakedef.h"
 #include "sound.h"
 
-#warning "This code hasn't been tested yet."
-
 static const int rates[] = { 11025, 22050, 44100, 8000 };
 
 #define NUMRATES (sizeof(rates)/sizeof(*rates))
