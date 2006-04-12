@@ -164,7 +164,7 @@ void S_Startup (void) {
 void SND_Restart_f (void)
 {
 	S_Shutdown();
-	S_Init();
+	S_Startup();
 }
 
 void S_CvarInit(void)
