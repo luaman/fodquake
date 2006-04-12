@@ -22,6 +22,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "quakedef.h"
 #include "sound.h"
 
+extern struct SoundCard *soundcard;
+
 #ifdef _WIN32
 #include "winquake.h"
 #else
@@ -111,17 +113,17 @@ void S_TransferStereo16 (int endtime)
 	else
 #endif
 	{
-		pbuf = (DWORD *)shm->buffer;
+		pbuf = (DWORD *)soundcard->buffer;
 	}
 
 	while (lpaintedtime < endtime)
 	{
 	// handle recirculating buffer issues
-		lpos = lpaintedtime & ((shm->samples>>1)-1);
+		lpos = lpaintedtime & ((soundcard->samples>>1)-1);
 
 		snd_out = (short *) pbuf + (lpos<<1);
 
-		snd_linear_count = (shm->samples>>1) - lpos;
+		snd_linear_count = (soundcard->samples>>1) - lpos;
 		if (lpaintedtime + snd_linear_count > endtime)
 			snd_linear_count = endtime - lpaintedtime;
 
@@ -160,17 +162,17 @@ void S_TransferPaintBuffer(int endtime)
 	HRESULT	hresult;
 #endif
 
-	if (shm->samplebits == 16 && shm->channels == 2)
+	if (soundcard->samplebits == 16 && soundcard->channels == 2)
 	{
 		S_TransferStereo16 (endtime);
 		return;
 	}
 	
 	p = (int *) paintbuffer;
-	count = (endtime - paintedtime) * shm->channels;
-	out_mask = shm->samples - 1; 
-	out_idx = paintedtime * shm->channels & out_mask;
-	step = 3 - shm->channels;
+	count = (endtime - paintedtime) * soundcard->channels;
+	out_mask = soundcard->samples - 1; 
+	out_idx = paintedtime * soundcard->channels & out_mask;
+	step = 3 - soundcard->channels;
 	snd_vol = s_volume.value*256;
 
 #ifdef _WIN32
@@ -201,10 +203,10 @@ void S_TransferPaintBuffer(int endtime)
 	else
 #endif
 	{
-		pbuf = (DWORD *)shm->buffer;
+		pbuf = (DWORD *)soundcard->buffer;
 	}
 
-	if (shm->samplebits == 16)
+	if (soundcard->samplebits == 16)
 	{
 		short *out = (short *) pbuf;
 		while (count--)
@@ -219,7 +221,7 @@ void S_TransferPaintBuffer(int endtime)
 			out_idx = (out_idx + 1) & out_mask;
 		}
 	}
-	else if (shm->samplebits == 8)
+	else if (soundcard->samplebits == 8)
 	{
 		unsigned char *out = (unsigned char *) pbuf;
 		while (count--)

@@ -26,6 +26,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "winquake.h"
 #endif
 
+struct SoundCard *soundcard;
+
 void S_Play_f (void);
 void S_PlayVol_f (void);
 void S_SoundList_f (void);
@@ -44,10 +46,6 @@ int			snd_blocked = 0;
 qboolean	snd_initialized = false;
 
 static qboolean		snd_ambient = 1;
-
-// pointer should go away
-volatile dma_t *shm = 0;
-volatile dma_t sn;
 
 static vec3_t	listener_origin;
 static vec3_t	listener_forward;
@@ -85,30 +83,72 @@ cvar_t s_swapstereo = {"s_swapstereo", "0"};
 // ====================================================================
 
 void S_SoundInfo_f (void) {
-	if (!sound_started || !shm) {
+	if (!sound_started || !soundcard) {
 		Com_Printf ("sound system not started\n");
 		return;
 	}
 
-    Com_Printf ("%5d stereo\n", shm->channels - 1);
-    Com_Printf ("%5d samples\n", shm->samples);
-    Com_Printf ("%5d samplepos\n", shm->samplepos);
-    Com_Printf ("%5d samplebits\n", shm->samplebits);
-    Com_Printf ("%5d submission_chunk\n", shm->submission_chunk);
-    Com_Printf ("%5d speed\n", shm->speed);
-    Com_Printf ("0x%x dma buffer\n", shm->buffer);
+    Com_Printf ("%5d stereo\n", soundcard->channels - 1);
+    Com_Printf ("%5d samples\n", soundcard->samples);
+    Com_Printf ("%5d samplepos\n", soundcard->samplepos);
+    Com_Printf ("%5d samplebits\n", soundcard->samplebits);
+    Com_Printf ("%5d submission_chunk\n", soundcard->submission_chunk);
+    Com_Printf ("%5d speed\n", soundcard->speed);
+    Com_Printf ("0x%x dma buffer\n", soundcard->buffer);
 	Com_Printf ("%5d total_channels\n", total_channels);
 }
 
+struct SoundDriver
+{
+	char *name;
+	SoundInitFunc *init;
+};
+
+SoundInitFunc OSS_Init;
+SoundInitFunc ALSA_Init;
+
+struct SoundDriver sounddrivers[] =
+{
+	{ "OSS", &OSS_Init },
+	{ "ALSA", &ALSA_Init },
+};
+
+#define NUMSOUNDDRIVERS (sizeof(sounddrivers)/sizeof(*sounddrivers))
+
 void S_Startup (void) {
-	int rc;
+	int rc = false;
+	int i;
 
 	if (!snd_initialized)
 		return;
 
-	rc = SNDDMA_Init();
+	soundcard = malloc(sizeof(*soundcard));
+	if (soundcard)
+	{
+		bzero(soundcard, sizeof(*soundcard));
 
-	if (!rc) {
+		for(i=0;i<NUMSOUNDDRIVERS;i++)
+		{
+			printf("Trying sound driver \"%s\"...\n", sounddrivers[i].name);
+			if (*sounddrivers[i].init)
+			{
+				rc = (*sounddrivers[i].init)(soundcard, 11025, 2, 16);
+				if (rc)
+				{
+					break;
+				}
+			}
+		}
+
+		if (i == NUMSOUNDDRIVERS)
+		{
+			free(soundcard);
+			soundcard = 0;
+		}
+	}
+
+	if (!rc)
+	{
 #ifndef	_WIN32
 		Com_Printf ("S_Startup: SNDDMA_Init failed.\n");
 #endif
@@ -198,13 +238,12 @@ void S_Shutdown (void) {
 	if (!sound_started)
 		return;
 
-	if (shm)
-		shm->gamealive = 0;
-
-	shm = 0;
 	sound_started = 0;
 
-	SNDDMA_Shutdown();
+	soundcard->Shutdown(soundcard);
+
+	free(soundcard);
+	soundcard = 0;
 }
 
 // =======================================================================
@@ -309,7 +348,7 @@ void SND_Spatialize (channel_t *ch) {
 	dist = VectorNormalize(source_vec) * ch->dist_mult;
 	dot = DotProduct(listener_right, source_vec);
 
-	if (shm->channels == 1) {
+	if (soundcard->channels == 1) {
 		rscale = 1.0;
 		lscale = 1.0;
 	} else {
@@ -384,7 +423,7 @@ void S_StartSound (int entnum, int entchannel, sfx_t *sfx, vec3_t origin, float 
 		if (check == target_chan)
 			continue;
 		if (check->sfx == sfx && !check->pos) {
-			skip = rand () % (int)(0.1 * shm->speed);
+			skip = rand () % (int)(0.1 * soundcard->speed);
 			if (skip >= target_chan->end)
 				skip = target_chan->end - 1;
 			target_chan->pos += skip;
@@ -433,13 +472,13 @@ void S_ClearBuffer (void) {
 	int clear;
 		
 #ifdef _WIN32
-	if (!sound_started || !shm || (!shm->buffer && !pDSBuf))
+	if (!sound_started || !soundcard || (!soundcard->buffer && !pDSBuf))
 #else
-	if (!sound_started || !shm || !shm->buffer)
+	if (!sound_started || !soundcard || !soundcard->buffer)
 #endif
 		return;
 
-	clear = (shm->samplebits == 8) ? 0x80 : 0;
+	clear = (soundcard->samplebits == 8) ? 0x80 : 0;
 
 #ifdef _WIN32
 	if (pDSBuf)
@@ -464,7 +503,7 @@ void S_ClearBuffer (void) {
 			}
 		}
 
-		memset(pData, clear, shm->samples * shm->samplebits/8);
+		memset(pData, clear, soundcard->samples * soundcard->samplebits/8);
 
 		pDSBuf->lpVtbl->Unlock(pDSBuf, pData, dwSize, NULL, 0);
 	
@@ -472,7 +511,7 @@ void S_ClearBuffer (void) {
 	else
 #endif
 	{
-		memset(shm->buffer, clear, shm->samples * shm->samplebits/8);
+		memset(soundcard->buffer, clear, soundcard->samples * soundcard->samplebits/8);
 	}
 }
 
@@ -632,10 +671,10 @@ void GetSoundtime (void) {
 	int samplepos, fullsamples;
 	static int buffers, oldsamplepos;
 
-	fullsamples = shm->samples / shm->channels;
+	fullsamples = soundcard->samples / soundcard->channels;
 
 	// it is possible to miscount buffers if it has wrapped twice between calls to S_Update.  Oh well.
-	samplepos = SNDDMA_GetDMAPos();
+	samplepos = soundcard->GetDMAPos(soundcard);
 
 	if (samplepos < oldsamplepos) {
 		buffers++;					// buffer wrapped
@@ -649,7 +688,7 @@ void GetSoundtime (void) {
 	}
 	oldsamplepos = samplepos;
 
-	soundtime = buffers*fullsamples + samplepos/shm->channels;
+	soundtime = buffers*fullsamples + samplepos/soundcard->channels;
 }
 
 void IN_Accumulate (void);
@@ -681,8 +720,8 @@ static void S_Update_ (void) {
 	}
 
 	// mix ahead of current position
-	endtime = soundtime + s_mixahead.value * shm->speed;
-	samps = shm->samples >> (shm->channels - 1);
+	endtime = soundtime + s_mixahead.value * soundcard->speed;
+	samps = soundcard->samples >> (soundcard->channels - 1);
 	if (endtime - soundtime > samps)
 		endtime = soundtime + samps;
 
@@ -706,7 +745,7 @@ static void S_Update_ (void) {
 
 	S_PaintChannels (endtime);
 
-	SNDDMA_Submit ();
+	soundcard->Submit(soundcard);
 }
 
 /*

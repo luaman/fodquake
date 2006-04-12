@@ -46,20 +46,6 @@ typedef struct
 	byte	data[1];		// variable sized
 } sfxcache_t;
 
-typedef struct
-{
-	qboolean		gamealive;
-	qboolean		soundalive;
-	qboolean		splitbuffer;
-	int				channels;
-	int				samples;				// mono samples in buffer
-	int				submission_chunk;		// don't mix less than this #
-	int				samplepos;				// in mono samples
-	int				samplebits;
-	int				speed;
-	unsigned char	*buffer;
-} dma_t;
-
 // !!! if this is changed, it much be changed in asm_i386.h too !!!
 typedef struct
 {
@@ -85,6 +71,24 @@ typedef struct
 	int		samples;
 	int		dataofs;		// chunk starts this many bytes from file start
 } wavinfo_t;
+
+struct SoundCard
+{
+	void *driverprivate;
+	int (*GetDMAPos)(struct SoundCard *);
+	void (*Submit)(struct SoundCard *);
+	void (*Shutdown)(struct SoundCard *);
+
+	int channels;
+	int samples;             // mono samples in buffer
+	int submission_chunk;    // don't mix less than this #
+	int samplepos;           // in mono samples
+	int samplebits;
+	int speed;
+	unsigned char *buffer;
+};
+
+typedef int (*SoundInitFunc)(struct SoundCard *, int rate, int channels, int bits);
 
 void S_CvarInit(void);
 void S_Init (void);
@@ -137,8 +141,6 @@ extern	channel_t   channels[MAX_CHANNELS];
 extern	int			total_channels;
 
 extern int		paintedtime;
-extern volatile dma_t *shm;
-extern volatile dma_t sn;
 
 extern cvar_t	s_loadas8bit;
 extern cvar_t	s_khz;

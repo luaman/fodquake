@@ -357,8 +357,6 @@ sndinitstat SNDDMA_InitDirect (void) {
 	pDSBuf->lpVtbl->GetCurrentPosition(pDSBuf, &mmstarttime.u.sample, &dwWrite);
 	pDSBuf->lpVtbl->Play(pDSBuf, 0, 0, DSBPLAY_LOOPING);
 
-	shm->soundalive = true;
-	shm->splitbuffer = false;
 	shm->samples = gSndBufSize/(shm->samplebits/8);
 	shm->samplepos = 0;
 	shm->submission_chunk = 1;
@@ -472,7 +470,6 @@ qboolean SNDDMA_InitWav (void) {
 		}
 	}
 
-	shm->soundalive = true;
 	shm->splitbuffer = false;
 	shm->samples = gSndBufSize/(shm->samplebits/8);
 	shm->samplepos = 0;
