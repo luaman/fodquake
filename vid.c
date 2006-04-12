@@ -100,10 +100,15 @@ void VID_Open()
 
 void VID_Shutdown()
 {
+	if (display)
+	{
 #ifdef GLQUAKE
-	GL_FlushTextures();
+		GL_FlushTextures();
 #endif
-	Sys_Video_Close(display);
+		Sys_Video_Close(display);
+
+		display = 0;
+	}
 }
 
 void VID_Update (vrect_t *rects)
