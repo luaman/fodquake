@@ -48,7 +48,7 @@ static void oss_shutdown(struct SoundCard *sc)
 	free(p);
 }
 
-static int oss_init(struct SoundCard *sc, int rate, int channels, int bits)
+static qboolean oss_init(struct SoundCard *sc, int rate, int channels, int bits)
 {
 	int i;
 	struct oss_private *p;
