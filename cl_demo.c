@@ -669,40 +669,10 @@ static qboolean OnChange_demo_dir(cvar_t *var, char *string) {
 	return false;
 }
 
-static void CL_WriteDemoPimpMessage(void) {
-	int i;
-	char pimpmessage[256] = {0}, border[64] = {0};
-
-	if (cls.demoplayback)
-		return;
-
-	strcat(border, "\x1d");
-	for (i = 0; i < 34; i++)
-		strcat(border, "\x1e");
-	strcat(border, "\x1f");
-
-	Q_snprintfz(pimpmessage, sizeof(pimpmessage), "\n%s\n%s\n%s\n%s\n",
-		border,
-		"\x1d\x1e\x1e\x1e\x1e\x1e\x1e Recorded by FuhQuake \x1e\x1e\x1e\x1e\x1e\x1e\x1f",
-		"\x1d\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e www.fuhquake.net \x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1f",
-		border		
-	);
-
-	SZ_Clear (&net_message);
-	MSG_WriteLong (&net_message, cls.netchan.incoming_sequence + 1);
-	MSG_WriteLong (&net_message, cls.netchan.incoming_acknowledged | (cls.netchan.incoming_reliable_acknowledged << 31));
-	MSG_WriteByte (&net_message, svc_print);
-	MSG_WriteByte (&net_message, PRINT_HIGH);
-	MSG_WriteString (&net_message, pimpmessage);
-	CL_WriteDemoMessage (&net_message);
-}
-
 //stop recording a demo
 static void CL_StopRecording (void) {
 	if (!cls.demorecording)
 		return;
-
-	CL_WriteDemoPimpMessage();
 
 	// write a disconnect message to the demo file
 	SZ_Clear (&net_message);
