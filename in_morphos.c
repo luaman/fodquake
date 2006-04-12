@@ -487,7 +487,7 @@ static struct InputEvent *myinputhandler_real()
 
 	struct InputEvent *coin;
 
-	int screeninfront;
+	ULONG screeninfront;
 
 	if (!(id->window->Flags & WFLG_WINDOWACTIVE))
 		return moo;
