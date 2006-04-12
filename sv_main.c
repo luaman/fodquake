@@ -1092,7 +1092,7 @@ void SV_InitLocal (void) {
 		Q_snprintfz (localmodels[i], sizeof(localmodels[i]), "*%i", i);
 
 	Info_SetValueForStarKey (svs.info, "*version", va("%4.2f", QW_VERSION), MAX_SERVERINFO_STRING);
-	Info_SetValueForStarKey (svs.info, "*fuh_version", VersionString(), MAX_SERVERINFO_STRING);
+	Info_SetValueForStarKey (svs.info, "*fod_version", VersionString(), MAX_SERVERINFO_STRING);
 	Info_SetValueForStarKey (svs.info, "*z_ext", va("%i", SUPPORTED_EXTENSIONS), MAX_SERVERINFO_STRING);
 
 	if (strcmp(com_gamedirfile, "qw"))
