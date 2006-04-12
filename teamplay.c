@@ -1793,7 +1793,7 @@ void TP_SearchForMsgTriggers (char *s, int level) {
 	for (t = msg_triggers; t; t = t->next) {
 		if ((t->level == level || (t->level == 3 && level == 4)) && t->string[0] && strstr(s, t->string)) {
 			if	(	level == PRINT_CHAT && (
-					strstr (s, "fuh_version") || strstr (s, "f_version") || strstr (s, "f_system") ||
+					strstr (s, "f_version") || strstr (s, "f_system") ||
 					strstr (s, "f_server") || strstr (s, "f_speed") || strstr (s, "f_modified"))
 				)
 				continue; 	// don't let llamas fake proxy replies
