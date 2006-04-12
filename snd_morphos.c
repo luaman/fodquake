@@ -13,20 +13,27 @@ struct AHIChannelInfo
 	ULONG offset;
 };
 
-static struct MsgPort *msgport;
-static struct AHIRequest *ahireq;
-static int ahiopen;
-static struct AHIAudioCtrl *audioctrl;
-static void *samplebuffer;
-static struct Hook EffectHook;
-static struct AHIChannelInfo aci;
-static unsigned int readpos;
+struct ahi_private
+{
+	struct MsgPort *msgport;
+	struct AHIRequest *ahireq;
+	struct AHIAudioCtrl *audioctrl;
+	void *samplebuffer;
+	struct Hook EffectHook;
+	struct AHIChannelInfo aci;
+	unsigned int readpos;
+};
 
 ULONG EffectFunc()
 {
+	struct Hook *hook = (struct Hook *)REG_A0;
 	struct AHIEffChannelInfo *aeci = (struct AHIEffChannelInfo *)REG_A1;
 
-	readpos = aeci->ahieci_Offset[0];
+	struct ahi_private *p;
+
+	p = hook->h_Data;
+
+	p->readpos = aeci->ahieci_Offset[0];
 
 	return 0;
 }
@@ -36,54 +43,48 @@ static struct EmulLibEntry EffectFunc_Gate =
 	TRAP_LIB, 0, (void (*)(void))EffectFunc
 };
 
-void SNDDMA_Shutdown()
+void ahi_shutdown(struct SoundCard *sc)
 {
+	struct ahi_private *p = sc->driverprivate;
+
 	struct Library *AHIBase;
 
-	if (ahireq)
-	{
-		AHIBase = (struct Library *)ahireq->ahir_Std.io_Device;
+	AHIBase = (struct Library *)p->ahireq->ahir_Std.io_Device;
 
-		aci.aeci.ahie_Effect = AHIET_CHANNELINFO|AHIET_CANCEL;
-		AHI_SetEffect(&aci.aeci, audioctrl);
-		AHI_ControlAudio(audioctrl,
-		                 AHIC_Play, FALSE,
-		                 TAG_END);
+	p->aci.aeci.ahie_Effect = AHIET_CHANNELINFO|AHIET_CANCEL;
+	AHI_SetEffect(&p->aci.aeci, p->audioctrl);
+	AHI_ControlAudio(p->audioctrl,
+	                 AHIC_Play, FALSE,
+	                 TAG_END);
 
-		AHI_FreeAudio(audioctrl);
+	AHI_FreeAudio(p->audioctrl);
 
-		audioctrl = 0;
+	CloseDevice((struct IORequest *)p->ahireq);
+	DeleteIORequest((struct IORequest *)p->ahireq);
 
-		CloseDevice((struct IORequest *)ahireq);
-		DeleteIORequest((struct IORequest *)ahireq);
+	DeleteMsgPort(p->msgport);
 
-		ahireq = 0;
+	FreeVec(p->samplebuffer);
 
-		DeleteMsgPort(msgport);
-		msgport = 0;
-
-		FreeVec(samplebuffer);
-		samplebuffer = 0;
-	}
+	FreeVec(p);
 }
 
-int SNDDMA_GetDMAPos()
+int ahi_getdmapos(struct SoundCard *sc)
 {
-	shm->samplepos = readpos*shm->channels;
+	struct ahi_private *p = sc->driverprivate;
 
-	return shm->samplepos;
+	sc->samplepos = p->readpos*sc->channels;
+
+	return sc->samplepos;
 }
 
-void SNDDMA_Submit()
+void ahi_submit(struct SoundCard *sc)
 {
 }
 
-qboolean SNDDMA_Init()
+qboolean ahi_init(struct SoundCard *sc, int rate, int channels, int bits)
 {
-	ULONG channels;
-	ULONG speed;
-	ULONG bits;
-
+	struct ahi_private *p;
 	ULONG r;
 
 	char name[64];
@@ -92,127 +93,123 @@ qboolean SNDDMA_Init()
 
 	struct AHISampleInfo sample;
 
-	shm = &sn;
-
-	bzero(shm, sizeof(*shm));
-
-	if (s_khz.value == 44)
-		speed = 44100;
-	else if (s_khz.value == 22)
-		speed = 22050;
-	else
-		speed = 11025;
-
-	msgport = CreateMsgPort();
-	if (msgport)
+	p = AllocVec(sizeof(*p), MEMF_ANY);
+	if (p)
 	{
-		ahireq = (struct AHIRequest *)CreateIORequest(msgport, sizeof(struct AHIRequest));
-		if (ahireq)
+		p->msgport = CreateMsgPort();
+		if (p->msgport)
 		{
-			ahiopen = !OpenDevice("ahi.device", AHI_NO_UNIT, (struct IORequest *)ahireq, 0);
-			if (ahiopen)
+			p->ahireq = (struct AHIRequest *)CreateIORequest(p->msgport, sizeof(struct AHIRequest));
+			if (p->ahireq)
 			{
-				AHIBase = (struct Library *)ahireq->ahir_Std.io_Device;
-
-				audioctrl = AHI_AllocAudio(AHIA_AudioID, AHI_DEFAULT_ID,
-				                               AHIA_MixFreq, speed,
-				                               AHIA_Channels, 1,
-				                               AHIA_Sounds, 1,
-				                               TAG_END);
-
-				if (audioctrl)
+				r = !OpenDevice("ahi.device", AHI_NO_UNIT, (struct IORequest *)p->ahireq, 0);
+				if (r)
 				{
-					AHI_GetAudioAttrs(AHI_INVALID_ID, audioctrl,
-					                  AHIDB_BufferLen, sizeof(name),
-					                  AHIDB_Name, (ULONG)name,
-					                  AHIDB_MaxChannels, (ULONG)&channels,
-					                  AHIDB_Bits, (ULONG)&bits,
-					                  TAG_END);
+					AHIBase = (struct Library *)p->ahireq->ahir_Std.io_Device;
 
-					AHI_ControlAudio(audioctrl,
-					                 AHIC_MixFreq_Query, (ULONG)&speed,
-					                 TAG_END);
+					p->audioctrl = AHI_AllocAudio(AHIA_AudioID, AHI_DEFAULT_ID,
+					                               AHIA_MixFreq, rate,
+					                               AHIA_Channels, 1,
+					                               AHIA_Sounds, 1,
+					                               TAG_END);
 
-					if (bits == 8 || bits == 16)
+					if (p->audioctrl)
 					{
-						if (channels > 2)
-							channels = 2;
+						AHI_GetAudioAttrs(AHI_INVALID_ID, p->audioctrl,
+						                  AHIDB_BufferLen, sizeof(name),
+						                  AHIDB_Name, (ULONG)name,
+						                  AHIDB_MaxChannels, (ULONG)&channels,
+						                  AHIDB_Bits, (ULONG)&bits,
+						                  TAG_END);
 
-						shm->speed = speed;
-						shm->samplebits = bits;
-						shm->channels = channels;
-						shm->samples = 16384*(speed/11025);
-						shm->submission_chunk = 1;
+						AHI_ControlAudio(p->audioctrl,
+						                 AHIC_MixFreq_Query, (ULONG)&rate,
+						                 TAG_END);
 
-						samplebuffer = AllocVec(16384*(speed/11025)*(bits/8)*channels, MEMF_CLEAR);
-						if (samplebuffer)
+						if (bits == 8 || bits == 16)
 						{
-							shm->buffer = samplebuffer;
+							if (channels > 2)
+								channels = 2;
 
-							if (channels == 1)
+							sc->speed = rate;
+							sc->samplebits = bits;
+							sc->channels = channels;
+							sc->samples = 16384*(rate/11025);
+							sc->submission_chunk = 1;
+
+							p->samplebuffer = AllocVec(16384*(rate/11025)*(bits/8)*channels, MEMF_CLEAR);
+							if (p->samplebuffer)
 							{
-								if (bits == 8)
-									sample.ahisi_Type = AHIST_M8S;
+								sc->buffer = p->samplebuffer;
+
+								if (channels == 1)
+								{
+									if (bits == 8)
+										sample.ahisi_Type = AHIST_M8S;
+									else
+										sample.ahisi_Type = AHIST_M16S;
+								}
 								else
-									sample.ahisi_Type = AHIST_M16S;
-							}
-							else
-							{
-								if (bits == 8)
-									sample.ahisi_Type = AHIST_S8S;
-								else
-									sample.ahisi_Type = AHIST_S16S;
-							}
+								{
+									if (bits == 8)
+										sample.ahisi_Type = AHIST_S8S;
+									else
+										sample.ahisi_Type = AHIST_S16S;
+								}
 
-							sample.ahisi_Address = samplebuffer;
-							sample.ahisi_Length = (16384*(speed/11025)*(bits/8))/AHI_SampleFrameSize(sample.ahisi_Type);
+								sample.ahisi_Address = p->samplebuffer;
+								sample.ahisi_Length = (16384*(rate/11025)*(bits/8))/AHI_SampleFrameSize(sample.ahisi_Type);
 
-							r = AHI_LoadSound(0, AHIST_DYNAMICSAMPLE, &sample, audioctrl);
-							if (r == 0)
-							{
-								r = AHI_ControlAudio(audioctrl,
-								                     AHIC_Play, TRUE,
-								                     TAG_END);
-
+								r = AHI_LoadSound(0, AHIST_DYNAMICSAMPLE, &sample, p->audioctrl);
 								if (r == 0)
 								{
-									AHI_Play(audioctrl,
-									         AHIP_BeginChannel, 0,
-									         AHIP_Freq, speed,
-									         AHIP_Vol, 0x10000,
-									         AHIP_Pan, 0x8000,
-									         AHIP_Sound, 0,
-									         AHIP_EndChannel, NULL,
-									         TAG_END);
+									r = AHI_ControlAudio(p->audioctrl,
+									                     AHIC_Play, TRUE,
+									                     TAG_END);
 
-									aci.aeci.ahie_Effect = AHIET_CHANNELINFO;
-									aci.aeci.ahieci_Func = &EffectHook;
-									aci.aeci.ahieci_Channels = 1;
+									if (r == 0)
+									{
+										AHI_Play(p->audioctrl,
+										         AHIP_BeginChannel, 0,
+										         AHIP_Freq, rate,
+										         AHIP_Vol, 0x10000,
+										         AHIP_Pan, 0x8000,
+										         AHIP_Sound, 0,
+										         AHIP_EndChannel, NULL,
+										         TAG_END);
 
-									EffectHook.h_Entry = (void *)&EffectFunc_Gate;
+										p->aci.aeci.ahie_Effect = AHIET_CHANNELINFO;
+										p->aci.aeci.ahieci_Func = &p->EffectHook;
+										p->aci.aeci.ahieci_Channels = 1;
 
-									AHI_SetEffect(&aci, audioctrl);
+										p->EffectHook.h_Entry = (void *)&EffectFunc_Gate;
+										p->EffectHook.h_Data = p;
 
-									Com_Printf("Using AHI mode \"%s\" for audio output\n", name);
-									Com_Printf("Channels: %d bits: %d frequency: %d\n", channels, bits, speed);
+										AHI_SetEffect(&p->aci, p->audioctrl);
 
-									return 1;
+										Com_Printf("Using AHI mode \"%s\" for audio output\n", name);
+										Com_Printf("Channels: %d bits: %d frequency: %d\n", channels, bits, rate);
+
+										return 1;
+									}
 								}
 							}
+							FreeVec(p->samplebuffer);
 						}
-						FreeVec(samplebuffer);
+						AHI_FreeAudio(p->audioctrl);
 					}
-					AHI_FreeAudio(audioctrl);
-				}
-				else
-					Com_Printf("Failed to allocate AHI audio\n");
+					else
+						Com_Printf("Failed to allocate AHI audio\n");
 
-				CloseDevice((struct IORequest *)ahireq);
+					CloseDevice((struct IORequest *)p->ahireq);
+				}
+				DeleteIORequest((struct IORequest *)p->ahireq);
 			}
-			DeleteIORequest((struct IORequest *)ahireq);
+			DeleteMsgPort(p->msgport);
 		}
-		DeleteMsgPort(msgport);
+		FreeVec(p);
 	}
 
 	return 0;
 }
+
