@@ -100,7 +100,7 @@ void *Sys_Video_Open(int width, int height, int depth, int fullscreen, unsigned 
 		d->window = OpenWindowTags(0,
 			WA_InnerWidth, vid.width,
 			WA_InnerHeight, vid.height,
-			WA_Title, "Fuhquake",
+			WA_Title, "FodQuake",
 			WA_DragBar, d->screen ? FALSE : TRUE,
 			WA_DepthGadget, d->screen ? FALSE : TRUE,
 			WA_Borderless, d->screen ? TRUE : FALSE,
