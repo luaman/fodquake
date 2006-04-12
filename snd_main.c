@@ -104,11 +104,13 @@ struct SoundDriver
 	SoundInitFunc *init;
 };
 
+SoundInitFunc AHI_Init;
 SoundInitFunc OSS_Init;
 SoundInitFunc ALSA_Init;
 
 struct SoundDriver sounddrivers[] =
 {
+	{ "AHI", &AHI_Init },
 	{ "OSS", &OSS_Init },
 	{ "ALSA", &ALSA_Init },
 };

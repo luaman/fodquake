@@ -190,6 +190,12 @@ qboolean ahi_init(struct SoundCard *sc, int rate, int channels, int bits)
 										Com_Printf("Using AHI mode \"%s\" for audio output\n", name);
 										Com_Printf("Channels: %d bits: %d frequency: %d\n", channels, bits, rate);
 
+										sc->driverprivate = p;
+
+										sc->GetDMAPos = ahi_getdmapos;
+										sc->Submit = ahi_submit;
+										sc->Shutdown = ahi_shutdown;
+
 										return 1;
 									}
 								}
@@ -212,4 +218,6 @@ qboolean ahi_init(struct SoundCard *sc, int rate, int channels, int bits)
 
 	return 0;
 }
+
+SoundInitFunc AHI_Init = ahi_init;
 
