@@ -425,9 +425,7 @@ void GL_FlushTextures()
 	int textures[MAX_GLTEXTURES];
 	int i;
 
-	glt = gltextures;
-
-	for(i=0;i<numgltextures;i++)
+	for(glt=gltextures,i=0;i<numgltextures;glt++,i++)
 	{
 		textures[i] = glt->texnum;
 	}
