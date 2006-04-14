@@ -377,6 +377,11 @@ mpic_t *Draw_CachePic (char *path) {
 	return &pic->pic;
 }
 
+void GL_FlushPics()
+{
+		  numcachepics = 0;
+}
+
 void Draw_InitConback (void) {
 	qpic_t *cb;
 	int start;
