@@ -525,6 +525,7 @@ void CL_ConnectionlessPacket (void) {
 			return;
 		Com_Printf("%s: challenge\n", NET_AdrToString(net_from));
 		cls.challenge = atoi(MSG_ReadString());
+		cls.netchan.huffcontext = 0;
 		while(1)
 		{
 			unsigned int foo;
