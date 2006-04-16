@@ -106,6 +106,9 @@ typedef struct {
 	// time and size data to calculate bandwidth
 	int			outgoing_size[MAX_LATENT];
 	double		outgoing_time[MAX_LATENT];
+
+	/* Anything below here is not cleared by Netchan_Setup */
+	void *huffcontext;
 } netchan_t;
 
 void Netchan_CvarInit(void);

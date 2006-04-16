@@ -131,6 +131,7 @@ OBJS= \
 	mp3_player.o \
 	fmod.o \
 	vid.o \
+	huffman.o \
 	$(OSOBJS)
 
 SWOBJS= \

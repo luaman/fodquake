@@ -223,6 +223,7 @@ void CL_UserinfoChanged (char *key, char *string) {
 //called by CL_Connect_f and CL_CheckResend
 static void CL_SendConnectPacket(void) {
 	char data[2048];
+	int i;
 
 	if (cls.state != ca_disconnected)
 		return;
@@ -230,8 +231,23 @@ static void CL_SendConnectPacket(void) {
 	connect_time = cls.realtime;	// for retransmit requests
 	cls.qport = Cvar_VariableValue("qport");
 
-	Q_snprintfz(data, sizeof(data), "\xff\xff\xff\xff" "connect %i %i %i \"%s\"\n", PROTOCOL_VERSION, cls.qport, cls.challenge, cls.userinfo);
-	NET_SendPacket(NS_CLIENT, strlen(data), data, cls.server_adr);
+	i = Q_snprintfz(data, sizeof(data), "\xff\xff\xff\xff" "connect %i %i %i \"%s\"\n", PROTOCOL_VERSION, cls.qport, cls.challenge, cls.userinfo);
+	if (i < sizeof(data))
+	{
+		if (cls.netchan.huffcontext)
+		{
+			i++;
+			i+= Q_snprintfz(data+i, sizeof(data)-1, "0x%08x 0x%08x\n", QW_PROTOEXT_HUFF, cls.hufftablecrc);
+		}
+		if (i < sizeof(data))
+		{
+			NET_SendPacket(NS_CLIENT, i+1, data, cls.server_adr);
+			return;
+		}
+	}
+
+	Com_Printf("Connection packet size overflow\n");
+	return;
 }
 
 //Resend a connect message if the last one has timed out
@@ -509,6 +525,23 @@ void CL_ConnectionlessPacket (void) {
 			return;
 		Com_Printf("%s: challenge\n", NET_AdrToString(net_from));
 		cls.challenge = atoi(MSG_ReadString());
+		while(1)
+		{
+			unsigned int foo;
+
+			foo = MSG_ReadLong();
+			if (msg_badread)
+				break;
+
+			if (foo == QW_PROTOEXT_HUFF)
+			{
+				Com_Printf("Server supports Huffman compression\n");
+				cls.hufftablecrc = MSG_ReadLong();
+				cls.netchan.huffcontext = Huff_Init(cls.hufftablecrc);
+				if (!cls.netchan.huffcontext)
+					Com_Printf("Unknown Huffman table\n");
+			}
+		}
 		CL_SendConnectPacket();
 		break;
 	case S2C_CONNECTION:

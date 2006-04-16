@@ -139,7 +139,7 @@ void Netchan_OutOfBandPrint (netsrc_t sock, netadr_t adr, char *format, ...) {
 
 //called to open a channel to a remote system
 void Netchan_Setup (netsrc_t sock, netchan_t *chan, netadr_t adr, int qport) {
-	memset (chan, 0, sizeof(*chan));
+	memset (chan, 0, (int)(((unsigned char *)&chan->huffcontext)-((unsigned char *)chan)));
 
 	chan->sock = sock;
 	chan->remote_address = adr;
@@ -245,7 +245,10 @@ void Netchan_Transmit (netchan_t *chan, int length, byte *data) {
 #ifndef SERVERONLY
 	if (!cls.demoplayback)
 #endif
+	{
+		Huff_CompressPacket(chan->huffcontext, &send, chan->sock==NS_CLIENT?10:8);
 		NET_SendPacket (chan->sock, send.cursize, send.data, chan->remote_address);
+	}
 
 	if (chan->cleartime < curtime)
 		chan->cleartime = curtime + send.cursize * chan->rate;
@@ -339,5 +342,8 @@ qboolean Netchan_Process (netchan_t *chan) {
 
 	chan->last_received = curtime;
 
+	if (chan->huffcontext)
+		Huff_DecompressPacket(chan->huffcontext, &net_message, chan->sock==NS_SERVER?10:8);
+	
 	return true;
 }

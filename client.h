@@ -247,6 +247,7 @@ typedef struct {
 	int			lasttype;
 	qboolean	findtrack;
 
+	unsigned int hufftablecrc;
 } clientPersistent_t;
 
 extern clientPersistent_t	cls;

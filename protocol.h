@@ -254,6 +254,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define Z_EXT_SERVERTIME		(1 << 3)
 #define SUPPORTED_EXTENSIONS	(Z_EXT_PM_TYPE|Z_EXT_PM_TYPE_NEW|Z_EXT_SERVERTIME)
 
+#define QW_PROTOEXT_HUFF 0x46465548
 /*
 ==========================================================
   ELEMENTS COMMUNICATED ACROSS THE NET
