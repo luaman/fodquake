@@ -195,14 +195,22 @@ void Q_strncpyz (char *dest, char *src, size_t size) {
 	dest[size - 1] = 0;
 }
 
-void Q_snprintfz (char *dest, size_t size, char *fmt, ...) {
+int Q_snprintfz (char *dest, size_t size, char *fmt, ...) {
+	int i;
 	va_list		argptr;
 
 	va_start (argptr, fmt);
-	vsnprintf (dest, size, fmt, argptr);
+	i = vsnprintf (dest, size, fmt, argptr);
 	va_end (argptr);
 
-	dest[size - 1] = 0;
+#ifdef _WIN32
+	if (size > 0)
+		dest[size - 1] = 0;
+	if (i == -1)
+		i = size-1;
+#endif
+
+	return i;
 }
 
 int Com_HashKey (char *name) { 
