@@ -28,13 +28,13 @@ ifeq ($(OS), linux)
 	OSOBJS= \
 		sys_linux.o \
 		cd_linux.o \
-		snd_linux.o
+		snd_oss.o
 
 	OSSWOBJS=vid_x11.o in_x11.o
 	OSSWLDFLAGS=-L/usr/X11R6/lib -lX11 -lXext -lXxf86vm
 
 	OSGLOBJS=vid_glx.o in_x11.o
-	OSGLLDFLAGS=-L/usr/X11R6/lib -lX11 -lXext -lXxf86vm -lGL -lpthread
+	OSGLLDFLAGS=-L/usr/X11R6/lib -lX11 -lXext -lXxf86vm -lGL
 endif
 
 ifeq ($(OS), cygwin)
