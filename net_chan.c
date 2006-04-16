@@ -246,7 +246,8 @@ void Netchan_Transmit (netchan_t *chan, int length, byte *data) {
 	if (!cls.demoplayback)
 #endif
 	{
-		Huff_CompressPacket(chan->huffcontext, &send, chan->sock==NS_CLIENT?10:8);
+		if (cls.netchan.huffcontext)
+			Huff_CompressPacket(chan->huffcontext, &send, chan->sock==NS_CLIENT?10:8);
 		NET_SendPacket (chan->sock, send.cursize, send.data, chan->remote_address);
 	}
 
