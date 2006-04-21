@@ -97,7 +97,7 @@ S_LoadSound
 */
 sfxcache_t *S_LoadSound (sfx_t *s)
 {
-    char	namebuffer[256];
+	char	namebuffer[256];
 	byte	*data;
 	wavinfo_t	info;
 	int		len;
@@ -111,8 +111,8 @@ sfxcache_t *S_LoadSound (sfx_t *s)
 		return sc;
 
 // load it in
-    strcpy(namebuffer, "sound/");
-    strcat(namebuffer, s->name);
+	strcpy(namebuffer, "sound/");
+	strcat(namebuffer, s->name);
 
 	data = FS_LoadStackFile (namebuffer, stackbuf, sizeof(stackbuf));
 
