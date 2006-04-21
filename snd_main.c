@@ -784,7 +784,7 @@ void S_Play_f (void) {
 	static int hash = 345;
 
 	for (i = 1; i < Cmd_Argc(); i++) {
-		strlcpy(name, Cmd_Argv(i), sizeof(name));
+		Q_strncpy(name, Cmd_Argv(i), sizeof(name));
 		COM_DefaultExtension (name, ".wav");
 		sfx = S_PrecacheSound(name);
 		S_StartSound(hash++, 0, sfx, listener_origin, 1.0, 0.0);
@@ -799,7 +799,7 @@ void S_PlayVol_f (void) {
 	static int hash = 543;
 
 	for (i = 1; i+1 < Cmd_Argc(); i += 2) {
-		strlcpy(name, Cmd_Argv(i), sizeof(name));
+		Q_strncpy(name, Cmd_Argv(i), sizeof(name));
 		COM_DefaultExtension (name, ".wav");
 		sfx = S_PrecacheSound(name);
 		vol = Q_atof(Cmd_Argv(i + 1));
