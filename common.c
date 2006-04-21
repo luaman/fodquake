@@ -190,9 +190,14 @@ float Q_atof (char *str) {
 }
 
 
-void Q_strncpyz (char *dest, char *src, size_t size) {
+void Q_strncpyz (char *dest, char *src, size_t size)
+{
+#if USE_STRL
+	strlcpy(dest, src, size);
+#else
 	strncpy (dest, src, size - 1);
 	dest[size - 1] = 0;
+#endif
 }
 
 int Q_snprintfz (char *dest, size_t size, char *fmt, ...) {
@@ -396,7 +401,7 @@ void COM_DefaultExtension (char *path, char *extension) {
 		src--;
 	}
 
-	strncat (path, extension, MAX_OSPATH);
+	strncat (path, extension, MAX_OSPATH-1);
 }
 
 //If path doesn't have an extension or has a different extension, append(!) specified extension
@@ -408,7 +413,7 @@ void COM_ForceExtension (char *path, char *extension) {
 	if (src >= path && !strcmp(src, extension))
 		return;
 
-	strncat (path, extension, MAX_OSPATH);
+	strncat (path, extension, MAX_OSPATH-1);
 }
 
 //============================================================================
