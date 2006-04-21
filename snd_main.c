@@ -131,7 +131,7 @@ void S_Startup (void) {
 
 		for(i=0;i<NUMSOUNDDRIVERS;i++)
 		{
-			printf("Trying sound driver \"%s\"...\n", sounddrivers[i].name);
+			Com_Printf("Trying sound driver \"%s\"...\n", sounddrivers[i].name);
 			if (*sounddrivers[i].init)
 			{
 				rc = (*sounddrivers[i].init)(soundcard, 11025, 2, 16);
@@ -163,8 +163,29 @@ void S_Startup (void) {
 
 void SND_Restart_f (void)
 {
+	int i;
+
 	S_Shutdown();
-	S_Startup();
+	sound_started = 0;
+
+	for(i=0;i<num_sfx;i++)
+	{
+		if (Cache_Check(&known_sfx[i].cache))
+		{
+			Cache_Free(&known_sfx[i].cache);
+		}
+	}
+
+	num_sfx = 0;
+	if (!s_nosound.value)
+	{
+		S_Startup();
+
+		ambient_sfx[AMBIENT_WATER] = S_PrecacheSound ("ambience/water1.wav");
+		ambient_sfx[AMBIENT_SKY] = S_PrecacheSound ("ambience/wind2.wav");
+
+		S_StopAllSounds(true);
+	}
 }
 
 void S_CvarInit(void)
