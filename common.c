@@ -401,7 +401,19 @@ void COM_DefaultExtension (char *path, char *extension) {
 		src--;
 	}
 
-	strncat (path, extension, MAX_OSPATH-1);
+#if USE_STRL
+	strlcat(path, extension, MAX_OSPATH);
+#else
+	{
+		int len;
+
+		len = MAX_OSPATH-strlen(path)-1;
+		if (len > 0)
+		{
+			strncat (path, extension, len);
+		}
+	}
+#endif
 }
 
 //If path doesn't have an extension or has a different extension, append(!) specified extension
@@ -413,7 +425,19 @@ void COM_ForceExtension (char *path, char *extension) {
 	if (src >= path && !strcmp(src, extension))
 		return;
 
-	strncat (path, extension, MAX_OSPATH-1);
+#if USE_STRL
+	strlcat(path, extension, MAX_OSPATH);
+#else
+	{
+		int len;
+
+		len = MAX_OSPATH-strlen(path)-1;
+		if (len > 0)
+		{
+			strncat (path, extension, len);
+		}
+	}
+#endif
 }
 
 //============================================================================
