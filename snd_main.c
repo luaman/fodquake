@@ -176,13 +176,14 @@ void SND_Restart_f (void)
 		}
 	}
 
-	num_sfx = 0;
 	if (!s_nosound.value)
 	{
 		S_Startup();
 
-		ambient_sfx[AMBIENT_WATER] = S_PrecacheSound ("ambience/water1.wav");
-		ambient_sfx[AMBIENT_SKY] = S_PrecacheSound ("ambience/wind2.wav");
+		for(i=0;i<num_sfx;i++)
+		{
+			S_LoadSound(&known_sfx[i]);
+		}
 
 		S_StopAllSounds(true);
 	}
@@ -240,7 +241,8 @@ void S_CvarInit(void)
 
 void S_Init(void)
 {
-	S_Startup ();
+	if (!s_nosound.value)
+		S_Startup ();
 
 	SND_InitScaletable ();
 
@@ -302,9 +304,6 @@ static sfx_t *S_FindName (char *name) {
 
 sfx_t *S_PrecacheSound (char *name) {
 	sfx_t *sfx;
-
-	if (!sound_started || s_nosound.value)
-		return NULL;
 
 	sfx = S_FindName (name);
 

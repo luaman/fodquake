@@ -105,6 +105,9 @@ sfxcache_t *S_LoadSound (sfx_t *s)
 	sfxcache_t	*sc;
 	byte	stackbuf[1*1024];		// avoid dirtying the cache heap
 
+	if (!soundcard)
+		return 0;
+
 // see if still in memory
 	sc = Cache_Check (&s->cache);
 	if (sc)
