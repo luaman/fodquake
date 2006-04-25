@@ -368,7 +368,6 @@ void Cvar_Register (cvar_t *var) {
 
 qboolean Cvar_Command (void) {
 	cvar_t *v;
-	char *spaces;
 
 	// check variables
 	if (!(v = Cvar_FindVar (Cmd_Argv(0))))
@@ -377,8 +376,7 @@ qboolean Cvar_Command (void) {
 	if (Cmd_Argc() == 1) {
 		if (cvar_viewdefault.value) {
 			Com_Printf ("%s : default value is \"%s\"\n", v->name, v->defaultvalue);
-			spaces = CreateSpaces(strlen(v->name) + 2);
-			Com_Printf ("%s current value is \"%s\"\n", spaces, v->string);
+			Com_Printf ("%*s current value is \"%s\"\n", strlen(v->name)+2, "", v->string);
 		} else {
 			Com_Printf ("\"%s\" is \"%s\"\n", v->name, v->string);
 		}
