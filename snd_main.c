@@ -65,7 +65,6 @@ static sfx_t	*ambient_sfx[NUM_AMBIENTS];
 static int sound_started = 0;
 
 cvar_t bgmvolume = {"bgmvolume", "1", CVAR_ARCHIVE};
-cvar_t s_initsound = {"s_initsound", "1"};
 cvar_t s_volume = {"volume", "0.7", CVAR_ARCHIVE};
 cvar_t s_nosound = {"s_nosound", "0"};
 cvar_t s_precache = {"s_precache", "1"};
@@ -194,7 +193,6 @@ void S_CvarInit(void)
 	Cvar_SetCurrentGroup(CVAR_GROUP_SOUND);
 	Cvar_Register(&bgmvolume);
 	Cvar_Register(&s_volume);
-	Cvar_Register(&s_initsound);
 	Cvar_Register(&s_nosound);
 	Cvar_Register(&s_precache);
 	Cvar_Register(&s_loadas8bit);
@@ -218,11 +216,6 @@ void S_CvarInit(void)
 	Cmd_AddLegacyCommand ("snd_noextraupdate", "s_noextraupdate");
 	Cmd_AddLegacyCommand ("snd_show", "s_show");
 	Cmd_AddLegacyCommand ("_snd_mixahead", "s_mixahead");
-
-	if (COM_CheckParm("-nosound") || !s_initsound.value) {
-		Cmd_AddLegacyCommand ("play", "");	// just suppress warnings
-		return;
-	}
 
 	Cmd_AddCommand("snd_restart", SND_Restart_f);
 	Cmd_AddCommand("play", S_Play_f);
