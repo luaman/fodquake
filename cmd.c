@@ -27,6 +27,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 extern cvar_t vid_fullscreen;
 extern cvar_t vid_width;
 extern cvar_t vid_height;
+extern cvar_t s_nosound;
 
 #ifdef GLQUAKE
 extern cvar_t vid_depth;
@@ -256,6 +257,8 @@ void Cmd_ParseLegacyCmdLineCmds()
 			Cvar_Set(&vid_fullscreen, "1");
 		else if (strcmp(com_argv[i], "-window") == 0)
 			Cvar_Set(&vid_fullscreen, "0");
+		else if (strcmp(com_argv[i], "-nosound") == 0)
+			Cvar_Set(&s_nosound, "1");
 #ifdef GLQUAKE
 		else if (strcmp(com_argv[i], "-depth") == 0 && i+1 < com_argc)
 			Cvar_Set(&vid_depth, com_argv[i+1]);
