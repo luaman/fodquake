@@ -140,12 +140,10 @@ void SList_Load (void) {
 
 void SList_Save (FILE *f) {
 	int i;
-	char *spaces;
 
 	for (i = 0; i < MAX_SERVER_LIST; i++) {
 		if (!slist[i].server)
 			break;
-		spaces = CreateSpaces(32 - strlen(slist[i].server));
-		fprintf(f, "%s%s%s\n", slist[i].server, spaces, slist[i].description);
+		fprintf(f, "%s%*s%s\n", slist[i].server, 32-strlen(slist[i].server), "", slist[i].description);
 	}
 }
