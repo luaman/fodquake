@@ -70,7 +70,7 @@ cvar_t	cfg_backup			=	{"cfg_backup", "0"};
 #define BIND_ALIGN_COL 20
 void DumpBindings (FILE *f) {
 	int i, leftright;
-	char *spaces, *string;
+	char *string;
 	qboolean printed = false;
 
 	for (i = 0; i < 256; i++) {
@@ -79,11 +79,10 @@ void DumpBindings (FILE *f) {
 		if (keybindings[i] || leftright) {
 			printed = true;
 			string = Key_KeynumToString(i);
-			spaces = CreateSpaces(BIND_ALIGN_COL - strlen(string) - 6);
 			if (i == ';')
-				fprintf (f, "bind  \";\"%s\"%s\"\n", spaces, keybindings[i]);
+				fprintf (f, "bind  \";\"%*s\"%s\"\n", BIND_ALIGN_COL - strlen(string) - 6, "", keybindings[i]);
 			else
-				fprintf (f, "bind  %s%s\"%s\"\n", string, spaces, keybindings[leftright ? i + 1 : i]);
+				fprintf (f, "bind  %s%*s\"%s\"\n", string, BIND_ALIGN_COL - strlen(string) - 6, "", keybindings[leftright ? i + 1 : i]);
 
 			if (leftright)
 				i += 2;
@@ -97,7 +96,6 @@ void DumpBindings (FILE *f) {
 static void DumpVariables(FILE	*f)	{
 	cvar_t *var, *sorted_vars[256];
 	cvar_group_t *group;
-	char *spaces;
 	int count, i, col_size;
 	qboolean skip_userinfo = false;
 
@@ -167,8 +165,7 @@ static void DumpVariables(FILE	*f)	{
 		for (i = 0; i < count; i++) {
 			var = sorted_vars[i];
 			if (cfg_save_unchanged.value || strcmp(var->string, var->defaultvalue)) {
-				spaces = CreateSpaces(col_size - strlen(var->name));
-				fprintf(f, "%s%s\"%s\"\n", var->name, spaces, var->string);
+				fprintf(f, "%s%*s\"%s\"\n", var->name, col_size - strlen(var->name), "", var->string);
 			}
 		}
 	
@@ -194,8 +191,7 @@ static void DumpVariables(FILE	*f)	{
 	
 		for (i = 0; i < count; i++) {
 			var = sorted_vars[i];
-			spaces = CreateSpaces(col_size - strlen(var->name));
-			fprintf(f, "%s%s\"%s\"\n", var->name, spaces, var->string);
+			fprintf(f, "%s%*s\"%s\"\n", var->name, col_size - strlen(var->name), "", var->string);
 		}
 	
 		fprintf(f, "\n");
@@ -224,15 +220,13 @@ static void DumpVariables(FILE	*f)	{
 	for (i = 0; i < count; i++) {
 		var = sorted_vars[i];
 
-		spaces = CreateSpaces(col_size - strlen(var->name) - 5);
-		fprintf	(f, "%s %s%s\"%s\"\n", (var->flags & CVAR_USER_ARCHIVE) ? "seta" : "set ", var->name, spaces, var->string);
+		fprintf	(f, "%s %s%*s\"%s\"\n", (var->flags & CVAR_USER_ARCHIVE) ? "seta" : "set ", var->name, col_size - strlen(var->name) - 5, "", var->string);
 	}
 }
 
 #define MAX_ALIGN_COL 60
 static void DumpAliases(FILE *f) {
 	int maxlen, i, j, count, lonely_count, minus_index, minus_count;
-	char *spaces;
 	cmd_alias_t	*b, *a, *sorted_aliases[512], *lonely_pluses[512];
 	qboolean partner, printed;
 
@@ -281,10 +275,8 @@ static void DumpAliases(FILE *f) {
 
 			if (!Q_strcasecmp(b->name + 1, a->name + 1)) {
 			
-				spaces = CreateSpaces(maxlen + 3 - strlen(a->name));
-				fprintf	(f, "alias %s%s\"%s\"\n", a->name, spaces, a->value);
-				spaces = CreateSpaces(maxlen + 3 - strlen(b->name));
-				fprintf	(f, "alias %s%s\"%s\"\n", b->name, spaces, b->value);
+				fprintf	(f, "alias %s%*s\"%s\"\n", a->name, maxlen + 3 - strlen(a->name), "", a->value);
+				fprintf	(f, "alias %s%*s\"%s\"\n", b->name, maxlen + 3 - strlen(b->name), "", b->value);
 				printed = partner = true;
 				break;
 			}
@@ -298,8 +290,7 @@ static void DumpAliases(FILE *f) {
 	for (i = 0; i < lonely_count; i++) {
 		a = lonely_pluses[i];
 			
-		spaces = CreateSpaces(maxlen + 3 - strlen(a->name));
-		fprintf	(f, "alias %s%s\"%s\"\n", a->name, spaces, a->value);
+		fprintf	(f, "alias %s%*s\"%s\"\n", a->name, maxlen + 3 - strlen(a->name), "", a->value);
 		printed = true;
 	}
 
@@ -318,8 +309,7 @@ static void DumpAliases(FILE *f) {
 		}
 		if (!partner) {
 		
-			spaces = CreateSpaces(maxlen + 3 - strlen(a->name));
-			fprintf	(f, "alias %s%s\"%s\"\n", a->name, spaces, a->value);
+			fprintf	(f, "alias %s%*s\"%s\"\n", a->name, maxlen + 3 - strlen(a->name), "", a->value);
 			printed = true;
 		}
 	}
@@ -330,8 +320,7 @@ static void DumpAliases(FILE *f) {
 			if (printed)
 				fprintf(f, "\n");
 			printed = false;
-			spaces = CreateSpaces(maxlen + 3 - strlen(a->name));
-			fprintf	(f, "alias %s%s\"%s\"\n", a->name, spaces, a->value);
+			fprintf	(f, "alias %s%*s\"%s\"\n", a->name, maxlen + 3 - strlen(a->name), "", a->value);
 		}
 	}
 }
@@ -367,17 +356,14 @@ static void DumpPlusCommands(FILE *f) {
 }
 
 static void DumpColorForcing(FILE *f, char *name, int topcolor, int bottomcolor) {
-	char *spaces;
-
-	spaces = CreateSpaces(13 - strlen(name));
 	if (topcolor < 0) {
 		if (cfg_save_unchanged.value)
-			fprintf	(f,	"%s%soff\n", name, spaces);
+			fprintf	(f,	"%s%*soff\n", name, 13 - strlen(name), "");
 	} else {
 		if (topcolor != bottomcolor)
-			fprintf	(f,	"%s%s%i %i\n", name, spaces, topcolor, bottomcolor);
+			fprintf	(f,	"%s%*s%i %i\n", name, 13 - strlen(name), "", topcolor, bottomcolor);
 		else
-			fprintf	(f,	"%s%s%i\n", name, spaces, topcolor);
+			fprintf	(f,	"%s%*s%i\n", name, 13 - strlen(name), "", topcolor);
 	}
 }
 

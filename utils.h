@@ -26,7 +26,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define	PLAYER_NAME_NOMATCH		-2
 #define	PLAYER_NUM_NOMATCH		-3
 
-char *CreateSpaces(int amount);
 char *SecondsToMinutesString(int print_time);
 char *SecondsToHourString(int time);
 byte *StringToRGB(char *s);

@@ -26,17 +26,6 @@ char *COM_FileExtension (char *in);
 
 /************************************** General Utils **************************************/
 
-char *CreateSpaces(int amount) {
-	static char spaces[1024];
-	int size;
-
-	size = bound(1, amount, sizeof(spaces) - 1);
-	memset(spaces, ' ', size);
-	spaces[size] = 0;
-
-	return spaces;
-}
-
 char *SecondsToMinutesString(int print_time) {
 	static char time[128];
 	int tens_minutes, minutes, tens_seconds, seconds;
