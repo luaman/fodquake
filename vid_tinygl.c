@@ -146,7 +146,7 @@ void *Sys_Video_Open(int width, int height, int depth, int fullscreen, unsigned 
 			d->window = OpenWindowTags(0,
 				WA_InnerWidth, vid.width,
 				WA_InnerHeight, vid.height,
-				WA_Title, "Fodquake",
+				WA_Title, "FodQuake",
 				WA_DragBar, d->screen?FALSE:TRUE,
 				WA_DepthGadget, d->screen?FALSE:TRUE,
 				WA_Borderless, d->screen?TRUE:FALSE,
@@ -370,8 +370,6 @@ void *tglGetProcAddress(char *s)
 		return (void *)myglMultiTexCoord2fARB;
 	else if (strcmp(s, "glActiveTextureARB") == 0)
 		return (void *)myglActiveTextureARB;
-
-	printf("tglGetProcAddress(\"%s\")\n", s);
 
 	return 0;
 }
