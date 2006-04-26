@@ -397,6 +397,8 @@ void *X11_Input_Init(Display *x_disp, Window x_win, int x_shmeventtype)
 		id->keyq_tail = 0;
 		id->mousex = 0;
 		id->mousey = 0;
+		id->old_windowed_mouse = 0;
+		id->oldmousex = id->oldmousey = 0;
 
 		Cvar_SetCurrentGroup(CVAR_GROUP_INPUT_KEYBOARD);
 		Cvar_Register(&cl_keypad);
