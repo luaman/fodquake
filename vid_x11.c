@@ -261,7 +261,7 @@ static void TragicDeath(int signal_num)
 // makes a null cursor
 // ========================================================================
 
-static Cursor CreateNullCursor(Display * display, Window root)
+static Cursor CreateNullCursor(Display *display, Window root)
 {
 	Pixmap cursormask;
 	XGCValues xgc;
@@ -739,6 +739,11 @@ void Sys_Video_Close(void *display)
 	if (d->vidmode_active)
 		XF86VidModeSwitchToMode(d->x_disp, d->scrnum, d->vidmodes[0]);
 #endif
+
+	XFree(d->x_visinfo);
+
+	XFreeGC(d->x_disp, d->x_gc);
+
 	XCloseDisplay(d->x_disp);
 
 	free(d);
