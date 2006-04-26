@@ -257,7 +257,6 @@ void Host_Init (int argc, char **argv, int default_memsize) {
 	CL_Init ();
 
 #ifndef SERVERONLY
-	
 	if (!dedicated)
 		CL_SaveArgv(argc, argv);
 #endif
@@ -267,6 +266,8 @@ void Host_Init (int argc, char **argv, int default_memsize) {
 
 	host_initialized = true;
 
+	Cmd_EnableFunctionExecution();
+	
 	Com_Printf ("Exe: "__TIME__" "__DATE__"\n");
 	Com_Printf ("Hunk allocation: %4.1f MB.\n", (float) host_memsize / (1024 * 1024));
 

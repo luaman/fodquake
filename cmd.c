@@ -39,6 +39,8 @@ qboolean CL_CheckServerCommand (void);
 
 static void Cmd_ExecuteStringEx (cbuf_t *context, char *text);
 
+static qboolean can_execute_functions;
+
 cvar_t cl_warncmd = {"cl_warncmd", "0"};
 
 cbuf_t	cbuf_main;
@@ -46,6 +48,7 @@ cbuf_t	cbuf_main;
 cbuf_t	cbuf_svc;
 cbuf_t	cbuf_safe, cbuf_formatted_comms;
 #endif
+cbuf_t	cbuf_cmdsave;
 
 cbuf_t	*cbuf_current = NULL;
 
@@ -97,6 +100,10 @@ void Cbuf_Init (void) {
 	cbuf_svc.wait = false;
 	cbuf_svc.runAwayLoop = 0;
 #endif
+
+	cbuf_cmdsave.text_start = cbuf_cmdsave.text_end = (MAXCMDBUF >> 1);
+	cbuf_cmdsave.wait = false;
+	cbuf_cmdsave.runAwayLoop = 0;
 }
 
 //Adds command text at the end of the buffer
@@ -1116,34 +1123,42 @@ static void Cmd_ExecuteStringEx (cbuf_t *context, char *text) {
 	// check functions
 	if ((cmd = Cmd_FindCommand(cmd_argv[0]))) {
 #ifndef SERVERONLY
-		char **s;
+		if (can_execute_functions)
+		{
+			char **s;
 
-		if (cbuf_current == &cbuf_safe) {
-			for (s = msgtrigger_commands; *s; s++) {
-				if (!Q_strcasecmp(cmd_argv[0], *s))
-					break;
+			if (cbuf_current == &cbuf_safe) {
+				for (s = msgtrigger_commands; *s; s++) {
+					if (!Q_strcasecmp(cmd_argv[0], *s))
+						break;
+				}
+				if (!*s) {
+					Com_Printf ("\"%s\" cannot be used in message triggers\n", cmd_argv[0]);
+					goto done;
+				}
+			} else if (cbuf_current == &cbuf_formatted_comms) {
+				for (s = formatted_comms_commands; *s; s++) {
+					if (!Q_strcasecmp(cmd_argv[0], *s))
+						break;
+				}
+				if (!*s) {
+					Com_Printf("\"%s\" cannot be used in combination with teamplay $macros\n", cmd_argv[0]);
+					goto done;
+				}
 			}
-			if (!*s) {
-				Com_Printf ("\"%s\" cannot be used in message triggers\n", cmd_argv[0]);
-				goto done;
-			}
-		} else if (cbuf_current == &cbuf_formatted_comms) {
-			for (s = formatted_comms_commands; *s; s++) {
-				if (!Q_strcasecmp(cmd_argv[0], *s))
-					break;
-			}
-			if (!*s) {
-				Com_Printf("\"%s\" cannot be used in combination with teamplay $macros\n", cmd_argv[0]);
-				goto done;
-			}
-		}
 #endif
 
-		if (cmd->function)
-			cmd->function();
+			if (cmd->function)
+				cmd->function();
+			else
+				Cmd_ForwardToServer ();
+			goto done;
+		}
 		else
-			Cmd_ForwardToServer ();
-		goto done;
+		{
+			Cbuf_AddTextEx(&cbuf_cmdsave, text);
+			Cbuf_AddTextEx(&cbuf_cmdsave, "\n");
+		}
 	}
 
 	// some bright guy decided to use "skill" as a mod command in Custom TF, sigh
@@ -1303,6 +1318,13 @@ int Cmd_CheckParm (char *parm) {
 			return i;
 
 	return 0;
+}
+
+void Cmd_EnableFunctionExecution()
+{
+	can_execute_functions = 1;
+
+	Cbuf_ExecuteEx(&cbuf_cmdsave);
 }
 
 void Cmd_Init (void) {
