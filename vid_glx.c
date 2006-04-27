@@ -52,6 +52,7 @@ struct display
 #ifdef USE_VMODE
 	XF86VidModeModeInfo **vidmodes;
 	qboolean vidmode_active;
+	qboolean customgamma;
 #endif
 	Display *x_disp;
 	Window x_win;
@@ -73,7 +74,6 @@ struct display
 #define X_MASK (KEY_MASK | MOUSE_MASK | VisibilityChangeMask)
 
 qboolean vid_hwgamma_enabled = false;
-qboolean customgamma = false;
 
 static int scr_width, scr_height;
 
@@ -160,7 +160,7 @@ void Sys_Video_SetGamma(struct display *display, unsigned short *ramps)
 		if (vid_hwgamma_enabled)
 		{
 			XF86VidModeSetGammaRamp(d->x_disp, d->scrnum, 256, ramps, ramps + 256, ramps + 512);
-			customgamma = true;
+			d->customgamma = true;
 		}
 	}
 #endif
@@ -169,9 +169,9 @@ void Sys_Video_SetGamma(struct display *display, unsigned short *ramps)
 static void RestoreHWGamma(struct display *d)
 {
 #if USE_VMODE
-	if (d->vid_gammaworks && customgamma)
+	if (d->vid_gammaworks && d->customgamma)
 	{
-		customgamma = false;
+		d->customgamma = false;
 		XF86VidModeSetGammaRamp(d->x_disp, d->scrnum, 256, d->systemgammaramp[0], d->systemgammaramp[1], d->systemgammaramp[2]);
 	}
 #endif
