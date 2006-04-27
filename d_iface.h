@@ -134,7 +134,6 @@ void D_ViewChanged (void);
 void D_SetupFrame (void);
 void D_WarpScreen (void);
 
-void D_FillRect (vrect_t *vrect, int color);
 void D_DrawRect (void);
 
 // currently for internal use only, and should be a do-nothing function in

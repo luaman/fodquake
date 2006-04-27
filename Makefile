@@ -136,7 +136,6 @@ OBJS= \
 
 SWOBJS= \
 	d_edge.o \
-	d_fill.o \
 	d_init.o \
 	d_modech.o \
 	d_polyse.o \
