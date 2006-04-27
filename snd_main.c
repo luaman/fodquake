@@ -130,9 +130,9 @@ void S_Startup (void) {
 
 		for(i=0;i<NUMSOUNDDRIVERS;i++)
 		{
-			Com_Printf("Trying sound driver \"%s\"...\n", sounddrivers[i].name);
 			if (*sounddrivers[i].init)
 			{
+				Com_Printf("Trying sound driver \"%s\"...\n", sounddrivers[i].name);
 				rc = (*sounddrivers[i].init)(soundcard, 11025, 2, 16);
 				if (rc)
 				{
