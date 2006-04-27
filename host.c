@@ -187,8 +187,14 @@ void Host_Init (int argc, char **argv, int default_memsize) {
 	R_CvarInit();
 	Con_CvarInit();
 	SCR_CvarInit();
-	CL_CvarInit();
-	CL_CvarInitInput();
+	if (!dedicated)
+	{
+		CL_CvarInit();
+		CL_CvarInitInput();
+		CL_CvarInitPrediction();
+		CL_CvarInitCam();
+		CL_CvarDemoInit();
+	}
 	ConfigManager_CvarInit();
 	Movie_CvarInit();
 	MT_CvarInit();
@@ -199,17 +205,15 @@ void Host_Init (int argc, char **argv, int default_memsize) {
 	Auth_CvarInit();
 	V_CvarInit();
 	Log_CvarInit();
-	CL_CvarInitPrediction();
 	Netchan_CvarInit();
 	Stats_CvarInit();
 	Draw_CvarInit();
 	Key_CvarInit();
-	CL_CvarInitCam();
 	M_CvarInit();
-	CL_CvarDemoInit();
 	PR_CvarInit();
 	FMod_CvarInit();
 	FChecks_CvarInit();
+	Sys_CvarInit();
 
 	cvarsregged = 1;
 	Cvar_Register(&dummycvar);
@@ -222,12 +226,6 @@ void Host_Init (int argc, char **argv, int default_memsize) {
 		Cbuf_AddText ("exec server.cfg\n");
 		Cmd_StuffCmds_f ();		// process command line arguments
 		Cbuf_Execute ();
-
-		// if a map wasn't specified on the command line, spawn start map
-		if (!com_serveractive)
-			Cmd_ExecuteString ("map start");
-		if (!com_serveractive)
-			Host_Error ("Couldn't spawn a server");
 	} else {
 		Cbuf_AddText ("exec default.cfg\n");
 		if (FS_FOpenFile("config.cfg", &f) != -1) {
@@ -271,18 +269,18 @@ void Host_Init (int argc, char **argv, int default_memsize) {
 	Com_Printf ("Exe: "__TIME__" "__DATE__"\n");
 	Com_Printf ("Hunk allocation: %4.1f MB.\n", (float) host_memsize / (1024 * 1024));
 
-	Com_Printf ("\nFuhQuake version %s\n\n", VersionString());
-	if (dedicated) {
-		Com_Printf ("========== www.fuhquake.net ==========\n\n");
-		Com_Printf ("======== FuhQuake Initialized ========\n\n");
-		Com_Printf("\n");
-	} else {
-		Com_Printf (Host_PrintBars("www\x9c" "fuhquake\x9c" "net", 38));
-		Com_Printf(Host_PrintBars("FuhQuake Initialized", 38));
-		Com_Printf("\n");
-	}
+	Com_Printf ("\nFodQuake version %s\n\n", VersionString());
 
-	VID_Open();
+	if (dedicated)
+	{
+		// if a map wasn't specified on the command line, spawn start map
+		if (!com_serveractive)
+			Cmd_ExecuteString ("map start");
+		if (!com_serveractive)
+			Host_Error ("Couldn't spawn a server");
+	}
+	else
+		VID_Open();
 }
 
 //FIXME: this is a callback from Sys_Quit and Sys_Error.  It would be better

@@ -81,13 +81,17 @@ void Sys_Quit(void)
 	exit(0);
 }
 
-void Sys_Init(void)
+void Sys_CvarInit(void)
 {
 	if (dedicated)
 	{
 		Cvar_Register(&sys_nostdout);
 		Cvar_Register(&sys_extrasleep);
 	}
+}
+
+void Sys_Init(void)
+{
 }
 
 void Sys_Error(char *error, ...)
@@ -102,6 +106,7 @@ void Sys_Error(char *error, ...)
 	va_end(argptr);
 	fprintf(stderr, "Error: %s\n", string);
 
+	*(int *)0 = 0;
 	Host_Shutdown();
 	exit(1);
 }
