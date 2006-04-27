@@ -30,6 +30,10 @@ void Sys_Shutdown()
 	}
 }
 
+void Sys_CvarInit()
+{
+}
+
 void Sys_Init()
 {
 }
