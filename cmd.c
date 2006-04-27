@@ -1123,7 +1123,7 @@ static void Cmd_ExecuteStringEx (cbuf_t *context, char *text) {
 	// check functions
 	if ((cmd = Cmd_FindCommand(cmd_argv[0]))) {
 #ifndef SERVERONLY
-		if (can_execute_functions)
+		if (can_execute_functions || strcmp(cmd_argv[0], "exec") == 0)
 		{
 			char **s;
 
