@@ -3354,31 +3354,20 @@ void M_SEdit_Key (int key) {
 
 // <-- SLIST
 
-void M_Quit_Draw (void) {
-	static char *quitmsg[] = {
-#if 0
-	"0FuhQuake " FUH_VERSION,
-	"1",
-	"1http://www.fuhquake.net",
-	"1",
-	"0Programming",
-	"1A 'fuh' Nourai",
-	"1",
-	"0Based on ZQuake by Anton Gavrilov",
-	"1",
-	"0Id Software is not responsible for",
-    "0providing technical support for",
-	"0FuhQuake.",
-	"1NOTICE: The copyright and trademark",
-	"1 notices appearing  in your copy of",
-	"1Quake(r) are not modified by the use",
-	"1of FuhQuake and remain in full force.",
-	"0QuakeWorld(tm) is a trademark of",
-	"0Id Software, Inc.",
-#else
-	"Fixme",
-#endif
-	NULL};
+void M_Quit_Draw (void)
+{
+	static char *quitmsg[] =
+	{
+		"0FodQuake "FODQUAKE_VERSION" by Mark Olsen",
+		"0",
+		"0Based on:",
+		"0FuhQuake by A Nourai",
+		"0ZQuake by Anton Garilov",
+		"0Quakeworld by Id Software",
+		"0",
+		"1Press 'y' to exit FodQuake",
+		NULL
+	};
 	char **p;
 	int x, y;
 
