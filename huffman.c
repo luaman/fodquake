@@ -4,6 +4,7 @@
 #include "huffmantable_q3.h"
 #include "bitswap.h"
 #include "common.h"
+#include "huffman.h"
 
 static void huffencbyte(struct huffenctable_s *huffenctable, unsigned char inbyte, unsigned char *outbuf, unsigned int *len)
 {
