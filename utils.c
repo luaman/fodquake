@@ -115,7 +115,7 @@ void Util_Process_Filename(char *string) {
 }
 
 qboolean Util_Is_Valid_Filename(char *s) {
-	static char badchars[] = {'?', '*', ':', '<', '>', '"'};
+	static const char badchars[] = {'?', '*', ':', '<', '>', '"'};
 
 	if (!s || !*s)
 		return false;
