@@ -89,5 +89,7 @@ void VID_UnlockBuffer (void);
 
 void VID_SetCaption (char *text);
 
+void VID_GetMouseMovement(int *mousex, int *mousey);
+
 void VID_SetDeviceGammaRamp (unsigned short *ramps);
 extern qboolean vid_hwgamma_enabled;

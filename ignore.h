@@ -27,6 +27,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define	NO_IGNORE_ADD		1
 #define	IGNORE_NO_ADD		2
 
+void Ignore_CvarInit(void);
 void Ignore_Init(void);
 qboolean Ignore_Message(char *s, int flags, int offset);
 char Ignore_Check_Flood(char *s, int flags, int offset);

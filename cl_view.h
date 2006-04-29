@@ -26,6 +26,7 @@ void V_AddLightBlend (float r, float g, float b, float a2);
 extern cvar_t v_gamma;
 extern cvar_t v_contrast;
 
+void V_CvarInit(void);
 void V_Init (void);
 void V_RenderView (void);
 void V_UpdatePalette (void);

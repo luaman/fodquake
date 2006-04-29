@@ -566,6 +566,7 @@ void	Skin_AllSkins_f (void);
 void	Skin_NextDownload (void);
 
 // match_tools.c
+void MT_CvarInit(void);
 void MT_Init(void);
 void MT_Frame(void);
 void MT_Disconnect(void);

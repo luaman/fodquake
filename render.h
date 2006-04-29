@@ -99,6 +99,7 @@ extern struct texture_s	*r_notexture_mip;
 
 extern	entity_t	r_worldentity;
 
+void R_CvarInit(void);
 void R_Init (void);
 void R_InitTextures (void);
 void R_InitEfrags (void);

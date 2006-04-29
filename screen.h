@@ -21,6 +21,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #define		SCR_NEED_CONSOLE_BACKGROUND		(cls.state < ca_active && !cl.intermission)
 
+void SCR_CvarInit(void);
 void SCR_Init (void);
 
 void SCR_UpdateScreen (void);
