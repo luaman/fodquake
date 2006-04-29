@@ -614,7 +614,7 @@ no_lf:
 	    case K_PGUP:
 	    case K_MWHEELUP:
 			if (keydown[K_CTRL] && key == K_PGUP)
-				con.display -= ((int)scr_conlines - 22) >> 3;
+				con.display -= ((int)scr_conlines - 40) >> 3;
 			else
 				con.display -= 2;
 			if (con.display - con.current + con.numlines < 0)
@@ -624,7 +624,7 @@ no_lf:
 	    case K_MWHEELDOWN:
 	    case K_PGDN:
 			if (keydown[K_CTRL] && key == K_PGDN)
-				con.display += ((int)scr_conlines - 22) >> 3;
+				con.display += ((int)scr_conlines - 40) >> 3;
 			else
 				con.display += 2;
 			if (con.display - con.current > 0)
