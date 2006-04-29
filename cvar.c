@@ -307,7 +307,7 @@ If the variable already exists, the value will not be set
 The flags will be or'ed in if the variable exists.
 */
 
-extern cvarsregged;
+extern int cvarsregged;
 
 void Cvar_Register (cvar_t *var) {
 	char string[512];
