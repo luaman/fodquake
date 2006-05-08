@@ -154,6 +154,8 @@ void Sys_Video_Close(void *display)
 	struct display *d = display;
 	int i;
 
+	D_FlushCaches();
+
 	if (d->inputdata)
 		Sys_Input_Shutdown(d->inputdata);
 
