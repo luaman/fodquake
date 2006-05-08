@@ -240,60 +240,68 @@ void Draw_Pixel(int x, int y, byte color) {
 
 
 #define		NUMCROSSHAIRS 6
-static qboolean crosshairdata[NUMCROSSHAIRS][64] = {
-	false, false, false, true,  false, false, false, false,
-	false, false, false, false, false, false, false, false,
-	false, false, false, true,  false, false, false, false,
-	true,  false, true,  false, true,  false, true,  false,
-	false, false, false, true,  false, false, false, false,
-	false, false, false, false, false, false, false, false,
-	false, false, false, true,  false, false, false, false,
-	false, false, false, false, false, false, false, false,
-
-	false, false, false, false, false, false, false, false,
-	false, false, false, false, false, false, false, false,
-	false, false, false, true,  false, false, false, false,
-	false, false, true,  true,  true,  false, false, false,
-	false, false, false, true,  false, false, false, false,
-	false, false, false, false, false, false, false, false,
-	false, false, false, false, false, false, false, false,
-	false, false, false, false, false, false, false, false,
-
-	false, false, false, false, false, false, false, false,
-	false, false, false, false, false, false, false, false,
-	false, false, false, false, false, false, false, false,
-	false, false, false, true,  false, false, false, false,
-	false, false, false, false, false, false, false, false,
-	false, false, false, false, false, false, false, false,
-	false, false, false, false, false, false, false, false,
-	false, false, false, false, false, false, false, false,
-
-	true,  false, false, false, false, false, false, true,
-	false, true,  false, false, false, false, true, false,
-	false, false, true,  false, false, true,  false, false,
-	false, false, false, false, false, false, false, false,
-	false, false, false, false, false, false, false, false,
-	false, false, true,  false, false, true,  false, false,
-	false, true,  false, false, false, false, true,  false,
-	true,  false, false, false, false, false, false, true,
-
-	false, false, true,  true,  true,  false, false, false, 
-	false, true,  false, true,  false, true,  false, false, 
-	true,  true,  false, true,  false, true,  true,  false, 
-	true,  true,  true,  true,  true,  true,  true,  false, 
-	true,  false, true,  true,  true,  false, true,  false, 
-	false, true,  false, false, false, true,  false, false, 
-	false, false, true,  true,  true,  false, false, false, 
-	false, false, false, false, false, false, false, false,
-	
-	false, false, true,  true,  true,  false, false, false, 
-	false, false, false, false, false, false, false, false, 
-	true,  false, false, false, false, false, true,  false, 
-	true,  false, false, true,  false, false, true,  false, 
-	true,  false, false, false, false, false, true,  false, 
-	false, false, false, false, false, false, false, false, 
-	false, false, true,  true,  true,  false, false, false, 
-	false, false, false, false, false, false, false, false
+static qboolean crosshairdata[NUMCROSSHAIRS][64] =
+{
+	{
+		false, false, false, true,  false, false, false, false,
+		false, false, false, false, false, false, false, false,
+		false, false, false, true,  false, false, false, false,
+		true,  false, true,  false, true,  false, true,  false,
+		false, false, false, true,  false, false, false, false,
+		false, false, false, false, false, false, false, false,
+		false, false, false, true,  false, false, false, false,
+		false, false, false, false, false, false, false, false,
+	},
+	{
+		false, false, false, false, false, false, false, false,
+		false, false, false, false, false, false, false, false,
+		false, false, false, true,  false, false, false, false,
+		false, false, true,  true,  true,  false, false, false,
+		false, false, false, true,  false, false, false, false,
+		false, false, false, false, false, false, false, false,
+		false, false, false, false, false, false, false, false,
+		false, false, false, false, false, false, false, false,
+	},
+	{
+		false, false, false, false, false, false, false, false,
+		false, false, false, false, false, false, false, false,
+		false, false, false, false, false, false, false, false,
+		false, false, false, true,  false, false, false, false,
+		false, false, false, false, false, false, false, false,
+		false, false, false, false, false, false, false, false,
+		false, false, false, false, false, false, false, false,
+		false, false, false, false, false, false, false, false,
+	},
+	{
+		true,  false, false, false, false, false, false, true,
+		false, true,  false, false, false, false, true, false,
+		false, false, true,  false, false, true,  false, false,
+		false, false, false, false, false, false, false, false,
+		false, false, false, false, false, false, false, false,
+		false, false, true,  false, false, true,  false, false,
+		false, true,  false, false, false, false, true,  false,
+		true,  false, false, false, false, false, false, true,
+	},
+	{
+		false, false, true,  true,  true,  false, false, false, 
+		false, true,  false, true,  false, true,  false, false, 
+		true,  true,  false, true,  false, true,  true,  false, 
+		true,  true,  true,  true,  true,  true,  true,  false, 
+		true,  false, true,  true,  true,  false, true,  false, 
+		false, true,  false, false, false, true,  false, false, 
+		false, false, true,  true,  true,  false, false, false, 
+		false, false, false, false, false, false, false, false,
+	},
+	{
+		false, false, true,  true,  true,  false, false, false, 
+		false, false, false, false, false, false, false, false, 
+		true,  false, false, false, false, false, true,  false, 
+		true,  false, false, true,  false, false, true,  false, 
+		true,  false, false, false, false, false, true,  false, 
+		false, false, false, false, false, false, false, false, 
+		false, false, true,  true,  true,  false, false, false, 
+		false, false, false, false, false, false, false, false
+	}
 };
 
 static qboolean customcrosshairdata[64];
