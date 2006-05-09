@@ -459,7 +459,7 @@ void CL_FinishMove (usercmd_t *cmd) {
 
 void CL_Move(usercmd_t *cmd)
 {
-	int mx, my;
+	double mx, my;
 	static int oldmousex, oldmousey;
 	int mousex, mousey;
 	float filterfrac;
@@ -506,7 +506,7 @@ void CL_Move(usercmd_t *cmd)
 	{
 		cl.viewangles[PITCH] += m_pitch.value * my;
 		cl.viewangles[PITCH] = bound(-70, cl.viewangles[PITCH], 80);
-        }
+	}
 	else
 	{   
 		cmd->forwardmove -= m_forward.value * my;
@@ -718,4 +718,3 @@ void CL_CvarInitInput(void)
 	Cvar_ResetCurrentGroup();
 }
 
-void CL_ClearStates (void) {}
