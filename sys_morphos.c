@@ -1,4 +1,5 @@
 #include <dos/dos.h>
+#include <devices/clipboard.h>
 
 #include <proto/exec.h>
 #include <proto/dos.h>
@@ -113,7 +114,66 @@ double Sys_DoubleTime()
 
 char *Sys_GetClipboardData()
 {
-	return 0;
+	struct IOClipReq *clipreq;
+	struct MsgPort *clipport;
+	unsigned int iffstuff[5];
+	static char clipdata[512];
+	char *ret = 0;
+
+	clipport = CreateMsgPort();
+	if (clipport)
+	{
+		clipreq = CreateIORequest(clipport, sizeof(*clipreq));
+		if (clipreq)
+		{
+			if (OpenDevice("clipboard.device", 0, (struct IORequest *)clipreq, 0) == 0)
+			{
+				clipreq->io_Command = CMD_READ;
+				clipreq->io_Length = sizeof(iffstuff);
+				clipreq->io_Data = (void *)iffstuff;
+				clipreq->io_Offset = 0;
+				clipreq->io_ClipID = 0;
+
+				DoIO((struct IORequest *)clipreq);
+
+				if (clipreq->io_Error == 0
+				 && clipreq->io_Actual == sizeof(iffstuff)
+				 && iffstuff[0] == 0x464F524D
+				 && iffstuff[2] == 0x46545854
+				 && iffstuff[3] == 0x43485253)
+				{
+					clipreq->io_Command = CMD_READ;
+					clipreq->io_Length = iffstuff[4]<sizeof(clipdata)?iffstuff[4]:sizeof(clipdata)-1;
+					clipreq->io_Data = clipdata;
+
+					DoIO((struct IORequest *)clipreq);
+
+					if (!(clipreq->io_Error != 0 || clipreq->io_Actual != iffstuff[4]))
+					{
+						clipdata[iffstuff[4]] = 0;
+						ret = clipdata;
+					}
+				}
+
+				do
+				{
+					clipreq->io_Command = CMD_READ;
+					clipreq->io_Length = 0x100000;
+					clipreq->io_Data = 0;
+
+					DoIO((struct IORequest *)clipreq);
+				} while(clipreq->io_Error == 0 && clipreq->io_Actual == 0x100000);
+
+				CloseDevice((struct IORequest *)clipreq);
+			}
+
+			DeleteIORequest((struct IORequest *)clipreq);
+		}
+
+		DeleteMsgPort(clipport);
+	}
+
+	return clipdata;
 }
 
 void Sys_CopyToClipboard(char *text)
