@@ -184,10 +184,10 @@ all:
 	@echo CPU: $(CPU)
 
 	mkdir -p objects/$(TARGETSYSTEM)/sw
-	(cd objects/$(TARGETSYSTEM)/sw; make -f $(VPATH)Makefile fodquake-sw)
+	(cd objects/$(TARGETSYSTEM)/sw; $(MAKE) -f $(VPATH)Makefile fodquake-sw)
 
 	mkdir -p objects/$(TARGETSYSTEM)/gl
-	(cd objects/$(TARGETSYSTEM)/gl; make -f $(VPATH)Makefile fodquake-gl RENDERERCFLAGS=-DGLQUAKE)
+	(cd objects/$(TARGETSYSTEM)/gl; $(MAKE) -f $(VPATH)Makefile fodquake-gl RENDERERCFLAGS=-DGLQUAKE)
 
 
 clean:
