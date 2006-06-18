@@ -201,6 +201,8 @@ void Sys_Video_Update(void *display, vrect_t *rects)
 
 	glFlush();
 	glXSwapBuffers(d->x_disp, d->x_win);
+
+	glXWaitGL();
 }
 
 /************************************* VID SHUTDOWN *************************************/
