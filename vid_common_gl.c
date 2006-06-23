@@ -119,9 +119,6 @@ void GL_CheckExtensions (void) {
 
 	if (CheckExtension("GL_ARB_texture_compression")) {
 		Com_Printf("Texture compression extensions found\n");
-		Cvar_SetCurrentGroup(CVAR_GROUP_TEXTURES);
-		Cvar_Register (&gl_ext_texture_compression);	
-		Cvar_ResetCurrentGroup();
 	}
 }
 
@@ -140,6 +137,14 @@ qboolean OnChange_gl_ext_texture_compression(cvar_t *var, char *string) {
 
 /************************************** GL INIT **************************************/
 
+void GL_CvarInit()
+{
+	Cvar_Register (&gl_strings);
+	Cvar_SetCurrentGroup(CVAR_GROUP_TEXTURES);
+	Cvar_Register (&gl_ext_texture_compression);	
+	Cvar_ResetCurrentGroup();
+}
+
 void GL_Init (void) {
 	gl_vendor = glGetString (GL_VENDOR);
 	Com_Printf ("GL_VENDOR: %s\n", gl_vendor);
@@ -151,7 +156,6 @@ void GL_Init (void) {
 	if (COM_CheckParm("-gl_ext"))
 		Com_Printf ("GL_EXTENSIONS: %s\n", gl_extensions);
 
-	Cvar_Register (&gl_strings);
 	Cvar_ForceSet (&gl_strings, va("GL_VENDOR: %s\nGL_RENDERER: %s\n"
 		"GL_VERSION: %s\nGL_EXTENSIONS: %s", gl_vendor, gl_renderer, gl_version, gl_extensions));
 
