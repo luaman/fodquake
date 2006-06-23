@@ -178,7 +178,7 @@ GLOBJS= \
 	vid_common_gl.o \
 	$(OSGLOBJS)
 	
-all:
+all: compilercheck
 	@echo $(TARGETSYSTEM)
 	@echo OS: $(OS)
 	@echo CPU: $(CPU)
@@ -202,4 +202,13 @@ fodquake-sw: $(OBJS) $(SWOBJS)
 fodquake-gl: $(OBJS) $(GLOBJS)
 	$(CC) $(CFLAGS) $^ -lm $(OSLDFLAGS) $(OSGLLDFLAGS) -o $@.db
 	$(STRIP) $(STRIPFLAGS) $@.db -o $@
-	
+
+compilercheck:
+# Check for GCC 4
+
+	@if [ ! -z "`$(CC) -v 2>&1 | grep \"gcc version 4\"`" ]; \
+	then \
+		echo "GCC version 4 is not supported because it generates broken code. Please use an older (and working) version of GCC."; \
+		exit 1; \
+	fi
+
