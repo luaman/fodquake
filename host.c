@@ -31,6 +31,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "image.h"
 #include <setjmp.h>
 
+#ifndef CLIENTONLY
+#include "server.h"
+#endif
 
 #if !defined(CLIENTONLY) && !defined(SERVERONLY)
 qboolean	dedicated = false;
@@ -123,6 +126,10 @@ void Host_ClearMemory (void) {
 
 	// any data previously allocated on hunk is no longer valid
 	Hunk_FreeToLowMark (host_hunklevel);
+
+#ifndef CLIENTONLY
+	server_hunklevel = host_hunklevel;
+#endif
 }
 
 void Host_Frame (double time) {
@@ -180,7 +187,9 @@ void Host_Init (int argc, char **argv, int default_memsize) {
 
 	VID_CvarInit();
 	S_CvarInit();
-#ifndef GLQUAKE
+#ifdef GLQUAKE
+	GL_CvarInit();
+#else
 	D_CvarInit();
 #endif
 	Image_CvarInit();
@@ -261,6 +270,9 @@ void Host_Init (int argc, char **argv, int default_memsize) {
 
 	Hunk_AllocName (0, "-HOST_HUNKLEVEL-");
 	host_hunklevel = Hunk_LowMark ();
+#ifndef CLIENTONLY
+	server_hunklevel = host_hunklevel;
+#endif
 
 	host_initialized = true;
 
