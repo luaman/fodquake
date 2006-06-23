@@ -4,6 +4,10 @@
 #include "r_shared.h"
 #endif
 
+#ifndef CLIENTONLY
+#include "server.h"
+#endif
+
 static void *display;
 
 #warning Fixme
@@ -30,8 +34,28 @@ void VID_Init(unsigned char *palette)
 
 void VID_Restart_f(void)
 {
+	int i;
+
 	VID_Shutdown();
+#ifdef CLIENTONLY
+	Host_ClearMemory();
+#else
+#ifndef GLQUAKE
+	D_FlushCaches();
+#endif
+	Mod_ClearAll();
+	Hunk_FreeToLowMark(server_hunklevel);
+#endif
 	VID_Open();
+	
+	for(i=1;i < MAX_MODELS;i++)
+	{
+		if (cl.model_precache[i])
+			Mod_LoadModel(cl.model_precache[i], true);
+	}
+
+	if (cl.model_precache[1])
+		R_NewMap();
 }
 
 void VID_CvarInit()
