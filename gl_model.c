@@ -152,17 +152,6 @@ model_t *Mod_FindName (char *name) {
 	return mod;
 }
 
-void Mod_TouchModel (char *name) {
-	model_t	*mod;
-	
-	mod = Mod_FindName (name);
-	
-	if (!mod->needload)	{
-		if (mod->type == mod_alias)
-			Cache_Check (&mod->cache);
-	}
-}
-
 //Loads a model into the cache
 model_t *Mod_LoadModel (model_t *mod, qboolean crash) {
 	void *d;
