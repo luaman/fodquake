@@ -148,6 +148,8 @@ qboolean MP3_IsActive(void) {
 	return true;
 #elif defined(__XMMS__)
 	return !!libxmms_handle;
+#else
+	return false;
 #endif
 }
 
