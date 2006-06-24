@@ -25,15 +25,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "version.h"
 #include "modules.h"
 #include "sound.h"
-#ifdef GLQUAKE
-#include "gl_local.h"
-#else
+#ifndef GLQUAKE
 #include "d_iface.h"
 #endif
 #include "image.h"
-#include "menu.h"
-#include "keys.h"
-#include "teamplay.h"
 #include <setjmp.h>
 
 #ifndef CLIENTONLY

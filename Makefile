@@ -47,16 +47,6 @@ ifeq ($(OS), cygwin)
 	OSSWLDFLAGS=-L/usr/X11R6/lib -lX11 -lXext
 endif
 
-ifeq ($(OS), ezx)
-	OSOBJS= \
-		sys_linux.o \
-		cd_null.o
-
-	OSLDFLAGS=-ldl
-
-	OSSWOBJS=vid_ezx.o
-endif
-
 ifeq ($(OS), mingw32)
 	OSOBJS= \
 		sys_win.o \

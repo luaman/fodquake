@@ -115,8 +115,6 @@ static qboolean oss_init(struct SoundCard *sc, int rate, int channels, int bits)
 										i = PCM_ENABLE_OUTPUT;
 										if (ioctl(p->fd, SNDCTL_DSP_SETTRIGGER, &i) >= 0)
 										{
-
-											printf("bits: %d speed: %d\n", sc->samplebits, rate);
 											sc->samples = info.fragstotal * info.fragsize / (sc->samplebits/8);
 											sc->samplepos = 0;
 											sc->submission_chunk = 1;
