@@ -1,4 +1,4 @@
-#include <exec/exec.h>
+
 #include <intuition/intuition.h>
 #include <intuition/intuitionbase.h>
 #include <intuition/extensions.h>
@@ -73,7 +73,6 @@ void *Sys_Video_Open(int width, int height, int depth, int fullscreen, unsigned 
 
 	int i;
 
-	dprintf("Sys_Video_Open\n");
 	Cvar_Register(&_windowed_mouse);
 
 	d = AllocVec(sizeof(*d), MEMF_CLEAR);
@@ -201,7 +200,6 @@ void *Sys_Video_Open(int width, int height, int depth, int fullscreen, unsigned 
 							d->inputdata = Sys_Input_Init(d->screen, d->window);
 							if (d->inputdata)
 							{
-								dprintf("Sys_Video_Open OK\n");
 								return d;
 							}
 
@@ -228,8 +226,6 @@ void *Sys_Video_Open(int width, int height, int depth, int fullscreen, unsigned 
 
 		FreeVec(d);
 	}
-
-	dprintf("Sys_Video_Open fail\n");
 
 	return 0;
 }
