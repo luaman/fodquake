@@ -121,13 +121,28 @@ byte *Mod_LeafPVS (mleaf_t *leaf, model_t *model) {
 	return Mod_DecompressVis (leaf->compressed_vis, model);
 }
 
-void Mod_ClearAll (void) {
+void Mod_ClearBrushesSprites(void)
+{
 	int i;
 	model_t	*mod;
 	
 	for (i = 0, mod = mod_known; i < mod_numknown; i++, mod++)
 		if (mod->type != mod_alias)
 			mod->needload = true;
+}
+
+void Mod_ClearAll(void)
+{
+	int i;
+	model_t	*mod;
+	
+	for (i = 0, mod = mod_known; i < mod_numknown; i++, mod++)
+	{
+		if (mod->type == mod_alias)
+			Cache_Free(&mod->cache);
+
+		mod->needload = true;
+	}
 }
 
 model_t *Mod_FindName (char *name) {
