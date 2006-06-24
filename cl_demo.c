@@ -1133,11 +1133,13 @@ void CL_StopPlayback (void) {
 	}
 }
 
-void CL_Play_f (void) {
+void CL_Play_f (void)
+{
 	char name[2 * MAX_OSPATH], **s;
 	static char *ext[] = {".qwd", ".mvd", NULL};
 
-	if (Cmd_Argc() != 2) {
+	if (Cmd_Argc() != 2)
+	{
 		Com_Printf ("Usage: %s <demoname>\n", Cmd_Argv(0));
 		return;
 	}
@@ -1146,33 +1148,35 @@ void CL_Play_f (void) {
 
 #ifdef _WIN32
 	Q_strncpyz (name, Cmd_Argv(1), sizeof(name) - 4);
-	if (strlen(name) > 4 && !Q_strcasecmp(name + strlen(name) - 4, ".qwz")) {
+	if (strlen(name) > 4 && !Q_strcasecmp(name + strlen(name) - 4, ".qwz"))
+	{
 		PlayQWZDemo();
 		if (!playbackfile && !qwz_playback)
 			return;	
-		goto done;
 	}
+	else
 #endif
+	{
+		for (s = ext; *s && !playbackfile; s++)
+		{
+			Q_strncpyz (name, Cmd_Argv(1), sizeof(name) - 4);
+			COM_DefaultExtension (name, *s);
 
-	
-	for (s = ext; *s && !playbackfile; s++) {
-		Q_strncpyz (name, Cmd_Argv(1), sizeof(name) - 4);
-		COM_DefaultExtension (name, *s);
+			if (!strncmp(name, "../", 3) || !strncmp(name, "..\\", 3))
+				playbackfile = fopen (va("%s/%s", com_basedir, name + 3), "rb");
+			else
+				FS_FOpenFile (name, &playbackfile);
+		}
 
-		if (!strncmp(name, "../", 3) || !strncmp(name, "..\\", 3))
-			playbackfile = fopen (va("%s/%s", com_basedir, name + 3), "rb");
-		else
-			FS_FOpenFile (name, &playbackfile);
+		if (!playbackfile)
+		{
+			Com_Printf ("Error: Couldn't open %s\n", Cmd_Argv(1));
+			return;
+		}
+
+		Com_Printf ("Playing demo from %s\n", COM_SkipPath(name));
 	}
 
-	if (!playbackfile) {
-		Com_Printf ("Error: Couldn't open %s\n", Cmd_Argv(1));
-		return;
-	}
-
-	Com_Printf ("Playing demo from %s\n", COM_SkipPath(name));
-
-done:
 	cls.demoplayback = true;
 	cls.mvdplayback = !Q_strcasecmp(name + strlen(name) - 3, "mvd") ? true : false;	
 	cls.state = ca_demostart;
@@ -1185,8 +1189,6 @@ done:
 	cls.lastto = cls.lasttype = 0;
 	CL_ClearPredict();
 
-
-	
 	if (cls.mvdplayback && cls.demorecording)
 		CL_Stop_f();
 }
