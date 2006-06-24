@@ -67,7 +67,7 @@ void Cvar_Reset_f (void) {
 
 	s = Cmd_Argv(1);
 
-	if (var = Cvar_FindVar(s))
+	if ((var = Cvar_FindVar(s)))
 		Cvar_ResetVar(var);
 	else
 		Com_Printf("%s : No variable with name %s\n", Cmd_Argv(0), s);
@@ -288,7 +288,7 @@ void Cvar_ResetCurrentGroup(void) {
 }
 
 static void Cvar_AddCvarToGroup(cvar_t *var) {
-	if (var->group = current) {
+	if ((var->group = current)) {
 		var->next_in_group = current->head;
 		current->head = var;
 		current->count++;
