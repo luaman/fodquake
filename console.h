@@ -45,6 +45,7 @@ extern qboolean con_initialized, con_suppress;
 extern	int	con_notifylines;		// scan lines to clear for notify lines
 
 void Con_CheckResize (void);
+void Con_CvarInit(void);
 void Con_Init (void);
 void Con_Shutdown (void);
 void Con_DrawConsole (int lines);

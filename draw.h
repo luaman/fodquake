@@ -44,6 +44,7 @@ typedef struct
 
 extern	mpic_t		*draw_disc;	// also used on sbar
 
+void Draw_CvarInit(void);
 void Draw_Init (void);
 void Draw_Character (int x, int y, int num);
 void Draw_SubPic(int x, int y, mpic_t *pic, int srcx, int srcy, int width, int height);

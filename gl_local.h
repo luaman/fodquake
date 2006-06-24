@@ -274,4 +274,6 @@ extern qboolean gl_allow_ztrick;
 qboolean CheckExtension (const char *extension);
 void Check_Gamma (unsigned char *pal);
 void VID_SetPalette (unsigned char *palette);
+void GL_CvarInit(void);
 void GL_Init (void);
+

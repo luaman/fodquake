@@ -364,6 +364,7 @@ extern	FILE		*sv_fraglogfile;
 //===========================================================
 
 // sv_main.c
+void SV_CvarInit(void);
 void SV_Shutdown (char *finalmsg);
 void SV_Frame (double time);
 void SV_FinalMessage (char *message);
