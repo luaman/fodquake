@@ -1227,25 +1227,32 @@ int SCR_Screenshot(char *name) {
 
 	D_EnableBackBufferAccess ();	// enable direct drawing of console to back buffer
 
+	if (format == IMAGE_PCX)
+	{
+		success = Image_WritePCX (name, vid.buffer, vid.width, vid.height, vid.rowbytes, current_pal) ? SSHOT_SUCCESS : SSHOT_FAILED;
+	}
 #if USE_PNG
-	if (format == IMAGE_PNG) {
-		if (QLib_isModuleLoaded(qlib_libpng)) {
-			success = Image_WritePNGPLTE(name, image_png_compression_level.value,
-					vid.buffer, vid.width, vid.height, vid.rowbytes, current_pal)
-					? SSHOT_SUCCESS : SSHOT_FAILED;
-		} else {
+	else if (format == IMAGE_PNG)
+	{
+		if (QLib_isModuleLoaded(qlib_libpng))
+		{
+			success = Image_WritePNGPLTE(name, image_png_compression_level.value, vid.buffer, vid.width, vid.height, vid.rowbytes, current_pal) ? SSHOT_SUCCESS : SSHOT_FAILED;
+		}
+		else 
+		{
 			Com_Printf("Can't take a PNG screenshot without libpng.");
 			if (SShot_FormatForName("noext") == IMAGE_PNG)
 				Com_Printf(" Try changing \"%s\" to another image format.", scr_sshot_format.name);
 			Com_Printf("\n");
+
 			success = SSHOT_FAILED_QUIET;
 		}
 	}
 #endif
-
-	if (format == IMAGE_PCX) {
-		success = Image_WritePCX (name, vid.buffer, vid.width, vid.height, vid.rowbytes, current_pal)
-					? SSHOT_SUCCESS : SSHOT_FAILED;
+	else
+	{
+		Com_Printf("Unsupported screenshot format.\n");
+		success = SSHOT_FAILED_QUIET;
 	}
 
 	D_DisableBackBufferAccess ();	// for adapters that can't stay mapped in for linear writes all the time
