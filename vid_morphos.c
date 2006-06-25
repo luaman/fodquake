@@ -12,6 +12,7 @@
 #include "d_local.h"
 #include "input.h"
 #include "keys.h"
+#include "in_morphos.h"
 
 extern viddef_t vid;
 
@@ -192,12 +193,12 @@ void Sys_Video_GetEvents(void *display)
 
 	Sys_Input_GetEvents(d->inputdata);
 }
-
-void Sys_Video_GetMouseMovement(void *display)
+ 
+void Sys_Video_GetMouseMovement(void *display, int *mousex, int *mousey)
 {
 	struct display *d = display;
 
-	Sys_Input_GetMouseMovement(d->inputdata);
+	Sys_Input_GetMouseMovement(d->inputdata, mousex, mousey);
 }
 
 void Sys_Video_Update(void *display, vrect_t * rects)

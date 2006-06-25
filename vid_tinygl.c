@@ -12,6 +12,7 @@
 #include "input.h"
 #include "keys.h"
 #include "gl_local.h"
+#include "in_morphos.h"
 
 #ifndef SA_GammaControl
 #define SA_GammaControl (SA_Dummy + 123)
@@ -263,11 +264,11 @@ void Sys_Video_GetEvents(void *display)
 	Sys_Input_GetEvents(d->inputdata);
 }
 
-void Sys_Video_GetMouseMovement(void *display)
+void Sys_Video_GetMouseMovement(void *display, int *mousex, int *mousey)
 {
 	struct display *d = display;
 
-	Sys_Input_GetMouseMovement(d->inputdata);
+	Sys_Input_GetMouseMovement(d->inputdata, mousex, mousey);
 }
 
 void VID_LockBuffer()
