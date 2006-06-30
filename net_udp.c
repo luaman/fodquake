@@ -155,6 +155,9 @@ qboolean NET_StringToAdr (char *s, netadr_t *a) {
 	struct sockaddr_in sadr;
 	char *colon, copy[128];
 
+	if (strlen(s) >= sizeof(copy)-1)
+		return false;
+
 	if (!strcmp(s, "local")) {
 		memset(a, 0, sizeof(*a));
 		a->type = NA_LOOPBACK;
