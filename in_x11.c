@@ -34,8 +34,6 @@ struct inputdata
 	
 	int mousex;
 	int mousey;
-	int oldmousex;
-	int oldmousey;
 	
 	int old_windowed_mouse;
 };
@@ -280,8 +278,8 @@ static void GetEvents(struct inputdata *id)
 	int newmousex;
 	int newmousey;
 	
-	newmousex = id->oldmousex;
-	newmousey = id->oldmousey;
+	newmousex = vid.width/2;
+	newmousey = vid.height/2;
 
 	do
 	{
@@ -344,25 +342,20 @@ static void GetEvents(struct inputdata *id)
 		}
 	} while(XPending(id->x_disp));
 
-	if (newmousex != id->oldmousex || newmousey != id->oldmousey)
+	if (newmousex != vid.width/2 || newmousey != vid.height/2)
 	{
-		id->mousex+= newmousex-id->oldmousex;
-		id->mousey+= newmousey-id->oldmousey;
+		newmousex-= vid.width/2;
+		newmousey-= vid.height/2;
+		id->mousex+= newmousex;
+		id->mousey+= newmousey;
 	
 		if (_windowed_mouse.value)
 		{
 			/* move the mouse to the window center again */
 			XSelectInput(id->x_disp, id->x_win, StructureNotifyMask | KeyPressMask | KeyReleaseMask | ExposureMask | ButtonPressMask | ButtonReleaseMask);
-			XWarpPointer(id->x_disp, None, id->x_win, 0, 0, 0, 0, (vid.width / 2), (vid.height / 2));
+			XWarpPointer(id->x_disp, None, None, 0, 0, 0, 0, -newmousex, -newmousey);
 			XSelectInput(id->x_disp, id->x_win, StructureNotifyMask | KeyPressMask | KeyReleaseMask | ExposureMask | PointerMotionMask | ButtonPressMask | ButtonReleaseMask);
-
-			id->oldmousex = vid.width/2;
-			id->oldmousey = vid.height/2;
-		}
-		else
-		{
-			id->oldmousex = newmousex;
-			id->oldmousey = newmousey;
+			XFlush(id->x_disp);
 		}
 	}
 
@@ -399,7 +392,6 @@ void *X11_Input_Init(Display *x_disp, Window x_win, int x_shmeventtype)
 		id->mousex = 0;
 		id->mousey = 0;
 		id->old_windowed_mouse = 0;
-		id->oldmousex = id->oldmousey = 0;
 
 		Cvar_SetCurrentGroup(CVAR_GROUP_INPUT_KEYBOARD);
 		Cvar_Register(&cl_keypad);
