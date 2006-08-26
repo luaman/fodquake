@@ -720,6 +720,30 @@ void CL_SaveArgv(int argc, char **argv) {
 	Cvar_ForceSet(&cl_cmdline, saved_args);
 }
 
+#if HUFFTEST
+void huff_load_f(void)
+{
+	if (Cmd_Argc() != 2)
+	{
+		Com_Printf("Blah!\n");
+		return;
+	}
+
+	huff_loadfile(Cmd_Argv(1));
+}
+
+void huff_save_f(void)
+{
+	if (Cmd_Argc() != 2)
+	{
+		Com_Printf("Blah!\n");
+		return;
+	}
+
+	huff_savefile(Cmd_Argv(1));
+}
+#endif
+
 void CL_InitCommands (void);
 
 void CL_CvarInit(void)
@@ -815,6 +839,11 @@ void CL_CvarInit(void)
 	Cmd_AddLegacyCommand ("demotimescale", "cl_demospeed");
 
 	CL_InitCommands();
+
+#if HUFFTEST
+	Cmd_AddCommand("huff_load", huff_load_f);
+	Cmd_AddCommand("huff_save", huff_save_f);
+#endif
 
 	Cmd_AddCommand ("disconnect", CL_Disconnect_f);
 	Cmd_AddCommand ("connect", CL_Connect_f);

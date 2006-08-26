@@ -66,6 +66,7 @@ endif
 
 OBJS= \
 	host.o \
+	hufftest.o \
 	snd_main.o \
 	snd_mem.o \
 	snd_mix.o \
