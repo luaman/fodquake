@@ -89,7 +89,10 @@ void Cvar_SetDefault(cvar_t *var, float value) {
 	Z_Free (var->defaultvalue);
 	var->defaultvalue = CopyString(val);
 	if (!(var->flags & CVAR_CHANGED))
+	{
 		Cvar_Set(var, val);
+		var->flags&= ~CVAR_CHANGED;
+	}
 }
 
 
