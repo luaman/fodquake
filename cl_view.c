@@ -510,7 +510,8 @@ void V_AddLightBlend (float r, float g, float b, float a2) {
 
 #ifdef	GLQUAKE
 
-void V_UpdatePalette (void) {
+void V_UpdatePalette(qboolean force_update)
+{
 	int i, j, c;
 	qboolean new;
 	float current_gamma, current_contrast, a, rgb[3];
@@ -544,7 +545,7 @@ void V_UpdatePalette (void) {
 		old_hwblend = gl_hwblend.value;
 	}
 
-	if (!new)
+	if (!new && !force_update)
 		return;
 
 	a = v_blend[3];
@@ -580,7 +581,8 @@ void V_UpdatePalette (void) {
 
 #else	// !GLQUAKE
 
-void V_UpdatePalette (void) {
+void V_UpdatePalette(qboolean force_update)
+{
 	int i, j, r,g,b;
 	qboolean new, force;
 	byte *basepal, *newpal;
@@ -619,7 +621,7 @@ void V_UpdatePalette (void) {
 		cl.cshifts[CSHIFT_BONUS].percent = 0;
 
 	force = V_CheckGamma ();
-	if (!new && !force)
+	if (!new && !force && !force_update)
 		return;
 			
 	basepal = host_basepal;

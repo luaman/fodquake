@@ -960,7 +960,7 @@ void SCR_UpdateScreen (void) {
 
 	R_BrightenScreen ();
 
-	V_UpdatePalette ();
+	V_UpdatePalette(false);
 
 	SCR_CheckAutoScreenshot();	
 
@@ -1036,7 +1036,7 @@ void SCR_UpdateScreen (void) {
 	SCR_DrawElements();
 
 	D_DisableBackBufferAccess ();	// for adapters that can't stay mapped in for linear writes all the time
-	V_UpdatePalette ();
+	V_UpdatePalette(false);
 
 	// update one of three areas
 	if (scr_copyeverything) {

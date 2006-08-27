@@ -29,7 +29,7 @@ extern cvar_t v_contrast;
 void V_CvarInit(void);
 void V_Init (void);
 void V_RenderView (void);
-void V_UpdatePalette (void);
+void V_UpdatePalette(qboolean force_update);
 void V_ParseDamage (void);
 void V_SetContentsColor (int contents);
 void V_CalcBlend (void);

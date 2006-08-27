@@ -110,15 +110,12 @@ void VID_Open()
 	if (display == 0)
 		Sys_Error("VID: Unable to open a display\n");
 
+	V_UpdatePalette(true);
 #ifdef GLQUAKE
-	VID_SetPalette(pal);
-
 	GL_InitTextureStuff();
 	GL_Particles_TextureInit();
 	Draw_Init();
 	Sbar_Init();
-#else
-	Sys_Video_SetPalette(display, pal);
 #endif
 }
 
