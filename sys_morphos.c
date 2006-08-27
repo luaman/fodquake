@@ -22,6 +22,8 @@ struct Library *SocketBase;
 int do_stdin = 0;
 qboolean stdin_ready;
 
+cvar_t sys_dynamicpriority = { "sys_dynamicpriority", "0" };
+
 void Sys_Shutdown()
 {
 	if (SocketBase)
@@ -33,6 +35,7 @@ void Sys_Shutdown()
 
 void Sys_CvarInit()
 {
+	Cvar_Register(&sys_dynamicpriority);
 }
 
 void Sys_Init()
@@ -178,6 +181,37 @@ char *Sys_GetClipboardData()
 
 void Sys_CopyToClipboard(char *text)
 {
+}
+
+void Sys_SleepTime(unsigned int usec)
+{
+	static int curstate;
+	static int oldpri;
+
+	if (sys_dynamicpriority.value)
+	{
+		if (usec >= 1000)
+		{
+			if (curstate == 0)
+			{
+				oldpri = SetTaskPri(FindTask(0), sys_dynamicpriority.value);
+				curstate = 1;
+			}
+		}
+		else
+		{
+			if (curstate == 1)
+			{
+				SetTaskPri(FindTask(0), oldpri);
+				curstate = 0;
+			}
+		}
+	}
+	else if (curstate == 1)
+	{
+		SetTaskPri(FindTask(0), oldpri);
+		curstate = 0;
+	}
 }
 
 void Sys_mkdir(char *path)
