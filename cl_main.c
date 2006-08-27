@@ -971,21 +971,27 @@ static double CL_MinFrameTime (void) {
 void CL_Frame (double time) {
 
 	static double extratime = 0.001;
+	static unsigned int sleeptime;
 	double minframetime;
 
 	extratime += time;
 	minframetime = CL_MinFrameTime();
 
-	if (extratime < minframetime) {
+	if (extratime < minframetime)
+	{
 #ifdef _WIN32
 		extern cvar_t sys_yieldcpu;
 		if (sys_yieldcpu.value)
 			Sys_MSleep(0);
 #else
+		sleeptime+= (unsigned int)((minframetime-extratime)*1000000);
 		usleep((unsigned int)((minframetime-extratime)*1000000));
 #endif
 		return;
 	}
+
+	Sys_SleepTime(sleeptime);
+	sleeptime = 0;
 
 	cls.trueframetime = extratime - 0.001;
 	cls.trueframetime = max(cls.trueframetime, minframetime);
