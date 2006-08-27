@@ -144,19 +144,8 @@ byte		*host_colormap;
 
 int			fps_count;
 
-// emodel and pmodel are encrypted to prevent llamas from easily hacking them
-char emodel_name[] = { 'e'^0xe5, 'm'^0xe5, 'o'^0xe5, 'd'^0xe5, 'e'^0xe5, 'l'^0xe5, 0 };
-char pmodel_name[] = { 'p'^0xe5, 'm'^0xe5, 'o'^0xe5, 'd'^0xe5, 'e'^0xe5, 'l'^0xe5, 0 };
-
-static void simple_crypt (char *buf, int len) {
-	while (len--)
-		*buf++ ^= 0xe5;
-}
-
-static void CL_FixupModelNames (void) {
-	simple_crypt (emodel_name, sizeof(emodel_name) - 1);
-	simple_crypt (pmodel_name, sizeof(pmodel_name) - 1);
-}
+char emodel_name[] = "emodel";
+char pmodel_name[] = "pmodel";
 
 //============================================================================
 
@@ -912,7 +901,6 @@ void CL_Init (void)
 	CDAudio_Init ();
 
 	CL_InitLocal ();
-	CL_FixupModelNames ();
 	CL_InitEnts ();
 	CL_InitTEnts ();
 	Rulesets_Init();
