@@ -30,14 +30,19 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 static float f_ruleset_reply_time, f_reply_time, f_mod_reply_time, f_version_reply_time, f_skins_reply_time, f_server_reply_time;
 extern cvar_t r_fullbrightSkins;
 
+extern int imitatedclientnum;
+extern int imitatedosnum;
+
+extern char *fversion_clientnames[];
+extern char *fversion_osnames[];
 
 void FChecks_VersionResponse(void) {
 #ifdef SECURITY_NONSENSE
 	if (Modules_SecurityLoaded())
-		Cbuf_AddText (va("say FodQuake version %s " QW_PLATFORM ":" QW_RENDERER "  crc: %s\n", VersionString(), Auth_Generate_Crc()));
+		Cbuf_AddText (va("say %s %s:" QW_RENDERER "  crc: %s\n", fversion_clientnames[imitatedclientnum], fversion_osnames[imitatedosnum], Auth_Generate_Crc()));
 	else
 #endif
-		Cbuf_AddText (va("say FodQuake version %s " QW_PLATFORM ":" QW_RENDERER "\n", VersionString()));
+		Cbuf_AddText (va("say %s %s:" QW_RENDERER "\n", fversion_clientnames[imitatedclientnum], fversion_osnames[imitatedosnum]));
 }
 
 void FChecks_FServerResponse (void) {

@@ -51,6 +51,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <netdb.h>
 #endif
 
+static qboolean cl_imitate_client_callback(cvar_t *var, char *string);
+static qboolean cl_imitate_os_callback(cvar_t *var, char *string);
+
 cvar_t	rcon_password = {"rcon_password", ""};
 cvar_t	rcon_address = {"rcon_address", ""};
 
@@ -91,6 +94,9 @@ cvar_t cl_fp_persecond		= {"cl_fp_persecond", "4"};
 cvar_t cl_cmdline			= {"cl_cmdline", "", CVAR_ROM};	
 cvar_t cl_useproxy			= {"cl_useproxy", "0"};			
 
+cvar_t cl_imitate_client = { "cl_imitate_client", "none", 0, cl_imitate_client_callback };
+cvar_t cl_imitate_os = { "cl_imitate_os", "none", 0, cl_imitate_os_callback };
+
 cvar_t cl_model_bobbing		= {"cl_model_bobbing", "1"};	
 cvar_t cl_nolerp			= {"cl_nolerp", "1"};
 
@@ -119,6 +125,9 @@ cvar_t	noaim = {"noaim", "0", CVAR_ARCHIVE|CVAR_USERINFO};
 cvar_t	w_switch = {"w_switch", "", CVAR_ARCHIVE|CVAR_USERINFO};
 cvar_t	b_switch = {"b_switch", "", CVAR_ARCHIVE|CVAR_USERINFO};
 
+int imitatedclientnum;
+int imitatedosnum;
+
 clientPersistent_t	cls;
 clientState_t		cl;
 
@@ -143,6 +152,103 @@ byte		*host_basepal;
 byte		*host_colormap;
 
 int			fps_count;
+
+void CL_InitClientVersionInfo();
+
+enum
+{
+	CLIENT_FODQUAKE,
+	CLIENT_EZQUAKE_1144,
+	CLIENT_EZQUAKE_1517,
+	CLIENT_FUHQUAKE_0_31_675
+};
+
+static char *validclientnames[] =
+{
+	"none",
+	"ezquake-1144",
+	"ezquake-1517",
+	"FuhQuake-0.31-675"
+};
+
+char *fversion_clientnames[] =
+{
+	"FodQuake version "FODQUAKE_VERSION,
+	"ezQuake version 1144",
+	"ezQuake version 1517",
+	"FuhQuake version 0.31 (build 675)"
+};
+
+char *validosnames[] =
+{
+	"none",
+	"Cygwin",
+	"Linux",
+	"MorphOS",
+	"Win32"
+};
+
+char *fversion_osnames[] =
+{
+	QW_PLATFORM,
+	"Cygwin",
+	"Linux",
+	"MorphOS",
+	"Win32"
+};
+
+#define NUMVALIDCLIENTNAMES (sizeof(validclientnames)/sizeof(*validclientnames))
+#define NUMVALIDOSNAMES (sizeof(validosnames)/sizeof(*validosnames))
+
+static qboolean cl_imitate_client_callback(cvar_t *var, char *string)
+{
+	int i;
+
+	for(i=0;i<NUMVALIDCLIENTNAMES;i++)
+	{
+		if (strcasecmp(validclientnames[i], string) == 0)
+			break;
+	}
+
+	if (i == NUMVALIDCLIENTNAMES)
+	{
+		Com_Printf("Client name \"%s\" is invalid. Valid client names are:\n");
+		for(i=0;i<NUMVALIDCLIENTNAMES;i++)
+			Com_Printf(" - %s\n", validclientnames[i]);
+
+		return true;
+	}
+
+	imitatedclientnum = i;
+	CL_InitClientVersionInfo();
+	Com_Printf("Client information will be updated after (re)connecting to a server.\n");
+
+	return false;
+}
+
+static qboolean cl_imitate_os_callback(cvar_t *var, char *string)
+{
+	int i;
+
+	for(i=0;i<NUMVALIDOSNAMES;i++)
+	{
+		if (strcasecmp(validosnames[i], string) == 0)
+			break;
+	}
+
+	if (i == NUMVALIDOSNAMES)
+	{
+		Com_Printf("OS name \"%s\" is invalid. Valid OS names are:\n");
+		for(i=0;i<NUMVALIDOSNAMES;i++)
+			Com_Printf(" - %s\n", validosnames[i]);
+
+		return true;
+	}
+
+	imitatedosnum = i;
+
+	return false;
+}
 
 char emodel_name[] = "emodel";
 char pmodel_name[] = "pmodel";
@@ -825,6 +931,9 @@ void CL_CvarInit(void)
 
 	Cvar_Register (&cl_confirmquit);
 
+	Cvar_Register(&cl_imitate_client);
+	Cvar_Register(&cl_imitate_os);
+
 	Cmd_AddLegacyCommand ("demotimescale", "cl_demospeed");
 
 	CL_InitCommands();
@@ -849,9 +958,26 @@ void CL_CvarInit(void)
 	Cmd_AddMacro("matchstatus", CL_Macro_Serverstatus);
 }
 
-void CL_InitLocal()
+void CL_InitClientVersionInfo()
 {
- 	Info_SetValueForStarKey (cls.userinfo, "*FodQuake", FODQUAKE_VERSION, MAX_INFO_STRING);
+	Info_RemoveKey(cls.userinfo, "*FuhQuake");
+	Info_RemoveKey(cls.userinfo, "*client");
+	Info_RemoveKey(cls.userinfo, "*FodQuake");
+
+	if (imitatedclientnum == CLIENT_EZQUAKE_1144)
+	{
+	 	Info_SetValueForStarKey (cls.userinfo, "*client", "ezQuake 1144", MAX_INFO_STRING);
+	}
+	else if (imitatedclientnum == CLIENT_EZQUAKE_1517)
+	{
+	 	Info_SetValueForStarKey (cls.userinfo, "*client", "ezQuake 1517", MAX_INFO_STRING);
+	}
+	else if (imitatedclientnum == CLIENT_FUHQUAKE_0_31_675)
+	{
+	 	Info_SetValueForStarKey (cls.userinfo, "*FuhQuake", "0.31", MAX_INFO_STRING);
+	}
+	else
+	 	Info_SetValueForStarKey (cls.userinfo, "*FodQuake", FODQUAKE_VERSION, MAX_INFO_STRING);
 }
 
 void CL_Init (void)
@@ -900,7 +1026,7 @@ void CL_Init (void)
 
 	CDAudio_Init ();
 
-	CL_InitLocal ();
+	CL_InitClientVersionInfo();
 	CL_InitEnts ();
 	CL_InitTEnts ();
 	Rulesets_Init();
@@ -959,27 +1085,21 @@ static double CL_MinFrameTime (void) {
 void CL_Frame (double time) {
 
 	static double extratime = 0.001;
-	static unsigned int sleeptime;
 	double minframetime;
 
 	extratime += time;
 	minframetime = CL_MinFrameTime();
 
-	if (extratime < minframetime)
-	{
+	if (extratime < minframetime) {
 #ifdef _WIN32
 		extern cvar_t sys_yieldcpu;
 		if (sys_yieldcpu.value)
 			Sys_MSleep(0);
 #else
-		sleeptime+= (unsigned int)((minframetime-extratime)*1000000);
 		usleep((unsigned int)((minframetime-extratime)*1000000));
 #endif
 		return;
 	}
-
-	Sys_SleepTime(sleeptime);
-	sleeptime = 0;
 
 	cls.trueframetime = extratime - 0.001;
 	cls.trueframetime = max(cls.trueframetime, minframetime);
