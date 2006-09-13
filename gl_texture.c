@@ -408,7 +408,7 @@ int GL_LoadPicTexture (char *name, mpic_t *pic, byte *data) {
 	return pic->texnum;
 }
 
-gltexture_t *GL_FindTexture (char *identifier) {
+static gltexture_t *GL_FindTexture (char *identifier) {
 	int i;
 
 	for (i = 0; i < numgltextures; i++) {
