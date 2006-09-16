@@ -7,7 +7,6 @@
 #include "input.h"
 #include "keys.h"
 
-cvar_t _windowed_mouse = { "_windowed_mouse", "1", CVAR_ARCHIVE };
 cvar_t cl_keypad = { "cl_keypad", "1" };
 
 typedef struct
@@ -34,8 +33,8 @@ struct inputdata
 	
 	int mousex;
 	int mousey;
-	
-	int old_windowed_mouse;
+
+	int grabmouse;
 };
 
 static int XLateKey(XKeyEvent * ev)
@@ -349,29 +348,13 @@ static void GetEvents(struct inputdata *id)
 		id->mousex+= newmousex;
 		id->mousey+= newmousey;
 	
-		if (_windowed_mouse.value)
+		if (id->grabmouse)
 		{
 			/* move the mouse to the window center again */
 			XSelectInput(id->x_disp, id->x_win, StructureNotifyMask | KeyPressMask | KeyReleaseMask | ExposureMask | ButtonPressMask | ButtonReleaseMask);
 			XWarpPointer(id->x_disp, None, None, 0, 0, 0, 0, -newmousex, -newmousey);
 			XSelectInput(id->x_disp, id->x_win, StructureNotifyMask | KeyPressMask | KeyReleaseMask | ExposureMask | PointerMotionMask | ButtonPressMask | ButtonReleaseMask);
 			XFlush(id->x_disp);
-		}
-	}
-
-	if (id->old_windowed_mouse != _windowed_mouse.value)
-	{
-		id->old_windowed_mouse = _windowed_mouse.value;
-
-		if (!_windowed_mouse.value)
-		{
-			/* ungrab the pointer */
-			XUngrabPointer(id->x_disp, CurrentTime);
-		}
-		else
-		{
-			/* grab the pointer */
-			XGrabPointer(id->x_disp, id->x_win, True, 0, GrabModeAsync, GrabModeAsync, id->x_win, None, CurrentTime);
 		}
 	}
 }
@@ -391,13 +374,10 @@ void *X11_Input_Init(Display *x_disp, Window x_win, int x_shmeventtype)
 		id->keyq_tail = 0;
 		id->mousex = 0;
 		id->mousey = 0;
-		id->old_windowed_mouse = 0;
+		id->grabmouse = 0;
 
 		Cvar_SetCurrentGroup(CVAR_GROUP_INPUT_KEYBOARD);
 		Cvar_Register(&cl_keypad);
-		Cvar_ResetCurrentGroup();
-		Cvar_SetCurrentGroup(CVAR_GROUP_INPUT_MOUSE);
-		Cvar_Register(&_windowed_mouse);
 		Cvar_ResetCurrentGroup();
 	}
 
@@ -451,5 +431,28 @@ void X11_Input_GetConfigNotify(void *inputdata, int *config_notify, int *config_
 	*config_notify_width = id->config_notify_width;
 	*config_notify_height = id->config_notify_height;
 	id->config_notify = 0;
+}
+
+void X11_Input_GrabMouse(void *inputdata, int dograb)
+{
+	struct inputdata *id = inputdata;
+
+	id->grabmouse = dograb;
+
+	if (dograb)
+	{
+		/* grab the pointer */
+		XSelectInput(id->x_disp, id->x_win, StructureNotifyMask | KeyPressMask | KeyReleaseMask | ExposureMask | ButtonPressMask | ButtonReleaseMask);
+		XWarpPointer(id->x_disp, None, id->x_win, 0, 0, 0, 0, vid.width/2, vid.height/2);
+
+		XGrabPointer(id->x_disp, id->x_win, True, 0, GrabModeAsync, GrabModeAsync, id->x_win, None, CurrentTime);
+		XSelectInput(id->x_disp, id->x_win, StructureNotifyMask | KeyPressMask | KeyReleaseMask | ExposureMask | PointerMotionMask | ButtonPressMask | ButtonReleaseMask);
+	}
+	else
+	{
+		/* ungrab the pointer */
+		XUngrabPointer(id->x_disp, CurrentTime);
+		XSelectInput(id->x_disp, id->x_win, StructureNotifyMask | KeyPressMask | KeyReleaseMask | ExposureMask | ButtonPressMask | ButtonReleaseMask);
+	}
 }
 

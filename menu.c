@@ -412,7 +412,7 @@ void M_AdjustSliders (int dir) {
 		break;
 
 	case 17:	// _windowed_mouse
-		Cvar_SetValue (&_windowed_mouse, !_windowed_mouse.value);
+		Cvar_SetValue (&in_grab_windowed_mouse, !in_grab_windowed_mouse.value);
 		break;
 	}
 }
@@ -502,7 +502,7 @@ void M_Options_Draw (void) {
 #endif
 	{
 		M_Print (16, 168, "             Use mouse");
-		M_DrawCheckbox (220, 168, _windowed_mouse.value);
+		M_DrawCheckbox (220, 168, in_grab_windowed_mouse.value);
 	}
 
 	// cursor

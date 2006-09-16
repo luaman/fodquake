@@ -10,6 +10,16 @@
 
 static void *display;
 
+qboolean in_grab_windowed_mouse_callback(cvar_t *var, char *value)
+{
+	printf("in_grab_windowed_mouse changed to %s\n", value);
+
+	if (display)
+		Sys_Video_GrabMouse(display, atoi(value));
+
+	return false;
+}
+
 #warning Fixme
 #ifdef GLQUAKE
 cvar_t vid_ref = { "vid_ref", "gl", CVAR_ROM };
@@ -24,6 +34,8 @@ cvar_t vid_height = { "vid_height", "480", CVAR_ARCHIVE };
 #ifdef GLQUAKE
 cvar_t vid_depth = { "vid_depth", "24", CVAR_ARCHIVE };
 #endif
+
+cvar_t in_grab_windowed_mouse = { "in_grab_windowed_mouse", "1", CVAR_ARCHIVE, in_grab_windowed_mouse_callback };
 
 static unsigned char pal[768];
 
@@ -68,6 +80,10 @@ void VID_CvarInit()
 #ifdef GLQUAKE
 	Cvar_Register(&vid_depth);
 #endif
+
+	Cvar_SetCurrentGroup(CVAR_GROUP_INPUT_MOUSE);
+	Cvar_Register(&in_grab_windowed_mouse);
+	Cmd_AddLegacyCommand("_windowed_mouse", "in_grab_windowed_mouse");
 	Cvar_ResetCurrentGroup();
 
 	Cmd_AddCommand("vid_restart", VID_Restart_f);
@@ -109,6 +125,8 @@ void VID_Open()
 	display = Sys_Video_Open(width, height, depth, fullscreen, host_basepal);
 	if (display == 0)
 		Sys_Error("VID: Unable to open a display\n");
+
+	Sys_Video_GrabMouse(display, in_grab_windowed_mouse.value);
 
 	V_UpdatePalette(true);
 #ifdef GLQUAKE

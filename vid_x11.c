@@ -71,6 +71,8 @@ struct display
 	XImage *x_framebuffer[2];
 	XShmSegmentInfo x_shminfo[2];
 
+	int fullscreen;
+
 	byte current_palette[768];
 
 	long X11_highhunkmark;
@@ -419,6 +421,8 @@ void *Sys_Video_Open(int width, int height, int depth, int fullscreen, unsigned 
 	{
 		bzero(d, sizeof(*d));
 
+		d->fullscreen = fullscreen;
+
 		vid.width = width;
 		vid.height = height;
 		vid.maxwarpwidth = WARP_WIDTH;
@@ -697,6 +701,13 @@ void Sys_Video_GetMouseMovement(void *display, int *mousex, int *mousey)
 	struct display *d = display;
 
 	X11_Input_GetMouseMovement(d->inputdata, mousex, mousey);
+}
+
+void Sys_Video_GrabMouse(void *display, int dograb)
+{
+	struct display *d = display;
+
+	X11_Input_GrabMouse(d->inputdata, d->fullscreen?1:dograb);
 }
 
 void Sys_Video_SetPalette(void *display, unsigned char *palette)

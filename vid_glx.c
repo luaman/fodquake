@@ -59,6 +59,8 @@ struct display
 	GLXContext ctx;
 	int scrnum;
 
+	int fullscreen;
+
 	qboolean vid_gammaworks;
 	unsigned short systemgammaramp[3][256];
 	unsigned short *currentgammaramp;
@@ -89,6 +91,13 @@ void Sys_Video_GetMouseMovement(void *display, int *mousex, int *mousey)
 	struct display *d = display;
 
 	X11_Input_GetMouseMovement(d->inputdata, mousex, mousey);
+}
+
+void Sys_Video_GrabMouse(void *display, int dograb)
+{
+	struct display *d = display;
+
+	X11_Input_GrabMouse(d->inputdata, d->fullscreen?1:dograb);
 }
 
 cvar_t	vid_hwgammacontrol = {"vid_hwgammacontrol", "1"};
@@ -284,6 +293,8 @@ void *Sys_Video_Open(int width, int height, int depth, int fullscreen, unsigned 
 	if (d)
 	{
 		bzero(d, sizeof(*d));
+
+		d->fullscreen = fullscreen;
 	d->x_disp = XOpenDisplay(NULL);
 	if (d->x_disp)
 	{
