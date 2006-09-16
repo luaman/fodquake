@@ -63,4 +63,6 @@ void *Sys_Video_Open(int width, int height, int depth, int fullscreen, unsigned 
 void Sys_Video_Close(void *display);
 void Sys_Video_Update(void *display, vrect_t *rects);
 void Sys_Video_SetPalette(void *display, unsigned char *palette);
+void Sys_Video_GetEvents(void *display);
+void Sys_Video_GetMouseMovement(void *display, int *mousex, int *mousey);
 
