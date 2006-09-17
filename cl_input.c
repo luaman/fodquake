@@ -471,7 +471,7 @@ void CL_Move(usercmd_t *cmd)
 	{
 		filterfrac = bound(0, m_filter.value, 1) / 2.0;
 		mx = (mousex * (1 - filterfrac) + oldmousex * filterfrac);
-		my = (mousex * (1 - filterfrac) + oldmousey * filterfrac);
+		my = (mousey * (1 - filterfrac) + oldmousey * filterfrac);
 	}
 	else
 	{
