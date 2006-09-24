@@ -736,6 +736,9 @@ int FS_FOpenFile (char *filename, FILE **file) {
 	searchpath_t *search;
 	pack_t *pak;
 	int i;
+	int ret;
+
+	int searchbegin, searchend;
 
 	*file = NULL;
 	file_from_pak = 0;
@@ -752,8 +755,14 @@ int FS_FOpenFile (char *filename, FILE **file) {
 		if (search->pack) {
 			// look through all the pak file elements
 			pak = search->pack;
-			for (i = 0; i < pak->numfiles; i++) {
-				if (!strcmp (pak->files[i].name, filename)) {	// found it!
+
+			searchbegin = 0;
+			searchend = pak->numfiles;
+			for (i = pak->numfiles/2; ;i=searchbegin+((searchend-searchbegin)/2))
+			{
+				ret = strcmp(filename, pak->files[i].name);
+				if (ret == 0)
+				{
 					if (developer.value)
 						Sys_Printf ("PackFile: %s : %s\n", pak->filename, filename);
 					// open a new file on the pakfile
@@ -765,6 +774,16 @@ int FS_FOpenFile (char *filename, FILE **file) {
 					file_from_pak = 1;
 					Q_snprintfz (com_netpath, sizeof(com_netpath), "%s#%i", pak->filename, i);
 					return com_filesize;
+				}
+				else
+				{
+					if (searchbegin == searchend)
+						break;
+
+					if (ret < 0)
+						searchend = i;
+					else
+						searchbegin = i+1;
 				}
 			}
 		} else {
@@ -865,6 +884,11 @@ byte *FS_LoadStackFile (char *path, void *buffer, int bufsize) {
 	return buf;
 }
 
+static int packfile_name_compare(const void *pack1, const void *pack2)
+{
+	return strcmp(((const packfile_t *)pack1)->name, ((const packfile_t *)pack2)->name);
+}
+
 /*
 Takes an explicit (not game tree related) path to a pak file.
 
@@ -907,6 +931,10 @@ pack_t *FS_LoadPackFile (char *packfile) {
 	}
 
 	free(info);
+
+	/* Sort the entries by name to make it easier to search */
+	qsort(newfiles, pack->numfiles, sizeof(*newfiles), packfile_name_compare);
+
 	return pack;
 }
 
