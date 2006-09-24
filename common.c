@@ -727,33 +727,6 @@ void COM_CreatePath(char *path) {
 	}
 }
 
-//Copies a file over from the net to the local cache, creating any directories
-//needed.  This is for the convenience of developers using ISDN from home.
-void COM_CopyFile (char *netpath, char *cachepath) {
-	FILE *in, *out;
-	int remaining, count;
-	char buf[4096];
-
-	remaining = COM_FileOpenRead (netpath, &in);		
-	COM_CreatePath (cachepath);	// create directories up to the cache file
-	out = fopen(cachepath, "wb");
-	if (!out)
-		Sys_Error ("Error opening %s", cachepath);
-
-	while (remaining) {
-		if (remaining < sizeof(buf))
-			count = remaining;
-		else
-			count = sizeof(buf);
-		fread (buf, 1, count, in);
-		fwrite (buf, 1, count, out);
-		remaining -= count;
-	}
-
-	fclose (in);
-	fclose (out);
-}
-
 //Finds the file in the search path.
 //Sets com_filesize, com_netpath and one of handle or file
 int		file_from_pak;				// global indicating file came from pack file ZOID
