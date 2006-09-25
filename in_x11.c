@@ -7,6 +7,8 @@
 #include "input.h"
 #include "keys.h"
 
+#define XINPUTFLAGS (StructureNotifyMask|KeyPressMask|KeyReleaseMask|ExposureMask|ButtonPressMask|ButtonReleaseMask|FocusChangeMask)
+
 cvar_t cl_keypad = { "cl_keypad", "1" };
 
 typedef struct
@@ -20,6 +22,8 @@ struct inputdata
 	Display *x_disp;
 	Window x_win;
 	int x_shmeventtype;
+	void (*eventcallback)(void *eventcallbackdata, int type);
+	void *eventcallbackdata;
 	
 	int config_notify;
 	int config_notify_width;
@@ -285,6 +289,11 @@ static void GetEvents(struct inputdata *id)
 		XNextEvent(id->x_disp, &event);
 		switch (event.type)
 		{
+			case FocusIn:
+			case FocusOut:
+				if(id->eventcallback)
+					id->eventcallback(id->eventcallbackdata, event.type);
+				break;
 			case KeyPress:
 				id->keyq[id->keyq_head].key = XLateKey(&event.xkey);
 				id->keyq[id->keyq_head].down = true;
@@ -351,15 +360,15 @@ static void GetEvents(struct inputdata *id)
 		if (id->grabmouse)
 		{
 			/* move the mouse to the window center again */
-			XSelectInput(id->x_disp, id->x_win, StructureNotifyMask | KeyPressMask | KeyReleaseMask | ExposureMask | ButtonPressMask | ButtonReleaseMask);
+			XSelectInput(id->x_disp, id->x_win, XINPUTFLAGS&(~PointerMotionMask));
 			XWarpPointer(id->x_disp, None, None, 0, 0, 0, 0, -newmousex, -newmousey);
-			XSelectInput(id->x_disp, id->x_win, StructureNotifyMask | KeyPressMask | KeyReleaseMask | ExposureMask | PointerMotionMask | ButtonPressMask | ButtonReleaseMask);
+			XSelectInput(id->x_disp, id->x_win, XINPUTFLAGS);
 			XFlush(id->x_disp);
 		}
 	}
 }
 
-void *X11_Input_Init(Display *x_disp, Window x_win, int x_shmeventtype)
+void *X11_Input_Init(Display *x_disp, Window x_win, int x_shmeventtype, void (*eventcallback)(void *eventcallbackdata, int type), void *eventcallbackdata)
 {
 	struct inputdata *id;
 	id = malloc(sizeof(*id));
@@ -368,6 +377,8 @@ void *X11_Input_Init(Display *x_disp, Window x_win, int x_shmeventtype)
 		id->x_disp = x_disp;
 		id->x_win = x_win;
 		id->x_shmeventtype = x_shmeventtype;
+		id->eventcallback = eventcallback;
+		id->eventcallbackdata = eventcallbackdata;
 		id->gotshmmsg = 0;
 		id->config_notify = 0;
 		id->keyq_head = 0;
@@ -442,11 +453,11 @@ void X11_Input_GrabMouse(void *inputdata, int dograb)
 	if (dograb)
 	{
 		/* grab the pointer */
-		XSelectInput(id->x_disp, id->x_win, StructureNotifyMask | KeyPressMask | KeyReleaseMask | ExposureMask | ButtonPressMask | ButtonReleaseMask);
+		XSelectInput(id->x_disp, id->x_win, XINPUTFLAGS&(~PointerMotionMask));
 		XWarpPointer(id->x_disp, None, id->x_win, 0, 0, 0, 0, vid.width/2, vid.height/2);
 
 		XGrabPointer(id->x_disp, id->x_win, True, 0, GrabModeAsync, GrabModeAsync, id->x_win, None, CurrentTime);
-		XSelectInput(id->x_disp, id->x_win, StructureNotifyMask | KeyPressMask | KeyReleaseMask | ExposureMask | PointerMotionMask | ButtonPressMask | ButtonReleaseMask);
+		XSelectInput(id->x_disp, id->x_win, XINPUTFLAGS);
 	}
 	else
 	{

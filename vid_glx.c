@@ -79,6 +79,21 @@ qboolean vid_hwgamma_enabled = false;
 
 static int scr_width, scr_height;
 
+static void RestoreHWGamma(struct display *d);
+
+static void eventcallback(void *display, int type)
+{
+	switch(type)
+	{
+		case FocusIn:
+			V_UpdatePalette(true);
+			break;
+		case FocusOut:
+			RestoreHWGamma(display);
+			break;
+	}
+}
+
 void Sys_Video_GetEvents(void *display)
 {
 	struct display *d = display;
@@ -446,7 +461,7 @@ void *Sys_Video_Open(int width, int height, int depth, int fullscreen, unsigned 
 
 			vid.recalc_refdef = 1;				// force a surface cache flush
 
-			d->inputdata = X11_Input_Init(d->x_disp, d->x_win, 0);
+			d->inputdata = X11_Input_Init(d->x_disp, d->x_win, 0, eventcallback, d);
 			if (d->inputdata)
 				return d;
 		}
