@@ -7,7 +7,7 @@
 #include "input.h"
 #include "keys.h"
 
-#define XINPUTFLAGS (StructureNotifyMask|KeyPressMask|KeyReleaseMask|ExposureMask|ButtonPressMask|ButtonReleaseMask|FocusChangeMask)
+#define XINPUTFLAGS (StructureNotifyMask|KeyPressMask|KeyReleaseMask|ExposureMask|PointerMotionMask|ButtonPressMask|ButtonReleaseMask|FocusChangeMask)
 
 cvar_t cl_keypad = { "cl_keypad", "1" };
 
