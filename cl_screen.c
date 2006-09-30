@@ -1286,7 +1286,7 @@ void SCR_ScreenShot_f (void) {
 			Q_strncpyz(ext, DEFAULT_SSHOT_FORMAT, 4);
 
 		for (i = 0; i < 999; i++) {
-			Q_snprintfz(name, sizeof(name), "fuhquake%03i.%s", i, ext);
+			Q_snprintfz(name, sizeof(name), "fodquake%03i.%s", i, ext);
 			if (!(f = fopen (va("%s/%s/%s", com_basedir, sshot_dir, name), "rb")))
 				break;  // file doesn't exist
 			fclose(f);
@@ -1332,7 +1332,7 @@ void SCR_RSShot_f (void) {
 
 	Com_Printf ("Remote screenshot requested.\n");
 
-	filename = "fuhquake/temp/__rsshot__";
+	filename = "fodquake/temp/__rsshot__";
 
 #ifdef GLQUAKE
 
