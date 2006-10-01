@@ -68,6 +68,8 @@ void VID_Restart_f(void)
 
 	if (cl.model_precache[1])
 		R_NewMap();
+
+	Skin_Skins_f();
 }
 
 void VID_CvarInit()
