@@ -227,3 +227,29 @@ void Skin_AllSkins_f (void) {
 	Q_strncpyz (allskins, Cmd_Argv(1), sizeof(allskins));
 	Skin_Skins_f();
 }
+
+void Skin_Reload()
+{
+	player_info_t *sc;
+	int i;
+
+	for(i=0;i<numskins;i++)
+	{
+		if (skins[i].cache.data)
+			Cache_Free(&skins[i].cache);
+	}
+			
+	numskins = 0;
+
+	for(i=0;i<MAX_CLIENTS;i++)
+	{
+		sc = &cl.players[i];
+		if (sc->name[0])
+		{
+			Skin_Find(sc);
+			Skin_Cache(sc->skin);
+			sc->skin = 0;
+		}
+	}
+}
+
