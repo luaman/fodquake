@@ -334,6 +334,9 @@ static void GetEvents(struct inputdata *id)
 					case 7:
 						Key_Event(K_MOUSE5, event.type == ButtonPress);
 						break;
+					case 8:
+						Key_Event(K_MOUSE6, event.type == ButtonPress);
+						break;
 				}
 				break;
 
