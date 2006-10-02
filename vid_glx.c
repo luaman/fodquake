@@ -58,6 +58,7 @@ struct display
 	Window x_win;
 	GLXContext ctx;
 	int scrnum;
+	int hasfocus;
 
 	int fullscreen;
 
@@ -83,12 +84,15 @@ static void RestoreHWGamma(struct display *d);
 
 static void eventcallback(void *display, int type)
 {
+	struct display *d = display;
 	switch(type)
 	{
 		case FocusIn:
+			d->hasfocus = 1;
 			V_UpdatePalette(true);
 			break;
 		case FocusOut:
+			d->hasfocus = 0;
 			RestoreHWGamma(display);
 			break;
 	}
@@ -178,7 +182,7 @@ void Sys_Video_SetGamma(struct display *display, unsigned short *ramps)
 #if USE_VMODE
 	struct display *d = display;
 
-	if (d->vid_gammaworks)
+	if (d->vid_gammaworks && d->hasfocus)
 	{
 		d->currentgammaramp = ramps;
 		if (vid_hwgamma_enabled)
@@ -309,6 +313,7 @@ void *Sys_Video_Open(int width, int height, int depth, int fullscreen, unsigned 
 	{
 		bzero(d, sizeof(*d));
 
+		d->hasfocus = 1;
 		d->fullscreen = fullscreen;
 	d->x_disp = XOpenDisplay(NULL);
 	if (d->x_disp)
