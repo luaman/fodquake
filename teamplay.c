@@ -1654,7 +1654,7 @@ done_locmacros:
 
 	buf[0] = 0;
 	recursive = true;
-	Cmd_ExpandString(newbuf, buf);
+	Cmd_ExpandString(newbuf, buf, sizeof(buf));
 	recursive = false;
 
 	return buf;

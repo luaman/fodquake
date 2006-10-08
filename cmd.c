@@ -165,7 +165,7 @@ void Cbuf_InsertTextEx (cbuf_t *cbuf, char *text) {
 
 void Cbuf_ExecuteEx (cbuf_t *cbuf) {
 	int i, j, cursize;
-	char *text, line[1024], *src, *dest;
+	char *text, line[1400], *src, *dest;
 	qboolean comment, quotes;
 
 	while (cbuf->text_end > cbuf->text_start) {
@@ -762,8 +762,10 @@ void Cmd_TokenizeString (char *text) {
 			return;
 
 		if (cmd_argc < MAX_ARGS) {
+			if (idx+strlen(com_token) >= sizeof(argv_buf))
+				break;
 			cmd_argv[cmd_argc] = argv_buf + idx;
-			strcpy (cmd_argv[cmd_argc], com_token);
+			strcpy(cmd_argv[cmd_argc], com_token);
 			idx += strlen(com_token) + 1;
 			cmd_argc++;
 		}
@@ -999,7 +1001,8 @@ void Cmd_MacroList_f (void) {
 //Expands all $cvar expressions to cvar values
 //If not SERVERONLY, also expands $macro expressions
 //Note: dest must point to a 1024 byte buffer
-void Cmd_ExpandString (char *data, char *dest) {
+void Cmd_ExpandString(char *data, char *dest, unsigned int maxlen)
+{
 	unsigned int c;
 	char buf[255], *str;
 	int i, len, quotes = 0, name_length;
@@ -1055,7 +1058,7 @@ void Cmd_ExpandString (char *data, char *dest) {
  
 			if (str) {
 				// check buffer size
-				if (len + strlen(str) >= 1024 - 1)
+				if (len + strlen(str) >= maxlen - 1)
 					break;
 
 				strcpy(&dest[len], str);
@@ -1066,7 +1069,7 @@ void Cmd_ExpandString (char *data, char *dest) {
 			} else {
 				// no matching cvar or macro
 				dest[len++] = '$';
-				if (len + strlen(buf) >= 1024 - 1)
+				if (len + strlen(buf) >= maxlen - 1)
 					break;
 				strcpy (&dest[len], buf);
 				len += strlen(buf);
@@ -1075,7 +1078,7 @@ void Cmd_ExpandString (char *data, char *dest) {
 			dest[len] = c;
 			data++;
 			len++;
-			if (len >= 1024 - 1)
+			if (len >= maxlen - 1)
 				break;
 		}
 	};
@@ -1101,13 +1104,13 @@ static void Cmd_ExecuteStringEx (cbuf_t *context, char *text) {
 	cvar_t *v;
 	cmd_function_t *cmd;
 	cmd_alias_t *a;
-	static char buf[1024];
+	static char buf[2048];
 	cbuf_t *inserttarget, *oldcontext;
 
 	oldcontext = cbuf_current;
 	cbuf_current = context;
 
-	Cmd_ExpandString (text, buf);
+	Cmd_ExpandString(text, buf, sizeof(buf));
 	Cmd_TokenizeString (buf);
 
 	if (!Cmd_Argc())

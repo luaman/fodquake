@@ -117,9 +117,8 @@ int Cmd_CheckParm (char *parm);
 // Returns the position (1 to argc-1) in the command's argument list
 // where the given parameter apears, or 0 if not present
 
-void Cmd_ExpandString (char *data, char *dest);
+void Cmd_ExpandString(char *data, char *dest, unsigned int maxlen);
 // Expands all $cvar or $macro expressions.
-// dest should point to a 1024-byte buffer
 
 void Cmd_TokenizeString (char *text);
 // Takes a null terminated string.  Does not need to be /n terminated.
