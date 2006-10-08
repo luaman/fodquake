@@ -1000,7 +1000,6 @@ void Cmd_MacroList_f (void) {
 
 //Expands all $cvar expressions to cvar values
 //If not SERVERONLY, also expands $macro expressions
-//Note: dest must point to a 1024 byte buffer
 void Cmd_ExpandString(char *data, char *dest, unsigned int maxlen)
 {
 	unsigned int c;
@@ -1013,24 +1012,29 @@ void Cmd_ExpandString(char *data, char *dest, unsigned int maxlen)
 
 	len = 0;
 
-	while ((c = *data)) {
+	while ((c = *data))
+	{
 		if (c == '"')
 			quotes++;
 
-		if (c == '$' && !(quotes&1)) {
+		if (c == '$' && !(quotes&1))
+		{
 			data++;
 
-			// Copy the text after '$' to a temp buffer
+			/* Copy the texter after '$' to a temporary buffer and
+			 * look for the longest cvar match in the process */
 			i = 0;
 			buf[0] = 0;
 			bestvar = NULL;
-			while ((c = *data) > 32) {
+			while ((c = *data) > 32 && i < sizeof(buf)-1)
+			{
 				if (c == '$')
 					break;
 				data++;
 				buf[i++] = c;
 				buf[i] = 0;
-				if ((var = Cvar_FindVar(buf))) {
+				if ((var = Cvar_FindVar(buf)))
+				{
 					bestvar = var;
 				}
 			}
@@ -1041,24 +1045,30 @@ void Cmd_ExpandString(char *data, char *dest, unsigned int maxlen)
 				str = Cmd_MacroString (buf, &macro_length);		
 				name_length = macro_length;
 
-				if (bestvar && (!str || (strlen(bestvar->name) > macro_length))) {
+				if (bestvar && (!str || (strlen(bestvar->name) > macro_length)))
+				{
 					str = bestvar->string;
 					name_length = strlen(bestvar->name);
 				}
-			} else		
+			}
+			else		
 #endif
 			{	
-				if (bestvar) {
+				if (bestvar)
+				{
 					str = bestvar->string;
 					name_length = strlen(bestvar->name);
-				} else {
+				}
+				else
+				{
 					str = NULL;
 				}
 			}
  
-			if (str) {
+			if (str)
+			{
 				// check buffer size
-				if (len + strlen(str) >= maxlen - 1)
+				if (len + strlen(str) + strlen(buf+name_length) >= maxlen - 1)
 					break;
 
 				strcpy(&dest[len], str);
@@ -1066,7 +1076,9 @@ void Cmd_ExpandString(char *data, char *dest, unsigned int maxlen)
 				i = name_length;
 				while (buf[i])
 					dest[len++] = buf[i++];
-			} else {
+			}
+			else
+			{
 				// no matching cvar or macro
 				dest[len++] = '$';
 				if (len + strlen(buf) >= maxlen - 1)
@@ -1074,14 +1086,16 @@ void Cmd_ExpandString(char *data, char *dest, unsigned int maxlen)
 				strcpy (&dest[len], buf);
 				len += strlen(buf);
 			}
-		} else {
+		}
+		else
+		{
 			dest[len] = c;
 			data++;
 			len++;
 			if (len >= maxlen - 1)
 				break;
 		}
-	};
+	}
 
 	dest[len] = 0;
 }
