@@ -248,6 +248,7 @@ typedef struct {
 	qboolean	findtrack;
 
 	unsigned int hufftablecrc;
+	unsigned int ftexsupported;
 } clientPersistent_t;
 
 extern clientPersistent_t	cls;
@@ -491,6 +492,8 @@ void CL_StartUpload (char *filename);
 void CL_StopUpload(void);
 
 void CL_ParseClientdata (void);	
+
+void CL_RequestNextFTEDownloadChunk(sizebuf_t *buf);
 
 // cl_tent.c
 void CL_InitTEnts (void);

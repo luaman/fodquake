@@ -515,7 +515,7 @@ void CL_Move(usercmd_t *cmd)
 
 void CL_SendCmd (void) {
 	sizebuf_t buf;
-	byte data[128];
+	byte data[256];
 	usercmd_t *cmd, *oldcmd;
 	int i, checksumIndex, lost;
 	qboolean dontdrop;
@@ -633,6 +633,11 @@ void CL_SendCmd (void) {
 	} else {
 		pps_balance = 0;
 		dropcount = 0;
+	}
+
+	if (cls.download && (cls.ftexsupported&FTEX_CHUNKEDDOWNLOADS))
+	{
+		CL_RequestNextFTEDownloadChunk(&buf);
 	}
 
 	// deliver the message

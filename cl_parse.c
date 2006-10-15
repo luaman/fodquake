@@ -299,16 +299,244 @@ void CL_RequestNextDownload (void) {
 	}
 }
 
-//A download message has been received from the server
-void CL_ParseDownload (void) {
-	int size, percent, r;
+static qboolean CL_OpenDownloadFile()
+{
 	byte name[1024];
+
+	if (strncmp(cls.downloadtempname,"skins/",6))
+		Q_snprintfz(name, sizeof(name), "%s/%s", cls.gamedir, cls.downloadtempname);
+	else
+		Q_snprintfz(name, sizeof(name), "qw/%s", cls.downloadtempname);
+
+	COM_CreatePath(name);
+
+	cls.download = fopen(name, "wb");
+	if (cls.download)
+		return true;
+
+	return false;
+}
+
+static void CL_FinishDownloadFile()
+{
+	char oldn[MAX_OSPATH], newn[MAX_OSPATH];
+	int r;
+
+	fclose (cls.download);
+
+	// rename the temp file to its final name
+	if (strcmp(cls.downloadtempname, cls.downloadname))
+	{
+		if (strncmp(cls.downloadtempname,"skins/",6))
+		{
+			Q_snprintfz(oldn, sizeof(oldn), "%s/%s", cls.gamedir, cls.downloadtempname);
+			Q_snprintfz(newn, sizeof(newn), "%s/%s", cls.gamedir, cls.downloadname);
+		}
+		else
+		{
+			Q_snprintfz(oldn, sizeof(oldn), "qw/%s", cls.downloadtempname);
+			Q_snprintfz(newn, sizeof(newn), "qw/%s", cls.downloadname);
+		}
+		r = rename (oldn, newn);
+		if (r)
+			Com_Printf ("failed to rename.\n");
+	}
+
+	cls.download = NULL;
+	cls.downloadpercent = 0;
+
+	// get another file if needed
+
+	CL_RequestNextDownload ();
+}
+
+#define FTEFILECHUNKSIZE 1024
+#define FTEMAXCHUNKS 64
+
+static int downloadchunkrequestsequencenumber[FTEMAXCHUNKS];
+static unsigned char downloadchunkdata[FTEMAXCHUNKS*FTEFILECHUNKSIZE];
+static unsigned int downloadchunkwindowoffset;
+static unsigned int downloadchunkcycle;
+static unsigned int downloadfirstchunk;
+static unsigned int downloadlastchunknumber;
+static unsigned int downloadchunksinbuffer;
+
+static void CL_GetFTEDownloadChunk(sizebuf_t *buf, int chunknumber)
+{
+	MSG_WriteByte(buf, clc_stringcmd);
+	MSG_WriteString(buf, va("nextdl %d", chunknumber));
+
+	downloadchunkrequestsequencenumber[((chunknumber-downloadfirstchunk)+downloadchunkwindowoffset)%FTEMAXCHUNKS] = cls.netchan.outgoing_sequence;
+}
+
+void CL_RequestNextFTEDownloadChunk(sizebuf_t *buf)
+{
+	unsigned int i, j;
+	int oldestrequest;
+	int oldestrequestage;
+	int age;
+
+	oldestrequest = -1;
+	oldestrequestage = 0;
+
+	for(i=downloadchunkwindowoffset,j=0;j<FTEMAXCHUNKS&&downloadfirstchunk+j<=downloadlastchunknumber;j++,i++)
+	{
+		i%= FTEMAXCHUNKS;
+		if (downloadchunkrequestsequencenumber[i] == -1)
+		{
+			CL_GetFTEDownloadChunk(buf, j+downloadfirstchunk);
+			return;
+		}
+
+		age = cls.netchan.incoming_sequence-downloadchunkrequestsequencenumber[i];
+
+		if (downloadchunkrequestsequencenumber[i] != -2 && age > oldestrequestage)
+		{
+			oldestrequestage = age;
+			oldestrequest = j;
+		}
+	}
+
+	if (oldestrequest != -1)
+		CL_GetFTEDownloadChunk(buf, downloadfirstchunk+oldestrequest);
+}
+
+static void CL_ParseFTEChunkedDownload()
+{
+	int chunk;
+	static int filesize;
+
+	chunk = MSG_ReadLong();
+
+	if (chunk < 0)
+	{
+		char *filename;
+
+		filesize = MSG_ReadLong();
+		filename = MSG_ReadString();
+
+		printf("Filename: \"%s\", length: %d\n", filename, filesize);
+
+		if (!cls.download)
+		{
+			if (strcmp(filename, cls.downloadname) == 0)
+			{
+				if (filesize > 0)
+				{
+					if (CL_OpenDownloadFile())
+					{
+						MSG_WriteByte(&cls.netchan.message, clc_stringcmd);
+						MSG_WriteString(&cls.netchan.message, va("nextdl %d", 1));
+
+						memset(downloadchunkrequestsequencenumber, 0xff, sizeof(downloadchunkrequestsequencenumber));
+						downloadchunkwindowoffset = 0;
+						downloadchunkcycle = 0;
+						downloadfirstchunk = 0;
+						downloadlastchunknumber = filesize/FTEFILECHUNKSIZE;
+						return;
+					}
+					else
+					{
+						Com_Printf("Unable to open output file\n");
+					}
+				}
+				else
+				{
+					if (filesize == -2)
+					{
+						Com_Printf("Server refused upload of \"%s\"\n", filename);
+					}
+					else
+					{
+						Com_Printf("\"%s\" not found on server\n", filename);
+					}
+				}
+			}
+			else
+			{
+				Com_Printf("Server sent the wrong file\n");
+			}
+		}
+		else
+		{
+			Com_Printf("Server sent us a new file while we were still receiving old one\n");
+		}
+
+		CL_RequestNextDownload();
+	}
+	else if (cls.download)
+	{
+		if (chunk >= downloadfirstchunk)
+		{
+			if (chunk < downloadfirstchunk+FTEMAXCHUNKS)
+			{
+				if (downloadchunkrequestsequencenumber[((chunk-downloadfirstchunk)+downloadchunkwindowoffset)%FTEMAXCHUNKS] != -2)
+				{
+					unsigned int numreadychunks;
+					downloadchunksinbuffer++;
+
+					downloadchunkrequestsequencenumber[((chunk-downloadfirstchunk)+downloadchunkwindowoffset)%FTEMAXCHUNKS] = -2;
+					MSG_ReadData(downloadchunkdata+((((chunk-downloadfirstchunk)+downloadchunkwindowoffset)%FTEMAXCHUNKS)*FTEFILECHUNKSIZE), FTEFILECHUNKSIZE);
+
+					cls.downloadpercent = (100*(downloadfirstchunk+downloadchunksinbuffer))/downloadlastchunknumber;
+
+					numreadychunks = 0;
+					while(numreadychunks < FTEMAXCHUNKS && downloadchunkrequestsequencenumber[(numreadychunks+downloadchunkwindowoffset)%FTEMAXCHUNKS] == -2)
+					{
+						downloadchunkrequestsequencenumber[(numreadychunks+downloadchunkwindowoffset)%FTEMAXCHUNKS] = -1;
+						numreadychunks++;
+					}
+
+					if (numreadychunks)
+					{
+						if (downloadchunkwindowoffset+numreadychunks > FTEMAXCHUNKS)
+						{
+							fwrite(downloadchunkdata+downloadchunkwindowoffset*FTEFILECHUNKSIZE, 1, (FTEMAXCHUNKS-downloadchunkwindowoffset)*FTEFILECHUNKSIZE, cls.download);
+							fwrite(downloadchunkdata, 1, (numreadychunks-(FTEMAXCHUNKS-downloadchunkwindowoffset))*FTEFILECHUNKSIZE, cls.download);
+						}
+						else
+						{
+							unsigned int size = numreadychunks*FTEFILECHUNKSIZE;
+
+							if ((downloadfirstchunk*FTEFILECHUNKSIZE)+size > filesize)
+								size = filesize-(downloadfirstchunk*FTEFILECHUNKSIZE);
+
+							fwrite(downloadchunkdata+(downloadchunkwindowoffset*FTEFILECHUNKSIZE), 1, size, cls.download);
+						}
+
+						downloadchunkwindowoffset+= numreadychunks;
+						downloadchunkwindowoffset%= FTEMAXCHUNKS;
+						downloadfirstchunk+= numreadychunks;
+						downloadchunksinbuffer-= numreadychunks;
+
+						if (downloadfirstchunk == downloadlastchunknumber+1)
+						{
+							CL_FinishDownloadFile();
+						}
+					}
+					return;
+				}
+			}
+		}
+
+		msg_readcount+= 1024;
+	}
+	else
+	{
+		Com_Printf("Got file data chunk while not receiving file\n");
+	}
+}
+
+static void CL_ParseQWDownload (void)
+{
+	int size, percent;
 
 	// read the data
 	size = MSG_ReadShort ();
 	percent = MSG_ReadByte ();
 
-	if (cls.demoplayback) {
+	if (cls.demoplayback)
+	{
 		if (size > 0)
 			msg_readcount += size;
 		return; // not in demo playback
@@ -326,16 +554,10 @@ void CL_ParseDownload (void) {
 	}
 
 	// open the file if not opened yet
-	if (!cls.download) {
-		if (strncmp(cls.downloadtempname,"skins/",6))
-			Q_snprintfz (name, sizeof(name), "%s/%s", cls.gamedir, cls.downloadtempname);
-		else
-			Q_snprintfz (name, sizeof(name), "qw/%s", cls.downloadtempname);
-
-		COM_CreatePath (name);
-
-		cls.download = fopen (name, "wb");
-		if (!cls.download) {
+	if (!cls.download)
+	{
+		if (!CL_OpenDownloadFile())
+		{
 			msg_readcount += size;
 			Com_Printf ("Failed to open %s\n", cls.downloadtempname);
 			CL_RequestNextDownload ();
@@ -346,39 +568,27 @@ void CL_ParseDownload (void) {
 	fwrite (net_message.data + msg_readcount, 1, size, cls.download);
 	msg_readcount += size;
 
-	if (percent != 100) {
+	if (percent != 100)
+	{
 // change display routines by zoid
 		// request next block
 		cls.downloadpercent = percent;
 
 		MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
 		SZ_Print (&cls.netchan.message, "nextdl");
-	} else {
-		char oldn[MAX_OSPATH], newn[MAX_OSPATH];
-
-		fclose (cls.download);
-
-		// rename the temp file to its final name
-		if (strcmp(cls.downloadtempname, cls.downloadname)) {
-			if (strncmp(cls.downloadtempname,"skins/",6)) {
-				sprintf (oldn, "%s/%s", cls.gamedir, cls.downloadtempname);
-				sprintf (newn, "%s/%s", cls.gamedir, cls.downloadname);
-			} else {
-				sprintf (oldn, "qw/%s", cls.downloadtempname);
-				sprintf (newn, "qw/%s", cls.downloadname);
-			}
-			r = rename (oldn, newn);
-			if (r)
-				Com_Printf ("failed to rename.\n");
-		}
-
-		cls.download = NULL;
-		cls.downloadpercent = 0;
-
-		// get another file if needed
-
-		CL_RequestNextDownload ();
 	}
+	else
+	{
+		CL_FinishDownloadFile();
+	}
+}
+
+static void CL_ParseDownload()
+{
+	if ((cls.ftexsupported&FTEX_CHUNKEDDOWNLOADS))
+		CL_ParseFTEChunkedDownload();
+	else
+		CL_ParseQWDownload();
 }
 
 static byte *upload_data;
@@ -476,7 +686,20 @@ void CL_ParseServerData (void) {
 
 	// parse protocol version number
 	// allow 2.2 and 2.29 demos to play
-	protover = MSG_ReadLong ();
+	
+	while(1)
+	{
+		protover = MSG_ReadLong();
+		if (protover == QW_PROTOEXT_FTEX)
+		{
+			cls.ftexsupported = MSG_ReadLong();
+		}
+		else
+		{
+			break;
+		}
+	}
+
 	if (protover != PROTOCOL_VERSION &&
 		!(cls.demoplayback && (protover == 26 || protover == 27 || protover == 28)))
 		Host_Error ("Server returned version %i, not %i\nYou probably need to upgrade.\nCheck http://www.fuhquake.net/", protover, PROTOCOL_VERSION);

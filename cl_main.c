@@ -328,18 +328,22 @@ static void CL_SendConnectPacket(void) {
 	cls.qport = Cvar_VariableValue("qport");
 
 	i = Q_snprintfz(data, sizeof(data), "\xff\xff\xff\xff" "connect %i %i %i \"%s\"\n", PROTOCOL_VERSION, cls.qport, cls.challenge, cls.userinfo);
+
+	i++;
+
+	if (i < sizeof(data) && cls.netchan.huffcontext)
+		i+= Q_snprintfz(data+i, sizeof(data)-i, "0x%08x 0x%08x\n", QW_PROTOEXT_HUFF, cls.hufftablecrc);
+
+	if (i < sizeof(data) && cls.ftexsupported)
+		i+= Q_snprintfz(data+i, sizeof(data)-i, "0x%08x 0x%08x\n", QW_PROTOEXT_FTEX, cls.ftexsupported);
+
 	if (i < sizeof(data))
 	{
-		if (cls.netchan.huffcontext)
-		{
-			i++;
-			i+= Q_snprintfz(data+i, sizeof(data)-1, "0x%08x 0x%08x\n", QW_PROTOEXT_HUFF, cls.hufftablecrc);
-		}
-		if (i < sizeof(data))
-		{
-			NET_SendPacket(NS_CLIENT, i+1, data, cls.server_adr);
-			return;
-		}
+		if (data[i-1] == 0)
+			i--;
+
+		NET_SendPacket(NS_CLIENT, i+1, data, cls.server_adr);
+		return;
 	}
 
 	Com_Printf("Connection packet size overflow\n");
@@ -603,7 +607,8 @@ void CL_Reconnect_f (void) {
 }
 
 //Responses to broadcasts, etc
-void CL_ConnectionlessPacket (void) {
+void CL_ConnectionlessPacket (void)
+{
 	int c;
 	char *s, cmdtext[2048];
 
@@ -615,7 +620,8 @@ void CL_ConnectionlessPacket (void) {
 	if (msg_badread)
 		return;			// runt packet
 
-	switch(c) {
+	switch(c)
+	{
 	case S2C_CHALLENGE:
 		if (!NET_CompareAdr(net_from, cls.server_adr))
 			return;
@@ -624,20 +630,35 @@ void CL_ConnectionlessPacket (void) {
 		cls.netchan.huffcontext = 0;
 		while(1)
 		{
-			unsigned int foo;
+			unsigned int extension;
+			unsigned int value;
 
-			foo = MSG_ReadLong();
+			extension = MSG_ReadLong();
+			value = MSG_ReadLong();
 			if (msg_badread)
 				break;
 
-			if (foo == QW_PROTOEXT_HUFF)
+			if (extension == QW_PROTOEXT_HUFF)
 			{
 				Com_Printf("Server supports Huffman compression\n");
-				cls.hufftablecrc = MSG_ReadLong();
+				cls.hufftablecrc = value;
+
 				cls.netchan.huffcontext = Huff_Init(cls.hufftablecrc);
 				if (!cls.netchan.huffcontext)
 					Com_Printf("Unknown Huffman table\n");
 			}
+			else if (extension == QW_PROTOEXT_FTEX)
+			{
+				cls.ftexsupported = FTEX_SUPPORTED&value;
+
+				Com_Printf("FTE extensions enabled: %08x\n", cls.ftexsupported);
+			}
+#if 0
+			else
+			{
+				printf("Unknown extension %08x %08x\n", extension, value);
+			}
+#endif
 		}
 		CL_SendConnectPacket();
 		break;
