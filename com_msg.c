@@ -292,6 +292,18 @@ int MSG_GetReadCount(void) {
 	return msg_readcount;
 }
 
+qboolean MSG_ReadData(void *destination, unsigned int size)
+{
+	if (msg_readcount + size <= net_message.cursize)
+	{
+		memcpy(destination, net_message.data+msg_readcount, size);
+		msg_readcount+= size;
+		return true;
+	}
+
+	return false;
+}
+
 // returns -1 and sets msg_badread if no more characters are available
 int MSG_ReadChar (void) {
 	int	c;
