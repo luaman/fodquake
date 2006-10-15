@@ -248,7 +248,7 @@ void CL_Download_f (void){
 		return;
 	}
 
-	Q_snprintfz (cls.downloadname, sizeof(cls.downloadname), "%s/%s", cls.gamedir, Cmd_Argv(1));
+	Q_snprintfz (cls.downloadname, sizeof(cls.downloadname), "%s", Cmd_Argv(1));
 
 	p = cls.downloadname;
 	while (1) {
@@ -262,7 +262,6 @@ void CL_Download_f (void){
 	}
 
 	strcpy(cls.downloadtempname, cls.downloadname);
-	cls.download = fopen (cls.downloadname, "wb");
 	cls.downloadtype = dl_single;
 
 	MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
