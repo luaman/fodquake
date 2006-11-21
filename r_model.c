@@ -136,7 +136,12 @@ void Mod_ClearAll(void)
 	model_t	*mod;
 
 	for (i = 0, mod = mod_known; i < mod_numknown ; i++, mod++)
+	{
+		if (mod->type == mod_alias && mod->cache.data)
+			Cache_Free(&mod->cache);
+
 		mod->needload = true;
+	}
 }
 
 model_t *Mod_FindName (char *name) {
