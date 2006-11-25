@@ -253,7 +253,6 @@ static void TragicDeath(int signal_num)
 {
 #warning fixme
 #if 0
-	XAutoRepeatOn(x_disp);
 	XCloseDisplay(x_disp);
 #endif
 	Sys_Error("This death brought to you by the number %d\n", signal_num);
@@ -453,8 +452,6 @@ void *Sys_Video_Open(int width, int height, int depth, int fullscreen, unsigned 
 			sigaction(SIGINT, &sa, 0);
 			sigaction(SIGTERM, &sa, 0);
 		}
-
-		XAutoRepeatOff(d->x_disp);
 
 		// for debugging only
 		XSynchronize(d->x_disp, True);
@@ -745,7 +742,6 @@ void Sys_Video_Close(void *display)
 
 	X11_Input_Shutdown(d->inputdata);
 	
-	XAutoRepeatOn(d->x_disp);
 #if USE_VMODE
 	if (d->vidmode_active)
 		XF86VidModeSwitchToMode(d->x_disp, d->scrnum, d->vidmodes[0]);
