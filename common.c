@@ -192,7 +192,12 @@ float Q_atof (char *str) {
 
 void Q_strncpyz (char *dest, char *src, size_t size)
 {
-	strlcat(dest, src, size);
+#if USE_STRL
+	strlcpy(dest, src, size);
+#else
+	strncpy (dest, src, size - 1);
+	dest[size - 1] = 0;
+#endif
 }
 
 int Q_snprintfz (char *dest, size_t size, char *fmt, ...) {
