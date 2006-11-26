@@ -668,9 +668,7 @@ static qboolean Cmd_LegacyCommand (void) {
 		return true;		// just ignore this command
 
 	// build new command string
-	Q_strncpyz (text, cmd->newname, sizeof(text) - 1);
-	strcat (text, " ");
-	strncat (text, Cmd_Args(), sizeof(text) - strlen(text) - 1);
+	Q_snprintfz(text, sizeof(text), "%s %s", cmd->newname, Cmd_Args());
 
 	assert (!recursive);
 	recursive = true;
@@ -1297,31 +1295,43 @@ void Cmd_If_f (void) {
 		return;
 	}
 
-	if (result)	{
-		for (i = 4; i < c; i++) {
+	if (result)
+	{
+		for (i = 4; i < c; i++)
+		{
 			if ((i == 4) && !Q_strcasecmp(Cmd_Argv(i), "then"))
 				continue;
+
 			if (!Q_strcasecmp(Cmd_Argv(i), "else"))
 				break;
+
 			if (buf[0])
-				strncat (buf, " ", sizeof(buf) - strlen(buf) - 2);
-			strncat (buf, Cmd_Argv(i), sizeof(buf) - strlen(buf) - 2);
+				strlcat(buf, " ", sizeof(buf));
+
+			strlcat(buf, Cmd_Argv(i), sizeof(buf));
 		}
-	} else {
-		for (i = 4; i < c ; i++) {
+	}
+	else
+	{
+		for (i = 4; i < c ; i++)
+		{
 			if (!Q_strcasecmp(Cmd_Argv(i), "else"))
 				break;
 		}
+
 		if (i == c)
 			return;
-		for (i++; i < c; i++) {
+
+		for (i++; i < c; i++)
+		{
 			if (buf[0])
-				strncat (buf, " ", sizeof(buf) - strlen(buf) - 2);
-			strncat (buf, Cmd_Argv(i), sizeof(buf) - strlen(buf) - 2);
+				strlcat(buf, " ", sizeof(buf));
+
+			strlcat(buf, Cmd_Argv(i), sizeof(buf));
 		}
 	}
 
-	strncat (buf, "\n", sizeof(buf) - strlen(buf) - 1);
+	strlcat(buf, "\n", sizeof(buf));
 	Cbuf_InsertTextEx (cbuf_current ? cbuf_current : &cbuf_main, buf);
 }
 
