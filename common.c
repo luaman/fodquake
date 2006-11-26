@@ -401,19 +401,7 @@ void COM_DefaultExtension (char *path, char *extension) {
 		src--;
 	}
 
-#if USE_STRL
 	strlcat(path, extension, MAX_OSPATH);
-#else
-	{
-		int len;
-
-		len = MAX_OSPATH-strlen(path)-1;
-		if (len > 0)
-		{
-			strncat (path, extension, len);
-		}
-	}
-#endif
 }
 
 //If path doesn't have an extension or has a different extension, append(!) specified extension
@@ -425,19 +413,7 @@ void COM_ForceExtension (char *path, char *extension) {
 	if (src >= path && !strcmp(src, extension))
 		return;
 
-#if USE_STRL
 	strlcat(path, extension, MAX_OSPATH);
-#else
-	{
-		int len;
-
-		len = MAX_OSPATH-strlen(path)-1;
-		if (len > 0)
-		{
-			strncat (path, extension, len);
-		}
-	}
-#endif
 }
 
 //============================================================================
@@ -455,6 +431,8 @@ char *COM_Parse (char *data) {
 
 	len = 0;
 	com_token[0] = 0;
+
+#warning Huge flying buffer overflow here with com_token
 
 	if (!data)
 		return NULL;
