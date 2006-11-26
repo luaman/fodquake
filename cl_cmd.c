@@ -196,7 +196,8 @@ void CL_Packet_f(void) {
 }
 
 //Send the rest of the command line over as an unconnected command.
-void CL_Rcon_f (void) {
+void CL_Rcon_f (void)
+{
 	char message[1024] = {0};
 	int i;
 	netadr_t to;
@@ -208,22 +209,28 @@ void CL_Rcon_f (void) {
 	message[3] = 255;
 	message[4] = 0;
 
-	strncat (message, "rcon ", sizeof(message) - strlen(message) - 1);
+	strlcat(message, "rcon ", sizeof(message));
 
-	if (rcon_password.string[0]) {
-		strncat (message, rcon_password.string, sizeof(message) - strlen(message) - 1);
-		strncat (message, " ", sizeof(message) - strlen(message) - 1);
+	if (rcon_password.string[0])
+	{
+		strlcat(message, rcon_password.string, sizeof(message));
+		strlcat(message, " ", sizeof(message));
 	}
 
-	for (i = 1; i < Cmd_Argc(); i++) {
-		strncat (message, Cmd_Argv(i), sizeof(message) - strlen(message) - 1);
-		strncat (message, " ", sizeof(message) - strlen(message) - 1);
+	for (i = 1; i < Cmd_Argc(); i++)
+	{
+		strlcat(message, Cmd_Argv(i), sizeof(message));
+		strlcat(message, " ", sizeof(message));
 	}
 
-	if (cls.state >= ca_connected) {
+	if (cls.state >= ca_connected)
+	{
 		to = cls.netchan.remote_address;
-	} else {
-		if (!strlen(rcon_address.string)) {
+	}
+	else
+	{
+		if (!strlen(rcon_address.string))
+		{
 			Com_Printf ("You must either be connected or set 'rcon_address' to issue rcon commands\n");
 			return;
 		}
