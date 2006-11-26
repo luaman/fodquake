@@ -144,18 +144,23 @@ static int MT_CountTeamMembers(char *team) {
 	return count;
 }
 
-static char *MT_NameAndClean_TeamMembers(char *team) {
+static char *MT_NameAndClean_TeamMembers(char *team)
+{
 	static char namebuf[MAX_STATIC_STRING];
 	int i;
 
 	namebuf[0] = 0;
-	for (i = 0; i < MAX_CLIENTS; i++) {
+	for (i = 0; i < MAX_CLIENTS; i++)
+	{
 		if (!cl.players[i].name[0] || cl.players[i].spectator)
 			continue;
-		if (!strcmp(cl.players[i].team, team)) {
+
+		if (!strcmp(cl.players[i].team, team))
+		{
 			if (namebuf[0])
-				strncat(namebuf, match_name_and.string, sizeof(namebuf) - strlen(namebuf) - 1);
-			strncat(namebuf, MT_CleanString(cl.players[i].name, false), sizeof(namebuf) - strlen(namebuf) - 1);
+				strlcat(namebuf, match_name_and.string, sizeof(namebuf));
+
+			strlcat(namebuf, MT_CleanString(cl.players[i].name, false), sizeof(namebuf));
 		}
 	}
 	return namebuf;
@@ -381,22 +386,24 @@ static matchinfo_t *MT_GetMatchInfo(void) {
 #undef CLEANFIELD
 
 #define BUF matchinfo.multiteamnames
-	for (i = 0; i < numteams; i++) {
-		strncat(BUF, MT_CleanString(teamnames[i], false), sizeof(BUF) - strlen(BUF) - 1);
+	for (i = 0; i < numteams; i++)
+	{
+		strlcat(BUF, MT_CleanString(teamnames[i], false), sizeof(BUF));
 		if (i < numteams - 1)
-			strncat(BUF, match_name_versus.string, sizeof(BUF) - strlen(BUF) - 1);
+			strlcat(BUF, match_name_versus.string, sizeof(BUF));
 	}
 #undef BUF
 
 	maxteamsize = 0;
 #define BUF matchinfo.multiteamcounts
-	for (i = 0; i < numteams; i++) {
+	for (i = 0; i < numteams; i++)
+	{
 		teamsize = MT_CountTeamMembers(teamnames[i]);
 		if (*teamnames[i])
 			maxteamsize = max(maxteamsize, teamsize);
-		strncat(BUF, va("%d", teamsize), sizeof(BUF) - strlen(BUF) - 1);
+		strlcat(BUF, va("%d", teamsize), sizeof(BUF));
 		if (i < numteams - 1)
-			strncat(BUF, match_name_on.string, sizeof(BUF) - strlen(BUF) - 1);
+			strlcat(BUF, match_name_on.string, sizeof(BUF));
 	}
 	matchinfo.maxteamsize = maxteamsize;
 #undef BUF
