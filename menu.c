@@ -2309,7 +2309,7 @@ void M_Menu_Demos_f (void) {
 				;
 			if (*s) {	
 				strcpy(demo_currentdir, "/");
-				strncat(demo_currentdir, s, sizeof(demo_currentdir) - 1 - 1);
+				strlcat(demo_currentdir, s, sizeof(demo_currentdir));
 				
 				for (s = demo_currentdir + strlen(demo_currentdir) - 1; *s == '/' || *s == '\\'; s--)
 					*s = 0;
