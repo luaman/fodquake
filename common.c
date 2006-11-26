@@ -1002,7 +1002,7 @@ void FS_SetGamedir (char *dir) {
 	// flush all data, so it will be forced to reload
 	Cache_Flush ();
 
-	sprintf (com_gamedir, "%s/%s", com_basedir, dir);
+	Q_snprintfz(com_gamedir, sizeof(com_gamedir), "%s/%s", com_basedir, dir);
 
 	if (!strcmp(dir, "id1") || !strcmp(dir, "qw") || !strcmp(dir, "fuhquake"))	
 		return;
@@ -1046,7 +1046,7 @@ void FS_InitFilesystem (void) {
 
 	// start up with id1 by default
 	FS_AddGameDirectory ( va("%s/id1", com_basedir) );
-	FS_AddGameDirectory ( va("%s/fuhquake", com_basedir) );	
+	FS_AddGameDirectory ( va("%s/fodquake", com_basedir) );
 	FS_AddGameDirectory ( va("%s/qw", com_basedir) );
 
 	// any set gamedirs will be freed up to here
