@@ -715,17 +715,20 @@ char *Cmd_Args (void) {
 
 //Returns a single string containing argv(start) to argv(argc() - 1)
 //Unlike Cmd_Args, shrinks spaces between argvs
-char *Cmd_MakeArgs (int start) {
+char *Cmd_MakeArgs (int start)
+{
 	int i, c;
 	
-	static char	text[1024];
+	static char text[1024];
 
 	text[0] = 0;
 	c = Cmd_Argc();
-	for (i = start; i < c; i++) {
+	for (i = start; i < c; i++)
+	{
 		if (i > start)
-			strncat (text, " ", sizeof(text) - strlen(text) - 1);
-		strncat (text, Cmd_Argv(i), sizeof(text) - strlen(text) - 1);
+			strlcat(text, " ", sizeof(text));
+
+		strlcat(text, Cmd_Argv(i), sizeof(text));
 	}
 
 	return text;
