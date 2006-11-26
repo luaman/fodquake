@@ -65,33 +65,9 @@ ifeq ($(CPU), ppc)
 endif
 
 OBJS= \
-	host.o \
-	hufftest.o \
-	snd_main.o \
-	snd_mem.o \
-	snd_mix.o \
-	cl_input.o \
-	keys.o \
-	net_chan.o \
-	net_udp.o \
-	pr_exec.o \
-	pr_edict.o \
-	pr_cmds.o \
-	pmove.o \
-	pmovetst.o \
-	r_part.o \
-	sv_ccmds.o \
-	sv_save.o \
-	sv_ents.o \
-	sv_init.o \
-	sv_main.o \
-	sv_move.o \
-	sv_nchan.o \
-	sv_phys.o \
-	sv_send.o \
-	sv_user.o \
-	sv_world.o \
 	cl_auth.o \
+	cl_sbar.o \
+	cl_screen.o \
 	cl_cam.o \
 	cl_capture.o \
 	cl_cmd.o \
@@ -100,6 +76,7 @@ OBJS= \
 	cl_fchecks.o \
 	cl_fragmsgs.o \
 	cl_ignore.o \
+	cl_input.o \
 	cl_logging.o \
 	cl_main.o \
 	cl_parse.o \
@@ -108,31 +85,54 @@ OBJS= \
 	cl_tent.o \
 	cl_view.o \
 	cmd.o \
-	common.o \
 	com_msg.o \
+	common.o \
+	config_manager.o \
 	console.o \
 	crc.o \
 	cvar.o \
+	fmod.o \
+	host.o \
+	huffman.o \
 	image.o \
+	keys.o \
+	match_tools.o \
 	mathlib.o \
 	mdfour.o \
 	menu.o \
-	cl_sbar.o \
-	cl_screen.o \
+	modules.o \
+	mp3_player.o \
+	net_chan.o \
+	net_udp.o \
+	pmove.o \
+	pmovetst.o \
+	pr_edict.o \
+	pr_exec.o \
+	pr_cmds.o \
+	r_part.o \
+	rulesets.o \
 	skin.o \
+	snd_main.o \
+	snd_mem.o \
+	snd_mix.o \
+	strlcat.o \
+	sv_ccmds.o \
+	sv_ents.o \
+	sv_init.o \
+	sv_main.o \
+	sv_move.o \
+	sv_nchan.o \
+	sv_phys.o \
+	sv_save.o \
+	sv_send.o \
+	sv_user.o \
+	sv_world.o \
 	teamplay.o \
+	utils.o \
 	version.o \
+	vid.o \
 	wad.o \
 	zone.o \
-	modules.o \
-	match_tools.o \
-	utils.o \
-	rulesets.o \
-	config_manager.o \
-	mp3_player.o \
-	fmod.o \
-	vid.o \
-	huffman.o \
 	$(OSOBJS)
 
 SWOBJS= \
