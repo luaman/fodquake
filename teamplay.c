@@ -404,11 +404,7 @@ char *Macro_ArmorType (void) {
 }
 
 
-#define Q_strncatz(dest, src)	\
-	do {	\
-		strncat(dest, src, sizeof(dest) - strlen(dest) - 1);	\
-		dest[sizeof(dest) - 1] = 0;	\
-	} while (0)
+#define Q_strncatz(dest, src) strlcat(dest, src, sizeof(dest))
 
 char *Macro_Powerups (void) {
 	int effects;
@@ -1450,7 +1446,7 @@ qboolean TP_LoadLocFile (char *path, qboolean quiet) {
 		Com_Printf ("TP_LoadLocFile: path name > MAX_OSPATH\n");
 		return false;
 	}
-	strncat (locname, path, sizeof(locname) - strlen(locname) - 1);
+	strlcat(locname, path, sizeof(locname));
 	COM_DefaultExtension(locname, ".loc");
 
 	mark = Hunk_LowMark ();
@@ -2051,8 +2047,8 @@ static void FlagCommand (int *flags, int defaultflags) {
 		for (i = 0 ; i < NUM_ITEMFLAGS ; i++)
 			if (*flags & (1 << i)) {
 				if (*str)
-					strncat (str, " ", sizeof(str) - strlen(str) - 1);
-				strncat (str, pknames[i], sizeof(str) - strlen(str) - 1);
+					strlcat(str, " ", sizeof(str));
+				strlcat(str, pknames[i], sizeof(str));
 			}
 		Com_Printf ("%s\n", str);
 		return;
@@ -2680,10 +2676,10 @@ void TP_FindPoint (void) {
 				name = teammate ? tp_name_teammate.string : tp_name_enemy.string;
 		}
 		if (beststate->effects & EF_BLUE)
-			strncat(buf, tp_name_quaded.string, sizeof(buf) - strlen(buf) - 1);
+			strlcat(buf, tp_name_quaded.string, sizeof(buf));
 		if (beststate->effects & EF_RED)
-			strncat(buf, va("%s%s", buf[0] ? " " : "", tp_name_pented.string), sizeof(buf) - strlen(buf) - 1);
-		strncat(buf, va("%s%s", buf[0] ? " " : "", name), sizeof(buf) - strlen(buf) - 1);
+			strlcat(buf, va("%s%s", buf[0] ? " " : "", tp_name_pented.string), sizeof(buf));
+		strlcat(buf, va("%s%s", buf[0] ? " " : "", name), sizeof(buf));
 		Q_strncpyz (vars.pointname, buf, sizeof(vars.pointname));
 		Q_strncpyz (vars.pointloc, TP_LocationName (beststate->origin), sizeof(vars.pointloc));
 

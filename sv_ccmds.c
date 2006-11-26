@@ -165,10 +165,12 @@ void SV_Kick_f (void) {
 	client_t *cl;
 	char reason[80] = {0};
 
-	if ((c = Cmd_Argc()) < 2) {
+	if ((c = Cmd_Argc()) < 2)
+	{
 #ifndef SERVERONLY
 		// some mods use a "kick" alias for their own needs, sigh
-		if (CL_ClientState() && Cmd_FindAlias("kick")) {
+		if (CL_ClientState() && Cmd_FindAlias("kick"))
+		{
 			Cmd_ExecuteString (Cmd_AliasString("kick"));
 			return;
 		}
@@ -179,15 +181,19 @@ void SV_Kick_f (void) {
 
 	uid = atoi(Cmd_Argv(1));
 	
-	for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++) {
+	for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++)
+	{
 		if (!cl->state)
 			continue;
-		if (cl->userid == uid) {
-			if (c > 2) {
-				for (j = 2; j < c; j++) {
-					strncat (reason, Cmd_Argv(j), sizeof(reason) - strlen(reason) - 1);
+		if (cl->userid == uid)
+		{
+			if (c > 2)
+			{
+				for (j = 2; j < c; j++)
+				{
+					strlcat(reason, Cmd_Argv(j), sizeof(reason));
 					if (j < c - 1)
-						strncat (reason, " ", sizeof(reason) - strlen(reason) - 1);
+						strlcat(reason, " ", sizeof(reason));
 				}
 			}
 			saved_state = cl->state;
