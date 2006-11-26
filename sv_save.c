@@ -136,7 +136,7 @@ void SV_LoadGame_f (void) {
 		return;
 	}
 
-	sprintf (name, "%s/save/%s", com_gamedir, Cmd_Argv(1));
+	Q_snprintfz(name, sizeof(name), "%s/save/%s", com_gamedir, Cmd_Argv(1));
 	COM_DefaultExtension (name, ".sav");
 
 	Com_Printf ("Loading game from %s...\n", name);
