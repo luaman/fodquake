@@ -425,14 +425,13 @@ int		com_argc;
 char	**com_argv;
 
 //Parse a token out of a string
-char *COM_Parse (char *data) {
+char *COM_Parse (char *data)
+{
 	unsigned char c;
 	int len;
 
 	len = 0;
 	com_token[0] = 0;
-
-#warning Huge flying buffer overflow here with com_token
 
 	if (!data)
 		return NULL;
@@ -446,39 +445,51 @@ skipwhite:
 		return NULL;			// end of file;
 
 	// skip // comments
-	if (c == '/' && data[1] == '/') {
+	if (c == '/' && data[1] == '/')
+	{
 		while (*data && *data != '\n')
 			data++;
 		goto skipwhite;
 	}
 
 	// handle quoted strings specially
-	if (c == '\"') {
+	if (c == '\"')
+	{
 		data++;
-		while (1) {
+		while(len < sizeof(com_token)-1)
+		{
 			c = *data++;
-			if (c == '\"' || !c) {
+			if (c == '\"' || !c)
+			{
 				com_token[len] = 0;
 				if (!c)
 					data--;
+
 				return data;
 			}
+
 			com_token[len] = c;
 			len++;
 		}
 	}
 
-	// parse a regular word
-	do {
-		com_token[len] = c;
-		data++;
-		len++;
-		if (len >= MAX_COM_TOKEN - 1)
-			break;
-		c = *data;
-	} while (c && c != ' ' && c != '\t' && c != '\n' && c != '\r');
+	if (len < sizeof(com_token)-1)
+	{
+		// parse a regular word
+		do
+		{
+			com_token[len] = c;
+			data++;
+			len++;
+			if (len >= MAX_COM_TOKEN - 1)
+				break;
+
+			c = *data;
+		} while (c && c != ' ' && c != '\t' && c != '\n' && c != '\r');
+	}
 
 	com_token[len] = 0;
+
 	return data;
 }
 
