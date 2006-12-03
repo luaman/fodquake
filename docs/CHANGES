@@ -4,6 +4,7 @@ version 0.1 (since Fuhquake 0.31)
 - Support for big endian systems.
 - Support for 64 bit systems.
 - Support for MorphOS.
+- Support for FreeBSD.
 - Big fixes to X11 support, including fullscreen support.
 - GLX and X11 now share the same mouse code.
 - Support for building Win32 target with MinGW.

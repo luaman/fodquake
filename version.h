@@ -11,6 +11,8 @@
 #define QW_PLATFORM     "MorphOS"
 #elif defined(__CYGWIN__)
 #define QW_PLATFORM     "Cygwin"
+#elif defined(__FreeBSD__)
+#define QW_PLATFORM     "FreeBSD"
 #endif
 
 #ifdef GLQUAKE
