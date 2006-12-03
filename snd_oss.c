@@ -1,7 +1,7 @@
 
 #include <sys/mman.h>
 #include <sys/ioctl.h>
-#include <linux/soundcard.h>
+#include <sys/soundcard.h>
 
 #include <fcntl.h>
 #include <stdlib.h>
