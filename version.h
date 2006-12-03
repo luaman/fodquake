@@ -13,6 +13,8 @@
 #define QW_PLATFORM     "Cygwin"
 #elif defined(__FreeBSD__)
 #define QW_PLATFORM     "FreeBSD"
+#elif defined(__NetBSD__)
+#define QW_PLATFORM	"NetBSD"
 #endif
 
 #ifdef GLQUAKE
