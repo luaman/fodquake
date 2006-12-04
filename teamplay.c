@@ -28,9 +28,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <time.h>
 #include <string.h>
 
-
 #include "ignore.h"
 #include "rulesets.h"
+
+#include "strl.h"
 
 qboolean OnChangeSkinForcing(cvar_t *var, char *string);	
 

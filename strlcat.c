@@ -1,3 +1,5 @@
+#ifdef BUILD_STRL
+
 /*	$OpenBSD: strlcat.c,v 1.13 2005/08/08 08:05:37 espie Exp $	*/
 
 /*
@@ -16,7 +18,7 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include <sys/types.h>
+#include "strl.h"
 #include <string.h>
 
 /*
@@ -53,3 +55,6 @@ strlcat(char *dst, const char *src, size_t siz)
 
 	return(dlen + (s - src));	/* count does not include NUL */
 }
+
+#endif
+

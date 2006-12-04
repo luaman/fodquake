@@ -30,6 +30,8 @@ ifeq ($(OS), linux)
 		cd_linux.o \
 		snd_oss.o
 
+	OSCFLAGS=-DBUILD_STRL
+
 	OSSWOBJS=vid_x11.o in_x11.o
 	OSSWLDFLAGS=-L/usr/X11R6/lib -lX11 -lXext -lXxf86vm
 

@@ -24,6 +24,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "rulesets.h"
 #endif
 
+#include "strl.h"
+
 extern cvar_t vid_fullscreen;
 extern cvar_t vid_width;
 extern cvar_t vid_height;
