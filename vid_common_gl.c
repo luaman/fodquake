@@ -28,6 +28,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #elif defined(__MORPHOS__)
 #define qglGetProcAddress tglGetProcAddress
 #else
+#define GLX_GLXEXT_PROTOTYPES 1
+#include <GL/glx.h>
 #define qglGetProcAddress glXGetProcAddressARB
 #endif
 
@@ -76,7 +78,7 @@ qboolean CheckExtension (const char *extension) {
 	if (!extension || *extension == 0 || strchr (extension, ' '))
 		return false;
 
-	for (start = gl_extensions; where = strstr(start, extension); start = terminator) {
+	for (start = gl_extensions; (where = strstr(start, extension)); start = terminator) {
 		terminator = where + strlen (extension);
 		if ((where == start || *(where - 1) == ' ') && (*terminator == 0 || *terminator == ' '))
 			return true;
