@@ -225,8 +225,6 @@ all: compilercheck
 clean:
 	rm -rf objects
 
-release: fodquake-sw fodquake-gl
-
 fodquake-sw: $(OBJS) $(SWOBJS)
 	$(CC) $(CFLAGS) $^ -lm $(OSLDFLAGS) $(OSSWLDFLAGS) -o $@.db
 	$(STRIP) $(STRIPFLAGS) $@.db -o $@
