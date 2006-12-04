@@ -480,10 +480,6 @@ void MW_Hook_Message (long buttons) {
 	old_buttons = buttons;
 }
 
-void Force_CenterView_f (void) {
-	cl.viewangles[PITCH] = 0;
-}
-
 void IN_UpdateClipCursor (void) {
 	if (mouseinitialized && mouseactive && !dinput)
 		ClipCursor (&window_rect);
@@ -713,8 +709,6 @@ void Sys_Input_Init (void) {
 	Cvar_Register (&in_joystick);
 
 	Cvar_ResetCurrentGroup();
-
-	Cmd_AddCommand ("force_centerview", Force_CenterView_f);
 
 	uiWheelMessage = RegisterWindowMessage ( "MSWHEEL_ROLLMSG" );
 
@@ -1325,7 +1319,7 @@ int IN_MapKey (int key) {
 	return key;
 }
 
-void Sys_Video_GetEvents()
+void Sys_Video_GetEvents(void *display)
 {
 	MSG msg;
 
