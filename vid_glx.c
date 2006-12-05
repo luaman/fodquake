@@ -413,6 +413,8 @@ void *Sys_Video_Open(int width, int height, int depth, int fullscreen, unsigned 
 
 			d->x_win = XCreateWindow(d->x_disp, root, 0, 0, width, height,0, visinfo->depth, InputOutput, visinfo->visual, mask, &attr);
 
+			XStoreName(d->x_disp, d->x_win, "FodQuake");
+
 			XDefineCursor(d->x_disp, d->x_win, CreateNullCursor(d->x_disp, d->x_win));
 
 			XMapWindow(d->x_disp, d->x_win);
