@@ -63,7 +63,7 @@ void FChecks_FServerResponse (void) {
 }
 
 void FChecks_SkinsResponse(float fbskins) {
-	Cbuf_AddText (va("say All skins %d%% fullbright", (int) (fbskins * 100)));	
+	Cbuf_AddText (va("say All skins %d%% fullbright\n", (int) (fbskins * 100)));	
 }
 
 qboolean FChecks_VersionRequest (char *s) {
