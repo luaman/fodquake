@@ -108,7 +108,10 @@ void SV_FinalMessage (char *message) {
 }
 
 //Quake calls this before calling Sys_Quit or Sys_Error
-void SV_Shutdown (char *finalmsg) {
+void SV_Shutdown (char *finalmsg)
+{
+	int i;
+
 	SV_FinalMessage (finalmsg);
 
 	Master_Shutdown ();
@@ -123,7 +126,11 @@ void SV_Shutdown (char *finalmsg) {
 	sv.state = ss_dead;
 	com_serveractive = false;
 
-	memset (svs.clients, 0, sizeof(svs.clients));
+	for(i=0;i<MAX_CLIENTS;i++)
+	{
+		if (svs.clients[i].state)
+			memset(&svs.clients[i], 0, sizeof(svs.clients[0]));
+	}
 }
 
 //Called when the player is totally leaving the server, either willingly or unwillingly.
