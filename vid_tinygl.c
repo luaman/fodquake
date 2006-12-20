@@ -61,8 +61,6 @@ struct display
 
 	unsigned char *gammatable;
 
-	unsigned int lastwindowedmouse;
-
 };
 
 void *Sys_Video_Open(int width, int height, int depth, int fullscreen, unsigned char *palette)
@@ -178,8 +176,6 @@ void *Sys_Video_Open(int width, int height, int depth, int fullscreen, unsigned 
 						if (d->pointermem)
 						{
 							SetPointer(d->window, d->pointermem, 16, 16, 0, 0);
-
-							d->lastwindowedmouse = 1;
 
 							real_width = vid.width;
 							real_height = vid.height;
@@ -307,12 +303,16 @@ void Sys_Video_Update(void *display, vrect_t *rects)
 {
 	struct display *d = display;
 
-	/* Check for the windowed mouse setting here */
-	if (d->lastwindowedmouse != _windowed_mouse.value && !d->screen)
-	{
-		d->lastwindowedmouse = _windowed_mouse.value;
+	glASwapBuffers();
+}
 
-		if (d->lastwindowedmouse == 1)
+void Sys_Video_GrabMouse(void *display, int dograb)
+{
+	struct display *d = display;
+
+	if (dograb && !d->screen)
+	{
+		if (dograb)
 		{
 			/* Hide pointer */
 
@@ -325,8 +325,6 @@ void Sys_Video_Update(void *display, vrect_t *rects)
 			ClearPointer(d->window);
 		}
 	}
-
-	glASwapBuffers();
 }
 
 void Sys_Video_SetGamma(void *display, unsigned short *ramps)

@@ -35,8 +35,6 @@ struct display
 	struct RastPort rastport;
 
 	char pal[256 * 4];
-
-	unsigned int lastwindowedmouse;
 };
 
 cvar_t _windowed_mouse = { "_windowed_mouse", "1", CVAR_ARCHIVE };
@@ -121,8 +119,6 @@ void *Sys_Video_Open(int width, int height, int depth, int fullscreen, unsigned 
 		}
 
 		SetPointer(d->window, d->pointermem, 16, 16, 0, 0);
-
-		d->lastwindowedmouse = 1;
 
 		vid.numpages = d->screen ? 3 : 1;
 
@@ -227,13 +223,15 @@ void Sys_Video_Update(void *display, vrect_t * rects)
 		d->currentbuffer++;
 		d->currentbuffer %= 3;
 	}
+}
 
-	/* Check for the windowed mouse setting here */
-	if (d->lastwindowedmouse != _windowed_mouse.value && !d->screen)
+void Sys_Video_GrabMouse(void *display, int dograb)
+{
+	struct display *d = display;
+
+	if (dograb && !d->screen)
 	{
-		d->lastwindowedmouse = _windowed_mouse.value;
-
-		if (d->lastwindowedmouse == 1)
+		if (dograb)
 		{
 			/* Hide pointer */
 
