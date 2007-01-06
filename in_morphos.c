@@ -210,7 +210,8 @@ void Sys_Input_GetMouseMovement(void *inputdata, int *mousex, int *mousey)
 	id->mousey[mbuf] = 0;
 }
 
-static char keyconv[] = {
+static char keyconv[] =
+{
 	'`',			/* 0 */
 	'1',
 	'2',
@@ -309,7 +310,7 @@ static char keyconv[] = {
 	0,
 	K_LSHIFT,
 	K_RSHIFT,
-	0,
+	K_CAPSLOCK,
 	K_RCTRL,
 	K_ALT,			/* 100 */
 	K_ALT,
