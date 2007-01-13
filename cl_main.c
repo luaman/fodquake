@@ -43,6 +43,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "config_manager.h"
 #include "mp3_player.h"
 #include "huffman.h"
+#include "config.h"
 
 #ifndef _WIN32
 #include <unistd.h>
@@ -519,6 +520,7 @@ void CL_ClearState (void) {
 	memset (&cl, 0, sizeof(cl));
 
 	SZ_Clear (&cls.netchan.message);
+	cls.ftexsupported = 0;
 
 	// clear other arrays
 	memset (cl_efrags, 0, sizeof(cl_efrags));
