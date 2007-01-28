@@ -102,8 +102,8 @@ void Rulesets_Init(void) {
 	int temp;
 
 	rulesetDef.restrictRJScripts = !!COM_CheckParm("-norjscripts");
-	if (1 || (temp = COM_CheckParm("-ruleset")) && temp + 1 < com_argc) {
-		if (1 || !Q_strcasecmp(com_argv[temp + 1], "smackdown")) {
+	if ((temp = COM_CheckParm("-ruleset")) && temp + 1 < com_argc) {
+		if (!Q_strcasecmp(com_argv[temp + 1], "smackdown")) {
 			Rulesets_Smackdown();
 			Com_Printf("Ruleset Smackdown initialized\n");
 			return;
