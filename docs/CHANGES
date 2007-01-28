@@ -10,7 +10,7 @@ version 0.1 (since Fuhquake 0.31)
 - GLX and X11 now share the same mouse code.
 - Support for building Win32 target with MinGW.
 - Non-platform specific code (lots of software rendering logic, mouse
-  acceleration handling, etc...) have been moved out from the platform
+  acceleration handling, etc...) has been moved out from the platform
   specific files where the code was previously duplicated before.
 - FTE-compatible support for compression of network data.
 - Command line arguments are no longer needed. Every option can be set by
