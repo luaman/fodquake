@@ -72,7 +72,7 @@ cvar_t			scr_showturtle = {"showturtle", "0"};
 cvar_t			scr_showpause = {"showpause", "1"};
 cvar_t			scr_printspeed = {"scr_printspeed", "8"};
 qboolean OnChange_scr_allowsnap(cvar_t *, char *);
-cvar_t			scr_allowsnap = {"scr_allowsnap", "1", 0, OnChange_scr_allowsnap};
+cvar_t			scr_allowsnap = {"scr_allowsnap", "0", 0, OnChange_scr_allowsnap};
 
 cvar_t			scr_clock = {"cl_clock", "0"};
 cvar_t			scr_clock_x = {"cl_clock_x", "0"};
