@@ -120,7 +120,7 @@ void Modules_Init(void) {
 #else
 	renderer = QW_RENDERER;
 #endif
-	version_string = va ("%s-p:%s-r:%s-v:%s-b:%d", binary_type, QW_PLATFORM, renderer, FUH_VERSION, build_number());
+	version_string = va ("%s-p:%s-r:%s-v:%s", binary_type, QW_PLATFORM, renderer, FUH_VERSION);
 
 	retval = Security_Init(version_string,(void **) &allok);
 	security_loaded = (retval >= 0 && (retval & allok)) ? true : false;
