@@ -1051,6 +1051,8 @@ void CL_Init (void)
 
 	CDAudio_Init ();
 
+	Info_SetValueForStarKey (cls.userinfo, "*z_ext", va("%i", SUPPORTED_EXTENSIONS), MAX_SERVERINFO_STRING);
+
 	CL_InitClientVersionInfo();
 	CL_InitEnts ();
 	CL_InitTEnts ();

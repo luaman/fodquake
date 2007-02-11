@@ -30,3 +30,5 @@ version 0.1 (since Fuhquake 0.31)
   enough.
 - Added support for FTE chunked downloads. Downloads can be much faster now on
   compatible servers.
+- Now works correctly as a spectator on servers which support
+  Z_EXT_PM_TYPE/Z_EXT_PM_TYPE_NEW.
