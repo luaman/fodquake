@@ -23,6 +23,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "sound.h"
 #include "utils.h"
 
+extern int gl_max_size_default;
+
 entity_t	r_worldentity;
 
 qboolean	r_cache_thrash;		// compatability
@@ -1021,6 +1023,9 @@ void R_Init (void)
 
 void GL_InitTextureStuff(void)
 {
+	glGetIntegerv(GL_MAX_TEXTURE_SIZE, &gl_max_size_default);
+	Cvar_SetDefault(&gl_max_size, gl_max_size_default);
+
 	// this minigl driver seems to slow us down if the particles are drawn WITHOUT Z buffer bits 
 	if (!strcmp(gl_vendor, "METABYTE/WICKED3D")) 
 		Cvar_SetDefault(&gl_solidparticles, 1); 

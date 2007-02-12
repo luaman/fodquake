@@ -654,9 +654,6 @@ void GL_Texture_Init(void)
 {
 	int oldflags;
 
-	glGetIntegerv(GL_MAX_TEXTURE_SIZE, &gl_max_size_default);
-	Cvar_SetDefault(&gl_max_size, gl_max_size_default);
-
 	/* Prevent setting the modified flag */
 	oldflags = Cvar_GetFlags(&gl_max_size);
 	if (gl_max_size.value > gl_max_size_default)
