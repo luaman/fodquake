@@ -65,49 +65,49 @@ static qboolean oss_init(struct SoundCard *sc, int rate, int channels, int bits)
 			&& (ioctl(p->fd, SNDCTL_DSP_GETCAPS, &capabilities) != -1 && (capabilities&(DSP_CAP_TRIGGER|DSP_CAP_MMAP)) == (DSP_CAP_TRIGGER|DSP_CAP_MMAP))
 			&& (ioctl(p->fd, SNDCTL_DSP_GETOSPACE, &info) != -1))
 			{
-				ioctl(p->fd, SNDCTL_DSP_GETFMTS, &dspformats);
-
-				if ((!(dspformats&AFMT_S16_LE) && (dspformats&AFMT_U8)) || bits == 8)
-					sc->samplebits = 8;
-				else if ((dspformats&AFMT_S16_LE))
-					sc->samplebits = 16;
-				else
-					sc->samplebits = 0;
-
-				if (sc->samplebits)
+				if ((sc->buffer = mmap(0, info.fragstotal * info.fragsize, PROT_WRITE, MAP_SHARED, p->fd, 0)) != 0)
 				{
-					i = 0;
-					do
+					ioctl(p->fd, SNDCTL_DSP_GETFMTS, &dspformats);
+
+					if ((!(dspformats&AFMT_S16_LE) && (dspformats&AFMT_U8)) || bits == 8)
+						sc->samplebits = 8;
+					else if ((dspformats&AFMT_S16_LE))
+						sc->samplebits = 16;
+					else
+						sc->samplebits = 0;
+
+					if (sc->samplebits)
 					{
-						if (ioctl(p->fd, SNDCTL_DSP_SPEED, &rate) == 0)
-							break;
-
-						rate = rates[i];
-					} while(i++ != NUMRATES);
-
-					if (i != NUMRATES+1)
-					{
-						if (channels == 1)
+						i = 0;
+						do
 						{
-							sc->channels = 1;
-							i = 0;
-						}
-						else
-						{
-							sc->channels = 2;
-							i = 1;
-						}
+							if (ioctl(p->fd, SNDCTL_DSP_SPEED, &rate) == 0)
+								break;
 
-						if (ioctl(p->fd, SNDCTL_DSP_STEREO, &i) >= 0)
-						{
-							if (sc->samplebits == 16)
-								i = AFMT_S16_LE;
-							else
-								i = AFMT_S8;
+							rate = rates[i];
+						} while(i++ != NUMRATES);
 
-							if (ioctl(p->fd, SNDCTL_DSP_SETFMT, &i) >= 0)
+						if (i != NUMRATES+1)
+						{
+							if (channels == 1)
 							{
-								if ((sc->buffer = mmap(0, info.fragstotal * info.fragsize, PROT_WRITE, MAP_SHARED, p->fd, 0)) != 0)
+								sc->channels = 1;
+								i = 0;
+							}
+							else
+							{
+								sc->channels = 2;
+								i = 1;
+							}
+
+							if (ioctl(p->fd, SNDCTL_DSP_STEREO, &i) >= 0)
+							{
+								if (sc->samplebits == 16)
+									i = AFMT_S16_LE;
+								else
+									i = AFMT_S8;
+
+								if (ioctl(p->fd, SNDCTL_DSP_SETFMT, &i) >= 0)
 								{
 									i = 0;
 									if (ioctl(p->fd, SNDCTL_DSP_SETTRIGGER, &i) >= 0)
@@ -129,12 +129,12 @@ static qboolean oss_init(struct SoundCard *sc, int rate, int channels, int bits)
 											return 1;
 										}
 									}
-
-									munmap(sc->buffer, info.fragstotal * info.fragsize);
 								}
 							}
 						}
 					}
+
+					munmap(sc->buffer, info.fragstotal * info.fragsize);
 				}
 			}
 
