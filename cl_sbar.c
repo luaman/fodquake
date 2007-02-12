@@ -1586,9 +1586,10 @@ void Sbar_FinaleOverlay (void) {
 
 /********************************* INTERFACE *********************************/
 
-void Sbar_Draw(void) {
+void Sbar_Draw(void)
+{
 	qboolean headsup;
-	char st[512];
+	char st[64];
 
 	headsup = !(cl_sbar.value || scr_viewsize.value < 100);
 	if (sb_updates >= vid.numpages && !headsup)
@@ -1604,7 +1605,8 @@ void Sbar_Draw(void) {
 		sbar_xofs = 0;
 
 	// top line
-	if (sb_lines > 24) {
+	if (sb_lines > 24)
+	{
 		if (!cl.spectator || autocam == CAM_TRACK)
 			Sbar_DrawInventory();
 		
@@ -1613,13 +1615,18 @@ void Sbar_Draw(void) {
 	}	
 
 	// main area
-	if (sb_lines > 0) {
-		if (cl.spectator) {
-			if (autocam != CAM_TRACK) {
-				Sbar_DrawPic (0, 0, sb_scorebar);
-				Sbar_DrawString (160 - 7 * 8,4, "SPECTATOR MODE");
+	if (sb_lines > 0)
+	{
+		if (cl.spectator)
+		{
+			if (autocam != CAM_TRACK)
+			{
+				Sbar_DrawPic(0, 0, sb_scorebar);
+				Sbar_DrawString(160 - 7 * 8,4, "SPECTATOR MODE");
 				Sbar_DrawString(160 - 14 * 8 + 4, 12, "Press [ATTACK] for AutoCamera");
-			} else {
+			}
+			else
+			{
 				if (sb_showscores || sb_showteamscores || cl.stats[STAT_HEALTH] <= 0)
 					Sbar_SoloScoreboard ();
 				
@@ -1634,32 +1641,38 @@ void Sbar_Draw(void) {
 
 				Q_snprintfz(st, sizeof(st), "Tracking %-.13s", cl.players[spec_track].name);
 				if (!cls.demoplayback)
-					strcat (st, ", [JUMP] for next");
+					strlcat(st, ", [JUMP] for next", sizeof(st));
+
 				Sbar_DrawString(0, -8, st);
 			}
-		} else if (sb_showscores || sb_showteamscores || cl.stats[STAT_HEALTH] <= 0) {
-			Sbar_SoloScoreboard();
-		} else if (scr_compactHud.value == 3) {
-			Sbar_DrawCompact_Bare();
-		} else if (scr_compactHud.value == 2) {
-			Sbar_DrawCompact_TF();
-		} else if (scr_compactHud.value == 1) {
-			Sbar_DrawCompact();
-		} else {
-			Sbar_DrawNormal();
 		}
+		else if (sb_showscores || sb_showteamscores || cl.stats[STAT_HEALTH] <= 0)
+			Sbar_SoloScoreboard();
+		else if (scr_compactHud.value == 3)
+			Sbar_DrawCompact_Bare();
+		else if (scr_compactHud.value == 2)
+			Sbar_DrawCompact_TF();
+		else if (scr_compactHud.value == 1)
+			Sbar_DrawCompact();
+		else
+			Sbar_DrawNormal();
 	}
 
 	// main screen deathmatch rankings
 	// if we're dead show team scores in team games
-	if (cl.stats[STAT_HEALTH] <= 0 && !cl.spectator) {
+	if (cl.stats[STAT_HEALTH] <= 0 && !cl.spectator)
+	{
 		if (cl.teamplay && !sb_showscores)
 			Sbar_TeamOverlay();
 		else
 			Sbar_DeathmatchOverlay (0);
-	} else if (sb_showscores) {
-		Sbar_DeathmatchOverlay (0);
-	} else if (sb_showteamscores) {
+	}
+	else if (sb_showscores)
+	{
+		Sbar_DeathmatchOverlay(0);
+	}
+	else if (sb_showteamscores)
+	{
 		Sbar_TeamOverlay();
 	}
 
@@ -1668,9 +1681,11 @@ void Sbar_Draw(void) {
 		sb_updates = 0;
 
 	// clear unused areas in GL
-	if (vid.width > 320 && !headsup) {
+	if (vid.width > 320 && !headsup)
+	{
 		if (scr_centerSbar.value)	// left
 			Draw_TileClear (0, vid.height - sb_lines, sbar_xofs, sb_lines);
+
 		Draw_TileClear (320 + sbar_xofs, vid.height - sb_lines, vid.width - (320 + sbar_xofs), sb_lines);	// right
 	}
 	if (!headsup && cl.spectator && autocam != CAM_TRACK && sb_lines > SBAR_HEIGHT)
@@ -1680,3 +1695,4 @@ void Sbar_Draw(void) {
 	if (vid.width >= 512 && sb_lines > 0 && cl.gametype == GAME_DEATHMATCH && !scr_centerSbar.value)
 		Sbar_MiniDeathmatchOverlay ();
 }
+
