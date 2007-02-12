@@ -73,6 +73,7 @@ cvar_t	scr_scoreboard_forcecolors = {"scr_scoreboard_forcecolors", "1"};
 cvar_t	scr_scoreboard_showfrags = {"scr_scoreboard_showfrags", "1"};
 cvar_t	scr_scoreboard_drawtitle = {"scr_scoreboard_drawtitle", "1"};
 cvar_t	scr_scoreboard_borderless = {"scr_scoreboard_borderless", "0"};
+cvar_t scr_scoreboard_titleseperator = { "scr_scoreboard_titleseperator", "0" };
 
 #ifdef GLQUAKE
 cvar_t	scr_scoreboard_fillalpha = {"scr_scoreboard_fillalpha", "0.7"};
@@ -132,6 +133,7 @@ void SBar_CvarInit(void)
 	Cvar_Register (&scr_scoreboard_showfrags);
 	Cvar_Register (&scr_scoreboard_drawtitle);
 	Cvar_Register (&scr_scoreboard_borderless);
+	Cvar_Register (&scr_scoreboard_titleseperator);
 #ifdef GLQUAKE
 	Cvar_Register (&scr_scoreboard_fillalpha);
 	Cvar_Register (&scr_scoreboard_fillcolored);
@@ -1058,10 +1060,9 @@ static void Sbar_DeathmatchOverlay (int start) {
 
 	if (!scr_scoreboard_borderless.value)
 		Draw_Fill (xofs - 1, y - 9, rank_width + 2, 1, 0);						//Border - Top
-	Draw_AlphaFill (xofs, y - 8, rank_width, 9, 1, SCOREBOARD_HEADINGALPHA);	//Draw heading row
+	Draw_AlphaFill (xofs, y - 8, rank_width, 9+(scr_scoreboard_titleseperator.value?8:0), 1, SCOREBOARD_HEADINGALPHA);	//Draw heading row
 
 	Draw_String(xofs + 1, y - 8, cl.teamplay ? " ping pl time frags team name" : " ping pl time frags name");
-
 
 	if (statswidth) {
 		char temp[32] = {0};
@@ -1079,13 +1080,32 @@ static void Sbar_DeathmatchOverlay (int start) {
 		Draw_String(xofs + 1 + stats_xoffset, y - 8, temp);
 	}
 
-
-	Draw_Fill (xofs -1, y + 1, rank_width + 2, 1, 0);	//Border - Top (under header)
-	y += 2;												//dont go over the black border, move the rest down
 	if (!scr_scoreboard_borderless.value) {
-		Draw_Fill (xofs - 1, y - 10, 1, 10, 0);						//Border - Left
-		Draw_Fill (xofs - 1 + rank_width + 1, y - 10, 1, 10, 0);	//Border - Right
+		Draw_Fill (xofs - 1, y - 8, 1, 10, 0);						//Border - Left
+		Draw_Fill (xofs - 1 + rank_width + 1, y - 8, 1, 10, 0);	//Border - Right
 	}
+
+	if (scr_scoreboard_titleseperator.value)
+	{
+		if (cl.teamplay)
+			Draw_String ( xofs + 1 , y, " \x1d\x1e\x1e\x1f \x1d\x1f \x1d\x1e\x1e\x1f \x1d\x1e\x1e\x1e\x1f \x1d\x1e\x1e\x1f \x1d\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1f");
+		else
+			Draw_String ( xofs + 1 , y, " \x1d\x1e\x1e\x1f \x1d\x1f \x1d\x1e\x1e\x1f \x1d\x1e\x1e\x1e\x1f \x1d\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1f");
+
+		if (!scr_scoreboard_borderless.value)
+		{
+			Draw_Fill (xofs - 1, y + 1, 1, 8, 0);                    //Border - Left
+			Draw_Fill (xofs - 1 + rank_width + 1, y + 1, 1, 8, 0);   //Border - Right
+		}
+
+		y+= 8;
+	}
+
+	if (!scr_scoreboard_borderless.value)
+		Draw_Fill (xofs -1, y + 1, rank_width + 2, 1, 0);	//Border - Top (under header)
+
+	y += 2;												//dont go over the black border, move the rest down
+
 	startx = x = xofs + 8;
 
 
