@@ -119,9 +119,17 @@ struct SoundDriver sounddrivers[] =
 void S_Startup (void) {
 	int rc = false;
 	int i;
+	unsigned int rate;
 
 	if (!snd_initialized)
 		return;
+
+	if (s_khz.value == 44)
+		rate = 44100;
+	else if (s_khz.value == 22)
+		rate = 22050;
+	else
+		rate = 11025;
 
 	soundcard = malloc(sizeof(*soundcard));
 	if (soundcard)
@@ -133,7 +141,7 @@ void S_Startup (void) {
 			if (*sounddrivers[i].init)
 			{
 				Com_Printf("Trying sound driver \"%s\"...\n", sounddrivers[i].name);
-				rc = (*sounddrivers[i].init)(soundcard, 11025, 2, 16);
+				rc = (*sounddrivers[i].init)(soundcard, rate, 2, 16);
 				if (rc)
 				{
 					break;
