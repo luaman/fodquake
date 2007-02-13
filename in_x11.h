@@ -1,3 +1,4 @@
+void X11_Input_CvarInit(void);
 void *X11_Input_Init(Display *x_disp, Window x_win, int x_shmeventtype, void (*eventcallback)(void *eventcallbackdata, int type), void *eventcallbackdata);
 void X11_Input_Shutdown(void *inputdata);
 void X11_Input_GetEvents(void *inputdata);

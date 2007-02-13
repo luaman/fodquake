@@ -278,6 +278,11 @@ static Cursor CreateNullCursor(Display *display, Window root) {
 	return cursor;
 }
 
+void Sys_Video_CvarInit()
+{
+	X11_Input_CvarInit();
+}
+
 void *Sys_Video_Open(int width, int height, int depth, int fullscreen, unsigned char *palette)
 {
 	struct display *d;

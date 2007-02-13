@@ -2,14 +2,18 @@
 #include <X11/Xutil.h>
 #include <X11/keysym.h>
 #include <X11/extensions/XShm.h>
+#include <X11/extensions/xf86dga.h>
 
 #include "quakedef.h"
 #include "input.h"
 #include "keys.h"
 
+#include "in_x11.h"
+
 #define XINPUTFLAGS (StructureNotifyMask|KeyPressMask|KeyReleaseMask|ExposureMask|PointerMotionMask|ButtonPressMask|ButtonReleaseMask|FocusChangeMask)
 
 cvar_t cl_keypad = { "cl_keypad", "1" };
+cvar_t in_dga_mouse = { "in_dga_mouse", "0" };
 
 typedef struct
 {
@@ -39,6 +43,7 @@ struct inputdata
 	int mousey;
 
 	int grabmouse;
+	int dga_mouse_enabled;
 };
 
 static int XLateKey(XKeyEvent * ev)
@@ -305,8 +310,16 @@ static void GetEvents(struct inputdata *id)
 				id->keyq_head = (id->keyq_head + 1) & 63;
 				break;
 			case MotionNotify:
-				newmousex = event.xmotion.x;
-				newmousey = event.xmotion.y;
+				if (id->dga_mouse_enabled)
+				{
+					id->mousex+= event.xmotion.x;
+					id->mousey+= event.xmotion.y;
+				}
+				else
+				{
+					newmousex = event.xmotion.x;
+					newmousey = event.xmotion.y;
+				}
 				break;
 
 			case ButtonPress:
@@ -353,7 +366,7 @@ static void GetEvents(struct inputdata *id)
 		}
 	} while(XPending(id->x_disp));
 
-	if (newmousex != vid.width/2 || newmousey != vid.height/2)
+	if (!id->dga_mouse_enabled && (newmousex != vid.width/2 || newmousey != vid.height/2))
 	{
 		newmousex-= vid.width/2;
 		newmousey-= vid.height/2;
@@ -369,6 +382,13 @@ static void GetEvents(struct inputdata *id)
 			XFlush(id->x_disp);
 		}
 	}
+}
+
+void X11_Input_CvarInit()
+{
+	Cvar_SetCurrentGroup(CVAR_GROUP_INPUT_MOUSE);
+	Cvar_Register(&in_dga_mouse);
+	Cvar_ResetCurrentGroup();
 }
 
 void *X11_Input_Init(Display *x_disp, Window x_win, int x_shmeventtype, void (*eventcallback)(void *eventcallbackdata, int type), void *eventcallbackdata)
@@ -389,6 +409,7 @@ void *X11_Input_Init(Display *x_disp, Window x_win, int x_shmeventtype, void (*e
 		id->mousex = 0;
 		id->mousey = 0;
 		id->grabmouse = 0;
+		id->dga_mouse_enabled = 0;
 
 		Cvar_SetCurrentGroup(CVAR_GROUP_INPUT_KEYBOARD);
 		Cvar_Register(&cl_keypad);
@@ -400,6 +421,8 @@ void *X11_Input_Init(Display *x_disp, Window x_win, int x_shmeventtype, void (*e
 
 void X11_Input_Shutdown(void *inputdata)
 {
+	X11_Input_GrabMouse(inputdata, 0);
+
 	free(inputdata);
 }
 
@@ -449,24 +472,55 @@ void X11_Input_GetConfigNotify(void *inputdata, int *config_notify, int *config_
 
 void X11_Input_GrabMouse(void *inputdata, int dograb)
 {
+	Window grab_win;
+	unsigned int dgaflags;
+
 	struct inputdata *id = inputdata;
 
-	id->grabmouse = dograb;
-
-	if (dograb)
+	if (dograb && !id->grabmouse)
 	{
 		/* grab the pointer */
-		XSelectInput(id->x_disp, id->x_win, XINPUTFLAGS&(~PointerMotionMask));
-		XWarpPointer(id->x_disp, None, id->x_win, 0, 0, 0, 0, vid.width/2, vid.height/2);
+		if (in_dga_mouse.value)
+		{
+			grab_win = DefaultRootWindow(id->x_disp);
+		}
+		if (!in_dga_mouse.value)
+		{
+			grab_win = id->x_win;
 
-		XGrabPointer(id->x_disp, id->x_win, True, 0, GrabModeAsync, GrabModeAsync, id->x_win, None, CurrentTime);
+			XSelectInput(id->x_disp, id->x_win, XINPUTFLAGS&(~PointerMotionMask));
+			XWarpPointer(id->x_disp, None, id->x_win, 0, 0, 0, 0, vid.width/2, vid.height/2);
+		}
+
 		XSelectInput(id->x_disp, id->x_win, XINPUTFLAGS);
+
+		XGrabPointer(id->x_disp, grab_win, True, PointerMotionMask | ButtonPressMask | ButtonReleaseMask, GrabModeAsync, GrabModeAsync, grab_win, None, CurrentTime);
+
+		if (in_dga_mouse.value)
+		{
+			XF86DGAQueryDirectVideo(id->x_disp, DefaultScreen(id->x_disp), &dgaflags);
+
+			if ((dgaflags&XF86DGADirectPresent))
+			{
+				if (XF86DGADirectVideo(id->x_disp, DefaultScreen(id->x_disp), XF86DGADirectMouse))
+				{
+					id->dga_mouse_enabled = 1;
+				}
+			}
+		}
 	}
-	else
+	else if (id->grabmouse)
 	{
 		/* ungrab the pointer */
+		if (id->dga_mouse_enabled)
+		{
+			id->dga_mouse_enabled = 0;
+			XF86DGADirectVideo(id->x_disp, DefaultScreen(id->x_disp), 0);
+		}
 		XUngrabPointer(id->x_disp, CurrentTime);
 		XSelectInput(id->x_disp, id->x_win, StructureNotifyMask | KeyPressMask | KeyReleaseMask | ExposureMask | ButtonPressMask | ButtonReleaseMask);
 	}
+
+	id->grabmouse = dograb;
 }
 

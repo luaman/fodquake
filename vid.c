@@ -89,6 +89,8 @@ void VID_CvarInit()
 	Cvar_ResetCurrentGroup();
 
 	Cmd_AddCommand("vid_restart", VID_Restart_f);
+
+	Sys_Video_CvarInit();
 }
 
 void VID_Open()

@@ -404,9 +404,10 @@ static void ResetSharedFrameBuffers(struct display *d)
 
 }
 
-// Called at startup to set up translation tables, takes 256 8 bit RGB values
-// the palette data will go away after the call, so it must be copied off if
-// the video driver will need it again
+void Sys_Video_CvarInit()
+{
+	X11_Input_CvarInit();
+}
 
 void *Sys_Video_Open(int width, int height, int depth, int fullscreen, unsigned char *palette)
 {
@@ -798,7 +799,7 @@ void Sys_Video_Update(void *display, vrect_t *rects)
 				st2_fixup(d, d->x_framebuffer[d->current_framebuffer], rects->x, rects->y, rects->width, rects->height);
 			if (!XShmPutImage(d->x_disp, d->x_win, d->x_gc, d->x_framebuffer[d->current_framebuffer], rects->x, rects->y, rects->x, rects->y, rects->width, rects->height, True))
 				Sys_Error("VID_Update: XShmPutImage failed\n");
-				
+
 			X11_Input_WaitForShmMsg(d->inputdata);
 
 			rects = rects->pnext;
