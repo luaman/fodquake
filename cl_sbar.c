@@ -58,6 +58,7 @@ qboolean	sb_showteamscores;
 
 int			sb_lines;			// scan lines to draw
 
+static int Sbar_TeamOverlay(void);
 void Draw_AlphaFill (int x, int y, int w, int h, int c, float alpha);
 
 static int	sbar_xofs;
@@ -977,7 +978,8 @@ static void Sbar_SoloScoreboard (void) {
 #define Draw_AlphaFill(a, b, c, d, e, f)
 #endif
 
-static void Sbar_DeathmatchOverlay (int start) {
+static void Sbar_DeathmatchOverlay()
+{
 	int stats_basic, stats_team, stats_touches, stats_caps, playerstats[7];
 	int scoreboardsize, colors_thickness, statswidth, stats_xoffset;
 	int i, k, top, bottom, x, y, xofs, total, minutes, p, skip = 10;
@@ -985,6 +987,9 @@ static void Sbar_DeathmatchOverlay (int start) {
 	char num[12], scorerow[64], team[5], name[MAX_SCOREBOARDNAME];
 	player_info_t *s;
 	mpic_t *pic;
+	int start;
+	int topy;
+	int midy;
 
 #ifndef CLIENTONLY
 	// FIXME
@@ -993,9 +998,16 @@ static void Sbar_DeathmatchOverlay (int start) {
 		return;
 #endif
 
-	if (cls.state == ca_active && !cls.demoplayback) {
+	if (cl.teamplay && (sb_showteamscores || cl.intermission))
+		start = Sbar_TeamOverlay();
+	else
+		start = 0;
+
+	if (cls.state == ca_active && !cls.demoplayback)
+	{
 		// request new ping times every two seconds
-		if (cls.realtime - cl.last_ping_request >= 2) {
+		if (cls.realtime - cl.last_ping_request >= 2)
+		{
 			cl.last_ping_request = cls.realtime;
 			MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
 			SZ_Print (&cls.netchan.message, "pings");
@@ -1009,29 +1021,34 @@ static void Sbar_DeathmatchOverlay (int start) {
 
 	rank_width = (cl.teamplay ? RANK_WIDTH_TEAM : RANK_WIDTH_DM);
 
-
 	statswidth = 0;
 	stats_basic = stats_team = stats_touches = stats_caps = 0;
-	if (scr_scoreboard_showfrags.value && Stats_IsActive()) {
-		if (rank_width + statswidth + RANK_WIDTH_BASICSTATS < vid.width - 16) {
+	if (scr_scoreboard_showfrags.value && Stats_IsActive())
+	{
+		if (rank_width + statswidth + RANK_WIDTH_BASICSTATS < vid.width - 16)
+		{
 			statswidth += RANK_WIDTH_BASICSTATS;
 			stats_basic++;
-			if (cl.teamplay) {
-				if (rank_width + statswidth + RANK_WIDTH_TEAMSTATS < vid.width - 16) {
-					if (
-						(cl.teamfortress || cl.teamplay != 3) &&
-						(!cl.teamfortress || (cl.teamplay & 21) != 21)
-						) {
-							statswidth += RANK_WIDTH_TEAMSTATS;
-							stats_team++;
-						}
+			if (cl.teamplay)
+			{
+				if (rank_width + statswidth + RANK_WIDTH_TEAMSTATS < vid.width - 16)
+				{
+					if ((cl.teamfortress || cl.teamplay != 3)
+					 && (!cl.teamfortress || (cl.teamplay & 21) != 21))
+					{
+						statswidth += RANK_WIDTH_TEAMSTATS;
+						stats_team++;
+					}
 				}
-				if (Stats_IsFlagsParsed()) {
-					if (rank_width + statswidth + RANK_WIDTH_TCHSTATS < vid.width - 16) {
+				if (Stats_IsFlagsParsed())
+				{
+					if (rank_width + statswidth + RANK_WIDTH_TCHSTATS < vid.width - 16)
+					{
 						statswidth += RANK_WIDTH_TCHSTATS;
 						stats_touches++;
 					}
-					if (rank_width + statswidth + RANK_WIDTH_CAPSTATS < vid.width - 16) {
+					if (rank_width + statswidth + RANK_WIDTH_CAPSTATS < vid.width - 16)
+					{
 						statswidth += RANK_WIDTH_CAPSTATS;
 						stats_caps++;
 					}
@@ -1039,34 +1056,38 @@ static void Sbar_DeathmatchOverlay (int start) {
 			}
 		}
 	}
+
 	rank_width += statswidth;
-
-
 
 	leftover = rank_width;
 	rank_width = bound(0, rank_width, vid.width - 16);
 	leftover = max(0, leftover - rank_width);
 	xofs = ((vid.width - rank_width) >> 1);
 
-	if (!start) {
-		if (scr_scoreboard_drawtitle.value) {
+	if (!start)
+	{
+		if (scr_scoreboard_drawtitle.value)
+		{
 			pic = Draw_CachePic ("gfx/ranking.lmp");
 			Draw_Pic (xofs + (rank_width - pic->width) / 2, 0, pic);
 			start = 36;
-		} else {
+		}
+		else
+		{
 			start = 12;
 		}
 	}
 
 	y = start;
 
-	if (!scr_scoreboard_borderless.value)
-		Draw_Fill (xofs - 1, y - 9, rank_width + 2, 1, 0);						//Border - Top
+	topy = y - 9;
+
 	Draw_AlphaFill (xofs, y - 8, rank_width, 9+(scr_scoreboard_titleseperator.value?8:0), 1, SCOREBOARD_HEADINGALPHA);	//Draw heading row
 
 	Draw_String(xofs + 1, y - 8, cl.teamplay ? " ping pl time frags team name" : " ping pl time frags name");
 
-	if (statswidth) {
+	if (statswidth)
+	{
 		char temp[32] = {0};
 
 		if (stats_team)
@@ -1082,11 +1103,6 @@ static void Sbar_DeathmatchOverlay (int start) {
 		Draw_String(xofs + 1 + stats_xoffset, y - 8, temp);
 	}
 
-	if (!scr_scoreboard_borderless.value) {
-		Draw_Fill (xofs - 1, y - 8, 1, 10, 0);						//Border - Left
-		Draw_Fill (xofs - 1 + rank_width + 1, y - 8, 1, 10, 0);	//Border - Right
-	}
-
 	if (scr_scoreboard_titleseperator.value)
 	{
 		if (cl.teamplay)
@@ -1094,28 +1110,21 @@ static void Sbar_DeathmatchOverlay (int start) {
 		else
 			Draw_String ( xofs + 1 , y, " \x1d\x1e\x1e\x1f \x1d\x1f \x1d\x1e\x1e\x1f \x1d\x1e\x1e\x1e\x1f \x1d\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1f");
 
-		if (!scr_scoreboard_borderless.value)
-		{
-			Draw_Fill (xofs - 1, y + 1, 1, 8, 0);                    //Border - Left
-			Draw_Fill (xofs - 1 + rank_width + 1, y + 1, 1, 8, 0);   //Border - Right
-		}
-
 		y+= 8;
 	}
 
-	if (!scr_scoreboard_borderless.value)
-		Draw_Fill (xofs -1, y + 1, rank_width + 2, 1, 0);	//Border - Top (under header)
+	midy = y + 1;
 
 	y += 2;												//dont go over the black border, move the rest down
 
 	startx = x = xofs + 8;
 
-
 	tempx = xofs + rank_width - MAX_SCOREBOARDNAME * 8 - (48 + statswidth) + leftover;
 
 	Sbar_SortTeamsAndFrags (true);	// scores
 
-	for (i = scoreboardsize = 0; i < scoreboardlines; i++) {
+	for (i = scoreboardsize = 0; i < scoreboardlines; i++)
+	{
 		k = fragsort[i];
 		s = &cl.players[k];
 
@@ -1123,14 +1132,18 @@ static void Sbar_DeathmatchOverlay (int start) {
 			scoreboardsize++;
 	}
 
-	if (y + (scoreboardsize - 1) * skip > SCOREBOARD_LASTROW) {
+	if (y + (scoreboardsize - 1) * skip > SCOREBOARD_LASTROW)
+	{
 		colors_thickness = 3;
 		skip = 8;
-	} else {
+	}
+	else
+	{
 		colors_thickness = 4;
 	}
 
-	for (i = 0; i < scoreboardlines && y <= SCOREBOARD_LASTROW; i++) {
+	for (i = 0; i < scoreboardlines && y <= SCOREBOARD_LASTROW; i++)
+	{
 		k = fragsort[i];
 		s = &cl.players[k];
 
@@ -1142,70 +1155,77 @@ static void Sbar_DeathmatchOverlay (int start) {
 		bottom = scr_scoreboard_forcecolors.value ? s->bottomcolor : s->real_bottomcolor;
 
 #ifdef GLQUAKE
-		if (
-			!cl.teamplay || s->spectator ||
-			!scr_scoreboard_fillcolored.value || (scr_scoreboard_fillcolored.value == 2 && !scr_scoreboard_teamsort.value)
-			) {
-				Draw_AlphaFill (xofs, y, rank_width, skip, 2, SCOREBOARD_ALPHA);
-			} else {
-				Q_strncpyz (team, s->team, sizeof(team));
-				if (k == mynum) {
-					float alpha;
-					alpha = 1.7 * SCOREBOARD_ALPHA;
-					alpha = min(alpha, 0.75);
-					Draw_AlphaFill (xofs, y, rank_width, skip, Sbar_ColorForMap(bottom), alpha);
-				} else {
-					Draw_AlphaFill (xofs, y, rank_width, skip, Sbar_ColorForMap(bottom), SCOREBOARD_ALPHA);
-				}
+		if (!cl.teamplay
+		 || s->spectator
+		 || !scr_scoreboard_fillcolored.value
+		 || (scr_scoreboard_fillcolored.value == 2 && !scr_scoreboard_teamsort.value))
+		{
+			Draw_AlphaFill (xofs, y, rank_width, skip, 2, SCOREBOARD_ALPHA);
+		}
+		else
+		{
+			Q_strncpyz (team, s->team, sizeof(team));
+			if (k == mynum)
+			{
+				float alpha;
+				alpha = 1.7 * SCOREBOARD_ALPHA;
+				alpha = min(alpha, 0.75);
+				Draw_AlphaFill (xofs, y, rank_width, skip, Sbar_ColorForMap(bottom), alpha);
 			}
+			else
+			{
+				Draw_AlphaFill (xofs, y, rank_width, skip, Sbar_ColorForMap(bottom), SCOREBOARD_ALPHA);
+			}
+		}
 #endif
 
-			if (!scr_scoreboard_borderless.value) {
-				Draw_Fill (xofs - 1, y, 1, skip, 0);					//Border - Left
-				Draw_Fill (xofs - 1 + rank_width + 1, y, 1, skip, 0);	//Border - Right
+		// draw ping
+		p = s->ping;
+		if (p < 0 || p > 999)
+			p = 999;
+
+		Q_snprintfz (num, sizeof(num), "&cAAD%4i", p);
+		Draw_ColoredString(x, y, num, 0);
+		x += 32; // move it forward, ready to print next column
+
+		// draw pl
+		p = s->pl;
+
+		if (p > 25)
+		{
+			Q_snprintfz (num, sizeof(num), "&cD33%3i", p);
+			Draw_ColoredString (x, y, num, 1);
+		}
+		else
+		{
+			Q_snprintfz (num, sizeof(num), "&cDB0%3i", p);
+			Draw_ColoredString (x, y, num, 0);
+		}
+
+		x += 32;
+
+		if (s->spectator)
+		{
+			Draw_ColoredString (x, y, "&cF20s&cF50p&cF80e&c883c&cA85t&c668a&c55At&c33Bo&c22Dr", 0);
+
+			x += cl.teamplay ? 128 : 88; // move across to print the name
+
+			Q_strncpyz(name, s->name, sizeof(name));
+			if (leftover > 0)
+			{
+				int truncate = (leftover / 8) + (leftover % 8 ? 1 : 0);
+
+				truncate = bound(0, truncate, sizeof(name) - 1);
+				name[sizeof(name) - 1 - truncate] = 0;
 			}
 
-			// draw ping
-			p = s->ping;
-			if (p < 0 || p > 999)
-				p = 999;
+			Draw_String (x, y, name);	// draw name
 
-			Q_snprintfz (num, sizeof(num), "&cAAD%4i", p);
-			Draw_ColoredString(x, y, num, 0);
-			x += 32; // move it forward, ready to print next column
-
-			// draw pl
-			p = s->pl;
-
-			if (p > 25) {
-				Q_snprintfz (num, sizeof(num), "&cD33%3i", p);
-				Draw_ColoredString (x, y, num, 1);
-			} else {
-				Q_snprintfz (num, sizeof(num), "&cDB0%3i", p);
-				Draw_ColoredString (x, y, num, 0);
-			}
-
-			x += 32;
-
-			if (s->spectator) {
-				Draw_ColoredString (x, y, "&cF20s&cF50p&cF80e&c883c&cA85t&c668a&c55At&c33Bo&c22Dr", 0);
-
-				x += cl.teamplay ? 128 : 88; // move across to print the name
-
-				Q_strncpyz(name, s->name, sizeof(name));
-				if (leftover > 0) {
-					int truncate = (leftover / 8) + (leftover % 8 ? 1 : 0);
-
-					truncate = bound(0, truncate, sizeof(name) - 1);
-					name[sizeof(name) - 1 - truncate] = 0;
-				}
-				Draw_String (x, y, name);	// draw name
-
-				y += skip;
-				x = startx;
-				continue;
-			}
-
+			y += skip;
+			x = startx;
+		}
+		else
+		{
 			// draw time
 			total = (cl.intermission ? cl.completed_time : cls.demoplayback ? cls.demotime : cls.realtime) - s->entertime;
 			minutes = (int) total / 60;
@@ -1216,7 +1236,8 @@ static void Sbar_DeathmatchOverlay (int start) {
 
 			// name
 			Q_strncpyz(name, s->name, sizeof(name));
-			if (leftover > 0) {
+			if (leftover > 0)
+			{
 				int truncate = (leftover / 8) + (leftover % 8 ? 1 : 0);
 
 				truncate = bound(0, truncate, sizeof(name) - 1);
@@ -1224,16 +1245,20 @@ static void Sbar_DeathmatchOverlay (int start) {
 			}
 
 			// team
-			if (cl.teamplay) {
+			if (cl.teamplay)
+			{
 				Q_strncpyz  (team, s->team, sizeof(team));
 				Q_snprintfz (scorerow, sizeof(scorerow), " %3i  %3i  %-4s %s", minutes, s->frags, team, name);
-			} else {
+			}
+			else
+			{
 				Q_snprintfz (scorerow, sizeof(scorerow), " %3i  %3i  %s", minutes, s->frags, name);
 			}
+
 			Draw_String (x, y, scorerow);
 
-
-			if (statswidth) {
+			if (statswidth)
+			{
 				Stats_GetBasicStats(s - cl.players, playerstats);
 				if (stats_touches || stats_caps)
 					Stats_GetFlagStats(s - cl.players, playerstats + 4);
@@ -1253,37 +1278,42 @@ static void Sbar_DeathmatchOverlay (int start) {
 				Draw_ColoredString(x + stats_xoffset - 9 * 8, y, scorerow, 0);	
 			}
 
-
-			if (k == mynum) {
+			if (k == mynum)
+			{
 				Draw_Character (x + 40, y, 16);
 				Draw_Character (x + 40 + 32, y, 17);
 			}
 
 			y += skip;
 			x = startx;
+		}
 	}
 
 	if (!scr_scoreboard_borderless.value)
-		Draw_Fill (xofs - 1, y - 1, rank_width + 2, 1, 0); //Border - Bottom
+	{
+		Draw_Fill (xofs, topy, rank_width, 1, 0);  //Border - Top
+		Draw_Fill (xofs, midy, rank_width, 1, 0);  //Border - Top (under header)
+		Draw_Fill (xofs, y - 1, rank_width, 1, 0); //Border - Bottom
+
+		Draw_Fill (xofs - 1, topy, 1, y - topy, 0);                   //Border - Left
+		Draw_Fill (xofs - 1 + rank_width + 1, topy, 1, y - topy, 0);  //Border - Right
+	}
 }
 
-static void Sbar_TeamOverlay (void) {
+static int Sbar_TeamOverlay(void)
+{
 	int i, k, l, x, y, xofs, plow, phigh, pavg, rank_width, skip = 10;
 	char num[12], team[5];
 	team_t *tm;
 	mpic_t *pic;
+	int topy;
 
 #ifndef CLIENTONLY
 	// FIXME
 	// check number of connections instead?
 	if (cl.gametype == GAME_COOP && com_serveractive && !coop.value)
-		return;
+		return 0;
 #endif
-
-	if (!cl.teamplay) {
-		Sbar_DeathmatchOverlay(0);
-		return;
-	}
 
 	scr_copyeverything = 1;
 	scr_fullupdate = 0;
@@ -1293,23 +1323,21 @@ static void Sbar_TeamOverlay (void) {
 
 	xofs = (vid.width - rank_width) >> 1;
 
-	if (scr_scoreboard_drawtitle.value) {
+	if (scr_scoreboard_drawtitle.value)
+	{
 		pic = Draw_CachePic ("gfx/ranking.lmp");
 		Draw_Pic (xofs + (rank_width - pic->width) / 2, 0, pic);
 		y = 26;
-	} else {
+	}
+	else
+	{
 		y = 2;
 	}
 
-	if (!scr_scoreboard_borderless.value)
-		Draw_Fill (xofs - 1, y + 1, rank_width + 2, 1, 0);							//Border - Top
+	topy = y + 1;
+
 	Draw_AlphaFill (xofs, y + 2, rank_width, skip, 1, SCOREBOARD_HEADINGALPHA);	//draw heading row
-	Draw_Fill (xofs - 1, y + 11, rank_width + 2, 1, 0);							//Border - Top (under header)
 	y += 2;																		//dont go over the black border, move the rest down
-	if (!scr_scoreboard_borderless.value) {
-		Draw_Fill (xofs - 1, y, 1, skip, 0);										//Border - Left
-		Draw_Fill (xofs - 1 + rank_width + 1, y, 1, skip, 0);						//Border - Right
-	}
 
 	x = xofs + rank_width * 0.1 + 8;
 
@@ -1321,16 +1349,12 @@ static void Sbar_TeamOverlay (void) {
 
 	l = scoreboardlines;	// draw the text
 
-	for (i = 0; i < scoreboardteams && y <= SCOREBOARD_LASTROW; i++)	{
+	for (i = 0; i < scoreboardteams && y <= SCOREBOARD_LASTROW; i++)
+	{
 		k = teamsort[i];
 		tm = teams + k;
 
 		Draw_AlphaFill (xofs, y, rank_width, skip, 2, SCOREBOARD_ALPHA);
-
-		if (!scr_scoreboard_borderless.value) {
-			Draw_Fill (xofs - 1, y, 1, skip, 0);						//Border - Left
-			Draw_Fill (xofs - 1 + rank_width + 1, y, 1, skip, 0);		//Border - Right
-		}
 
 		// draw pings
 		plow = tm->plow;
@@ -1360,7 +1384,8 @@ static void Sbar_TeamOverlay (void) {
 		Q_snprintfz (num, sizeof(num), "%5i", tm->players);
 		Draw_String (x + 104 + 88, y, num);
 
-		if (tm->myteam) {
+		if (tm->myteam)
+		{
 			Draw_Character (x + 104 - 8, y, 16);
 			Draw_Character (x + 104 + 32, y, 17);
 		}
@@ -1369,14 +1394,23 @@ static void Sbar_TeamOverlay (void) {
 	}
 
 	if (!scr_scoreboard_borderless.value)
-		Draw_Fill (xofs - 1, y - 1, rank_width + 2, 1, 0);              //Border - Bottom
+	{
+		Draw_Fill(xofs, topy, rank_width, 1, 0);                       //Border - Top
+		Draw_Fill(xofs, topy + 10, rank_width, 1, 0);                    //Border - Top (under header)
+		Draw_Fill(xofs, y - 1, rank_width, 1, 0);                      //Border - Bottom
+
+		Draw_Fill(xofs - 1, topy, 1, y - topy, 0);                     //Border - Left
+		Draw_Fill(xofs - 1 + rank_width + 1, topy, 1, y - topy, 0);    //Border - Right
+	}
 
 	y += 14;
-	Sbar_DeathmatchOverlay(y);
+
+	return y;
 }
 
 
-static void Sbar_MiniDeathmatchOverlay (void) {
+static void Sbar_MiniDeathmatchOverlay (void)
+{
 	int i, k, top, bottom, x, y, mynum, numlines;
 	char num[4 + 1], name[16 + 1], team[4 + 1];
 	player_info_t *s;
@@ -1536,11 +1570,10 @@ void Sbar_IntermissionOverlay (void) {
 	scr_copyeverything = 1;
 	scr_fullupdate = 0;
 
-	if (cl.gametype == GAME_DEATHMATCH)	{
-		if (cl.teamplay && !sb_showscores)
-			Sbar_TeamOverlay ();
-		else
-			Sbar_DeathmatchOverlay (0);
+	if (cl.gametype == GAME_DEATHMATCH)
+	{
+		Sbar_DeathmatchOverlay();
+
 		return;
 	}
 
@@ -1662,20 +1695,9 @@ void Sbar_Draw(void)
 
 	// main screen deathmatch rankings
 	// if we're dead show team scores in team games
-	if (cl.stats[STAT_HEALTH] <= 0 && !cl.spectator)
+	if ((cl.stats[STAT_HEALTH] <= 0 && !cl.spectator) || sb_showscores || sb_showteamscores)
 	{
-		if (cl.teamplay && !sb_showscores)
-			Sbar_TeamOverlay();
-		else
-			Sbar_DeathmatchOverlay (0);
-	}
-	else if (sb_showscores)
-	{
-		Sbar_DeathmatchOverlay(0);
-	}
-	else if (sb_showteamscores)
-	{
-		Sbar_TeamOverlay();
+		Sbar_DeathmatchOverlay();
 	}
 
 #ifdef GLQUAKE
