@@ -33,10 +33,10 @@ ifeq ($(OS), linux)
 	OSCFLAGS=-DBUILD_STRL
 
 	OSSWOBJS=vid_x11.o in_x11.o
-	OSSWLDFLAGS=-L/usr/X11R6/lib -lX11 -lXext -lXxf86vm
+	OSSWLDFLAGS=-L/usr/X11R6/lib -lX11 -lXext -lXxf86vm -lXxf86dga
 
 	OSGLOBJS=vid_glx.o in_x11.o
-	OSGLLDFLAGS=-L/usr/X11R6/lib -lX11 -lXext -lXxf86vm -lGL
+	OSGLLDFLAGS=-L/usr/X11R6/lib -lX11 -lXext -lXxf86vm -lXxf86dga -lGL
 endif
 
 ifeq ($(OS), freebsd)
@@ -48,10 +48,10 @@ ifeq ($(OS), freebsd)
 	OSCFLAGS=-I/usr/X11R6/include
 
 	OSSWOBJS=vid_x11.o in_x11.o
-	OSSWLDFLAGS=-L/usr/X11R6/lib -lX11 -lXext -lXxf86vm
+	OSSWLDFLAGS=-L/usr/X11R6/lib -lX11 -lXext -lXxf86vm -lXxf86dga
 
 	OSGLOBJS=vid_glx.o in_x11.o
-	OSGLLDFLAGS=-L/usr/X11R6/lib -lX11 -lXext -lXxf86vm -lGL
+	OSGLLDFLAGS=-L/usr/X11R6/lib -lX11 -lXext -lXxf86vm -lXxf86dga -lGL
 endif
 
 ifeq ($(OS), netbsd)
@@ -64,10 +64,10 @@ ifeq ($(OS), netbsd)
 	OSLDFLAGS=-lossaudio
 
 	OSSWOBJS=vid_x11.o in_x11.o
-	OSSWLDFLAGS=-L/usr/X11R6/lib -lX11 -lXext -lXxf86vm
+	OSSWLDFLAGS=-L/usr/X11R6/lib -lX11 -lXext -lXxf86vm -lXxf86dga
 
 	OSGLOBJS=vid_glx.o in_x11.o
-	OSGLLDFLAGS=-L/usr/X11R6/lib -lX11 -lXext -lXxf86vm -lGL
+	OSGLLDFLAGS=-L/usr/X11R6/lib -lX11 -lXext -lXxf86vm -lXxf86dga -lGL
 endif
 
 ifeq ($(OS), cygwin)
