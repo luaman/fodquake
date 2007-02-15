@@ -82,7 +82,7 @@ qboolean FChecks_SkinRequest (char *s) {
 	float fbskins;		
 
 	fbskins = bound(0, r_fullbrightSkins.value, cl.fbskins);	
-	if (cl.spectator || !fbskins || f_skins_reply_time && cls.realtime - f_skins_reply_time < 20)	
+	if (cl.spectator || !fbskins || (f_skins_reply_time && cls.realtime - f_skins_reply_time < 20))
 		return false;
 
 	if (Util_F_Match(s, "f_skins"))	{
