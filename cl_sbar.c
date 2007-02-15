@@ -233,6 +233,66 @@ void Sbar_Init (void) {
 	sb_scorebar = Draw_CacheWadPic ("scorebar");
 }
 
+#ifdef GLQUAKE
+void Sbar_Shutdown(void)
+{
+	int i, j;
+
+	for (i=0;i<11;i++)
+	{
+		Draw_FreeWadPic(sb_nums[0][i]);
+		Draw_FreeWadPic(sb_nums[1][i]);
+	}
+
+	Draw_FreeWadPic(sb_colon);
+	Draw_FreeWadPic(sb_slash);
+
+	for(i=0;i<7;i++)
+	{
+		for(j=0;j<7;j++)
+		{
+			Draw_FreeWadPic(sb_weapons[i][j]);
+		}
+	}
+
+	for(i=0;i<4;i++)
+	{
+		Draw_FreeWadPic(sb_ammo[i]);
+	}
+
+	for(i=0;i<3;i++)
+	{
+		Draw_FreeWadPic(sb_armor[i]);
+	}
+	for(i=0;i<6;i++)
+	{
+		Draw_FreeWadPic(sb_items[i]);
+	}
+
+	for(i=0;i<4;i++)
+	{
+		Draw_FreeWadPic(sb_sigil[i]);
+	}
+
+
+	for (i=0;i<5;i++)
+	{
+		Draw_FreeWadPic(sb_faces[i][0]);
+		Draw_FreeWadPic(sb_faces[i][1]);
+	}
+
+	Draw_FreeWadPic(sb_face_invis);
+	Draw_FreeWadPic(sb_face_invuln);
+	Draw_FreeWadPic(sb_face_invis_invuln);
+	Draw_FreeWadPic(sb_face_quad);
+
+	Draw_FreeWadPic(sb_sbar);
+	Draw_FreeWadPic(sb_ibar);
+	Draw_FreeWadPic(sb_scorebar);
+}
+#endif
+
+
 /****************************** SUPPORT ROUTINES ******************************/
 
 // drawing routines are relative to the status bar location

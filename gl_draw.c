@@ -219,6 +219,8 @@ void customCrosshair_Init(void) {
 =============================================================================
 */
 
+#warning My God, this sucks!
+
 // some cards have low quality of alpha pics, so load the pics
 // without transparent pixels into a different scrap block.
 // scrap 0 is solid pics, 1 is transparent
@@ -228,8 +230,17 @@ void customCrosshair_Init(void) {
 
 int			scrap_allocated[MAX_SCRAPS][BLOCK_WIDTH];
 byte		scrap_texels[MAX_SCRAPS][BLOCK_WIDTH*BLOCK_HEIGHT*4];
-int			scrap_dirty = 0;	// bit mask
+int			scrap_dirty;	// bit mask
 int			scrap_texnum;
+
+void Scrap_Init()
+{
+	bzero(scrap_allocated, sizeof(scrap_allocated));
+	scrap_dirty = 0;
+
+	scrap_texnum = texture_extension_number;
+	texture_extension_number += MAX_SCRAPS;
+}
 
 // returns false if allocation failed
 qboolean Scrap_AllocBlock (int scrapnum, int w, int h, int *x, int *y) {
@@ -292,7 +303,7 @@ int			numcachepics;
 
 byte	menuplyr_pixels[4096];
 
-int		pic_texels, pic_count;
+int		pic_texels;
 
 mpic_t *Draw_CacheWadPic (char *name) {
 	qpic_t	*p;
@@ -301,42 +312,59 @@ mpic_t *Draw_CacheWadPic (char *name) {
 	p = W_GetLumpName (name);
 	pic = (mpic_t *)p;
 
-	
-	if (
-		(pic_24bit = GL_LoadPicImage(va("textures/wad/%s", name), name, 0, 0, TEX_ALPHA)) ||
-		(pic_24bit = GL_LoadPicImage(va("gfx/%s", name), name, 0, 0, TEX_ALPHA))
-	) {
-		memcpy(&pic->texnum, &pic_24bit->texnum, sizeof(mpic_t) - 8);
-		return pic;
-	}
+	pic = malloc(sizeof(*pic));
+	if (pic)
+	{
+		memcpy(pic, p, sizeof(*pic));
 
-	// load little ones into the scrap
-	if (p->width < 64 && p->height < 64) {
-		int x, y, i, j, k, texnum;
-
-		texnum = memchr(p->data, 255, p->width*p->height) != NULL;
-		if (!Scrap_AllocBlock (texnum, p->width, p->height, &x, &y)) {
-			GL_LoadPicTexture (name, pic, p->data);
+		if ((pic_24bit = GL_LoadPicImage(va("textures/wad/%s", name), name, 0, 0, TEX_ALPHA))
+		 || (pic_24bit = GL_LoadPicImage(va("gfx/%s", name), name, 0, 0, TEX_ALPHA)))
+		{
+			memcpy(&pic->texnum, &pic_24bit->texnum, sizeof(mpic_t) - 8);
 			return pic;
 		}
-		k = 0;
-		for (i = 0; i < p->height; i++)
-			for (j  = 0; j < p->width; j++, k++)
-				scrap_texels[texnum][(y + i) * BLOCK_WIDTH + x + j] = p->data[k];
-		texnum += scrap_texnum;
-		pic->texnum = texnum;
-		pic->sl = (x + 0.01) / (float) BLOCK_WIDTH;
-		pic->sh = (x + p->width - 0.01) / (float) BLOCK_WIDTH;
-		pic->tl = (y + 0.01) / (float) BLOCK_WIDTH;
-		pic->th = (y + p->height - 0.01) / (float) BLOCK_WIDTH;
 
-		pic_count++;
-		pic_texels += p->width * p->height;
-	} else {
-		GL_LoadPicTexture (name, pic, p->data);
+		// load little ones into the scrap
+		if (p->width < 64 && p->height < 64)
+		{
+			int x, y, i, j, k, texnum;
+
+			texnum = memchr(p->data, 255, p->width*p->height) != NULL;
+			if (!Scrap_AllocBlock (texnum, p->width, p->height, &x, &y))
+			{
+				GL_LoadPicTexture (name, pic, p->data);
+				return pic;
+			}
+			k = 0;
+			for (i = 0; i < p->height; i++)
+			{
+				for (j  = 0; j < p->width; j++, k++)
+				{
+					scrap_texels[texnum][(y + i) * BLOCK_WIDTH + x + j] = p->data[k];
+				}
+			}
+
+			texnum += scrap_texnum;
+			pic->texnum = texnum;
+			pic->sl = (x + 0.01) / (float) BLOCK_WIDTH;
+			pic->sh = (x + p->width - 0.01) / (float) BLOCK_WIDTH;
+			pic->tl = (y + 0.01) / (float) BLOCK_WIDTH;
+			pic->th = (y + p->height - 0.01) / (float) BLOCK_WIDTH;
+
+			pic_texels += p->width * p->height;
+		}
+		else
+		{
+			GL_LoadPicTexture (name, pic, p->data);
+		}
 	}
 
 	return pic;
+}
+
+void Draw_FreeWadPic(mpic_t *pic)
+{
+	free(pic);
 }
 
 mpic_t *Draw_CachePic (char *path) {
@@ -520,8 +548,7 @@ void Draw_Init (void)
 	translate_texture = texture_extension_number++;
 
 	// save slots for scraps
-	scrap_texnum = texture_extension_number;
-	texture_extension_number += MAX_SCRAPS;
+	Scrap_Init();
 
 	// Load the crosshair pics
 	for (i = 0; i < NUMCROSSHAIRS; i++) {

@@ -8,6 +8,8 @@
 #include "server.h"
 #endif
 
+#include "sbar.h"
+
 static void *display;
 
 qboolean in_grab_windowed_mouse_callback(cvar_t *var, char *value)
@@ -143,6 +145,10 @@ void VID_Open()
 
 void VID_Shutdown()
 {
+#ifdef GLQUAKE
+	Sbar_Shutdown();
+#endif
+
 	if (display)
 	{
 #ifdef GLQUAKE
