@@ -62,5 +62,6 @@ void Draw_Alt_String (int x, int y, char *str);
 void Draw_ColoredString (int x, int y, char *str, int red);
 mpic_t *Draw_CachePic (char *path);
 mpic_t *Draw_CacheWadPic (char *name);
+void Draw_FreeWadPic(mpic_t *pic);
 void Draw_Crosshair(void);
 void Draw_TextBox (int x, int y, int width, int lines);
