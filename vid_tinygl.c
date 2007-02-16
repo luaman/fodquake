@@ -63,6 +63,10 @@ struct display
 
 };
 
+void Sys_Video_CvarInit(void)
+{
+}
+
 void *Sys_Video_Open(int width, int height, int depth, int fullscreen, unsigned char *palette)
 {
 	struct display *d;

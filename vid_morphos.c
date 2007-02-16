@@ -39,6 +39,10 @@ struct display
 
 cvar_t _windowed_mouse = { "_windowed_mouse", "1", CVAR_ARCHIVE };
 
+void Sys_Video_CvarInit(void)
+{
+}
+
 void *Sys_Video_Open(int width, int height, int depth, int fullscreen, unsigned char *palette)
 {
 	struct display *d;
