@@ -123,6 +123,8 @@ void VID_Open()
 	height = vid_height.value;
 #ifdef GLQUAKE
 	depth = vid_depth.value;
+#else
+	depth = 8;
 #endif
 
 #warning Fix this.
