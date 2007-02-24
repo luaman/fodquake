@@ -4,13 +4,15 @@
 #define FODQUAKE_VERSION        "0.1"
 
 #ifdef _WIN32
-#define QW_PLATFORM	"Win32"
+#define QW_PLATFORM     "Win32"
 #elif defined(linux)
-#define QW_PLATFORM	"Linux"
+#define QW_PLATFORM     "Linux"
 #elif defined(__MORPHOS__)
 #define QW_PLATFORM     "MorphOS"
 #elif defined(__CYGWIN__)
 #define QW_PLATFORM     "Cygwin"
+#elif defined(__MACOSX__)
+#define QW_PLATFORM     "MacOS X"
 #elif defined(__FreeBSD__)
 #define QW_PLATFORM     "FreeBSD"
 #elif defined(__NetBSD__)
