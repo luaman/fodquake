@@ -66,11 +66,140 @@ struct inputdata
 	int dga_mouse_enabled;
 };
 
+static const unsigned char keytable[] =
+{
+	0, /* 0 */
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	K_ESCAPE,
+	'1', /* 10 */
+	'2',
+	'3',
+	'4',
+	'5',
+	'6',
+	'7',
+	'8',
+	'9',
+	'0',
+	'-', /* 20 */
+	'=',
+	K_BACKSPACE,
+	K_TAB,
+	'q',
+	'w',
+	'e',
+	'r',
+	't',
+	'y',
+	'u', /* 30 */
+	'i',
+	'o',
+	'p',
+	'[',
+	']',
+	K_ENTER,
+	K_LCTRL,
+	'a',
+	's',
+	'd', /* 40 */
+	'f',
+	'g',
+	'h',
+	'j',
+	'k',
+	'l',
+	';',
+	'\'',
+	'`',
+	K_LSHIFT, /* 50 */
+	'\\',
+	'z',
+	'x',
+	'c',
+	'v',
+	'b',
+	'n',
+	'm',
+	',',
+	'.', /* 60 */
+	'/',
+	K_RSHIFT,
+	KP_STAR,
+	K_LALT,
+	' ',
+	K_CAPSLOCK,
+	K_F1,
+	K_F2,
+	K_F3,
+	K_F4, /* 70 */
+	K_F5,
+	K_F6,
+	K_F7,
+	K_F8,
+	K_F9,
+	K_F10,
+	KP_NUMLOCK,
+	0,
+	KP_HOME,
+	KP_UPARROW, /* 80 */
+	KP_PGUP,
+	KP_MINUS,
+	KP_LEFTARROW,
+	KP_5,
+	KP_RIGHTARROW,
+	KP_PLUS,
+	KP_END,
+	KP_DOWNARROW,
+	KP_PGDN,
+	KP_INS, /* 90 */
+	KP_DEL,
+	0,
+	0,
+	'<',
+	K_F11,
+	K_F12,
+	K_HOME,
+	K_UPARROW,
+	K_PGUP,
+	K_LEFTARROW, /* 100 */
+	0,
+	K_RIGHTARROW,
+	K_END,
+	K_DOWNARROW,
+	K_PGDN,
+	K_INS,
+	K_DEL,
+	KP_ENTER,
+	K_RCTRL,
+	0, /* 110 */
+	0,
+	KP_SLASH,
+	K_RALT,
+	0,
+	K_LWIN,
+	K_RWIN,
+	K_MENU,
+};
+
 static int XLateKey(XKeyEvent * ev)
 {
 	int key, kp;
 	char buf[64];
 	KeySym keysym;
+
+	if (ev->keycode < sizeof(keytable))
+	{
+		key = keytable[ev->keycode];
+		if (key)
+			return key;
+	}
 
 	key = 0;
 	kp = (int) cl_keypad.value;
@@ -293,7 +422,7 @@ static int XLateKey(XKeyEvent * ev)
 			key = *(unsigned char *) buf;
 			if (key >= 'A' && key <= 'Z')
 				key = key - 'A' + 'a';
-//                      fprintf(stdout, "case 0x0%x: key = ___;break;/* [%c] */\n", keysym);
+
 			break;
 	}
 	return key;
@@ -504,7 +633,7 @@ void X11_Input_GrabMouse(void *inputdata, int dograb)
 		{
 			grab_win = DefaultRootWindow(id->x_disp);
 		}
-		if (!in_dga_mouse.value)
+		else
 		{
 			grab_win = id->x_win;
 
