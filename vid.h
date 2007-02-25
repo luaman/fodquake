@@ -68,6 +68,7 @@ void	VID_Init(unsigned char *palette);
 
 void VID_CvarInit(void);
 void VID_Open(void);
+void VID_Close(void);
 
 void VID_Shutdown (void);
 // Called at shutdown

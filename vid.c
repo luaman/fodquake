@@ -35,6 +35,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 static void *display;
 
+static char *windowtitle;
+
 qboolean in_grab_windowed_mouse_callback(cvar_t *var, char *value)
 {
 	printf("in_grab_windowed_mouse changed to %s\n", value);
@@ -69,11 +71,18 @@ void VID_Init(unsigned char *palette)
 	memcpy(pal, palette, sizeof(pal));
 }
 
+void VID_Shutdown()
+{
+	VID_Close();
+
+	free(windowtitle);
+}
+
 void VID_Restart_f(void)
 {
 	int i;
 
-	VID_Shutdown();
+	VID_Close();
 #ifdef CLIENTONLY
 	Host_ClearMemory();
 #else
@@ -157,6 +166,9 @@ void VID_Open()
 	if (display == 0)
 		Sys_Error("VID: Unable to open a display\n");
 
+	if (windowtitle)
+		Sys_Video_SetWindowTitle(display, windowtitle);
+
 	Sys_Video_GrabMouse(display, in_grab_windowed_mouse.value);
 
 	V_UpdatePalette(true);
@@ -168,7 +180,7 @@ void VID_Open()
 #endif
 }
 
-void VID_Shutdown()
+void VID_Close()
 {
 #ifdef GLQUAKE
 	Sbar_Shutdown();
@@ -232,8 +244,19 @@ qboolean VID_HWGammaSupported()
 
 void VID_SetCaption(const char *text)
 {
+	char *newwindowtitle;
 	if (display)
+	{
+		newwindowtitle = malloc(strlen(text)+1);
+		if (newwindowtitle)
+		{
+			strcpy(newwindowtitle, text);
+			free(windowtitle);
+			windowtitle = newwindowtitle;
+		}
+
 		Sys_Video_SetWindowTitle(display, text);
+	}
 }
 
 qboolean VID_IsFullscreen()
