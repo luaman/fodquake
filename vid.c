@@ -232,7 +232,8 @@ qboolean VID_HWGammaSupported()
 
 void VID_SetCaption(const char *text)
 {
-	Sys_Video_SetWindowTitle(display, text);
+	if (display)
+		Sys_Video_SetWindowTitle(display, text);
 }
 
 qboolean VID_IsFullscreen()
