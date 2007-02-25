@@ -289,14 +289,6 @@ void Sys_Video_GetMouseMovement(void *display, int *mousex, int *mousey)
 	Sys_Input_GetMouseMovement(d->inputdata, mousex, mousey);
 }
 
-void VID_LockBuffer()
-{
-}
-
-void VID_UnlockBuffer()
-{
-}
-
 qboolean VID_IsLocked()
 {
 	return 0;

@@ -127,10 +127,6 @@ void D_EndDirectRect (int x, int y, int width, int height) {}
 
 /************************************* COMPATABILITY *************************************/
 
-void VID_UnlockBuffer() {}
-
-void VID_LockBuffer() {}
-
 void VID_SetCaption (char *text) {}
 
 void signal_handler(int sig) {
