@@ -49,6 +49,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 struct display
 {
 	void *inputdata;
+
+	int width, height;
+
 #ifdef USE_VMODE
 	XF86VidModeModeInfo **vidmodes;
 	qboolean vidmode_active;
@@ -75,10 +78,6 @@ struct display
 #define MOUSE_MASK (ButtonPressMask | ButtonReleaseMask | PointerMotionMask)
 
 #define X_MASK (KEY_MASK | MOUSE_MASK | VisibilityChangeMask)
-
-qboolean vid_hwgamma_enabled = false;
-
-static int scr_width, scr_height;
 
 static void RestoreHWGamma(struct display *d);
 
@@ -119,11 +118,16 @@ void Sys_Video_GrabMouse(void *display, int dograb)
 	X11_Input_GrabMouse(d->inputdata, d->fullscreen?1:dograb);
 }
 
-cvar_t	vid_hwgammacontrol = {"vid_hwgammacontrol", "1"};
-
 /************************************* COMPATABILITY *************************************/
 
-void VID_SetCaption (char *text) {}
+void Sys_Video_SetWindowTitle(void *display, const char *text)
+{
+	struct display *d;
+
+	d = display;
+
+	XStoreName(d->x_disp, d->x_win, text);
+}
 
 void signal_handler(int sig) {
 	printf("Received signal %d, exiting...\n", sig);
@@ -147,15 +151,10 @@ void InitSig(void) {
 
 /************************************* HW GAMMA *************************************/
 
-void VID_ShiftPalette(unsigned char *p) {}
-
 static void InitHWGamma(struct display *d)
 {
 #if USE_VMODE
 	int xf86vm_gammaramp_size;
-
-	if (COM_CheckParm("-nohwgamma"))
-		return;
 
 	XF86VidModeGetGammaRampSize(d->x_disp, d->scrnum, &xf86vm_gammaramp_size);
 	
@@ -165,11 +164,10 @@ static void InitHWGamma(struct display *d)
 	{
 		XF86VidModeGetGammaRamp(d->x_disp, d->scrnum, xf86vm_gammaramp_size, d->systemgammaramp[0], d->systemgammaramp[1], d->systemgammaramp[2]);
 	}
-	vid_hwgamma_enabled = vid_hwgammacontrol.value && d->vid_gammaworks; // && fullscreen?
 #endif
 }
 
-void Sys_Video_SetGamma(struct display *display, unsigned short *ramps)
+void Sys_Video_SetGamma(void *display, unsigned short *ramps)
 {
 #if USE_VMODE
 	struct display *d = display;
@@ -177,11 +175,8 @@ void Sys_Video_SetGamma(struct display *display, unsigned short *ramps)
 	if (d->vid_gammaworks && d->hasfocus)
 	{
 		d->currentgammaramp = ramps;
-		if (vid_hwgamma_enabled)
-		{
-			XF86VidModeSetGammaRamp(d->x_disp, d->scrnum, 256, ramps, ramps + 256, ramps + 512);
-			d->customgamma = true;
-		}
+		XF86VidModeSetGammaRamp(d->x_disp, d->scrnum, 256, ramps, ramps + 256, ramps + 512);
+		d->customgamma = true;
 	}
 #endif
 }
@@ -199,25 +194,21 @@ static void RestoreHWGamma(struct display *d)
 
 /************************************* GL *************************************/
 
-void GL_BeginRendering (int *x, int *y, int *width, int *height) {
-	*x = *y = 0;
-	*width = scr_width;
-	*height = scr_height;
+void Sys_Video_BeginFrame(void *display, int *x, int *y, int *width, int *height)
+{
+	struct display *d;
+
+	d = display;
+
+	*x = 0;
+	*y = 0;
+	*width = d->width;
+	*height = d->height;
 }
 
 void Sys_Video_Update(void *display, vrect_t *rects)
 {
 	struct display *d = display;
-	static qboolean old_hwgamma_enabled;
-
-	vid_hwgamma_enabled = vid_hwgammacontrol.value && d->vid_gammaworks;
-	if (vid_hwgamma_enabled != old_hwgamma_enabled) {
-		old_hwgamma_enabled = vid_hwgamma_enabled;
-		if (vid_hwgamma_enabled && d->currentgammaramp)
-			VID_SetDeviceGammaRamp(d->currentgammaramp);
-		else
-			RestoreHWGamma(d);
-	}
 
 	glFlush();
 	glXSwapBuffers(d->x_disp, d->x_win);
@@ -295,10 +286,6 @@ void *Sys_Video_Open(int width, int height, int depth, int fullscreen, unsigned 
 	unsigned long mask;
 	Window root;
 	XVisualInfo *visinfo;
-
-	Cvar_SetCurrentGroup(CVAR_GROUP_VIDEO);
-	Cvar_Register(&vid_hwgammacontrol);
-	Cvar_ResetCurrentGroup();
 
 	vid.maxwarpwidth = WARP_WIDTH;
 	vid.maxwarpheight = WARP_HEIGHT;
@@ -435,8 +422,8 @@ void *Sys_Video_Open(int width, int height, int depth, int fullscreen, unsigned 
 
 			glXMakeCurrent(d->x_disp, d->x_win, d->ctx);
 
-			scr_width = width;
-			scr_height = height;
+			d->width = width;
+			d->height = height;
 
 			if (vid.conheight > height)
 				vid.conheight = height;
@@ -476,5 +463,14 @@ void *Sys_Video_Open(int width, int height, int depth, int fullscreen, unsigned 
 	}
 
 	return 0;
+}
+
+qboolean Sys_Video_HWGammaSupported(void *display)
+{
+	struct display *d;
+
+	d = display;
+
+	return d->vid_gammaworks;
 }
 
