@@ -847,6 +847,12 @@ void VID_UnlockBuffer(void)
 {
 }
 
-void VID_SetCaption(char *text)
+void Sys_Video_SetWindowTitle(void *display, const char *text)
 {
+	struct display *d;
+
+	d = display;
+
+	XStoreName(d->x_disp, d->x_win, text);
 }
+
