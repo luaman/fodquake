@@ -725,7 +725,7 @@ void R_DrawViewModel (void) {
 void R_PolyBlend (void) {
 	extern cvar_t gl_hwblend;
 
-	if (vid_hwgamma_enabled && gl_hwblend.value && !cl.teamfortress)
+	if (VID_HWGammaSupported() && gl_hwblend.value && !cl.teamfortress)
 		return;
 	if (!v_blend[3])
 		return;
@@ -754,7 +754,7 @@ void R_BrightenScreen (void) {
 	extern float vid_gamma;
 	float f;
 
-	if (vid_hwgamma_enabled)
+	if (VID_HWGammaSupported())
 		return;
 	if (v_contrast.value <= 1.0)
 		return;
@@ -1074,7 +1074,7 @@ qboolean OnChange_gl_clearColor(cvar_t *v, char *s) {
 void R_Clear (void) {
 	int clearbits = 0;
 
-	if (gl_clear.value || (!vid_hwgamma_enabled && v_contrast.value > 1))
+	if (gl_clear.value || (!VID_HWGammaSupported && v_contrast.value > 1))
 		clearbits |= GL_COLOR_BUFFER_BIT;
 
 	if (gl_ztrick.value) {

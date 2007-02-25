@@ -550,7 +550,7 @@ void V_UpdatePalette(qboolean force_update)
 
 	a = v_blend[3];
 
-	if (!vid_hwgamma_enabled || !gl_hwblend.value || cl.teamfortress)
+	if (!VID_HWGammaSupported() || !gl_hwblend.value || cl.teamfortress)
 		a = 0;
 
 	rgb[0] = 255 * v_blend[0] * a;

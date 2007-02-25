@@ -934,11 +934,11 @@ void SCR_UpdateScreen (void) {
 	if (vid.recalc_refdef)
 		SCR_CalcRefdef ();
 
-	if ((v_contrast.value > 1 && !vid_hwgamma_enabled) || gl_clear.value)
+	if ((v_contrast.value > 1 && !VID_HWGammaSupported()) || gl_clear.value)
 		Sbar_Changed ();
 
 	// do 3D refresh drawing, and then update the screen
-	GL_BeginRendering (&glx, &gly, &glwidth, &glheight);
+	VID_BeginFrame(&glx, &gly, &glwidth, &glheight);
 
 	SCR_SetUpToDrawConsole ();
 
@@ -1142,7 +1142,7 @@ extern unsigned short ramps[3][256];
 static void applyHWGamma(byte *buffer, int size) {
 	int i;
 
-	if (vid_hwgamma_enabled) {
+	if (VID_HWGammaSupported()) {
 		for (i = 0; i < size; i += 3) {
 			buffer[i + 0] = ramps[0][buffer[i + 0]] >> 8;
 			buffer[i + 1] = ramps[1][buffer[i + 1]] >> 8;

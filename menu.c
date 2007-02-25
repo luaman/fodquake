@@ -497,11 +497,7 @@ void M_Options_Draw (void) {
 	if (vid_menudrawfn)
 		M_Print (16, 160, "           Video modes");
 
-#ifdef _WIN32
-	if (modestate == MS_WINDOWED)
-#else
-	if (vid_windowedmouse)
-#endif
+	if (!VID_IsFullscreen())
 	{
 		M_Print (16, 168, "             Use mouse");
 		M_DrawCheckbox (220, 168, in_grab_windowed_mouse.value);
@@ -582,11 +578,7 @@ void M_Options_Key (int k) {
 	}
 
 	if (k == K_UPARROW || k == K_END || k == K_PGDN) {
-#ifdef _WIN32
-		if (options_cursor == 17 && modestate != MS_WINDOWED)
-#else
-		if (options_cursor == 17 && !vid_windowedmouse)
-#endif
+		if (options_cursor == 17 && !VID_IsFullscreen())
 			options_cursor = 16;
 
 		if (options_cursor == 16 && vid_menudrawfn == NULL)
@@ -595,11 +587,7 @@ void M_Options_Key (int k) {
 		if (options_cursor == 16 && vid_menudrawfn == NULL)
 			options_cursor = 17;
 
-#ifdef _WIN32
-		if (options_cursor == 17 && modestate != MS_WINDOWED)
-#else
-		if (options_cursor == 17 && !vid_windowedmouse)
-#endif
+		if (options_cursor == 17 && !VID_IsFullscreen())
 			options_cursor = 0;
 	}
 }

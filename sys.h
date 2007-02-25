@@ -67,4 +67,10 @@ void Sys_Video_SetPalette(void *display, unsigned char *palette);
 void Sys_Video_GetEvents(void *display);
 void Sys_Video_GetMouseMovement(void *display, int *mousex, int *mousey);
 void Sys_Video_GrabMouse(void *display, int dograb);
+#ifdef GLQUAKE
+void Sys_Video_BeginFrame(int *x, int *y, int *width, int *height);
+void Sys_Video_SetGamma(void *display, unsigned short *ramps);
+qboolean Sys_Video_HWGammaSupported(void *display);
+#endif
+void Sys_Video_SetWindowTitle(void *display, const char *text);
 

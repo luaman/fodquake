@@ -72,10 +72,10 @@ void	VID_Init(unsigned char *palette);
 void VID_CvarInit(void);
 void VID_Open(void);
 
-void	VID_Shutdown (void);
+void VID_Shutdown (void);
 // Called at shutdown
 
-void	VID_Update (vrect_t *rects);
+void VID_Update (vrect_t *rects);
 // flushes the given rectangles from the view buffer to the screen
 
 int VID_SetMode (int modenum, unsigned char *palette);
@@ -87,9 +87,15 @@ void VID_GetEvents(void);
 void VID_LockBuffer (void);
 void VID_UnlockBuffer (void);
 
-void VID_SetCaption (char *text);
+void VID_SetCaption(const char *text);
 
 void VID_GetMouseMovement(int *mousex, int *mousey);
 
+qboolean VID_IsFullscreen(void);
+
+#ifdef GLQUAKE
+void VID_BeginFrame(int *x, int *y, int *width, int *height);
 void VID_SetDeviceGammaRamp (unsigned short *ramps);
-extern qboolean vid_hwgamma_enabled;
+qboolean VID_HWGammaSupported(void);
+#endif
+

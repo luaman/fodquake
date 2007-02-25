@@ -186,7 +186,15 @@ void VID_Shutdown()
 	}
 }
 
-void VID_Update (vrect_t *rects)
+#ifdef GLQUAKE
+#warning Should fix this junk some day.
+void VID_BeginFrame(int *x, int *y, int *width, int *height)
+{
+	Sys_Video_BeginFrame(display, x, y, width, height);
+}
+#endif
+
+void VID_Update(vrect_t *rects)
 {
 	Sys_Video_Update(display, rects);
 }
@@ -216,4 +224,20 @@ void VID_SetDeviceGammaRamp(unsigned short *ramps)
 	Sys_Video_SetGamma(display, ramps);
 }
 #endif
+
+void VID_SetCaption(const char *text)
+{
+	Sys_Video_SetWindowTitle(display, text);
+}
+
+qboolean VID_IsFullscreen()
+{
+#warning fixme
+	return false;
+}
+
+qboolean VID_HWGammaSupported()
+{
+	return Sys_Video_HWGammaSupported(display);
+}
 
