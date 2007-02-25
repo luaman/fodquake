@@ -3431,9 +3431,13 @@ void M_Draw (void) {
 
 		if (SCR_NEED_CONSOLE_BACKGROUND) {
 			Draw_ConsoleBackground (scr_con_current);
+#ifndef GLQUAKE
 			VID_UnlockBuffer ();
+#endif
 			S_ExtraUpdate ();
+#ifndef GLQUAKE
 			VID_LockBuffer ();
+#endif
 		} else {
 			Draw_FadeScreen ();
 		}
@@ -3557,9 +3561,13 @@ void M_Draw (void) {
 		m_entersound = false;
 	}
 
+#ifndef GLQUAKE
 	VID_UnlockBuffer ();
+#endif
 	S_ExtraUpdate ();
+#ifndef GLQUAKE
 	VID_LockBuffer ();
+#endif
 }
 
 void M_Keydown (int key) {
