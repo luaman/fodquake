@@ -223,6 +223,11 @@ void VID_SetDeviceGammaRamp(unsigned short *ramps)
 {
 	Sys_Video_SetGamma(display, ramps);
 }
+
+qboolean VID_HWGammaSupported()
+{
+	return Sys_Video_HWGammaSupported(display);
+}
 #endif
 
 void VID_SetCaption(const char *text)
@@ -234,10 +239,5 @@ qboolean VID_IsFullscreen()
 {
 #warning fixme
 	return false;
-}
-
-qboolean VID_HWGammaSupported()
-{
-	return Sys_Video_HWGammaSupported(display);
 }
 
