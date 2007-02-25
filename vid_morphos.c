@@ -321,6 +321,12 @@ void D_EndDirectRect(int x, int y, int width, int height)
 {
 }
 
-void VID_SetCaption(char *text)
+void Sys_Video_SetWindowTitle(void *display, const char *text)
 {
+	struct display *d;
+
+	d = display;
+
+	SetWindowTitles(d->window, text, (void *)-1);
 }
+
