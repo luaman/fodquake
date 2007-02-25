@@ -121,10 +121,6 @@ void Sys_Video_GrabMouse(void *display, int dograb)
 
 cvar_t	vid_hwgammacontrol = {"vid_hwgammacontrol", "1"};
 
-void D_BeginDirectRect (int x, int y, byte *pbitmap, int width, int height) {}
-
-void D_EndDirectRect (int x, int y, int width, int height) {}
-
 /************************************* COMPATABILITY *************************************/
 
 void VID_SetCaption (char *text) {}

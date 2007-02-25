@@ -289,19 +289,6 @@ void Sys_Video_GetMouseMovement(void *display, int *mousex, int *mousey)
 	Sys_Input_GetMouseMovement(d->inputdata, mousex, mousey);
 }
 
-qboolean VID_IsLocked()
-{
-	return 0;
-}
-
-void D_BeginDirectRect(int x, int y, byte *pbitmap, int width, int height)
-{
-}
-
-void D_EndDirectRect(int x, int y, int width, int height)
-{
-}
-
 void VID_SetCaption(char *text)
 {
 }

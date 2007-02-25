@@ -313,11 +313,6 @@ void VID_UnlockBuffer()
 {
 }
 
-qboolean VID_IsLocked()
-{
-	return false;
-}
-
 void D_BeginDirectRect(int x, int y, byte *pbitmap, int width, int height)
 {
 }
