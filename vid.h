@@ -45,8 +45,10 @@ typedef struct
 	int				recalc_refdef;	// if true, recalc vid-based stuff
 	unsigned		conwidth;
 	unsigned		conheight;
+#ifndef GLQUAKE
 	int				maxwarpwidth;
 	int				maxwarpheight;
+#endif
 	pixel_t			*direct;		// direct drawing to framebuffer, if not
 									//  NULL
 } viddef_t;
