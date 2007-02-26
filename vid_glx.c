@@ -71,9 +71,6 @@ struct display
 };
 
 
-#define WARP_WIDTH		320
-#define WARP_HEIGHT		200
-
 #define KEY_MASK (KeyPressMask | KeyReleaseMask)
 #define MOUSE_MASK (ButtonPressMask | ButtonReleaseMask | PointerMotionMask)
 
@@ -287,8 +284,6 @@ void *Sys_Video_Open(int width, int height, int depth, int fullscreen, unsigned 
 	Window root;
 	XVisualInfo *visinfo;
 
-	vid.maxwarpwidth = WARP_WIDTH;
-	vid.maxwarpheight = WARP_HEIGHT;
 	vid.colormap = host_colormap;
 	vid.fullbright = 256 - LittleLong (*((int *)vid.colormap + 2048));
 
