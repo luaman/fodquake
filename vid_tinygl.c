@@ -154,81 +154,84 @@ void *Sys_Video_Open(int width, int height, int depth, int fullscreen, unsigned 
 					TAG_DONE);
 			}
 
-			d->window = OpenWindowTags(0,
-				WA_InnerWidth, vid.width,
-				WA_InnerHeight, vid.height,
-				WA_Title, "FodQuake",
-				WA_DragBar, d->screen?FALSE:TRUE,
-				WA_DepthGadget, d->screen?FALSE:TRUE,
-				WA_Borderless, d->screen?TRUE:FALSE,
-				WA_RMBTrap, TRUE,
-				d->screen?WA_PubScreen:TAG_IGNORE, (ULONG)d->screen,
-				WA_Activate, TRUE,
-				TAG_DONE);
-
-			if (d->window)
+			if (d->screen || !fullscreen)
 			{
-				if (d->screen == 0)
-					vid_hwgamma_enabled = 0;
+				d->window = OpenWindowTags(0,
+					WA_InnerWidth, vid.width,
+					WA_InnerHeight, vid.height,
+					WA_Title, "FodQuake",
+					WA_DragBar, d->screen?FALSE:TRUE,
+					WA_DepthGadget, d->screen?FALSE:TRUE,
+					WA_Borderless, d->screen?TRUE:FALSE,
+					WA_RMBTrap, TRUE,
+					d->screen?WA_PubScreen:TAG_IGNORE, (ULONG)d->screen,
+					WA_Activate, TRUE,
+					TAG_DONE);
 
-				__tglContext = GLInit();
-				if (__tglContext)
+				if (d->window)
 				{
-					if (d->screen && !(TinyGLBase->lib_Version == 0 && TinyGLBase->lib_Revision < 4))
-					{
-						r = glAInitializeContextScreen(d->screen);
-					}
-					else
-					{
-						r = glAInitializeContextWindowed(d->window);
-					}
+					if (d->screen == 0)
+						vid_hwgamma_enabled = 0;
 
-					if (r)
+					__tglContext = GLInit();
+					if (__tglContext)
 					{
-						d->pointermem = AllocVec(256, MEMF_ANY|MEMF_CLEAR);
-						if (d->pointermem)
+						if (d->screen && !(TinyGLBase->lib_Version == 0 && TinyGLBase->lib_Revision < 4))
 						{
-							SetPointer(d->window, d->pointermem, 16, 16, 0, 0);
-
-							d->width = vid.width;
-							d->height = vid.height;
-
-							if (vid.conheight > vid.height)
-								vid.conheight = vid.height;
-							if (vid.conwidth > vid.width)
-								vid.conwidth = vid.width;
-
-							vid.width = vid.conwidth;
-							vid.height = vid.conheight;
-
-							GL_Init();
-
-							VID_SetPalette(palette);
-
-							vid.recalc_refdef = 1;
-
-							d->inputdata = Sys_Input_Init(d->screen, d->window);
-							if (d->inputdata)
-							{
-								return d;
-							}
-
-							FreeVec(d->pointermem);
+							r = glAInitializeContextScreen(d->screen);
+						}
+						else
+						{
+							r = glAInitializeContextWindowed(d->window);
 						}
 
-						if (d->screen && !(TinyGLBase->lib_Version == 0 && TinyGLBase->lib_Revision < 4))
-							glADestroyContextScreen();
-						else
-							glADestroyContextWindowed();
+						if (r)
+						{
+							d->pointermem = AllocVec(256, MEMF_ANY|MEMF_CLEAR);
+							if (d->pointermem)
+							{
+								SetPointer(d->window, d->pointermem, 16, 16, 0, 0);
+
+								d->width = vid.width;
+								d->height = vid.height;
+
+								if (vid.conheight > vid.height)
+									vid.conheight = vid.height;
+								if (vid.conwidth > vid.width)
+									vid.conwidth = vid.width;
+
+								vid.width = vid.conwidth;
+								vid.height = vid.conheight;
+
+								GL_Init();
+
+								VID_SetPalette(palette);
+
+								vid.recalc_refdef = 1;
+
+								d->inputdata = Sys_Input_Init(d->screen, d->window);
+								if (d->inputdata)
+								{
+									return d;
+								}
+
+								FreeVec(d->pointermem);
+							}
+
+							if (d->screen && !(TinyGLBase->lib_Version == 0 && TinyGLBase->lib_Revision < 4))
+								glADestroyContextScreen();
+							else
+								glADestroyContextWindowed();
+						}
+
+						GLClose(__tglContext);
 					}
 
-					GLClose(__tglContext);
+					CloseWindow(d->window);
 				}
 
 				if (d->screen)
 					CloseScreen(d->screen);
-
-				CloseWindow(d->window);
 			}
 
 			CloseLibrary(TinyGLBase);
