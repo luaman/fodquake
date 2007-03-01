@@ -103,7 +103,6 @@ void *Sys_Video_Open(int width, int height, int depth, int fullscreen, unsigned 
 
 		vid.rowbytes = vid.width;
 		vid.buffer = d->buffer;
-		vid.direct = 0;	/* Isn't used anywhere, but whatever. */
 		vid.conwidth = vid.width;
 		vid.conheight = vid.height;
 		vid.aspect = ((float)vid.height / (float)vid.width) * (320.0 / 240.0);
