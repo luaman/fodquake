@@ -285,7 +285,6 @@ void *Sys_Video_Open(int width, int height, int depth, int fullscreen, unsigned 
 	XVisualInfo *visinfo;
 
 	vid.colormap = host_colormap;
-	vid.fullbright = 256 - LittleLong (*((int *)vid.colormap + 2048));
 
 	d = malloc(sizeof(*d));
 	if (d)

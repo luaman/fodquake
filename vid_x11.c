@@ -432,7 +432,6 @@ void *Sys_Video_Open(int width, int height, int depth, int fullscreen, unsigned 
 		vid.colormap = host_colormap;
 		//      vid.cbits = VID_CBITS;
 		//      vid.grades = VID_GRADES;
-		vid.fullbright = 256 - LittleLong(*((int *) vid.colormap + 2048));
 
 		srandom(getpid());
 

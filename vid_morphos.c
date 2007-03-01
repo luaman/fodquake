@@ -77,7 +77,6 @@ void *Sys_Video_Open(int width, int height, int depth, int fullscreen, unsigned 
 		vid.maxwarpwidth = WARP_WIDTH;
 		vid.maxwarpheight = WARP_HEIGHT;
 		vid.colormap = host_colormap;
-		vid.fullbright = 256 - LittleLong(*((int *)vid.colormap + 2048));
 
 		d->buffer = AllocVec(vid.width * vid.height, MEMF_ANY);
 		if (d->buffer == 0)

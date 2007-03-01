@@ -102,7 +102,6 @@ void *Sys_Video_Open(int width, int height, int depth, int fullscreen, unsigned 
 		vid.height = height;
 		vid.numpages = 1;
 		vid.colormap = host_colormap;
-		vid.fullbright = 256 - LittleLong (*((int *)vid.colormap + 2048));
 
 		if (vid.width <= 640)
 		{
