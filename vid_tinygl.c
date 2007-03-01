@@ -137,8 +137,6 @@ void *Sys_Video_Open(int width, int height, int depth, int fullscreen, unsigned 
 		TinyGLBase = OpenLibrary("tinygl.library", 0);
 		if (TinyGLBase)
 		{
-
-			vid.rowbytes = vid.width;
 			vid.aspect = ((float)vid.height / (float)vid.width) * (320.0 / 240.0);
 
 			if (fullscreen)
