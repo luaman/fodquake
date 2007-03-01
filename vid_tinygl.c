@@ -52,9 +52,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define SA_GammaGreen (SA_Dummy + 126)
 #endif
 
-#define WARP_WIDTH		320
-#define WARP_HEIGHT		200
-
 struct Library *TinyGLBase = 0;
 GLContext *__tglContext;
 
@@ -62,13 +59,11 @@ qboolean vid_hwgamma_enabled = false;
 
 extern viddef_t vid;
 
-cvar_t _windowed_mouse = {"_windowed_mouse", "1", CVAR_ARCHIVE};
-
-int real_width, real_height;
-
 struct display
 {
 	void *inputdata;
+
+	unsigned int width, height;
 
 	struct Screen *screen;
 	struct Window *window;
@@ -94,8 +89,6 @@ void *Sys_Video_Open(int width, int height, int depth, int fullscreen, unsigned 
 
 	int i;
 
-	Cvar_Register(&_windowed_mouse);
-
 	d = AllocVec(sizeof(*d), MEMF_CLEAR);
 	{
 		if (IntuitionBase->LibNode.lib_Version > 50 || (IntuitionBase->LibNode.lib_Version == 50 && IntuitionBase->LibNode.lib_Revision >= 74))
@@ -107,8 +100,6 @@ void *Sys_Video_Open(int width, int height, int depth, int fullscreen, unsigned 
 
 		vid.width = width;
 		vid.height = height;
-		vid.maxwarpwidth = WARP_WIDTH;
-		vid.maxwarpheight = WARP_HEIGHT;
 		vid.numpages = 1;
 		vid.colormap = host_colormap;
 		vid.fullbright = 256 - LittleLong (*((int *)vid.colormap + 2048));
@@ -199,8 +190,8 @@ void *Sys_Video_Open(int width, int height, int depth, int fullscreen, unsigned 
 						{
 							SetPointer(d->window, d->pointermem, 16, 16, 0, 0);
 
-							real_width = vid.width;
-							real_height = vid.height;
+							d->width = vid.width;
+							d->height = vid.height;
 
 							if (vid.conheight > vid.height)
 								vid.conheight = vid.height;
@@ -289,15 +280,25 @@ void Sys_Video_GetMouseMovement(void *display, int *mousex, int *mousey)
 	Sys_Input_GetMouseMovement(d->inputdata, mousex, mousey);
 }
 
-void VID_SetCaption(char *text)
+void Sys_Video_SetWindowTitle(void *display, const char *text)
 {
+	struct display *d;
+
+	d = display;
+
+	SetWindowTitles(d->window, text, (void *)-1);
 }
 
-void GL_BeginRendering (int *x, int *y, int *width, int *height)
+void Sys_Video_BeginFrame(void *display, int *x, int *y, int *width, int *height)
 {
-	*x = *y = 0;
-	*width = real_width;
-	*height = real_height;
+	struct display *d;
+
+	d = display;
+
+	*x = 0;
+	*y = 0;
+	*width = d->width;
+	*height = d->height;
 }
 
 void Sys_Video_Update(void *display, vrect_t *rects)
