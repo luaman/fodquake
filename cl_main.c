@@ -1109,28 +1109,51 @@ static double CL_MinFrameTime (void) {
 	return 1 / fps;
 }
 
-void CL_Frame (double time) {
-
+void CL_Frame (double time)
+{
 	static double extratime = 0.001;
 	double minframetime;
 
 	extratime += time;
 	minframetime = CL_MinFrameTime();
 
-	if (extratime < minframetime) {
+	if (extratime < minframetime)
+	{
 #ifdef _WIN32
 		extern cvar_t sys_yieldcpu;
 		if (sys_yieldcpu.value)
 			Sys_MSleep(0);
 #else
+#if 1
 		usleep((unsigned int)((minframetime-extratime)*1000000));
+#else
+		/* Simulate a broken Linux system. */
+		{
+			unsigned int foo = (unsigned int)((minframetime-extratime)*1000000);
+
+			foo+= 1999;
+			foo-= foo%2000;
+			usleep(foo);
+		}
+#endif
 #endif
 		return;
 	}
 
+#if 0
 	cls.trueframetime = extratime - 0.001;
 	cls.trueframetime = max(cls.trueframetime, minframetime);
 	extratime -= cls.trueframetime;
+#else
+	cls.trueframetime = minframetime;
+	extratime -= minframetime;
+
+	if (extratime > minframetime)
+	{
+		cls.trueframetime+= extratime-minframetime;
+		extratime = minframetime;
+	}
+#endif
 
 	if (Movie_IsCapturing())
 		cls.frametime = Movie_StartFrame();
