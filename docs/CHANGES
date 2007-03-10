@@ -7,7 +7,7 @@ version 0.1 (since Fuhquake 0.31)
 - Support for FreeBSD.
 - Support for NetBSD.
 - Big fixes to X11 support, including fullscreen support.
-- GLX and X11 now share the same mouse code.
+- GLX and X11 now share the same mouse code, which has had many improvements.
 - Support for building Win32 target with MinGW.
 - Non-platform specific code (lots of software rendering logic, mouse
   acceleration handling, etc...) has been moved out from the platform
@@ -19,8 +19,8 @@ version 0.1 (since Fuhquake 0.31)
 - Sound system parametres can be changed while Quake is running and sound can
   be completely turned on/off as well without a restart.
 - Fixed several security issues.
-- General code clean up. Use fewer globals, especially don't use globals for
-  argument passing.
+- General code clean up. Now uses fewer globals, especially doesnn't use
+  globals for argument passing.
 - Console ctrl+pageup/pagedown scrolling fixed to scroll the correct amount of
   lines in all cases. That means always having one line from the previous page
   visible.
