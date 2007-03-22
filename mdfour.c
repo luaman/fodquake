@@ -24,7 +24,7 @@
 		59 Temple Place - Suite 330
 		Boston, MA  02111-1307, USA
 
-	$Id: mdfour.c,v 1.2 2007-03-22 01:24:21 bigfoot Exp $
+	$Id: mdfour.c,v 1.3 2007-03-22 01:31:07 bigfoot Exp $
 */
 
 #include <string.h>		/* XoXus: needed for memset call */
@@ -163,8 +163,6 @@ void mdfour_update(struct mdfour *md, unsigned char *in, int n)
 	uint32 M[16];
 
 	m = md;
-
-	if (n == 0) mdfour_tail(in, n);
 
 	while (n >= 64) {
 		copy64(M, in);
