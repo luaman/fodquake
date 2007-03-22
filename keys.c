@@ -645,19 +645,24 @@ no_lf:
 				key_linepos = strlen(key_lines[edit_line]);
 			return;
 	}
-	if ((key == 'V' || key == 'v') && keydown[K_CTRL]) {
+	if ((key == 'V' || key == 'v') && keydown[K_CTRL])
+	{
 		char *clipText;
 	
-		if ((clipText = Sys_GetClipboardData())) {
+		if ((clipText = VID_GetClipboardText()))
+		{
 			len = strlen(clipText);
 			if (len + strlen(key_lines[edit_line]) > MAXCMDLINE - 1)
 				len = MAXCMDLINE - 1 - strlen(key_lines[edit_line]);
-			if (len > 0) {	// insert the string
+			if (len > 0)
+			{	// insert the string
 				memmove (key_lines[edit_line] + key_linepos + len,
 					key_lines[edit_line] + key_linepos, strlen(key_lines[edit_line]) - key_linepos + 1);
 				memcpy (key_lines[edit_line] + key_linepos, clipText, len);
 				key_linepos += len;
 			}
+
+			VID_FreeClipboardText(clipText);
 		}
 		return;
 	}
@@ -768,19 +773,24 @@ void Key_Message (int key) {
 		return;
 	}
 
-	if ((key == 'V' || key == 'v') && keydown[K_CTRL]) {
+	if ((key == 'V' || key == 'v') && keydown[K_CTRL])
+	{
 		char *clipText;
 	
-		if ((clipText = Sys_GetClipboardData())) {
+		if ((clipText = VID_GetClipboardText()))
+		{
 			len = strlen(clipText);
 			if (len + strlen(key_lines[edit_line]) > MAXCMDLINE - 1)
 				len = MAXCMDLINE - 1 - strlen(key_lines[edit_line]);
-			if (len > 0) {	// insert the string
+			if (len > 0)
+			{	// insert the string
 				memmove (key_lines[edit_line] + key_linepos + len,
 					key_lines[edit_line] + key_linepos, strlen(key_lines[edit_line]) - key_linepos + 1);
 				memcpy (key_lines[edit_line] + key_linepos, clipText, len);
 				key_linepos += len;
 			}
+
+			VID_FreeClipboardText(clipText);
 		}
 		return;
 	}

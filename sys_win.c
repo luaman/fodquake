@@ -421,6 +421,8 @@ void Sys_Init_ (void) {
 
 /********************************* CLIPBOARD *********************************/
 
+#if 0
+/* Deprecated interface */
 #define SYS_CLIPBOARD_SIZE		256
 
 char *Sys_GetClipboardData(void) {
@@ -452,6 +454,7 @@ char *Sys_GetClipboardData(void) {
 
 	return clipboard;
 }
+#endif
 
 // copies given text to clipboard
 void Sys_CopyToClipboard(char *text) {

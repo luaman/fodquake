@@ -468,3 +468,5 @@ qboolean Sys_Video_HWGammaSupported(void *display)
 	return d->vid_gammaworks;
 }
 
+#include "clipboard_x11.c"
+

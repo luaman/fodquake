@@ -233,17 +233,3 @@ void Sys_MakeCodeWriteable(unsigned long startaddr, unsigned long length)
 		Sys_Error("Protection change failed");
 }
 
-/********************************* CLIPBOARD *********************************/
-
-#define SYS_CLIPBOARD_SIZE		256
-static char clipboard_buffer[SYS_CLIPBOARD_SIZE] = { 0 };
-
-char *Sys_GetClipboardData(void)
-{
-	return clipboard_buffer;
-}
-
-void Sys_CopyToClipboard(char *text)
-{
-	Q_strncpyz(clipboard_buffer, text, SYS_CLIPBOARD_SIZE);
-}

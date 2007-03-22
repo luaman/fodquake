@@ -56,9 +56,6 @@ void Sys_SetFPCW (void);
 void Sys_CvarInit(void);
 void Sys_Init (void);
 
-char *Sys_GetClipboardData(void);
-void Sys_CopyToClipboard(char *);
-
 void Sys_Video_CvarInit(void);
 void *Sys_Video_Open(int width, int height, int depth, int fullscreen, unsigned char *palette);
 void Sys_Video_Close(void *display);
@@ -73,4 +70,8 @@ void Sys_Video_SetGamma(void *display, unsigned short *ramps);
 qboolean Sys_Video_HWGammaSupported(void *display);
 #endif
 void Sys_Video_SetWindowTitle(void *display, const char *text);
+
+const char *Sys_Video_GetClipboardText(void *display);
+void Sys_Video_FreeClipboardText(void *display, const char *text);
+void Sys_Video_SetClipboardText(void *display, const char *text);
 

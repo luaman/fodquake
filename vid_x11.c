@@ -854,3 +854,5 @@ void Sys_Video_SetWindowTitle(void *display, const char *text)
 	XStoreName(d->x_disp, d->x_win, text);
 }
 
+#include "clipboard_x11.c"
+

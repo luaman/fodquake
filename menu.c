@@ -3167,7 +3167,7 @@ void M_ServerList_Key (key) {
 	case 'c': case 'C':
 	case 'x': case 'X':
 		if (keydown[K_CTRL])
-			Sys_CopyToClipboard(slist[m_multip_cursor].server);
+			VID_SetClipboardText(slist[m_multip_cursor].server);
 		break;
 
 	case K_INS:
@@ -3292,23 +3292,32 @@ void M_SEdit_Key (int key) {
 			}
 			break;
 		case 'v': case 'V':
-			if (keydown[K_CTRL]) {
-				if ((cliptext = Sys_GetClipboardData())) {
-					if (sedit_state == 0) {
+			if (keydown[K_CTRL])
+			{
+				if ((cliptext = VID_GetClipboardText()))
+				{
+					if (sedit_state == 0)
+					{
 						strncat(slist_serv, cliptext, sizeof(slist_serv) - strlen(slist_serv) - 1);
 						l = strlen(slist_serv);
-						if (l > slist_serv_max) {
+						if (l > slist_serv_max)
+						{
 							slist_serv_min += (l - slist_serv_max);
 							slist_serv_max += (l - slist_serv_max);
 						}
-					} else {
+					}
+					else
+					{
 						strncat(slist_desc, cliptext, sizeof(slist_desc) - strlen(slist_desc) - 1);
 						l = strlen(slist_desc);
-						if (l > slist_desc_max) {
+						if (l > slist_desc_max)
+						{
 							slist_desc_min += (l - slist_desc_max);
 							slist_desc_max += (l - slist_desc_max);
 						}
 					}
+
+					VID_FreeClipboardText(cliptext);
 				}
 				return;
 			}

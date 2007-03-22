@@ -265,3 +265,18 @@ qboolean VID_IsFullscreen()
 	return false;
 }
 
+const char *VID_GetClipboardText()
+{
+	return Sys_Video_GetClipboardText(display);
+}
+
+void VID_FreeClipboardText(const char *text)
+{
+	Sys_Video_FreeClipboardText(display, text);
+}
+
+void VID_SetClipboardText(const char *text)
+{
+	Sys_Video_SetClipboardText(display, text);
+}
+

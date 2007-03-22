@@ -18,7 +18,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 
 #include <dos/dos.h>
-#include <devices/clipboard.h>
 
 #include <proto/exec.h>
 #include <proto/dos.h>
@@ -134,6 +133,10 @@ double Sys_DoubleTime()
 	return (tp.tv_sec - secbase) + tp.tv_usec / 1000000.0;
 }
 
+#if 0
+/* Deprecated interface */
+
+#include <devices/clipboard.h>
 char *Sys_GetClipboardData()
 {
 	struct IOClipReq *clipreq;
@@ -201,6 +204,8 @@ char *Sys_GetClipboardData()
 void Sys_CopyToClipboard(char *text)
 {
 }
+
+#endif
 
 void Sys_SleepTime(unsigned int usec)
 {

@@ -6,8 +6,9 @@ version 0.1 (since Fuhquake 0.31)
 - Support for MorphOS.
 - Support for FreeBSD.
 - Support for NetBSD.
-- Big fixes to X11 support, including fullscreen support.
+- Many fixes to the X11 support, including fullscreen support.
 - GLX and X11 now share the same mouse code, which has had many improvements.
+- Clipboard support for X11.
 - Support for building Win32 target with MinGW.
 - Non-platform specific code (lots of software rendering logic, mouse
   acceleration handling, etc...) has been moved out from the platform
