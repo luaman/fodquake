@@ -208,6 +208,7 @@ typedef struct {
 	double		demotime;		// scaled by cl_demospeed, reset when starting a demo
 	double		trueframetime;	// time since last frame
 	double		frametime;		// time since last frame, scaled by cl_demospeed
+	double          framedev;
 
 	// network stuff
 	netchan_t	netchan;

@@ -145,6 +145,7 @@ OBJS= \
 	r_part.o \
 	rulesets.o \
 	skin.o \
+	sleep.o \
 	snd_main.o \
 	snd_mem.o \
 	snd_mix.o \

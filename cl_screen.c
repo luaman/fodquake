@@ -94,6 +94,10 @@ cvar_t			show_fps = {"show_fps", "0"};
 cvar_t			show_fps_x = {"show_fps_x", "-5"};
 cvar_t			show_fps_y = {"show_fps_y", "-1"};
 
+cvar_t			show_framestddev = {"show_framestddev", "0"};
+cvar_t			show_framestddev_x = {"show_framestddev_x", "-5"};
+cvar_t			show_framestddev_y = {"show_framestddev_y", "-2"};
+
 cvar_t			scr_sshot_format		= {"sshot_format", DEFAULT_SSHOT_FORMAT};
 cvar_t			scr_sshot_dir			= {"sshot_dir", ""};
 
@@ -403,6 +407,7 @@ void SCR_DrawFPS (void) {
 	char str[80];
 	static float lastfps;
 	static double lastframetime;
+	static int last_fps_count;
 	extern int fps_count;
 
 	if (!show_fps.value)
@@ -410,14 +415,45 @@ void SCR_DrawFPS (void) {
 
 	t = Sys_DoubleTime();
 	if ((t - lastframetime) >= 1.0) {
-		lastfps = fps_count / (t - lastframetime);
-		fps_count = 0;
+		lastfps = (fps_count - last_fps_count) / (t - lastframetime);
+		last_fps_count = fps_count;
 		lastframetime = t;
 	}
 
 	Q_snprintfz(str, sizeof(str), "%3.1f%s", lastfps + 0.05, show_fps.value == 2 ? " FPS" : "");
 	x = ELEMENT_X_COORD(show_fps);
 	y = ELEMENT_Y_COORD(show_fps);
+	Draw_String (x, y, str);
+}
+
+void SCR_DrawFrameStdDev (void)
+{
+	double t;
+	int x, y;
+	char str[80];
+	static double lastframestddev;
+	static double framedevcum;
+	static double lastframetime;
+	static int last_fps_count;
+	extern int fps_count;
+
+	if (!show_framestddev.value)
+		return;
+
+	framedevcum+= (cls.framedev*1000)*(cls.framedev*1000);
+
+	t = Sys_DoubleTime();
+	if ((t - lastframetime) >= 1.0)
+	{
+		lastframestddev = sqrt(framedevcum/(fps_count-last_fps_count));
+		last_fps_count = fps_count;
+		framedevcum = 0;
+		lastframetime = t;
+	}
+
+	Q_snprintfz(str, sizeof(str), "%3.1f%s", lastframestddev, show_framestddev.value == 2 ? " frame stddev" : "");
+	x = ELEMENT_X_COORD(show_framestddev);
+	y = ELEMENT_Y_COORD(show_framestddev);
 	Draw_String (x, y, str);
 }
 
@@ -827,6 +863,8 @@ void SCR_TileClear (void) {
 				Draw_TileClear(ELEMENT_X_COORD(show_speed), ELEMENT_Y_COORD(show_speed), 10 * 8, 8);
 			if (show_fps.value)
 				Draw_TileClear(ELEMENT_X_COORD(show_fps), ELEMENT_Y_COORD(show_fps), 10 * 8, 8);
+			if (show_framestddev.value)
+				Draw_TileClear(ELEMENT_X_COORD(show_framestddev), ELEMENT_Y_COORD(show_framestddev), 19 * 8, 8);
 			if (scr_clock.value)
 				Draw_TileClear(ELEMENT_X_COORD(scr_clock), ELEMENT_Y_COORD(scr_clock), 10 * 8, 8);
 			if (scr_gameclock.value)
@@ -870,6 +908,7 @@ void SCR_DrawElements(void) {
 				SCR_DrawGameClock ();
 				SCR_DrawDemoClock ();
 				SCR_DrawFPS ();
+				SCR_DrawFrameStdDev ();
 				Sbar_Draw ();
 			}
 		}
@@ -1472,6 +1511,10 @@ void SCR_CvarInit (void)
 	Cvar_Register (&show_fps);
 	Cvar_Register (&show_fps_x);
 	Cvar_Register (&show_fps_y);
+
+	Cvar_Register (&show_framestddev);
+	Cvar_Register (&show_framestddev_x);
+	Cvar_Register (&show_framestddev_y);
 
 	Cvar_Register (&scr_autoid);
 	Cvar_Register (&scr_coloredText);

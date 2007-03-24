@@ -44,6 +44,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "mp3_player.h"
 #include "huffman.h"
 #include "config.h"
+#include "sleep.h"
 
 #ifndef _WIN32
 #include <unistd.h>
@@ -1072,6 +1073,8 @@ void CL_Init (void)
 	Ignore_Init();
 	Stats_Init();
 	MP3_Init();
+
+	Sleep_Init();
 }
 
 //============================================================================
@@ -1124,18 +1127,7 @@ void CL_Frame (double time)
 		if (sys_yieldcpu.value)
 			Sys_MSleep(0);
 #else
-#if 1
-		usleep((unsigned int)((minframetime-extratime)*1000000));
-#else
-		/* Simulate a broken Linux system. */
-		{
-			unsigned int foo = (unsigned int)((minframetime-extratime)*1000000);
-
-			foo+= 1999;
-			foo-= foo%2000;
-			usleep(foo);
-		}
-#endif
+		Sleep_Sleep((unsigned int)((minframetime-extratime)*1000000));
 #endif
 		return;
 	}
@@ -1150,10 +1142,13 @@ void CL_Frame (double time)
 
 	if (extratime > minframetime)
 	{
+/*		Com_Printf("Dropping frame: %.4f\n", extratime);*/
 		cls.trueframetime+= extratime-minframetime;
 		extratime = minframetime;
 	}
 #endif
+
+	cls.framedev = extratime;
 
 	if (Movie_IsCapturing())
 		cls.frametime = Movie_StartFrame();
