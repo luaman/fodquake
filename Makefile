@@ -70,6 +70,22 @@ ifeq ($(OS), netbsd)
 	OSGLLDFLAGS=-L/usr/X11R6/lib -lX11 -lXext -lXxf86vm -lXxf86dga -lGL
 endif
 
+ifeq ($(OS), openbsd)
+	OSOBJS= \
+		sys_linux.o \
+		cd_null.o \
+#		snd_oss.o
+
+	OSCFLAGS=-I/usr/X11R6/include
+	OSLDFLAGS=-lossaudio
+
+	OSSWOBJS=vid_x11.o in_x11.o
+	OSSWLDFLAGS=-L/usr/X11R6/lib -lX11 -lXext -lXxf86vm -lXxf86dga
+
+	OSGLOBJS=vid_glx.o in_x11.o
+	OSGLLDFLAGS=-L/usr/X11R6/lib -lX11 -lXext -lXxf86vm -lXxf86dga -lGL
+endif
+
 ifeq ($(OS), cygwin)
 	OSOBJS= \
 		sys_linux.o \

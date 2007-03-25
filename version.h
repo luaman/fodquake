@@ -17,6 +17,8 @@
 #define QW_PLATFORM     "FreeBSD"
 #elif defined(__NetBSD__)
 #define QW_PLATFORM	"NetBSD"
+#elif defined(__OpenBSD__)
+#define QW_PLATFORM     "OpenBSD"
 #endif
 
 #ifdef GLQUAKE
