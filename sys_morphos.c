@@ -33,7 +33,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "quakedef.h"
 
-int __stack = 1024*1024*4;
+int __stack = 1024*1024*2;
 
 struct Library *SocketBase;
 
@@ -133,17 +133,15 @@ double Sys_DoubleTime()
 	return (tp.tv_sec - secbase) + tp.tv_usec / 1000000.0;
 }
 
-#if 0
-/* Deprecated interface */
-
 #include <devices/clipboard.h>
-char *Sys_GetClipboardData()
+const char *Sys_Video_GetClipboardText(void *display)
 {
 	struct IOClipReq *clipreq;
 	struct MsgPort *clipport;
 	unsigned int iffstuff[5];
-	static char clipdata[512];
-	char *ret = 0;
+	char *clipdata;
+
+	clipdata = 0;
 
 	clipport = CreateMsgPort();
 	if (clipport)
@@ -167,16 +165,24 @@ char *Sys_GetClipboardData()
 				 && iffstuff[2] == 0x46545854
 				 && iffstuff[3] == 0x43485253)
 				{
-					clipreq->io_Command = CMD_READ;
-					clipreq->io_Length = iffstuff[4]<sizeof(clipdata)?iffstuff[4]:sizeof(clipdata)-1;
-					clipreq->io_Data = clipdata;
-
-					DoIO((struct IORequest *)clipreq);
-
-					if (!(clipreq->io_Error != 0 || clipreq->io_Actual != iffstuff[4]))
+					clipdata = AllocVec(iffstuff[4]+1, MEMF_ANY);
+					if (clipdata)
 					{
-						clipdata[iffstuff[4]] = 0;
-						ret = clipdata;
+						clipreq->io_Command = CMD_READ;
+						clipreq->io_Length = iffstuff[4]<sizeof(clipdata)?iffstuff[4]:sizeof(clipdata)-1;
+						clipreq->io_Data = clipdata;
+
+						DoIO((struct IORequest *)clipreq);
+
+						if (!(clipreq->io_Error != 0 || clipreq->io_Actual != iffstuff[4]))
+						{
+							clipdata[iffstuff[4]] = 0;
+						}
+						else
+						{
+							FreeVec(clipdata);
+							clipdata = 0;
+						}
 					}
 				}
 
@@ -201,11 +207,14 @@ char *Sys_GetClipboardData()
 	return clipdata;
 }
 
-void Sys_CopyToClipboard(char *text)
+void Sys_Video_FreeClipboardText(void *display, const char *text)
 {
+	FreeVec((char *)text);
 }
 
-#endif
+void Sys_Video_SetClipboardText(void *display, const char *text)
+{
+}
 
 void Sys_SleepTime(unsigned int usec)
 {
