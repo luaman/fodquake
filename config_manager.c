@@ -583,7 +583,7 @@ void DumpConfig(char *name)	{
 	FILE	*f;
 	char	*outfile, *newlines = "\n\n\n\n";
 
-	outfile = va("%s/fuhquake/configs/%s", com_basedir, name);
+	outfile = va("%s/fodquake/configs/%s", com_basedir, name);
 	if (!(f	= fopen	(outfile, "w"))) {
 		COM_CreatePath(outfile);
 		if (!(f	= fopen	(outfile, "w"))) {
@@ -653,7 +653,7 @@ void SaveConfig_f(void)	{
 
 
 	if (cfg_backup.value) {
-		filename_ext = va("%s/fuhquake/configs/%s", com_basedir, filename);
+		filename_ext = va("%s/fodquake/configs/%s", com_basedir, filename);
 		if ((f = fopen(filename_ext, "r"))) {
 			fclose(f);
 			backupname_ext = Z_Malloc(strlen(filename_ext) + 4);
@@ -691,7 +691,7 @@ void LoadConfig_f(void)	{
 	}
 	filename = COM_SkipPath(Cmd_Argv(1));
 	COM_ForceExtension(filename, ".cfg");
-	if (!(f = fopen(va("%s/fuhquake/configs/%s", com_basedir, filename), "r"))) {
+	if (!(f = fopen(va("%s/fodquake/configs/%s", com_basedir, filename), "r"))) {
 		Com_Printf("Couldn't load config %s\n", filename);
 		return;
 	}
