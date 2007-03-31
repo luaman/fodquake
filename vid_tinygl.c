@@ -55,8 +55,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 struct Library *TinyGLBase = 0;
 GLContext *__tglContext;
 
-qboolean vid_hwgamma_enabled = false;
-
 extern viddef_t vid;
 
 struct display
@@ -72,6 +70,7 @@ struct display
 
 	char pal[256*4];
 
+	int gammaenabled;
 	unsigned char *gammatable;
 
 };
@@ -83,19 +82,17 @@ void Sys_Video_CvarInit(void)
 void *Sys_Video_Open(int width, int height, int depth, int fullscreen, unsigned char *palette)
 {
 	struct display *d;
-	int argnum;
 
 	int r;
 
 	int i;
 
 	d = AllocVec(sizeof(*d), MEMF_CLEAR);
+	if (d)
 	{
 		if (IntuitionBase->LibNode.lib_Version > 50 || (IntuitionBase->LibNode.lib_Version == 50 && IntuitionBase->LibNode.lib_Revision >= 74))
 		{
-			d->gammatable = AllocVec(256*3, MEMF_ANY);
-			if (d->gammatable)
-				vid_hwgamma_enabled = 1;
+			d->gammaenabled = 1;
 		}
 
 		vid.width = width;
@@ -148,6 +145,16 @@ void *Sys_Video_Open(int width, int height, int depth, int fullscreen, unsigned 
 					SA_GammaControl, TRUE,
 					SA_3DSupport, TRUE,
 					TAG_DONE);
+
+				if (d->gammaenabled)
+				{
+					d->gammatable = AllocVec(256*3, MEMF_ANY);
+					if (d->gammatable == 0)
+					{
+						CloseScreen(d->screen);
+						d->screen = 0;
+					}
+				}
 			}
 
 			if (d->screen || !fullscreen)
@@ -166,9 +173,6 @@ void *Sys_Video_Open(int width, int height, int depth, int fullscreen, unsigned 
 
 				if (d->window)
 				{
-					if (d->screen == 0)
-						vid_hwgamma_enabled = 0;
-
 					__tglContext = GLInit();
 					if (__tglContext)
 					{
@@ -311,8 +315,10 @@ void Sys_Video_GrabMouse(void *display, int dograb)
 {
 	struct display *d = display;
 
-	if (dograb && !d->screen)
+	if (!d->screen)
 	{
+		Sys_Input_GrabMouse(d->inputdata, dograb);
+
 		if (dograb)
 		{
 			/* Hide pointer */
@@ -333,7 +339,7 @@ void Sys_Video_SetGamma(void *display, unsigned short *ramps)
 	struct display *d = display;
 	int i;
 
-	if (d->screen && vid_hwgamma_enabled)
+	if (d->screen && d->gammaenabled)
 	{
 		for(i=0;i<768;i++)
 		{
@@ -346,6 +352,13 @@ void Sys_Video_SetGamma(void *display, unsigned short *ramps)
 			SA_GammaBlue, d->gammatable+512,
 			TAG_DONE);
 	}
+}
+
+qboolean Sys_Video_HWGammaSupported(void *display)
+{
+	struct display *d = display;
+
+	return d->gammaenabled;
 }
 
 /* gl extensions */

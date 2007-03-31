@@ -56,8 +56,6 @@ struct display
 	char pal[256 * 4];
 };
 
-cvar_t _windowed_mouse = { "_windowed_mouse", "1", CVAR_ARCHIVE };
-
 void Sys_Video_CvarInit(void)
 {
 }
@@ -66,8 +64,6 @@ void *Sys_Video_Open(int width, int height, int depth, int fullscreen, unsigned 
 {
 	struct display *d;
 	int i;
-
-	Cvar_Register(&_windowed_mouse);
 
 	d = AllocVec(sizeof(*d), MEMF_CLEAR);
 	if (d)
@@ -250,8 +246,10 @@ void Sys_Video_GrabMouse(void *display, int dograb)
 {
 	struct display *d = display;
 
-	if (dograb && !d->screen)
+	if (!d->screen)
 	{
+		Sys_Input_GrabMouse(d->inputdata, dograb);
+
 		if (dograb)
 		{
 			/* Hide pointer */

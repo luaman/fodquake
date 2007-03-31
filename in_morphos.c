@@ -48,6 +48,8 @@ struct inputdata
 
 	int mousebuf;
 	int mousex[3], mousey[3];
+
+	int grabmouse;
 };
 
 #ifndef SA_Displayed
@@ -55,8 +57,6 @@ struct inputdata
 #endif
 
 extern struct IntuitionBase *IntuitionBase;
-
-extern cvar_t _windowed_mouse;
 
 #define DEBUGRING(x)
 
@@ -90,6 +90,8 @@ void *Sys_Input_Init(struct Screen *screen, struct Window *window)
 	if (id)
 	{
 		id->imsglow = id->imsghigh = id->mousebuf = id->mousex[0] = id->mousex[1] = id->mousex[2] = id->mousey[0] = id->mousey[1] = id->mousey[2] = 0;
+
+		id->grabmouse = 1;
 
 		id->screen = screen;
 		id->window = window;
@@ -547,7 +549,7 @@ static struct InputEvent *myinputhandler_real()
 
 		if ((id->window->Flags & WFLG_WINDOWACTIVE) && coin->ie_Class == IECLASS_RAWMOUSE && screeninfront && id->window->MouseX > 0 && id->window->MouseY > 0)
 		{
-			if (_windowed_mouse.value)
+			if (id->grabmouse)
 			{
 				coin->ie_position.ie_xy.ie_x = 0;
 				coin->ie_position.ie_xy.ie_y = 0;
@@ -558,5 +560,12 @@ static struct InputEvent *myinputhandler_real()
 	} while (coin);
 
 	return moo;
+}
+
+void Sys_Input_GrabMouse(void *inputdata, int dograb)
+{
+	struct inputdata *id = inputdata;
+
+	id->grabmouse = dograb;	
 }
 
