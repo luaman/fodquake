@@ -570,7 +570,7 @@ void CL_FullServerinfo_f (void) {
 
 	p = Info_ValueForKey (cl.serverinfo, "*version");
 	if (strcasecmp(p, "mvdsv 0.26") == 0)
-		Com_Printf ("== BROKEN SERVER ==\nDownloads will not work! Please report download bugs to the MVDSV project.");
+		Com_Printf ("== BROKEN SERVER ==\nDownloads will not work! Please report download bugs to the MVDSV project.\n");
 
 	CL_ProcessServerInfo ();
 }
