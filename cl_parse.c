@@ -432,7 +432,7 @@ static void CL_ParseFTEChunkedDownload()
 						downloadchunkwindowoffset = 0;
 						downloadchunkcycle = 0;
 						downloadfirstchunk = 0;
-						downloadlastchunknumber = filesize/FTEFILECHUNKSIZE;
+						downloadlastchunknumber = (filesize>0?filesize-1:filesize)/FTEFILECHUNKSIZE;
 						return;
 					}
 					else
