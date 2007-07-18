@@ -478,7 +478,7 @@ static void CL_ParseFTEChunkedDownload()
 					downloadchunkrequestsequencenumber[((chunk-downloadfirstchunk)+downloadchunkwindowoffset)%FTEMAXCHUNKS] = -2;
 					MSG_ReadData(downloadchunkdata+((((chunk-downloadfirstchunk)+downloadchunkwindowoffset)%FTEMAXCHUNKS)*FTEFILECHUNKSIZE), FTEFILECHUNKSIZE);
 
-					cls.downloadpercent = (100*(downloadfirstchunk+downloadchunksinbuffer))/downloadlastchunknumber;
+					cls.downloadpercent = (100*(downloadfirstchunk+downloadchunksinbuffer))/(downloadlastchunknumber+1);
 
 					numreadychunks = 0;
 					while(numreadychunks < FTEMAXCHUNKS && downloadchunkrequestsequencenumber[(numreadychunks+downloadchunkwindowoffset)%FTEMAXCHUNKS] == -2)
