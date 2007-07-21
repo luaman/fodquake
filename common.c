@@ -748,7 +748,7 @@ int FS_FOpenFile (char *filename, FILE **file) {
 			pak = search->pack;
 
 			searchbegin = 0;
-			searchend = pak->numfiles;
+			searchend = pak->numfiles-1;
 			for (i = pak->numfiles/2; ;i=searchbegin+((searchend-searchbegin)/2))
 			{
 				ret = strcmp(filename, pak->files[i].name);
