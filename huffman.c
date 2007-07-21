@@ -80,7 +80,8 @@ static unsigned char huffdecbyte(struct huffdectable_s *huffdectable, unsigned c
 
 void *Huff_Init(unsigned int tablecrc)
 {
-	if (tablecrc == 0x5ed5c4e4)
+	/* The first value is from FTE with broken CRC generation */
+	if (tablecrc == 0x5ed5c4e4 || tablecrc == 0x286f2e8d)
 		return &hufftables_q3;
 	else
 		return 0;
