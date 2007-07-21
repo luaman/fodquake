@@ -521,7 +521,6 @@ void CL_ClearState (void) {
 	memset (&cl, 0, sizeof(cl));
 
 	SZ_Clear (&cls.netchan.message);
-	cls.ftexsupported = 0;
 
 	// clear other arrays
 	memset (cl_efrags, 0, sizeof(cl_efrags));
@@ -546,6 +545,7 @@ void CL_Disconnect (void) {
 
 	connect_time = 0;
 	cl.teamfortress = false;
+	cls.ftexsupported = 0;
 
 	VID_SetCaption("FodQuake");
 
@@ -632,7 +632,6 @@ void CL_ConnectionlessPacket (void)
 			return;
 		Com_Printf("%s: challenge\n", NET_AdrToString(net_from));
 		cls.challenge = atoi(MSG_ReadString());
-		cls.netchan.huffcontext = 0;
 		while(1)
 		{
 			unsigned int extension;
