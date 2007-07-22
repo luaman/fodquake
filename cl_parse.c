@@ -1444,7 +1444,7 @@ void CL_ParseQizmoVoice (void) {
 		MSG_ReadByte ();
 }
 
-#define SHOWNET(x) {if (cl_shownet.value == 2) Com_Printf ("%3i:%s\n", msg_readcount - 1, x);}
+#define SHOWNET(x) do {if (cl_shownet.value == 2) Com_Printf ("%3i:%s\n", msg_readcount - 1, x);} while(0)
 
 void CL_ParseServerMessage (void) {
 	int cmd, i, j;
@@ -1478,7 +1478,7 @@ void CL_ParseServerMessage (void) {
 		}
 
 		if (cmd == svc_qizmovoice)
-			SHOWNET("svc_qizmovoice")
+			SHOWNET("svc_qizmovoice");
 		else if (cmd < sizeof(svc_strings) / sizeof(svc_strings[0]))
 			SHOWNET(svc_strings[cmd]);
 
