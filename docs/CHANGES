@@ -17,7 +17,7 @@ version 0.1 (since Fuhquake 0.31)
 - Command line arguments are no longer needed. Every option can be set by
   regular Quake cvars. Command line options are converted into their
   respective cvars for legacy reasons.
-- Sound system parametres can be changed while Quake is running and sound can
+- Sound system parameters can be changed while Quake is running and sound can
   be completely turned on/off as well without a restart.
 - Fixed several security issues.
 - General code clean up. Now uses fewer globals, especially doesnn't use
