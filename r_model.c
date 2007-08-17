@@ -595,6 +595,9 @@ void CalcSurfaceExtents (msurface_t *s) {
 
 	for (i = 0;  i< s->numedges; i++) {
 		e = loadmodel->surfedges[s->firstedge+i];
+		if (abs(e) >= loadmodel->numedges)
+			Host_Error("CalcSurfaceExtents: Bad surface edge");
+			
 		if (e >= 0)
 			v = &loadmodel->vertexes[loadmodel->edges[e].v[0]];
 		else
