@@ -281,6 +281,7 @@ static Cursor CreateNullCursor(Display *display, Window root)
 	cursor = XCreatePixmapCursor(display, cursormask, cursormask, &dummycolour, &dummycolour, 0, 0);
 	XFreePixmap(display, cursormask);
 	XFreeGC(display, gc);
+
 	return cursor;
 }
 
@@ -745,6 +746,8 @@ void Sys_Video_Close(void *display)
 #if USE_VMODE
 	if (d->vidmode_active)
 		XF86VidModeSwitchToMode(d->x_disp, d->scrnum, d->vidmodes[0]);
+
+	XFree(d->vidmodes);
 #endif
 
 	XFree(d->x_visinfo);
