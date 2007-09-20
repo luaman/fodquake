@@ -601,7 +601,6 @@ void InterceptServerRateSet()
 {
 	if (Cmd_Argc() == 2)
 	{
-		Com_Printf("The server tried to change our rate. Stupid server.\n");
 		CL_UserinfoChanged("rate", Cmd_Argv(1));
 	}
 }
