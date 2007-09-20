@@ -581,6 +581,12 @@ void CL_Disconnect (void) {
 
 	CL_StopUpload();
 	DeleteServerAliases();	
+
+	/* Restore the rate if it has been overridden by the server */
+	if (strcmp(Info_ValueForKey(cls.userinfo, "rate"), rate.string) != 0)
+	{
+		CL_UserinfoChanged("rate", rate.string);
+	}
 }
 
 void CL_Disconnect_f (void) {

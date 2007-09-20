@@ -35,3 +35,7 @@ version 0.1 (since Fuhquake 0.31)
   Z_EXT_PM_TYPE/Z_EXT_PM_TYPE_NEW.
 - Added scr_scoreboard_titleseperator, set to 1 draws the original QW
   scoreboard title seperator.
+- No longer lets broken mods (hint, they start with the letters 'kt') change
+  the rate cvar. If the server asks for the cvar to be changed, only the
+  userinfo will be changed, and the value will be restored when disconneting
+  from the server.

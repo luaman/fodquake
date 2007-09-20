@@ -597,6 +597,15 @@ void CL_R_DrawViewModel_f (void) {
 	Cvar_Command ();
 }
 
+void InterceptServerRateSet()
+{
+	if (Cmd_Argc() == 2)
+	{
+		Com_Printf("The server tried to change our rate. Stupid server.\n");
+		CL_UserinfoChanged("rate", Cmd_Argv(1));
+	}
+}
+
 typedef struct {
 	char	*name;
 	void	(*func) (void);
@@ -609,21 +618,29 @@ svcmd_t svcmds[] = {
 	{"stopul", CL_StopUpload},
 	{"fov", CL_Fov_f},
 	{"r_drawviewmodel", CL_R_DrawViewModel_f},
+	{"rate", InterceptServerRateSet},
 	{NULL, NULL}
 };
 
 //Called by Cmd_ExecuteString if cbuf_current == &cbuf_svc
-qboolean CL_CheckServerCommand () {
+qboolean CL_CheckServerCommand ()
+{
 	svcmd_t	*cmd;
 	char *s;
 
 	s = Cmd_Argv (0);
-	for (cmd = svcmds; cmd->name; cmd++) {
-		if (!strcmp (s, cmd->name) ) {
-			cmd->func();
+
+	for (cmd = svcmds; cmd->name; cmd++)
+	{
+		if (!strcmp (s, cmd->name) )
+		{
+			if (cmd->func)
+				cmd->func();
+
 			return true;
 		}
 	}
 
 	return false;
 }
+
