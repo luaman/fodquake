@@ -203,12 +203,6 @@ void *Sys_Video_Open(int width, int height, int depth, int fullscreen, unsigned 
 								vid.width = vid.conwidth;
 								vid.height = vid.conheight;
 
-								GL_Init();
-
-								VID_SetPalette(palette);
-
-								vid.recalc_refdef = 1;
-
 								d->inputdata = Sys_Input_Init(d->screen, d->window);
 								if (d->inputdata)
 								{

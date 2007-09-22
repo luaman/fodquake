@@ -431,20 +431,12 @@ void *Sys_Video_Open(int width, int height, int depth, int fullscreen, unsigned 
 
 			InitSig(); // trap evil signals
 
-			GL_Init();
-
-			Check_Gamma(palette);
-
-			VID_SetPalette(palette);
-
 			InitHWGamma(d);
 
 			Com_Printf ("Video mode %dx%d initialized.\n", width, height);
 
 			if (fullscreen)
 				vid_windowedmouse = false;
-
-			vid.recalc_refdef = 1;				// force a surface cache flush
 
 			d->inputdata = X11_Input_Init(d->x_disp, d->x_win, 0, eventcallback, d);
 			if (d->inputdata)

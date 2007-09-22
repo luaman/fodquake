@@ -173,6 +173,13 @@ void VID_Open()
 
 	V_UpdatePalette(true);
 #ifdef GLQUAKE
+	GL_Init();
+
+	Check_Gamma(host_basepal);
+	VID_SetPalette(host_basepal);
+
+	vid.recalc_refdef = 1;				// force a surface cache flush
+
 	GL_InitTextureStuff();
 	GL_Particles_TextureInit();
 	Draw_Init();
@@ -245,6 +252,7 @@ qboolean VID_HWGammaSupported()
 void VID_SetCaption(const char *text)
 {
 	char *newwindowtitle;
+
 	if (display)
 	{
 		newwindowtitle = malloc(strlen(text)+1);
