@@ -37,6 +37,9 @@ extern viddef_t vid;
 
 struct display
 {
+	unsigned int width;
+	unsigned int height;
+
 	void *inputdata;
 
 	char *buffer;
@@ -60,7 +63,7 @@ void Sys_Video_CvarInit(void)
 {
 }
 
-void *Sys_Video_Open(int width, int height, int depth, int fullscreen, unsigned char *palette)
+void *Sys_Video_Open(unsigned int width, unsigned int height, unsigned int depth, int fullscreen, unsigned char *palette)
 {
 	struct display *d;
 	int i;
@@ -68,45 +71,33 @@ void *Sys_Video_Open(int width, int height, int depth, int fullscreen, unsigned 
 	d = AllocVec(sizeof(*d), MEMF_CLEAR);
 	if (d)
 	{
-		vid.width = width;
-		vid.height = height;
-		vid.maxwarpwidth = WARP_WIDTH;
-		vid.maxwarpheight = WARP_HEIGHT;
-		vid.colormap = host_colormap;
-
-		d->buffer = AllocVec(vid.width * vid.height, MEMF_ANY);
+		d->buffer = AllocVec(width * height, MEMF_ANY);
 		if (d->buffer == 0)
 		{
 			Sys_Error("VID: Couldn't allocate frame buffer");
 		}
 
-		d->zbuffer = AllocVec(vid.width * vid.height * sizeof(*d_pzbuffer), MEMF_ANY);
+		d->zbuffer = AllocVec(width * height * sizeof(*d_pzbuffer), MEMF_ANY);
 		if (d->zbuffer == 0)
 		{
 			Sys_Error("VID: Couldn't allocate zbuffer");
 		}
 
-		d->sbuffer = AllocVec(D_SurfaceCacheForRes(vid.width, vid.height), MEMF_ANY);
+		d->sbuffer = AllocVec(D_SurfaceCacheForRes(width, height), MEMF_ANY);
 		if (d->sbuffer == 0)
 		{
 			Sys_Error("VID: Couldn't allocate surface cache");
 		}
 
-		D_InitCaches(d->sbuffer, D_SurfaceCacheForRes(vid.width, vid.height));
+		D_InitCaches(d->sbuffer, D_SurfaceCacheForRes(width, height));
 
 		d_pzbuffer = d->zbuffer;
-
-		vid.rowbytes = vid.width;
-		vid.buffer = d->buffer;
-		vid.conwidth = vid.width;
-		vid.conheight = vid.height;
-		vid.aspect = ((float)vid.height / (float)vid.width) * (320.0 / 240.0);
 
 		if (fullscreen)
 		{
 			d->screen = OpenScreenTags(0,
-				SA_Width, vid.width,
-				SA_Height, vid.height,
+				SA_Width, width,
+				SA_Height, height,
 				SA_Depth, 8,
 				SA_Quiet, TRUE,
 				TAG_DONE);
@@ -114,8 +105,8 @@ void *Sys_Video_Open(int width, int height, int depth, int fullscreen, unsigned 
 
 
 		d->window = OpenWindowTags(0,
-			WA_InnerWidth, vid.width,
-			WA_InnerHeight, vid.height,
+			WA_InnerWidth, width,
+			WA_InnerHeight, height,
 			WA_Title, "FodQuake",
 			WA_DragBar, d->screen ? FALSE : TRUE,
 			WA_DepthGadget, d->screen ? FALSE : TRUE,
@@ -137,8 +128,6 @@ void *Sys_Video_Open(int width, int height, int depth, int fullscreen, unsigned 
 
 		SetPointer(d->window, d->pointermem, 16, 16, 0, 0);
 
-		vid.numpages = d->screen ? 3 : 1;
-
 		if (d->screen)
 		{
 			for (i = 0; i < 3; i++)
@@ -150,6 +139,9 @@ void *Sys_Video_Open(int width, int height, int depth, int fullscreen, unsigned 
 				}
 			}
 		}
+
+		d->width = width;
+		d->height = height;
 
 		d->currentbuffer = 0;
 
@@ -200,6 +192,15 @@ void Sys_Video_Close(void *display)
 	FreeVec(d);
 }
 
+unsigned int Sys_Video_GetNumBuffers(void *display)
+{
+	struct display *d;
+	
+	d = display;
+
+	return d->screen ? 3 : 1;
+}
+
 void Sys_Video_GetEvents(void *display)
 {
 	struct display *d = display;
@@ -223,11 +224,11 @@ void Sys_Video_Update(void *display, vrect_t * rects)
 		if (d->screen)
 		{
 			d->rastport.BitMap = d->screenbuffers[d->currentbuffer]->sb_BitMap;
-			WritePixelArray(d->buffer, rects->x, rects->y, vid.rowbytes, &d->rastport, rects->x, rects->y, rects->width, rects->height, RECTFMT_LUT8);
+			WritePixelArray(d->buffer, rects->x, rects->y, d->width, &d->rastport, rects->x, rects->y, rects->width, rects->height, RECTFMT_LUT8);
 		}
 		else
 		{
-			WriteLUTPixelArray(d->buffer, rects->x, rects->y, vid.rowbytes, d->window->RPort, d->pal, d->window->BorderLeft + rects->x, d->window->BorderTop + rects->y, rects->width, rects->height, CTABFMT_XRGB8);
+			WriteLUTPixelArray(d->buffer, rects->x, rects->y, d->width, d->window->RPort, d->pal, d->window->BorderLeft + rects->x, d->window->BorderTop + rects->y, rects->width, rects->height, CTABFMT_XRGB8);
 		}
 
 
@@ -324,5 +325,23 @@ void Sys_Video_SetWindowTitle(void *display, const char *text)
 	d = display;
 
 	SetWindowTitles(d->window, text, (void *)-1);
+}
+
+unsigned int Sys_Video_GetBytesPerRow(void *display)
+{
+	struct display *d;
+
+	d = display;
+
+	return d->width;
+}
+
+void *Sys_Video_GetBuffer(void *display)
+{
+	struct display *d;
+
+	d = display;
+
+	return d->buffer;
 }
 

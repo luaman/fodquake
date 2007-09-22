@@ -79,7 +79,7 @@ void Sys_Video_CvarInit(void)
 {
 }
 
-void *Sys_Video_Open(int width, int height, int depth, int fullscreen, unsigned char *palette)
+void *Sys_Video_Open(unsigned int width, unsigned int height, unsigned int depth, int fullscreen, unsigned char *palette)
 {
 	struct display *d;
 
@@ -95,51 +95,14 @@ void *Sys_Video_Open(int width, int height, int depth, int fullscreen, unsigned 
 			d->gammaenabled = 1;
 		}
 
-		vid.width = width;
-		vid.height = height;
-		vid.numpages = 1;
-		vid.colormap = host_colormap;
-
-		if (vid.width <= 640)
-		{
-			vid.conwidth = vid.width;
-			vid.conheight = vid.height;
-		}
-		else
-		{
-			vid.conwidth = vid.width/2;
-			vid.conheight = vid.height/2;
-		}
-
-		if ((i = COM_CheckParm("-conwidth")) && i + 1 < com_argc)
-		{
-			vid.conwidth = Q_atoi(com_argv[i + 1]);
-
-			// pick a conheight that matches with correct aspect
-			vid.conheight = vid.conwidth * 3 / 4;
-		}
-
-		vid.conwidth &= 0xfff8; // make it a multiple of eight
-
-		if ((i = COM_CheckParm("-conheight")) && i + 1 < com_argc)
-			vid.conheight = Q_atoi(com_argv[i + 1]);
-
-		if (vid.conwidth < 320)
-			vid.conwidth = 320;
-
-		if (vid.conheight < 200)
-			vid.conheight = 200;
-
 		TinyGLBase = OpenLibrary("tinygl.library", 0);
 		if (TinyGLBase)
 		{
-			vid.aspect = ((float)vid.height / (float)vid.width) * (320.0 / 240.0);
-
 			if (fullscreen)
 			{
 				d->screen = OpenScreenTags(0,
-					SA_Width, vid.width,
-					SA_Height, vid.height,
+					SA_Width, width,
+					SA_Height, height,
 					SA_Depth, depth,
 					SA_Quiet, TRUE,
 					SA_GammaControl, TRUE,
@@ -160,8 +123,8 @@ void *Sys_Video_Open(int width, int height, int depth, int fullscreen, unsigned 
 			if (d->screen || !fullscreen)
 			{
 				d->window = OpenWindowTags(0,
-					WA_InnerWidth, vid.width,
-					WA_InnerHeight, vid.height,
+					WA_InnerWidth, width,
+					WA_InnerHeight, height,
 					WA_Title, "FodQuake",
 					WA_DragBar, d->screen?FALSE:TRUE,
 					WA_DepthGadget, d->screen?FALSE:TRUE,
@@ -192,16 +155,8 @@ void *Sys_Video_Open(int width, int height, int depth, int fullscreen, unsigned 
 							{
 								SetPointer(d->window, d->pointermem, 16, 16, 0, 0);
 
-								d->width = vid.width;
-								d->height = vid.height;
-
-								if (vid.conheight > vid.height)
-									vid.conheight = vid.height;
-								if (vid.conwidth > vid.width)
-									vid.conwidth = vid.width;
-
-								vid.width = vid.conwidth;
-								vid.height = vid.conheight;
+								d->width = width;
+								d->height = height;
 
 								d->inputdata = Sys_Input_Init(d->screen, d->window);
 								if (d->inputdata)
@@ -263,6 +218,15 @@ void Sys_Video_Close(void *display)
 		FreeVec(d->gammatable);
 }
 
+unsigned int Sys_Video_GetNumBuffers(void *display)
+{
+	struct display *d;
+	
+	d = display;
+
+	return d->screen ? 3 : 1;
+}
+
 void Sys_Video_GetEvents(void *display)
 {
 	struct display *d = display;
@@ -286,7 +250,7 @@ void Sys_Video_SetWindowTitle(void *display, const char *text)
 	SetWindowTitles(d->window, text, (void *)-1);
 }
 
-void Sys_Video_BeginFrame(void *display, int *x, int *y, int *width, int *height)
+void Sys_Video_BeginFrame(void *display, unsigned int *x, unsigned int *y, unsigned int *width, unsigned int *height)
 {
 	struct display *d;
 
