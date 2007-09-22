@@ -72,6 +72,9 @@ struct display
 	XImage *x_framebuffer[2];
 	XShmSegmentInfo x_shminfo[2];
 
+	int width;
+	int height;
+	int depth;
 	int fullscreen;
 
 	byte current_palette[768];
@@ -306,9 +309,9 @@ static void ResetFrameBuffer(struct display *d)
 	d->X11_highhunkmark = Hunk_HighMark();
 
 	// alloc an extra line in case we want to wrap, and allocate the z-buffer
-	d->X11_buffersize = vid.width * vid.height * sizeof(*d_pzbuffer);
+	d->X11_buffersize = d->width * d->height * sizeof(*d_pzbuffer);
 
-	vid_surfcachesize = D_SurfaceCacheForRes(vid.width, vid.height);
+	vid_surfcachesize = D_SurfaceCacheForRes(d->width, d->height);
 
 	d->X11_buffersize += vid_surfcachesize;
 
@@ -316,16 +319,16 @@ static void ResetFrameBuffer(struct display *d)
 	if (d_pzbuffer == NULL)
 		Sys_Error("Not enough memory for video mode\n");
 
-	d->vid_surfcache = (byte *) d_pzbuffer + vid.width * vid.height * sizeof(*d_pzbuffer);
+	d->vid_surfcache = (byte *) d_pzbuffer + d->width * d->height * sizeof(*d_pzbuffer);
 
 	D_InitCaches(d->vid_surfcache, vid_surfcachesize);
 
 	pwidth = d->x_visinfo->depth / 8;
 	if (pwidth == 3)
 		pwidth = 4;
-	mem = ((vid.width * pwidth + 7) & ~7) * vid.height;
+	mem = ((d->width * pwidth + 7) & ~7) * d->height;
 
-	d->x_framebuffer[0] = XCreateImage(d->x_disp, d->x_vis, d->x_visinfo->depth, ZPixmap, 0, Q_Malloc(mem), vid.width, vid.height, 32, 0);
+	d->x_framebuffer[0] = XCreateImage(d->x_disp, d->x_vis, d->x_visinfo->depth, ZPixmap, 0, Q_Malloc(mem), d->width, d->height, 32, 0);
 
 	if (!d->x_framebuffer[0])
 		Sys_Error("VID: XCreateImage failed\n");
@@ -349,9 +352,9 @@ static void ResetSharedFrameBuffers(struct display *d)
 	d->X11_highhunkmark = Hunk_HighMark();
 
 	// alloc an extra line in case we want to wrap, and allocate the z-buffer
-	d->X11_buffersize = vid.width * vid.height * sizeof(*d_pzbuffer);
+	d->X11_buffersize = d->width * d->height * sizeof(*d_pzbuffer);
 
-	vid_surfcachesize = D_SurfaceCacheForRes(vid.width, vid.height);
+	vid_surfcachesize = D_SurfaceCacheForRes(d->width, d->height);
 
 	d->X11_buffersize += vid_surfcachesize;
 
@@ -359,7 +362,7 @@ static void ResetSharedFrameBuffers(struct display *d)
 	if (d_pzbuffer == NULL)
 		Sys_Error("Not enough memory for video mode\n");
 
-	d->vid_surfcache = (byte *) d_pzbuffer + vid.width * vid.height * sizeof(*d_pzbuffer);
+	d->vid_surfcache = (byte *) d_pzbuffer + d->width * d->height * sizeof(*d_pzbuffer);
 
 	D_InitCaches(d->vid_surfcache, vid_surfcachesize);
 
@@ -374,7 +377,7 @@ static void ResetSharedFrameBuffers(struct display *d)
 		}
 
 		// create the image
-		d->x_framebuffer[frm] = XShmCreateImage(d->x_disp, d->x_vis, d->x_visinfo->depth, ZPixmap, 0, &d->x_shminfo[frm], vid.width, vid.height);
+		d->x_framebuffer[frm] = XShmCreateImage(d->x_disp, d->x_vis, d->x_visinfo->depth, ZPixmap, 0, &d->x_shminfo[frm], d->width, d->height);
 
 		// grab shared memory
 		size = d->x_framebuffer[frm]->bytes_per_line * d->x_framebuffer[frm]->height;
@@ -423,6 +426,9 @@ void *Sys_Video_Open(int width, int height, int depth, int fullscreen, unsigned 
 	{
 		bzero(d, sizeof(*d));
 
+		d->width = width;
+		d->height = height;
+		d->depth = depth;
 		d->fullscreen = fullscreen;
 
 		vid.width = width;
@@ -583,7 +589,7 @@ void *Sys_Video_Open(int width, int height, int depth, int fullscreen, unsigned 
 
 // create the main window
 			d->x_win = XCreateWindow(d->x_disp, XRootWindow(d->x_disp, d->x_visinfo->screen), 0, 0,	// x, y
-					      vid.width, vid.height, 0,	// borderwidth
+					      d->width, d->height, 0,	// borderwidth
 					      d->x_visinfo->depth, InputOutput, d->x_vis, attribmask, &attribs);
 			XStoreName(d->x_disp, d->x_win, "FodQuake");
 
@@ -622,7 +628,7 @@ void *Sys_Video_Open(int width, int height, int depth, int fullscreen, unsigned 
 		if (fullscreen)
 		{
 			XRaiseWindow(d->x_disp, d->x_win);
-			XWarpPointer(d->x_disp, None, d->x_win, 0, 0, 0, 0, vid.width / 2, vid.height / 2);
+			XWarpPointer(d->x_disp, None, d->x_win, 0, 0, 0, 0, d->width / 2, d->height / 2);
 			XFlush(d->x_disp);
 #if USE_VMODE
 			XF86VidModeSetViewPort(d->x_disp, d->scrnum, 0, 0);
@@ -671,9 +677,9 @@ void *Sys_Video_Open(int width, int height, int depth, int fullscreen, unsigned 
 		d->current_framebuffer = 0;
 		vid.rowbytes = d->x_framebuffer[0]->bytes_per_line;
 		vid.buffer = d->x_framebuffer[0]->data;
-		vid.conwidth = vid.width;
-		vid.conheight = vid.height;
-		vid.aspect = ((float) vid.height / (float) vid.width) * (320.0 / 240.0);
+		vid.conwidth = d->width;
+		vid.conheight = d->height;
+		vid.aspect = ((float) d->height / (float) d->width) * (320.0 / 240.0);
 
 		//XSynchronize(d->x_disp, False);
 
@@ -772,20 +778,25 @@ void Sys_Video_Update(void *display, vrect_t *rects)
 	X11_Input_GetConfigNotify(d->inputdata, &config_notify, &config_notify_width, &config_notify_height);
 	
 	// if the window changes dimension, skip this frame
-	if (config_notify && ((config_notify_width&~7) != vid.width || config_notify_height != vid.height))
+	if (config_notify && ((config_notify_width&~7) != d->width || config_notify_height != d->height))
 	{
 		fprintf(stderr, "config notify\n");
 		config_notify = 0;
-		vid.width = config_notify_width & ~7;
-		vid.height = config_notify_height;
+		d->width = config_notify_width & ~7;
+		d->height = config_notify_height;
+
+		vid.width = d->width;
+		vid.height = d->height;
+
 		if (d->doShm)
 			ResetSharedFrameBuffers(d);
 		else
 			ResetFrameBuffer(d);
+
 		vid.rowbytes = d->x_framebuffer[0]->bytes_per_line;
 		vid.buffer = d->x_framebuffer[d->current_framebuffer]->data;
-		vid.conwidth = vid.width;
-		vid.conheight = vid.height;
+		vid.conwidth = d->width;
+		vid.conheight = d->height;
 		vid.recalc_refdef = 1;	// force a surface cache flush
 		Con_CheckResize();
 		return;
