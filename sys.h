@@ -57,19 +57,23 @@ void Sys_CvarInit(void);
 void Sys_Init (void);
 
 void Sys_Video_CvarInit(void);
-void *Sys_Video_Open(int width, int height, int depth, int fullscreen, unsigned char *palette);
+void *Sys_Video_Open(unsigned int width, unsigned int height, unsigned int depth, int fullscreen, unsigned char *palette);
 void Sys_Video_Close(void *display);
+unsigned int Sys_Video_GetNumBuffers(void *display);
 void Sys_Video_Update(void *display, vrect_t *rects);
 void Sys_Video_SetPalette(void *display, unsigned char *palette);
 void Sys_Video_GetEvents(void *display);
 void Sys_Video_GetMouseMovement(void *display, int *mousex, int *mousey);
 void Sys_Video_GrabMouse(void *display, int dograb);
+void Sys_Video_SetWindowTitle(void *display, const char *text);
 #ifdef GLQUAKE
-void Sys_Video_BeginFrame(void *display, int *x, int *y, int *width, int *height);
+void Sys_Video_BeginFrame(void *display, unsigned int *x, unsigned int *y, unsigned int *width, unsigned int *height);
 void Sys_Video_SetGamma(void *display, unsigned short *ramps);
 qboolean Sys_Video_HWGammaSupported(void *display);
+#else
+unsigned int Sys_Video_GetBytesPerRow(void *display);
+void *Sys_Video_GetBuffer(void *display);
 #endif
-void Sys_Video_SetWindowTitle(void *display, const char *text);
 
 const char *Sys_Video_GetClipboardText(void *display);
 void Sys_Video_FreeClipboardText(void *display, const char *text);

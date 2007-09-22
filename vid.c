@@ -130,6 +130,7 @@ void VID_CvarInit()
 void VID_Open()
 {
 	int width, height, depth, fullscreen;
+	int i;
 
 	fullscreen = vid_fullscreen.value;
 	width = vid_width.value;
@@ -162,9 +163,70 @@ void VID_Open()
 	}
 #endif
 
+	vid.colormap = host_colormap;
+	vid.width = width;
+	vid.height = height;
+	vid.aspect = ((float)height / (float)width) * (320.0 / 240.0);
+
+#ifndef GLQUAKE
+	vid.maxwarpwidth = WARP_WIDTH;
+	vid.maxwarpheight = WARP_HEIGHT;
+#endif
+
 	display = Sys_Video_Open(width, height, depth, fullscreen, host_basepal);
 	if (display == 0)
 		Sys_Error("VID: Unable to open a display\n");
+
+	vid.numpages = Sys_Video_GetNumBuffers(display);
+
+#ifdef GLQUAKE
+#warning fixme
+	if (vid.width <= 640)
+	{
+		vid.conwidth = vid.width;
+		vid.conheight = vid.height;
+	}
+	else
+	{
+		vid.conwidth = vid.width/2;
+		vid.conheight = vid.height/2;
+	}
+
+	if ((i = COM_CheckParm("-conwidth")) && i + 1 < com_argc)
+	{
+		vid.conwidth = Q_atoi(com_argv[i + 1]);
+
+		vid.conwidth &= 0xfff8; // make it a multiple of eight
+
+		if (vid.conwidth < 320)
+			vid.conwidth = 320;
+
+		// pick a conheight that matches with correct aspect
+		vid.conheight = vid.conwidth * 3 / 4;
+	}
+
+	if ((i = COM_CheckParm("-conheight")) && i + 1 < com_argc)
+	{
+		vid.conheight = Q_atoi(com_argv[i + 1]);
+
+		if (vid.conheight < 200)
+			vid.conheight = 200;
+	}
+
+	if (vid.conwidth > vid.width)
+		vid.conwidth = vid.width;
+	
+	if (vid.conheight > vid.conheight)
+		vid.conheight = vid.height;
+
+	vid.width = vid.conwidth;
+	vid.height = vid.conheight;
+#else
+	vid.rowbytes = Sys_Video_GetBytesPerRow(display);
+	vid.buffer = Sys_Video_GetBuffer(display);
+	vid.conwidth = vid.width;
+	vid.conheight = vid.height;
+#endif
 
 	if (windowtitle)
 		Sys_Video_SetWindowTitle(display, windowtitle);
@@ -216,6 +278,11 @@ void VID_BeginFrame(int *x, int *y, int *width, int *height)
 void VID_Update(vrect_t *rects)
 {
 	Sys_Video_Update(display, rects);
+
+#ifndef GLQUAKE
+#warning Fixme, this is a sucky place to put this.
+	vid.buffer = Sys_Video_GetBuffer(display);
+#endif
 }
 
 #ifndef GLQUAKE

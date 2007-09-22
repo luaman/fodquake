@@ -332,8 +332,6 @@ static void ResetFrameBuffer(struct display *d)
 
 	if (!d->x_framebuffer[0])
 		Sys_Error("VID: XCreateImage failed\n");
-
-	vid.buffer = (byte *) (d->x_framebuffer[0]);
 }
 
 static void ResetSharedFrameBuffers(struct display *d)
@@ -414,7 +412,7 @@ void Sys_Video_CvarInit()
 	X11_Input_CvarInit();
 }
 
-void *Sys_Video_Open(int width, int height, int depth, int fullscreen, unsigned char *palette)
+void *Sys_Video_Open(unsigned int width, unsigned int height, unsigned int depth, int fullscreen, unsigned char *palette)
 {
 	int pnum, i, num_visuals, template_mask;
 	XVisualInfo template;
@@ -430,15 +428,6 @@ void *Sys_Video_Open(int width, int height, int depth, int fullscreen, unsigned 
 		d->height = height;
 		d->depth = depth;
 		d->fullscreen = fullscreen;
-
-		vid.width = width;
-		vid.height = height;
-		vid.maxwarpwidth = WARP_WIDTH;
-		vid.maxwarpheight = WARP_HEIGHT;
-		vid.numpages = 2;
-		vid.colormap = host_colormap;
-		//      vid.cbits = VID_CBITS;
-		//      vid.grades = VID_GRADES;
 
 		srandom(getpid());
 
@@ -675,11 +664,6 @@ void *Sys_Video_Open(int width, int height, int depth, int fullscreen, unsigned 
 		}
 
 		d->current_framebuffer = 0;
-		vid.rowbytes = d->x_framebuffer[0]->bytes_per_line;
-		vid.buffer = d->x_framebuffer[0]->data;
-		vid.conwidth = d->width;
-		vid.conheight = d->height;
-		vid.aspect = ((float) d->height / (float) d->width) * (320.0 / 240.0);
 
 		//XSynchronize(d->x_disp, False);
 
@@ -691,6 +675,11 @@ void *Sys_Video_Open(int width, int height, int depth, int fullscreen, unsigned 
 	}
 
 	return 0;
+}
+
+unsigned int Sys_Video_GetNumBuffers(void *display)
+{
+	return 2;
 }
 
 void Sys_Video_GetEvents(void *display)
@@ -780,24 +769,17 @@ void Sys_Video_Update(void *display, vrect_t *rects)
 	// if the window changes dimension, skip this frame
 	if (config_notify && ((config_notify_width&~7) != d->width || config_notify_height != d->height))
 	{
+#warning This is broken.
 		fprintf(stderr, "config notify\n");
 		config_notify = 0;
 		d->width = config_notify_width & ~7;
 		d->height = config_notify_height;
-
-		vid.width = d->width;
-		vid.height = d->height;
 
 		if (d->doShm)
 			ResetSharedFrameBuffers(d);
 		else
 			ResetFrameBuffer(d);
 
-		vid.rowbytes = d->x_framebuffer[0]->bytes_per_line;
-		vid.buffer = d->x_framebuffer[d->current_framebuffer]->data;
-		vid.conwidth = d->width;
-		vid.conheight = d->height;
-		vid.recalc_refdef = 1;	// force a surface cache flush
 		Con_CheckResize();
 		return;
 	}
@@ -818,7 +800,6 @@ void Sys_Video_Update(void *display, vrect_t *rects)
 			rects = rects->pnext;
 		}
 		d->current_framebuffer = !d->current_framebuffer;
-		vid.buffer = d->x_framebuffer[d->current_framebuffer]->data;
 		XSync(d->x_disp, False);
 	}
 	else
@@ -866,6 +847,24 @@ void Sys_Video_SetWindowTitle(void *display, const char *text)
 	d = display;
 
 	XStoreName(d->x_disp, d->x_win, text);
+}
+
+unsigned int Sys_Video_GetBytesPerRow(void *display)
+{
+	struct display *d;
+
+	d = display;
+
+	return d->x_framebuffer[0]->bytes_per_line;
+}
+
+void *Sys_Video_GetBuffer(void *display)
+{
+	struct display *d;
+
+	d = display;
+
+	return d->x_framebuffer[d->current_framebuffer]->data;
 }
 
 #include "clipboard_x11.c"

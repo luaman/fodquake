@@ -50,7 +50,7 @@ struct display
 {
 	void *inputdata;
 
-	int width, height;
+	unsigned int width, height;
 
 #ifdef USE_VMODE
 	XF86VidModeModeInfo **vidmodes;
@@ -191,7 +191,7 @@ static void RestoreHWGamma(struct display *d)
 
 /************************************* GL *************************************/
 
-void Sys_Video_BeginFrame(void *display, int *x, int *y, int *width, int *height)
+void Sys_Video_BeginFrame(void *display, unsigned int *x, unsigned int *y, unsigned int *width, unsigned int *height)
 {
 	struct display *d;
 
@@ -236,6 +236,11 @@ void Sys_Video_Close(void *display)
 	free(d);
 }
 
+unsigned int Sys_Video_GetNumBuffers(void *display)
+{
+	return 2;
+}
+
 /************************************* VID INIT *************************************/
 
 static Cursor CreateNullCursor(Display *display, Window root) {
@@ -264,7 +269,7 @@ void Sys_Video_CvarInit()
 	X11_Input_CvarInit();
 }
 
-void *Sys_Video_Open(int width, int height, int depth, int fullscreen, unsigned char *palette)
+void *Sys_Video_Open(unsigned int width, unsigned int height, unsigned int depth, int fullscreen, unsigned char *palette)
 {
 	struct display *d;
 
@@ -284,8 +289,6 @@ void *Sys_Video_Open(int width, int height, int depth, int fullscreen, unsigned 
 	Window root;
 	XVisualInfo *visinfo;
 
-	vid.colormap = host_colormap;
-
 	d = malloc(sizeof(*d));
 	if (d)
 	{
@@ -302,25 +305,6 @@ void *Sys_Video_Open(int width, int height, int depth, int fullscreen, unsigned 
 		{
 
 			root = RootWindow(d->x_disp, d->scrnum);
-
-#warning fixme
-			if ((i = COM_CheckParm("-conwidth")) && i + 1 < com_argc)
-				vid.conwidth = Q_atoi(com_argv[i + 1]);
-			else
-				vid.conwidth = 640;
-
-			vid.conwidth &= 0xfff8; // make it a multiple of eight
-
-			if (vid.conwidth < 320)
-				vid.conwidth = 320;
-
-			// pick a conheight that matches with correct aspect
-			vid.conheight = vid.conwidth * 3 / 4;
-
-			if ((i = COM_CheckParm("-conheight")) && i + 1 < com_argc)
-				vid.conheight = Q_atoi(com_argv[i + 1]);
-			if (vid.conheight < 200)
-				vid.conheight = 200;
 
 #ifdef USE_VMODE
 			if (fullscreen)
@@ -418,16 +402,6 @@ void *Sys_Video_Open(int width, int height, int depth, int fullscreen, unsigned 
 
 			d->width = width;
 			d->height = height;
-
-			if (vid.conheight > height)
-				vid.conheight = height;
-			if (vid.conwidth > width)
-				vid.conwidth = width;
-			vid.width = vid.conwidth;
-			vid.height = vid.conheight;
-
-			vid.aspect = ((float) vid.height / (float) vid.width) * (320.0 / 240.0);
-			vid.numpages = 2;
 
 			InitSig(); // trap evil signals
 
