@@ -827,11 +827,6 @@ void D_EndDirectRect(int x, int y, int width, int height)
 // direct drawing of the "accessing disk" icon isn't supported under Linux
 }
 
-void Force_CenterView_f(void)
-{
-	cl.viewangles[PITCH] = 0;
-}
-
 void VID_LockBuffer(void)
 {
 }
