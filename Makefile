@@ -9,7 +9,7 @@ STRIPFLAGS=--strip-unneeded --remove-section=.comment
 
 TARGETSYSTEM?=$(shell $(CC) -dumpmachine)
 
-OS=$(shell echo $(TARGETSYSTEM) | sed "s/-gnu//" | sed "s/.*-//" | tr [A-Z] [a-z])
+OS=$(shell echo $(TARGETSYSTEM) | sed "s/-gnu//" | sed "s/.*-//" | tr [A-Z] [a-z] | sed s/^mingw.*/win32/)
 CPU=$(shell echo $(TARGETSYSTEM) | cut -d '-' -f 1 | tr [A-Z] [a-z])
 
 # OS specific settings
@@ -96,15 +96,23 @@ ifeq ($(OS), cygwin)
 	OSSWLDFLAGS=-L/usr/X11R6/lib -lX11 -lXext
 endif
 
-ifeq ($(OS), mingw32)
+ifeq ($(OS), win32)
 	OSOBJS= \
 		sys_win.o \
-		snd_win.o \
+		snd_dx7.o \
 		cd_win.o \
 		in_win.o \
 
 	OSSWOBJS=vid_win.o
 	OSSWLDFLAGS=-lmgllt -lwsock32 -lgdi32 -ldxguid -lwinmm
+
+	OSGLOBJS=vid_wgl.o
+	OSGLLDFLAGS=-lopengl32 -lwinmm -lwsock32 -lgdi32 -ldxguid
+
+	OSCFLAGS = -I$(VPATH)directx -DBUILD_STRL
+	ifneq ($(shell $(CC) -dumpmachine | grep cygwin),)
+		OSCFLAGS+= -mno-cygwin
+	endif
 endif
 
 # CPU specific settings
