@@ -22,10 +22,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "quakedef.h"
 #include "sound.h"
 
-#ifdef _WIN32
-#include "winquake.h"
-#endif
-
 struct SoundCard *soundcard;
 
 void S_Play_f (void);
@@ -105,13 +101,17 @@ struct SoundDriver
 
 SoundInitFunc AHI_Init;
 SoundInitFunc OSS_Init;
+SoundInitFunc WaveOut_Init;
+SoundInitFunc DS7_Init;
 SoundInitFunc ALSA_Init;
 
 struct SoundDriver sounddrivers[] =
 {
 	{ "AHI", &AHI_Init },
 	{ "OSS", &OSS_Init },
+	{ "DS7", &DS7_Init },
 	{ "ALSA", &ALSA_Init },
+	{ "WaveOut", &WaveOut_Init },
 };
 
 #define NUMSOUNDDRIVERS (sizeof(sounddrivers)/sizeof(*sounddrivers))
@@ -147,6 +147,8 @@ void S_Startup (void) {
 					break;
 				}
 			}
+			else
+				Com_Printf("Sound driver \"%s\" not available\n", sounddrivers[i].name);
 		}
 
 		if (i == NUMSOUNDDRIVERS)
@@ -158,9 +160,7 @@ void S_Startup (void) {
 
 	if (!rc)
 	{
-#ifndef	_WIN32
 		Com_Printf ("S_Startup: SNDDMA_Init failed.\n");
-#endif
 		sound_started = 0;
 		return;
 	}
@@ -492,50 +492,23 @@ void S_StopAllSounds_f (void) {
 }
 
 void S_ClearBuffer (void) {
+	unsigned char *buffer;
 	int clear;
 		
-#ifdef _WIN32
-	if (!sound_started || !soundcard || (!soundcard->buffer && !pDSBuf))
-#else
 	if (!sound_started || !soundcard || !soundcard->buffer)
-#endif
 		return;
 
 	clear = (soundcard->samplebits == 8) ? 0x80 : 0;
 
-#ifdef _WIN32
-	if (pDSBuf)
-	{
-		DWORD dwSize, *pData;
-		int reps;
-		HRESULT	hresult;
-
-		reps = 0;
-
-		while ((hresult = pDSBuf->lpVtbl->Lock(pDSBuf, 0, gSndBufSize, &pData, &dwSize, NULL, NULL, 0)) != DS_OK) {
-			if (hresult != DSERR_BUFFERLOST) {
-				Com_Printf ("S_ClearBuffer: DS::Lock Sound Buffer Failed\n");
-				S_Shutdown ();
-				return;
-			}
-
-			if (++reps > 10000) {
-				Com_Printf ("S_ClearBuffer: DS: couldn't restore buffer\n");
-				S_Shutdown ();
-				return;
-			}
-		}
-
-		memset(pData, clear, soundcard->samples * soundcard->samplebits/8);
-
-		pDSBuf->lpVtbl->Unlock(pDSBuf, pData, dwSize, NULL, 0);
-	
-	}
+	if (soundcard->Lock)
+		buffer = soundcard->Lock(soundcard);
 	else
-#endif
-	{
-		memset(soundcard->buffer, clear, soundcard->samples * soundcard->samplebits/8);
-	}
+		buffer = soundcard->buffer;
+
+	memset(soundcard->buffer, clear, soundcard->samples * soundcard->samplebits/8);
+
+	if (soundcard->Unlock)
+		soundcard->Unlock(soundcard);
 }
 
 void S_StaticSound (sfx_t *sfx, vec3_t origin, float vol, float attenuation) {
@@ -748,23 +721,8 @@ static void S_Update_ (void) {
 	if (endtime - soundtime > samps)
 		endtime = soundtime + samps;
 
-#ifdef _WIN32
-	// if the buffer was lost or stopped, restore it and/or restart it
-	{
-		DWORD dwStatus;
-
-		if (pDSBuf) {
-			if (pDSBuf->lpVtbl->GetStatus (pDSBuf, &dwStatus) != DS_OK)
-				Com_Printf ("Couldn't get sound buffer status\n");
-			
-			if (dwStatus & DSBSTATUS_BUFFERLOST)
-				pDSBuf->lpVtbl->Restore (pDSBuf);
-			
-			if (!(dwStatus & DSBSTATUS_PLAYING))
-				pDSBuf->lpVtbl->Play(pDSBuf, 0, 0, DSBPLAY_LOOPING);
-		}
-	}
-#endif
+	if (soundcard->Restore)
+		soundcard->Restore(soundcard);
 
 	S_PaintChannels (endtime);
 
