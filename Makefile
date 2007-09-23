@@ -110,7 +110,7 @@ endif
 # CPU specific settings
 
 ifeq ($(CPU), ppc)
-	CPUCFLAGS=-DBIGENDIAN
+	CPUCFLAGS=-DFOD_BIGENDIAN
 endif
 
 OBJS= \

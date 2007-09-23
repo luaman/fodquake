@@ -60,7 +60,7 @@ extern	int glx, gly, glwidth, glheight;
 
 #define BACKFACE_EPSILON	0.01
 
-#ifdef BIGENDIAN
+#ifdef FOD_BIGENDIAN
 #define COLOURMASK_RGBA 0xffffff00
 #else
 #define COLOURMASK_RGBA 0x00ffffff
