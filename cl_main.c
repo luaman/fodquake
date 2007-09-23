@@ -1127,13 +1127,7 @@ void CL_Frame (double time)
 
 	if (extratime < minframetime)
 	{
-#ifdef _WIN32
-		extern cvar_t sys_yieldcpu;
-		if (sys_yieldcpu.value)
-			Sys_MSleep(0);
-#else
 		Sleep_Sleep((unsigned int)((minframetime-extratime)*1000000));
-#endif
 		return;
 	}
 
