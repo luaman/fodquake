@@ -499,20 +499,29 @@ void IN_HideMouse (void) {
 	}
 }
 
-void IN_ActivateMouse (void) {
+void IN_ActivateMouse (void)
+{
 	mouseactivatetoggle = true;
 
-	if (mouseinitialized) {
-		if (dinput) {
-			if (g_pMouse) {
-				if (!dinput_acquired) {
+	if (mouseinitialized)
+	{
+		if (dinput)
+		{
+			if (g_pMouse)
+			{
+				if (!dinput_acquired)
+				{
 					IDirectInputDevice_Acquire(g_pMouse);
 					dinput_acquired = true;
 				}
-			} else {
+			}
+			else
+			{
 				return;
 			}
-		} else {
+		}
+		else
+		{
 			if (mouseparmsvalid)
 				restore_spi = SystemParametersInfo (SPI_SETMOUSE, 0, newmouseparms, 0);
 
@@ -524,29 +533,37 @@ void IN_ActivateMouse (void) {
 	}
 }
 
-void IN_SetQuakeMouseState (void) {
+void IN_SetQuakeMouseState (void)
+{
 	if (mouseactivatetoggle)
 		IN_ActivateMouse ();
 }
 
-void IN_DeactivateMouse (void) {
+void IN_DeactivateMouse (void)
+{
 	mouseactivatetoggle = false;
 
-	if (mouseinitialized) {
-		if (dinput) {
-			if (g_pMouse) {
-				if (dinput_acquired) {
+	if (mouseinitialized)
+	{
+		if (dinput)
+		{
+			if (g_pMouse)
+			{
+				if (dinput_acquired)
+				{
 					IDirectInputDevice_Unacquire(g_pMouse);
 					dinput_acquired = false;
 				}
 			}
-		} else {
-		if (restore_spi)
-			SystemParametersInfo (SPI_SETMOUSE, 0, originalmouseparms, 0);
+		}
+		else
+		{
+			if (restore_spi)
+				SystemParametersInfo (SPI_SETMOUSE, 0, originalmouseparms, 0);
 
-		ClipCursor (NULL);
-		ReleaseCapture ();
-	}
+			ClipCursor (NULL);
+			ReleaseCapture ();
+		}
 
 		mouseactive = false;
 	}
@@ -1336,16 +1353,24 @@ void Sys_Video_GetEvents(void *display)
 	IN_Commands();
 }
 
-void Sys_Input_GetMouseMovement(void *inputdata, int *mousex, int *mousey)
+void Sys_Video_GetMouseMovement(void *inputdata, int *mousex, int *mousey)
 {
 	POINT current_pos;
 
-	GetCursorPos (&current_pos);
-	*mousex = current_pos.x - window_center_x + mx_accum;
-	*mousey = current_pos.y - window_center_y + my_accum;
-	mx_accum = my_accum = 0;
+	if (mouseactive)
+	{
+		GetCursorPos (&current_pos);
+		*mousex = current_pos.x - window_center_x + mx_accum;
+		*mousey = current_pos.y - window_center_y + my_accum;
 
-	if (*mousex || *mousey)
-		SetCursorPos (window_center_x, window_center_y);
+		if (*mousex || *mousey)
+			SetCursorPos (window_center_x, window_center_y);
+	}
+	else
+	{
+		*mousex = 0;
+		*mousey = 0;
+	}
+	mx_accum = my_accum = 0;
 }
 
