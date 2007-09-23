@@ -25,7 +25,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #ifndef SERVERONLY
 
+#ifndef WM_MOUSEWHEEL
 #define WM_MOUSEWHEEL		0x020A
+#endif
 #define WM_XBUTTONDOWN		0x020B
 #define WM_XBUTTONUP		0x020C
 
@@ -35,7 +37,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifndef WITHOUT_WINKEYHOOK
 
 #define LLKHF_UP			(KF_UP >> 8)
+#ifndef KF_UP
 #define KF_UP				0x8000
+#endif
 
 #endif
 
@@ -45,10 +49,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 extern	HINSTANCE	global_hInstance;
 
 extern qboolean		DDActive;
-
-extern LPDIRECTSOUND		pDS;
-extern LPDIRECTSOUNDBUFFER	pDSBuf;
-extern DWORD				gSndBufSize;
 
 typedef enum {MS_WINDOWED, MS_FULLSCREEN, MS_FULLDIB, MS_UNINIT} modestate_t;
 
