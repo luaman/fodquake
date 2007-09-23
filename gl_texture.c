@@ -222,7 +222,7 @@ static void ScaleDimensions(int width, int height, int *scaled_width, int *scale
 	*scaled_height = bound(1, *scaled_height, maxsize);
 }
 
-void GL_Upload32 (unsigned *data, int width, int height, int mode) {
+void GL_Upload32 (unsigned int *data, int width, int height, int mode) {
 	int	internal_format, tempwidth, tempheight, miplevel;
 	unsigned int *newdata;
 
@@ -267,9 +267,9 @@ void GL_Upload32 (unsigned *data, int width, int height, int mode) {
 }
 
 void GL_Upload8 (byte *data, int width, int height, int mode) {
-	static unsigned trans[640 * 480];
+	static unsigned int trans[640 * 480];
 	int	i, image_size, p;
-	unsigned *table;
+	unsigned int *table;
 
 	table = (mode & TEX_BRIGHTEN) ? d_8to24table2 : d_8to24table;
 	image_size = width * height;
@@ -505,7 +505,7 @@ int GL_LoadTexturePixels (byte *data, char *identifier, int width, int height, i
 	} else if (mode & TEX_ALPHA) {
 		mode &= ~TEX_ALPHA;
 		for (j = 0; j < image_size; j++) {
-			if ( ( (((unsigned *) data)[j] >> 24 ) & 0xFF ) < 255 ) {
+			if ( ( (((unsigned int *) data)[j] >> 24 ) & 0xFF ) < 255 ) {
 				mode |= TEX_ALPHA;
 				break;
 			}
@@ -565,7 +565,7 @@ mpic_t *GL_LoadPicImage (char *filename, char *id, int matchwidth, int matchheig
 	if (mode & TEX_ALPHA) {
 		mode &= ~TEX_ALPHA;
 		for (i = 0; i < image_width * image_height; i++) {
-			if ( ( (((unsigned *) data)[i] >> 24 ) & 0xFF ) < 255) {
+			if ( ( (((unsigned int *) data)[i] >> 24 ) & 0xFF ) < 255) {
 				mode |= TEX_ALPHA;
 				break;
 			}
