@@ -182,11 +182,11 @@ void Classic_LoadParticleTextures (void) {
 	unsigned int data[32][32];
 
 	particletexture = texture_extension_number++;
-    GL_Bind(particletexture);
+	GL_Bind(particletexture);
 
 	// clear to transparent white
 	for (i = 0; i < 32 * 32; i++)
-		((unsigned *) data)[i] = COLOURMASK_RGBA;
+		((unsigned int*) data)[i] = COLOURMASK_RGBA;
 
 	// draw a circle in the top left corner
 	for (x = 0; x < 16; x++) {
@@ -200,7 +200,7 @@ void Classic_LoadParticleTextures (void) {
 	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST);
 	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-	GL_Upload32 ((unsigned *) data, 32, 32, TEX_MIPMAP | TEX_ALPHA | TEX_NOSCALE);
+	GL_Upload32 ((unsigned int*) data, 32, 32, TEX_MIPMAP | TEX_ALPHA | TEX_NOSCALE);
 }
 #endif
 
