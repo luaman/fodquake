@@ -27,9 +27,26 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "sound.h"
 #include "winquake.h"
 
+struct display {
+	HWND window;
+	HDC dc;
+	int width;
+	int height;
+	int left;
+	int right;
+	HGLRC glctx;
+	qboolean isfullscreen;
+	qboolean isfocused;
+
+	struct display *next;	//this is absurd.
+};
+
+static struct display *activedisplays;
+
+#if OLDCODE
+
+
 #define MAX_MODE_LIST	128
-#define WARP_WIDTH		320
-#define WARP_HEIGHT		200
 #define MAXWIDTH		10000
 #define MAXHEIGHT		10000
 #define BASEWIDTH		320
@@ -63,7 +80,7 @@ lmode_t	lowresmodes[] = {
 	{512, 384},
 };
 
-qboolean DDActive;
+static qboolean DDActive;
 
 static vmode_t	modelist[MAX_MODE_LIST];
 static int		nummodes;
@@ -79,73 +96,72 @@ static int		windowed_mouse;
 extern qboolean	mouseactive;  // from in_win.c
 static HICON	hIcon;
 
-int			DIBWidth, DIBHeight;
-RECT		WindowRect;
-DWORD		WindowStyle, ExWindowStyle;
+static int			DIBWidth, DIBHeight;
+static RECT		WindowRect;
+static DWORD		WindowStyle, ExWindowStyle;
 
-HWND		mainwindow, dibwindow;
+static HWND		dibwindow;
+extern HWND		mainwindow;
 
-int				vid_modenum = NO_MODE;
-int				vid_default = MODE_WINDOWED;
+static int				vid_modenum = NO_MODE;
+static int				vid_default = MODE_WINDOWED;
 static int		windowed_default;
-unsigned char	vid_curpal[256*3];
+static unsigned char	vid_curpal[256*3];
 
-HGLRC	baseRC;
-HDC		maindc;
+static HGLRC	baseRC;
+static HDC		maindc;
 
-glvert_t glv;
+static glvert_t glv;
 
-HWND WINAPI InitializeWindow (HINSTANCE hInstance, int nCmdShow);
+static HWND WINAPI InitializeWindow (HINSTANCE hInstance, int nCmdShow);
 
-modestate_t	modestate = MS_UNINIT;
+static modestate_t	modestate = MS_UNINIT;
 
-unsigned short *currentgammaramp = NULL;
+static unsigned short *currentgammaramp = NULL;
 static unsigned short systemgammaramp[3][256];
 
-qboolean vid_3dfxgamma = false;
-qboolean vid_gammaworks = false;
-qboolean vid_hwgamma_enabled = false;
-qboolean customgamma = false;
+static qboolean vid_3dfxgamma = false;
+static qboolean vid_gammaworks = false;
+static qboolean vid_hwgamma_enabled = false;
+static qboolean customgamma = false;
 
-void VID_MenuDraw (void);
-void VID_MenuKey (int key);
-
-LONG WINAPI MainWndProc (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
-void AppActivate(BOOL fActive, BOOL minimize);
-char *VID_GetModeDescription (int mode);
-void ClearAllStates (void);
-void VID_UpdateWindowStatus (void);
+static LONG WINAPI MainWndProc (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+static void AppActivate(BOOL fActive, BOOL minimize);
+static char *VID_GetModeDescription (int mode);
+static void ClearAllStates (void);
+static void VID_UpdateWindowStatus (void);
 
 /*********************************** CVARS ***********************************/
 
-cvar_t		vid_ref = {"vid_ref", "gl", CVAR_ROM};
-cvar_t		vid_mode = {"vid_mode","0"};	// Note that 0 is MODE_WINDOWED
-cvar_t		_vid_default_mode = {"_vid_default_mode","0",CVAR_ARCHIVE};	// Note that 3 is MODE_FULLSCREEN_DEFAULT
-cvar_t		_vid_default_mode_win = {"_vid_default_mode_win","3",CVAR_ARCHIVE};
-cvar_t		vid_config_x = {"vid_config_x","800",CVAR_ARCHIVE};
-cvar_t		vid_config_y = {"vid_config_y","600",CVAR_ARCHIVE};
-cvar_t		_windowed_mouse = {"_windowed_mouse","1",CVAR_ARCHIVE};
-cvar_t		vid_displayfrequency = {"vid_displayfrequency", "0", CVAR_INIT};
-cvar_t		vid_hwgammacontrol = {"vid_hwgammacontrol", "1"};
+static cvar_t		vid_ref = {"vid_ref", "gl", CVAR_ROM};
+static cvar_t		vid_mode = {"vid_mode","0"};	// Note that 0 is MODE_WINDOWED
+static cvar_t		_vid_default_mode = {"_vid_default_mode","0",CVAR_ARCHIVE};	// Note that 3 is MODE_FULLSCREEN_DEFAULT
+static cvar_t		_vid_default_mode_win = {"_vid_default_mode_win","3",CVAR_ARCHIVE};
+static cvar_t		vid_config_x = {"vid_config_x","800",CVAR_ARCHIVE};
+static cvar_t		vid_config_y = {"vid_config_y","600",CVAR_ARCHIVE};
+static cvar_t		_windowed_mouse = {"_windowed_mouse","1",CVAR_ARCHIVE};
+static cvar_t		vid_displayfrequency = {"vid_displayfrequency", "0", CVAR_INIT};
+static cvar_t		vid_hwgammacontrol = {"vid_hwgammacontrol", "1"};
 
 
 typedef BOOL (APIENTRY *SWAPINTERVALFUNCPTR)(int);
 SWAPINTERVALFUNCPTR wglSwapIntervalEXT = NULL;
-qboolean OnChange_vid_vsync(cvar_t *var, char *string);
+static qboolean OnChange_vid_vsync(cvar_t *var, char *string);
 static qboolean update_vsync = false;
-cvar_t	vid_vsync = {"vid_vsync", "", 0, OnChange_vid_vsync};
+static cvar_t	vid_vsync = {"vid_vsync", "", 0, OnChange_vid_vsync};
 
-BOOL (APIENTRY *wglGetDeviceGammaRamp3DFX)(HDC hDC, GLvoid *ramp);
-BOOL (APIENTRY *wglSetDeviceGammaRamp3DFX)(HDC hDC, GLvoid *ramp);
+static BOOL (APIENTRY *wglGetDeviceGammaRamp3DFX)(HDC hDC, GLvoid *ramp);
+static BOOL (APIENTRY *wglSetDeviceGammaRamp3DFX)(HDC hDC, GLvoid *ramp);
 
 
-int		window_center_x, window_center_y, window_x, window_y, window_width, window_height;
-RECT	window_rect;
+int		window_center_x, window_center_y;
+static int window_x, window_y, window_width, window_height;
+extern RECT	window_rect;
 
 /******************************* GL EXTENSIONS *******************************/
 
 
-void GL_WGL_CheckExtensions(void) {
+static void GL_WGL_CheckExtensions(void) {
     if (!COM_CheckParm("-noswapctrl") && CheckExtension("WGL_EXT_swap_control")) {
 		if ((wglSwapIntervalEXT = (void *) wglGetProcAddress("wglSwapIntervalEXT"))) {
             Com_Printf("Vsync control extensions found\n");
@@ -162,33 +178,19 @@ void GL_WGL_CheckExtensions(void) {
 	}
 }
 
-qboolean OnChange_vid_vsync(cvar_t *var, char *string) {
+static qboolean OnChange_vid_vsync(cvar_t *var, char *string) {
 	update_vsync = true;
 	return false;
 }
 
 
-void GL_Init_Win(void) {
+static void GL_Init_Win(void) {
 	GL_WGL_CheckExtensions();
 }
 
-/**************************** DDRAW COMPATABILITY ****************************/
-void VID_LockBuffer (void) {}
-
-void VID_UnlockBuffer (void) {}
-
-void D_BeginDirectRect (int x, int y, byte *pbitmap, int width, int height) {}
-
-void D_EndDirectRect (int x, int y, int width, int height) {}
-
 /******************************** WINDOW STUFF ********************************/
 
-void VID_SetCaption (char *text) {
-	if (vid_initialized)
-		SetWindowText (mainwindow, text);
-}
-
-void CenterWindow(HWND hWndCenter, int width, int height, BOOL lefttopjustify) {
+static void CenterWindow(HWND hWndCenter, int width, int height, BOOL lefttopjustify) {
 	int CenterX, CenterY;
 
 	CenterX = (GetSystemMetrics(SM_CXSCREEN) - width) / 2;
@@ -200,7 +202,7 @@ void CenterWindow(HWND hWndCenter, int width, int height, BOOL lefttopjustify) {
 	SetWindowPos (hWndCenter, NULL, CenterX, CenterY, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_SHOWWINDOW | SWP_DRAWFRAME);
 }
 
-void VID_UpdateWindowStatus (void) {
+static void VID_UpdateWindowStatus (void) {
 	window_rect.left = window_x;
 	window_rect.top = window_y;
 	window_rect.right = window_x + window_width;
@@ -213,7 +215,7 @@ void VID_UpdateWindowStatus (void) {
 
 /******************************** VID_SETMODE ********************************/
 
-qboolean VID_SetWindowedMode (int modenum) {
+static qboolean VID_SetWindowedMode (int modenum) {
 	HDC hdc;
 	int lastmodestate, width, height;
 	RECT rect;
@@ -240,8 +242,8 @@ qboolean VID_SetWindowedMode (int modenum) {
 	// Create the DIB window
 	dibwindow = CreateWindowEx (
 		 ExWindowStyle,
-		 "FuhQuake",
-		 "FuhQuake",
+		 "FodQuake",
+		 "FodQuake",
 		 WindowStyle,
 		 rect.left, rect.top,
 		 width,
@@ -285,7 +287,7 @@ qboolean VID_SetWindowedMode (int modenum) {
 	return true;
 }
 
-qboolean VID_SetFullDIBMode (int modenum) {
+static qboolean VID_SetFullDIBMode (int modenum) {
 	HDC hdc;
 	int lastmodestate, width, height;
 	RECT rect;
@@ -330,8 +332,8 @@ qboolean VID_SetFullDIBMode (int modenum) {
 	// Create the DIB window
 	dibwindow = CreateWindowEx (
 		 ExWindowStyle,
-		 "FuhQuake",
-		 "FuhQuake",
+		 "FodQuake",
+		 "FodQuake",
 		 WindowStyle,
 		 rect.left, rect.top,
 		 width,
@@ -373,7 +375,7 @@ qboolean VID_SetFullDIBMode (int modenum) {
 	return true;
 }
 
-int VID_SetMode (int modenum, unsigned char *palette) {
+static int VID_SetMode (int modenum, unsigned char *palette) {
 	int original_mode, temp;
 	qboolean stat;
     MSG msg;
@@ -450,7 +452,8 @@ int VID_SetMode (int modenum, unsigned char *palette) {
 	return true;
 }
 
-int bChosePixelFormat(HDC hDC, PIXELFORMATDESCRIPTOR *pfd, PIXELFORMATDESCRIPTOR *retpfd) {
+#endif
+static int bChosePixelFormat(HDC hDC, PIXELFORMATDESCRIPTOR *pfd, PIXELFORMATDESCRIPTOR *retpfd) {
 	int pixelformat;
 
 	if (!(pixelformat = ChoosePixelFormat(hDC, pfd))) {
@@ -466,7 +469,7 @@ int bChosePixelFormat(HDC hDC, PIXELFORMATDESCRIPTOR *pfd, PIXELFORMATDESCRIPTOR
 	return pixelformat;
 }
 
-BOOL bSetupPixelFormat(HDC hDC) {
+static BOOL bSetupPixelFormat(HDC hDC) {
 	int pixelformat;
 	PIXELFORMATDESCRIPTOR retpfd, pfd = {
 		sizeof(PIXELFORMATDESCRIPTOR),	// size of this pfd
@@ -511,13 +514,14 @@ BOOL bSetupPixelFormat(HDC hDC) {
 	return TRUE;
 }
 
+#if OLDCODE
 
 /********************************** HW GAMMA **********************************/
 
-void VID_ShiftPalette (unsigned char *palette) {}
+static void VID_ShiftPalette (unsigned char *palette) {}
 
 //Note: ramps must point to a static array
-void VID_SetDeviceGammaRamp(unsigned short *ramps) {
+static void VID_SetDeviceGammaRamp(unsigned short *ramps) {
 	if (!vid_gammaworks)
 		return;
 
@@ -545,7 +549,7 @@ void VID_SetDeviceGammaRamp(unsigned short *ramps) {
 		SetDeviceGammaRamp(maindc, ramps);
 }
 
-void InitHWGamma (void) {
+static void InitHWGamma (void) {
 	if (COM_CheckParm("-nohwgamma"))
 		return;
 	if (vid_3dfxgamma)
@@ -566,13 +570,13 @@ static void RestoreHWGamma(void) {
 
 /*********************************** OPENGL ***********************************/
 
-void GL_BeginRendering (int *x, int *y, int *width, int *height) {
+static void GL_BeginRendering (unsigned int *x, unsigned int *y, unsigned int *width, unsigned int *height) {
 	*x = *y = 0;
 	*width = WindowRect.right - WindowRect.left;
 	*height = WindowRect.bottom - WindowRect.top;
 }
 
-void GL_EndRendering (void) {
+static void GL_EndRendering (void) {
 	static qboolean old_hwgamma_enabled;
 
 	vid_hwgamma_enabled = vid_hwgammacontrol.value && vid_gammaworks && ActiveApp && !Minimized;
@@ -617,7 +621,7 @@ void GL_EndRendering (void) {
 
 /******************************** VID SHUTDOWN ********************************/
 
-void VID_Shutdown (void) {
+static void VID_Shutdown (void) {
    	HGLRC hRC;
    	HDC hDC;
 
@@ -648,9 +652,9 @@ void VID_Shutdown (void) {
 
 /************************ SIGNALS, MESSAGES, INPUT ETC ************************/
 
-void IN_ClearStates (void);
+static void IN_ClearStates (void);
 
-void ClearAllStates (void) {
+static void ClearAllStates (void) {
 	extern qboolean keydown[256];
 	int i;
 
@@ -664,7 +668,7 @@ void ClearAllStates (void) {
 	IN_ClearStates ();
 }
 
-void AppActivate(BOOL fActive, BOOL minimize) {
+static void AppActivate(BOOL fActive, BOOL minimize) {
 /******************************************************************************
 *
 * Function:     AppActivate
@@ -682,10 +686,10 @@ void AppActivate(BOOL fActive, BOOL minimize) {
 
 	// enable/disable sound on focus gain/loss
 	if (!ActiveApp && sound_active) {
-		S_BlockSound ();
+//		S_BlockSound ();
 		sound_active = false;
 	} else if (ActiveApp && !sound_active) {
-		S_UnblockSound ();
+//		S_UnblockSound ();
 		sound_active = true;
 	}
 
@@ -731,17 +735,17 @@ void AppActivate(BOOL fActive, BOOL minimize) {
 	}
 }
 
-LONG CDAudio_MessageHandler(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+static LONG CDAudio_MessageHandler(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
-int IN_MapKey (int key);
+static int IN_MapKey (int key);
 
 
 #include "mw_hook.h"
-void MW_Hook_Message (long buttons);
+static void MW_Hook_Message (long buttons);
 
 
 /* main window procedure */
-LONG WINAPI MainWndProc (HWND    hWnd, UINT    uMsg, WPARAM  wParam, LPARAM  lParam) {
+static LONG WINAPI MainWndProc (HWND    hWnd, UINT    uMsg, WPARAM  wParam, LPARAM  lParam) {
     LONG lRet = 1;
 	int fActive, fMinimized, temp;
 	extern unsigned int uiWheelMessage;
@@ -832,7 +836,7 @@ LONG WINAPI MainWndProc (HWND    hWnd, UINT    uMsg, WPARAM  wParam, LPARAM  lPa
             break;
 
    	    case WM_CLOSE:
-			if (MessageBox (mainwindow, "Are you sure you want to quit?", "FuhQuake : Confirm Exit",
+			if (MessageBox (mainwindow, "Are you sure you want to quit?", "FodQuake : Confirm Exit",
 						MB_YESNO | MB_SETFOREGROUND | MB_ICONQUESTION) == IDYES)
 			{
 				Host_Quit ();
@@ -873,18 +877,18 @@ LONG WINAPI MainWndProc (HWND    hWnd, UINT    uMsg, WPARAM  wParam, LPARAM  lPa
 
 /********************************* VID MODES *********************************/
 
-int VID_NumModes (void) {
+static int VID_NumModes (void) {
 	return nummodes;
 }
 
-vmode_t *VID_GetModePtr (int modenum) {
+static vmode_t *VID_GetModePtr (int modenum) {
 	if (modenum >= 0 && modenum < nummodes)
 		return &modelist[modenum];
 
 	return &badmode;
 }
 
-char *VID_GetModeDescription (int mode) {
+static char *VID_GetModeDescription (int mode) {
 	char *pinfo;
 	vmode_t *pv;
 	static char	temp[100];
@@ -906,7 +910,7 @@ char *VID_GetModeDescription (int mode) {
 
 // KJB: Added this to return the mode driver name in description for console
 
-char *VID_GetExtModeDescription (int mode) {
+static char *VID_GetExtModeDescription (int mode) {
 	static char	pinfo[40];
 	vmode_t *pv;
 
@@ -932,7 +936,7 @@ char *VID_GetExtModeDescription (int mode) {
 	return pinfo;
 }
 
-void VID_ModeList_f (void) {
+static void VID_ModeList_f (void) {
 	int i, lnummodes, t;
 	char *pinfo;
 	vmode_t *pv;
@@ -953,7 +957,7 @@ void VID_ModeList_f (void) {
 
 /********************************** VID INIT **********************************/
 
-void VID_InitDIB (HINSTANCE hInstance) {
+static void VID_InitDIB (HINSTANCE hInstance) {
 	int temp;
 	WNDCLASS wc;
 
@@ -967,7 +971,7 @@ void VID_InitDIB (HINSTANCE hInstance) {
     wc.hCursor       = LoadCursor (NULL,IDC_ARROW);
 	wc.hbrBackground = NULL;
     wc.lpszMenuName  = 0;
-    wc.lpszClassName = "FuhQuake";
+    wc.lpszClassName = "FodQuake";
 
     if (!RegisterClass (&wc) )
 		Sys_Error ("Couldn't register window class");
@@ -1001,7 +1005,7 @@ void VID_InitDIB (HINSTANCE hInstance) {
 	nummodes = 1;
 }
 
-void VID_InitFullDIB (HINSTANCE hInstance) {
+static void VID_InitFullDIB (HINSTANCE hInstance) {
 	DEVMODE	devmode;
 	int i, modenum, originalnummodes, numlowresmodes, j, bpp, done;
 	BOOL stat;
@@ -1102,25 +1106,12 @@ void VID_InitFullDIB (HINSTANCE hInstance) {
 		Com_Printf ("No fullscreen DIB modes found\n");
 }
 
-void VID_Init (unsigned char *palette) {
+static void VID_Init (unsigned char *palette) {
 	int i, temp, basenummodes, width, height, bpp, findbpp, done;
 	HDC hdc;
 	DEVMODE	devmode;
 
 	memset(&devmode, 0, sizeof(devmode));
-
-	Cvar_SetCurrentGroup(CVAR_GROUP_VIDEO);
-	Cvar_Register (&vid_ref);
-	Cvar_Register (&vid_mode);
-	Cvar_Register (&_vid_default_mode);
-	Cvar_Register (&_vid_default_mode_win);
-	Cvar_Register (&vid_config_x);
-	Cvar_Register (&vid_config_y);
-	Cvar_Register (&_windowed_mouse);
-	Cvar_Register (&vid_hwgammacontrol);
-	Cvar_Register (&vid_displayfrequency);
-
-	Cvar_ResetCurrentGroup();
 
 	Cmd_AddCommand ("vid_modelist", VID_ModeList_f);
 
@@ -1255,11 +1246,7 @@ void VID_Init (unsigned char *palette) {
 	if (vid.conheight < 200)
 		vid.conheight = 200;
 
-	vid.maxwarpwidth = WARP_WIDTH;
-	vid.maxwarpheight = WARP_HEIGHT;
 	vid.colormap = host_colormap;
-	vid.fullbright = 256 - LittleLong (*((int *) vid.colormap + 2048));
-
 	Check_Gamma(palette);
 	VID_SetPalette (palette);
 
@@ -1279,101 +1266,495 @@ void VID_Init (unsigned char *palette) {
 	GL_Init();
 	GL_Init_Win();
 
-	vid_menudrawfn = VID_MenuDraw;
-	vid_menukeyfn = VID_MenuKey;
-
 	strcpy (badmode.modedesc, "Bad mode");
 	vid_canalttab = true;
 }
 
-/********************************** VID MENU **********************************/
 
-#define VID_ROW_SIZE	3
-
-void M_Menu_Options_f (void);
-void M_Print (int cx, int cy, char *str);
-void M_PrintWhite (int cx, int cy, char *str);
-void M_DrawPic (int x, int y, mpic_t *pic);
-
-static int	vid_line, vid_wmodes;
-
-typedef struct {
-	int		modenum;
-	char	*desc;
-	int		iscur;
-} modedesc_t;
+#endif
 
 
-#define MAX_COLUMN_SIZE		9
-#define MODE_AREA_HEIGHT	(MAX_COLUMN_SIZE + 2)
-#define MAX_MODEDESCS		(MAX_COLUMN_SIZE * 3)
 
-static modedesc_t	modedescs[MAX_MODEDESCS];
 
-void VID_MenuDraw (void) {
-	mpic_t *p;
-	char *ptr;
-	int lnummodes, i, k, column, row;
-	vmode_t *pv;
 
-	p = Draw_CachePic ("gfx/vidmodes.lmp");
-	M_DrawPic ( (320 - p->width)/2, 4, p);
 
-	vid_wmodes = 0;
-	lnummodes = VID_NumModes ();
 
-	for (i = 1; i < lnummodes && vid_wmodes < MAX_MODEDESCS; i++) {
-		ptr = VID_GetModeDescription (i);
-		pv = VID_GetModePtr (i);
 
-		k = vid_wmodes;
 
-		modedescs[k].modenum = i;
-		modedescs[k].desc = ptr;
-		modedescs[k].iscur = 0;
 
-		if (i == vid_modenum)
-			modedescs[k].iscur = 1;
 
-		vid_wmodes++;
 
+
+
+
+LONG CDAudio_MessageHandler(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+
+int IN_MapKey (int key);
+
+
+#include "mw_hook.h"
+void MW_Hook_Message (long buttons);
+
+
+static void ClearAllStates (void)
+{
+	extern qboolean keydown[256];
+	int i;
+
+	// send an up event for each key, to make sure the server clears them all
+	for (i = 0; i < 256; i++)
+	{
+		if (keydown[i])
+			Key_Event (i, false);
 	}
 
-	if (vid_wmodes > 0) {
-		M_Print (2 * 8, 36 + 0 * 8, "Fullscreen Modes (WIDTHxHEIGHTxBPP)");
+	Key_ClearStates ();
+	IN_ClearStates ();
+}
 
-		column = 8;
-		row = 36 + 2 * 8;
+/* main window procedure */
+static LONG WINAPI MainWndProc (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+	LONG lRet = 1;
+	int fActive, fMinimized, temp;
+	extern unsigned int uiWheelMessage;
 
-		for (i = 0; i < vid_wmodes; i++) {
-			if (modedescs[i].iscur)
-				M_PrintWhite (column, row, modedescs[i].desc);
-			else
-				M_Print (column, row, modedescs[i].desc);
+	struct display *d;
 
-			column += 13*8;
+	for (d = activedisplays; d; d = d->next)
+	{
+		if (d->window == hWnd)
+			break;
+	}
+	if (!d)
+	{
+		//this shouldn't ever happen
+		return DefWindowProc (hWnd, uMsg, wParam, lParam);
+	}
 
-			if ((i % VID_ROW_SIZE) == (VID_ROW_SIZE - 1)) {
-				column = 8;
-				row += 8;
+	if (uMsg == uiWheelMessage)
+	{
+		uMsg = WM_MOUSEWHEEL;
+		wParam <<= 16;
+	}
+
+	switch (uMsg)
+	{
+		case WM_KILLFOCUS:
+			if (d->isfullscreen)
+				ShowWindow(hWnd, SW_SHOWMINNOACTIVE);
+			break;
+
+		case WM_CREATE:
+			break;
+
+		case WM_MOVE:
+			d->left = (int) LOWORD(lParam);
+			d->right = (int) HIWORD(lParam);
+//			VID_UpdateWindowStatus ();
+			break;
+
+		case WM_KEYDOWN:
+		case WM_SYSKEYDOWN:
+			Key_Event (IN_MapKey(lParam), true);
+			break;
+
+		case WM_KEYUP:
+		case WM_SYSKEYUP:
+			Key_Event (IN_MapKey(lParam), false);
+			break;
+
+		case WM_SYSCHAR:
+			// keep Alt-Space from happening
+			break;
+		// this is complicated because Win32 seems to pack multiple mouse events into
+		// one update sometimes, so we always check all states and look for events
+		case WM_LBUTTONDOWN:
+		case WM_LBUTTONUP:
+		case WM_RBUTTONDOWN:
+		case WM_RBUTTONUP:
+		case WM_MBUTTONDOWN:
+		case WM_MBUTTONUP:
+		case WM_XBUTTONDOWN:
+		case WM_XBUTTONUP:
+			temp = 0;
+
+			if (wParam & MK_LBUTTON)
+				temp |= 1;
+
+			if (wParam & MK_RBUTTON)
+				temp |= 2;
+
+			if (wParam & MK_MBUTTON)
+				temp |= 4;
+
+			if (wParam & MK_XBUTTON1)
+				temp |= 8;
+
+			if (wParam & MK_XBUTTON2)
+				temp |= 16;
+
+			IN_MouseEvent (temp);
+
+			break;
+
+		// JACK: This is the mouse wheel with the Intellimouse
+		// Its delta is either positive or neg, and we generate the proper Event.
+		case WM_MOUSEWHEEL:
+			if ((short) HIWORD(wParam) > 0)
+			{
+				Key_Event(K_MWHEELUP, true);
+				Key_Event(K_MWHEELUP, false);
 			}
+			else
+			{
+				Key_Event(K_MWHEELDOWN, true);
+				Key_Event(K_MWHEELDOWN, false);
+			}
+			break;
+
+
+		case WM_MWHOOK:
+			MW_Hook_Message (lParam);
+			break;
+
+
+		case WM_SIZE:
+			break;
+
+		case WM_CLOSE:
+			if (MessageBox (mainwindow, "Are you sure you want to quit?", "FodQuake : Confirm Exit",
+						MB_YESNO | MB_SETFOREGROUND | MB_ICONQUESTION) == IDYES)
+			{
+				Host_Quit ();
+			}
+			break;
+
+		case WM_ACTIVATE:
+			fActive = LOWORD(wParam);
+			fMinimized = (BOOL) HIWORD(wParam);
+			d->isfocused = !(fActive == WA_INACTIVE);
+
+			// fix the leftover Alt from any Alt-Tab or the like that switched us away
+			ClearAllStates ();
+
+			break;
+
+		case WM_DESTROY:
+			DestroyWindow (hWnd);
+			break;
+
+		case MM_MCINOTIFY:
+			lRet = CDAudio_MessageHandler (hWnd, uMsg, wParam, lParam);
+			break;
+
+		default:
+			/* pass all unhandled messages to DefWindowProc */
+			lRet = DefWindowProc (hWnd, uMsg, wParam, lParam);
+			break;
+	}
+
+	/* return 1 if handled message, 0 if not */
+	return lRet;
+}
+
+
+
+
+
+
+static cvar_t		vid_ref = {"vid_ref", "gl", CVAR_ROM};
+/*
+static cvar_t		vid_mode = {"vid_mode","0"};	// Note that 0 is MODE_WINDOWED
+static cvar_t		_vid_default_mode = {"_vid_default_mode","0",CVAR_ARCHIVE};	// Note that 3 is MODE_FULLSCREEN_DEFAULT
+static cvar_t		_vid_default_mode_win = {"_vid_default_mode_win","3",CVAR_ARCHIVE};
+static cvar_t		vid_config_x = {"vid_config_x","800",CVAR_ARCHIVE};
+static cvar_t		vid_config_y = {"vid_config_y","600",CVAR_ARCHIVE};
+static cvar_t		_windowed_mouse = {"_windowed_mouse","1",CVAR_ARCHIVE};
+*/
+static cvar_t		vid_displayfrequency = {"vid_displayfrequency", "0", CVAR_INIT};
+/*
+static cvar_t		vid_vsync = {"vid_vsync", "", CVAR_INIT};
+static cvar_t		vid_hwgammacontrol = {"vid_hwgammacontrol", "1"};
+*/
+void Sys_Video_SetWindowTitle(void *display, const char *text)
+{
+	struct display *d = display;
+	SetWindowText (d->window, text);
+}
+	
+
+
+/*void Sys_Video_GetMouseMovement(void *display, int *mousex, int *mousey)
+{
+	struct display *d = display;
+
+}*/
+
+void Sys_Video_GrabMouse(void *display, int dograb)
+{
+	struct display *d = display;
+
+	if (dograb)
+	{
+		IN_ActivateMouse ();
+		IN_HideMouse ();
+	}
+	else
+	{
+		IN_DeactivateMouse ();
+		IN_ShowMouse ();
+	}
+}
+
+void Sys_Video_SetGamma(void *display, unsigned short *ramps)
+{
+//noop, for now
+}
+
+void Sys_Video_BeginFrame(void *display, unsigned int *x, unsigned int *y, unsigned int *width, unsigned int *height)
+{
+	struct display *d = display;
+
+	*x = 0;
+	*y = 0;
+	*width = d->width;
+	*height = d->height;
+}
+
+unsigned int Sys_Video_GetNumBuffers(void *display)
+{
+	return 3;
+}
+
+void Sys_Video_Update(void *display, vrect_t *rects)
+{
+	struct display *d = display;
+	SwapBuffers(d->dc);
+}
+
+void Sys_Video_Close(void *display)
+{
+	struct display *d = display;
+
+	if (d->isfullscreen)
+		ChangeDisplaySettings (NULL, 0);
+#warning shiesh, nothing here
+}
+
+void Sys_Video_CvarInit()
+{
+	Cvar_SetCurrentGroup(CVAR_GROUP_VIDEO);
+	Cvar_Register (&vid_ref);
+/*	Cvar_Register (&vid_mode);
+	Cvar_Register (&_vid_default_mode);
+	Cvar_Register (&_vid_default_mode_win);
+	Cvar_Register (&vid_config_x);
+	Cvar_Register (&vid_config_y);
+	Cvar_Register (&_windowed_mouse);
+	Cvar_Register (&vid_hwgammacontrol);
+*/	Cvar_Register (&vid_displayfrequency);
+/*
+	Cvar_Register (&vid_vsync);
+*/
+	Cvar_ResetCurrentGroup();
+}
+
+void *Sys_Video_Open(unsigned int width, unsigned int height, unsigned int depth, int fullscreen, unsigned char *palette)
+{
+	RECT		rect;
+	int WindowStyle, ExWindowStyle;
+	struct display *d;
+	HANDLE hdc;
+	WNDCLASS wc;
+	int displacement;
+
+#warning this function doesn't clean up yet
+
+	if (fullscreen)	//first step is to set up the video res that we want
+	{
+		DEVMODE gdevmode;
+		memset(&gdevmode, 0, sizeof(gdevmode));
+		gdevmode.dmFields = DM_BITSPERPEL | DM_PELSWIDTH | DM_PELSHEIGHT;
+		gdevmode.dmBitsPerPel = ((depth==24)?32:depth);	//windows does not like 24bit depth (although that is all we get with 32bit anyway)
+		gdevmode.dmPelsWidth = width;
+		gdevmode.dmPelsHeight = height;
+		gdevmode.dmSize = sizeof (gdevmode);
+
+#warning display frequency should be a parameter to this function (so that we can tell if its already failed once or not)
+		if (vid_displayfrequency.value > 0)
+		{
+			gdevmode.dmDisplayFrequency = vid_displayfrequency.value;
+			gdevmode.dmFields |= DM_DISPLAYFREQUENCY;
+			Com_DPrintf ("Forcing display frequency to %i Hz\n", gdevmode.dmDisplayFrequency);
+		}
+
+		if (ChangeDisplaySettings (&gdevmode, CDS_FULLSCREEN) != DISP_CHANGE_SUCCESSFUL)
+		{
+			Com_Printf ("Couldn't set fullscreen DIB mode\n");
+
+#if GOWINDOWEDINSTEAD
+			fullscreen = false;
+#else
+			return NULL;
+#endif
 		}
 	}
 
-	M_Print (3 * 8, 36 + MODE_AREA_HEIGHT  *  8 + 8 * 2, "Video modes must be set from the");
-	M_Print (3 * 8, 36 + MODE_AREA_HEIGHT  *  8 + 8 * 3, "command line with -width <width>");
-	M_Print (3 * 8, 36 + MODE_AREA_HEIGHT  *  8 + 8 * 4, "and -bpp <bits-per-pixel>");
-	M_Print (3 * 8, 36 + MODE_AREA_HEIGHT  *  8 + 8 * 6, "Select windowed mode with -window");
+	if (!fullscreen)
+	{
+		hdc = GetDC (NULL);
+		if (GetDeviceCaps(hdc, RASTERCAPS) & RC_PALETTE)
+		{
+			Com_Printf ("You probably don't want opengl paletted. Switch to 16bit or 32bit colour or something.\n");
+			return NULL;
+		}
+		ReleaseDC (NULL, hdc);
+	}
+
+	d = malloc(sizeof(*d));
+	if (!d)
+	{
+		Com_Printf("malloc failed\n");
+		return NULL;
+	}
+
+	memset(d, 0, sizeof(*d));
+	d->width = width;
+	d->height = height;
+
+	d->next = activedisplays;
+	activedisplays = d;
+
+	d->isfullscreen = fullscreen;
+
+
+	/* Register the frame class */
+	wc.style         = 0;
+	wc.lpfnWndProc   = (WNDPROC)MainWndProc;
+	wc.cbClsExtra    = 0;
+	wc.cbWndExtra    = 0;
+	wc.hInstance     = global_hInstance;
+	wc.hIcon         = LoadIcon (global_hInstance, MAKEINTRESOURCE (IDI_APPICON));
+	wc.hCursor       = LoadCursor (NULL,IDC_ARROW);
+	wc.hbrBackground = NULL;
+	wc.lpszMenuName  = 0;
+	wc.lpszClassName = "FodQuake";
+
+	RegisterClass (&wc);	//assume that any failures are due to it still being registered
+					//we'll fail on the create instead.
+
+
+	rect.top = rect.left = 0;
+	rect.right = d->width;
+	rect.bottom = d->height;
+
+
+	if (d->isfullscreen)
+	{
+		WindowStyle = WS_POPUP;
+		ExWindowStyle = 0;
+	}
+	else
+	{
+		WindowStyle = WS_OVERLAPPED | WS_BORDER | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX;
+		ExWindowStyle = 0;
+	}
+
+	AdjustWindowRectEx(&rect, WindowStyle, FALSE, 0);
+
+	//ajust the rect so that it appears in the center of the screen
+	displacement = (GetSystemMetrics(SM_CYSCREEN) - (rect.top+rect.bottom)) / 2;
+	rect.top += displacement;
+	rect.bottom += displacement;
+	displacement = (GetSystemMetrics(SM_CXSCREEN) - (rect.left+rect.right)) / 2;
+	rect.left += displacement;
+	rect.right += displacement;
+
+	// Create the DIB window
+	d->window = CreateWindowEx (
+		 ExWindowStyle,
+		 "FodQuake",
+		 "FodQuake",
+		 WindowStyle,
+		 rect.left, rect.top,
+		 rect.right - rect.left,
+		 rect.bottom - rect.top,
+		 NULL,
+		 NULL,
+		 global_hInstance,
+		 NULL);
+
+	if (!d->window)
+	{
+		Com_Printf("Couldn't create a window\n");
+		return NULL;
+	}
+
+
+	ShowWindow (d->window, SW_SHOWDEFAULT);
+	UpdateWindow (d->window);
+
+
+	d->dc = GetDC(d->window);
+	if (!bSetupPixelFormat(d->dc))
+	{
+		Com_Printf ("bSetupPixelFormat failed\n");
+		return NULL;
+	}
+
+	if (!(d->glctx = wglCreateContext(d->dc)))
+	{
+		Com_Printf ("Could not initialize GL (wglCreateContext failed).\n\nMake sure you in are 65535 color mode, and try running -window.\n");
+		return NULL;
+	}
+	if (!wglMakeCurrent(d->dc, d->glctx))
+	{
+		Com_Printf ("wglMakeCurrent failed\n");
+		return NULL;
+	}
+
+	GL_Init();
+	VID_SetPalette(palette);
+
+mainwindow = d->window;
+
+	vid.width = vid.conwidth = d->width;
+	vid.height = vid.conheight = d->height;
+
+	window_rect = rect;
+	window_center_x = (window_rect.left + window_rect.right)/2;
+	window_center_y = (window_rect.top + window_rect.bottom)/2;
+
+	IN_StartupMouse();
+
+	return d;
 }
 
-void VID_MenuKey (int key) {
-	switch (key) {
-	case K_ESCAPE:
-		S_LocalSound ("misc/menu1.wav");
-		M_Menu_Options_f ();
-		break;
+qboolean Sys_Video_HWGammaSupported(void *display)
+{
+	return false;	//for now
+}
 
-	default:
-		break;
-	}
+const char *Sys_Video_GetClipboardText(void *display)
+{
+	return NULL;
+}
+void Sys_Video_FreeClipboardText(void *display, const char *text)	//is text technically a const here?...
+{
+}
+void Sys_Video_SetClipboardText(void *display, const char *text)
+{
+}
+
+
+
+//REMOVE THESE
+int window_center_x, window_center_y;
+RECT	window_rect;
+
+HWND mainwindow;
+char *Sys_GetClipboardData(void)
+{
+	return NULL;
 }
