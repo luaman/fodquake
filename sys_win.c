@@ -365,7 +365,7 @@ BOOL WINAPI HandlerRoutine (DWORD dwCtrlType) {
 }
 
 //Quake calls this so the system can register variables before host_hunklevel is marked
-void Sys_Init (void) {
+void Sys_CvarInit (void) {
 
 	Cvar_SetCurrentGroup(CVAR_GROUP_SYSTEM_SETTINGS);
 	Cvar_Register(&sys_highpriority);
@@ -376,7 +376,10 @@ void Sys_Init (void) {
 		Cvar_Register(&sys_disableWinKeys);	
 #endif
 	Cvar_ResetCurrentGroup();
+}
 
+void Sys_Init (void)
+{
 }
 
 void Sys_Init_ (void) {
@@ -585,10 +588,10 @@ int WINAPI WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
 			NET_Sleep(1);
 		} else if (sys_inactivesleep.value) {
 			// yield the CPU for a little while when paused, minimized, or not the focus
-			if ((cl.paused && (!ActiveApp && !DDActive)) || Minimized || block_drawing) {
+			if ((cl.paused && (!ActiveApp)) || Minimized || block_drawing) {
 				SleepUntilInput (PAUSE_SLEEP);
 				scr_skipupdate = 1;		// no point in bothering to draw
-			} else if (!ActiveApp && !DDActive) {
+			} else if (!ActiveApp) {
 				SleepUntilInput (NOT_FOCUS_SLEEP);
 			}
 		}
