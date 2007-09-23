@@ -79,6 +79,10 @@ struct SoundCard
 	void (*Submit)(struct SoundCard *);
 	void (*Shutdown)(struct SoundCard *);
 
+	unsigned char *(*Lock)(struct SoundCard *);
+	void (*Unlock)(struct SoundCard *);
+	void (*Restore)(struct SoundCard *);
+
 	int channels;
 	int samples;             // mono samples in buffer
 	int submission_chunk;    // don't mix less than this #
