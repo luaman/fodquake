@@ -23,21 +23,26 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "winquake.h"
 #include "sound.h"
 
+#warning Command line arguments are not tolerated.
 
 #define iDirectSoundCreate(a,b,c)	pDirectSoundCreate(a,b,c)
 
-HRESULT (WINAPI *pDirectSoundCreate)(GUID FAR *lpGUID, LPDIRECTSOUND FAR *lplpDS, IUnknown FAR *pUnkOuter);
-HRESULT (WINAPI *pDirectSoundEnumerate)(LPDSENUMCALLBACKA pDSEnumCallback, LPVOID pContext);
-static HINSTANCE hInstDS;
-
-
 // 64K is > 1 second at 16-bit, 22050 Hz
-#define	WAV_BUFFERS				64
-#define	WAV_MASK				0x3F
-#define	WAV_BUFFER_SIZE			0x0400
-#define SECONDARY_BUFFER_SIZE	0x10000
+#define	WAV_BUFFERS             64
+#define	WAV_MASK                0x3F
+#define	WAV_BUFFER_SIZE         0x0400
+#define SECONDARY_BUFFER_SIZE   0x10000
 
 struct dspriv {
+	HINSTANCE hInstDS;
+	HRESULT (WINAPI *pDirectSoundCreate)(GUID FAR *lpGUID, LPDIRECTSOUND FAR *lplpDS, IUnknown FAR *pUnkOuter);
+	HRESULT (WINAPI *pDirectSoundEnumerate)(LPDSENUMCALLBACKA pDSEnumCallback, LPVOID pContext);
+
+	int wanteddevicenum;
+	int currentenum;
+	LPGUID dsdevice;
+
+
 	int samplebytes;
 
 	LPDIRECTSOUND pDS;
@@ -46,17 +51,17 @@ struct dspriv {
 	int gSndBufSize;
 
 	DWORD lockedsize;
-	MMTIME		mmstarttime;
+	MMTIME mmstarttime;
 };
-
-static int		currentenum = 0;
-static LPGUID	dsdevice = NULL;
 
 static BOOL CALLBACK DS_EnumDevices(LPGUID lpGUID, LPCTSTR lpszDesc, LPCTSTR lpszDrvName, LPVOID lpContext)
 {
-	if (*((int *) lpContext) == currentenum++)
+	struct dspriv *p = lpContext;
+
+	if (p->wanteddevicenum == p->currentenum++)
 	{
-		dsdevice = lpGUID;
+		p->dsdevice = lpGUID;
+
 		return FALSE;
 	}
 	else
@@ -70,27 +75,19 @@ static void ds7_shutdown (struct SoundCard *sc)
 {
 	struct dspriv *p = sc->driverprivate;
 
-	if (p)
-	{
-		if (p->pDSBuf)
-		{
-			p->pDSBuf->lpVtbl->Stop(p->pDSBuf);
-			p->pDSBuf->lpVtbl->Release(p->pDSBuf);
-		}
+	p->pDSBuf->lpVtbl->Stop(p->pDSBuf);
+	p->pDSBuf->lpVtbl->Release(p->pDSBuf);
 
-		// only release primary buffer if it's not also the mixing buffer we just released
-		if (p->pDSPBuf && p->pDSBuf != p->pDSPBuf)
-			p->pDSPBuf->lpVtbl->Release(p->pDSPBuf);
+	// only release primary buffer if it's not also the mixing buffer we just released
+	if (p->pDSPBuf && p->pDSBuf != p->pDSPBuf)
+		p->pDSPBuf->lpVtbl->Release(p->pDSPBuf);
 
-		if (p->pDS)
-		{
-			p->pDS->lpVtbl->SetCooperativeLevel (p->pDS, mainwindow, DSSCL_NORMAL);
-			p->pDS->lpVtbl->Release(p->pDS);
-		}
-		free(p);
-	}
-	sc->driverprivate = NULL;
+	p->pDS->lpVtbl->SetCooperativeLevel (p->pDS, mainwindow, DSSCL_NORMAL);
+	p->pDS->lpVtbl->Release(p->pDS);
 
+	FreeLibrary(p->hInstDS);
+
+	free(p);
 }
 
 //return the current sample position (in mono samples read) inside the recirculating dma buffer,
@@ -188,251 +185,242 @@ static qboolean ds7_init (struct SoundCard *sc, int rate, int channels, int bits
 	WAVEFORMATEX format, pformat; 
 	HRESULT hresult;
 	int reps, temp, devicenum;
+	int tempresult;
 
-	sc->channels = channels;
-	sc->samplebits = bits;
-	sc->speed = rate;
-
-	memset (&format, 0, sizeof(format));
-	format.wFormatTag = WAVE_FORMAT_PCM;
-	format.nChannels = sc->channels;
-	format.wBitsPerSample = sc->samplebits;
-	format.nSamplesPerSec = sc->speed;
-	format.nBlockAlign = format.nChannels * format.wBitsPerSample / 8;
-	format.cbSize = 0;
-	format.nAvgBytesPerSec = format.nSamplesPerSec * format.nBlockAlign; 
-
-	if (!hInstDS)
+	p = malloc(sizeof(*p));
+	if (p)
 	{
-		hInstDS = LoadLibrary("dsound.dll");
-		
-		if (hInstDS == NULL)
+		memset(p, 0, sizeof(*p));
+
+		p->hInstDS = LoadLibrary("dsound.dll");
+		if (p->hInstDS)
 		{
-			Com_Printf ("Couldn't load dsound.dll\n");
-			return false;
-		}
+			p->pDirectSoundCreate = (void *)GetProcAddress(p->hInstDS,"DirectSoundCreate");
+			p->pDirectSoundEnumerate = (void *) GetProcAddress(p->hInstDS, "DirectSoundEnumerateA");
 
-		pDirectSoundCreate = (void *)GetProcAddress(hInstDS,"DirectSoundCreate");
+			if (p->pDirectSoundCreate && p->pDirectSoundEnumerate)
+			{
+				memset (&format, 0, sizeof(format));
+				format.wFormatTag = WAVE_FORMAT_PCM;
+				format.nChannels = sc->channels;
+				format.wBitsPerSample = sc->samplebits;
+				format.nSamplesPerSec = sc->speed;
+				format.nBlockAlign = format.nChannels * format.wBitsPerSample / 8;
+				format.cbSize = 0;
+				format.nAvgBytesPerSec = format.nSamplesPerSec * format.nBlockAlign; 
 
-		if (!pDirectSoundCreate)
-		{
-			Com_Printf ("Couldn't get DS proc addr\n");
-			return false;
-		}
-
-		if (!(pDirectSoundEnumerate = (void *) GetProcAddress(hInstDS, "DirectSoundEnumerateA")))
-		{
-			Com_Printf ("Couldn't get DirectSoundEnumerateA proc addr\n");
-			return false;
-		}
-	}
-
-	sc->driverprivate = p = malloc(sizeof(*p));
-	if (!p)
-		return false;
-	memset(p, 0, sizeof(*p));
-
-	dsdevice = NULL;
-	if ((temp = COM_CheckParm("-snddev")) && temp + 1 < com_argc)
-	{
+				p->dsdevice = NULL;
+				if ((temp = COM_CheckParm("-snddev")) && temp + 1 < com_argc)
+				{
 #warning do this properly
-		devicenum = Q_atoi(com_argv[temp + 1]);
-		currentenum = 0;
-		if ((hresult = pDirectSoundEnumerate(DS_EnumDevices, &devicenum)) != DS_OK)
-		{
-			Com_Printf ("Couldn't open preferred sound device. Falling back to primary sound device.\n");
-			dsdevice = NULL;
-		}
-	}
+					p->wanteddevicenum = Q_atoi(com_argv[temp + 1]);
+					p->currentenum = 0;
+					if ((hresult = p->pDirectSoundEnumerate(DS_EnumDevices, p)) != DS_OK)
+					{
+						Com_Printf ("Couldn't open preferred sound device. Falling back to primary sound device.\n");
+						p->dsdevice = NULL;
+					}
+				}
 
-	hresult = pDirectSoundCreate(dsdevice, &p->pDS, NULL);
-	if (hresult != DS_OK && dsdevice)
-	{
-		Com_Printf ("Couldn't open preferred sound device. Falling back to primary sound device.\n");
-		dsdevice = NULL;
-		hresult = pDirectSoundCreate(dsdevice, &p->pDS, NULL);
-	}
+				hresult = p->pDirectSoundCreate(p->dsdevice, &p->pDS, NULL);
+				if (hresult != DS_OK && p->dsdevice)
+				{
+					Com_Printf ("Couldn't open preferred sound device. Falling back to primary sound device.\n");
+					p->dsdevice = NULL;
+					hresult = p->pDirectSoundCreate(p->dsdevice, &p->pDS, NULL);
+				}
 
-	if (hresult != DS_OK)
-	{
-		if (hresult == DSERR_ALLOCATED)
-		{
-			Com_Printf ("DirectSoundCreate failed, hardware already in use\n");
-			ds7_shutdown (sc);
-			return false;
-		}
+				if (hresult != DS_OK)
+				{
+					if (hresult == DSERR_ALLOCATED)
+					{
+						Com_Printf ("DirectSoundCreate failed, hardware already in use\n");
+					}
+					else
+					{
+						Com_Printf ("DirectSound create failed\n");
+					}
+				}
+				else
+				{
+					dscaps.dwSize = sizeof(dscaps);
 
-		Com_Printf ("DirectSound create failed\n");
-		ds7_shutdown (sc);
-		return false;
-	}
+					if (DS_OK != p->pDS->lpVtbl->GetCaps (p->pDS, &dscaps))
+						Com_Printf ("Couldn't get DS caps\n");
 
-	dscaps.dwSize = sizeof(dscaps);
+					if (dscaps.dwFlags & DSCAPS_EMULDRIVER)
+					{
+						Com_Printf ("No DirectSound driver installed\n");
+					}
+					else
+					{
+						if (DS_OK != p->pDS->lpVtbl->SetCooperativeLevel (p->pDS, mainwindow, DSSCL_EXCLUSIVE))
+						{
+							Com_Printf ("Set coop level failed\n");
+						}
+						else
+						{
+							// get access to the primary buffer, if possible, so we can set the sound hardware format
+							memset (&dsbuf, 0, sizeof(dsbuf));
+							dsbuf.dwSize = sizeof(DSBUFFERDESC);
+							dsbuf.dwFlags = DSBCAPS_PRIMARYBUFFER|DSBCAPS_GLOBALFOCUS;
+							dsbuf.dwBufferBytes = 0;
+							dsbuf.lpwfxFormat = NULL;
 
-	if (DS_OK != p->pDS->lpVtbl->GetCaps (p->pDS, &dscaps))
-		Com_Printf ("Couldn't get DS caps\n");
+							memset(&dsbcaps, 0, sizeof(dsbcaps));
+							dsbcaps.dwSize = sizeof(dsbcaps);
+							primary_format_set = false;
 
-	if (dscaps.dwFlags & DSCAPS_EMULDRIVER)
-	{
-		Com_Printf ("No DirectSound driver installed\n");
-		ds7_shutdown (sc);
-		return false;
-	}
+							if (!COM_CheckParm ("-snoforceformat"))
+							{
+								if (DS_OK == p->pDS->lpVtbl->CreateSoundBuffer(p->pDS, &dsbuf, &p->pDSPBuf, NULL))
+								{
+									pformat = format;
 
-	if (DS_OK != p->pDS->lpVtbl->SetCooperativeLevel (p->pDS, mainwindow, DSSCL_EXCLUSIVE))
-	{
-		Com_Printf ("Set coop level failed\n");
-		ds7_shutdown (sc);
-		return false;
-	}
+									if (DS_OK == p->pDSPBuf->lpVtbl->SetFormat (p->pDSPBuf, &pformat))
+									{
+										primary_format_set = true;
+									}
+								}
+							}
 
-	// get access to the primary buffer, if possible, so we can set the sound hardware format
-	memset (&dsbuf, 0, sizeof(dsbuf));
-	dsbuf.dwSize = sizeof(DSBUFFERDESC);
-	dsbuf.dwFlags = DSBCAPS_PRIMARYBUFFER|DSBCAPS_GLOBALFOCUS;
-	dsbuf.dwBufferBytes = 0;
-	dsbuf.lpwfxFormat = NULL;
+							tempresult = 0;
 
-	memset(&dsbcaps, 0, sizeof(dsbcaps));
-	dsbcaps.dwSize = sizeof(dsbcaps);
-	primary_format_set = false;
+							if (!primary_format_set || !COM_CheckParm ("-primarysound"))
+							{
+								// create the secondary buffer we'll actually work with
+								memset (&dsbuf, 0, sizeof(dsbuf));
+								dsbuf.dwSize = sizeof(DSBUFFERDESC);
+								dsbuf.dwFlags = DSBCAPS_CTRLFREQUENCY | DSBCAPS_LOCSOFTWARE|DSBCAPS_GLOBALFOCUS;
+								dsbuf.dwBufferBytes = SECONDARY_BUFFER_SIZE;
+								dsbuf.lpwfxFormat = &format;
 
-	if (!COM_CheckParm ("-snoforceformat"))
-	{
-		if (DS_OK == p->pDS->lpVtbl->CreateSoundBuffer(p->pDS, &dsbuf, &p->pDSPBuf, NULL))
-		{
-			pformat = format;
+								memset(&dsbcaps, 0, sizeof(dsbcaps));
+								dsbcaps.dwSize = sizeof(dsbcaps);
 
-			if (DS_OK != p->pDSPBuf->lpVtbl->SetFormat (p->pDSPBuf, &pformat))
-			{
-//				if (snd_firsttime)
-//					Com_Printf ("Set primary sound buffer format: no\n");
+								if (DS_OK != p->pDS->lpVtbl->CreateSoundBuffer(p->pDS, &dsbuf, &p->pDSBuf, NULL))
+								{
+									Com_Printf ("DS:CreateSoundBuffer Failed");
+								}
+								else
+								{
+									sc->driverprivate = p;
+									sc->channels = format.nChannels;
+									sc->samplebits = format.wBitsPerSample;
+									sc->speed = format.nSamplesPerSec;
+
+									if (DS_OK != p->pDSBuf->lpVtbl->GetCaps (p->pDSBuf, &dsbcaps))
+									{
+										Com_Printf ("DS:GetCaps failed\n");
+									}
+									else
+										tempresult = 1;
+								}
+							}
+							else
+							{
+								if (DS_OK != p->pDS->lpVtbl->SetCooperativeLevel (p->pDS, mainwindow, DSSCL_WRITEPRIMARY))
+								{
+									Com_Printf ("Set coop level failed\n");
+								}
+								else
+								{
+									if (DS_OK != p->pDSPBuf->lpVtbl->GetCaps (p->pDSPBuf, &dsbcaps))
+									{
+										Com_Printf ("DS:GetCaps failed\n");
+									}
+									else
+									{
+										p->pDSBuf = p->pDSPBuf;
+										tempresult = 1;
+									}
+								}
+							}
+
+							if (tempresult)
+							{
+								// Make sure mixer is active
+								p->pDSBuf->lpVtbl->Play(p->pDSBuf, 0, 0, DSBPLAY_LOOPING);
+
+								p->gSndBufSize = dsbcaps.dwBufferBytes;
+
+								// initialize the buffer
+								reps = 0;
+
+								tempresult = 1;
+								while ((hresult = p->pDSBuf->lpVtbl->Lock(p->pDSBuf, 0, p->gSndBufSize, &lpData, &dwSize, NULL, NULL, 0)) != DS_OK)
+								{
+									if (hresult != DSERR_BUFFERLOST)
+									{
+										Com_Printf ("SNDDMA_InitDirect: DS::Lock Sound Buffer Failed\n");
+										tempresult = 0;
+										break;
+									}
+
+									Com_Printf ("SNDDMA_InitDirect: relocking...\n");
+
+									if (++reps > 10000)
+									{
+										Com_Printf ("SNDDMA_InitDirect: DS: couldn't restore buffer\n");
+										tempresult = 0;
+										break;
+									}
+								}
+
+								if (tempresult)
+								{
+									memset(lpData, 0, dwSize);
+									//		lpData[4] = lpData[5] = 0x7f;	// force a pop for debugging
+
+									p->pDSBuf->lpVtbl->Unlock(p->pDSBuf, lpData, dwSize, NULL, 0);
+
+									/* we don't want anyone to access the buffer directly w/o locking it first. */
+									lpData = NULL; 
+
+									p->pDSBuf->lpVtbl->Stop(p->pDSBuf);
+									p->pDSBuf->lpVtbl->GetCurrentPosition(p->pDSBuf, &p->mmstarttime.u.sample, &dwWrite);
+									p->pDSBuf->lpVtbl->Play(p->pDSBuf, 0, 0, DSBPLAY_LOOPING);
+
+									sc->samples = p->gSndBufSize/(sc->samplebits/8);
+									sc->samplepos = 0;
+									sc->submission_chunk = 1;
+									sc->buffer = NULL;
+									p->samplebytes = (sc->samplebits/8);
+
+									sc->GetDMAPos = ds7_getdmapos;
+									sc->Submit = ds7_submit;
+									sc->Shutdown = ds7_shutdown;
+									sc->Restore = ds7_restore;
+									sc->Lock = ds7_lock;
+									sc->Unlock = ds7_unlock;
+
+									return true;
+								}
+							}
+
+							if (p->pDSBuf)
+							{
+								p->pDSBuf->lpVtbl->Stop(p->pDSBuf);
+								p->pDSBuf->lpVtbl->Release(p->pDSBuf);
+
+								if (p->pDSPBuf && p->pDSBuf != p->pDSPBuf)
+									p->pDSPBuf->lpVtbl->Release(p->pDSPBuf);
+							}
+						}
+					}
+
+					p->pDS->lpVtbl->Release(p->pDS);
+				}
 			}
-			else
-			{
-//				if (snd_firsttime)
-//					Com_Printf ("Set primary sound buffer format: yes\n");
 
-				primary_format_set = true;
-			}
+			FreeLibrary(p->hInstDS);
 		}
+
+		free(p);
 	}
 
-	if (!primary_format_set || !COM_CheckParm ("-primarysound"))
-	{
-		// create the secondary buffer we'll actually work with
-		memset (&dsbuf, 0, sizeof(dsbuf));
-		dsbuf.dwSize = sizeof(DSBUFFERDESC);
-		dsbuf.dwFlags = DSBCAPS_CTRLFREQUENCY | DSBCAPS_LOCSOFTWARE|DSBCAPS_GLOBALFOCUS;
-		dsbuf.dwBufferBytes = SECONDARY_BUFFER_SIZE;
-		dsbuf.lpwfxFormat = &format;
-
-		memset(&dsbcaps, 0, sizeof(dsbcaps));
-		dsbcaps.dwSize = sizeof(dsbcaps);
-
-		if (DS_OK != p->pDS->lpVtbl->CreateSoundBuffer(p->pDS, &dsbuf, &p->pDSBuf, NULL))
-		{
-			Com_Printf ("DS:CreateSoundBuffer Failed");
-			ds7_shutdown (sc);
-			return false;
-		}
-
-		sc->channels = format.nChannels;
-		sc->samplebits = format.wBitsPerSample;
-		sc->speed = format.nSamplesPerSec;
-
-		if (DS_OK != p->pDSBuf->lpVtbl->GetCaps (p->pDSBuf, &dsbcaps))
-		{
-			Com_Printf ("DS:GetCaps failed\n");
-			ds7_shutdown (sc);
-			return false;
-		}
-
-//		if (snd_firsttime)
-//			Com_Printf ("Using secondary sound buffer\n");
-	}
-	else
-	{
-		if (DS_OK != p->pDS->lpVtbl->SetCooperativeLevel (p->pDS, mainwindow, DSSCL_WRITEPRIMARY))
-		{
-			Com_Printf ("Set coop level failed\n");
-			ds7_shutdown (sc);
-			return false;
-		}
-
-		if (DS_OK != p->pDSPBuf->lpVtbl->GetCaps (p->pDSPBuf, &dsbcaps))
-		{
-			Com_Printf ("DS:GetCaps failed\n");
-			return false;
-		}
-
-		p->pDSBuf = p->pDSPBuf;
-//		Com_Printf ("Using primary sound buffer\n");
-	}
-
-	// Make sure mixer is active
-	p->pDSBuf->lpVtbl->Play(p->pDSBuf, 0, 0, DSBPLAY_LOOPING);
-
-/*	if (snd_firsttime)
-		Com_Printf ("   %d channel(s)\n"
-		               "   %d bits/sample\n"
-					   "   %d bytes/sec\n",
-					   shm->channels, shm->samplebits, shm->speed);*/
-	
-	p->gSndBufSize = dsbcaps.dwBufferBytes;
-
-// initialize the buffer
-	reps = 0;
-
-	while ((hresult = p->pDSBuf->lpVtbl->Lock(p->pDSBuf, 0, p->gSndBufSize, &lpData, &dwSize, NULL, NULL, 0)) != DS_OK)
-	{
-		if (hresult != DSERR_BUFFERLOST)
-		{
-			Com_Printf ("SNDDMA_InitDirect: DS::Lock Sound Buffer Failed\n");
-			ds7_shutdown (sc);
-			return false;
-		}
-		Com_Printf ("SNDDMA_InitDirect: relocking...\n");
-
-		if (++reps > 10000)
-		{
-			Com_Printf ("SNDDMA_InitDirect: DS: couldn't restore buffer\n");
-			ds7_shutdown (sc);
-			return false;
-		}
-
-	}
-
-	memset(lpData, 0, dwSize);
-//		lpData[4] = lpData[5] = 0x7f;	// force a pop for debugging
-
-	p->pDSBuf->lpVtbl->Unlock(p->pDSBuf, lpData, dwSize, NULL, 0);
-
-	/* we don't want anyone to access the buffer directly w/o locking it first. */
-	lpData = NULL; 
-
-	p->pDSBuf->lpVtbl->Stop(p->pDSBuf);
-	p->pDSBuf->lpVtbl->GetCurrentPosition(p->pDSBuf, &p->mmstarttime.u.sample, &dwWrite);
-	p->pDSBuf->lpVtbl->Play(p->pDSBuf, 0, 0, DSBPLAY_LOOPING);
-
-	sc->samples = p->gSndBufSize/(sc->samplebits/8);
-	sc->samplepos = 0;
-	sc->submission_chunk = 1;
-	sc->buffer = NULL;
-	p->samplebytes = (sc->samplebits/8);
-
-	sc->GetDMAPos = ds7_getdmapos;
-	sc->Submit = ds7_submit;
-	sc->Shutdown = ds7_shutdown;
-	sc->Restore = ds7_restore;
-	sc->Lock = ds7_lock;
-	sc->Unlock = ds7_unlock;
-
-	return true;
+	return false;
 }
 
-
-
-
-
 SoundInitFunc DS7_Init = ds7_init;
+
