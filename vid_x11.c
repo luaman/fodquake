@@ -90,11 +90,6 @@ struct display
 	unsigned long r_mask, g_mask, b_mask;
 };
 
-extern viddef_t vid;		// global video state
-
-int XShmQueryExtension(Display *);
-int XShmGetEventBase(Display *);
-
 static void shiftmask_init(struct display *d)
 {
 	unsigned int x;
@@ -247,19 +242,6 @@ static void st3_fixup(struct display *d, XImage * framebuf, int x, int y, int wi
 			dest[xi] = d->st2d_8to24table[src[xi]];
 		}
 	}
-}
-
-// ========================================================================
-// Tragic death handler
-// ========================================================================
-
-static void TragicDeath(int signal_num)
-{
-#warning fixme
-#if 0
-	XCloseDisplay(x_disp);
-#endif
-	Sys_Error("This death brought to you by the number %d\n", signal_num);
 }
 
 // ========================================================================
@@ -439,15 +421,6 @@ void *Sys_Video_Open(unsigned int width, unsigned int height, unsigned int depth
 				Sys_Error("VID: Could not open display [%s]\n", getenv("DISPLAY"));
 			else
 				Sys_Error("VID: Could not open local display\n");
-		}
-
-		// catch signals so i can turn on auto-repeat
-		{
-			struct sigaction sa;
-			sigaction(SIGINT, 0, &sa);
-			sa.sa_handler = TragicDeath;
-			sigaction(SIGINT, &sa, 0);
-			sigaction(SIGTERM, &sa, 0);
 		}
 
 		// for debugging only
