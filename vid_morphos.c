@@ -43,8 +43,6 @@ struct display
 	void *inputdata;
 
 	char *buffer;
-	short *zbuffer;
-	char *sbuffer;
 
 	struct Screen *screen;
 	struct Window *window;
@@ -67,92 +65,99 @@ void *Sys_Video_Open(unsigned int width, unsigned int height, unsigned int depth
 {
 	struct display *d;
 	int i;
+	int screenbuffersallocated;
 
 	d = AllocVec(sizeof(*d), MEMF_CLEAR);
 	if (d)
 	{
 		d->buffer = AllocVec(width * height, MEMF_ANY);
-		if (d->buffer == 0)
+		if (d->buffer)
 		{
-			Sys_Error("VID: Couldn't allocate frame buffer");
-		}
-
-		d->zbuffer = AllocVec(width * height * sizeof(*d_pzbuffer), MEMF_ANY);
-		if (d->zbuffer == 0)
-		{
-			Sys_Error("VID: Couldn't allocate zbuffer");
-		}
-
-		d->sbuffer = AllocVec(D_SurfaceCacheForRes(width, height), MEMF_ANY);
-		if (d->sbuffer == 0)
-		{
-			Sys_Error("VID: Couldn't allocate surface cache");
-		}
-
-		D_InitCaches(d->sbuffer, D_SurfaceCacheForRes(width, height));
-
-		d_pzbuffer = d->zbuffer;
-
-		if (fullscreen)
-		{
-			d->screen = OpenScreenTags(0,
-				SA_Width, width,
-				SA_Height, height,
-				SA_Depth, 8,
-				SA_Quiet, TRUE,
-				TAG_DONE);
-		}
-
-
-		d->window = OpenWindowTags(0,
-			WA_InnerWidth, width,
-			WA_InnerHeight, height,
-			WA_Title, "FodQuake",
-			WA_DragBar, d->screen ? FALSE : TRUE,
-			WA_DepthGadget, d->screen ? FALSE : TRUE,
-			WA_Borderless, d->screen ? TRUE : FALSE,
-			WA_RMBTrap, TRUE, d->screen ?
-			WA_PubScreen : TAG_IGNORE, (ULONG) d->screen,
-			WA_Activate, TRUE,
-			WA_ReportMouse, TRUE,
-			TAG_DONE);
-
-		if (d->window == 0)
-			Sys_Error("Unable to open window");
-
-		d->pointermem = AllocVec(256, MEMF_ANY | MEMF_CLEAR);
-		if (d->pointermem == 0)
-		{
-			Sys_Error("Unable to allocate memory for mouse pointer");
-		}
-
-		SetPointer(d->window, d->pointermem, 16, 16, 0, 0);
-
-		if (d->screen)
-		{
-			for (i = 0; i < 3; i++)
+			if (fullscreen)
 			{
-				d->screenbuffers[i] = AllocScreenBuffer(d->screen, 0, i ? SB_COPY_BITMAP : SB_SCREEN_BITMAP);
-				if (d->screenbuffers[i] == 0)
-				{
-					Sys_Error("Unable to set up triplebuffering");
-				}
+				d->screen = OpenScreenTags(0,
+					SA_Width, width,
+					SA_Height, height,
+					SA_Depth, 8,
+					SA_Quiet, TRUE,
+					TAG_DONE);
 			}
+
+			d->window = OpenWindowTags(0,
+				WA_InnerWidth, width,
+				WA_InnerHeight, height,
+				WA_Title, "FodQuake",
+				WA_DragBar, d->screen ? FALSE : TRUE,
+				WA_DepthGadget, d->screen ? FALSE : TRUE,
+				WA_Borderless, d->screen ? TRUE : FALSE,
+				WA_RMBTrap, TRUE, d->screen ?
+				WA_PubScreen : TAG_IGNORE, (ULONG) d->screen,
+				WA_Activate, TRUE,
+				WA_ReportMouse, TRUE,
+				TAG_DONE);
+
+			if (d->window)
+			{
+				d->pointermem = AllocVec(256, MEMF_ANY | MEMF_CLEAR);
+				if (d->pointermem)
+				{
+					SetPointer(d->window, d->pointermem, 16, 16, 0, 0);
+
+					if (d->screen)
+					{
+						for (screenbuffersallocated = 0; screenbuffersallocated < 3; screenbuffersallocated++)
+						{
+							d->screenbuffers[screenbuffersallocated] = AllocScreenBuffer(d->screen, 0, screenbuffersallocated ? SB_COPY_BITMAP : SB_SCREEN_BITMAP);
+							if (d->screenbuffers[screenbuffersallocated] == 0)
+								break;
+						}
+					}
+
+					if (d->screen == 0 || screenbuffersallocated == 3)
+					{
+						d->width = width;
+						d->height = height;
+
+						d->currentbuffer = 0;
+
+						InitRastPort(&d->rastport);
+
+						Sys_Video_SetPalette(d, palette);
+
+						d->inputdata = Sys_Input_Init(d->screen, d->window);
+
+						return d;
+					}
+
+					if (d->screen)
+					{
+						screenbuffersallocated--;
+
+						while(screenbuffersallocated >= 0)
+						{
+							FreeScreenBuffer(d->screen, d->screenbuffers[screenbuffersallocated]);
+							screenbuffersallocated--;
+						}
+					}
+
+					FreeVec(d->pointermem);
+				}
+
+				CloseWindow(d->window);
+			}
+
+			if (d->screen)
+			{
+				CloseScreen(d->screen);
+			}
+
+			FreeVec(d->buffer);
 		}
 
-		d->width = width;
-		d->height = height;
-
-		d->currentbuffer = 0;
-
-		InitRastPort(&d->rastport);
-
-		Sys_Video_SetPalette(d, palette);
-
-		d->inputdata = Sys_Input_Init(d->screen, d->window);
+		FreeVec(d);
 	}
 
-	return d;
+	return 0;
 }
 
 void Sys_Video_Close(void *display)
@@ -160,34 +165,23 @@ void Sys_Video_Close(void *display)
 	struct display *d = display;
 	int i;
 
-	D_FlushCaches();
+	Sys_Input_Shutdown(d->inputdata);
 
-	if (d->inputdata)
-		Sys_Input_Shutdown(d->inputdata);
+	FreeVec(d->buffer);
 
-	if (d->buffer)
-		FreeVec(d->buffer);
+	CloseWindow(d->window);
 
-	if (d->zbuffer)
-		FreeVec(d->zbuffer);
-
-	if (d->sbuffer)
-		FreeVec(d->sbuffer);
-
-	for (i = 0; i < 3; i++)
-	{
-		if (d->screenbuffers[i])
-			FreeScreenBuffer(d->screen, d->screenbuffers[i]);
-	}
-
-	if (d->window)
-		CloseWindow(d->window);
-
-	if (d->pointermem)
-		FreeVec(d->pointermem);
+	FreeVec(d->pointermem);
 
 	if (d->screen)
+	{
+		for (i = 0; i < 3; i++)
+		{
+			FreeScreenBuffer(d->screen, d->screenbuffers[i]);
+		}
+
 		CloseScreen(d->screen);
+	}
 
 	FreeVec(d);
 }
