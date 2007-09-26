@@ -79,11 +79,6 @@ struct display
 
 	byte current_palette[768];
 
-	long X11_highhunkmark;
-	long X11_buffersize;
-
-	void *vid_surfcache;
-
 	PIXEL16 st2d_8to16table[256];
 	PIXEL24 st2d_8to24table[256];
 	long r_shift, g_shift, b_shift;
@@ -274,36 +269,11 @@ static void ResetFrameBuffer(struct display *d)
 {
 	int mem, pwidth;
 
-	int vid_surfcachesize;
-
 	if (d->x_framebuffer[0])
 	{
 		free(d->x_framebuffer[0]->data);
 		free(d->x_framebuffer[0]);
 	}
-
-	if (d_pzbuffer)
-	{
-		D_FlushCaches();
-		Hunk_FreeToHighMark(d->X11_highhunkmark);
-		d_pzbuffer = NULL;
-	}
-	d->X11_highhunkmark = Hunk_HighMark();
-
-	// alloc an extra line in case we want to wrap, and allocate the z-buffer
-	d->X11_buffersize = d->width * d->height * sizeof(*d_pzbuffer);
-
-	vid_surfcachesize = D_SurfaceCacheForRes(d->width, d->height);
-
-	d->X11_buffersize += vid_surfcachesize;
-
-	d_pzbuffer = Hunk_HighAllocName(d->X11_buffersize, "video");
-	if (d_pzbuffer == NULL)
-		Sys_Error("Not enough memory for video mode\n");
-
-	d->vid_surfcache = (byte *) d_pzbuffer + d->width * d->height * sizeof(*d_pzbuffer);
-
-	D_InitCaches(d->vid_surfcache, vid_surfcachesize);
 
 	pwidth = d->x_visinfo->depth / 8;
 	if (pwidth == 3)
@@ -319,32 +289,6 @@ static void ResetFrameBuffer(struct display *d)
 static void ResetSharedFrameBuffers(struct display *d)
 {
 	int size, key, minsize = getpagesize(), frm;
-
-	int vid_surfcachesize;
-
-	if (d_pzbuffer)
-	{
-		D_FlushCaches();
-		Hunk_FreeToHighMark(d->X11_highhunkmark);
-		d_pzbuffer = NULL;
-	}
-
-	d->X11_highhunkmark = Hunk_HighMark();
-
-	// alloc an extra line in case we want to wrap, and allocate the z-buffer
-	d->X11_buffersize = d->width * d->height * sizeof(*d_pzbuffer);
-
-	vid_surfcachesize = D_SurfaceCacheForRes(d->width, d->height);
-
-	d->X11_buffersize += vid_surfcachesize;
-
-	d_pzbuffer = Hunk_HighAllocName(d->X11_buffersize, "video");
-	if (d_pzbuffer == NULL)
-		Sys_Error("Not enough memory for video mode\n");
-
-	d->vid_surfcache = (byte *) d_pzbuffer + d->width * d->height * sizeof(*d_pzbuffer);
-
-	D_InitCaches(d->vid_surfcache, vid_surfcachesize);
 
 	for (frm = 0; frm < 2; frm++)
 	{
