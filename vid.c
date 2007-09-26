@@ -25,6 +25,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "gl_texture.h"
 #else
 #include "r_shared.h"
+#include "d_local.h"
 #endif
 
 #ifndef CLIENTONLY
@@ -65,6 +66,10 @@ cvar_t vid_depth = { "vid_depth", "24", CVAR_ARCHIVE };
 cvar_t in_grab_windowed_mouse = { "in_grab_windowed_mouse", "1", CVAR_ARCHIVE, in_grab_windowed_mouse_callback };
 
 static unsigned char pal[768];
+
+#ifndef GLQUAKE
+static void *vid_surfcache;
+#endif
 
 void VID_Init(unsigned char *palette)
 {
@@ -127,6 +132,39 @@ void VID_CvarInit()
 	Sys_Video_CvarInit();
 }
 
+#ifndef GLQUAKE
+static int VID_SW_AllocBuffers(int width, int height)
+{
+	unsigned int surfcachesize;
+
+	surfcachesize = D_SurfaceCacheForRes(width, height);
+
+	d_pzbuffer = malloc(width * height * sizeof(*d_pzbuffer));
+	if (d_pzbuffer)
+	{
+		vid_surfcache = malloc(surfcachesize);
+		if (vid_surfcache)
+		{
+			D_InitCaches(vid_surfcache, surfcachesize);
+
+			return 1;
+		}
+
+		free(d_pzbuffer);
+	}
+
+	return 0;
+}
+
+static void VID_SW_FreeBuffers()
+{
+	D_FlushCaches();
+
+	free(vid_surfcache);
+	free(d_pzbuffer);
+}
+#endif
+
 void VID_Open()
 {
 	int width, height, depth, fullscreen;
@@ -135,11 +173,6 @@ void VID_Open()
 	fullscreen = vid_fullscreen.value;
 	width = vid_width.value;
 	height = vid_height.value;
-#ifdef GLQUAKE
-	depth = vid_depth.value;
-#else
-	depth = 8;
-#endif
 
 #warning Fix this.
 #ifndef GLQUAKE
@@ -150,17 +183,21 @@ void VID_Open()
 	}
 	if (height > MAXHEIGHT)
 	{
-		Com_Printf("VID: Maximum supported heigfht is %d\n", MAXHEIGHT);
+		Com_Printf("VID: Maximum supported height is %d\n", MAXHEIGHT);
 		height = MAXHEIGHT;
 	}
 #endif
 
 #ifdef GLQUAKE
+	depth = vid_depth.value;
+
 	if (depth != 15 && depth != 16 && depth != 24)
 	{
 		Sys_Printf("VID: Bad depth\n");
 		depth = 24;
 	}
+#else
+	depth = 8;
 #endif
 
 	vid.colormap = host_colormap;
@@ -174,79 +211,90 @@ void VID_Open()
 #endif
 
 	display = Sys_Video_Open(width, height, depth, fullscreen, host_basepal);
-	if (display == 0)
-		Sys_Error("VID: Unable to open a display\n");
-
-	vid.numpages = Sys_Video_GetNumBuffers(display);
+	if (display)
+	{
+#ifndef GLQUAKE
+		if (VID_SW_AllocBuffers(width, height))
+#endif
+		{
+			vid.numpages = Sys_Video_GetNumBuffers(display);
 
 #ifdef GLQUAKE
 #warning fixme
-	if (vid.width <= 640)
-	{
-		vid.conwidth = vid.width;
-		vid.conheight = vid.height;
-	}
-	else
-	{
-		vid.conwidth = vid.width/2;
-		vid.conheight = vid.height/2;
-	}
+			if (vid.width <= 640)
+			{
+				vid.conwidth = vid.width;
+				vid.conheight = vid.height;
+			}
+			else
+			{
+				vid.conwidth = vid.width/2;
+				vid.conheight = vid.height/2;
+			}
 
-	if ((i = COM_CheckParm("-conwidth")) && i + 1 < com_argc)
-	{
-		vid.conwidth = Q_atoi(com_argv[i + 1]);
+			if ((i = COM_CheckParm("-conwidth")) && i + 1 < com_argc)
+			{
+				vid.conwidth = Q_atoi(com_argv[i + 1]);
 
-		vid.conwidth &= 0xfff8; // make it a multiple of eight
+				vid.conwidth &= 0xfff8; // make it a multiple of eight
 
-		if (vid.conwidth < 320)
-			vid.conwidth = 320;
+				if (vid.conwidth < 320)
+					vid.conwidth = 320;
 
-		// pick a conheight that matches with correct aspect
-		vid.conheight = vid.conwidth * 3 / 4;
-	}
+				// pick a conheight that matches with correct aspect
+				vid.conheight = vid.conwidth * 3 / 4;
+			}
 
-	if ((i = COM_CheckParm("-conheight")) && i + 1 < com_argc)
-	{
-		vid.conheight = Q_atoi(com_argv[i + 1]);
+			if ((i = COM_CheckParm("-conheight")) && i + 1 < com_argc)
+			{
+				vid.conheight = Q_atoi(com_argv[i + 1]);
 
-		if (vid.conheight < 200)
-			vid.conheight = 200;
-	}
+				if (vid.conheight < 200)
+					vid.conheight = 200;
+			}
 
-	if (vid.conwidth > vid.width)
-		vid.conwidth = vid.width;
+			if (vid.conwidth > vid.width)
+				vid.conwidth = vid.width;
 	
-	if (vid.conheight > vid.conheight)
-		vid.conheight = vid.height;
+			if (vid.conheight > vid.conheight)
+				vid.conheight = vid.height;
 
-	vid.width = vid.conwidth;
-	vid.height = vid.conheight;
+			vid.width = vid.conwidth;
+			vid.height = vid.conheight;
 #else
-	vid.rowbytes = Sys_Video_GetBytesPerRow(display);
-	vid.buffer = Sys_Video_GetBuffer(display);
-	vid.conwidth = vid.width;
-	vid.conheight = vid.height;
+			vid.rowbytes = Sys_Video_GetBytesPerRow(display);
+			vid.buffer = Sys_Video_GetBuffer(display);
+			vid.conwidth = vid.width;
+			vid.conheight = vid.height;
 #endif
 
-	if (windowtitle)
-		Sys_Video_SetWindowTitle(display, windowtitle);
+			if (windowtitle)
+				Sys_Video_SetWindowTitle(display, windowtitle);
 
-	Sys_Video_GrabMouse(display, in_grab_windowed_mouse.value);
+			Sys_Video_GrabMouse(display, in_grab_windowed_mouse.value);
 
-	V_UpdatePalette(true);
+			V_UpdatePalette(true);
 #ifdef GLQUAKE
-	GL_Init();
+			GL_Init();
 
-	Check_Gamma(host_basepal);
-	VID_SetPalette(host_basepal);
+			Check_Gamma(host_basepal);
+			VID_SetPalette(host_basepal);
 
-	vid.recalc_refdef = 1;				// force a surface cache flush
+			vid.recalc_refdef = 1;				// force a surface cache flush
 
-	GL_InitTextureStuff();
-	GL_Particles_TextureInit();
-	Draw_Init();
-	Sbar_Init();
+			GL_InitTextureStuff();
+			GL_Particles_TextureInit();
+			Draw_Init();
+			Sbar_Init();
 #endif
+
+			return;
+		}
+
+		Sys_Video_Close(display);
+	}
+
+	Sys_Error("VID: Unable to open a display\n");
 }
 
 void VID_Close()
@@ -262,6 +310,10 @@ void VID_Close()
 		GL_FlushPics();
 #endif
 		Sys_Video_Close(display);
+
+#ifndef GLQUAKE
+		VID_SW_FreeBuffers();
+#endif
 
 		display = 0;
 	}
