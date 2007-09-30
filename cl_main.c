@@ -164,6 +164,7 @@ enum
 	CLIENT_FODQUAKE,
 	CLIENT_EZQUAKE_1144,
 	CLIENT_EZQUAKE_1517,
+	CLIENT_EZQUAKE_1_8_2,
 	CLIENT_FUHQUAKE_0_31_675
 };
 
@@ -172,6 +173,7 @@ static char *validclientnames[] =
 	"none",
 	"ezquake-1144",
 	"ezquake-1517",
+	"ezquake-1.8.2",
 	"FuhQuake-0.31-675"
 };
 
@@ -180,6 +182,7 @@ char *fversion_clientnames[] =
 	"FodQuake version "FODQUAKE_VERSION,
 	"ezQuake version 1144",
 	"ezQuake version 1517",
+	"ezQuake 1.8.2 stable (build 2029)",
 	"FuhQuake version 0.31 (build 675)"
 };
 
@@ -1002,6 +1005,10 @@ void CL_InitClientVersionInfo()
 	else if (imitatedclientnum == CLIENT_EZQUAKE_1517)
 	{
 	 	Info_SetValueForStarKey (cls.userinfo, "*client", "ezQuake 1517", MAX_INFO_STRING);
+	}
+	else if (imitatedclientnum == CLIENT_EZQUAKE_1_8_2)
+	{
+	 	Info_SetValueForStarKey (cls.userinfo, "*client", "ezQuake 2029", MAX_INFO_STRING);
 	}
 	else if (imitatedclientnum == CLIENT_FUHQUAKE_0_31_675)
 	{
