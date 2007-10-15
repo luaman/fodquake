@@ -87,13 +87,14 @@ void VID_Restart_f(void)
 {
 	int i;
 
+#ifndef GLQUAKE
+	D_FlushCaches();
+#endif
+
 	VID_Close();
 #ifdef CLIENTONLY
 	Host_ClearMemory();
 #else
-#ifndef GLQUAKE
-	D_FlushCaches();
-#endif
 	Mod_ClearAll();
 	Hunk_FreeToLowMark(server_hunklevel);
 #endif
