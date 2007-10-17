@@ -10,7 +10,7 @@ STRIPFLAGS=--strip-unneeded --remove-section=.comment
 TARGETSYSTEM?=$(shell $(CC) -dumpmachine)
 
 OS=$(shell echo $(TARGETSYSTEM) | sed "s/-gnu//" | sed "s/.*-//" | tr [A-Z] [a-z] | sed s/^mingw.*/win32/)
-CPU=$(shell echo $(TARGETSYSTEM) | cut -d '-' -f 1 | tr [A-Z] [a-z])
+CPU=$(shell echo $(TARGETSYSTEM) | cut -d '-' -f 1 | tr [A-Z] [a-z] | sed "s/powerpc/ppc/")
 
 # OS specific settings
 
