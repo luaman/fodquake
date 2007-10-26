@@ -1,3 +1,4 @@
+#include <string.h>
 
 const char *Sys_Video_GetClipboardText(void *display)
 {

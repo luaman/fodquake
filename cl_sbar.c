@@ -19,6 +19,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 // sbar.c -- status bar code
 
+#include <string.h>
+
 #include "quakedef.h"
 #include "sbar.h"
 #include "teamplay.h"		

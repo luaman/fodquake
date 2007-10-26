@@ -19,6 +19,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 // gl_rmisc.c
 
+#include <string.h>
+
 #include "quakedef.h"
 #include "gl_local.h"
 

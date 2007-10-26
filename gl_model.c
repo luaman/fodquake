@@ -19,6 +19,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 // gl_model.c  -- model loading and caching
 
+#include <stdlib.h>
+#include <string.h>
+#include <math.h>
+
 // models are the only shared resource between a client and server running on the same machine.
 
 #include "quakedef.h"

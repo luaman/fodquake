@@ -18,12 +18,17 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */
 
+#include <stdlib.h>
+#include <string.h>
+#include <assert.h>
+#include <math.h>
+#include <time.h>
+
 #include "quakedef.h"
 #include "keys.h"
 #include "image.h"
 #include "menu.h"
 #include "sbar.h"
-#include <time.h>
 
 #include "teamplay.h"
 #include "utils.h"
