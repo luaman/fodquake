@@ -23,13 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #define __COMMON_H_
 
-#include <math.h>
-#include <string.h>
-#include <stdarg.h>
 #include <stdio.h>
-#include <stdlib.h>
-#include <ctype.h>
-#include <assert.h>
 
 #ifdef _MSC_VER
 #pragma warning( disable : 4244 4127 4201 4214 4514 4305 4115 4018)
