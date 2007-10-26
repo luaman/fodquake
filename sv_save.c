@@ -93,7 +93,7 @@ void SV_SaveGame_f (void) {
 	
 	Com_Printf ("Saving game to %s...\n", fname);
 	if (!(f = fopen (fname, "w"))) {		
-		COM_CreatePath (fname);
+		FS_CreatePath (fname);
 		if (!(f = fopen (fname, "w"))) {
 			Com_Printf ("ERROR: couldn't open.\n");
 			return;

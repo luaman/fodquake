@@ -28,7 +28,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #if defined(_WIN32) || defined(__XMMS__)
 
-int COM_FileOpenRead (char *path, FILE **hndl);
 char *COM_FileExtension(char *);
 
 cvar_t mp3_scrolltitle = {"mp3_scrolltitle", "1"};
@@ -658,7 +657,7 @@ long MP3_GetPlaylist(char **buf) {
 	if (pathlength && (path[pathlength - 1] == '\\' || path[pathlength - 1] == '/'))
 		path[pathlength - 1] = 0;
 	strcat(path, "/winamp.m3u");
-	filelength = COM_FileOpenRead(path, &f);
+	filelength = FS_FileOpenRead(path, &f);
 	if (!f)
 		return -1;
 	*buf = Q_Malloc(filelength);

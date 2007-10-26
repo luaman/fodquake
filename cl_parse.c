@@ -311,7 +311,7 @@ static qboolean CL_OpenDownloadFile()
 	else
 		Q_snprintfz(name, sizeof(name), "qw/%s", cls.downloadtempname);
 
-	COM_CreatePath(name);
+	FS_CreatePath(name);
 
 	cls.download = fopen(name, "wb");
 	if (cls.download)
@@ -638,8 +638,6 @@ void CL_StopUpload(void) {
 	}
 }
 
-int COM_FileOpenRead (char *path, FILE **hndl);
-
 void CL_StartUpload (char *filename) {
 	FILE *f;
 	int size;
@@ -650,7 +648,7 @@ void CL_StartUpload (char *filename) {
 	if (CL_IsUploading())
 		CL_StopUpload();
 
-	if ((size = COM_FileOpenRead (va("%s/%s", com_basedir, filename), &f)) == -1)
+	if ((size = FS_FileOpenRead (va("%s/%s", com_basedir, filename), &f)) == -1)
 		return;
 
 	Com_DPrintf ("Upload starting of %d...\n", size);

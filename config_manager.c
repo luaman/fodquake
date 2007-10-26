@@ -588,7 +588,7 @@ void DumpConfig(char *name)	{
 
 	outfile = va("%s/fodquake/configs/%s", com_basedir, name);
 	if (!(f	= fopen	(outfile, "w"))) {
-		COM_CreatePath(outfile);
+		FS_CreatePath(outfile);
 		if (!(f	= fopen	(outfile, "w"))) {
 			Com_Printf ("Couldn't write	%s.\n",	name);
 			return;

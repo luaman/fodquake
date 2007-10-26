@@ -538,7 +538,7 @@ void SV_Snap (int uid) {
 		return;
 	}
 
-	COM_CreatePath (va("%s/snap/", com_gamedir));
+	FS_CreatePath (va("%s/snap/", com_gamedir));
 	sprintf (pcxname, "%d-00.pcx", uid);
 		
 	for (i = 0; i <= 99; i++) { 

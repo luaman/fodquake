@@ -24,6 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "quakedef.h"
 #include "image.h"
 #include "modules.h"
+#include "filesystem.h"
 #include "config.h"
 
 #if USE_PNG
@@ -729,7 +730,7 @@ int Image_WritePNG (char *filename, int compression, byte *pixels, int width, in
 	width = abs(width);
 
 	if (!(fp = fopen (name, "wb"))) {
-		COM_CreatePath (name);
+		FS_CreatePath (name);
 		if (!(fp = fopen (name, "wb")))
 			return false;
 	}
@@ -794,7 +795,7 @@ int Image_WritePNGPLTE (char *filename, int compression,
 	Q_snprintfz (name, sizeof(name), "%s/%s", com_basedir, filename);
 	
 	if (!(fp = fopen (name, "wb"))) {
-		COM_CreatePath (name);
+		FS_CreatePath (name);
 		if (!(fp = fopen (name, "wb")))
 			return false;
 	}
@@ -1057,7 +1058,7 @@ int Image_WriteTGA (char *filename, byte *pixels, int width, int height) {
 
 	memcpy (buffer + 18, pixels, size);
 
-	if (!(COM_WriteFile (filename, buffer, size + 18)))
+	if (!(FS_WriteFile (filename, buffer, size + 18)))
 		retval = false;
 	free (buffer);
 	return retval;
@@ -1240,7 +1241,7 @@ int Image_WriteJPEG(char *filename, int quality, byte *pixels, int width, int he
 
 	Q_snprintfz (name, sizeof(name), "%s/%s", com_basedir, filename);	
 	if (!(outfile = fopen (name, "wb"))) {
-		COM_CreatePath (name);
+		FS_CreatePath (name);
 		if (!(outfile = fopen (name, "wb")))
 			return false;
 	}
@@ -1452,7 +1453,7 @@ int Image_WritePCX (char *filename, byte *data, int width, int height, int rowby
 		*pack++ = *palette++;
 
 	length = pack - (byte *) pcx;
-	if (!(COM_WriteFile (filename, pcx, length))) {
+	if (!(FS_WriteFile (filename, pcx, length))) {
 		free(pcx);
 		return false;
 	}

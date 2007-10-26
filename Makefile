@@ -148,6 +148,7 @@ OBJS= \
 	console.o \
 	crc.o \
 	cvar.o \
+	filesystem.o \
 	fmod.o \
 	host.o \
 	huffman.o \

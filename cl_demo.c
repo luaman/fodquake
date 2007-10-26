@@ -816,7 +816,7 @@ static qboolean CL_RecordDemo(char *dir, char *name, qboolean autorecord) {
 
 	// open the demo file
 	if (!CL_Demo_Open(fullname)) {
-		COM_CreatePath(fullname);
+		FS_CreatePath(fullname);
 		if (!CL_Demo_Open(fullname)) {
 			Com_Printf("Error: Couldn't open %s\n", fullname);
 			return false;
@@ -963,7 +963,7 @@ void CL_AutoRecord_SaveMatch(void) {
 	fclose(f);
 
 	if ((error = rename(tempname, fullsavedname))) {
-		COM_CreatePath(fullsavedname);
+		FS_CreatePath(fullsavedname);
 		error = rename(tempname, fullsavedname);
 	}
 

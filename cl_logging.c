@@ -114,7 +114,7 @@ static void Log_log_f(void) {
 		COM_ForceExtension (logfilename, ".log");
 		fulllogname = va("%s/%s", Log_LogDirectory(), logfilename);
 		if (!(templog = fopen (fulllogname, "wb"))) {
-			COM_CreatePath(fulllogname);
+			FS_CreatePath(fulllogname);
 			if (!(templog = fopen (fulllogname, "wb"))) {
 				Com_Printf("Error: Couldn't open %s\n", logfilename);
 				return;
@@ -231,7 +231,7 @@ void Log_AutoLogging_StartMatch(char *logname) {
 
 
 	if (!(templog = fopen (fullname, "wb"))) {
-		COM_CreatePath(fullname);
+		FS_CreatePath(fullname);
 		if (!(templog = fopen (fullname, "wb"))) {
 			Com_Printf("Error: Couldn't open %s\n", fullname);
 			return;
@@ -277,7 +277,7 @@ void Log_AutoLogging_SaveMatch(void) {
 	fclose(f);
 
 	if ((error = rename(tempname, fullsavedname))) {
-		COM_CreatePath(fullsavedname);
+		FS_CreatePath(fullsavedname);
 		error = rename(tempname, fullsavedname);
 	}
 

@@ -192,6 +192,7 @@ void Host_Init (int argc, char **argv, int default_memsize) {
 	Cmd_Init ();
 	Cvar_Init ();
 	COM_Init ();
+	FS_Init();
 
 	VID_CvarInit();
 	S_CvarInit();
