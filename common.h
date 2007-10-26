@@ -20,10 +20,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // common.h  -- general definitions
 
 #ifndef __COMMON_H_
-
 #define __COMMON_H_
 
-#include <stdio.h>
+#include <stddef.h>
 
 #ifdef _MSC_VER
 #pragma warning( disable : 4244 4127 4201 4214 4514 4305 4115 4018)
