@@ -20,6 +20,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // gl_rmisc.c
 
 #include <string.h>
+#include <stdlib.h>
 
 #include "quakedef.h"
 #include "gl_local.h"
@@ -67,7 +68,8 @@ void R_TranslatePlayerSkin (int playernum) {
 	byte translate[256], *inrow, *original;
 	char s[512];
 	int	top, bottom, i, j, scaled_width, scaled_height, inwidth, inheight, tinwidth, tinheight;
-	unsigned translate32[256], pixels[512 * 256], *out, frac, fracstep;
+	unsigned translate32[256], *out, frac, fracstep;
+	unsigned int *pixels;
 	player_info_t *player;
 	extern byte player_8bit_texels[320 * 200];
 	extern cvar_t gl_scaleModelTextures;
@@ -84,6 +86,10 @@ void R_TranslatePlayerSkin (int playernum) {
 		player->skin = NULL;
 
 	if (player->_topcolor == player->topcolor && player->_bottomcolor == player->bottomcolor && player->skin)
+		return;
+
+	pixels = malloc(512*256*sizeof(*pixels));
+	if (pixels == 0)
 		return;
 
 	GL_DisableMultitexture();
@@ -209,6 +215,8 @@ void R_TranslatePlayerSkin (int playernum) {
 		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	}
+
+	free(pixels);
 }
 
 
