@@ -596,8 +596,11 @@ readit:
 			Host_Abort();
 		}
 
-		CL_Demo_Read(net_message.data, net_message.cursize);
+		if (net_message.cursize == 0)
+			goto readnext;
 
+		CL_Demo_Read(net_message.data, net_message.cursize);
+		
 		if (cls.mvdplayback) {
 			switch(cls.lasttype) {
 			case dem_multiple:
