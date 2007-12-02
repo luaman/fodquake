@@ -154,6 +154,9 @@ static void InitHWGamma(struct display *d)
 #if USE_VMODE
 	int xf86vm_gammaramp_size;
 
+	if (!d->fullscreen)
+		return;
+
 	XF86VidModeGetGammaRampSize(d->x_disp, d->scrnum, &xf86vm_gammaramp_size);
 	
 	d->vid_gammaworks = (xf86vm_gammaramp_size == 256);
