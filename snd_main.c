@@ -474,9 +474,6 @@ void S_StopSound (int entnum, int entchannel) {
 void S_StopAllSounds (qboolean clear) {
 	int i;
 
-	if (!sound_started)
-		return;
-
 	total_channels = MAX_DYNAMIC_CHANNELS + NUM_AMBIENTS;	// no statics
 
 	for (i = 0; i < MAX_CHANNELS; i++) {
@@ -485,6 +482,9 @@ void S_StopAllSounds (qboolean clear) {
 	}
 
 	memset(channels, 0, MAX_CHANNELS * sizeof(channel_t));
+
+	if (!sound_started)
+		return;
 
 	if (clear)
 		S_ClearBuffer ();
