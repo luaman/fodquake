@@ -47,3 +47,4 @@ char *VersionString (void)
 {
 	return FODQUAKE_VERSION;
 }
+
