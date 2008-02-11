@@ -107,7 +107,7 @@ static int get_sleep_granularity()
 		{
 			if (abs(tv[i].tv_usec-avg) == maxdist)
 			{
-				memcpy(&tv[i], &tv[i+1], samples-i-1);
+				memmove(&tv[i], &tv[i+1], samples-i-1);
 				samples--;
 				break;
 			}
