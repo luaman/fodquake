@@ -413,7 +413,7 @@ void *Sys_Video_Open(unsigned int width, unsigned int height, unsigned int depth
 
 			Com_Printf ("Video mode %dx%d initialized.\n", width, height);
 
-			d->inputdata = X11_Input_Init(d->x_disp, d->x_win, 0, eventcallback, d);
+			d->inputdata = X11_Input_Init(d->x_disp, width, height, d->x_win, 0, eventcallback, d);
 			if (d->inputdata)
 				return d;
 		}

@@ -586,7 +586,7 @@ void *Sys_Video_Open(unsigned int width, unsigned int height, unsigned int depth
 
 		shiftmask_init(d);
 		
-		d->inputdata = X11_Input_Init(d->x_disp, d->x_win, x_shmeventtype, 0, 0);
+		d->inputdata = X11_Input_Init(d->x_disp, d->x_win, width, height, x_shmeventtype, 0, 0);
 		
 		return d;
 	}
