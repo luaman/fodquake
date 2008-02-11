@@ -48,6 +48,8 @@ struct inputdata
 	Display *x_disp;
 	Window x_win;
 	int x_shmeventtype;
+	unsigned int windowwidth;
+	unsigned int windowheight;
 	void (*eventcallback)(void *eventcallbackdata, int type);
 	void *eventcallbackdata;
 	
@@ -437,10 +439,10 @@ static void GetEvents(struct inputdata *id)
 	int newmousex;
 	int newmousey;
 	
-	newmousex = vid.width/2;
-	newmousey = vid.height/2;
+	newmousex = id->windowwidth/2;
+	newmousey = id->windowheight/2;
 
-	do
+	while(XPending(id->x_disp))
 	{
 		XNextEvent(id->x_disp, &event);
 		switch (event.type)
@@ -515,12 +517,12 @@ static void GetEvents(struct inputdata *id)
 					id->gotshmmsg = 1;
 				break;
 		}
-	} while(XPending(id->x_disp));
+	}
 
-	if (!id->dga_mouse_enabled && (newmousex != vid.width/2 || newmousey != vid.height/2))
+	if (!id->dga_mouse_enabled && (newmousex != id->windowwidth/2 || newmousey != id->windowheight/2))
 	{
-		newmousex-= vid.width/2;
-		newmousey-= vid.height/2;
+		newmousex-= id->windowwidth/2;
+		newmousey-= id->windowheight/2;
 		id->mousex+= newmousex;
 		id->mousey+= newmousey;
 	
@@ -542,7 +544,7 @@ void X11_Input_CvarInit()
 	Cvar_ResetCurrentGroup();
 }
 
-void *X11_Input_Init(Display *x_disp, Window x_win, int x_shmeventtype, void (*eventcallback)(void *eventcallbackdata, int type), void *eventcallbackdata)
+void *X11_Input_Init(Display *x_disp, Window x_win, unsigned int windowwidth, unsigned int windowheight, int x_shmeventtype, void (*eventcallback)(void *eventcallbackdata, int type), void *eventcallbackdata)
 {
 	struct inputdata *id;
 	id = malloc(sizeof(*id));
@@ -551,6 +553,8 @@ void *X11_Input_Init(Display *x_disp, Window x_win, int x_shmeventtype, void (*e
 		id->x_disp = x_disp;
 		id->x_win = x_win;
 		id->x_shmeventtype = x_shmeventtype;
+		id->windowwidth = windowwidth;
+		id->windowheight = windowheight;
 		id->eventcallback = eventcallback;
 		id->eventcallbackdata = eventcallbackdata;
 		id->gotshmmsg = 0;
@@ -581,8 +585,7 @@ void X11_Input_GetEvents(void *inputdata)
 {
 	struct inputdata *id = inputdata;
 
-	if(XPending(id->x_disp))
-		GetEvents(id);
+	GetEvents(id);
 
 	while(id->keyq_head != id->keyq_tail)
 	{
@@ -640,7 +643,7 @@ void X11_Input_GrabMouse(void *inputdata, int dograb)
 			grab_win = id->x_win;
 
 			XSelectInput(id->x_disp, id->x_win, XINPUTFLAGS&(~PointerMotionMask));
-			XWarpPointer(id->x_disp, None, id->x_win, 0, 0, 0, 0, vid.width/2, vid.height/2);
+			XWarpPointer(id->x_disp, None, id->x_win, 0, 0, 0, 0, id->windowwidth/2, id->windowheight/2);
 		}
 
 		XSelectInput(id->x_disp, id->x_win, XINPUTFLAGS);

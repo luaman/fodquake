@@ -18,7 +18,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 
 void X11_Input_CvarInit(void);
-void *X11_Input_Init(Display *x_disp, Window x_win, int x_shmeventtype, void (*eventcallback)(void *eventcallbackdata, int type), void *eventcallbackdata);
+void *X11_Input_Init(Display *x_disp, Window x_win, unsigned int windowwidth, unsigned int windowheight, int x_shmeventtype, void (*eventcallback)(void *eventcallbackdata, int type), void *eventcallbackdata);
 void X11_Input_Shutdown(void *inputdata);
 void X11_Input_GetEvents(void *inputdata);
 void X11_Input_WaitForShmMsg(void *inputdata);
