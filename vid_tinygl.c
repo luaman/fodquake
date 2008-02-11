@@ -55,8 +55,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 struct Library *TinyGLBase = 0;
 GLContext *__tglContext;
 
-extern viddef_t vid;
-
 struct display
 {
 	void *inputdata;
@@ -216,6 +214,8 @@ void Sys_Video_Close(void *display)
 
 	if (d->gammatable)
 		FreeVec(d->gammatable);
+	
+	FreeVec(d);
 }
 
 unsigned int Sys_Video_GetNumBuffers(void *display)
