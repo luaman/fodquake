@@ -663,7 +663,7 @@ void X11_Input_GrabMouse(void *inputdata, int dograb)
 			}
 		}
 	}
-	else if (id->grabmouse)
+	else if (!dograb && id->grabmouse)
 	{
 		/* ungrab the pointer */
 		if (id->dga_mouse_enabled)
