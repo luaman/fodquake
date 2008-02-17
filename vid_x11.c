@@ -58,6 +58,7 @@ struct display
 	void *inputdata;
 #if USE_VMODE
 	XF86VidModeModeInfo **vidmodes;
+	XF86VidModeModeInfo origvidmode;
 	qboolean vidmode_active;
 #endif
 	int scrnum;
@@ -383,6 +384,8 @@ void *Sys_Video_Open(unsigned int width, unsigned int height, unsigned int depth
 			{
 				Com_Printf("Using XF86-VidModeExtension Ver. %d.%d\n", version, revision);
 
+				XF86VidModeGetModeLine(d->x_disp, d->scrnum, &d->origvidmode.dotclock, (XF86VidModeModeLine *)&d->origvidmode.hdisplay);
+
 				XF86VidModeGetAllModeLines(d->x_disp, d->scrnum, &num_vidmodes, &d->vidmodes);
 
 				best_dist = 9999999;
@@ -657,7 +660,7 @@ void Sys_Video_Close(void *display)
 	
 #if USE_VMODE
 	if (d->vidmode_active)
-		XF86VidModeSwitchToMode(d->x_disp, d->scrnum, d->vidmodes[0]);
+		XF86VidModeSwitchToMode(d->x_disp, d->scrnum, &d->origvidmode);
 
 	XFree(d->vidmodes);
 #endif
