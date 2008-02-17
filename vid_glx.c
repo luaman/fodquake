@@ -55,6 +55,7 @@ struct display
 
 #ifdef USE_VMODE
 	XF86VidModeModeInfo **vidmodes;
+	XF86VidModeModeInfo origvidmode;
 	qboolean vidmode_active;
 	qboolean customgamma;
 #endif
@@ -232,7 +233,7 @@ void Sys_Video_Close(void *display)
 
 #ifdef USE_VMODE
 	if (d->vidmode_active)
-		XF86VidModeSwitchToMode(d->x_disp, d->scrnum, d->vidmodes[0]);
+		XF86VidModeSwitchToMode(d->x_disp, d->scrnum, &d->origvidmode);
 #endif
 
 	XCloseDisplay(d->x_disp);
@@ -320,6 +321,8 @@ void *Sys_Video_Open(unsigned int width, unsigned int height, unsigned int depth
 				if (XF86VidModeQueryVersion(d->x_disp, &version, &revision))
 				{
 					Com_Printf("Using XF86-VidModeExtension Ver. %d.%d\n", version, revision);
+
+					XF86VidModeGetModeLine(d->x_disp, d->scrnum, &d->origvidmode.dotclock, (XF86VidModeModeLine *)&d->origvidmode.hdisplay);
 
 					XF86VidModeGetAllModeLines(d->x_disp, d->scrnum, &num_vidmodes, &d->vidmodes);
 
@@ -413,7 +416,10 @@ void *Sys_Video_Open(unsigned int width, unsigned int height, unsigned int depth
 
 			Com_Printf ("Video mode %dx%d initialized.\n", width, height);
 
-			d->inputdata = X11_Input_Init(d->x_disp, d->x_win, width, height, 0, eventcallback, d);
+			if (fullscreen)
+				vid_windowedmouse = false;
+
+			d->inputdata = X11_Input_Init(d->x_disp, d->x_win, 0, eventcallback, d);
 			if (d->inputdata)
 				return d;
 		}
