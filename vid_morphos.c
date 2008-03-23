@@ -1,5 +1,5 @@
 /*
-Copyright (C) 2006-2007 Mark Olsen
+Copyright (C) 2006-2008 Mark Olsen
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -32,8 +32,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "input.h"
 #include "keys.h"
 #include "in_morphos.h"
-
-extern viddef_t vid;
 
 struct display
 {
