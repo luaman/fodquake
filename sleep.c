@@ -149,7 +149,7 @@ void Sleep_Sleep(unsigned int sleeptime)
 
 	endtime.tv_sec+= sleeptime/1000000;
 	endtime.tv_usec+= sleeptime%1000000;
-	if (endtime.tv_usec > 1000000)
+	if (endtime.tv_usec >= 1000000)
 	{
 		endtime.tv_sec++;
 		endtime.tv_usec-= 1000000;
