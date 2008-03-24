@@ -19,6 +19,9 @@
 #define QW_PLATFORM     "NetBSD"
 #elif defined(__OpenBSD__)
 #define QW_PLATFORM     "OpenBSD"
+#elif defined(GEKKO)
+/* Not entirely true, but close enough for now. */
+#define QW_PLATFORM     "Wii"
 #endif
 
 #ifdef GLQUAKE
