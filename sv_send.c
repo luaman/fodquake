@@ -116,7 +116,12 @@ void SV_BroadcastPrintf (int level, char *fmt, ...) {
 
 	Sys_Printf ("%s", string);	// print to the console
 
-	for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++) {
+	for (i = 0; i < MAX_CLIENTS; i++) {
+		cl = svs.clients[i];
+
+		if (cl == 0)
+			continue;
+
 		if (level < cl->messagelevel)
 			continue;
 		if (!cl->state)
@@ -191,8 +196,10 @@ void SV_Multicast (vec3_t origin, int to) {
 	}
 
 	// send the data to all relevent clients
-	for (j = 0, client = svs.clients; j < MAX_CLIENTS; j++, client++) {
-		if (client->state != cs_spawned)
+	for (j = 0; j < MAX_CLIENTS; j++) {
+		client = svs.clients[j];
+
+		if (client == 0 || client->state != cs_spawned)
 			continue;
 
 		VectorAdd (client->edict->v.origin, client->edict->v.view_ofs, org);
@@ -395,8 +402,8 @@ void SV_UpdateClientStats (client_t *client) {
 	
 	// if we are a spectator and we are tracking a player, we get his stats
 	// so our status bar reflects his
-	if (client->spectator && client->spec_track > 0)
-		ent = svs.clients[client->spec_track - 1].edict;
+	if (client->spectator && client->spec_track > 0 && svs.clients[client->spec_track - 1])
+		ent = svs.clients[client->spec_track - 1]->edict;
 
 	stats[STAT_HEALTH] = ent->v.health;
 	stats[STAT_WEAPON] = SV_ModelIndex(PR_GetString(ent->v.weaponmodel));
@@ -472,15 +479,19 @@ void SV_UpdateToReliableMessages (void) {
 	edict_t *ent;
 
 	// check for changes to be sent over the reliable streams to all clients
-	for (i = 0, sv_client = svs.clients; i < MAX_CLIENTS; i++, sv_client++) {
-		if (sv_client->state != cs_spawned)
+	for (i = 0; i < MAX_CLIENTS; i++) {
+		sv_client = svs.clients[i];
+
+		if (sv_client == 0 || sv_client->state != cs_spawned)
 			continue;
 		if (sv_client->sendinfo) {
 			sv_client->sendinfo = false;
 			SV_FullClientUpdate (sv_client, &sv.reliable_datagram);
 		}
 		if (sv_client->old_frags != sv_client->edict->v.frags) {
-			for (j = 0, client = svs.clients; j < MAX_CLIENTS; j++, client++) {
+			for (j = 0; j < MAX_CLIENTS; j++) {
+				sv_client = svs.clients[j];
+
 				if (client->state < cs_connected)
 					continue;
 				ClientReliableWrite_Begin(client, svc_updatefrags, 4);
@@ -513,8 +524,10 @@ void SV_UpdateToReliableMessages (void) {
 		SZ_Clear (&sv.datagram);
 
 	// append the broadcast messages to each client messages
-	for (j = 0, client = svs.clients; j < MAX_CLIENTS; j++, client++) {
-		if (client->state < cs_connected)
+	for (j = 0; j < MAX_CLIENTS; j++) {
+		client = svs.clients[j];
+
+		if (client == 0 || client->state < cs_connected)
 			continue;	// reliables go to all connected or spawned
 
 		ClientReliableCheckBlock(client, sv.reliable_datagram.cursize);
@@ -542,8 +555,11 @@ void SV_SendClientMessages (void) {
 	SV_UpdateToReliableMessages ();
 
 	// build individual updates
-	for (i = 0, c = svs.clients ; i < MAX_CLIENTS; i++, c++) {
-		if (!c->state)
+	for (i = 0; i < MAX_CLIENTS; i++)
+	{
+		c = svs.clients[i];
+
+		if (c == 0 || !c->state)
 			continue;
 
 		if (c->drop) {
@@ -615,8 +631,11 @@ void SV_SendMessagesToAll (void) {
 	int i;
 	client_t *c;
 
-	for (i = 0, c = svs.clients; i < MAX_CLIENTS; i++, c++) {
-		if (c->state)		// FIXME: should this only send to active?
+	for (i = 0; i < MAX_CLIENTS; i++)
+	{
+		c = svs.clients[i];
+
+		if (c && c->state)		// FIXME: should this only send to active?
 			c->send_message = true;
 	}
 	SV_SendClientMessages ();

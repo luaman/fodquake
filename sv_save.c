@@ -73,16 +73,16 @@ void SV_SaveGame_f (void) {
 	}
 
 	for (i = 1; i < MAX_CLIENTS; i++) {
-		if (svs.clients[i].state == cs_spawned) {
+		if (svs.clients[i] && svs.clients[i]->state == cs_spawned) {
 			Com_Printf ("Can't save multiplayer games.\n");
 			return;
 		}
 	}	
 
-	if (svs.clients[0].state != cs_spawned) {
+	if (svs.clients[0] == 0 || svs.clients[0]->state != cs_spawned) {
 		Com_Printf ("Can't save, client #0 not spawned.\n");
 		return;
-	} else if (svs.clients[0].edict->v.health <= 0) {
+	} else if (svs.clients[0]->edict->v.health <= 0) {
 		Com_Printf ("Can't save game with a dead player\n");
 		// in fact, we can, but does it make sense?
 		return;
@@ -104,7 +104,7 @@ void SV_SaveGame_f (void) {
 	SV_SavegameComment (comment);
 	fprintf (f, "%s\n", comment);
 	for (i = 0 ; i < NUM_SPAWN_PARMS; i++)
-		fprintf (f, "%f\n", svs.clients->spawn_parms[i]);
+		fprintf (f, "%f\n", svs.clients[0]->spawn_parms[i]);
 	fprintf (f, "%d\n", current_skill);
 	fprintf (f, "%s\n", sv.name);
 	fprintf (f, "%f\n", sv.time);
@@ -238,7 +238,7 @@ void SV_LoadGame_f (void) {
 	fclose (f);
 
 	for (i = 0; i < NUM_SPAWN_PARMS; i++)
-		svs.clients->spawn_parms[i] = spawn_parms[i];
+		svs.clients[0]->spawn_parms[i] = spawn_parms[i];
 }
 
 #endif	//!SERVERONLY

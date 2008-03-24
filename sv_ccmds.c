@@ -115,8 +115,11 @@ qboolean SV_SetPlayer (void) {
 
 	idnum = atoi(Cmd_Argv(1));
 
-	for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++) {
-		if (!cl->state)
+	for (i = 0; i < MAX_CLIENTS; i++)
+	{
+		cl = svs.clients[i];
+
+		if (cl == 0 || !cl->state)
 			continue;
 		if (cl->userid == idnum) {
 			sv_client = cl;
@@ -186,9 +189,11 @@ void SV_Kick_f (void) {
 
 	uid = atoi(Cmd_Argv(1));
 	
-	for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++)
+	for (i = 0; i < MAX_CLIENTS; i++)
 	{
-		if (!cl->state)
+		cl = svs.clients[i];
+
+		if (cl == 0 || !cl->state)
 			continue;
 		if (cl->userid == uid)
 		{
@@ -247,8 +252,11 @@ void SV_Status_f (void) {
 		Com_Printf ("name               userid frags\n");
         Com_Printf ("  address          rate ping drop\n");
 		Com_Printf ("  ---------------- ---- ---- -----\n");
-		for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++) {
-			if (!cl->state)
+		for (i = 0; i < MAX_CLIENTS; i++)
+		{
+			cl = svs.clients[i];
+
+			if (cl == 0 || !cl->state)
 				continue;
 
 			Com_Printf ("%-16.16s  ", cl->name);
@@ -277,7 +285,10 @@ void SV_Status_f (void) {
 	} else {
 		Com_Printf ("frags userid address         name            rate ping drop  qport\n");
 		Com_Printf ("----- ------ --------------- --------------- ---- ---- ----- -----\n");
-		for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++) {
+		for (i = 0; i < MAX_CLIENTS; i++)
+		{
+			cl = svs.clients[i];
+
 			if (!cl->state)
 				continue;
 			Com_Printf ("%5i %6i ", (int)cl->edict->v.frags,  cl->userid);
@@ -332,8 +343,11 @@ void SV_ConSay_f (void) {
 
 	strcat(text, p);
 
-	for (j = 0, client = svs.clients; j < MAX_CLIENTS; j++, client++) {
-		if (client->state != cs_spawned)
+	for (j = 0; j < MAX_CLIENTS; j++)
+	{
+		client = svs.clients[j];
+
+		if (client == 0 || client->state != cs_spawned)
 			continue;
 		SV_ClientPrintf(client, PRINT_CHAT, "%s\n", text);
 	}
@@ -527,8 +541,11 @@ void SV_Snap (int uid) {
 	int i;
 	FILE *f;
 
-	for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++) {
-		if (!cl->state)
+	for (i = 0; i < MAX_CLIENTS; i++)
+	{
+		cl = svs.clients[i];
+
+		if (cl == 0 || !cl->state)
 			continue;
 		if (cl->userid == uid)
 			break;
@@ -580,8 +597,10 @@ void SV_SnapAll_f (void) {
 	client_t *cl;
 	int i;
 
-	for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++) {
-		if (cl->state < cs_connected || cl->spectator)
+	for (i = 0; i < MAX_CLIENTS; i++)
+	{
+		cl = svs.clients[i];
+		if (cl == 0 || cl->state < cs_connected || cl->spectator)
 			continue;
 		SV_Snap (cl->userid);
 	}

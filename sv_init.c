@@ -117,8 +117,11 @@ void SV_SaveSpawnparms (void) {
 	// serverflags is the only game related thing maintained
 	svs.serverflags = pr_global_struct->serverflags;
 
-	for (i = 0, sv_client = svs.clients; i < MAX_CLIENTS; i++, sv_client++) {
-		if (sv_client->state != cs_spawned)
+	for (i = 0; i < MAX_CLIENTS; i++)
+	{
+		sv_client = svs.clients[i];
+
+		if (sv_client == 0 || sv_client->state != cs_spawned)
 			continue;
 
 		// needs to reconnect
@@ -290,12 +293,6 @@ void SV_SpawnServer (char *server, qboolean devmap) {
 
 	// leave slots at start for clients only
 	sv.num_edicts = MAX_CLIENTS+1;
-	for (i = 0; i < MAX_CLIENTS; i++) {
-		ent = EDICT_NUM(i+1);
-		svs.clients[i].edict = ent;
-		//ZOID - make sure we update frags right
-		svs.clients[i].old_frags = 0;
-	}
 
 	sv.time = 1.0;
 

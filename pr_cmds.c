@@ -153,7 +153,8 @@ static sizebuf_t *WriteDest (void) {
 	return NULL;
 }
 
-static client_t *Write_GetClient(void) {
+static client_t *Write_GetClient(void)
+{
 	int entnum;
 	edict_t	*ent;
 
@@ -161,7 +162,7 @@ static client_t *Write_GetClient(void) {
 	entnum = NUM_FOR_EDICT(ent);
 	if (entnum < 1 || entnum > MAX_CLIENTS)
 		PR_RunError ("WriteDest: not a client");
-	return &svs.clients[entnum - 1];
+	return svs.clients[entnum - 1];
 }
 
 //for message writing >--
@@ -309,7 +310,10 @@ void PF_sprint (void) {
 		return;
 	}
 
-	cl = &svs.clients[entnum - 1];
+	cl = svs.clients[entnum - 1];
+
+	if (cl == 0)
+		return;
 
 	buf = cl->sprint_buf;
 	buflen = strlen (buf);
@@ -368,7 +372,10 @@ void PF_centerprint (void) {
 		return;
 	}
 
-	cl = &svs.clients[entnum - 1];
+	cl = svs.clients[entnum - 1];
+
+	if (cl == 0)
+		return;
 
 	ClientReliableWrite_Begin (cl, svc_centerprint, 2 + strlen(s));
 	ClientReliableWrite_String (cl, s);
@@ -627,7 +634,11 @@ void PF_stuffcmd (void) {
 	entnum = G_EDICTNUM(OFS_PARM0);
 	if (entnum < 1 || entnum > MAX_CLIENTS)
 		PR_RunError ("Parm 0 not a client");
-	cl = &svs.clients[entnum - 1];
+	cl = svs.clients[entnum - 1];
+
+	if (cl == 0)
+		return;
+
 	str = G_STRING(OFS_PARM1);	
 
 	buf = cl->stufftext_buf;
@@ -949,8 +960,10 @@ void PF_lightstyle (void) {
 	if (sv.state != ss_active)
 		return;
 
-	for (j = 0, client = svs.clients; j < MAX_CLIENTS; j++, client++) {
-		if ( client->state == cs_spawned ) {
+	for (j = 0; j < MAX_CLIENTS; j++)
+	{
+		client = svs.clients[j];
+		if ( client && client->state == cs_spawned ) {
 			ClientReliableWrite_Begin (client, svc_lightstyle, strlen(val)+3);
 			ClientReliableWrite_Char (client, style);
 			ClientReliableWrite_String (client, val);
@@ -1049,7 +1062,11 @@ void PF_aim (void) {
 	// noaim option
 	i = NUM_FOR_EDICT(ent);
 	if (i > 0 && i < MAX_CLIENTS) {
-		noaim = Info_ValueForKey (svs.clients[i - 1].userinfo, "noaim");
+		if (svs.clients[i - 1])
+			noaim = Info_ValueForKey (svs.clients[i - 1]->userinfo, "noaim");
+		else
+			noaim = 0;
+
 		if (atoi(noaim) > 0) {
 			VectorCopy (pr_global_struct->v_forward, G_VECTOR(OFS_RETURN));
 			return;
@@ -1107,88 +1124,136 @@ void PF_aim (void) {
 
 //void(float to, float f) WriteByte = #52
 void PF_WriteByte (void) {
-	if (G_FLOAT(OFS_PARM0) == MSG_ONE) {
+	if (G_FLOAT(OFS_PARM0) == MSG_ONE)
+	{
 		client_t *cl = Write_GetClient();
-		ClientReliableCheckBlock(cl, 1);
-		ClientReliableWrite_Byte(cl, G_FLOAT(OFS_PARM1));
-	} else {
+		if (cl)
+		{
+			ClientReliableCheckBlock(cl, 1);
+			ClientReliableWrite_Byte(cl, G_FLOAT(OFS_PARM1));
+		}
+	}
+	else
+	{
 		MSG_WriteByte (WriteDest(), G_FLOAT(OFS_PARM1));
 	}
 }
 
 //void(float to, float f) WriteChar = #53
 void PF_WriteChar (void) {
-	if (G_FLOAT(OFS_PARM0) == MSG_ONE) {
+	if (G_FLOAT(OFS_PARM0) == MSG_ONE)
+	{
 		client_t *cl = Write_GetClient();
-		ClientReliableCheckBlock(cl, 1);
-		ClientReliableWrite_Char(cl, G_FLOAT(OFS_PARM1));
-	} else {
+		if (cl)
+		{
+			ClientReliableCheckBlock(cl, 1);
+			ClientReliableWrite_Char(cl, G_FLOAT(OFS_PARM1));
+		}
+	}
+	else
+	{
 		MSG_WriteChar (WriteDest(), G_FLOAT(OFS_PARM1));
 	}
 }
 
 //void(float to, float f) WriteShort = #54
 void PF_WriteShort (void) {
-	if (G_FLOAT(OFS_PARM0) == MSG_ONE) {
+	if (G_FLOAT(OFS_PARM0) == MSG_ONE)
+	{
 		client_t *cl = Write_GetClient();
-		ClientReliableCheckBlock(cl, 2);
-		ClientReliableWrite_Short(cl, G_FLOAT(OFS_PARM1));
-	} else {
+		if (cl)
+		{
+			ClientReliableCheckBlock(cl, 2);
+			ClientReliableWrite_Short(cl, G_FLOAT(OFS_PARM1));
+		}
+	}
+	else
+	{
 		MSG_WriteShort (WriteDest(), G_FLOAT(OFS_PARM1));
 	}
 }
 
 //void(float to, float f) WriteLong = #55
 void PF_WriteLong (void) {
-	if (G_FLOAT(OFS_PARM0) == MSG_ONE) {
+	if (G_FLOAT(OFS_PARM0) == MSG_ONE)
+	{
 		client_t *cl = Write_GetClient();
-		ClientReliableCheckBlock(cl, 4);
-		ClientReliableWrite_Long(cl, G_FLOAT(OFS_PARM1));
-	} else {
+		if (cl)
+		{
+			ClientReliableCheckBlock(cl, 4);
+			ClientReliableWrite_Long(cl, G_FLOAT(OFS_PARM1));
+		}
+	}
+	else
+	{
 		MSG_WriteLong (WriteDest(), G_FLOAT(OFS_PARM1));
 	}
 }
 
 //void(float to, float f) WriteCoord = #56
 void PF_WriteCoord (void) {
-	if (G_FLOAT(OFS_PARM0) == MSG_ONE) {
+	if (G_FLOAT(OFS_PARM0) == MSG_ONE)
+	{
 		client_t *cl = Write_GetClient();
-		ClientReliableCheckBlock(cl, 2);
-		ClientReliableWrite_Coord(cl, G_FLOAT(OFS_PARM1));
-	} else {
+		if (cl)
+		{
+			ClientReliableCheckBlock(cl, 2);
+			ClientReliableWrite_Coord(cl, G_FLOAT(OFS_PARM1));
+		}
+	}
+	else
+	{
 		MSG_WriteCoord (WriteDest(), G_FLOAT(OFS_PARM1));
 	}
 }
 
 //void(float to, float f) WriteAngle = #57
 void PF_WriteAngle (void) {
-	if (G_FLOAT(OFS_PARM0) == MSG_ONE) {
+	if (G_FLOAT(OFS_PARM0) == MSG_ONE)
+	{
 		client_t *cl = Write_GetClient();
-		ClientReliableCheckBlock(cl, 1);
-		ClientReliableWrite_Angle(cl, G_FLOAT(OFS_PARM1));
-	} else {
+		if (cl)
+		{
+			ClientReliableCheckBlock(cl, 1);
+			ClientReliableWrite_Angle(cl, G_FLOAT(OFS_PARM1));
+		}
+	}
+	else
+	{
 		MSG_WriteAngle (WriteDest(), G_FLOAT(OFS_PARM1));
 	}
 }
 
 //void(float to, string s) WriteString = #58
 void PF_WriteString (void) {
-	if (G_FLOAT(OFS_PARM0) == MSG_ONE) {
+	if (G_FLOAT(OFS_PARM0) == MSG_ONE)
+	{
 		client_t *cl = Write_GetClient();
-		ClientReliableCheckBlock(cl, 1+strlen(G_STRING(OFS_PARM1)));
-		ClientReliableWrite_String(cl, G_STRING(OFS_PARM1));
-	} else {
+		if (cl)
+		{
+			ClientReliableCheckBlock(cl, 1+strlen(G_STRING(OFS_PARM1)));
+			ClientReliableWrite_String(cl, G_STRING(OFS_PARM1));
+		}
+	}
+	else
+	{
 		MSG_WriteString (WriteDest(), G_STRING(OFS_PARM1));
 	}
 }
 
 //void(float to, entity e) WriteEntity = #59
 void PF_WriteEntity (void) {
-	if (G_FLOAT(OFS_PARM0) == MSG_ONE) {
+	if (G_FLOAT(OFS_PARM0) == MSG_ONE)
+	{
 		client_t *cl = Write_GetClient();
-		ClientReliableCheckBlock(cl, 2);
-		ClientReliableWrite_Short(cl, SV_TranslateEntnum(G_EDICTNUM(OFS_PARM1)));
-	} else {
+		if (cl)
+		{
+			ClientReliableCheckBlock(cl, 2);
+			ClientReliableWrite_Short(cl, SV_TranslateEntnum(G_EDICTNUM(OFS_PARM1)));
+		}
+	}
+	else
+	{
 		MSG_WriteShort (WriteDest(), SV_TranslateEntnum(G_EDICTNUM(OFS_PARM1)));
 	}
 }
@@ -1228,7 +1293,10 @@ void PF_setspawnparms (void) {
 		PR_RunError ("Entity is not a client");
 
 	// copy spawn parms out of the client_t
-	client = svs.clients + (i - 1);
+	client = svs.clients[(i - 1)];
+
+	if (client == 0)
+		return;
 
 	for (i = 0; i < NUM_SPAWN_PARMS; i++)
 		(&pr_global_struct->parm1)[i] = client->spawn_parms[i];
@@ -1263,7 +1331,10 @@ void PF_logfrag (void) {
 	if (e1 < 1 || e1 > MAX_CLIENTS || e2 < 1 || e2 > MAX_CLIENTS)
 		return;
 
-	s = va("\\%s\\%s\\\n", svs.clients[e1-1].name, svs.clients[e2-1].name);
+	if (svs.clients[e1 - 1] == 0 || svs.clients[e2 - 1] == 0)
+		return;
+
+	s = va("\\%s\\%s\\\n", svs.clients[e1-1]->name, svs.clients[e2-1]->name);
 
 	SZ_Print (&svs.log[svs.logsequence & 1], s);
 	if (sv_fraglogfile) {
@@ -1283,19 +1354,23 @@ void PF_infokey (void) {
 	e1 = NUM_FOR_EDICT(e);
 	key = G_STRING(OFS_PARM1);
 
-	if (e1 == 0) {
+	if (e1 == 0)
+	{
 		if ((value = Info_ValueForKey (svs.info, key)) == NULL || !*value)
 			value = Info_ValueForKey(localinfo, key);
-	} else if (e1 <= MAX_CLIENTS) {
-		if (!strcmp(key, "ip")) {
-			Q_strncpyz(ov, NET_BaseAdrToString (svs.clients[e1 - 1].netchan.remote_address), sizeof(ov));
+	}
+	else if (e1 <= MAX_CLIENTS && svs.clients[e1 - 1])
+	{
+		if (!strcmp(key, "ip"))
+		{
+			Q_strncpyz(ov, NET_BaseAdrToString (svs.clients[e1 - 1]->netchan.remote_address), sizeof(ov));
 			value = ov;
 		} else if (!strcmp(key, "ping")) {
-			ping = SV_CalcPing (&svs.clients[e1 - 1]);
+			ping = SV_CalcPing (svs.clients[e1 - 1]);
 			Q_snprintfz(ov, sizeof(ov), "%d", ping);
 			value = ov;
 		} else {
-			value = Info_ValueForKey (svs.clients[e1 - 1].userinfo, key);
+			value = Info_ValueForKey (svs.clients[e1 - 1]->userinfo, key);
 		}
 	} else {
 		value = "";
@@ -1609,8 +1684,8 @@ void PF_clientcommand (void) {
 		PR_RunError("PF_clientcommand: entity is not a client");
 
 	temp_client = sv_client;
-	sv_client = &svs.clients[i];
-	if (sv_client->state == cs_connected || sv_client->state == cs_spawned)
+	sv_client = svs.clients[i];
+	if (sv_client && (sv_client->state == cs_connected || sv_client->state == cs_spawned))
 		SV_ExecuteUserCommand (G_STRING(OFS_PARM1), true);
 	sv_client = temp_client;
 }

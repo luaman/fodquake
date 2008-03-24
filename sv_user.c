@@ -305,8 +305,12 @@ void Cmd_Spawn_f (void) {
 	// send current status of all other players
 
 	// normally this could overflow, but no need to check due to backbuf
-	for (i = n, client = svs.clients + n ; i < MAX_CLIENTS; i++, client++)
-		SV_FullClientUpdateToClient (client, sv_client);
+	for (i = n; i < MAX_CLIENTS; i++)
+	{
+		client = svs.clients[i];
+		if (client)
+			SV_FullClientUpdateToClient (client, sv_client);
+	}
 	
 	// send all current light styles
 	for (i = 0; i < MAX_LIGHTSTYLES; i++) {
@@ -463,7 +467,7 @@ void Cmd_Begin_f (void) {
 		// with a permanent head tilt
 		edict_t *ent;
 
-		ent = EDICT_NUM( 1 + (sv_client - svs.clients) );
+		ent = sv_client->edict;
 		MSG_WriteByte (&sv_client->netchan.message, svc_setangle);
 		for (i = 0; i < 2; i++)
 			MSG_WriteAngle (&sv_client->netchan.message, ent->v.v_angle[i]);
@@ -707,8 +711,11 @@ void SV_Say (qboolean team) {
 
 	Sys_Printf ("%s", text);
 
-	for (j = 0, client = svs.clients; j < MAX_CLIENTS; j++, client++) {
-		if (client->state != cs_spawned)
+	for (j = 0; j < MAX_CLIENTS; j++)
+	{
+		client = svs.clients[j];
+
+		if (client == 0 || client->state != cs_spawned)
 			continue;
 		if (sv_client->spectator && !sv_spectalk.value)
 			if (!client->spectator)
@@ -744,8 +751,11 @@ void Cmd_Pings_f (void) {
 	client_t *client;
 	int j;
 
-	for (j = 0, client = svs.clients; j < MAX_CLIENTS; j++, client++) {
-		if (client->state != cs_spawned)
+	for (j = 0; j < MAX_CLIENTS; j++)
+	{
+		client = svs.clients[j];
+
+		if (client == 0 || client->state != cs_spawned)
 			continue;
 
 		ClientReliableWrite_Begin (sv_client, svc_updateping, 4);
@@ -778,8 +788,11 @@ void SV_TogglePause (const char *msg) {
 		SV_BroadcastPrintf (PRINT_HIGH, "%s", msg);
 
 	// send notification to all clients
-	for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++) {
-		if (!cl->state)
+	for (i = 0; i < MAX_CLIENTS; i++)
+	{
+		cl = svs.clients[i];
+
+		if (cl == 0 || !cl->state)
 			continue;
 		ClientReliableWrite_Begin (cl, svc_setpause, 2);
 		ClientReliableWrite_Byte (cl, sv.paused ? 1 : 0);
@@ -827,25 +840,25 @@ void Cmd_PTrack_f (void) {
 	if (Cmd_Argc() != 2) {
 		// turn off tracking
 		sv_client->spec_track = 0;
-		ent = EDICT_NUM(sv_client - svs.clients + 1);
+		ent = sv_client->edict;
 		tent = EDICT_NUM(0);
 		ent->v.goalentity = EDICT_TO_PROG(tent);
 		return;
 	}
 
 	i = atoi(Cmd_Argv(1));
-	if (i < 0 || i >= MAX_CLIENTS || svs.clients[i].state != cs_spawned ||
-		svs.clients[i].spectator) {
+	if (i < 0 || i >= MAX_CLIENTS || svs.clients[i] == 0 || svs.clients[i]->state != cs_spawned || svs.clients[i]->spectator)
+	{
 		SV_ClientPrintf (sv_client, PRINT_HIGH, "Invalid client to track\n");
 		sv_client->spec_track = 0;
-		ent = EDICT_NUM(sv_client - svs.clients + 1);
+		ent = sv_client->edict;
 		tent = EDICT_NUM(0);
 		ent->v.goalentity = EDICT_TO_PROG(tent);
 		return;
 	}
 	sv_client->spec_track = i + 1; // now tracking
 
-	ent = EDICT_NUM(sv_client - svs.clients + 1);
+	ent = sv_client->edict;
 	tent = EDICT_NUM(i + 1);
 	ent->v.goalentity = EDICT_TO_PROG(tent);
 }
@@ -854,6 +867,11 @@ void Cmd_PTrack_f (void) {
 void Cmd_SetInfo_f (void) {
 	int i;
 	char oldval[MAX_INFO_STRING];
+
+	for(i=0;i<MAX_CLIENTS && svs.clients[i] != sv_client;i++);
+
+	if (i == MAX_CLIENTS)
+		Sys_Error("Client not found\n");
 
 	if (Cmd_Argc() == 1) {
 		Com_Printf ("User info settings:\n");
@@ -884,7 +902,6 @@ void Cmd_SetInfo_f (void) {
 	// process any changed values
 	SV_ExtractFromUserinfo (sv_client);
 
-	i = sv_client - svs.clients;
 	MSG_WriteByte (&sv.reliable_datagram, svc_setinfo);
 	MSG_WriteByte (&sv.reliable_datagram, i);
 	MSG_WriteString (&sv.reliable_datagram, Cmd_Argv(1));

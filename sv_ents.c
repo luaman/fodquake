@@ -206,8 +206,11 @@ void SV_WritePlayersToClient (client_t *client, byte *pvs, sizebuf_t *msg) {
 	usercmd_t cmd;
 	int pm_type, pm_code;
 
-	for (j = 0, cl = svs.clients; j < MAX_CLIENTS; j++, cl++) {
-		if (cl->state != cs_spawned)
+	for (j = 0; j < MAX_CLIENTS; j++)
+	{
+		cl = svs.clients[j];
+
+		if (cl == 0 || cl->state != cs_spawned)
 			continue;
 
 		ent = cl->edict;

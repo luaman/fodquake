@@ -105,9 +105,13 @@ void SV_FinalMessage (char *message) {
 	MSG_WriteString (&net_message, message);
 	MSG_WriteByte (&net_message, svc_disconnect);
 
-	for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++)
-		if (cl->state >= cs_spawned)
+	for (i = 0; i < MAX_CLIENTS; i++)
+	{
+		cl = svs.clients[i];
+
+		if (cl && cl->state >= cs_spawned)
 			Netchan_Transmit (&cl->netchan, net_message.cursize, net_message.data);
+	}
 }
 
 //Quake calls this before calling Sys_Quit or Sys_Error
@@ -131,14 +135,21 @@ void SV_Shutdown (char *finalmsg)
 
 	for(i=0;i<MAX_CLIENTS;i++)
 	{
-		if (svs.clients[i].state)
-			memset(&svs.clients[i], 0, sizeof(svs.clients[0]));
+		free(svs.clients[i]);
 	}
 }
 
 //Called when the player is totally leaving the server, either willingly or unwillingly.
 //This is NOT called if the entire server is quiting or crashing.
-void SV_DropClient (client_t *drop) {
+void SV_DropClient (client_t *drop)
+{
+	unsigned int clientnum;
+
+	for(clientnum=0;clientnum<MAX_CLIENTS && svs.clients[clientnum] != drop;clientnum++);
+
+	if (clientnum == MAX_CLIENTS)
+		Sys_Error("%s: Client not found\n", __func__);
+
 	// add the disconnect
 	MSG_WriteByte (&drop->netchan.message, svc_disconnect);
 
@@ -182,6 +193,9 @@ void SV_DropClient (client_t *drop) {
 
 	// send notification to all remaining clients
 	SV_FullClientUpdate (drop, &sv.reliable_datagram);
+
+	free(drop);
+	svs.clients[clientnum] = 0;
 }
 
 //====================================================================
@@ -208,35 +222,38 @@ int SV_CalcPing (client_t *cl) {
 
 //Writes all update values to a sizebuf
 void SV_FullClientUpdate (client_t *client, sizebuf_t *buf) {
-	int i;
 	char info[MAX_INFO_STRING];
+	unsigned int clientnum;
 
-	i = client - svs.clients;
+	for(clientnum=0;clientnum<MAX_CLIENTS && svs.clients[clientnum] != client;clientnum++);
+
+	if (clientnum == MAX_CLIENTS)
+		Sys_Error("%s: Client not found\n", __func__);
 
 	if (client->state == cs_free && sv_fastconnect.value)
 		return;
 
 	MSG_WriteByte (buf, svc_updatefrags);
-	MSG_WriteByte (buf, i);
+	MSG_WriteByte (buf, clientnum);
 	MSG_WriteShort (buf, client->old_frags);
 
 	MSG_WriteByte (buf, svc_updateping);
-	MSG_WriteByte (buf, i);
+	MSG_WriteByte (buf, clientnum);
 	MSG_WriteShort (buf, SV_CalcPing (client));
 
 	MSG_WriteByte (buf, svc_updatepl);
-	MSG_WriteByte (buf, i);
+	MSG_WriteByte (buf, clientnum);
 	MSG_WriteByte (buf, client->lossage);
 
 	MSG_WriteByte (buf, svc_updateentertime);
-	MSG_WriteByte (buf, i);
+	MSG_WriteByte (buf, clientnum);
 	MSG_WriteFloat (buf, svs.realtime - client->connection_started);
 
 	strcpy (info, client->userinfo);
 	Info_RemovePrefixedKeys (info, '_');	// server passwords, etc
 
 	MSG_WriteByte (buf, svc_updateuserinfo);
-	MSG_WriteByte (buf, i);
+	MSG_WriteByte (buf, clientnum);
 	MSG_WriteLong (buf, client->userid);
 	MSG_WriteString (buf, info);
 }
@@ -266,8 +283,8 @@ void SVC_Status (void) {
 	SV_BeginRedirect (RD_PACKET);
 	Com_Printf ("%s\n", svs.info);
 	for (i = 0; i < MAX_CLIENTS; i++) {
-		cl = &svs.clients[i];
-		if ((cl->state == cs_connected || cl->state == cs_spawned ) && !cl->spectator) {
+		cl = svs.clients[i];
+		if (cl && (cl->state == cs_connected || cl->state == cs_spawned ) && !cl->spectator) {
 			top = atoi(Info_ValueForKey (cl->userinfo, "topcolor"));
 			bottom = atoi(Info_ValueForKey (cl->userinfo, "bottomcolor"));
 			top = (top < 0) ? 0 : ((top > 13) ? 13 : top);
@@ -456,8 +473,10 @@ void SVC_DirectConnect (void) {
 	}
 
 	// if there is already a slot for this ip, drop it
-	for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++,cl++) {
-		if (cl->state == cs_free)
+	for (i = 0; i < MAX_CLIENTS; i++) {
+		cl = svs.clients[i];
+
+		if (cl == 0 || cl->state == cs_free)
 			continue;
 		if (NET_CompareBaseAdr (adr, cl->netchan.remote_address)
 			&& ( cl->netchan.qport == qport || adr.port == cl->netchan.remote_address.port )) {
@@ -468,7 +487,7 @@ void SVC_DirectConnect (void) {
 			}
 
 			Com_Printf ("%s:reconnect\n", NET_AdrToString (adr));
-			SV_DropClient (cl);
+			SV_DropClient(cl);
 			break;
 		}
 	}
@@ -476,8 +495,10 @@ void SVC_DirectConnect (void) {
 	// count up the clients and spectators
 	clients = 0;
 	spectators = 0;
-	for (i = 0,cl=svs.clients; i < MAX_CLIENTS; i++,cl++) {
-		if (cl->state == cs_free)
+	for (i = 0; i < MAX_CLIENTS; i++)
+	{
+		cl = svs.clients[i];
+		if (cl == 0 || cl->state == cs_free)
 			continue;
 		if (cl->spectator)
 			spectators++;
@@ -500,17 +521,22 @@ void SVC_DirectConnect (void) {
 
 	// find a client slot
 	newcl = NULL;
-	for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++,cl++) {
-		if (cl->state == cs_free) {
-			newcl = cl;
+	for (i = 0; i < MAX_CLIENTS; i++)
+	{
+		cl = svs.clients[i];
+		if (cl == 0)
+		{
+			newcl = svs.clients[i] = malloc(sizeof(*newcl));
+			edictnum = i + 1;
 			break;
 		}
 	}
-	if (!newcl) {
-		Com_Printf ("WARNING: miscounted available clients\n");
+	if (!newcl)
+	{
+		Com_Printf ("WARNING: Out of memory\n");
 		return;
 	}
-	
+
 	// build a new connection
 	// accept the new client
 	// this is the only place a client_t is ever initialized
@@ -518,8 +544,6 @@ void SVC_DirectConnect (void) {
 
 	Netchan_OutOfBandPrint (NS_SERVER, adr, "%c", S2C_CONNECTION );
 
-	edictnum = (newcl-svs.clients)+1;
-	
 	Netchan_Setup (NS_SERVER, &newcl->netchan, adr, qport);
 
 	newcl->state = cs_connected;
@@ -831,8 +855,10 @@ void SV_ReadPackets (void) {
 		qport = MSG_ReadShort () & 0xffff;
 
 		// check for packets from connected clients
-		for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++,cl++) {
-			if (cl->state == cs_free)
+		for (i = 0; i < MAX_CLIENTS; i++)
+		{
+			cl = svs.clients[i];
+			if (cl == 0 || cl->state == cs_free)
 				continue;
 			if (!NET_CompareBaseAdr (net_from, cl->netchan.remote_address))
 				continue;
@@ -871,13 +897,18 @@ void SV_CheckTimeouts (void) {
 	droptime = curtime - sv_timeout.value;
 	nclients = 0;
 
-	for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++,cl++) {
+	for (i = 0; i < MAX_CLIENTS; i++)
+	{
+		cl = svs.clients[i];
+		if (cl == 0)
+			continue;
+
 		if (cl->state == cs_connected || cl->state == cs_spawned) {
 			if (!cl->spectator)
 				nclients++;
 			if (cl->netchan.last_received < droptime) {
 				SV_BroadcastPrintf (PRINT_HIGH, "%s timed out\n", cl->name);
-				SV_DropClient (cl); 
+				SV_DropClient(cl); 
 				cl->state = cs_free;	// don't bother with zombie state
 			}
 		}
@@ -948,8 +979,9 @@ void SV_CheckVars (void) {
 
 		old_maxrate = sv_maxrate.value;
 
-		for (i = 0, cl = svs.clients; i < MAX_CLIENTS; i++, cl++) {
-			if (cl->state < cs_connected)
+		for (i = 0; i < MAX_CLIENTS; i++) {
+			cl = svs.clients[i];
+			if (cl == 0 || cl->state < cs_connected)
 				continue;
 
 			val = Info_ValueForKey (cl->userinfo, "rate");
@@ -1137,9 +1169,10 @@ void Master_Heartbeat (void) {
 	// count active users
 	active = 0;
 	for (i = 0; i < MAX_CLIENTS; i++)
-		if (svs.clients[i].state == cs_connected ||
-		svs.clients[i].state == cs_spawned )
+	{
+		if (svs.clients[i] && (svs.clients[i]->state == cs_connected || svs.clients[i]->state == cs_spawned))
 			active++;
+	}
 
 	svs.heartbeat_sequence++;
 	sprintf (string, "%c\n%i\n%i\n", S2M_HEARTBEAT,
@@ -1212,8 +1245,10 @@ void SV_ExtractFromUserinfo (client_t *cl) {
 
 	// check to see if another user by the same name exists
 	while (1) {
-		for (i = 0, client = svs.clients; i < MAX_CLIENTS; i++, client++) {
-			if (client->state != cs_spawned || client == cl)
+		for (i = 0; i < MAX_CLIENTS; i++)
+		{
+			client = svs.clients[i];
+			if (client == 0 || client->state != cs_spawned || client == cl)
 				continue;
 			if (!Q_strcasecmp(client->name, val))
 				break;
