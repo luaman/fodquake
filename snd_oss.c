@@ -180,7 +180,7 @@ static qboolean oss_init(struct SoundCard *sc, int rate, int channels, int bits)
 	ret = oss_init_internal(sc, snd_oss_device.string, rate, channels, bits);
 	if (ret == 0 && strcmp(snd_oss_device.string, "/dev/dsp") != 0)
 	{
-		printf("Opening \"%s\" failed, trying \"/dev/dsp\"\n", snd_oss_device.string);
+		Com_Printf("Opening \"%s\" failed, trying \"/dev/dsp\"\n", snd_oss_device.string);
 
 		ret = oss_init_internal(sc, "/dev/dsp", rate, channels, bits);
 	}
