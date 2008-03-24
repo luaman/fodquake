@@ -71,6 +71,8 @@ void Sys_Video_BeginFrame(void *display, unsigned int *x, unsigned int *y, unsig
 void Sys_Video_SetGamma(void *display, unsigned short *ramps);
 qboolean Sys_Video_HWGammaSupported(void *display);
 #else
+unsigned int Sys_Video_GetWidth(void *display);
+unsigned int Sys_Video_GetHeight(void *display);
 unsigned int Sys_Video_GetBytesPerRow(void *display);
 void *Sys_Video_GetBuffer(void *display);
 #endif
