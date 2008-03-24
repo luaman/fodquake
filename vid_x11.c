@@ -764,6 +764,24 @@ void Sys_Video_SetWindowTitle(void *display, const char *text)
 	XStoreName(d->x_disp, d->x_win, text);
 }
 
+unsigned int Sys_Video_GetWidth(void *display)
+{
+	struct display *d;
+
+	d = display;
+
+	return d->width;
+}
+
+unsigned int Sys_Video_GetHeight(void *display)
+{
+	struct display *d;
+
+	d = display;
+
+	return d->height;
+}
+
 unsigned int Sys_Video_GetBytesPerRow(void *display)
 {
 	struct display *d;
