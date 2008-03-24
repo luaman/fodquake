@@ -1182,6 +1182,7 @@ static void Cmd_ExecuteStringEx (cbuf_t *context, char *text) {
 		{
 			Cbuf_AddTextEx(&cbuf_cmdsave, text);
 			Cbuf_AddTextEx(&cbuf_cmdsave, "\n");
+			goto done;
 		}
 	}
 
