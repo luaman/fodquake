@@ -23,6 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include <fcntl.h>
 #include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 
 #include "quakedef.h"
@@ -31,6 +32,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 static const int rates[] = { 11025, 22050, 44100, 8000 };
 
 #define NUMRATES (sizeof(rates)/sizeof(*rates))
+
+cvar_t snd_oss_device = { "snd_oss_device", "/dev/dsp", CVAR_ARCHIVE };
 
 struct oss_private
 {
@@ -64,7 +67,12 @@ static void oss_shutdown(struct SoundCard *sc)
 	free(p);
 }
 
-static qboolean oss_init(struct SoundCard *sc, int rate, int channels, int bits)
+static void oss_cvarinit()
+{
+	Cvar_Register(&snd_oss_device);
+}
+
+static qboolean oss_init_internal(struct SoundCard *sc, const char *device, int rate, int channels, int bits)
 {
 	int i;
 	struct oss_private *p;
@@ -76,7 +84,7 @@ static qboolean oss_init(struct SoundCard *sc, int rate, int channels, int bits)
 	p = malloc(sizeof(*p));
 	if (p)
 	{
-		p->fd = open("/dev/dsp", O_RDWR|O_NONBLOCK);
+		p->fd = open(device, O_RDWR|O_NONBLOCK);
 		if (p->fd != -1)
 		{
 			if ((ioctl(p->fd, SNDCTL_DSP_RESET, 0) >= 0)
@@ -165,5 +173,21 @@ static qboolean oss_init(struct SoundCard *sc, int rate, int channels, int bits)
 	return 0;
 }
 
+static qboolean oss_init(struct SoundCard *sc, int rate, int channels, int bits)
+{
+	qboolean ret;
+
+	ret = oss_init_internal(sc, snd_oss_device.string, rate, channels, bits);
+	if (ret == 0 && strcmp(snd_oss_device.string, "/dev/dsp") != 0)
+	{
+		printf("Opening \"%s\" failed, trying \"/dev/dsp\"\n", snd_oss_device.string);
+
+		ret = oss_init_internal(sc, "/dev/dsp", rate, channels, bits);
+	}
+
+	return ret;
+}
+
+SoundCvarInitFunc OSS_CvarInit = oss_cvarinit;
 SoundInitFunc OSS_Init = oss_init;
 

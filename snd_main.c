@@ -76,6 +76,36 @@ cvar_t s_show = {"s_show", "0"};
 cvar_t s_mixahead = {"s_mixahead", "0.1", CVAR_ARCHIVE};
 cvar_t s_swapstereo = {"s_swapstereo", "0"};
 
+struct SoundDriver
+{
+	char *name;
+	SoundInitFunc *init;
+	SoundCvarInitFunc *cvarinit;
+};
+
+SoundCvarInitFunc AHI_CvarInit;
+SoundCvarInitFunc OSS_CvarInit;
+SoundCvarInitFunc WaveOut_CvarInit;
+SoundCvarInitFunc DS7_CvarInit;
+SoundCvarInitFunc ALSA_CvarInit;
+
+SoundInitFunc AHI_Init;
+SoundInitFunc OSS_Init;
+SoundInitFunc WaveOut_Init;
+SoundInitFunc DS7_Init;
+SoundInitFunc ALSA_Init;
+
+struct SoundDriver sounddrivers[] =
+{
+	{ "AHI", &AHI_Init, &AHI_CvarInit },
+	{ "OSS", &OSS_Init, &OSS_CvarInit },
+	{ "DS7", &DS7_Init, &DS7_CvarInit },
+	{ "ALSA", &ALSA_Init, &ALSA_CvarInit },
+	{ "WaveOut", &WaveOut_Init, &WaveOut_CvarInit },
+};
+
+#define NUMSOUNDDRIVERS (sizeof(sounddrivers)/sizeof(*sounddrivers))
+
 // ====================================================================
 // User-setable variables
 // ====================================================================
@@ -95,29 +125,6 @@ void S_SoundInfo_f (void) {
     Com_Printf ("0x%x dma buffer\n", soundcard->buffer);
 	Com_Printf ("%5d total_channels\n", total_channels);
 }
-
-struct SoundDriver
-{
-	char *name;
-	SoundInitFunc *init;
-};
-
-SoundInitFunc AHI_Init;
-SoundInitFunc OSS_Init;
-SoundInitFunc WaveOut_Init;
-SoundInitFunc DS7_Init;
-SoundInitFunc ALSA_Init;
-
-struct SoundDriver sounddrivers[] =
-{
-	{ "AHI", &AHI_Init },
-	{ "OSS", &OSS_Init },
-	{ "DS7", &DS7_Init },
-	{ "ALSA", &ALSA_Init },
-	{ "WaveOut", &WaveOut_Init },
-};
-
-#define NUMSOUNDDRIVERS (sizeof(sounddrivers)/sizeof(*sounddrivers))
 
 void S_Startup (void) {
 	int rc = false;
@@ -201,6 +208,8 @@ void SND_Restart_f (void)
 
 void S_CvarInit(void)
 {
+	unsigned int i;
+
 	Cvar_SetCurrentGroup(CVAR_GROUP_SOUND);
 	Cvar_Register(&bgmvolume);
 	Cvar_Register(&s_volume);
@@ -238,6 +247,14 @@ void S_CvarInit(void)
 	if (host_memsize < 0x800000) {
 		Cvar_Set (&s_loadas8bit, "1");
 		Com_Printf ("loading all sounds as 8bit\n");
+	}
+
+	for(i=0;i<NUMSOUNDDRIVERS;i++)
+	{
+		if (*sounddrivers[i].cvarinit)
+		{
+			(*sounddrivers[i].cvarinit)();
+		}
 	}
 
 	snd_initialized = true;

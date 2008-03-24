@@ -92,6 +92,7 @@ struct SoundCard
 	unsigned char *buffer;
 };
 
+typedef void (*SoundCvarInitFunc)(void);
 typedef qboolean (*SoundInitFunc)(struct SoundCard *, int rate, int channels, int bits);
 
 void S_CvarInit(void);
