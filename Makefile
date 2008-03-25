@@ -115,6 +115,22 @@ ifeq ($(OS), win32)
 	endif
 endif
 
+ifeq ($(OS), gekko)
+# Hey, we're actually libogc on the Wii.
+
+	OSOBJS = \
+		sys_wii.o \
+		cd_null.o \
+		fatfs/libfat.a
+	
+	OSSWOBJS = vid_wii.o in_wii.o
+
+	# -mrvl
+	# -I/usr/local/devkitPro/devkitPPC/powerpc-gekko/include/
+	OSCFLAGS = -DGEKKO -mrvl -mcpu=750 -meabi -mhard-float -I/usr/local/devkitPro/devkitPPC/include
+	OSLDFLAGS = -L/usr/local/devkitPro/devkitPPC/lib/wii/ -logc
+endif
+
 # CPU specific settings
 
 ifeq ($(CPU), ppc)
