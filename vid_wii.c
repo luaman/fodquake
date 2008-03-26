@@ -93,7 +93,7 @@ void *Sys_Video_Open(unsigned int width, unsigned int height, unsigned int depth
 			if (d->buffer)
 			{
 				memset(d->buffer, 0, d->width * d->height * 2);
-				#if 0
+				#if 1
 				VIDEO_Configure(rmode);
 				VIDEO_SetNextFramebuffer(d->buffer);
 				VIDEO_SetBlack(FALSE);
@@ -146,9 +146,7 @@ void Sys_Video_GetMouseMovement(void *display, int *mousex, int *mousey)
 {
 	struct display *d = display;
 
-#if 0
 	Sys_Input_GetMouseMovement(d->inputdata, mousex, mousey);
-#endif
 }
 
 unsigned int CvtRGB (unsigned char r1, unsigned char g1, unsigned char b1, unsigned char r2, unsigned char g2, unsigned char b2)
