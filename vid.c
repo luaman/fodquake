@@ -215,8 +215,8 @@ void VID_Open()
 	display = Sys_Video_Open(width, height, depth, fullscreen, host_basepal);
 	if (display)
 	{
-		vid.width = Sys_Video_GetWidth(display);
-		vid.height = Sys_Video_GetHeight(display);
+		width = vid.width = Sys_Video_GetWidth(display);
+		height = vid.height = Sys_Video_GetHeight(display);
 #ifndef GLQUAKE
 		if (VID_SW_AllocBuffers(width, height))
 #endif
