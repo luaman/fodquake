@@ -334,6 +334,8 @@ void Sys_Input_GetEvents(void *inputdata)
 
 void Sys_Input_GetMouseMovement(void *inputdata, int *mousex, int *mousey)
 {
+	*mousex = 0;
+	*mousey = 0;
 }
 
 void Sys_Input_GrabMouse(void *inputdata, int dograb)
