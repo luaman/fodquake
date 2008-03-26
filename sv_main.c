@@ -393,7 +393,7 @@ void SVC_DirectConnect (void) {
 	static int	userid;
 	netadr_t adr;
 	int i, edictnum, clients, spectators, qport, version, challenge;
-	client_t *cl, *newcl, temp;
+	client_t *cl, *newcl;
 	edict_t *ent;
 	qboolean spectator;
 
@@ -453,36 +453,20 @@ void SVC_DirectConnect (void) {
 	}
 
 	adr = net_from;
-	userid++;	// so every client gets a unique id
-
-	newcl = &temp;
-	memset (newcl, 0, sizeof(client_t));
-
-	newcl->userid = userid;
-
-	// works properly
-	if (!sv_highchars.value) {
-		byte *p, *q;
-
-		for (p = (byte *)newcl->userinfo, q = (byte *) userinfo; 
-			*q && p < (byte *)newcl->userinfo + sizeof(newcl->userinfo)-1; q++)
-			if (*q > 31 && *q <= 127)
-				*p++ = *q;
-	} else {
-		Q_strncpyz (newcl->userinfo, userinfo, sizeof(newcl->userinfo));
-	}
 
 	// if there is already a slot for this ip, drop it
-	for (i = 0; i < MAX_CLIENTS; i++) {
+	for (i = 0; i < MAX_CLIENTS; i++)
+	{
 		cl = svs.clients[i];
 
 		if (cl == 0 || cl->state == cs_free)
 			continue;
-		if (NET_CompareBaseAdr (adr, cl->netchan.remote_address)
-			&& ( cl->netchan.qport == qport || adr.port == cl->netchan.remote_address.port )) {
-			if (cl->state == cs_connected) {
+
+		if (NET_CompareBaseAdr (adr, cl->netchan.remote_address) && ( cl->netchan.qport == qport || adr.port == cl->netchan.remote_address.port ))
+		{
+			if (cl->state == cs_connected)
+			{
 				Com_Printf ("%s:dup connect\n", NET_AdrToString (adr));
-				userid--;
 				return;
 			}
 
@@ -498,6 +482,7 @@ void SVC_DirectConnect (void) {
 	for (i = 0; i < MAX_CLIENTS; i++)
 	{
 		cl = svs.clients[i];
+
 		if (cl == 0 || cl->state == cs_free)
 			continue;
 		if (cl->spectator)
@@ -513,76 +498,97 @@ void SVC_DirectConnect (void) {
 		Cvar_SetValue (&maxspectators, MAX_CLIENTS);
 	if (maxspectators.value + maxclients.value > MAX_CLIENTS)
 		Cvar_SetValue (&maxspectators, MAX_CLIENTS - maxclients.value);
-	if ((spectator && spectators >= (int)maxspectators.value) || (!spectator && clients >= (int)maxclients.value)) {
+	if ((spectator && spectators >= (int)maxspectators.value) || (!spectator && clients >= (int)maxclients.value))
+	{
 		Com_Printf ("%s:full connect\n", NET_AdrToString (adr));
 		Netchan_OutOfBandPrint (NS_SERVER, adr, "%c\nserver is full\n\n", A2C_PRINT);
 		return;
 	}
 
-	// find a client slot
-	newcl = NULL;
-	for (i = 0; i < MAX_CLIENTS; i++)
+	newcl = malloc(sizeof(*newcl));
+	if (newcl)
 	{
-		cl = svs.clients[i];
-		if (cl == 0)
+		userid++;	// so every client gets a unique id
+
+		memset(newcl, 0, sizeof(*newcl));
+
+		newcl->userid = userid;
+
+		// works properly
+		if (!sv_highchars.value)
 		{
-			newcl = svs.clients[i] = malloc(sizeof(*newcl));
-			edictnum = i + 1;
-			break;
+			byte *p, *q;
+
+			for (p = (byte *)newcl->userinfo, q = (byte *) userinfo; *q && p < (byte *)newcl->userinfo + sizeof(newcl->userinfo)-1; q++)
+			{
+				if (*q > 31 && *q <= 127)
+					*p++ = *q;
+			}
 		}
+		else
+		{
+			Q_strncpyz (newcl->userinfo, userinfo, sizeof(newcl->userinfo));
+		}
+
+		// find a client slot
+		for (i = 0; i < MAX_CLIENTS; i++)
+		{
+			cl = svs.clients[i];
+			if (cl == 0)
+			{
+				svs.clients[i] = newcl;
+				edictnum = i + 1;
+				break;
+			}
+		}
+
+		// build a new connection
+		// accept the new client
+		// this is the only place a client_t is ever initialized
+
+		Netchan_OutOfBandPrint (NS_SERVER, adr, "%c", S2C_CONNECTION );
+
+		Netchan_Setup (NS_SERVER, &newcl->netchan, adr, qport);
+
+		newcl->state = cs_connected;
+
+		SZ_Init (&newcl->datagram, newcl->datagram_buf, sizeof(newcl->datagram_buf));
+		newcl->datagram.allowoverflow = true;
+
+		// spectator mode can ONLY be set at join time
+		newcl->spectator = spectator;
+
+		// extract extensions mask
+		if (net_from.type == NA_LOOPBACK)
+			newcl->extensions = SUPPORTED_EXTENSIONS;
+		else
+			newcl->extensions = atoi(Info_ValueForKey(newcl->userinfo, "*z_ext"));
+		Info_RemoveKey (newcl->userinfo, "*z_ext");
+
+		ent = EDICT_NUM(edictnum);	
+		newcl->edict = ent;
+
+		// parse some info from the info strings
+		SV_ExtractFromUserinfo (newcl);
+
+		// JACK: Init the floodprot stuff.
+		for (i = 0; i < 10; i++)
+			newcl->whensaid[i] = 0.0;
+		newcl->whensaidhead = 0;
+		newcl->lockedtill = 0;
+
+		// call the progs to get default spawn parms for the new client
+		PR_ExecuteProgram (pr_global_struct->SetNewParms);
+		for (i = 0; i < NUM_SPAWN_PARMS; i++)
+			newcl->spawn_parms[i] = (&pr_global_struct->parm1)[i];
+
+		if (newcl->spectator)
+			Com_Printf ("Spectator %s connected\n", newcl->name);
+		else
+			Com_DPrintf ("Client %s connected\n", newcl->name);
+
+		newcl->sendinfo = true;
 	}
-	if (!newcl)
-	{
-		Com_Printf ("WARNING: Out of memory\n");
-		return;
-	}
-
-	// build a new connection
-	// accept the new client
-	// this is the only place a client_t is ever initialized
-	*newcl = temp;
-
-	Netchan_OutOfBandPrint (NS_SERVER, adr, "%c", S2C_CONNECTION );
-
-	Netchan_Setup (NS_SERVER, &newcl->netchan, adr, qport);
-
-	newcl->state = cs_connected;
-
-	SZ_Init (&newcl->datagram, newcl->datagram_buf, sizeof(newcl->datagram_buf));
-	newcl->datagram.allowoverflow = true;
-
-	// spectator mode can ONLY be set at join time
-	newcl->spectator = spectator;
-
-	// extract extensions mask
-	if (net_from.type == NA_LOOPBACK)
-		newcl->extensions = SUPPORTED_EXTENSIONS;
-	else
-		newcl->extensions = atoi(Info_ValueForKey(newcl->userinfo, "*z_ext"));
-	Info_RemoveKey (newcl->userinfo, "*z_ext");
-
-	ent = EDICT_NUM(edictnum);	
-	newcl->edict = ent;
-
-	// parse some info from the info strings
-	SV_ExtractFromUserinfo (newcl);
-
-	// JACK: Init the floodprot stuff.
-	for (i = 0; i < 10; i++)
-		newcl->whensaid[i] = 0.0;
-	newcl->whensaidhead = 0;
-	newcl->lockedtill = 0;
-
-	// call the progs to get default spawn parms for the new client
-	PR_ExecuteProgram (pr_global_struct->SetNewParms);
-	for (i = 0; i < NUM_SPAWN_PARMS; i++)
-		newcl->spawn_parms[i] = (&pr_global_struct->parm1)[i];
-
-	if (newcl->spectator)
-		Com_Printf ("Spectator %s connected\n", newcl->name);
-	else
-		Com_DPrintf ("Client %s connected\n", newcl->name);
-	newcl->sendinfo = true;
 }
 
 int Rcon_Validate (void) {
