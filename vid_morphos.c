@@ -79,6 +79,13 @@ void *Sys_Video_Open(unsigned int width, unsigned int height, unsigned int depth
 					SA_Depth, 8,
 					SA_Quiet, TRUE,
 					TAG_DONE);
+
+
+				if (d->screen)
+				{
+					width = d->screen->Width;
+					height = d->screen->Height;
+				}
 			}
 
 			d->window = OpenWindowTags(0,
