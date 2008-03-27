@@ -319,6 +319,24 @@ void Sys_Video_SetWindowTitle(void *display, const char *text)
 	SetWindowTitles(d->window, text, (void *)-1);
 }
 
+unsigned int Sys_Video_GetWidth(void *display)
+{
+	struct display *d;
+
+	d = display;
+
+	return d->width;
+}
+
+unsigned int Sys_Video_GetHeight(void *display)
+{
+	struct display *d;
+
+	d = display;
+
+	return d->height;
+}
+
 unsigned int Sys_Video_GetBytesPerRow(void *display)
 {
 	struct display *d;
