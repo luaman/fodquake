@@ -33,9 +33,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #undef false
 #include "keys.h"
 
-#define USE_THREAD 0
+#define USE_THREAD 1
 
-#define EVENTQUEUESIZE 2
+#define EVENTQUEUESIZE 16
 
 struct keyboardevent
 {
@@ -115,15 +115,13 @@ static void *inputthread(void *inputdata)
 	{
 		if ((id->eventlist_write_ptr + 1)%EVENTQUEUESIZE == id->eventlist_read_ptr)
 		{
-			printf("%s: You lose.\n", __func__);
-			while(1);
+			Com_Printf("%s: You lose.\n", __func__);
 		}
 
 		r = IOS_Ioctl(id->fd, 0, 0, 0, (u8 *)&id->eventlist[id->eventlist_write_ptr].event, sizeof(id->eventlist[id->eventlist_write_ptr].event));
 		if (r != 0)
 		{
-			printf("%s: IOS_Ioctl() failed: %d\n", __func__, r);
-			while(1);
+			Com_Printf("%s: IOS_Ioctl() failed: %d\n", __func__, r);
 		}
 
 		id->eventlist_write_ptr = (id->eventlist_write_ptr + 1) % EVENTQUEUESIZE;
@@ -136,9 +134,7 @@ static int setupthread(struct inputdata *id)
 
 	stackptr = (void *)((((unsigned int)id->threadstack)+15)&~15);
 
-#if 0
 	if(LWP_CreateThread(&id->threadhandle, inputthread, id, stackptr, 16384, LWP_PRIO_HIGHEST) != -1)
-#endif
 	{
 		return 1;
 	}
@@ -165,7 +161,6 @@ void *Sys_Input_Init()
 			if (setupasyncevents(id))
 #endif
 			{
-				printf("In done\n");
 				return id;
 			}
 
@@ -184,7 +179,7 @@ void Sys_Input_Shutdown(void *inputdata)
 {
 }
 
-static unsigned char keymappingtable[256] =
+static unsigned char keymappingtable[] =
 {
 	0,
 	0,
@@ -209,14 +204,14 @@ static unsigned char keymappingtable[256] =
 	'q', /* 20 */
 	'r',
 	's',
-	0,
 	't',
 	'u',
 	'v',
 	'w',
 	'x',
 	'y',
-	'z', /* 30 */
+	'z',
+	0, /* 30 */
 	'1',
 	'2',
 	'3',
@@ -226,7 +221,7 @@ static unsigned char keymappingtable[256] =
 	'7',
 	'8',
 	'9',
-	K_ENTER,
+	K_ENTER, /* 40 */
 	K_ESCAPE,
 	K_BACKSPACE,
 	K_TAB,
@@ -236,14 +231,51 @@ static unsigned char keymappingtable[256] =
 	'[',
 	']',
 	0,
-	'\\',
+	'\\', /* 50 */
 	';',
 	'\'',
 	'`',
 	',',
 	'.',
 	'/',
-	K_CAPSLOCK
+	K_CAPSLOCK,
+	K_F1,
+	K_F2,
+	K_F3,
+	K_F4,
+	K_F5,
+	K_F6,
+	K_F7,
+	K_F8,
+	K_F9,
+	K_F10,
+	K_F11,
+	K_F12,
+	K_PRINTSCR,
+	K_SCRLCK,
+	K_PAUSE,
+	K_INS,
+	K_HOME,
+	K_PGUP,
+	K_DEL,
+	K_END,
+	K_PGDN,
+	K_RIGHTARROW,
+	K_LEFTARROW,
+	K_DOWNARROW,
+	K_UPARROW,
+};
+
+static char specialkeys[8] =
+{
+	K_LCTRL,
+	K_LSHIFT,
+	K_LALT,
+	K_LWIN,
+	K_RCTRL,
+	K_RSHIFT,
+	K_RALT,
+	K_RWIN
 };
 
 static void handleevent(struct inputdata *id, struct keyboardevent *event)
@@ -258,25 +290,36 @@ static void handleevent(struct inputdata *id, struct keyboardevent *event)
 		printf("Keyboard disconnected\n");
 	else if (event->type == 2)
 	{
-		printf("%d pressed\n", event->pressed[0]);
+		/* Check the special keys */
+		for(i=0;i<8;i++)
+		{
+			if ((event->modifiers&(1<<i))^(id->modifierstate&(1<<i)))
+				Key_Event(specialkeys[i], !!(event->modifiers&(1<<i)));
+		}
+
+		id->modifierstate = event->modifiers;
 
 		/* First check for new down events */
 		for(i=0;i<6;i++)
 		{
 			if (id->keystate[event->pressed[i]] == 0)
 			{
-				translatedkey = keymappingtable[event->pressed[i]];
+				if (event->pressed[i] < sizeof(keymappingtable))
+					translatedkey = keymappingtable[event->pressed[i]];
+				else
+					translatedkey = 0;
+
 				if (translatedkey)
 					Key_Event(translatedkey, 1);
 				else
-					printf("%s: Unknown key %d\n", __func__, event->pressed[i]);
+					Com_Printf("%s: Unknown key %d\n", __func__, event->pressed[i]);
 
 				id->keystate[event->pressed[i]] = 1;
 			}
 		}
 
 		/* Now check for keys which are no longer pressed... Sign... */
-		for(i=1;i<256;i++)
+		for(i=1;i<sizeof(keymappingtable);i++)
 		{
 			if (id->keystate[i])
 			{
@@ -284,7 +327,6 @@ static void handleevent(struct inputdata *id, struct keyboardevent *event)
 
 				if (j == 6)
 				{
-					printf("Key released\n");
 					translatedkey = keymappingtable[i];
 					if (translatedkey)
 						Key_Event(translatedkey, 0);
@@ -308,9 +350,9 @@ void Sys_Input_GetEvents(void *inputdata)
 	id = inputdata;
 
 #if USE_THREAD
-	if (id->eventlist_read_ptr != id->eventlist_write_ptr)
+	while (id->eventlist_read_ptr != id->eventlist_write_ptr)
 	{
-		printf("%s: Received event\n", __func__);
+		handleevent(id, &id->eventlist[id->eventlist_read_ptr].event);
 		id->eventlist_read_ptr = (id->eventlist_read_ptr + 1) % EVENTQUEUESIZE;
 	}
 #else
