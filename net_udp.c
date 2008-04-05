@@ -17,7 +17,6 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */
-// net_udp.c
 
 #include <string.h>
 #include <stdlib.h>
@@ -77,18 +76,26 @@ byte		net_message_buffer[MAX_UDP_PACKET];
 
 #define	MAX_LOOPBACK	4	// must be a power of two
 
-typedef struct {
-	byte	data[MAX_UDP_PACKET];
-	int		datalen;
-} loopmsg_t;
+struct loopmsg
+{
+	byte data[MAX_UDP_PACKET];
+	int datalen;
+};
 
-typedef struct {
-	loopmsg_t	msgs[MAX_LOOPBACK];
-	unsigned int	get, send;
-} loopback_t;
+struct loopback
+{
+	struct loopmsg msgs[MAX_LOOPBACK];
+	unsigned int get, send;
+};
 
-loopback_t	loopbacks[2];
-int			ip_sockets[2] = { -1, -1 };
+struct NetData
+{
+	struct SysSocketData *syssocketdata;
+	struct loopback loopbacks[2];
+	int ip_sockets[2];
+};
+
+struct NetData *netdata;
 
 //=============================================================================
 
@@ -136,6 +143,7 @@ char *NET_AdrToString (netadr_t a) {
 		return "loopback";
 
 	sprintf (s, "%i.%i.%i.%i:%i", a.ip[0], a.ip[1], a.ip[2], a.ip[3], ntohs(a.port));
+
 	return s;
 }
 
@@ -203,9 +211,9 @@ LOOPBACK BUFFERS FOR LOCAL PLAYER
 
 qboolean NET_GetLoopPacket (netsrc_t sock) {
 	int i;
-	loopback_t *loop;
+	struct loopback *loop;
 
-	loop = &loopbacks[sock];
+	loop = &netdata->loopbacks[sock];
 
 	if (loop->send - loop->get > MAX_LOOPBACK)
 		loop->get = loop->send - MAX_LOOPBACK;
@@ -220,14 +228,15 @@ qboolean NET_GetLoopPacket (netsrc_t sock) {
 	net_message.cursize = loop->msgs[i].datalen;
 	memset (&net_from, 0, sizeof(net_from));
 	net_from.type = NA_LOOPBACK;
+
 	return true;
 }
 
 void NET_SendLoopPacket (netsrc_t sock, int length, void *data, netadr_t to) {
 	int i;
-	loopback_t *loop;
+	struct loopback *loop;
 
-	loop = &loopbacks[sock ^ 1];
+	loop = &netdata->loopbacks[sock ^ 1];
 
 	i = loop->send & (MAX_LOOPBACK - 1);
 	loop->send++;
@@ -241,21 +250,25 @@ void NET_SendLoopPacket (netsrc_t sock, int length, void *data, netadr_t to) {
 
 //=============================================================================
 
-void NET_ClearLoopback (void) {
-	loopbacks[0].send = loopbacks[0].get = 0;
-	loopbacks[1].send = loopbacks[1].get = 0;
+void NET_ClearLoopback (void)
+{
+	if (netdata == 0)
+		Sys_Error("NET_ClearLoopback() called before net init\n");
+
+	netdata->loopbacks[0].send = netdata->loopbacks[0].get = 0;
+	netdata->loopbacks[1].send = netdata->loopbacks[1].get = 0;
 }
 
 qboolean NET_GetPacket (netsrc_t sock) {
 	int ret;
-	struct sockaddr_in	from;
+	struct sockaddr_in from;
 	int fromlen;
 	int net_socket;
 
 	if (NET_GetLoopPacket (sock))
 		return true;
 
-	net_socket = ip_sockets[sock];
+	net_socket = netdata->ip_sockets[sock];
 	if (net_socket == -1)
 		return false;
 
@@ -280,7 +293,7 @@ qboolean NET_GetPacket (netsrc_t sock) {
 
 void NET_SendPacket (netsrc_t sock, int length, void *data, netadr_t to) {
 	int ret;
-	struct sockaddr_in	addr;
+	struct sockaddr_in addr;
 	int net_socket;
 
 	if (to.type == NA_LOOPBACK) {
@@ -288,7 +301,7 @@ void NET_SendPacket (netsrc_t sock, int length, void *data, netadr_t to) {
 		return;
 	}
 
-	net_socket = ip_sockets[sock];
+	net_socket = netdata->ip_sockets[sock];
 	if (net_socket == -1)
 		return;
 
@@ -339,28 +352,37 @@ int UDP_OpenSocket (int port) {
 	return newsocket;
 }
 
-void NET_ClientConfig (qboolean enable) {
-	if (enable) {
-		if (ip_sockets[NS_CLIENT] == -1) {
-			ip_sockets[NS_CLIENT] = UDP_OpenSocket (PORT_CLIENT);
-			if (ip_sockets[NS_CLIENT] == -1)
-				ip_sockets[NS_CLIENT] = UDP_OpenSocket(PORT_ANY);
-			if (ip_sockets[NS_CLIENT] == -1)
+void NET_ClientConfig (qboolean enable)
+{
+	if (enable)
+	{
+		if (netdata->ip_sockets[NS_CLIENT] == -1)
+		{
+			netdata->ip_sockets[NS_CLIENT] = UDP_OpenSocket (PORT_CLIENT);
+
+			if (netdata->ip_sockets[NS_CLIENT] == -1)
+				netdata->ip_sockets[NS_CLIENT] = UDP_OpenSocket(PORT_ANY);
+			if (netdata->ip_sockets[NS_CLIENT] == -1)
 				Sys_Error ("Couldn't allocate client socket");
 		}
-	} else {
-		if (ip_sockets[NS_CLIENT] != -1) {
-			close (ip_sockets[NS_CLIENT]);
-			ip_sockets[NS_CLIENT] = -1;
+	}
+	else
+	{
+		if (netdata->ip_sockets[NS_CLIENT] != -1)
+		{
+			close (netdata->ip_sockets[NS_CLIENT]);
+			netdata->ip_sockets[NS_CLIENT] = -1;
 		}
 	}
 }
 
-void NET_ServerConfig (qboolean enable) {
+void NET_ServerConfig (qboolean enable)
+{
 	int i, port;
 
-	if (enable) {
-		if (ip_sockets[NS_SERVER] != -1)
+	if (enable)
+	{
+		if (netdata->ip_sockets[NS_SERVER] != -1)
 			return;
 
 		port = 0;
@@ -370,8 +392,9 @@ void NET_ServerConfig (qboolean enable) {
 		if (!port)
 			port = PORT_SERVER;
 
-		ip_sockets[NS_SERVER] = UDP_OpenSocket (port);
-		if (ip_sockets[NS_SERVER] == -1) {
+		netdata->ip_sockets[NS_SERVER] = UDP_OpenSocket (port);
+		if (netdata->ip_sockets[NS_SERVER] == -1)
+		{
 #ifdef SERVERONLY
 			Sys_Error ("Couldn't allocate server socket");
 #else
@@ -385,53 +408,70 @@ void NET_ServerConfig (qboolean enable) {
 		if (dedicated)
 			SetConsoleTitle (va("fqds: %i", port));
 #endif
-	} else {
-		if (ip_sockets[NS_SERVER] != -1) {
-			close (ip_sockets[NS_SERVER]);
-			ip_sockets[NS_SERVER] = -1;
+	}
+	else
+	{
+		if (netdata->ip_sockets[NS_SERVER] != -1)
+		{
+			close (netdata->ip_sockets[NS_SERVER]);
+			netdata->ip_sockets[NS_SERVER] = -1;
 		}
 	}
 }
 
 //Sleeps msec or until the server socket is ready
-void NET_Sleep (int msec) {
-    struct timeval timeout;
+void NET_Sleep (int msec)
+{
+	struct timeval timeout;
 	fd_set fdset;
 	extern qboolean do_stdin, stdin_ready;
 
-	if (dedicated) {
-		if (ip_sockets[NS_SERVER] == -1)
+	if (dedicated)
+	{
+		if (netdata->ip_sockets[NS_SERVER] == -1)
 			return; // we're not a server, just run full speed
 
 		FD_ZERO (&fdset);
 		if (do_stdin)
 			FD_SET (0, &fdset); // stdin is processed too
-		FD_SET (ip_sockets[NS_SERVER], &fdset); // network socket
+		FD_SET (netdata->ip_sockets[NS_SERVER], &fdset); // network socket
 		timeout.tv_sec = msec/1000;
 		timeout.tv_usec = (msec%1000)*1000;
-		select (ip_sockets[NS_SERVER]+1, &fdset, NULL, NULL, &timeout);
+		select (netdata->ip_sockets[NS_SERVER]+1, &fdset, NULL, NULL, &timeout);
 		stdin_ready = FD_ISSET (0, &fdset);
 	}
 }
 
-void NET_Init (void) {
-#ifdef _WIN32
-	WORD wVersionRequested; 
-	int r;
+#warning Should return an error o:)
+void NET_Init(void)
+{
+	netdata = malloc(sizeof(*netdata));
+	if (netdata)
+	{
+		memset(netdata, 0, sizeof(*netdata));
+		netdata->ip_sockets[0] = -1;
+		netdata->ip_sockets[1] = -1;
 
-	wVersionRequested = MAKEWORD(1, 1); 
-	r = WSAStartup (wVersionRequested, &winsockdata);
-	if (r)
-		Sys_Error ("Winsock initialization failed.");
-#endif
-	// init the message buffer
-	SZ_Init (&net_message, net_message_buffer, sizeof(net_message_buffer));
+		netdata->syssocketdata = Sys_Socket_Init();
+		if (netdata->syssocketdata == 0)
+			Com_Printf("Failed to initialise networking\n");
+
+		// init the message buffer
+		SZ_Init(&net_message, net_message_buffer, sizeof(net_message_buffer));
+	}
 }
 
-void NET_Shutdown (void) {
-	NET_ClientConfig (false);
-	NET_ServerConfig (false);
-#ifdef _WIN32
-	WSACleanup();
-#endif
+void NET_Shutdown (void)
+{
+	if (netdata == 0)
+		Sys_Error("NET_Shutdown() called twice\n");
+
+	NET_ClientConfig(false);
+	NET_ServerConfig(false);
+
+	Sys_Socket_Shutdown(netdata->syssocketdata);
+
+	free(netdata);
+	netdata = 0;
 }
+

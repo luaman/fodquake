@@ -16,7 +16,13 @@ CPU=$(shell echo $(TARGETSYSTEM) | cut -d '-' -f 1 | tr [A-Z] [a-z] | sed "s/pow
 
 ifeq ($(OS), morphos)
 	OSCFLAGS=-noixemul
-	OSOBJS=sys_morphos.o cd_morphos.o snd_morphos.o in_morphos.o
+	OSOBJS= \
+		sys_morphos.o \
+		socket_bsd.o \
+		cd_morphos.o \
+		snd_morphos.o \
+		in_morphos.o
+
 	OSLDFLAGS=-lsyscall
 
 	OSSWOBJS=vid_morphos.o
@@ -27,6 +33,7 @@ endif
 ifeq ($(OS), linux)
 	OSOBJS= \
 		sys_linux.o \
+		socket_bsd.o \
 		cd_linux.o \
 		snd_oss.o
 
