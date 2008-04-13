@@ -19,6 +19,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 // server.h
 
+#include "net_chan.h"
 #include "progs.h"
 
 extern int server_hunklevel;
@@ -201,7 +202,7 @@ typedef struct client_s {
 
 	FILE		*upload;
 	char		uploadfn[MAX_QPATH];
-	netadr_t	snap_from;
+	struct netaddr	snap_from;
 	qboolean	remote_snap;
  
 //===== NETWORK ============
@@ -237,7 +238,7 @@ typedef struct {
 #define	MAX_CHALLENGES	1024
 
 typedef struct {
-	netadr_t	adr;
+	struct netaddr	adr;
 	int			challenge;
 	int			time;
 } challenge_t;
@@ -338,7 +339,7 @@ extern	cvar_t	pm_maxspeed;
 
 extern	cvar_t	sv_fastconnect;
 
-extern	netadr_t	master_adr[MAX_MASTERS];	// address of the master server
+extern	struct netaddr	master_adr[MAX_MASTERS];	// address of the master server
 
 extern	int		current_skill;
 

@@ -108,7 +108,7 @@ void Netchan_CvarInit(void)
 }
 
 //Sends an out-of-band datagram
-void Netchan_OutOfBand (netsrc_t sock, netadr_t adr, int length, byte *data) {
+void Netchan_OutOfBand (enum netsrc sock, struct netaddr adr, int length, byte *data) {
 	sizebuf_t send;
 	byte send_buf[MAX_MSGLEN + PACKET_HEADER];
 
@@ -123,11 +123,11 @@ void Netchan_OutOfBand (netsrc_t sock, netadr_t adr, int length, byte *data) {
 #ifndef SERVERONLY
 	if (!cls.demoplayback)
 #endif
-		NET_SendPacket (sock, send.cursize, send.data, adr);
+		NET_SendPacket (sock, send.cursize, send.data, &adr);
 }
 
 //Sends a text message in an out-of-band datagram
-void Netchan_OutOfBandPrint (netsrc_t sock, netadr_t adr, char *format, ...) {
+void Netchan_OutOfBandPrint (enum netsrc sock, struct netaddr adr, char *format, ...) {
 	va_list argptr;
 	char string[8192];
 
@@ -139,11 +139,12 @@ void Netchan_OutOfBandPrint (netsrc_t sock, netadr_t adr, char *format, ...) {
 }
 
 //called to open a channel to a remote system
-void Netchan_Setup (netsrc_t sock, netchan_t *chan, netadr_t adr, int qport) {
+void Netchan_Setup (enum netsrc sock, netchan_t *chan, struct netaddr adr, int qport) {
 	memset (chan, 0, (int)(((unsigned char *)&chan->huffcontext)-((unsigned char *)chan)));
 
 	chan->sock = sock;
 	chan->remote_address = adr;
+
 	chan->qport = qport;
 
 	chan->last_received = curtime;
@@ -249,7 +250,7 @@ void Netchan_Transmit (netchan_t *chan, int length, byte *data) {
 	{
 		if (cls.netchan.huffcontext)
 			Huff_CompressPacket(chan->huffcontext, &send, chan->sock==NS_CLIENT?10:8);
-		NET_SendPacket (chan->sock, send.cursize, send.data, chan->remote_address);
+		NET_SendPacket (chan->sock, send.cursize, send.data, &chan->remote_address);
 	}
 
 	if (chan->cleartime < curtime)

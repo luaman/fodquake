@@ -353,7 +353,7 @@ static void CL_SendConnectPacket(void) {
 		if (data[i-1] == 0)
 			i--;
 
-		NET_SendPacket(NS_CLIENT, i+1, data, cls.server_adr);
+		NET_SendPacket(NS_CLIENT, i+1, data, &cls.server_adr);
 		return;
 	}
 
@@ -362,11 +362,13 @@ static void CL_SendConnectPacket(void) {
 }
 
 //Resend a connect message if the last one has timed out
-void CL_CheckForResend (void) {
+void CL_CheckForResend (void)
+{
 	char data[2048];
 	double t1, t2;
 
-	if (cls.state == ca_disconnected && com_serveractive) {
+	if (cls.state == ca_disconnected && com_serveractive)
+	{
 		// if the local server is running and we are not, then connect
 		Q_strncpyz (cls.servername, "local", sizeof(cls.servername));
 		NET_StringToAdr("local", &cls.server_adr);
@@ -381,7 +383,8 @@ void CL_CheckForResend (void) {
 		return;
 
 	t1 = Sys_DoubleTime();
-	if (!NET_StringToAdr(cls.servername, &cls.server_adr)) {
+	if (!NET_StringToAdr(cls.servername, &cls.server_adr))
+	{
 		Com_Printf("Bad server address\n");
 		connect_time = 0;
 		return;
@@ -389,12 +392,16 @@ void CL_CheckForResend (void) {
 	t2 = Sys_DoubleTime();
 	connect_time = cls.realtime + t2 - t1;	// for retransmit requests
 
-	if (cls.server_adr.port == 0)
-		cls.server_adr.port = BigShort(PORT_SERVER);
+	if (!NET_OpenSocket(NS_CLIENT, cls.server_adr.type))
+	{
+		Com_Printf("Unable to create socket\n");
+		connect_time = 0;
+		return;
+	}
 
 	Com_Printf("Connecting to %s...\n", cls.servername);
 	Q_snprintfz(data, sizeof(data), "\xff\xff\xff\xff" "getchallenge\n");
-	NET_SendPacket(NS_CLIENT, strlen(data), data, cls.server_adr);
+	NET_SendPacket(NS_CLIENT, strlen(data), data, &cls.server_adr);
 }
 
 void CL_BeginServerConnect(void) {

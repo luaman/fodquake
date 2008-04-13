@@ -156,7 +156,7 @@ void CL_Pause_f (void) {
 //packet <destination> <contents>
 //Contents allows \n escape character
 void CL_Packet_f(void) {
-	netadr_t adr;
+	struct netaddr adr;
 	char send[2048], *in, *out;
 
 	if (Cmd_Argc() != 3) {
@@ -174,8 +174,9 @@ void CL_Packet_f(void) {
 		return;
 	}
 
-	if (adr.port == 0)
-		adr.port = BigShort(PORT_SERVER);
+#warning Only works with IPv4... but this function must die anyway.
+	if (adr.addr.ipv4.port == 0)
+		adr.addr.ipv4.port = BigShort(PORT_SERVER);
 
 	send[0] = send[1] = send[2] = send[3] = 0xFF;
 
@@ -198,7 +199,7 @@ void CL_Packet_f(void) {
 	}
 	*out = 0;
 
-	NET_SendPacket(NS_CLIENT, out - send, send, adr);
+	NET_SendPacket(NS_CLIENT, out - send, send, &adr);
 }
 
 //Send the rest of the command line over as an unconnected command.
@@ -206,7 +207,7 @@ void CL_Rcon_f (void)
 {
 	char message[1024] = {0};
 	int i;
-	netadr_t to;
+	struct netaddr to;
 	extern cvar_t rcon_password, rcon_address;
 
 	message[0] = 255;
@@ -241,11 +242,12 @@ void CL_Rcon_f (void)
 			return;
 		}
 		NET_StringToAdr (rcon_address.string, &to);
-		if (to.port == 0)
-			to.port = BigShort (PORT_SERVER);
+#warning Only works with IPv4
+		if (to.addr.ipv4.port == 0)
+			to.addr.ipv4.port = BigShort (PORT_SERVER);
 	}
 
-	NET_SendPacket (NS_CLIENT, strlen(message)+1, message, to);
+	NET_SendPacket (NS_CLIENT, strlen(message)+1, message, &to);
 }
 
 void CL_Download_f (void){

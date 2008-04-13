@@ -1,4 +1,14 @@
 
-struct SysSocketData *Sys_Socket_Init(void);
-void Sys_Socket_Shutdown(struct SysSocketData *socketdata);
+struct SysNetData;
+struct SysSocket;
+
+struct SysNetData *Sys_Net_Init(void);
+void Sys_Net_Shutdown(struct SysNetData *netdata);
+
+qboolean Sys_Net_ResolveName(struct SysNetData *netdata, const char *name, struct netaddr *address);
+struct SysSocket *Sys_Net_CreateSocket(struct SysNetData *netdata, enum netaddrtype addrtype);
+void Sys_Net_DeleteSocket(struct SysNetData *netdata, struct SysSocket *socket);
+qboolean Sys_Net_Bind(struct SysNetData *netdata, struct SysSocket *socket, unsigned short port);
+int Sys_Net_Send(struct SysNetData *netdata, struct SysSocket *socket, const void *data, int datalen, const struct netaddr *address);
+int Sys_Net_Receive(struct SysNetData *netdata, struct SysSocket *socket, void *data, int datalen, struct netaddr *address);
 

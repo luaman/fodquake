@@ -19,6 +19,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 // client.h
 
+#include "net_chan.h"
+
 #define	MAX_PROJECTILES	32 
 
 typedef struct {
@@ -214,7 +216,7 @@ typedef struct {
 	netchan_t	netchan;
 	int			qport;
 	char		servername[MAX_OSPATH];	// name of server from original connect
-	netadr_t	server_adr;
+	struct netaddr	server_adr;
 
 	// private userinfo for sending to masterless servers
 	char		userinfo[MAX_INFO_STRING];

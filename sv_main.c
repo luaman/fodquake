@@ -27,7 +27,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 int			current_skill;			// for entity spawnflags checking
 
-netadr_t	master_adr[MAX_MASTERS];	// address of group servers
+struct netaddr	master_adr[MAX_MASTERS];	// address of group servers
 
 client_t	*sv_client;					// current client
 
@@ -78,7 +78,7 @@ cvar_t	skill = {"skill", "1"};
 
 FILE	*sv_fraglogfile;
 
-void SV_AcceptClient (netadr_t adr, int userid, char *userinfo);
+void SV_AcceptClient (struct netaddr adr, int userid, char *userinfo);
 void Master_Shutdown (void);
 
 //============================================================================
@@ -334,7 +334,7 @@ void SVC_Log (void) {
 	if (seq == svs.logsequence-1 || !sv_fraglogfile) {	
 		// they already have this data, or we aren't logging frags
 		data[0] = A2A_NACK;
-		NET_SendPacket (NS_SERVER, 1, data, net_from);
+		NET_SendPacket (NS_SERVER, 1, data, &net_from);
 		return;
 	}
 
@@ -343,7 +343,7 @@ void SVC_Log (void) {
 	sprintf (data, "stdlog %i\n", svs.logsequence-1);
 	strcat (data, (char *)svs.log_buf[((svs.logsequence-1)&1)]);
 
-	NET_SendPacket (NS_SERVER, strlen(data)+1, data, net_from);
+	NET_SendPacket (NS_SERVER, strlen(data)+1, data, &net_from);
 }
 
 //Just responds with an acknowledgement
@@ -352,7 +352,7 @@ void SVC_Ping (void) {
 
 	data = A2A_ACK;
 
-	NET_SendPacket (NS_SERVER, 1, &data, net_from);
+	NET_SendPacket (NS_SERVER, 1, &data, &net_from);
 }
 
 //Returns a challenge number that can be used in a subsequent client_connect command.
@@ -391,7 +391,7 @@ void SVC_GetChallenge (void) {
 void SVC_DirectConnect (void) {
 	char userinfo[1024], *s;
 	static int	userid;
-	netadr_t adr;
+	struct netaddr adr;
 	int i, edictnum, clients, spectators, qport, version, challenge;
 	client_t *cl, *newcl;
 	edict_t *ent;
@@ -462,7 +462,8 @@ void SVC_DirectConnect (void) {
 		if (cl == 0 || cl->state == cs_free)
 			continue;
 
-		if (NET_CompareBaseAdr (adr, cl->netchan.remote_address) && ( cl->netchan.qport == qport || adr.port == cl->netchan.remote_address.port ))
+#warning Only works with IPv4.
+		if (NET_CompareBaseAdr (adr, cl->netchan.remote_address) && ( cl->netchan.qport == qport || adr.addr.ipv4.port == cl->netchan.remote_address.addr.ipv4.port ))
 		{
 			if (cl->state == cs_connected)
 			{
@@ -815,7 +816,7 @@ void SV_SendBan (void) {
 	data[5] = 0;
 	strcat (data, "\nbanned.\n");
 	
-	NET_SendPacket (NS_SERVER, strlen(data), data, net_from);
+	NET_SendPacket (NS_SERVER, strlen(data), data, &net_from);
 }
 
 //Returns true if net_from.ip is banned
@@ -826,7 +827,8 @@ qboolean SV_FilterPacket (void) {
 	if (net_from.type == NA_LOOPBACK)
 		return false;	// the local client can't be banned
 
-	in = *(unsigned *)net_from.ip;
+#warning Only works with IPv4.
+	in = *(unsigned *)net_from.addr.ipv4.address;
 
 	for (i = 0; i < numipfilters; i++)
 		if ( (in & ipfilters[i].mask) == ipfilters[i].compare)
@@ -870,9 +872,9 @@ void SV_ReadPackets (void) {
 				continue;
 			if (cl->netchan.qport != qport)
 				continue;
-			if (cl->netchan.remote_address.port != net_from.port) {
+			if (cl->netchan.remote_address.addr.ipv4.port != net_from.addr.ipv4.port) {
 				Com_DPrintf ("SV_ReadPackets: fixing up a translated port\n");
-				cl->netchan.remote_address.port = net_from.port;
+				cl->netchan.remote_address.addr.ipv4.port = net_from.addr.ipv4.port;
 			}
 			if (Netchan_Process(&cl->netchan)) {	
 				// this is a valid, sequenced packet, so process it
@@ -1185,11 +1187,12 @@ void Master_Heartbeat (void) {
 		svs.heartbeat_sequence, active);
 
 
+#warning Bogus check.
 	// send to group master
 	for (i = 0; i < MAX_MASTERS; i++)
-		if (master_adr[i].port) {
+		if (master_adr[i].addr.ipv4.port) {
 			Com_Printf ("Sending heartbeat to %s\n", NET_AdrToString (master_adr[i]));
-			NET_SendPacket (NS_SERVER, strlen(string), string, master_adr[i]);
+			NET_SendPacket (NS_SERVER, strlen(string), string, &master_adr[i]);
 		}
 }
 
@@ -1200,11 +1203,12 @@ void Master_Shutdown (void) {
 
 	sprintf (string, "%c\n", S2M_SHUTDOWN);
 
+#warning Bogus check.
 	// send to group master
 	for (i = 0; i < MAX_MASTERS; i++) {
-		if (master_adr[i].port) {
+		if (master_adr[i].addr.ipv4.port) {
 			Com_Printf ("Sending heartbeat to %s\n", NET_AdrToString (master_adr[i]));
-			NET_SendPacket (NS_SERVER, strlen(string), string, master_adr[i]);
+			NET_SendPacket (NS_SERVER, strlen(string), string, &master_adr[i]);
 		}
 	}
 }

@@ -18,7 +18,6 @@ ifeq ($(OS), morphos)
 	OSCFLAGS=-noixemul
 	OSOBJS= \
 		sys_morphos.o \
-		socket_bsd.o \
 		cd_morphos.o \
 		snd_morphos.o \
 		in_morphos.o
@@ -33,7 +32,7 @@ endif
 ifeq ($(OS), linux)
 	OSOBJS= \
 		sys_linux.o \
-		socket_bsd.o \
+		net_bsd.o \
 		cd_linux.o \
 		snd_oss.o
 
@@ -184,7 +183,7 @@ OBJS= \
 	modules.o \
 	mp3_player.o \
 	net_chan.o \
-	net_udp.o \
+	net.o \
 	pmove.o \
 	pmovetst.o \
 	pr_edict.o \

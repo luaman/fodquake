@@ -46,13 +46,14 @@ void FChecks_VersionResponse(void) {
 }
 
 void FChecks_FServerResponse (void) {
-	netadr_t adr;
+	struct netaddr adr;
 
 	if (!NET_StringToAdr (cls.servername, &adr))
 		return;
 
-	if (adr.port == 0)
-		adr.port = BigShort (PORT_SERVER);
+#warning Only works with IPv4
+	if (adr.addr.ipv4.port == 0)
+		adr.addr.ipv4.port = BigShort (PORT_SERVER);
 
 #ifdef SECURITY_NONSENSE
 	if (Modules_SecurityLoaded())
@@ -106,7 +107,7 @@ qboolean FChecks_CheckFModRequest (char *s) {
 }
 
 qboolean FChecks_CheckFServerRequest (char *s) {
-	netadr_t adr;
+	struct netaddr adr;
 
 	if (cl.spectator || (f_server_reply_time && cls.realtime - f_server_reply_time < 20))
 		return false;

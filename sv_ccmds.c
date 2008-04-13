@@ -54,8 +54,9 @@ void SV_SetMaster_f (void) {
 			Com_Printf ("Setting nomaster mode.\n");
 			return;
 		}
-		if (master_adr[i - 1].port == 0)
-			master_adr[i - 1].port = BigShort (PORT_MASTER);
+#warning Only works with IPv4
+		if (master_adr[i - 1].addr.ipv4.port == 0)
+			master_adr[i - 1].addr.ipv4.port = BigShort (PORT_MASTER);
 
 		Com_Printf ("Master server at %s\n", NET_AdrToString (master_adr[i-1]));
 
@@ -63,7 +64,7 @@ void SV_SetMaster_f (void) {
 
 		data[0] = A2A_PING;
 		data[1] = 0;
-		NET_SendPacket (NS_SERVER, 2, data, master_adr[i-1]);
+		NET_SendPacket (NS_SERVER, 2, data, &master_adr[i-1]);
 	}
 
 	svs.last_heartbeat = -99999;

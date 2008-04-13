@@ -19,24 +19,53 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 // net.h -- quake's interface to the networking layer
 
+#ifndef __NET_H__
+#define __NET_H__
+
 #define	PORT_ANY	-1
 
-typedef enum {NA_LOOPBACK, NA_BROADCAST, NA_IP, NA_IPX, NA_BROADCAST_IPX} netadrtype_t;
+enum netaddrtype
+{
+	NA_LOOPBACK,  /* Only used internally */
+	NA_IPV4,
+	NA_IPV6
+};
 
-typedef enum {NS_CLIENT, NS_SERVER} netsrc_t;
+enum netsrc
+{
+	NS_CLIENT,
+	NS_SERVER
+};
 
-typedef struct {
-	netadrtype_t	type;
+struct netaddr_ipv4
+{
+	unsigned char address[4];
+	unsigned short port;
+};
 
-	byte	ip[4];
-	byte	ipx[10];
+struct netaddr_ipv6
+{
+	unsigned char address[16];
+	unsigned short port;
+};
 
-	unsigned short	port;
-} netadr_t;
+struct netaddr
+{
+	enum netaddrtype type;
 
-extern	netadr_t	net_local_adr;
-extern	netadr_t	net_from;		// address of who sent the packet
+	union
+	{
+		struct netaddr_ipv4 ipv4;
+		struct netaddr_ipv6 ipv6;
+	} addr;
+};
+
+#warning The rid of these externs
+extern struct netaddr	net_local_adr;
+extern struct netaddr	net_from;		// address of who sent the packet
 extern	sizebuf_t	net_message;
+
+qboolean NET_OpenSocket(enum netsrc socknum, enum netaddrtype type);
 
 void		NET_Init (void);
 void		NET_Shutdown (void);
@@ -44,79 +73,16 @@ void		NET_ClientConfig (qboolean enable);	// open/close client socket
 void		NET_ServerConfig (qboolean enable);	// open/close server socket
 
 void		NET_ClearLoopback (void);
-qboolean	NET_GetPacket (netsrc_t sock);
-void		NET_SendPacket (netsrc_t sock, int length, void *data, netadr_t to);
+qboolean	NET_GetPacket(enum netsrc sock);
+void		NET_SendPacket(enum netsrc sock, int length, void *data, const struct netaddr *to);
 void		NET_Sleep (int msec);
 
-qboolean	NET_CompareAdr (netadr_t a, netadr_t b);
-qboolean	NET_CompareBaseAdr (netadr_t a, netadr_t b);
-qboolean	NET_IsLocalAddress (netadr_t a);
-char		*NET_AdrToString (netadr_t a);
-char		*NET_BaseAdrToString (netadr_t a);
-qboolean	NET_StringToAdr (char *s, netadr_t *a);
+qboolean	NET_CompareAdr(struct netaddr a, struct netaddr b);
+qboolean	NET_CompareBaseAdr(struct netaddr a, struct netaddr b);
+qboolean	NET_IsLocalAddress(struct netaddr a);
+char		*NET_AdrToString(struct netaddr a);
+char		*NET_BaseAdrToString(struct netaddr a);
+qboolean	NET_StringToAdr(const char *s, struct netaddr *a);
 
-//============================================================================
+#endif
 
-#define	OLD_AVG		0.99		// total = oldtotal*OLD_AVG + new*(1-OLD_AVG)
-
-#define	MAX_LATENT	32
-
-typedef struct {
-	qboolean	fatal_error;
-
-	netsrc_t	sock;
-
-	int			dropped;			// between last packet and previous
-
-	float		last_received;		// for timeouts
-
-	// the statistics are cleared at each client begin, because
-	// the server connecting process gives a bogus picture of the data
-	float		frame_latency;		// rolling average
-	float		frame_rate;
-
-	int			drop_count;			// dropped packets, cleared each level
-	int			good_count;			// cleared each level
-
-	netadr_t	remote_address;
-	int			qport;
-
-	// bandwidth estimator
-	double		cleartime;			// if curtime > nc->cleartime, free to go
-	double		rate;				// seconds / byte
-
-	// sequencing variables
-	int			incoming_sequence;
-	int			incoming_acknowledged;
-	int			incoming_reliable_acknowledged;	// single bit
-
-	int			incoming_reliable_sequence;		// single bit, maintained local
-
-	int			outgoing_sequence;
-	int			reliable_sequence;			// single bit
-	int			last_reliable_sequence;		// sequence number of last send
-
-	// reliable staging and holding areas
-	sizebuf_t	message;		// writing buffer to send to server
-	byte		message_buf[MAX_MSGLEN];
-
-	int			reliable_length;
-	byte		reliable_buf[MAX_MSGLEN];	// unacked reliable message
-
-	// time and size data to calculate bandwidth
-	int			outgoing_size[MAX_LATENT];
-	double		outgoing_time[MAX_LATENT];
-
-	/* Anything below here is not cleared by Netchan_Setup */
-	void *huffcontext;
-} netchan_t;
-
-void Netchan_CvarInit(void);
-void Netchan_Transmit (netchan_t *chan, int length, byte *data);
-void Netchan_OutOfBand (netsrc_t sock, netadr_t adr, int length, byte *data);
-void Netchan_OutOfBandPrint (netsrc_t sock, netadr_t adr, char *format, ...);
-qboolean Netchan_Process (netchan_t *chan);
-void Netchan_Setup (netsrc_t sock, netchan_t *chan, netadr_t adr, int qport);
-
-qboolean Netchan_CanPacket (netchan_t *chan);
-qboolean Netchan_CanReliable (netchan_t *chan);

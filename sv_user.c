@@ -508,7 +508,7 @@ void Cmd_NextDL_f (void) {
 
 }
 
-void OutofBandPrintf (netadr_t where, char *fmt, ...) {
+void OutofBandPrintf (struct netaddr where, char *fmt, ...) {
 	va_list argptr;
 	char send[1024];
 
@@ -521,7 +521,7 @@ void OutofBandPrintf (netadr_t where, char *fmt, ...) {
 	vsnprintf (send + 5, sizeof(send) - 5, fmt, argptr);
 	va_end (argptr);
 
-	NET_SendPacket (NS_SERVER, strlen(send)+1, send, where);
+	NET_SendPacket (NS_SERVER, strlen(send)+1, send, &where);
 }
 
 void SV_NextUpload (void) {
