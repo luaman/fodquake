@@ -6,6 +6,8 @@ version 0.1 (since Fuhquake 0.31)
 - Support for MorphOS.
 - Support for FreeBSD.
 - Support for NetBSD.
+- Support for Nintendo Wii.
+- Support for IPv6.
 - Many fixes to the X11 support, including fullscreen support.
 - GLX and X11 now share the same mouse code, which has had many improvements.
 - Clipboard support for X11.
