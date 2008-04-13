@@ -18,7 +18,7 @@ ifeq ($(OS), morphos)
 	OSCFLAGS=-noixemul
 	OSOBJS= \
 		sys_morphos.o \
-		net_null.o \
+		net_amitcp.o \
 		cd_morphos.o \
 		snd_morphos.o \
 		in_morphos.o
