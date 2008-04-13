@@ -18,6 +18,7 @@ ifeq ($(OS), morphos)
 	OSCFLAGS=-noixemul
 	OSOBJS= \
 		sys_morphos.o \
+		net_null.o \
 		cd_morphos.o \
 		snd_morphos.o \
 		in_morphos.o
@@ -32,7 +33,7 @@ endif
 ifeq ($(OS), linux)
 	OSOBJS= \
 		sys_linux.o \
-		net_bsd.o \
+		net_posix.o \
 		cd_linux.o \
 		snd_oss.o
 
@@ -126,6 +127,7 @@ ifeq ($(OS), gekko)
 
 	OSOBJS = \
 		sys_wii.o \
+		net_null.o \
 		cd_null.o \
 		fatfs/libfat.a
 	
