@@ -198,6 +198,7 @@ OBJS= \
 	snd_mem.o \
 	snd_mix.o \
 	strlcat.o \
+	strlcpy.o \
 	sv_ccmds.o \
 	sv_ents.o \
 	sv_init.o \
