@@ -58,7 +58,7 @@ void SV_SetMaster_f (void) {
 		if (master_adr[i - 1].addr.ipv4.port == 0)
 			master_adr[i - 1].addr.ipv4.port = BigShort (PORT_MASTER);
 
-		Com_Printf ("Master server at %s\n", NET_AdrToString (master_adr[i-1]));
+		Com_Printf ("Master server at %s\n", NET_AdrToString(&master_adr[i-1]));
 
 		Com_Printf ("Sending a ping.\n");
 
@@ -241,7 +241,7 @@ void SV_Status_f (void) {
 	avg = 1000 * svs.stats.latched_active / STATFRAMES;
 	pak = (float) svs.stats.latched_packets / STATFRAMES;
 
-	Com_Printf ("net address      : %s\n",NET_AdrToString (net_local_adr));
+	Com_Printf ("net address      : %s\n",NET_AdrToString(&net_local_adr));
 	Com_Printf ("cpu utilization  : %3i%%\n",(int)cpu);
 	Com_Printf ("avg response time: %i ms\n",(int)avg);
 	Com_Printf ("packets/frame    : %5.2f (%d)\n", pak, num_prstr);
@@ -268,7 +268,7 @@ void SV_Status_f (void) {
 			else			
 				Com_Printf ("\n");
 
-			s = NET_BaseAdrToString ( cl->netchan.remote_address);
+			s = NET_BaseAdrToString(& cl->netchan.remote_address);
 			Com_Printf ("  %-16.16s", s);
 			if (cl->state == cs_connected) {
 				Com_Printf ("CONNECTING\n");
@@ -294,7 +294,7 @@ void SV_Status_f (void) {
 				continue;
 			Com_Printf ("%5i %6i ", (int)cl->edict->v.frags,  cl->userid);
 
-			s = NET_BaseAdrToString ( cl->netchan.remote_address);
+			s = NET_BaseAdrToString(& cl->netchan.remote_address);
 			Com_Printf ("%s", s);
 			l = 16 - strlen(s);
 			for (j = 0; j < l; j++)

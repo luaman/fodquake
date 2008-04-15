@@ -338,7 +338,7 @@ void SVC_Log (void) {
 		return;
 	}
 
-	Com_DPrintf ("sending log %i to %s\n", svs.logsequence-1, NET_AdrToString(net_from));
+	Com_DPrintf ("sending log %i to %s\n", svs.logsequence-1, NET_AdrToString(&net_from));
 
 	sprintf (data, "stdlog %i\n", svs.logsequence-1);
 	strcat (data, (char *)svs.log_buf[((svs.logsequence-1)&1)]);
@@ -366,7 +366,7 @@ void SVC_GetChallenge (void) {
 
 	// see if we already have a challenge for this ip
 	for (i = 0; i < MAX_CHALLENGES; i++) {
-		if (NET_CompareBaseAdr (net_from, svs.challenges[i].adr))
+		if (NET_CompareBaseAdr(&net_from, &svs.challenges[i].adr))
 			break;
 		if (svs.challenges[i].time < oldestTime) {
 			oldestTime = svs.challenges[i].time;
@@ -414,7 +414,7 @@ void SVC_DirectConnect (void) {
 	// see if the challenge is valid
 	if (net_from.type != NA_LOOPBACK) {
 		for (i = 0; i < MAX_CHALLENGES; i++) {
-			if (NET_CompareBaseAdr (net_from, svs.challenges[i].adr)) {
+			if (NET_CompareBaseAdr(&net_from, &svs.challenges[i].adr)) {
 				if (challenge == svs.challenges[i].challenge)
 					break;		// good
 				Netchan_OutOfBandPrint (NS_SERVER, net_from, "%c\nBad challenge.\n", A2C_PRINT);
@@ -434,7 +434,7 @@ void SVC_DirectConnect (void) {
 			Q_strcasecmp(spectator_password.string, "none") &&
 			strcmp(spectator_password.string, s) )
 		{	// failed
-			Com_Printf ("%s:spectator password failed\n", NET_AdrToString (net_from));
+			Com_Printf ("%s:spectator password failed\n", NET_AdrToString(&net_from));
 			Netchan_OutOfBandPrint (NS_SERVER, net_from, "%c\nrequires a spectator password\n\n", A2C_PRINT);
 			return;
 		}
@@ -444,7 +444,7 @@ void SVC_DirectConnect (void) {
 	} else {
 		s = Info_ValueForKey (userinfo, "password");
 		if (password.string[0] && Q_strcasecmp(password.string, "none") && strcmp(password.string, s) ) {
-			Com_Printf ("%s:password failed\n", NET_AdrToString (net_from));
+			Com_Printf ("%s:password failed\n", NET_AdrToString(&net_from));
 			Netchan_OutOfBandPrint (NS_SERVER, net_from, "%c\nserver requires a password\n\n", A2C_PRINT);
 			return;
 		}
@@ -463,15 +463,15 @@ void SVC_DirectConnect (void) {
 			continue;
 
 #warning Only works with IPv4.
-		if (NET_CompareBaseAdr (adr, cl->netchan.remote_address) && ( cl->netchan.qport == qport || adr.addr.ipv4.port == cl->netchan.remote_address.addr.ipv4.port ))
+		if (NET_CompareBaseAdr(&adr, &cl->netchan.remote_address) && ( cl->netchan.qport == qport || adr.addr.ipv4.port == cl->netchan.remote_address.addr.ipv4.port ))
 		{
 			if (cl->state == cs_connected)
 			{
-				Com_Printf ("%s:dup connect\n", NET_AdrToString (adr));
+				Com_Printf ("%s:dup connect\n", NET_AdrToString(&adr));
 				return;
 			}
 
-			Com_Printf ("%s:reconnect\n", NET_AdrToString (adr));
+			Com_Printf ("%s:reconnect\n", NET_AdrToString(&adr));
 			SV_DropClient(cl);
 			break;
 		}
@@ -501,7 +501,7 @@ void SVC_DirectConnect (void) {
 		Cvar_SetValue (&maxspectators, MAX_CLIENTS - maxclients.value);
 	if ((spectator && spectators >= (int)maxspectators.value) || (!spectator && clients >= (int)maxclients.value))
 	{
-		Com_Printf ("%s:full connect\n", NET_AdrToString (adr));
+		Com_Printf ("%s:full connect\n", NET_AdrToString(&adr));
 		Netchan_OutOfBandPrint (NS_SERVER, adr, "%c\nserver is full\n\n", A2C_PRINT);
 		return;
 	}
@@ -609,12 +609,12 @@ Redirect all printfs
 */
 void SVC_RemoteCommand (void) {
 	if (!Rcon_Validate ()) {
-		Com_Printf ("Bad rcon from %s:\n%s\n", NET_AdrToString (net_from), net_message.data + 4);
+		Com_Printf ("Bad rcon from %s:\n%s\n", NET_AdrToString(&net_from), net_message.data + 4);
 
 		SV_BeginRedirect (RD_PACKET);
 		Com_Printf ("Bad rcon_password.\n");
 	} else {
-		Com_Printf ("Rcon from %s:\n%s\n", NET_AdrToString (net_from), net_message.data + 4);
+		Com_Printf ("Rcon from %s:\n%s\n", NET_AdrToString(&net_from), net_message.data + 4);
 		SV_BeginRedirect (RD_PACKET);
 
 		Cmd_ExecuteString (Cmd_MakeArgs(2));
@@ -642,7 +642,7 @@ void SV_ConnectionlessPacket (void) {
 		return;
 	}
 	if (c[0] == A2A_ACK && (c[1] == 0 || c[1] == '\n')) {
-		Com_Printf ("A2A_ACK from %s\n", NET_AdrToString (net_from));
+		Com_Printf ("A2A_ACK from %s\n", NET_AdrToString(&net_from));
 		return;
 	} else if (!strcmp(c, "status")) {
 		SVC_Status ();
@@ -659,7 +659,7 @@ void SV_ConnectionlessPacket (void) {
 	} else if (!strcmp(c, "rcon")) {
 		SVC_RemoteCommand ();
 	} else {
-		Com_Printf ("bad connectionless packet from %s:\n%s\n", NET_AdrToString (net_from), s);
+		Com_Printf ("bad connectionless packet from %s:\n%s\n", NET_AdrToString(&net_from), s);
 	}
 }
 
@@ -868,7 +868,7 @@ void SV_ReadPackets (void) {
 			cl = svs.clients[i];
 			if (cl == 0 || cl->state == cs_free)
 				continue;
-			if (!NET_CompareBaseAdr (net_from, cl->netchan.remote_address))
+			if (!NET_CompareBaseAdr(&net_from, &cl->netchan.remote_address))
 				continue;
 			if (cl->netchan.qport != qport)
 				continue;
@@ -1191,7 +1191,7 @@ void Master_Heartbeat (void) {
 	// send to group master
 	for (i = 0; i < MAX_MASTERS; i++)
 		if (master_adr[i].addr.ipv4.port) {
-			Com_Printf ("Sending heartbeat to %s\n", NET_AdrToString (master_adr[i]));
+			Com_Printf ("Sending heartbeat to %s\n", NET_AdrToString(&master_adr[i]));
 			NET_SendPacket (NS_SERVER, strlen(string), string, &master_adr[i]);
 		}
 }
@@ -1207,7 +1207,7 @@ void Master_Shutdown (void) {
 	// send to group master
 	for (i = 0; i < MAX_MASTERS; i++) {
 		if (master_adr[i].addr.ipv4.port) {
-			Com_Printf ("Sending heartbeat to %s\n", NET_AdrToString (master_adr[i]));
+			Com_Printf ("Sending heartbeat to %s\n", NET_AdrToString(&master_adr[i]));
 			NET_SendPacket (NS_SERVER, strlen(string), string, &master_adr[i]);
 		}
 	}

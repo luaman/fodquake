@@ -77,11 +77,11 @@ qboolean	NET_GetPacket(enum netsrc sock);
 void		NET_SendPacket(enum netsrc sock, int length, void *data, const struct netaddr *to);
 void		NET_Sleep (int msec);
 
-qboolean	NET_CompareAdr(struct netaddr a, struct netaddr b);
-qboolean	NET_CompareBaseAdr(struct netaddr a, struct netaddr b);
-qboolean	NET_IsLocalAddress(struct netaddr a);
-char		*NET_AdrToString(struct netaddr a);
-char		*NET_BaseAdrToString(struct netaddr a);
+qboolean	NET_CompareAdr(const struct netaddr *a, const struct netaddr *b);
+qboolean	NET_CompareBaseAdr(const struct netaddr *a, const struct netaddr *b);
+qboolean	NET_IsLocalAddress(const struct netaddr *a);
+char		*NET_AdrToString(const struct netaddr *a);
+char		*NET_BaseAdrToString(const struct netaddr *a);
 qboolean	NET_StringToAdr(const char *s, struct netaddr *a);
 
 #endif

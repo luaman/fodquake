@@ -57,10 +57,10 @@ void FChecks_FServerResponse (void) {
 
 #ifdef SECURITY_NONSENSE
 	if (Modules_SecurityLoaded())
-		Cbuf_AddText(va("say FodQuake f_server response: %s  crc: %s\n", NET_AdrToString(adr), Auth_Generate_Crc()));
+		Cbuf_AddText(va("say FodQuake f_server response: %s  crc: %s\n", NET_AdrToString(&adr), Auth_Generate_Crc()));
 	else
 #endif
-		Cbuf_AddText(va("say FodQuake f_server response: %s\n", NET_AdrToString(adr)));
+		Cbuf_AddText(va("say FodQuake f_server response: %s\n", NET_AdrToString(&adr)));
 }
 
 void FChecks_SkinsResponse(float fbskins) {

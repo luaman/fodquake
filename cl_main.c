@@ -648,9 +648,9 @@ void CL_ConnectionlessPacket (void)
 	switch(c)
 	{
 	case S2C_CHALLENGE:
-		if (!NET_CompareAdr(net_from, cls.server_adr))
+		if (!NET_CompareAdr(&net_from, &cls.server_adr))
 			return;
-		Com_Printf("%s: challenge\n", NET_AdrToString(net_from));
+		Com_Printf("%s: challenge\n", NET_AdrToString(&net_from));
 		cls.challenge = atoi(MSG_ReadString());
 		while(1)
 		{
@@ -687,10 +687,10 @@ void CL_ConnectionlessPacket (void)
 		CL_SendConnectPacket();
 		break;
 	case S2C_CONNECTION:
-		if (!NET_CompareAdr(net_from, cls.server_adr))
+		if (!NET_CompareAdr(&net_from, &cls.server_adr))
 			return;
 		if (!com_serveractive || developer.value)
-			Com_Printf("%s: connection\n", NET_AdrToString(net_from));
+			Com_Printf("%s: connection\n", NET_AdrToString(&net_from));
 
 		if (cls.state >= ca_connected) {
 			if (!cls.demoplayback)
@@ -707,9 +707,9 @@ void CL_ConnectionlessPacket (void)
 		break;
 
 	case A2C_CLIENT_COMMAND:	// remote command from gui front end
-		Com_Printf ("%s: client command\n", NET_AdrToString (net_from));
+		Com_Printf ("%s: client command\n", NET_AdrToString(&net_from));
 
-		if (!NET_IsLocalAddress(net_from)) {
+		if (!NET_IsLocalAddress(&net_from)) {
 			Com_Printf ("Command packet from remote host.  Ignored.\n");
 			return;
 		}
@@ -750,7 +750,7 @@ void CL_ConnectionlessPacket (void)
 		break;
 
 	case A2C_PRINT:		// print command from somewhere
-		Com_Printf("%s: print\n", NET_AdrToString(net_from));
+		Com_Printf("%s: print\n", NET_AdrToString(&net_from));
 		Com_Printf("%s", MSG_ReadString());
 		break;
 
@@ -788,13 +788,13 @@ void CL_ReadPackets (void) {
 		}
 
 		if (net_message.cursize < 8 && !cls.mvdplayback) {	
-			Com_DPrintf ("%s: Runt packet\n", NET_AdrToString(net_from));
+			Com_DPrintf ("%s: Runt packet\n", NET_AdrToString(&net_from));
 			continue;
 		}
 
 		// packet from server
-		if (!cls.demoplayback && !NET_CompareAdr (net_from, cls.netchan.remote_address)) {
-			Com_DPrintf ("%s: sequenced packet without connection\n", NET_AdrToString(net_from));
+		if (!cls.demoplayback && !NET_CompareAdr(&net_from, &cls.netchan.remote_address)) {
+			Com_DPrintf ("%s: sequenced packet without connection\n", NET_AdrToString(&net_from));
 			continue;
 		}
 
