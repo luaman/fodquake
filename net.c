@@ -82,10 +82,13 @@ qboolean NET_CompareAdr(struct netaddr a, struct netaddr b)
 	return false;
 }
 
-qboolean NET_IsLocalAddress(struct netaddr a)
+qboolean NET_IsLocalAddress(const struct netaddr *a)
 {
 #warning Fix this... Broken in so many ways :)
-	if ((*(unsigned *)a.addr.ipv4.address == *(unsigned *)net_local_adr.addr.ipv4.address || *(unsigned *)a.addr.ipv4.address == htonl(INADDR_LOOPBACK)) )
+	if (a->type != NA_IPV4)
+		return false;
+
+	if ((*(unsigned *)a->addr.ipv4.address == BigLong(INADDR_LOOPBACK)))
 		return true;
 	
 	return false;
