@@ -462,8 +462,7 @@ void SVC_DirectConnect (void) {
 		if (cl == 0 || cl->state == cs_free)
 			continue;
 
-#warning Only works with IPv4.
-		if (NET_CompareBaseAdr(&adr, &cl->netchan.remote_address) && ( cl->netchan.qport == qport || adr.addr.ipv4.port == cl->netchan.remote_address.addr.ipv4.port ))
+		if (NET_CompareAdr(&adr, &cl->netchan.remote_address) || (NET_CompareBaseAdr(&adr, &cl->netchan.remote_address) && cl->netchan.qport == qport))
 		{
 			if (cl->state == cs_connected)
 			{
