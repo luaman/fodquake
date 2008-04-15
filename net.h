@@ -60,8 +60,7 @@ struct netaddr
 	} addr;
 };
 
-#warning The rid of these externs
-extern struct netaddr	net_local_adr;
+#warning Get rid of these externs
 extern struct netaddr	net_from;		// address of who sent the packet
 extern	sizebuf_t	net_message;
 
