@@ -237,7 +237,7 @@ void Host_Init (int argc, char **argv, int default_memsize) {
 	Cvar_Register(&dummycvar);
 	Cmd_AddCommand("Dummy", 0);
 	
-	FS_InitFilesystem ();
+	FS_InitFilesystem();
 	COM_CheckRegistered ();
 
 	if (dedicated) {
@@ -318,6 +318,7 @@ void Host_Shutdown (void) {
 	SV_Shutdown ("Server quit\n");
 	QLib_Shutdown();
 	CL_Shutdown ();
+	FS_ShutdownFilesystem();
 	NET_Shutdown ();
 #ifndef SERVERONLY
 	Con_Shutdown();
