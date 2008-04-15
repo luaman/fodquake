@@ -48,8 +48,6 @@ cvar_t	mapname = {"mapname", "", CVAR_ROM};
 
 qboolean com_serveractive = false;
 
-void FS_InitFilesystem (void);
-
 char com_gamedirfile[MAX_QPATH];
 
 /*
@@ -197,15 +195,11 @@ float Q_atof (char *str) {
 
 void Q_strncpyz (char *dest, char *src, size_t size)
 {
-#if USE_STRL
 	strlcpy(dest, src, size);
-#else
-	strncpy (dest, src, size - 1);
-	dest[size - 1] = 0;
-#endif
 }
 
-int Q_snprintfz (char *dest, size_t size, char *fmt, ...) {
+int Q_snprintfz (char *dest, size_t size, char *fmt, ...)
+{
 	int i;
 	va_list		argptr;
 
