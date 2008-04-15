@@ -60,8 +60,8 @@ struct searchpath
 	struct searchpath *next;
 };
 
-struct searchpath *com_searchpaths;
-struct searchpath *com_base_searchpaths;	// without gamedirs
+static struct searchpath *com_searchpaths;
+static struct searchpath *com_base_searchpaths;	// without gamedirs
 
 static int FS_FileLength(FILE * f)
 {
@@ -325,7 +325,7 @@ Takes an explicit (not game tree related) path to a pak file.
 Loads the header and directory, adding the files at the beginning
 of the list so they override previous pack files.
 */
-struct pack *FS_LoadPackFile(char *packfile)
+static struct pack *FS_LoadPackFile(char *packfile)
 {
 
 	struct dpackheader header;
@@ -369,6 +369,12 @@ struct pack *FS_LoadPackFile(char *packfile)
 	qsort(newfiles, pack->numfiles, sizeof(*newfiles), packfile_name_compare);
 
 	return pack;
+}
+
+static void FS_FreePackFile(struct pack *pack)
+{
+	fclose(pack->handle);
+	free(pack);
 }
 
 //Sets com_gamedir, adds the directory to the head of the path, then loads and adds pak1.pak pak2.pak ... 
@@ -497,6 +503,30 @@ void FS_InitFilesystem(void)
 		i = COM_CheckParm("+gamedir");
 	if (i && i < com_argc - 1)
 		FS_SetGamedir(com_argv[i + 1]);
+}
+
+void FS_ShutdownFilesystem(void)
+{
+	struct searchpath *s;
+	struct searchpath *next;
+
+	s = com_searchpaths;
+	while(s)
+	{
+		next = s->next;
+
+		if (s->pack)
+		{
+			FS_FreePackFile(s->pack);
+		}
+
+#warning "We can't free the structures because this file uses a mix of allocation routines :/"
+#if 0
+		free(s);
+#endif
+
+		s = next;
+	}
 }
 
 static void FS_Path_f(void)

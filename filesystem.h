@@ -1,6 +1,8 @@
 #include <stdio.h>
 
 void FS_InitFilesystem(void);
+void FS_ShutdownFilesystem(void);
+
 int FS_FileOpenRead(char *path, FILE **hndl);
 void FS_CreatePath(char *path);
 qboolean FS_WriteFile(char *filename, void *data, int len);
