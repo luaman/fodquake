@@ -66,6 +66,40 @@ qboolean Sys_Net_ResolveName(struct SysNetData *netdata, const char *name, struc
 	return ret;
 }
 
+qboolean Sys_Net_ResolveAddress(struct SysNetData *netdata, const struct netaddr *address, char *output, unsigned int outputsize)
+{
+	int r;
+	socklen_t addrsize;
+	union
+	{
+		struct sockaddr_in addr;
+		struct sockaddr_in6 addr6;
+	} addr;
+
+	if (address->type == NA_IPV4)
+	{
+		addr.addr.sin_family = AF_INET;
+		addr.addr.sin_port = htons(address->addr.ipv4.port);
+		*(unsigned int *)&addr.addr.sin_addr.s_addr = *(unsigned int *)address->addr.ipv4.address;
+		addrsize = sizeof(addr.addr);
+	}
+	else if (address->type == NA_IPV6)
+	{
+		addr.addr6.sin6_family = AF_INET6;
+		addr.addr6.sin6_port = htons(address->addr.ipv6.port);
+		addr.addr6.sin6_flowinfo = 0;
+		memcpy(&addr.addr6.sin6_addr, address->addr.ipv6.address, sizeof(addr.addr6.sin6_addr));
+		addr.addr6.sin6_scope_id = 0;
+		addrsize = sizeof(addr.addr6);
+	}
+
+	r = getnameinfo((struct sockaddr *)&addr, addrsize, output, outputsize, 0, 0, NI_NAMEREQD);
+	if (r == 0)
+		return true;
+	
+	return false;
+}
+
 struct SysSocket *Sys_Net_CreateSocket(struct SysNetData *netdata, enum netaddrtype addrtype)
 {
 	struct SysSocket *s;
