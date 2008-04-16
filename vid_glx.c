@@ -117,8 +117,6 @@ void Sys_Video_GrabMouse(void *display, int dograb)
 	X11_Input_GrabMouse(d->inputdata, d->fullscreen?1:dograb);
 }
 
-/************************************* COMPATABILITY *************************************/
-
 void Sys_Video_SetWindowTitle(void *display, const char *text)
 {
 	struct display *d;
@@ -127,6 +125,25 @@ void Sys_Video_SetWindowTitle(void *display, const char *text)
 
 	XStoreName(d->x_disp, d->x_win, text);
 }
+
+unsigned int Sys_Video_GetWidth(void *display)
+{
+	struct display *d;
+
+	d = display;
+
+	return d->width;
+}
+
+unsigned int Sys_Video_GetHeight(void *display)
+{
+	struct display *d;
+
+	d = display;
+
+	return d->height;
+}
+
 
 void signal_handler(int sig) {
 	printf("Received signal %d, exiting...\n", sig);
