@@ -365,7 +365,6 @@ static void CL_SendConnectPacket(void) {
 void CL_CheckForResend (void)
 {
 	char data[2048];
-	double t1, t2;
 
 	if (cls.state == ca_disconnected && com_serveractive)
 	{
@@ -382,29 +381,29 @@ void CL_CheckForResend (void)
 	if (cls.realtime - connect_time < 5.0)
 		return;
 
-	t1 = Sys_DoubleTime();
-	if (!NET_StringToAdr(cls.servername, &cls.server_adr))
-	{
-		Com_Printf("Bad server address\n");
-		connect_time = 0;
-		return;
-	}
-	t2 = Sys_DoubleTime();
-	connect_time = cls.realtime + t2 - t1;	// for retransmit requests
-
-	if (!NET_OpenSocket(NS_CLIENT, cls.server_adr.type))
-	{
-		Com_Printf("Unable to create socket\n");
-		connect_time = 0;
-		return;
-	}
+	connect_time = cls.realtime;	// for retransmit requests
 
 	Com_Printf("Connecting to %s...\n", cls.servername);
 	Q_snprintfz(data, sizeof(data), "\xff\xff\xff\xff" "getchallenge\n");
 	NET_SendPacket(NS_CLIENT, strlen(data), data, &cls.server_adr);
 }
 
-void CL_BeginServerConnect(void) {
+void CL_BeginServerConnect(void)
+{
+	connect_time = 0;
+
+	if (!NET_StringToAdr(cls.servername, &cls.server_adr))
+	{
+		Com_Printf("Bad server address\n");
+		return;
+	}
+
+	if (!NET_OpenSocket(NS_CLIENT, cls.server_adr.type))
+	{
+		Com_Printf("Unable to create socket\n");
+		return;
+	}
+
 	connect_time = -999;	// CL_CheckForResend() will fire immediately
 	CL_CheckForResend();
 }
