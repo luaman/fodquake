@@ -50,15 +50,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "config.h"
 #include "sleep.h"
 
-#ifndef _WIN32
-#include <unistd.h>
-
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <netdb.h>
-#endif
-
 static qboolean cl_imitate_client_callback(cvar_t *var, char *string);
 static qboolean cl_imitate_os_callback(cvar_t *var, char *string);
 
@@ -483,35 +474,40 @@ void CL_Observe_f (void) {
 
 
 
-
-
-void CL_DNS_f (void) {
+void CL_DNS_f()
+{
 	char address[128], *s;
 	struct hostent *h;
-	struct in_addr addr;
+	struct netaddr addr;
+	qboolean r;
+	const char *ip;
+	const char *cname;
 
-	if (Cmd_Argc() != 2) {
+	if (Cmd_Argc() != 2)
+	{
 		Com_Printf("Usage: %s <address>\n", Cmd_Argv(0));
 		return;
 	}
-	Q_strncpyz(address, Cmd_Argv(1), sizeof(address));
+
+	strlcpy(address, Cmd_Argv(1), sizeof(address));
+
+#if 0
 	if ((s = strchr(address, ':')))
 		*s = 0;
-	if ((addr.s_addr = inet_addr(address)) == INADDR_NONE) {
-		//forward lookup
-		if (!(h = gethostbyname(address))) {
-			Com_Printf("Couldn't resolve %s\n", address);
-		} else {
-			addr.s_addr = *(int *) h->h_addr_list[0];
-			Com_Printf("Resolved %s to %s\n", address, inet_ntoa(addr));
-		}
-		return;
+#endif
+
+	r = NET_StringToAdr(address, &addr);
+	if (!r)
+	{
+		Com_Printf("Couldn't look up \"%s\"\n", address);
 	}
-	//reverse lookup ip address
-	if (!(h = gethostbyaddr((char *) &addr, sizeof(addr), AF_INET)))
-		Com_Printf("Couldn't resolve %s\n", address);
 	else
-		Com_Printf("Resolved %s to %s\n", address, h->h_name);
+	{
+		Com_Printf("IP: %s\n", NET_BaseAdrToString(&addr));
+		cname = NET_GetHostnameForAddress(&addr);
+		if (cname)
+			Com_Printf("Hostname: %s\n", cname);
+	}
 }
 
 
@@ -631,7 +627,7 @@ void CL_Reconnect_f (void) {
 }
 
 //Responses to broadcasts, etc
-void CL_ConnectionlessPacket (void)
+void CL_ConnectionlessPacket(void)
 {
 	int c;
 	char *s, cmdtext[2048];
@@ -705,6 +701,7 @@ void CL_ConnectionlessPacket (void)
 		allowremotecmd = false; // localid required now for remote cmds
 		break;
 
+#warning This is b0rken in so many ways.
 	case A2C_CLIENT_COMMAND:	// remote command from gui front end
 		Com_Printf ("%s: client command\n", NET_AdrToString(&net_from));
 
@@ -1083,6 +1080,8 @@ void CL_Init (void)
 #ifndef GLQUAKE
 	Sbar_Init ();
 #endif
+
+#warning If I want to keep compatibility with Win32 server browsers, I need to open a socket on port 27001 here.
 
 	SList_Init ();
 	SList_Load ();
