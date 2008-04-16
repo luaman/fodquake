@@ -81,6 +81,7 @@ qboolean	NET_IsLocalAddress(const struct netaddr *a);
 char		*NET_AdrToString(const struct netaddr *a);
 char		*NET_BaseAdrToString(const struct netaddr *a);
 qboolean	NET_StringToAdr(const char *s, struct netaddr *a);
+char *NET_GetHostnameForAddress(const struct netaddr *addr);
 
 #endif
 

@@ -319,6 +319,15 @@ qboolean NET_StringToAdr(const char *s, struct netaddr *a)
 	return true;
 }
 
+char *NET_GetHostnameForAddress(const struct netaddr *addr)
+{
+	static char buf[128];
+
+	if (Sys_Net_ResolveAddress(netdata->sysnetdata, addr, buf, sizeof(buf)))
+		return buf;
+
+	return 0;
+}
 
 /*
 =============================================================================
