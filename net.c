@@ -29,8 +29,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define INADDR_LOOPBACK 0x7f000001
 #endif
 
-struct netaddr	net_local_adr;
-
 struct netaddr	net_from;
 sizebuf_t	net_message;
 
