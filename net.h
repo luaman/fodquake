@@ -68,7 +68,6 @@ qboolean NET_OpenSocket(enum netsrc socknum, enum netaddrtype type);
 
 void		NET_Init (void);
 void		NET_Shutdown (void);
-void		NET_ClientConfig (qboolean enable);	// open/close client socket
 void		NET_ServerConfig (qboolean enable);	// open/close server socket
 
 void		NET_ClearLoopback (void);

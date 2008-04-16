@@ -1085,8 +1085,6 @@ void CL_Init (void)
 	Sbar_Init ();
 #endif
 
-	NET_ClientConfig (true);
-
 	SList_Init ();
 	SList_Load ();
 

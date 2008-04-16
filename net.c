@@ -446,29 +446,6 @@ qboolean NET_OpenSocket(enum netsrc socknum, enum netaddrtype type)
 	return false;
 }
 
-#warning Obsolete function.
-void NET_ClientConfig(qboolean enable)
-{
-	if (enable)
-	{
-		if (netdata->sockets[NS_CLIENT] == 0)
-		{
-			netdata->sockets[NS_CLIENT] = Sys_Net_CreateSocket(netdata->sysnetdata, NA_IPV4);
-
-			if (netdata->sockets[NS_CLIENT] == 0)
-				Com_Printf("WARNING: Couldn't allocate client socket.\n");
-		}
-	}
-	else
-	{
-		if (netdata->sockets[NS_CLIENT])
-		{
-			Sys_Net_DeleteSocket(netdata->sysnetdata, netdata->sockets[NS_CLIENT]);
-			netdata->sockets[NS_CLIENT] = 0;
-		}
-	}
-}
-
 void NET_ServerConfig (qboolean enable)
 {
 	int i, port;
@@ -579,7 +556,9 @@ void NET_Shutdown (void)
 	if (netdata == 0)
 		Sys_Error("NET_Shutdown() called twice\n");
 
-	NET_ClientConfig(false);
+	if (netdata->sockets[NS_CLIENT])
+		Sys_Net_DeleteSocket(netdata->sockets[NS_CLIENT]);
+
 	NET_ServerConfig(false);
 
 	Sys_Net_Shutdown(netdata->sysnetdata);
