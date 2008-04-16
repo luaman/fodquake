@@ -92,6 +92,8 @@ qboolean Sys_Net_ResolveAddress(struct SysNetData *netdata, const struct netaddr
 		addr.addr6.sin6_scope_id = 0;
 		addrsize = sizeof(addr.addr6);
 	}
+	else
+		return false;
 
 	r = getnameinfo((struct sockaddr *)&addr, addrsize, output, outputsize, 0, 0, NI_NAMEREQD);
 	if (r == 0)
@@ -145,6 +147,35 @@ void Sys_Net_DeleteSocket(struct SysNetData *netdata, struct SysSocket *socket)
 
 qboolean Sys_Net_Bind(struct SysNetData *netdata, struct SysSocket *socket, unsigned short port)
 {
+	int r;
+	socklen_t addrsize;
+	union
+	{
+		struct sockaddr_in addr;
+		struct sockaddr_in6 addr6;
+	} addr;
+
+	if (socket->domain == AF_INET)
+	{
+		addr.addr.sin_family = AF_INET;
+		addr.addr.sin_port = htons(port);
+		*(unsigned int *)&addr.addr.sin_addr.s_addr = 0;
+		addrsize = sizeof(addr.addr);
+	}
+	else if (socket->domain == AF_INET6)
+	{
+		addr.addr6.sin6_family = AF_INET6;
+		addr.addr6.sin6_port = htons(port);
+		addr.addr6.sin6_flowinfo = 0;
+		memset(&addr.addr6.sin6_addr, 0, sizeof(addr.addr6.sin6_addr));
+		addr.addr6.sin6_scope_id = 0;
+		addrsize = sizeof(addr.addr6);
+	}
+
+	r = bind(socket->s, (struct sockaddr *)&addr, addrsize);
+	if (r == 0)
+		return true;
+
 	return false;
 }
 
