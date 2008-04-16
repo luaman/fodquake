@@ -62,22 +62,22 @@ struct NetData *netdata;
 
 //=============================================================================
 
-qboolean NET_CompareBaseAdr(struct netaddr a, struct netaddr b)
+qboolean NET_CompareBaseAdr(const struct netaddr *a, const struct netaddr *b)
 {
 #warning Fix this.
-	if (a.type == NA_LOOPBACK && b.type == NA_LOOPBACK)
+	if (a->type == NA_LOOPBACK && b->type == NA_LOOPBACK)
 		return true;
-	if (a.addr.ipv4.address[0] == b.addr.ipv4.address[0] && a.addr.ipv4.address[1] == b.addr.ipv4.address[1] && a.addr.ipv4.address[2] == b.addr.ipv4.address[2] && a.addr.ipv4.address[3] == b.addr.ipv4.address[3])
+	if (a->addr.ipv4.address[0] == b->addr.ipv4.address[0] && a->addr.ipv4.address[1] == b->addr.ipv4.address[1] && a->addr.ipv4.address[2] == b->addr.ipv4.address[2] && a->addr.ipv4.address[3] == b->addr.ipv4.address[3])
 		return true;
 	return false;
 }
 
-qboolean NET_CompareAdr(struct netaddr a, struct netaddr b)
+qboolean NET_CompareAdr(const struct netaddr *a, const struct netaddr *b)
 {
 #warning Fix this.
-	if (a.type == NA_LOOPBACK && b.type == NA_LOOPBACK)
+	if (a->type == NA_LOOPBACK && b->type == NA_LOOPBACK)
 		return true;
-	if (a.addr.ipv4.address[0] == b.addr.ipv4.address[0] && a.addr.ipv4.address[1] == b.addr.ipv4.address[1] && a.addr.ipv4.address[2] == b.addr.ipv4.address[2] && a.addr.ipv4.address[3] == b.addr.ipv4.address[3] && a.addr.ipv4.port == b.addr.ipv4.port)
+	if (a->addr.ipv4.address[0] == b->addr.ipv4.address[0] && a->addr.ipv4.address[1] == b->addr.ipv4.address[1] && a->addr.ipv4.address[2] == b->addr.ipv4.address[2] && a->addr.ipv4.address[3] == b->addr.ipv4.address[3] && a->addr.ipv4.port == b->addr.ipv4.port)
 		return true;
 	return false;
 }
@@ -158,29 +158,29 @@ static void NET_IPv6ToString(char *s, unsigned int size, const struct netaddr *a
 	snprintf(s, size, ":%d", a->addr.ipv6.port);
 }
 
-char *NET_AdrToString(struct netaddr a)
+char *NET_AdrToString(const struct netaddr *a)
 {
 #warning Fix this.
 	static char s[64];
 
-	if (a.type == NA_LOOPBACK)
+	if (a->type == NA_LOOPBACK)
 		return "loopback";
-	else if (a.type == NA_IPV4)
-		snprintf(s, sizeof(s), "%d.%d.%d.%d:%d", a.addr.ipv4.address[0], a.addr.ipv4.address[1], a.addr.ipv4.address[2], a.addr.ipv4.address[3], a.addr.ipv4.port);
-	else if (a.type == NA_IPV6)
-		NET_IPv6ToString(s, sizeof(s), &a);
+	else if (a->type == NA_IPV4)
+		snprintf(s, sizeof(s), "%d.%d.%d.%d:%d", a->addr.ipv4.address[0], a->addr.ipv4.address[1], a->addr.ipv4.address[2], a->addr.ipv4.address[3], a->addr.ipv4.port);
+	else if (a->type == NA_IPV6)
+		NET_IPv6ToString(s, sizeof(s), a);
 	else
 		s[0] = 0;
 
 	return s;
 }
 
-char *NET_BaseAdrToString(struct netaddr a)
+char *NET_BaseAdrToString(const struct netaddr *a)
 {
 #warning Fix this.
 	static char s[64];
 	
-	snprintf(s, sizeof(s), "%d.%d.%d.%d", a.addr.ipv4.address[0], a.addr.ipv4.address[1], a.addr.ipv4.address[2], a.addr.ipv4.address[3]);
+	snprintf(s, sizeof(s), "%d.%d.%d.%d", a->addr.ipv4.address[0], a->addr.ipv4.address[1], a->addr.ipv4.address[2], a->addr.ipv4.address[3]);
 
 	return s;
 }
@@ -557,7 +557,7 @@ void NET_Shutdown (void)
 		Sys_Error("NET_Shutdown() called twice\n");
 
 	if (netdata->sockets[NS_CLIENT])
-		Sys_Net_DeleteSocket(netdata->sockets[NS_CLIENT]);
+		Sys_Net_DeleteSocket(netdata->sysnetdata, netdata->sockets[NS_CLIENT]);
 
 	NET_ServerConfig(false);
 
