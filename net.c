@@ -114,7 +114,7 @@ qboolean NET_IsLocalAddress(const struct netaddr *a)
 	return false;
 }
 
-static void NET_IPv6ToString(char *s, unsigned int size, const struct netaddr *a)
+static void NET_IPv6ToString(char *s, unsigned int size, const struct netaddr *a, qboolean addport)
 {
 	unsigned int biggestzeroblockstart;
 	unsigned int biggestzeroblocksize;
@@ -175,12 +175,12 @@ static void NET_IPv6ToString(char *s, unsigned int size, const struct netaddr *a
 	s++;
 	size--;
 
-	snprintf(s, size, ":%d", a->addr.ipv6.port);
+	if (addport)
+		snprintf(s, size, ":%d", a->addr.ipv6.port);
 }
 
 char *NET_AdrToString(const struct netaddr *a)
 {
-#warning Fix this.
 	static char s[64];
 
 	if (a->type == NA_LOOPBACK)
@@ -188,7 +188,7 @@ char *NET_AdrToString(const struct netaddr *a)
 	else if (a->type == NA_IPV4)
 		snprintf(s, sizeof(s), "%d.%d.%d.%d:%d", a->addr.ipv4.address[0], a->addr.ipv4.address[1], a->addr.ipv4.address[2], a->addr.ipv4.address[3], a->addr.ipv4.port);
 	else if (a->type == NA_IPV6)
-		NET_IPv6ToString(s, sizeof(s), a);
+		NET_IPv6ToString(s, sizeof(s), a, true);
 	else
 		s[0] = 0;
 
@@ -197,10 +197,16 @@ char *NET_AdrToString(const struct netaddr *a)
 
 char *NET_BaseAdrToString(const struct netaddr *a)
 {
-#warning Fix this.
 	static char s[64];
-	
-	snprintf(s, sizeof(s), "%d.%d.%d.%d", a->addr.ipv4.address[0], a->addr.ipv4.address[1], a->addr.ipv4.address[2], a->addr.ipv4.address[3]);
+
+	if (a->type == NA_LOOPBACK)
+		return "loopback";
+	else if (a->type == NA_IPV4)
+		snprintf(s, sizeof(s), "%d.%d.%d.%d", a->addr.ipv4.address[0], a->addr.ipv4.address[1], a->addr.ipv4.address[2], a->addr.ipv4.address[3]);
+	else if (a->type == NA_IPV6)
+		NET_IPv6ToString(s, sizeof(s), a, false);
+	else
+		s[0] = 0;
 
 	return s;
 }
