@@ -72,20 +72,66 @@ void Sys_Video_SetClipboardText(void *display, const char *text)
 {
 }
 
-double Sys_DoubleTime()
+#define gettb(u, l) \
+do { \
+	__asm volatile( \
+		"\n1:\n" \
+		"mftbu  %0\n" \
+		"mftb   %1\n" \
+		"mftbu  %%r5\n" \
+		"cmpw   %0,%%r5\n" \
+		"bne    1b\n" \
+		: "=r" (u), "=r" (l) \
+		: \
+		: "r5"); \
+} while(0)
+
+#define TBFREQ (243000000/4)
+
+int gettimeofday(struct timeval *tv, struct timezone *tz)
 {
-	struct timeval tp;
-	static int secbase;
+	unsigned int tbu;
+	unsigned int tbl;
 
-	gettimeofday(&tp, 0);
+	unsigned long long tb;
 
-	if (secbase == 0)
+	static unsigned long long starttb;
+
+	gettb(tbu, tbl);
+
+	tb = (((unsigned long long)tbu)<<32)|tbl;
+
+	if (tv)
 	{
-		secbase = tp.tv_sec;
-		return tp.tv_usec/1000000.0;
+		tv->tv_sec = tb/TBFREQ;
+		tv->tv_usec = ((tb%TBFREQ)/6075)*100;
 	}
 
-	return (tp.tv_sec - secbase) + tp.tv_usec / 1000000.0;
+	return 0;
+}
+
+double Sys_DoubleTime()
+{
+	unsigned int tbu;
+	unsigned int tbl;
+
+	unsigned long long tb;
+
+	double time;
+
+	static unsigned long long starttb;
+
+	gettb(tbu, tbl);
+
+	tb = (((unsigned long long)tbu)<<32)|tbl;
+
+	if (starttb == 0)
+		starttb = tb;
+
+	time = (tb-starttb)/TBFREQ;
+	time+= ((double)((tb-starttb)%TBFREQ))/TBFREQ;
+
+	return time;
 }
 
 void Sys_CvarInit()
@@ -117,7 +163,7 @@ static int main_real()
 	}
 
 	{
-	double time, oldtime, newtime;
+	double mytime, oldtime, newtime;
 	char *myargv[] = { "fodquake", 0 };
 
 	printf("Calling Host_Init()\n");
@@ -132,11 +178,10 @@ static int main_real()
 	while(1)
 	{
 		newtime = Sys_DoubleTime();
-		time = newtime - oldtime;
+		mytime = newtime - oldtime;
 		oldtime = newtime;
 
-		time = 0.015;
-		Host_Frame(time);
+		Host_Frame(mytime);
 	}
 
 	Sys_Error("End of app");
