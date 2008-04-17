@@ -476,11 +476,9 @@ void CL_Observe_f (void) {
 
 void CL_DNS_f()
 {
-	char address[128], *s;
-	struct hostent *h;
+	char address[128];
 	struct netaddr addr;
 	qboolean r;
-	const char *ip;
 	const char *cname;
 
 	if (Cmd_Argc() != 2)
