@@ -62,21 +62,43 @@ struct NetData *netdata;
 
 qboolean NET_CompareBaseAdr(const struct netaddr *a, const struct netaddr *b)
 {
-#warning Fix this.
-	if (a->type == NA_LOOPBACK && b->type == NA_LOOPBACK)
+	if (a->type != b->type)
+		return false;
+	
+	if (a->type == NA_LOOPBACK)
 		return true;
-	if (a->addr.ipv4.address[0] == b->addr.ipv4.address[0] && a->addr.ipv4.address[1] == b->addr.ipv4.address[1] && a->addr.ipv4.address[2] == b->addr.ipv4.address[2] && a->addr.ipv4.address[3] == b->addr.ipv4.address[3])
-		return true;
+	else if (a->type == NA_IPV4)
+	{
+		if (*(unsigned int *)a->addr.ipv4.address == *(unsigned int *)b->addr.ipv4.address)
+			return true;
+	}
+	else if (a->type == NA_IPV6)
+	{
+		if (memcmp(a->addr.ipv6.address, b->addr.ipv6.address, sizeof(a->addr.ipv6.address)) == 0)
+			return true;
+	}
+
 	return false;
 }
 
 qboolean NET_CompareAdr(const struct netaddr *a, const struct netaddr *b)
 {
-#warning Fix this.
-	if (a->type == NA_LOOPBACK && b->type == NA_LOOPBACK)
+	if (a->type != b->type)
+		return false;
+	
+	if (a->type == NA_LOOPBACK)
 		return true;
-	if (a->addr.ipv4.address[0] == b->addr.ipv4.address[0] && a->addr.ipv4.address[1] == b->addr.ipv4.address[1] && a->addr.ipv4.address[2] == b->addr.ipv4.address[2] && a->addr.ipv4.address[3] == b->addr.ipv4.address[3] && a->addr.ipv4.port == b->addr.ipv4.port)
-		return true;
+	else if (a->type == NA_IPV4)
+	{
+		if (memcmp(&a->addr.ipv4, &b->addr.ipv4, sizeof(a->addr.ipv4)) == 0)
+			return true;
+	}
+	else if (a->type == NA_IPV6)
+	{
+		if (memcmp(&a->addr.ipv6, &b->addr.ipv6, sizeof(a->addr.ipv6)) == 0)
+			return true;
+	}
+
 	return false;
 }
 
