@@ -211,8 +211,7 @@ static unsigned char keymappingtable[] =
 	'x',
 	'y',
 	'z',
-	0, /* 30 */
-	'1',
+	'1', /* 30 */
 	'2',
 	'3',
 	'4',
@@ -221,6 +220,7 @@ static unsigned char keymappingtable[] =
 	'7',
 	'8',
 	'9',
+	'0',
 	K_ENTER, /* 40 */
 	K_ESCAPE,
 	K_BACKSPACE,
@@ -285,9 +285,9 @@ static void handleevent(struct inputdata *id, struct keyboardevent *event)
 	unsigned char translatedkey;
 
 	if (event->type == 0)
-		printf("Keyboard connected\n");
+		Com_Printf("Keyboard connected\n");
 	else if (event->type == 1)
-		printf("Keyboard disconnected\n");
+		Com_Printf("Keyboard disconnected\n");
 	else if (event->type == 2)
 	{
 		/* Check the special keys */
