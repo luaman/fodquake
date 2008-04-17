@@ -44,9 +44,9 @@ struct display
 	unsigned char *buffer8;
 	unsigned short *buffer;
 
-	unsigned char palr[256];
-	unsigned char palg[256];
-	unsigned char palb[256];
+	unsigned char paly[256];
+	unsigned char palcb[256];
+	unsigned char palcr[256];
 };
 
 void Sys_Video_CvarInit(void)
@@ -104,6 +104,8 @@ void *Sys_Video_Open(unsigned int width, unsigned int height, unsigned int depth
 				d->inputdata = Sys_Input_Init();
 				if (d->inputdata)
 				{
+					Com_Printf("%s: %dx%d display initialised\n", __func__, d->width, d->height);
+
 					return d;
 				}
 
@@ -149,24 +151,6 @@ void Sys_Video_GetMouseMovement(void *display, int *mousex, int *mousey)
 	Sys_Input_GetMouseMovement(d->inputdata, mousex, mousey);
 }
 
-unsigned int CvtRGB (unsigned char r1, unsigned char g1, unsigned char b1, unsigned char r2, unsigned char g2, unsigned char b2)
-{
-  int y1, cb1, cr1, y2, cb2, cr2, cb, cr;
-
-  y1 = (299 * r1 + 587 * g1 + 114 * b1) / 1000;
-  cb1 = (-16874 * r1 - 33126 * g1 + 50000 * b1 + 12800000) / 100000;
-  cr1 = (50000 * r1 - 41869 * g1 - 8131 * b1 + 12800000) / 100000;
-
-  y2 = (299 * r2 + 587 * g2 + 114 * b2) / 1000;
-  cb2 = (-16874 * r2 - 33126 * g2 + 50000 * b2 + 12800000) / 100000;
-  cr2 = (50000 * r2 - 41869 * g2 - 8131 * b2 + 12800000) / 100000;
-
-  cb = (cb1 + cb2) >> 1;
-  cr = (cr1 + cr2) >> 1;
-
-  return (y1 << 24) | (cb << 16) | (y2 << 8) | cr;
-}
-
 void Sys_Video_Update(void *display, vrect_t * rects)
 {
 	struct display *d = display;
@@ -177,6 +161,8 @@ void Sys_Video_Update(void *display, vrect_t * rects)
 	unsigned int width;
 	unsigned int x;
 	unsigned int y;
+	unsigned int cb;
+	unsigned int cr;
 
 #if 1
 	while (rects)
@@ -190,7 +176,10 @@ void Sys_Video_Update(void *display, vrect_t * rects)
 		{
 			for(x=0;x<width;x+=2)
 			{
-				dest[x/2] = CvtRGB(d->palr[source[x]], d->palg[source[x]], d->palb[source[x]], d->palr[source[x+1]], d->palg[source[x+1]], d->palb[source[x+1]]);
+				cb = (d->palcb[source[x]] + d->palcb[source[x+1]])>>1;
+				cr = (d->palcr[source[x]] + d->palcr[source[x+1]])>>1;
+
+				dest[x/2] = (d->paly[source[x]]<<24)|(cb<<16)|(d->paly[source[x+1]]<<8)|cr;
 			}
 
 			source+= d->width;
@@ -210,12 +199,17 @@ void Sys_Video_SetPalette(void *display, unsigned char *palette)
 {
 	struct display *d = display;
 	int i;
+	int r, g, b;
 
 	for (i = 0; i < 256; i++)
 	{
-		d->palr[i] = palette[i * 3 + 0];
-		d->palg[i] = palette[i * 3 + 1];
-		d->palb[i] = palette[i * 3 + 2];
+		r = palette[i * 3 + 0];
+		g = palette[i * 3 + 1];
+		b = palette[i * 3 + 2];
+
+		d->paly[i] = (299 * r + 587 * g + 114 * b) / 1000;
+		d->palcb[i] = (-16874 * r - 33126 * g + 50000 * b + 12800000) / 100000;
+		d->palcr[i] = (50000 * r - 41869 * g - 8131 * b + 12800000) / 100000;
 	}
 }
 
