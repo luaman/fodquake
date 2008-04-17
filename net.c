@@ -245,10 +245,19 @@ static unsigned int NET_StringToIPv4(const char *s, struct netaddr *a)
 		if (r == 0)
 			return 0;
 		s+= r;
-		if ((i == 3 && *s != 0 && *s != ':')
-		 || (i != 3 &&*s != '.'))
-			return 0;
-		s++;
+		if (i == 3)
+		{
+			if (*s != 0 && *s != ':')
+				return 0;
+		}
+		else
+		{
+			if (*s != '.')
+				return 0;
+
+			s++;
+		}
+
 		a->addr.ipv4.address[i] = value;
 	}
 
