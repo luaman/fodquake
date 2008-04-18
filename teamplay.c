@@ -23,6 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define TP_ISEYESMODEL(x)       ((x) && cl.model_precache[(x)] && cl.model_precache[(x)]->modhint == MOD_EYES)
 
 #include "quakedef.h"
+#include "filesystem.h"
 #include "common.h"
 #include "sound.h"
 #include "pmove.h"
