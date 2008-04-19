@@ -16,6 +16,11 @@ qboolean Sys_Net_ResolveName(struct SysNetData *netdata, const char *name, struc
 	return false;
 }
 
+qboolean Sys_Net_ResolveAddress(struct SysNetData *netdata, const struct netaddr *address, char *output, unsigned int outputsize)
+{
+	return false;
+}
+
 struct SysSocket *Sys_Net_CreateSocket(struct SysNetData *netdata, enum netaddrtype addrtype)
 {
 	return 0;
