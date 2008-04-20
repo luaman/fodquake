@@ -7,6 +7,8 @@
 #include <proto/exec.h>
 #include <proto/socket.h>
 
+#include <string.h>
+
 #include "quakedef.h"
 #include "sys_net.h"
 
@@ -63,6 +65,27 @@ qboolean Sys_Net_ResolveName(struct SysNetData *netdata, const char *name, struc
 	return false;
 }
 
+qboolean Sys_Net_ResolveAddress(struct SysNetData *netdata, const struct netaddr *address, char *output, unsigned int outputsize)
+{
+	struct hostent *remote;
+	struct in_addr addr;
+
+	if (address->type != NA_IPV4)
+		return false;
+
+	addr.s_addr = (address->addr.ipv4.address[0]<<24)|(address->addr.ipv4.address[1]<<16)|(address->addr.ipv4.address[2]<<8)|address->addr.ipv4.address[3];
+
+	remote = gethostbyaddr((void *)&addr, sizeof(addr), AF_INET);
+	if (remote)
+	{
+		strlcpy(output, remote->h_name, outputsize);
+
+		return true;
+	}
+
+	return false;
+}
+
 struct SysSocket *Sys_Net_CreateSocket(struct SysNetData *netdata, enum netaddrtype addrtype)
 {
 	struct SysSocket *s;
@@ -103,6 +126,17 @@ void Sys_Net_DeleteSocket(struct SysNetData *netdata, struct SysSocket *socket)
 
 qboolean Sys_Net_Bind(struct SysNetData *netdata, struct SysSocket *socket, unsigned short port)
 {
+	int r;
+	struct sockaddr_in addr;
+
+	addr.sin_family = AF_INET;
+	addr.sin_port = htons(port);
+	*(unsigned int *)&addr.sin_addr.s_addr = 0;
+
+	r = bind(socket->s, (struct sockaddr *)&addr, sizeof(addr));
+	if (r == 0)
+		return true;
+
 	return false;
 }
 
@@ -163,3 +197,4 @@ int Sys_Net_Receive(struct SysNetData *netdata, struct SysSocket *socket, void *
 
 	return r;
 }
+
