@@ -609,7 +609,8 @@ byte *Image_LoadPNG (FILE *fin, char *filename, int matchwidth, int matchheight)
 	byte header[8], **rowpointers, *data;
 	png_structp png_ptr;
 	png_infop pnginfo;
-	int y, width, height, bitdepth, colortype, interlace, compression, filter, bytesperpixel;
+	int y, bitdepth, colortype, interlace, compression, filter, bytesperpixel;
+	png_uint_32 width, height;
 	unsigned long rowbytes;
 
 	if (!png_handle)
@@ -646,7 +647,7 @@ byte *Image_LoadPNG (FILE *fin, char *filename, int matchwidth, int matchheight)
     qpng_set_read_fn(png_ptr, fin, PNG_IO_user_read_data);
 	qpng_set_sig_bytes(png_ptr, 8);
 	qpng_read_info(png_ptr, pnginfo);
-	qpng_get_IHDR(png_ptr, pnginfo, (png_uint_32 *) &width, (png_uint_32 *) &height, &bitdepth,
+	qpng_get_IHDR(png_ptr, pnginfo, &width, &height, &bitdepth,
 		&colortype, &interlace, &compression, &filter);
 
 	if (width > IMAGE_MAX_DIMENSIONS || height > IMAGE_MAX_DIMENSIONS) {
