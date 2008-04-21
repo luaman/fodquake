@@ -490,9 +490,9 @@ void SV_UpdateToReliableMessages (void) {
 		}
 		if (sv_client->old_frags != sv_client->edict->v.frags) {
 			for (j = 0; j < MAX_CLIENTS; j++) {
-				sv_client = svs.clients[j];
+				client = svs.clients[j];
 
-				if (client->state < cs_connected)
+				if (client == 0 || client->state < cs_connected)
 					continue;
 				ClientReliableWrite_Begin(client, svc_updatefrags, 4);
 				ClientReliableWrite_Byte(client, i);
