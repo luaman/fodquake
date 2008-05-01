@@ -173,7 +173,6 @@ byte	*data_p;
 byte 	*iff_end;
 byte 	*last_chunk;
 byte 	*iff_data;
-int 	iff_chunk_len;
 
 
 short GetLittleShort(void)
@@ -198,11 +197,15 @@ int GetLittleLong(void)
 
 void FindNextChunk(char *name)
 {
+	int iff_chunk_len;
+	unsigned dataleft;
+
 	while (1)
 	{
 		data_p=last_chunk;
+		dataleft = iff_end - data_p;
 
-		if (data_p >= iff_end)
+		if (dataleft < 8)
 		{	// didn't find the chunk
 			data_p = NULL;
 			return;
@@ -210,13 +213,15 @@ void FindNextChunk(char *name)
 		
 		data_p += 4;
 		iff_chunk_len = GetLittleLong();
-		if (iff_chunk_len < 0)
+		dataleft-= 8;
+		if (iff_chunk_len < 0 || iff_chunk_len > dataleft)
 		{
 			data_p = NULL;
 			return;
 		}
-		data_p -= 8;
-		last_chunk = data_p + 8 + ( (iff_chunk_len + 1) & ~1 );
+		iff_chunk_len+= iff_chunk_len&1;
+		data_p-= 8;
+		last_chunk = data_p + 8 + iff_chunk_len;
 		if (!strncmp(data_p, name, 4))
 			return;
 	}
@@ -244,7 +249,7 @@ wavinfo_t GetWavinfo (char *name, byte *wav, int wavlength)
 
 	if (!wav)
 		return info;
-		
+
 	iff_data = wav;
 	iff_end = wav + wavlength;
 
