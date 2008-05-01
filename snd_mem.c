@@ -219,9 +219,11 @@ void FindNextChunk(char *name)
 			data_p = NULL;
 			return;
 		}
-		iff_chunk_len+= iff_chunk_len&1;
+		dataleft-= iff_chunk_len;
 		data_p-= 8;
 		last_chunk = data_p + 8 + iff_chunk_len;
+		if ((iff_chunk_len&1) && dataleft)
+			last_chunk++;
 		if (!strncmp(data_p, name, 4))
 			return;
 	}
