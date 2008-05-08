@@ -698,6 +698,7 @@ byte *Image_LoadPNG (FILE *fin, char *filename, int matchwidth, int matchheight)
 		return NULL;
 	}
 
+#warning integer overflow vuln
 	data = Q_Malloc(height * rowbytes );
 	rowpointers = Q_Malloc(height * sizeof(*rowpointers));
 
