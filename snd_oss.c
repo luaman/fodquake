@@ -91,7 +91,7 @@ static qboolean oss_init_internal(struct SoundCard *sc, const char *device, int 
 			&& (ioctl(p->fd, SNDCTL_DSP_GETCAPS, &capabilities) != -1 && (capabilities&(DSP_CAP_TRIGGER|DSP_CAP_MMAP)) == (DSP_CAP_TRIGGER|DSP_CAP_MMAP))
 			&& (ioctl(p->fd, SNDCTL_DSP_GETOSPACE, &info) != -1))
 			{
-				if ((sc->buffer = mmap(0, info.fragstotal * info.fragsize, PROT_WRITE, MAP_SHARED, p->fd, 0)) != 0)
+				if ((sc->buffer = mmap(0, info.fragstotal * info.fragsize, PROT_WRITE, MAP_SHARED, p->fd, 0)) != MAP_INVALID)
 				{
 					ioctl(p->fd, SNDCTL_DSP_GETFMTS, &dspformats);
 
