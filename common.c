@@ -637,20 +637,24 @@ char *Info_ValueForKey (char *s, char *key) {
 	}
 }
 
-void Info_RemoveKey (char *s, char *key) {
+void Info_RemoveKey (char *s, char *key)
+{
 	char *start, pkey[512], value[512], *o;
 
-	if (strstr (key, "\\")) {
+	if (strstr (key, "\\"))
+	{
 		Com_Printf ("Can't use a key with a \\\n");
 		return;
 	}
 
-	while (1) {
+	while (1)
+	{
 		start = s;
 		if (*s == '\\')
 			s++;
 		o = pkey;
-		while (*s != '\\') {
+		while (*s != '\\')
+		{
 			if (!*s)
 				return;
 			*o++ = *s++;
@@ -659,15 +663,18 @@ void Info_RemoveKey (char *s, char *key) {
 		s++;
 
 		o = value;
-		while (*s != '\\' && *s) {
+		while (*s != '\\' && *s)
+		{
 			if (!*s)
 				return;
 			*o++ = *s++;
 		}
 		*o = 0;
 
-		if (!strcmp (key, pkey) ) {
-			strcpy (start, s);	// remove this part
+		if (!strcmp (key, pkey) )
+		{
+			/* Remove this part */
+			memmove(start, s, strlen(s)+1);
 			return;
 		}
 
