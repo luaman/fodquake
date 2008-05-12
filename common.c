@@ -27,15 +27,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "strl.h"
 
-#ifdef _WIN32
-#include <direct.h>
-#else
-#include <unistd.h>
-#endif
-
-void Draw_BeginDisc ();
-void Draw_EndDisc ();
-
 #define MAX_NUM_ARGVS	50
 
 usercmd_t nullcmd; // guaranteed to be zero
