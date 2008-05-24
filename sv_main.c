@@ -910,6 +910,7 @@ void SV_CheckTimeouts (void) {
 		if (cl == 0)
 			continue;
 
+#warning BUG: Write to freed memory after SV_DropClient. Oh, and memory leaks.
 		if (cl->state == cs_connected || cl->state == cs_spawned) {
 			if (!cl->spectator)
 				nclients++;
