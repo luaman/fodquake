@@ -294,7 +294,7 @@ void SV_Status_f (void) {
 		{
 			cl = svs.clients[i];
 
-			if (!cl->state)
+			if (!cl)
 				continue;
 			Com_Printf ("%5i %6i ", (int)cl->edict->v.frags,  cl->userid);
 
