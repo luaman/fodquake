@@ -136,6 +136,7 @@ void SV_Shutdown (char *finalmsg)
 	for(i=0;i<MAX_CLIENTS;i++)
 	{
 		free(svs.clients[i]);
+		svs.clients[i] = 0;
 	}
 }
 
