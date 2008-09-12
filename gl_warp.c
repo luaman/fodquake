@@ -219,6 +219,8 @@ void EmitWaterPolys (msurface_t *fa)
 	}
 	else
 	{
+		glDisable(GL_BLEND);
+		glTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 		GL_Bind (fa->texinfo->texture->gl_texturenum);
 		for (p = fa->polys; p; p = p->next)
 		{
