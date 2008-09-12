@@ -198,14 +198,16 @@ void EmitFlatPoly (msurface_t *fa) {
 }
 
 //Does a water warp on the pre-fragmented glpoly_t chain
-void EmitWaterPolys (msurface_t *fa) {
+void EmitWaterPolys (msurface_t *fa)
+{
 	glpoly_t *p;
 	float *v, s, t, os, ot;
 	int i;
 
 	GL_DisableMultitexture();
 
-	if (r_fastturb.value) {
+	if (r_fastturb.value)
+	{
 		glDisable (GL_TEXTURE_2D);
 
 		glColor3ubv ((byte *) &fa->texinfo->texture->colour);
@@ -214,11 +216,15 @@ void EmitWaterPolys (msurface_t *fa) {
 
 		glColor3ubv (color_white);
 		glEnable (GL_TEXTURE_2D);
-	} else {
+	}
+	else
+	{
 		GL_Bind (fa->texinfo->texture->gl_texturenum);
-		for (p = fa->polys; p; p = p->next) {
+		for (p = fa->polys; p; p = p->next)
+		{
 			glBegin(GL_POLYGON);
-			for (i = 0, v = p->verts[0]; i < p->numverts; i++, v += VERTEXSIZE) {
+			for (i = 0, v = p->verts[0]; i < p->numverts; i++, v += VERTEXSIZE)
+			{
 				os = v[3];
 				ot = v[4];
 
