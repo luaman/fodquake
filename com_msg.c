@@ -395,8 +395,10 @@ char *MSG_ReadString (void) {
 	l = 0;
 	do {
 		c = MSG_ReadByte ();
+#if 0
 		if (c == 255)			// skip these to avoid security problems
 			continue;			// with old clients and servers
+#endif
 		if (c == -1 || c == 0)		// msg_badread or end of string
 			break;
 		string[l] = c;
