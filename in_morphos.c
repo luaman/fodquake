@@ -355,8 +355,8 @@ static char keyconv[] =
 	0,
 	0,			/* 120 */
 	0,
-	0,
-	0,
+	K_MWHEELUP,
+	K_MWHEELDOWN,
 	0,
 	0,
 	0,
