@@ -1158,6 +1158,7 @@ char *TP_ParseMacroString (char *s) {
 				case 'X':	macro_string = Macro_Took(); break;
 				case 'y':	macro_string = Macro_PointLocation(); break;
 				case 'Y':	macro_string = Macro_TookLoc(); break;
+				case '%':	macro_string = "%"; break;
 				default:
 					buf[i++] = *s++;
 					continue;
