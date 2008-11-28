@@ -19,8 +19,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 
 #ifndef __MATHLIB_H_
-
 #define __MATHLIB_H_
+
+#warning The macros in this file use globals(!)
 
 typedef float vec_t;
 typedef vec_t vec3_t[3];
@@ -78,7 +79,7 @@ struct mplane_s;
 
 #define VectorMA(a, _f, b, c)							\
 do {													\
-	_mathlib_temp_float1 = (_f);						\
+	float _mathlib_temp_float1 = (_f);						\
 	(c)[0] = (a)[0] + _mathlib_temp_float1 * (b)[0];	\
 	(c)[1] = (a)[1] + _mathlib_temp_float1 * (b)[1];	\
 	(c)[2] = (a)[2] + _mathlib_temp_float1 * (b)[2];	\
@@ -94,6 +95,9 @@ do {										\
 
 #define VectorNormalizeFast(_v)		\
 do {								\
+	float _mathlib_temp_float1, _mathlib_temp_float2; \
+	int _mathlib_temp_int1; \
+\
 	_mathlib_temp_float1 = DotProduct((_v), (_v));						\
 	if (_mathlib_temp_float1) {											\
 		_mathlib_temp_float2 = 0.5f * _mathlib_temp_float1;				\
@@ -123,16 +127,16 @@ do {								\
 
 #define VectorInterpolate(v1, _frac, v2, v)							\
 do {																\
-	_mathlib_temp_float1 = _frac;									\
+	float _mathlib_temp_float1 = _frac;									\
 																	\
 	(v)[0] = (v1)[0] + _mathlib_temp_float1 * ((v2)[0] - (v1)[0]);	\
 	(v)[1] = (v1)[1] + _mathlib_temp_float1 * ((v2)[1] - (v1)[1]);	\
 	(v)[2] = (v1)[2] + _mathlib_temp_float1 * ((v2)[2] - (v1)[2]);	\
-} while (0);
+} while (0)
 
 #define AngleInterpolate(v1, _frac, v2, v)									\
 do {																		\
-	_mathlib_temp_float1 = _frac;											\
+	float _mathlib_temp_float1 = _frac;											\
 	VectorSubtract((v2), (v1), _mathlib_temp_vec1);							\
 																			\
 	if (_mathlib_temp_vec1[0] > 180) _mathlib_temp_vec1[0] -= 360;			\
@@ -145,7 +149,7 @@ do {																		\
 	(v)[0] = (v1)[0] + _mathlib_temp_float1 * _mathlib_temp_vec1[0];		\
 	(v)[1] = (v1)[1] + _mathlib_temp_float1 * _mathlib_temp_vec1[1];		\
 	(v)[2] = (v1)[2] + _mathlib_temp_float1 * _mathlib_temp_vec1[2];		\
-} while (0);
+} while (0)
 
 #define FloatInterpolate(f1, _frac, f2)			\
 	(_mathlib_temp_float1 = _frac,				\
