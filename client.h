@@ -450,6 +450,7 @@ extern byte		*host_colormap;
 //=============================================================================
 
 // cl_main
+void CL_UserinfoChanged(char *key, char *string);
 void CL_Init (void);
 void CL_WriteConfiguration (void);
 void CL_ClearState (void);

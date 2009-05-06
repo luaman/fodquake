@@ -24,11 +24,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <assert.h>
 
 #include "common.h"
+#include "quakedef.h"
 #include "console.h"
 
 #include "utils.h"
 
-extern void CL_UserinfoChanged (char *key, char *value);
 extern void SV_ServerinfoChanged (char *key, char *value);
 
 static cvar_t *cvar_hash[32];

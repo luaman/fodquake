@@ -50,6 +50,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "huffman.h"
 #include "config.h"
 #include "sleep.h"
+#include "strl.h"
 
 static qboolean cl_imitate_client_callback(cvar_t *var, char *string);
 static qboolean cl_imitate_os_callback(cvar_t *var, char *string);
@@ -304,7 +305,8 @@ void CL_MakeActive(void) {
 }
 
 //Cvar system calls this when a CVAR_USERINFO cvar changes
-void CL_UserinfoChanged (char *key, char *string) {
+void CL_UserinfoChanged(char *key, char *string)
+{
 	char *s;
 
 	s = TP_ParseFunChars (string, false);
