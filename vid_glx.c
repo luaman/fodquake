@@ -392,7 +392,7 @@ void *Sys_Video_Open(unsigned int width, unsigned int height, unsigned int depth
 
 			if (fullscreen)
 			{
-				mask = CWBackPixel | CWColormap | CWEventMask | CWSaveUnder | CWBackingStore | CWOverrideRedirect;
+				mask = CWBackPixel | CWBorderPixel | CWColormap | CWEventMask | CWSaveUnder | CWBackingStore | CWOverrideRedirect;
 				attr.override_redirect = True;
 				attr.backing_store = NotUseful;
 				attr.save_under = False;
