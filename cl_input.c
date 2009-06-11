@@ -350,7 +350,6 @@ void CL_AdjustAngles (void) {
 		speed = bound(-700, speed, 700);
 	speed *= frametime;
 	if (in_klook.state & 1)	{
-		V_StopPitchDrift ();
 		cl.viewangles[PITCH] -= speed * CL_KeyState(&in_forward);
 		cl.viewangles[PITCH] += speed * CL_KeyState(&in_back);
 	}
@@ -360,8 +359,6 @@ void CL_AdjustAngles (void) {
 	down = CL_KeyState(&in_lookdown);
 	cl.viewangles[PITCH] -= speed * up;
 	cl.viewangles[PITCH] += speed * down;
-	if (up || down)
-		V_StopPitchDrift();
 
 	cl.viewangles[PITCH] = bound(-70, cl.viewangles[PITCH], 80);
 	cl.viewangles[ROLL] = bound(-50, cl.viewangles[ROLL], 50);		

@@ -36,5 +36,3 @@ void V_CalcBlend (void);
 
 float V_CalcRoll (vec3_t angles, vec3_t velocity);
 
-void V_StartPitchDrift (void);
-void V_StopPitchDrift (void);

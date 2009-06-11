@@ -144,81 +144,6 @@ float V_CalcBob (void) {
 
 //=============================================================================
 
-cvar_t	v_centermove = {"v_centermove", "0.15"};
-cvar_t	v_centerspeed = {"v_centerspeed","500"};
-
-void V_StartPitchDrift (void) {
-	if (cl.laststop == cl.time)
-		return;		// something else is keeping it from drifting
-
-	if (cl.nodrift || !cl.pitchvel) {
-		cl.pitchvel = v_centerspeed.value;
-		cl.nodrift = false;
-		cl.driftmove = 0;
-	}
-}
-
-void V_StopPitchDrift (void) {
-	cl.laststop = cl.time;
-	cl.nodrift = true;
-	cl.pitchvel = 0;
-}
-
-/*
-Moves the client pitch angle towards cl.idealpitch sent by the server.
-
-If the user is adjusting pitch manually, either with lookup/lookdown,
-mlook and mouse, or klook and keyboard, pitch drifting is constantly stopped.
-
-Drifting is enabled when the center view key is hit, mlook is released and
-lookspring is non 0, or when 
-*/
-void V_DriftPitch (void) {
-	float delta, move;
-
-	if (!cl.onground || cls.demoplayback ) {
-		cl.driftmove = cl.pitchvel = 0;
-		return;
-	}
-
-// don't count small mouse motion
-	if (cl.nodrift) {
-		if ( fabs(cl.frames[(cls.netchan.outgoing_sequence-1)&UPDATE_MASK].cmd.forwardmove) < 200)
-			cl.driftmove = 0;
-		else
-			cl.driftmove += cls.frametime;
-	
-		if ( cl.driftmove > v_centermove.value)
-			V_StartPitchDrift ();
-
-		return;
-	}
-	
-	delta = 0 - cl.viewangles[PITCH];
-
-	if (!delta) {
-		cl.pitchvel = 0;
-		return;
-	}
-
-	move = cls.frametime * cl.pitchvel;
-	cl.pitchvel += cls.frametime * v_centerspeed.value;
-
-	if (delta > 0) {
-		if (move > delta) {
-			cl.pitchvel = 0;
-			move = delta;
-		}
-		cl.viewangles[PITCH] += move;
-	} else if (delta < 0) {
-		if (move > -delta) {
-			cl.pitchvel = 0;
-			move = -delta;
-		}
-		cl.viewangles[PITCH] -= move;
-	}
-}
-
 /*
 ============================================================================== 
  						PALETTE FLASHES 
@@ -785,8 +710,6 @@ void V_CalcRefdef (void) {
 	vec3_t forward;
 	float height_adjustment;
 
-	V_DriftPitch ();
-
 	
 	height_adjustment = v_viewheight.value ? bound (-7, v_viewheight.value, 4) : V_CalcBob ();
 	
@@ -890,11 +813,8 @@ void V_CvarInit(void)
 {
 	Cmd_AddCommand ("v_cshift", V_cshift_f);	
 	Cmd_AddCommand ("bf", V_BonusFlash_f);
-	Cmd_AddCommand ("centerview", V_StartPitchDrift);
 
 	Cvar_SetCurrentGroup(CVAR_GROUP_VIEW);
-	Cvar_Register (&v_centermove);
-	Cvar_Register (&v_centerspeed);
 	Cvar_Register (&cl_rollspeed);
 	Cvar_Register (&cl_rollangle);
 

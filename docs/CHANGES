@@ -42,6 +42,6 @@ version 0.1 (since Fuhquake 0.31)
   userinfo will be changed, and the value will be restored when disconneting
   from the server.
 - '%%' can now be used to output a literal '%' in chat strings.
-- Removed the 'lookstrafe', 'lookspring', and 'freelook' cvars and the
-  '+mlook' and '-mlook' commands.
+- Removed the 'lookstrafe', 'lookspring', 'freelook', 'v_centermove' and
+  'v_centerspeed' cvars and the '+mlook', '-mlook' and 'centerview' commands.
 
