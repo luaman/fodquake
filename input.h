@@ -61,7 +61,6 @@ extern cvar_t	cl_yawspeed;
 extern cvar_t	cl_pitchspeed;
 
 extern cvar_t	sensitivity;
-extern cvar_t	lookspring;
 
 extern cvar_t	m_pitch;
 extern cvar_t	m_yaw;
