@@ -303,7 +303,6 @@ cvar_t	cl_yawspeed = {"cl_yawspeed","140"};
 cvar_t	cl_pitchspeed = {"cl_pitchspeed","150"};
 
 cvar_t	lookspring = {"lookspring","0",CVAR_ARCHIVE};
-cvar_t	lookstrafe = {"lookstrafe","0",CVAR_ARCHIVE};
 cvar_t	sensitivity = {"sensitivity","3",CVAR_ARCHIVE};
 cvar_t	freelook = {"freelook","1",CVAR_ARCHIVE};
 
@@ -498,7 +497,7 @@ void CL_Move(usercmd_t *cmd)
 		my *= sensitivity.value;
 	}
 
-	if ((in_strafe.state & 1) || (lookstrafe.value && mlook_active))
+	if ((in_strafe.state & 1))
 		cmd->sidemove += m_side.value * mx;
 	else
 		cl.viewangles[YAW] -= m_yaw.value * mx;
@@ -707,7 +706,6 @@ void CL_CvarInitInput(void)
 
 	Cvar_SetCurrentGroup(CVAR_GROUP_INPUT_MISC);
 	Cvar_Register (&lookspring);
-	Cvar_Register (&lookstrafe);
 	Cvar_Register (&sensitivity);
 	Cvar_Register (&freelook);
 
