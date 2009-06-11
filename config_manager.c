@@ -474,7 +474,6 @@ static void ResetPlusCommands(void) {
 	Cbuf_AddText("-use\n");
 	Cbuf_AddText("-jump\n");
 	Cbuf_AddText("-klook\n");
-	Cbuf_AddText("-mlook\n");
 
 	Cbuf_AddText("-showscores\n");
 	Cbuf_AddText("-showteamscores\n");

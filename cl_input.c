@@ -56,7 +56,7 @@ state bit 2 is edge triggered on the down to up transition
 ===============================================================================
 */
 
-kbutton_t	in_mlook, in_klook;
+kbutton_t	in_klook;
 kbutton_t	in_left, in_right, in_forward, in_back;
 kbutton_t	in_lookup, in_lookdown, in_moveleft, in_moveright;
 kbutton_t	in_strafe, in_speed, in_use, in_jump, in_attack;
@@ -123,12 +123,6 @@ void KeyUp (kbutton_t *b) {
 void IN_KLookDown (void) {KeyDown(&in_klook);}
 void IN_KLookUp (void) {KeyUp(&in_klook);}
 
-void IN_MLookDown (void) {KeyDown(&in_mlook);}
-void IN_MLookUp (void) {
-	KeyUp(&in_mlook);
-	if (!mlook_active && lookspring.value)
-		V_StartPitchDrift();
-}
 
 void IN_UpDown(void) {KeyDown(&in_up);}
 void IN_UpUp(void) {KeyUp(&in_up);}
@@ -304,7 +298,6 @@ cvar_t	cl_pitchspeed = {"cl_pitchspeed","150"};
 
 cvar_t	lookspring = {"lookspring","0",CVAR_ARCHIVE};
 cvar_t	sensitivity = {"sensitivity","3",CVAR_ARCHIVE};
-cvar_t	freelook = {"freelook","1",CVAR_ARCHIVE};
 
 cvar_t	m_pitch = {"m_pitch","0.022", CVAR_ARCHIVE};
 cvar_t	m_yaw = {"m_yaw","0.022"};
@@ -502,10 +495,7 @@ void CL_Move(usercmd_t *cmd)
 	else
 		cl.viewangles[YAW] -= m_yaw.value * mx;
 
-	if (mlook_active)
-		V_StopPitchDrift();
-
-	if (mlook_active && !(in_strafe.state & 1))
+	if (!(in_strafe.state & 1))
 	{
 		cl.viewangles[PITCH] += m_pitch.value * my;
 		cl.viewangles[PITCH] = bound(-70, cl.viewangles[PITCH], 80);
@@ -682,8 +672,6 @@ void CL_CvarInitInput(void)
 	Cmd_AddCommand ("impulse", IN_Impulse);
 	Cmd_AddCommand ("+klook", IN_KLookDown);
 	Cmd_AddCommand ("-klook", IN_KLookUp);
-	Cmd_AddCommand ("+mlook", IN_MLookDown);
-	Cmd_AddCommand ("-mlook", IN_MLookUp);
 
 	
 	Cmd_AddCommand ("rotate",CL_Rotate_f);
@@ -707,7 +695,6 @@ void CL_CvarInitInput(void)
 	Cvar_SetCurrentGroup(CVAR_GROUP_INPUT_MISC);
 	Cvar_Register (&lookspring);
 	Cvar_Register (&sensitivity);
-	Cvar_Register (&freelook);
 
 	Cvar_SetCurrentGroup(CVAR_GROUP_INPUT_MOUSE);
 	Cvar_Register (&m_pitch);

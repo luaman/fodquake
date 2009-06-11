@@ -317,7 +317,7 @@ void M_Main_Key (int key) {
 //=============================================================================
 /* OPTIONS MENU */
 
-#define	OPTIONS_ITEMS	17
+#define	OPTIONS_ITEMS	16
 
 #define	SLIDER_RANGE	10
 
@@ -396,23 +396,19 @@ void M_AdjustSliders (int dir) {
 		}
 		break;
 	
-	case 10:	// mouse look
-		Cvar_SetValue (&freelook, !freelook.value);
-		break;
-	
-	case 11:	// invert mouse
+	case 10:	// invert mouse
 		Cvar_SetValue (&m_pitch, -m_pitch.value);
 		break;
 	
-	case 12:
+	case 11:
 		Cvar_SetValue (&cl_sbar, !cl_sbar.value);
 		break;
 
-	case 13:
+	case 12:
 		Cvar_SetValue (&cl_hudswap, !cl_hudswap.value);
 		break;
 
-	case 16:	// _windowed_mouse
+	case 15:	// _windowed_mouse
 		Cvar_SetValue (&in_grab_windowed_mouse, !in_grab_windowed_mouse.value);
 		break;
 	}
@@ -476,27 +472,24 @@ void M_Options_Draw (void) {
 	M_Print (16, 104,  "            Always run");
 	M_DrawCheckbox (220, 104, cl_forwardspeed.value > 200);
 
-	M_Print (16, 112, "            Mouse look");
-	M_DrawCheckbox (220, 112, freelook.value);
+	M_Print (16, 112, "          Invert mouse");
+	M_DrawCheckbox (220, 112, m_pitch.value < 0);
 
-	M_Print (16, 120, "          Invert mouse");
-	M_DrawCheckbox (220, 120, m_pitch.value < 0);
+	M_Print (16, 120, "    Use old status bar");
+	M_DrawCheckbox (220, 120, cl_sbar.value);
 
-	M_Print (16, 128, "    Use old status bar");
-	M_DrawCheckbox (220, 128, cl_sbar.value);
+	M_Print (16, 128, "      HUD on left side");
+	M_DrawCheckbox (220, 128, cl_hudswap.value);
 
-	M_Print (16, 136, "      HUD on left side");
-	M_DrawCheckbox (220, 136, cl_hudswap.value);
-
-	M_Print (16, 144, "          FPS settings");
+	M_Print (16, 136, "          FPS settings");
 
 	if (vid_menudrawfn)
-		M_Print (16, 152, "           Video modes");
+		M_Print (16, 144, "           Video modes");
 
 	if (!VID_IsFullscreen())
 	{
-		M_Print (16, 160, "             Use mouse");
-		M_DrawCheckbox (220, 160, in_grab_windowed_mouse.value);
+		M_Print (16, 152, "             Use mouse");
+		M_DrawCheckbox (220, 152, in_grab_windowed_mouse.value);
 	}
 
 	// cursor
@@ -526,10 +519,10 @@ void M_Options_Key (int k) {
 	case 2:
 		Cbuf_AddText ("exec default.cfg\n");
 		break;
-	case 14:
+	case 13:
 		M_Menu_Fps_f ();
 		break;
-	case 15:
+	case 14:
 		M_Menu_Video_f ();
 		break;
 	default:
@@ -574,16 +567,16 @@ void M_Options_Key (int k) {
 	}
 
 	if (k == K_UPARROW || k == K_END || k == K_PGDN) {
-		if (options_cursor == 16 && !VID_IsFullscreen())
+		if (options_cursor == 15 && !VID_IsFullscreen())
+			options_cursor = 14;
+
+		if (options_cursor == 14 && vid_menudrawfn == NULL)
+			options_cursor = 13;
+	} else {
+		if (options_cursor == 14 && vid_menudrawfn == NULL)
 			options_cursor = 15;
 
-		if (options_cursor == 15 && vid_menudrawfn == NULL)
-			options_cursor = 14;
-	} else {
-		if (options_cursor == 15 && vid_menudrawfn == NULL)
-			options_cursor = 16;
-
-		if (options_cursor == 16 && !VID_IsFullscreen())
+		if (options_cursor == 15 && !VID_IsFullscreen())
 			options_cursor = 0;
 	}
 }
