@@ -277,45 +277,55 @@ float	r_framelerp;
 float	r_modelalpha;
 float	r_lerpdistance;
 
-void GL_DrawAliasFrame(aliashdr_t *paliashdr, int pose1, int pose2, qboolean mtex) {
-    int *order, count;
+void GL_DrawAliasFrame(aliashdr_t *paliashdr, int pose1, int pose2, qboolean mtex)
+{
+	int *order, count;
 	vec3_t interpolated_verts;
-    float l, lerpfrac;
-    trivertx_t *verts1, *verts2;
+	float l, lerpfrac;
+	trivertx_t *verts1, *verts2;
 
 	lerpfrac = r_framelerp;
 	lastposenum = (lerpfrac >= 0.5) ? pose2 : pose1;	
 
-    verts2 = verts1 = (trivertx_t *) ((byte *) paliashdr + paliashdr->posedata);
+	verts2 = verts1 = (trivertx_t *) ((byte *) paliashdr + paliashdr->posedata);
 
-    verts1 += pose1 * paliashdr->poseverts;
-    verts2 += pose2 * paliashdr->poseverts;
+	verts1 += pose1 * paliashdr->poseverts;
+	verts2 += pose2 * paliashdr->poseverts;
 
-    order = (int *) ((byte *) paliashdr + paliashdr->commands);
+	order = (int *) ((byte *) paliashdr + paliashdr->commands);
 
 	if (r_modelalpha < 1)
 		glEnable(GL_BLEND);
 
-    while ((count = *order++)) {
-		if (count < 0) {
+	while ((count = *order++))
+	{
+		if (count < 0)
+		{
 			count = -count;
 			glBegin(GL_TRIANGLE_FAN);
-		} else if (count > 0) {
+		}
+		else if (count > 0)
+		{
 			glBegin(GL_TRIANGLE_STRIP);
 		}
 
-		do {
+		do
+		{
 			// texture coordinates come from the draw list
-			if (mtex) {
+			if (mtex)
+			{
 				qglMultiTexCoord2f (GL_TEXTURE0_ARB, ((float *) order)[0], ((float *) order)[1]);
 				qglMultiTexCoord2f (GL_TEXTURE1_ARB, ((float *) order)[0], ((float *) order)[1]);
-			} else {
+			}
+			else
+			{
 				glTexCoord2f (((float *) order)[0], ((float *) order)[1]);
 			}
 
 			order += 2;
 
-			if ((currententity->flags & RF_LIMITLERP)) {
+			if ((currententity->flags & RF_LIMITLERP))
+			{
 				lerpfrac = VectorL2Compare(verts1->v, verts2->v, r_lerpdistance) ? r_framelerp : 1;
 			}
 
@@ -334,26 +344,29 @@ void GL_DrawAliasFrame(aliashdr_t *paliashdr, int pose1, int pose2, qboolean mte
 		} while (--count);
 
 		glEnd();
-    }
+	}
 
 	if (r_modelalpha < 1)
 		glDisable(GL_BLEND);
 }
 
-void R_SetupAliasFrame (maliasframedesc_t *oldframe, maliasframedesc_t *frame, aliashdr_t *paliashdr, qboolean mtex) {
+void R_SetupAliasFrame (maliasframedesc_t *oldframe, maliasframedesc_t *frame, aliashdr_t *paliashdr, qboolean mtex)
+{
 	int oldpose, pose, numposes;
 	float interval;
 
 	oldpose = oldframe->firstpose;
 	numposes = oldframe->numposes;
-	if (numposes > 1) {
+	if (numposes > 1)
+	{
 		interval = oldframe->interval;
 		oldpose += (int) (cl.time / interval) % numposes;
 	}
 
 	pose = frame->firstpose;
 	numposes = frame->numposes;
-	if (numposes > 1) {
+	if (numposes > 1)
+	{
 		interval = frame->interval;
 		pose += (int) (cl.time / interval) % numposes;
 	}
