@@ -380,6 +380,7 @@ void	Mod_ClearBrushesSprites(void);
 void	Mod_ClearAll(void);
 model_t *Mod_ForName (char *name, qboolean crash);
 void	*Mod_Extradata (model_t *mod);	// handles caching
+model_t *Mod_LoadModel (model_t *mod, qboolean crash);
 
 mleaf_t *Mod_PointInLeaf (float *p, model_t *model);
 byte	*Mod_LeafPVS (mleaf_t *leaf, model_t *model);
