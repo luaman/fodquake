@@ -676,8 +676,8 @@ void SV_Say (qboolean team) {
 	if (fp_messages) {
 		if (!sv.paused && svs.realtime < sv_client->lockedtill) {
 			SV_ClientPrintf(sv_client, PRINT_CHAT,
-				"You can't talk for %d more seconds\n", 
-					(int) (sv_client->lockedtill - svs.realtime));
+				"You can't talk for %d more second%s\n", 
+					(int) (sv_client->lockedtill - svs.realtime), (int) (sv_client->lockedtill - svs.realtime)==1?"":"s");
 			return;
 		}
 		tmp = sv_client->whensaidhead - fp_messages + 1;
@@ -691,7 +691,7 @@ void SV_Say (qboolean team) {
 					"FloodProt: %s\n", sv_floodprotmsg.string);
 			else
 				SV_ClientPrintf(sv_client, PRINT_CHAT,
-					"FloodProt: You can't talk for %d seconds.\n", fp_secondsdead);
+					"FloodProt: You can't talk for %d second%s.\n", fp_secondsdead, fp_secondsdead==1?"":"s");
 			return;
 		}
 		sv_client->whensaidhead++;
