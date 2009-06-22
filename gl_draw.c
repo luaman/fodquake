@@ -660,7 +660,8 @@ static int HexToInt(char c) {
 		return -1;
 }
 
-void Draw_ColoredString (int x, int y, char *text, int red) {
+void Draw_ColoredString (int x, int y, char *text, int red)
+{
 	int r, g, b, num;
 	qboolean white = true;
 
@@ -677,22 +678,29 @@ void Draw_ColoredString (int x, int y, char *text, int red) {
 
 	glBegin (GL_QUADS);
 
-	for ( ; *text; text++) {
-		
-		if (*text == '&') {
-			if (text[1] == 'c' && text[2] && text[3] && text[4])	{
+	for ( ; *text; text++)
+	{
+		if (*text == '&')
+		{
+			if (text[1] == 'c' && text[2] && text[3] && text[4])
+			{
 				r = HexToInt(text[2]);
 				g = HexToInt(text[3]);
 				b = HexToInt(text[4]);
-				if (r >= 0 && g >= 0 && b >= 0) {
-					if (scr_coloredText.value) {
+				if (r >= 0 && g >= 0 && b >= 0)
+				{
+					if (scr_coloredText.value)
+					{
 						glColor3f(r / 16.0, g / 16.0, b / 16.0);
 						white = false;
 					}
 					text += 5;
 				}
-            } else if (text[1] == 'r')	{
-				if (!white) {
+			}
+			else if (text[1] == 'r')
+			{
+				if (!white)
+				{
 					glColor3ubv(color_white);
 					white = true;
 				}

@@ -214,21 +214,28 @@ static int HexToInt(char c) {
 		return -1;
 }
 
-void Draw_ColoredString (int x, int y, char *text, int red) {
+void Draw_ColoredString (int x, int y, char *text, int red)
+{
 	int r, g, b;
 
-	for ( ; *text; text++) {
-		if (*text == '&') {
-			if (text[1] == 'c' && text[2] && text[3] && text[4])	{
+	for ( ; *text; text++)
+	{
+		if (*text == '&')
+		{
+			if (text[1] == 'c' && text[2] && text[3] && text[4])
+			{
 				r = HexToInt(text[2]);
 				g = HexToInt(text[3]);
 				b = HexToInt(text[4]);
 				if (r >= 0 && g >= 0 && b >= 0)
 					text += 5;
-            } else if (text[1] == 'r')	{
+			}
+			else if (text[1] == 'r')
+			{
 				text += 2;
 			}
 		}
+
 		Draw_Character (x, y, (*text) | (red ? 0x80 : 0));
 		x += 8;
 	}
