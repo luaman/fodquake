@@ -356,7 +356,7 @@ static void CL_SendConnectPacket(void) {
 }
 
 //Resend a connect message if the last one has timed out
-void CL_CheckForResend (void)
+static void CL_CheckForResend (void)
 {
 	char data[2048];
 
@@ -382,7 +382,7 @@ void CL_CheckForResend (void)
 	NET_SendPacket(NS_CLIENT, strlen(data), data, &cls.server_adr);
 }
 
-void CL_BeginServerConnect(void)
+static void CL_BeginServerConnect(void)
 {
 	connect_time = 0;
 

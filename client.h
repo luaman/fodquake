@@ -455,7 +455,6 @@ void CL_Init (void);
 void CL_WriteConfiguration (void);
 void CL_ClearState (void);
 void CL_ReadPackets (void);
-void CL_BeginServerConnect(void);
 void CL_Disconnect (void);
 void CL_Disconnect_f (void);
 qboolean CL_ConnectedToProxy(void);
