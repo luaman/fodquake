@@ -1015,7 +1015,7 @@ byte COM_BlockSequenceCRCByte (byte *base, int length, int sequence)
 
 #define	MAXPRINTMSG	4096
 
-void (*rd_print) (char *) = NULL;
+static void (*rd_print) (char *) = NULL;
 
 void Com_BeginRedirect (void (*RedirectedPrint) (char *))
 {
