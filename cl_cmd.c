@@ -250,15 +250,18 @@ void CL_Rcon_f (void)
 	NET_SendPacket (NS_CLIENT, strlen(message)+1, message, &to);
 }
 
-void CL_Download_f (void){
+void CL_Download_f (void)
+{
 	char *p, *q;
 
-	if (cls.state == ca_disconnected) {
+	if (cls.state == ca_disconnected)
+	{
 		Com_Printf ("Must be connected.\n");
 		return;
 	}
 
-	if (Cmd_Argc() != 2) {
+	if (Cmd_Argc() != 2)
+	{
 		Com_Printf ("Usage: %s <datafile>\n", Cmd_Argv(0));
 		return;
 	}
@@ -266,13 +269,16 @@ void CL_Download_f (void){
 	Q_snprintfz (cls.downloadname, sizeof(cls.downloadname), "%s", Cmd_Argv(1));
 
 	p = cls.downloadname;
-	while (1) {
-		if ((q = strchr(p, '/')) != NULL) {
+	while (1)
+	{
+		if ((q = strchr(p, '/')) != NULL)
+		{
 			*q = 0;
 			Sys_mkdir(cls.downloadname);
 			*q = '/';
 			p = q + 1;
-		} else
+		}
+		else
 			break;
 	}
 
