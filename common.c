@@ -54,23 +54,27 @@ The "game directory" is the first tree on the search path and directory that all
 //============================================================================
 
 // ClearLink is used for new headnodes
-void ClearLink (link_t *l) {
+void ClearLink (link_t *l)
+{
 	l->prev = l->next = l;
 }
 
-void RemoveLink (link_t *l) {
+void RemoveLink (link_t *l)
+{
 	l->next->prev = l->prev;
 	l->prev->next = l->next;
 }
 
-void InsertLinkBefore (link_t *l, link_t *before) {
+void InsertLinkBefore (link_t *l, link_t *before)
+{
 	l->next = before;
 	l->prev = before->prev;
 	l->prev->next = l;
 	l->next->prev = l;
 }
 
-void InsertLinkAfter (link_t *l, link_t *after) {
+void InsertLinkAfter (link_t *l, link_t *after)
+{
 	l->next = after->next;
 	l->prev = after;
 	l->prev->next = l;
@@ -83,22 +87,28 @@ void InsertLinkAfter (link_t *l, link_t *after) {
 ============================================================================
 */
 
-int Q_atoi (char *str) {
+int Q_atoi (char *str)
+{
 	int val, sign, c;
 	
-	if (*str == '-') {
+	if (*str == '-')
+	{
 		sign = -1;
 		str++;
-	} else {
+	}
+	else
+	{
 		sign = 1;
 	}
 		
 	val = 0;
 
 	// check for hex
-	if (str[0] == '0' && (str[1] == 'x' || str[1] == 'X') ) {
+	if (str[0] == '0' && (str[1] == 'x' || str[1] == 'X') )
+	{
 		str += 2;
-		while (1) {
+		while (1)
+		{
 			c = *str++;
 			if (c >= '0' && c <= '9')
 				val = (val << 4) + c - '0';
@@ -116,7 +126,8 @@ int Q_atoi (char *str) {
 		return sign * str[1];
 
 	// assume decimal
-	while (1) {
+	while (1)
+	{
 		c = *str++;
 		if (c <'0' || c > '9')
 			return val*sign;
@@ -126,23 +137,29 @@ int Q_atoi (char *str) {
 	return 0;
 }
 
-float Q_atof (char *str) {
+float Q_atof (char *str)
+{
 	double val;
 	int sign, c, decimal, total;
 	
-	if (*str == '-') {
+	if (*str == '-')
+	{
 		sign = -1;
 		str++;
-	} else {
+	}
+	else
+	{
 		sign = 1;
 	}
 		
 	val = 0;
 
 	// check for hex
-	if (str[0] == '0' && (str[1] == 'x' || str[1] == 'X') ) {
+	if (str[0] == '0' && (str[1] == 'x' || str[1] == 'X') )
+	{
 		str += 2;
-		while (1) {
+		while (1)
+		{
 			c = *str++;
 			if (c >= '0' && c <= '9')
 				val = (val * 16) + c - '0';
@@ -162,21 +179,27 @@ float Q_atof (char *str) {
 	// assume decimal
 	decimal = -1;
 	total = 0;
-	while (1) {
+	while (1)
+	{
 		c = *str++;
-		if (c == '.') {
+		if (c == '.')
+		{
 			decimal = total;
 			continue;
 		}
+
 		if (c <'0' || c > '9')
 			break;
+
 		val = val*10 + c - '0';
 		total++;
 	}
 
 	if (decimal == -1)
 		return val * sign;
-	while (total > decimal) {
+
+	while (total > decimal)
+	{
 		val /= 10;
 		total--;
 	}
@@ -209,7 +232,8 @@ int Q_snprintfz (char *dest, size_t size, char *fmt, ...)
 	return i;
 }
 
-int Com_HashKey (char *name) { 
+int Com_HashKey (char *name)
+{
 	unsigned int v;	
 	unsigned char c; 
 
@@ -227,7 +251,8 @@ int Com_HashKey (char *name) {
 ============================================================================
 */
 
-short ShortSwap (short l) {
+short ShortSwap (short l)
+{
 	byte b1, b2;
 
 	b1 = l & 255;
@@ -236,7 +261,8 @@ short ShortSwap (short l) {
 	return (b1 << 8) + b2;
 }
 
-int LongSwap (int l) {
+int LongSwap (int l)
+{
 	byte b1, b2, b3, b4;
 
 	b1 = l & 255;
@@ -247,10 +273,12 @@ int LongSwap (int l) {
 	return ((int) b1 << 24) + ((int) b2 << 16) + ((int) b3 << 8) + b4;
 }
 
-float FloatSwap (float f) {
-	union {
-		float	f;
-		byte	b[4];
+float FloatSwap (float f)
+{
+	union
+	{
+		float   f;
+		byte    b[4];
 	} dat1, dat2;
 
 	dat1.f = f;
@@ -263,21 +291,25 @@ float FloatSwap (float f) {
 
 //===========================================================================
 
-void SZ_Init (sizebuf_t *buf, byte *data, int length) {
+void SZ_Init (sizebuf_t *buf, byte *data, int length)
+{
 	memset (buf, 0, sizeof(*buf));
 	buf->data = data;
 	buf->maxsize = length;
 }
 
-void SZ_Clear (sizebuf_t *buf) {
+void SZ_Clear (sizebuf_t *buf)
+{
 	buf->cursize = 0;
 	buf->overflowed = false;
 }
 
-void *SZ_GetSpace (sizebuf_t *buf, int length) {
+void *SZ_GetSpace (sizebuf_t *buf, int length)
+{
 	void *data;
 
-	if (buf->cursize + length > buf->maxsize) {
+	if (buf->cursize + length > buf->maxsize)
+	{
 		if (!buf->allowoverflow)
 			Sys_Error ("SZ_GetSpace: overflow without allowoverflow set (%d)", buf->maxsize);
 
@@ -295,11 +327,13 @@ void *SZ_GetSpace (sizebuf_t *buf, int length) {
 	return data;
 }
 
-void SZ_Write (sizebuf_t *buf, void *data, int length) {
+void SZ_Write (sizebuf_t *buf, void *data, int length)
+{
 	memcpy (SZ_GetSpace(buf,length),data,length);		
 }
 
-void SZ_Print (sizebuf_t *buf, char *data) {
+void SZ_Print (sizebuf_t *buf, char *data)
+{
 	int len;
 
 	len = strlen(data) + 1;
@@ -312,15 +346,18 @@ void SZ_Print (sizebuf_t *buf, char *data) {
 
 //============================================================================
 
-char *COM_SkipPath (char *pathname) {
-	char	*last;
+char *COM_SkipPath (char *pathname)
+{
+	char *last;
 	
 	last = pathname;
-	while (*pathname) {
+	while (*pathname)
+	{
 		if (*pathname == '/')
 			last = pathname+1;
 		pathname++;
 	}
+
 	return last;
 }
 
@@ -328,25 +365,30 @@ char *COM_SkipPath (char *pathname) {
 void COM_StripExtension (char *in, char *out) {
 	char *dot;
 
-	if (!(dot = strrchr(in, '.'))) {
+	if (!(dot = strrchr(in, '.')))
+	{
 		Q_strncpyz(out, in, strlen(in) + 1);
 		return;
 	}
+
 	while (*in && in != dot)
 		*out++ = *in++;
 	*out = 0;
 }
 
 
-char *COM_FileExtension (char *in) {
+char *COM_FileExtension (char *in)
+{
 	static char exten[8];
 	int i;
 
 	if (!(in = strrchr(in, '.')))
 		return "";
+
 	in++;
 	for (i = 0 ; i < 7 && *in ; i++,in++)
 		exten[i] = *in;
+
 	exten[i] = 0;
 	return exten;
 }
@@ -355,7 +397,8 @@ char *COM_FileExtension (char *in) {
 
 
 
-void COM_FileBase (char *in, char *out) {
+void COM_FileBase (char *in, char *out)
+{
 	char *start, *end;
 	int	length;
 
@@ -372,21 +415,25 @@ void COM_FileBase (char *in, char *out) {
 		strcpy (out, "?empty filename?");	
 	else if (length == 0)
 		out[0] = 0;
-	else {
+	else
+	{
 		if (length > 31)
 			length = 31;
+
 		memcpy (out, start, length);
 		out[length] = 0;
 	}
 }
 
 //If path doesn't have a .EXT, append extension (extension should include the .)
-void COM_DefaultExtension (char *path, char *extension) {
+void COM_DefaultExtension (char *path, char *extension)
+{
 	char *src;
 
 	src = path + strlen(path) - 1;
 
-	while (*src != '/' && src != path) {
+	while (*src != '/' && src != path)
+	{
 		if (*src == '.')
 			return;                 // it has an extension
 		src--;
@@ -397,7 +444,8 @@ void COM_DefaultExtension (char *path, char *extension) {
 
 //If path doesn't have an extension or has a different extension, append(!) specified extension
 //Extension should include the .
-void COM_ForceExtension (char *path, char *extension) {
+void COM_ForceExtension (char *path, char *extension)
+{
 	char *src;
 
 	src = path + strlen(path) - strlen(extension);
@@ -484,30 +532,36 @@ skipwhite:
 	return data;
 }
 
-void COM_CheckRegistered (void) {
+void COM_CheckRegistered (void)
+{
 	FILE *h;
 
 	FS_FOpenFile ("gfx/pop.lmp", &h);
 
-	if (h) {
+	if (h)
+	{
 		Cvar_Set (&registered, "1");
 		fclose (h);
 	}
 }
 
 //Adds the given string at the end of the current argument list
-void COM_AddParm (char *parm) {
+void COM_AddParm (char *parm)
+{
 	if (com_argc >= MAX_NUM_ARGVS)
 		return;
+
 	largv[com_argc++] = parm;
 }
 
 //Returns the position (1 to argc-1) in the program's argument list
 //where the given parameter appears, or 0 if not present
-int COM_CheckParm (char *parm) {
+int COM_CheckParm (char *parm)
+{
 	int		i;
 
-	for (i = 1; i < com_argc; i++) {
+	for (i = 1; i < com_argc; i++)
+	{
 		if (!strcmp(parm, com_argv[i]))
 			return i;
 	}
@@ -515,24 +569,31 @@ int COM_CheckParm (char *parm) {
 	return 0;
 }
 
-int COM_Argc (void) {
+int COM_Argc (void)
+{
 	return com_argc;
 }
 
-char *COM_Argv (int arg) {
+char *COM_Argv (int arg)
+{
 	if (arg < 0 || arg >= com_argc)
 		return "";
+
 	return com_argv[arg];
 }
 
-void COM_ClearArgv (int arg) {
+void COM_ClearArgv (int arg)
+{
 	if (arg < 0 || arg >= com_argc)
 		return;
+
 	com_argv[arg] = "";
 }
 
-void COM_InitArgv (int argc, char **argv) {
-	for (com_argc = 0; com_argc < MAX_NUM_ARGVS && com_argc < argc; com_argc++) {
+void COM_InitArgv(int argc, char **argv)
+{
+	for (com_argc = 0; com_argc < MAX_NUM_ARGVS && com_argc < argc; com_argc++)
+	{
 		if (argv[com_argc])
 			largv[com_argc] = argv[com_argc];
 		else
@@ -543,7 +604,7 @@ void COM_InitArgv (int argc, char **argv) {
 	com_argv = largv;
 }
 
-void COM_Init (void)
+void COM_Init(void)
 {
 	Cvar_SetCurrentGroup(CVAR_GROUP_NO_GROUP);
 	Cvar_Register (&developer);
@@ -553,10 +614,13 @@ void COM_Init (void)
 	Cvar_ResetCurrentGroup();
 }
 
-void COM_Shutdown (void) {}
+void COM_Shutdown(void)
+{
+}
 
 //does a varargs printf into a temp buffer, so I don't need to have varargs versions of all text functions.
-char *va (char *format, ...) {
+char *va (char *format, ...)
+{
 	va_list argptr;
 	static char string[8][2048];
 	static int idx = 0;
@@ -572,7 +636,8 @@ char *va (char *format, ...) {
 	return string[idx];
 }
 
-char *CopyString (char *in) {
+char *CopyString (char *in)
+{
 	char *out;
 
 	out = Z_Malloc (strlen(in) + 1);
@@ -601,7 +666,8 @@ char	com_basedir[MAX_OSPATH];
 */
 
 //Searches the string for the given key and returns the associated value, or an empty string.
-char *Info_ValueForKey (char *s, char *key) {
+char *Info_ValueForKey (char *s, char *key)
+{
 	char pkey[512];
 	static char value[4][512];	// use two buffers so compares work without stomping on each other
 	static int	valueindex;
@@ -610,11 +676,15 @@ char *Info_ValueForKey (char *s, char *key) {
 	valueindex = (valueindex + 1) % 4;
 	if (*s == '\\')
 		s++;
-	while (1) {
+
+	while (1)
+	{
 		o = pkey;
-		while (*s != '\\') {
+		while (*s != '\\')
+		{
 			if (!*s)
 				return "";
+
 			*o++ = *s++;
 		}
 		*o = 0;
@@ -622,11 +692,14 @@ char *Info_ValueForKey (char *s, char *key) {
 
 		o = value[valueindex];
 
-		while (*s != '\\' && *s) {
+		while (*s != '\\' && *s)
+		{
 			if (!*s)
 				return "";
+
 			*o++ = *s++;
 		}
+
 		*o = 0;
 
 		if (!strcmp (key, pkey) )
@@ -685,32 +758,40 @@ void Info_RemoveKey (char *s, char *key)
 
 }
 
-void Info_RemovePrefixedKeys (char *start, char prefix) {
+void Info_RemovePrefixedKeys (char *start, char prefix)
+{
 	char *s, pkey[512], value[512], *o;
 
 	s = start;
 
-	while (1) {
+	while (1)
+	{
 		if (*s == '\\')
 			s++;
+
 		o = pkey;
-		while (*s != '\\') {
+		while (*s != '\\')
+		{
 			if (!*s)
 				return;
+
 			*o++ = *s++;
 		}
+
 		*o = 0;
 		s++;
 
 		o = value;
-		while (*s != '\\' && *s) {
+		while (*s != '\\' && *s)
+		{
 			if (!*s)
 				return;
 			*o++ = *s++;
 		}
 		*o = 0;
 
-		if (pkey[0] == prefix) {
+		if (pkey[0] == prefix)
+		{
 			Info_RemoveKey (start, pkey);
 			s = start;
 		}
@@ -721,44 +802,52 @@ void Info_RemovePrefixedKeys (char *start, char prefix) {
 
 }
 
-void Info_SetValueForStarKey (char *s, char *key, char *value, int maxsize) {
+void Info_SetValueForStarKey (char *s, char *key, char *value, int maxsize)
+{
 	char new[1024], *v;
 	int c;
 #ifndef CLIENTONLY
 	extern cvar_t sv_highchars;
 #endif
 
-	if (strstr (key, "\\") || strstr (value, "\\") ) {
+	if (strstr (key, "\\") || strstr (value, "\\") )
+	{
 		Com_Printf ("Can't use keys or values with a \\\n");
 		return;
 	}
 
-	if (strstr (key, "\"") || strstr (value, "\"") ) {
+	if (strstr (key, "\"") || strstr (value, "\"") )
+	{
 		Com_Printf ("Can't use keys or values with a \"\n");
 		return;
 	}
 
-	if (strlen(key) > 63 || strlen(value) > 63) {
+	if (strlen(key) > 63 || strlen(value) > 63)
+	{
 		Com_Printf ("Keys and values must be < 64 characters.\n");
 		return;
 	}
 
 	// this next line is kinda trippy
-	if (*(v = Info_ValueForKey(s, key))) {
+	if (*(v = Info_ValueForKey(s, key)))
+	{
 		// key exists, make sure we have enough room for new value, if we don't,
 		// don't change it!
-		if (strlen(value) - strlen(v) + strlen(s) >= maxsize) {
+		if (strlen(value) - strlen(v) + strlen(s) >= maxsize)
+		{
 			Com_Printf ("Info string length exceeded\n");
 			return;
 		}
 	}
+
 	Info_RemoveKey (s, key);
 	if (!value || !strlen(value))
 		return;
 
 	sprintf (new, "\\%s\\%s", key, value);
 
-	if ((strlen(new) + strlen(s)) >= maxsize) {
+	if ((strlen(new) + strlen(s)) >= maxsize)
+	{
 		Com_Printf ("Info string length exceeded\n");
 		return;
 	}
@@ -767,29 +856,37 @@ void Info_SetValueForStarKey (char *s, char *key, char *value, int maxsize) {
 	s += strlen(s);
 	v = new;
 #ifndef CLIENTONLY
-	if (!sv_highchars.value) {
-		while (*v) {
+	if (!sv_highchars.value)
+	{
+		while (*v)
+		{
 			c = (unsigned char)*v++;
 			if (c == ('\\'|128))
 				continue;
+
 			c &= 127;
 			if (c >= 32)
 				*s++ = c;
 		}
-	} else
+	}
+	else
 #endif
 	{
-		while (*v) {
+		while (*v)
+		{
 			c = (unsigned char)*v++;
 			if (c > 13)
 				*s++ = c;
 		}
+
 		*s = 0;
 	}
 }
 
-void Info_SetValueForKey (char *s, char *key, char *value, int maxsize) {
-	if (key[0] == '*') {
+void Info_SetValueForKey (char *s, char *key, char *value, int maxsize)
+{
+	if (key[0] == '*')
+	{
 		Com_Printf ("Can't set * keys\n");
 		return;
 	}
@@ -798,27 +895,34 @@ void Info_SetValueForKey (char *s, char *key, char *value, int maxsize) {
 }
 
 #define INFO_PRINT_FIRST_COLUMN_WIDTH 20
-void Info_Print (char *s) {
+void Info_Print (char *s)
+{
 	char key[512], value[512], *o;
 	int l;
 
 	if (*s == '\\')
 		s++;
-	while (*s) {
+	while (*s)
+	{
 		o = key;
 		while (*s && *s != '\\')
 			*o++ = *s++;
 
 		l = o - key;
-		if (l < INFO_PRINT_FIRST_COLUMN_WIDTH) {
+		if (l < INFO_PRINT_FIRST_COLUMN_WIDTH)
+		{
 			memset (o, ' ', INFO_PRINT_FIRST_COLUMN_WIDTH - l);
 			key[INFO_PRINT_FIRST_COLUMN_WIDTH] = 0;
-		} else {
+		}
+		else
+		{
 			*o = 0;
 		}
+
 		Com_Printf ("%s", key);
 
-		if (!*s) {
+		if (!*s)
+		{
 			Com_Printf ("MISSING VALUE\n");
 			return;
 		}
@@ -827,10 +931,12 @@ void Info_Print (char *s) {
 		s++;
 		while (*s && *s != '\\')
 			*o++ = *s++;
+
 		*o = 0;
 
 		if (*s)
 			s++;
+
 		Com_Printf ("%s\n", value);
 	}
 }
@@ -878,7 +984,8 @@ static byte chktbl[1024] = {
 };
 
 //For proxy protecting
-byte COM_BlockSequenceCRCByte (byte *base, int length, int sequence) {
+byte COM_BlockSequenceCRCByte (byte *base, int length, int sequence)
+{
 	unsigned short crc;
 	byte *p;
 	byte chkb[60 + 4];
@@ -910,16 +1017,19 @@ byte COM_BlockSequenceCRCByte (byte *base, int length, int sequence) {
 
 void (*rd_print) (char *) = NULL;
 
-void Com_BeginRedirect (void (*RedirectedPrint) (char *)) {
+void Com_BeginRedirect (void (*RedirectedPrint) (char *))
+{
 	rd_print = RedirectedPrint;
 }
 
-void Com_EndRedirect (void) {
+void Com_EndRedirect (void)
+{
 	rd_print = NULL;
 }
 
 //All console printing must go through this in order to be logged to disk
-void Com_Printf (char *fmt, ...) {
+void Com_Printf (char *fmt, ...)
+{
 	va_list argptr;
 	char msg[MAXPRINTMSG];
 	
@@ -927,7 +1037,8 @@ void Com_Printf (char *fmt, ...) {
 	vsnprintf (msg, sizeof(msg), fmt, argptr);
 	va_end (argptr);
 
-	if (rd_print) {
+	if (rd_print)
+	{
 		// add to redirected message
 		rd_print (msg);
 		return;
@@ -941,7 +1052,8 @@ void Com_Printf (char *fmt, ...) {
 }
 
 //A Com_Printf that only shows up if the "developer" cvar is set
-void Com_DPrintf (char *fmt, ...) {
+void Com_DPrintf (char *fmt, ...)
+{
 	va_list argptr;
 	char msg[MAXPRINTMSG];
 
@@ -954,3 +1066,4 @@ void Com_DPrintf (char *fmt, ...) {
 	
 	Com_Printf ("%s", msg);
 }
+
