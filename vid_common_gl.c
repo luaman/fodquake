@@ -93,33 +93,37 @@ qboolean CheckExtension (const char *extension)
 
 void CheckMultiTextureExtensions (void)
 {
-	if (!COM_CheckParm("-nomtex") && CheckExtension("GL_ARB_multitexture"))
+	if (!COM_CheckParm("-nomtex"))
+		return;
+
+	if (strstr(gl_renderer, "Savage"))
 	{
-		if (strstr(gl_renderer, "Savage"))
-			return;
+		Com_Printf("Multitexturing disabled for this graphics card.\n");
+		return;
+	}
+
+	if (CheckExtension("GL_ARB_multitexture"))
+	{
 
 		qglMultiTexCoord2f = (void *) qglGetProcAddress("glMultiTexCoord2fARB");
 		qglActiveTexture = (void *) qglGetProcAddress("glActiveTextureARB");
-		if (!qglMultiTexCoord2f || !qglActiveTexture)
-			return;
+		if (qglMultiTexCoord2f && qglActiveTexture)
+		{
+			glGetIntegerv(GL_MAX_TEXTURE_UNITS_ARB, &gl_textureunits);
 
-		Com_Printf ("Multitexture extensions found\n");
-		gl_mtexable = true;
+			if (COM_CheckParm("-maxtmu2")/* || !strcmp(gl_vendor, "ATI Technologies Inc.")*/)
+				gl_textureunits = min(gl_textureunits, 2);
+
+			gl_textureunits = min(gl_textureunits, 4);
+			gl_mtexable = true;
+
+			if (gl_textureunits < 2)
+				gl_mtexable = false;
+		}
 	}
 
-	glGetIntegerv(GL_MAX_TEXTURE_UNITS_ARB, &gl_textureunits);
-	gl_textureunits = min(gl_textureunits, 4);
-
-	if (COM_CheckParm("-maxtmu2")/* || !strcmp(gl_vendor, "ATI Technologies Inc.")*/)
-		gl_textureunits = min(gl_textureunits, 2);
-
-	if (gl_textureunits < 2)
-		gl_mtexable = false;
-
 	if (!gl_mtexable)
-		gl_textureunits = 1;
-	else
-		Com_Printf("Enabled %i texture units on hardware\n", gl_textureunits);
+		Com_Printf("OpenGL multitexturing extensions not available.\n");
 }
 
 void GL_CheckExtensions (void)
