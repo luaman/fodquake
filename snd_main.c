@@ -150,15 +150,12 @@ void S_Startup (void) {
 		{
 			if (*sounddrivers[i].init)
 			{
-				Com_Printf("Trying sound driver \"%s\"...\n", sounddrivers[i].name);
 				rc = (*sounddrivers[i].init)(soundcard, rate, 2, 16);
 				if (rc)
 				{
 					break;
 				}
 			}
-			else
-				Com_Printf("Sound driver \"%s\" not available\n", sounddrivers[i].name);
 		}
 
 		if (i == NUMSOUNDDRIVERS)
@@ -170,7 +167,7 @@ void S_Startup (void) {
 
 	if (!rc)
 	{
-		Com_Printf ("S_Startup: SNDDMA_Init failed.\n");
+		Com_Printf("Unable to initialise sound output.\n");
 		sound_started = 0;
 		return;
 	}
