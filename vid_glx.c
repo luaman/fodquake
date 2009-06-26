@@ -337,8 +337,6 @@ void *Sys_Video_Open(unsigned int width, unsigned int height, unsigned int depth
 
 				if (XF86VidModeQueryVersion(d->x_disp, &version, &revision))
 				{
-					Com_Printf("Using XF86-VidModeExtension Ver. %d.%d\n", version, revision);
-
 					XF86VidModeGetModeLine(d->x_disp, d->scrnum, &d->origvidmode.dotclock, (XF86VidModeModeLine *)&d->origvidmode.hdisplay);
 
 					XF86VidModeGetAllModeLines(d->x_disp, d->scrnum, &num_vidmodes, &d->vidmodes);
@@ -377,7 +375,10 @@ void *Sys_Video_Open(unsigned int width, unsigned int height, unsigned int depth
 						fullscreen = 0;
 				}
 				else
+				{
+					Com_Printf("Unable to use the XF86 vidmode extension.\n");
 					fullscreen = 0;
+				}
 			}
 #else
 			fullscreen = 0;
