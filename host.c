@@ -144,6 +144,8 @@ void Host_Frame (double time) {
 	if (setjmp (host_abort))
 		return;			// something bad happened, or the server disconnected
 
+	rand();
+
 	curtime += time;
 
 	if (dedicated)
@@ -181,8 +183,11 @@ void CL_SaveArgv(int, char **);
 static cvar_t dummycvar = { "dummycvar", "0" };
 int cvarsregged;
 
-void Host_Init (int argc, char **argv, int default_memsize) {
+void Host_Init (int argc, char **argv, int default_memsize)
+{
 	FILE *f;
+
+	srand(time(0));
 
 	COM_InitArgv (argc, argv);
 
