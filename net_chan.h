@@ -55,7 +55,7 @@ typedef struct
 	double		outgoing_time[MAX_LATENT];
 
 	/* Anything below here is not cleared by Netchan_Setup */
-	void *huffcontext;
+	struct HuffContext *huffcontext;
 } netchan_t;
 
 void Netchan_CvarInit(void);
