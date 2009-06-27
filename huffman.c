@@ -78,18 +78,18 @@ static unsigned char huffdecbyte(struct huffdectable_s *huffdectable, unsigned c
 	return huffdectable[index].value;
 }
 
-void *Huff_Init(unsigned int tablecrc)
+struct HuffContext *Huff_Init(unsigned int tablecrc)
 {
 	/* The first value is from FTE with broken CRC generation */
 	if (tablecrc == 0x5ed5c4e4 || tablecrc == 0x286f2e8d)
-		return &hufftables_q3;
+		return (struct HuffContext *)&hufftables_q3;
 	else
 		return 0;
 }
 
-void Huff_CompressPacket(void *huffcontext, sizebuf_t *msg, int offset)
+void Huff_CompressPacket(struct HuffContext *huffcontext, sizebuf_t *msg, int offset)
 {
-	struct hufftables *ht = huffcontext;
+	struct hufftables *ht = (struct hufftables *)huffcontext;
 	unsigned char *decmsg;
 	unsigned char buffer[MAX_MSGLEN+1];
 	unsigned int inlen, outlen;
@@ -121,9 +121,9 @@ void Huff_CompressPacket(void *huffcontext, sizebuf_t *msg, int offset)
 	msg->cursize = offset+outlen+1;
 }
 
-void Huff_DecompressPacket(void *huffcontext, sizebuf_t *msg, int offset)
+void Huff_DecompressPacket(struct HuffContext *huffcontext, sizebuf_t *msg, int offset)
 {
-	struct hufftables *ht = huffcontext;
+	struct hufftables *ht = (struct hufftables *)huffcontext;
 	unsigned char *encmsg;
 	unsigned char buffer[MAX_MSGLEN+1];
 	unsigned int inlen, outlen;
