@@ -531,7 +531,7 @@ static void GetEvents(struct inputdata *id)
 		}
 	}
 
-	if (!id->dga_mouse_enabled && (newmousex != id->windowwidth/2 || newmousey != id->windowheight/2))
+	if (!id->dga_mouse_enabled && (newmousex != id->windowwidth/2 || newmousey != id->windowheight/2) && id->grabmouse)
 	{
 		newmousex-= id->windowwidth/2;
 		newmousey-= id->windowheight/2;
