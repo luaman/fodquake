@@ -37,12 +37,11 @@ typedef struct
 	int		numlines;		// number of non-blank text lines, used for backscroling
 } console_t;
 
-extern	console_t	con;
-extern	int			con_ormask;
+extern console_t con;
+extern int con_ormask;
 
-extern int con_totallines;
 extern qboolean con_initialized, con_suppress;
-extern	int	con_notifylines;		// scan lines to clear for notify lines
+extern int con_notifylines;		// scan lines to clear for notify lines
 
 void Con_CheckResize (void);
 void Con_CvarInit(void);
@@ -55,3 +54,4 @@ void Con_ClearNotify (void);
 void Con_ToggleConsole_f (void);
 
 #endif		//_CONSOLE_H_
+

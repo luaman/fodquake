@@ -34,22 +34,22 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 console_t	con;
 
-int			con_ormask;
-int 		con_linewidth;		// characters across screen
-int			con_totallines;		// total lines in console scrollback
-float		con_cursorspeed = 4;
+static int con_ormask;
+int con_linewidth;		// characters across screen
+static int con_totallines;		// total lines in console scrollback
+static float con_cursorspeed = 4;
 
-cvar_t		_con_notifylines = {"con_notifylines","4"};
-cvar_t		con_notifytime = {"con_notifytime","3"};		//seconds
-cvar_t		con_wordwrap = {"con_wordwrap","1"};
-cvar_t		con_clearnotify = {"con_clearnotify","1"};
+static cvar_t _con_notifylines = {"con_notifylines","4"};
+static cvar_t con_notifytime = {"con_notifytime","3"};         //seconds
+static cvar_t con_wordwrap = {"con_wordwrap","1"};
+static cvar_t con_clearnotify = {"con_clearnotify","1"};
 
 #define	NUM_CON_TIMES 16
-float		con_times[NUM_CON_TIMES];	// cls.realtime time the line was generated
-										// for transparent notify lines
+static float con_times[NUM_CON_TIMES];  // cls.realtime time the line was generated
+                                        // for transparent notify lines
 
-int			con_vislines;
-int			con_notifylines;			// scan lines to clear for notify lines
+static int con_vislines;
+int con_notifylines;			// scan lines to clear for notify lines
 
 #define		MAXCMDLINE	256
 extern	char	key_lines[32][MAXCMDLINE];
@@ -59,7 +59,7 @@ extern	int		key_linepos;
 qboolean	con_initialized = false;
 qboolean	con_suppress = false;
 
-FILE		*qconsole_log;
+static FILE		*qconsole_log;
 
 static void Key_ClearTyping(void)
 {
