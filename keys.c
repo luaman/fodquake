@@ -649,7 +649,7 @@ no_lf:
 	}
 	if ((key == 'V' || key == 'v') && keydown[K_CTRL])
 	{
-		char *clipText;
+		const char *clipText;
 	
 		if ((clipText = VID_GetClipboardText()))
 		{
@@ -777,7 +777,7 @@ void Key_Message (int key) {
 
 	if ((key == 'V' || key == 'v') && keydown[K_CTRL])
 	{
-		char *clipText;
+		const char *clipText;
 	
 		if ((clipText = VID_GetClipboardText()))
 		{
