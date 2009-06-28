@@ -590,3 +590,41 @@ void Con_DrawConsole(int lines)
 	Con_DrawInput();
 }
 
+void Con_LineUp()
+{
+	con.display -= 2;
+	if (con.display - con.current + con.numlines < 0)
+		con.display = con.current - con.numlines;
+}
+
+void Con_LineDown()
+{
+	con.display += 2;
+	if (con.display - con.current > 0)
+		con.display = con.current;
+}
+
+void Con_PageUp()
+{
+	con.display -= ((int)scr_conlines - 40) >> 3;
+	if (con.display - con.current + con.numlines < 0)
+		con.display = con.current - con.numlines;
+}
+
+void Con_PageDown()
+{
+	con.display += ((int)scr_conlines - 40) >> 3;
+	if (con.display - con.current > 0)
+		con.display = con.current;
+}
+
+void Con_Home()
+{
+	con.display = con.current - con.numlines;
+}
+
+void Con_End()
+{
+	con.display = con.current;
+}
+

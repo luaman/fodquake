@@ -620,33 +620,29 @@ no_lf:
 	    case K_PGUP:
 	    case K_MWHEELUP:
 			if (keydown[K_CTRL] && key == K_PGUP)
-				con.display -= ((int)scr_conlines - 40) >> 3;
+				Con_PageUp();
 			else
-				con.display -= 2;
-			if (con.display - con.current + con.numlines < 0)
-				con.display = con.current - con.numlines;
+				Con_LineUp();
 			return;
 
 	    case K_MWHEELDOWN:
 	    case K_PGDN:
 			if (keydown[K_CTRL] && key == K_PGDN)
-				con.display += ((int)scr_conlines - 40) >> 3;
+				Con_PageDown();
 			else
-				con.display += 2;
-			if (con.display - con.current > 0)
-				con.display = con.current;
+				Con_LineDown();
 			return;
 
 	    case K_HOME:
 			if (keydown[K_CTRL])
-				con.display = con.current - con.numlines;
+				Con_Home();
 			else
 				key_linepos = 1;
 			return;
 
 	    case K_END:
 			if (keydown[K_CTRL])
-				con.display = con.current;
+				Con_End();
 			else
 				key_linepos = strlen(key_lines[edit_line]);
 			return;

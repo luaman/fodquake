@@ -53,5 +53,12 @@ void Con_DrawNotify (void);
 void Con_ClearNotify (void);
 void Con_ToggleConsole_f (void);
 
+void Con_LineUp(void);
+void Con_LineDown(void);
+void Con_PageUp(void);
+void Con_PageDown(void);
+void Con_Home(void);
+void Con_End(void);
+
 #endif		//_CONSOLE_H_
 
