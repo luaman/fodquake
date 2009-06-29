@@ -18,23 +18,19 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */
 
-//
-// console
-//
-
 #ifndef	_CONSOLE_H_
 
 #define _CONSOLE_H_
 
-#define		CON_TEXTSIZE	32768
+#define CON_TEXTSIZE 32768
 typedef struct
 {
-	char	*text;
-	int		maxsize;
-	int		current;		// line where next message will be printed
-	int		x;				// offset in current line for next print
-	int		display;		// bottom of console displays this line
-	int		numlines;		// number of non-blank text lines, used for backscroling
+	char *text;
+	int maxsize;
+	int current;         // line where next message will be printed
+	int x;               // offset in current line for next print
+	int display;         // bottom of console displays this line
+	int numlines;        // number of non-blank text lines, used for backscroling
 } console_t;
 
 extern console_t con;
@@ -43,15 +39,15 @@ extern int con_ormask;
 extern qboolean con_initialized, con_suppress;
 extern int con_notifylines;		// scan lines to clear for notify lines
 
-void Con_CheckResize (void);
+void Con_Init(void);
+void Con_Shutdown(void);
 void Con_CvarInit(void);
-void Con_Init (void);
-void Con_Shutdown (void);
-void Con_DrawConsole (int lines);
-void Con_Print (char *txt);
-void Con_DrawNotify (void);
-void Con_ClearNotify (void);
-void Con_ToggleConsole_f (void);
+void Con_CheckResize(void);
+void Con_DrawConsole(int lines);
+void Con_Print(char *txt);
+void Con_DrawNotify(void);
+void Con_ClearNotify(void);
+void Con_ToggleConsole_f(void);
 
 void Con_LineUp(void);
 void Con_LineDown(void);
@@ -60,5 +56,5 @@ void Con_PageDown(void);
 void Con_Home(void);
 void Con_End(void);
 
-#endif		//_CONSOLE_H_
+#endif /* _CONSOLE_H_ */
 
