@@ -165,9 +165,10 @@ void Cvar_Set (cvar_t *var, char *value) {
 	if (!var)
 		return;
 
-	if (var->flags & CVAR_ROM) {
-		if (con_initialized)
-			Com_Printf ("\"%s\" is write protected\n", var->name);
+	if (var->flags & CVAR_ROM)
+	{
+		Com_Printf ("\"%s\" is write protected\n", var->name);
+
 		return;
 	}
 

@@ -56,7 +56,7 @@ extern	char	key_lines[32][MAXCMDLINE];
 extern	int		edit_line;
 extern	int		key_linepos;
 
-qboolean	con_initialized = false;
+static qboolean	con_initialized = false;
 qboolean	con_suppress = false;
 
 static FILE		*qconsole_log;
