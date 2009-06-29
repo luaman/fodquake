@@ -1341,9 +1341,9 @@ qboolean OnChangeSkinForcing(cvar_t *var, char *string) {
 		Cvar_Set(var, string);
 		oldskins = noskins.value;
 		noskins.value = 2;
-		con_suppress = true;
+		Con_Suppress();
 		Skin_Skins_f();		
-		con_suppress = false;
+		Con_Unsuppress();
 		noskins.value = oldskins;
 		return true;
 	}

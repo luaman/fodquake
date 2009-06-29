@@ -36,7 +36,6 @@ typedef struct
 extern console_t con;
 extern int con_ormask;
 
-extern qboolean con_suppress;
 extern int con_notifylines;		// scan lines to clear for notify lines
 
 void Con_Init(void);
@@ -48,6 +47,8 @@ void Con_Print(char *txt);
 void Con_DrawNotify(void);
 void Con_ClearNotify(void);
 void Con_ToggleConsole_f(void);
+void Con_Suppress(void);
+void Con_Unsuppress(void);
 
 void Con_LineUp(void);
 void Con_LineDown(void);

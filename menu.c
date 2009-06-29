@@ -1715,7 +1715,8 @@ void M_Menu_MP3_Control_Key(int key) {
 		return;
 	}
 
-	con_suppress = true;
+	Con_Suppress();
+
 	switch (key) {
 		case K_BACKSPACE:
 			m_topmenu = m_none;
@@ -1791,7 +1792,8 @@ void M_Menu_MP3_Control_Key(int key) {
 		case KP_HOME: MP3_Rewind_f(); break;
 		case KP_PGUP: MP3_FastForward_f(); break;
 	}
-	con_suppress = false;
+
+	Con_Unsuppress();
 }
 
 void M_Menu_MP3_Control_f (void){
@@ -1947,8 +1949,10 @@ menu_items:
 	M_DrawCharacter (17 + 286 * ((float) last_elapsed / last_total), M_MP3_CONTROL_BARHEIGHT, 131);
 }
 
-void M_Menu_MP3_Playlist_Key (int k) {
-	con_suppress = true;
+void M_Menu_MP3_Playlist_Key (int k)
+{
+	Con_Suppress();
+
 	switch (k) {
          case K_BACKSPACE:
 			m_topmenu = m_none;
@@ -2026,7 +2030,8 @@ void M_Menu_MP3_Playlist_Key (int k) {
 		case KP_HOME: case K_LEFTARROW:  MP3_Rewind_f(); break;
 		case KP_PGUP: case K_RIGHTARROW: MP3_FastForward_f(); break;
 	}
-	con_suppress = false;
+
+	Con_Unsuppress();
 }
 
 void M_Menu_MP3_Playlist_f (void){

@@ -698,9 +698,9 @@ void LoadConfig_f(void)	{
 	}
 	fclose(f);
 
-	con_suppress = true;
+	Con_Suppress();
 	ResetConfigs(false);
-	con_suppress = false;
+	Con_Unsuppress();
 
 	Com_Printf("Loading config %s ...\n", filename);
 

@@ -56,8 +56,8 @@ extern	char	key_lines[32][MAXCMDLINE];
 extern	int		edit_line;
 extern	int		key_linepos;
 
-static qboolean	con_initialized = false;
-qboolean	con_suppress = false;
+static qboolean con_initialized = false;
+static qboolean con_suppress = false;
 
 static FILE		*qconsole_log;
 
@@ -588,6 +588,16 @@ void Con_DrawConsole(int lines)
 
 	// draw the input prompt, user text, and cursor if desired
 	Con_DrawInput();
+}
+
+void Con_Suppress(void)
+{
+	con_suppress = true;
+}
+
+void Con_Unsuppress(void)
+{
+	con_suppress = false;
 }
 
 void Con_LineUp()
