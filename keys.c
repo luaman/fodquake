@@ -224,27 +224,6 @@ qboolean CheckForCommand (void) {
 //===================================================================
 //  Advanced command completion
 
-#define COLUMNWIDTH 20
-#define MINCOLUMNWIDTH 18	// the last column may be slightly smaller
-
-void PaddedPrint (char *s) {	
-	extern int con_linewidth;
-	int	nextcolx = 0;
-
-	if (con.x)
-		nextcolx = (int)((con.x + COLUMNWIDTH)/COLUMNWIDTH)*COLUMNWIDTH;
-
-	if (nextcolx > con_linewidth - MINCOLUMNWIDTH
-		|| (con.x && nextcolx + strlen(s) >= con_linewidth))
-		Com_Printf ("\n");
-
-	if (con.x)
-		Com_Printf (" ");
-	while (con.x % COLUMNWIDTH)
-		Com_Printf (" ");
-	Com_Printf ("%s", s);
-}
-
 static char	compl_common[64];
 static int	compl_clen;
 static int	compl_len;
@@ -314,35 +293,35 @@ void CompleteCommand (void) {
 			Com_Printf ("\x02" "Commands:\n");
 			for (cmd=cmd_functions ; cmd ; cmd=cmd->next) {
 				if (!Q_strncasecmp (s, cmd->name, compl_len)) {
-					PaddedPrint (cmd->name);
+					Con_PaddedPrint (cmd->name);
 					FindCommonSubString (cmd->name);
 				}
 			}
-			if (con.x)
-				Com_Printf ("\n");
+
+			Con_PaddedPrintTerminate();
 		}
 
 		if (v) {
 			Com_Printf ("\x02" "Variables:\n");
 			for (var=cvar_vars ; var ; var=var->next) {
 				if (!Q_strncasecmp (s, var->name, compl_len)) {
-					PaddedPrint (var->name);
+					Con_PaddedPrint (var->name);
 					FindCommonSubString (var->name);
 				}
 			}
-			if (con.x)
-				Com_Printf ("\n");
+
+			Con_PaddedPrintTerminate();
 		}
 
 		if (a) {
 			Com_Printf ("\x02" "Aliases:\n");
 			for (alias=cmd_alias ; alias ; alias=alias->next)
 				if (!Q_strncasecmp (s, alias->name, compl_len)) {
-					PaddedPrint (alias->name);
+					Con_PaddedPrint (alias->name);
 					FindCommonSubString (alias->name);
 				}
-			if (con.x)
-				Com_Printf ("\n");
+
+			Con_PaddedPrintTerminate();
 		}
 
 	}

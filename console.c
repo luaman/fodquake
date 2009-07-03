@@ -278,7 +278,7 @@ static void Con_Linefeed(void)
 }
 
 //Handles cursor positioning, line wrapping, etc
-void Con_Print(char *txt)
+void Con_Print(const char *txt)
 {
 	int y, c, l, mask;
 	static int cr;
@@ -372,6 +372,33 @@ void Con_Print(char *txt)
 	}
 }
 
+#define COLUMNWIDTH 20
+#define MINCOLUMNWIDTH 18	// the last column may be slightly smaller
+
+void Con_PaddedPrint(const char *txt)
+{
+	int nextcolx = 0;
+
+	if (con.x)
+		nextcolx = (int)((con.x + COLUMNWIDTH)/COLUMNWIDTH)*COLUMNWIDTH;
+
+	if (nextcolx > con_linewidth - MINCOLUMNWIDTH || (con.x && nextcolx + strlen(txt) >= con_linewidth))
+		Con_Print("\n");
+
+	if (con.x)
+		Con_Print(" ");
+
+	while (con.x % COLUMNWIDTH)
+		Con_Print(" ");
+
+	Con_Print(txt);
+}
+
+void Con_PaddedPrintTerminate()
+{
+	if (con.x)
+		Con_Print("\n");
+}
 
 /*
 ==============================================================================

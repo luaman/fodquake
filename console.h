@@ -43,12 +43,15 @@ void Con_Shutdown(void);
 void Con_CvarInit(void);
 void Con_CheckResize(void);
 void Con_DrawConsole(int lines);
-void Con_Print(char *txt);
 void Con_DrawNotify(void);
 void Con_ClearNotify(void);
 void Con_ToggleConsole_f(void);
 void Con_Suppress(void);
 void Con_Unsuppress(void);
+
+void Con_Print(const char *txt);
+void Con_PaddedPrint(const char *txt);
+void Con_PaddedPrintTerminate(void);
 
 void Con_LineUp(void);
 void Con_LineDown(void);

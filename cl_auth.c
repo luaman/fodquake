@@ -177,7 +177,6 @@ static void Auth_Verify_Clients_f(void) {
 	int i;
 	int authClients[MAX_CLIENTS], unauthClients[MAX_CLIENTS], otherClients[MAX_CLIENTS];
 	int authClientsCount, unauthClientsCount, otherClientsCount;
-	extern void PaddedPrint (char *s);
 
 	if (!Modules_SecurityLoaded()) {
 		Com_Printf("Security module not initialized\n");
@@ -201,28 +200,25 @@ static void Auth_Verify_Clients_f(void) {
 	if (authClientsCount || auth_validateclients.value == 2) {
 		Com_Printf ("\x02" "Authenticated FuhQuake Clients:\n");
 		for (i = 0; i < authClientsCount; i++)
-			PaddedPrint (cl.players[authClients[i]].name);
+			Con_PaddedPrint(cl.players[authClients[i]].name);
 	}
-	if (con.x)
-		Com_Printf ("\n");
+	Con_PaddedPrintTerminate();
 
 	if (auth_validateclients.value != 2) {
 
 		if (unauthClientsCount) {
 			Com_Printf ("\x02" "Unauthenticated FuhQuake Clients:\n");
 			for (i = 0; i < unauthClientsCount; i++)
-				PaddedPrint (cl.players[unauthClients[i]].name);
+				Con_PaddedPrint(cl.players[unauthClients[i]].name);
 		}
-		if (con.x)
-			Com_Printf ("\n");
+		Con_PaddedPrintTerminate();
 
 		if (otherClientsCount) {
 			Com_Printf ("\x02" "Non FuhQuake Clients:\n");
 			for (i = 0; i < otherClientsCount; i++)
-				PaddedPrint (cl.players[otherClients[i]].name);
+				Con_PaddedPrint (cl.players[otherClients[i]].name);
 		}
-		if (con.x)
-			Com_Printf ("\n");
+		Con_PaddedPrintTerminate();
 	}
 	if ((auth_validateclients.value != 2 && authClientsCount + unauthClientsCount + otherClientsCount > 0) || auth_validateclients.value == 2)
 		Com_Printf("\n");

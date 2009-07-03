@@ -44,8 +44,6 @@ typedef struct flood_s {
 static flood_t floodlist[FLOODLIST_SIZE];
 static int		floodindex;
 
-extern void PaddedPrint (char *s);
-
 static qboolean IsIgnored(int slot) {
 	return cl.players[slot].ignored;
 }
@@ -56,15 +54,13 @@ static void Display_Ignorelist(void) {
 	Com_Printf ("\x02" "User Ignore List:\n");
 	for (i = 0; i < MAX_CLIENTS; i++)
 		if (cl.players[i].name[0] && cl.players[i].ignored)
-			PaddedPrint(cl.players[i].name);
-	if (con.x)
-		Com_Printf ("\n");
+			Con_PaddedPrint(cl.players[i].name);
+	Con_PaddedPrintTerminate();
 	
 	Com_Printf ("\x02" "Team Ignore List:\n");
 	for (i = 0; i < MAX_TEAMIGNORELIST && ignoreteamlist[i][0]; i++)
-		PaddedPrint(ignoreteamlist[i]);
-	if (con.x)
-		Com_Printf ("\n");
+		Con_PaddedPrint(ignoreteamlist[i]);
+	Con_PaddedPrintTerminate();
 
 	if (ignore_opponents.value)
 		Com_Printf("\x02" "Opponents are Ignored\n");
