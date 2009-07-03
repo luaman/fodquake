@@ -55,7 +55,8 @@ cvar_t match_name_nick = {"match_name_nick", ""};
 cvar_t match_name_spec = {"match_name_spec", "(SPEC)"};		
 
 
-static char *MT_CleanString(char *string, qboolean allow_spaces_and_slashes) {
+static char *MT_CleanString(char *string, qboolean allow_spaces_and_slashes)
+{
 	byte *in, *out, c, d, *disallowed;
 	static byte buf[MAX_STATIC_STRING], badchars[] = {' ', '\\', '/', '?', '*', ':', '<', '>', '"', '|'};
 	extern char readableChars[];
@@ -68,10 +69,12 @@ static char *MT_CleanString(char *string, qboolean allow_spaces_and_slashes) {
 	in = string;
 	out = buf;
 
-	while ((c = *in++) && out - buf < sizeof(buf) - 1) {
+	while ((c = *in++) && out - buf < sizeof(buf) - 1)
+	{
 		d = CLEANCHAR(c);
 		*out++ = d;
-		if (d == '_') {
+		if (d == '_')
+		{
 			for ( ; *in && CLEANCHAR(*in) == '_'; in++)
 				;
 		}
@@ -84,67 +87,83 @@ static char *MT_CleanString(char *string, qboolean allow_spaces_and_slashes) {
 	return buf;
 }
 
-static char *MT_PlayerName(void) {
+static char *MT_PlayerName(void)
+{
 	return TP_PlayerName();
 }
 
-static char *MT_PlayerTeam(void) {
+static char *MT_PlayerTeam(void)
+{
 	return TP_PlayerTeam();
 }
 
-static char *MT_EnemyName(void) {
+static char *MT_EnemyName(void)
+{
 	int i;
 	char *myname, *name;
-	static char	enemyname[MAX_INFO_STRING];
+	static char enemyname[MAX_INFO_STRING];
 
 	enemyname[0] = 0;
 	myname = MT_PlayerName ();
 
-	for (i = 0; i < MAX_CLIENTS; i++) {
-		if (cl.players[i].name[0] && !cl.players[i].spectator) {
+	for (i = 0; i < MAX_CLIENTS; i++)
+	{
+		if (cl.players[i].name[0] && !cl.players[i].spectator)
+		{
 			name = Info_ValueForKey(cl.players[i].userinfo, "name");
-			if (strcmp(name, myname)) {
+			if (strcmp(name, myname))
+			{
 				strcpy(enemyname, name);
 				return enemyname;
 			}
 		}
 	}
+
 	return enemyname;
 }
 
-static char *MT_EnemyTeam(void) {
+static char *MT_EnemyTeam(void)
+{
 	int i;
 	char *myteam, *team;
-	static char	enemyteam[MAX_INFO_STRING];
+	static char enemyteam[MAX_INFO_STRING];
 
 	enemyteam[0] = 0;
 	myteam = MT_PlayerTeam();
 
-	for (i = 0; i < MAX_CLIENTS; i++) {
-		if (cl.players[i].name[0] && !cl.players[i].spectator) {
+	for (i = 0; i < MAX_CLIENTS; i++)
+	{
+		if (cl.players[i].name[0] && !cl.players[i].spectator)
+		{
 			team = cl.players[i].team;
-			if (team[0] && strcmp(team, myteam)) {
+			if (team[0] && strcmp(team, myteam))
+			{
 				strcpy(enemyteam, team);
 				return enemyteam;
 			}
 		}
 	}
+
 	return enemyteam;
 }
 
-static int MT_CountPlayers(void) {
+static int MT_CountPlayers(void)
+{
 	return TP_CountPlayers();
 }
 
-static int MT_CountTeamMembers(char *team) {
+static int MT_CountTeamMembers(char *team)
+{
 	int i, count = 0;
 
-	for (i = 0; i < MAX_CLIENTS; i++) {
+	for (i = 0; i < MAX_CLIENTS; i++)
+	{
 		if (!cl.players[i].name[0] || cl.players[i].spectator)
 			continue;
 		if (!strcmp(cl.players[i].team, team))
 			count++;
 	}
+
 	return count;
 }
 
@@ -167,34 +186,44 @@ static char *MT_NameAndClean_TeamMembers(char *team)
 			strlcat(namebuf, MT_CleanString(cl.players[i].name, false), sizeof(namebuf));
 		}
 	}
+
 	return namebuf;
 }
 
-static char *MT_MapName(void) {
+static char *MT_MapName(void)
+{
 	static char buf[MAX_OSPATH];
 
 	Q_strncpyz(buf, TP_MapName(), sizeof(buf));
 	return buf;
 }
 
-static void MT_GetPlayerNames(char *name1, char *name2) {
+static void MT_GetPlayerNames(char *name1, char *name2)
+{
 	int i;
 	char *s1 = NULL, *s2 = NULL;
 
 	name1[0] = name2[0] = 0;
 
-	for (i = 0; i < MAX_CLIENTS; i++) {
+	for (i = 0; i < MAX_CLIENTS; i++)
+	{
 		if (!cl.players[i].name[0] || cl.players[i].spectator)
 			continue;
-		if (!s1) {
+
+		if (!s1)
+		{
 			s1 = cl.players[i].name;
-		} else {
+		}
+		else
+		{
 			s2 = cl.players[i].name;
 			break;
 		}
 	}
+
 	if (s1)
 		strcpy(name1, s1);
+
 	if (s2)
 		strcpy(name2, s2);
 }
