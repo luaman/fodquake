@@ -157,21 +157,24 @@ int			scr_erase_lines;
 int			scr_erase_center;
 
 //Called for important messages that should stay in the center of the screen for a few moments
-void SCR_CenterPrint (char *str) {
+void SCR_CenterPrint(char *str)
+{
 	Q_strncpyz (scr_centerstring, str, sizeof(scr_centerstring));
 	scr_centertime_off = scr_centertime.value;
 	scr_centertime_start = cl.time;
 
 	// count the number of lines for centering
 	scr_center_lines = 1;
-	while (*str) {
+	while (*str)
+	{
 		if (*str == '\n')
 			scr_center_lines++;
 		str++;
 	}
 }
 
-void SCR_DrawCenterString (void) {
+void SCR_DrawCenterString(void)
+{
 	char *start;
 	int l, j, x, y, remaining;
 
@@ -183,14 +186,19 @@ void SCR_DrawCenterString (void) {
 
 	y = (scr_center_lines <= 4) ? vid.height * 0.35 : 48;
 
-	while (1) {
+	while (1)
+	{
 		// scan the width of the line
-		for (l = 0; l < 40; l++) {
+		for (l = 0; l < 40; l++)
+		{
 			if (start[l] == '\n' || !start[l])
 				break;
 		}
+
 		x = (vid.width - l * 8) / 2;
-		for (j = 0; j < l; j++, x += 8) {
+
+		for (j = 0; j < l; j++, x += 8)
+		{
 			Draw_Character (x, y, start[j]);        
 			if (!remaining--)
 				return;
@@ -203,11 +211,13 @@ void SCR_DrawCenterString (void) {
 
 		if (!*start)
 			break;
+
 		start++;                // skip the \n
 	}
 }
 
-void SCR_CheckDrawCenterString (void) {
+void SCR_CheckDrawCenterString(void)
+{
 	scr_copytop = 1;
 	if (scr_center_lines > scr_erase_lines)
 		scr_erase_lines = scr_center_lines;
@@ -222,10 +232,12 @@ void SCR_CheckDrawCenterString (void) {
 	SCR_DrawCenterString ();
 }
 
-void SCR_EraseCenterString (void) {
+void SCR_EraseCenterString(void)
+{
 	int y;
 
-	if (scr_erase_center++ > vid.numpages) {
+	if (scr_erase_center++ > vid.numpages)
+	{
 		scr_erase_lines = 0;
 		return;
 	}
@@ -238,7 +250,8 @@ void SCR_EraseCenterString (void) {
 
 /************************************ FOV ************************************/
 
-static float CalcFov (float fov_x, float width, float height) {
+static float CalcFov (float fov_x, float width, float height)
+{
 	float x;
 
 	if (fov_x < 1 || fov_x > 179)
@@ -249,8 +262,9 @@ static float CalcFov (float fov_x, float width, float height) {
 }
 
 //Must be called whenever vid changes
-static void SCR_CalcRefdef (void) {
-	float  size;
+static void SCR_CalcRefdef (void)
+{
+	float size;
 #ifdef GLQUAKE
 	int h;
 	qboolean full = false;
@@ -288,13 +302,18 @@ static void SCR_CalcRefdef (void) {
 
 #ifdef GLQUAKE
 
-	if (scr_viewsize.value >= 100.0) {
+	if (scr_viewsize.value >= 100.0)
+	{
 		full = true;
 		size = 100.0;
-	} else {
+	}
+	else
+	{
 		size = scr_viewsize.value;
 	}
-	if (cl.intermission) {
+
+	if (cl.intermission)
+	{
 		full = true;
 		size = 100.0;
 		sb_lines = 0;
@@ -307,16 +326,20 @@ static void SCR_CalcRefdef (void) {
 		h = vid.height - sb_lines;
 
 	r_refdef.vrect.width = vid.width * size;
-	if (r_refdef.vrect.width < 96) {
+	if (r_refdef.vrect.width < 96)
+	{
 		size = 96.0 / r_refdef.vrect.width;
 		r_refdef.vrect.width = 96;      // min for icons
 	}
 
 	r_refdef.vrect.height = vid.height * size;
-	if (cl_sbar.value || !full) {
+	if (cl_sbar.value || !full)
+	{
   		if (r_refdef.vrect.height > vid.height - sb_lines)
   			r_refdef.vrect.height = vid.height - sb_lines;
-	} else if (r_refdef.vrect.height > vid.height) {
+	}
+	else if (r_refdef.vrect.height > vid.height)
+	{
 			r_refdef.vrect.height = vid.height;
 	}
 	r_refdef.vrect.x = (vid.width - r_refdef.vrect.width) / 2;
@@ -353,20 +376,23 @@ static void SCR_CalcRefdef (void) {
 }
 
 //Keybinding command
-void SCR_SizeUp_f (void) {
+void SCR_SizeUp_f(void)
+{
 	Cvar_SetValue (&scr_viewsize, scr_viewsize.value + 10);
 	vid.recalc_refdef = 1;
 }
 
 //Keybinding command
-void SCR_SizeDown_f (void) {
+void SCR_SizeDown_f(void)
+{
 	Cvar_SetValue (&scr_viewsize,scr_viewsize.value - 10);
 	vid.recalc_refdef = 1;
 }
 
 /********************************** ELEMENTS **********************************/
 
-void SCR_DrawRam (void) {
+void SCR_DrawRam(void)
+{
 	if (!scr_showram.value)
 		return;
 
@@ -376,13 +402,15 @@ void SCR_DrawRam (void) {
 	Draw_Pic (scr_vrect.x + 32, scr_vrect.y, scr_ram);
 }
 
-void SCR_DrawTurtle (void) {
-	static int  count;
+void SCR_DrawTurtle(void)
+{
+	static int count;
 	
 	if (!scr_showturtle.value)
 		return;
 
-	if (cls.frametime < 0.1) {
+	if (cls.frametime < 0.1)
+	{
 		count = 0;
 		return;
 	}
@@ -394,9 +422,11 @@ void SCR_DrawTurtle (void) {
 	Draw_Pic (scr_vrect.x, scr_vrect.y, scr_turtle);
 }
 
-void SCR_DrawNet (void) {
+void SCR_DrawNet (void)
+{
 	if (cls.netchan.outgoing_sequence - cls.netchan.incoming_acknowledged < UPDATE_BACKUP-1)
 		return;
+
 	if (cls.demoplayback)
 		return;
 
@@ -406,7 +436,8 @@ void SCR_DrawNet (void) {
 #define	ELEMENT_X_COORD(var)	((var##_x.value < 0) ? vid.width - strlen(str) * 8 + 8 * var##_x.value: 8 * var##_x.value)
 #define	ELEMENT_Y_COORD(var)	((var##_y.value < 0) ? vid.height - sb_lines + 8 * var##_y.value : 8 * var##_y.value)
 
-void SCR_DrawFPS (void) {
+void SCR_DrawFPS (void)
+{
 	double t;
 	int x, y;
 	char str[80];
@@ -419,7 +450,8 @@ void SCR_DrawFPS (void) {
 		return;
 
 	t = Sys_DoubleTime();
-	if ((t - lastframetime) >= 1.0) {
+	if ((t - lastframetime) >= 1.0)
+	{
 		lastfps = (fps_count - last_fps_count) / (t - lastframetime);
 		last_fps_count = fps_count;
 		lastframetime = t;
@@ -462,7 +494,8 @@ void SCR_DrawFrameStdDev (void)
 	Draw_String (x, y, str);
 }
 
-void SCR_DrawSpeed (void) {
+void SCR_DrawSpeed (void)
+{
 	double t;
 	int x, y, mynum;
 	char str[80];
@@ -480,13 +513,13 @@ void SCR_DrawSpeed (void) {
 	if (!cl.spectator || (mynum = Cam_TrackNum()) == -1)
 		mynum = cl.playernum;
 
-	if (mynum != lastmynum) {
+	if (mynum != lastmynum)
+	{
 		lastmynum = mynum;
 		lastframetime = t;
 		display_speed = -1;
 		maxspeed = 0;
 	}
-
 
 	if (!cl.spectator || cls.demoplayback || mynum == cl.playernum)
 		VectorCopy (cl.simvel, vel);
@@ -498,21 +531,24 @@ void SCR_DrawSpeed (void) {
 
 	maxspeed = max(maxspeed, speed);
 
-	if (display_speed >= 0) {
+	if (display_speed >= 0)
+	{
 		Q_snprintfz(str, sizeof(str), "%3d%s", (int) display_speed, show_speed.value == 2 ? " SPD" : "");
 		x = ELEMENT_X_COORD(show_speed);
 		y = ELEMENT_Y_COORD(show_speed);
 		Draw_String (x, y, str);
 	}
 
-	if (t - lastframetime >= 0.1) {
+	if (t - lastframetime >= 0.1)
+	{
 		lastframetime = t;
 		display_speed = maxspeed;
 		maxspeed = 0;
 	}
 }
 
-void SCR_DrawClock (void) {
+void SCR_DrawClock (void)
+{
 	int x, y;
 	time_t t;
 	struct tm *ptm;
@@ -521,14 +557,20 @@ void SCR_DrawClock (void) {
 	if (!scr_clock.value)
 		return;
 
-	if (scr_clock.value == 2) {
+	if (scr_clock.value == 2)
+	{
 		time (&t);
-		if ((ptm = localtime (&t))) {
+		if ((ptm = localtime (&t)))
+		{
 			strftime (str, sizeof(str) - 1, "%H:%M:%S", ptm);
-		} else {
+		}
+		else
+		{
 			strcpy (str, "#bad date#");
 		}
-	} else {
+	}
+	else
+	{
 		float time = (cl.servertime_works) ? cl.servertime : cls.realtime;
 		Q_strncpyz (str, SecondsToHourString((int) time), sizeof(str));
 	}
@@ -538,7 +580,8 @@ void SCR_DrawClock (void) {
 	Draw_String (x, y, str);
 }
 
-void SCR_DrawGameClock (void) {
+void SCR_DrawGameClock (void)
+{
 	int x, y;
 	char str[80], *s;
 	float timelimit;
@@ -566,7 +609,8 @@ void SCR_DrawGameClock (void) {
 	Draw_String (x, y, s);
 }
 
-void SCR_DrawDemoClock (void) {
+void SCR_DrawDemoClock (void)
+{
 	int x, y;
 	char str[80];
 
@@ -583,7 +627,8 @@ void SCR_DrawDemoClock (void) {
 	Draw_String (x, y, str);
 }
 
-void SCR_DrawPause (void) {
+void SCR_DrawPause (void)
+{
 	mpic_t *pic;
 
 	if (!scr_showpause.value)               // turn off for screenshots
@@ -596,7 +641,8 @@ void SCR_DrawPause (void) {
 	Draw_Pic ((vid.width - pic->width) / 2, (vid.height - 48 - pic->height) / 2, pic);
 }
 
-void SCR_DrawLoading (void) {
+void SCR_DrawLoading (void)
+{
 	mpic_t *pic;
 
 	if (!scr_drawloading)
@@ -608,7 +654,8 @@ void SCR_DrawLoading (void) {
 
 
 
-void SCR_BeginLoadingPlaque (void) {
+void SCR_BeginLoadingPlaque (void)
+{
 	if (cls.state != ca_active)
 		return;
 
@@ -627,33 +674,44 @@ void SCR_BeginLoadingPlaque (void) {
 	scr_fullupdate = 0;
 }
 
-void SCR_EndLoadingPlaque (void) {
+void SCR_EndLoadingPlaque(void)
+{
 	if (!scr_disabled_for_loading)
 		return;
+
 	scr_disabled_for_loading = false;
 	scr_fullupdate = 0;
 }
 
 /********************************** CONSOLE **********************************/
 
-void SCR_SetUpToDrawConsole (void) {
+void SCR_SetUpToDrawConsole(void)
+{
 	Con_CheckResize ();
 
 	// decide on the height of the console
-	if (SCR_NEED_CONSOLE_BACKGROUND) {
+	if (SCR_NEED_CONSOLE_BACKGROUND)
+	{
 		scr_conlines = vid.height;		// full screen
 		scr_con_current = scr_conlines;
-	} else if (key_dest == key_console) {
+	}
+	else if (key_dest == key_console)
+	{
 		scr_conlines = vid.height * scr_consize.value;
 		scr_conlines = bound(30, scr_conlines, vid.height);
-	} else {
+	}
+	else
+	{
 		scr_conlines = 0;				// none visible
 	}
 
-	if (scr_conlines < scr_con_current)	{
+	if (scr_conlines < scr_con_current)
+	{
 		scr_con_current -= scr_conspeed.value * cls.trueframetime * vid.height / 320;
 		scr_con_current = max(scr_con_current, scr_conlines);
-	} else if (scr_conlines > scr_con_current) {
+	}
+	else if (scr_conlines > scr_con_current)
+	{
 		scr_con_current += scr_conspeed.value * cls.trueframetime * vid.height / 320;
 		scr_con_current = min(scr_con_current, scr_conlines);
 	}
@@ -681,7 +739,9 @@ void SCR_SetUpToDrawConsole (void) {
 #ifndef GLQUAKE
 	{
 		extern cvar_t scr_conalpha;
-		if (!scr_conalpha.value && scr_con_current) {
+
+		if (!scr_conalpha.value && scr_con_current)
+		{
 
 			Draw_TileClear(0, 0, vid.width, scr_con_current);
 		}
@@ -689,12 +749,16 @@ void SCR_SetUpToDrawConsole (void) {
 #endif
 }
 
-void SCR_DrawConsole (void) {
-	if (scr_con_current) {
+void SCR_DrawConsole(void)
+{
+	if (scr_con_current)
+	{
 		scr_copyeverything = 1;
 		Con_DrawConsole (scr_con_current);
 		clearconsole = 0;
-	} else {
+	}
+	else
+	{
 		if (key_dest == key_game || key_dest == key_message)
 			Con_DrawNotify ();      // only draw notify in game
 	}
