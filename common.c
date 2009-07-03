@@ -1028,7 +1028,7 @@ void Com_EndRedirect (void)
 }
 
 //All console printing must go through this in order to be logged to disk
-void Com_Printf (char *fmt, ...)
+void Com_Printf(const char *fmt, ...)
 {
 	va_list argptr;
 	char msg[MAXPRINTMSG];
@@ -1052,7 +1052,7 @@ void Com_Printf (char *fmt, ...)
 }
 
 //A Com_Printf that only shows up if the "developer" cvar is set
-void Com_DPrintf (char *fmt, ...)
+void Com_DPrintf(const char *fmt, ...)
 {
 	va_list argptr;
 	char msg[MAXPRINTMSG];
