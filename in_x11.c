@@ -442,6 +442,8 @@ static void GetEvents(struct inputdata *id)
 	newmousex = id->windowwidth/2;
 	newmousey = id->windowheight/2;
 
+	XSync(id->x_disp, 0);
+
 	while(XPending(id->x_disp))
 	{
 		XNextEvent(id->x_disp, &event);
