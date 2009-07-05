@@ -192,6 +192,7 @@ OBJS= \
 	pr_exec.o \
 	pr_cmds.o \
 	r_part.o \
+	readablechars.o \
 	rulesets.o \
 	skin.o \
 	sleep.o \

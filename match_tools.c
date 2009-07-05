@@ -26,6 +26,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "teamplay.h"
 #include "utils.h"
 #include "logging.h"
+#include "readablechars.h"
 
 #include "strl.h"
 
@@ -59,12 +60,11 @@ static char *MT_CleanString(char *string, qboolean allow_spaces_and_slashes)
 {
 	byte *in, *out, c, d, *disallowed;
 	static byte buf[MAX_STATIC_STRING], badchars[] = {' ', '\\', '/', '?', '*', ':', '<', '>', '"', '|'};
-	extern char readableChars[];
 
 	disallowed = allow_spaces_and_slashes ? badchars + 3 : badchars;
 
 	#define CLEANCHAR(c) \
-		((readableChars[(byte) c] < ' ' || strchr(disallowed, readableChars[(byte) c])) ? '_' : readableChars[(byte) c])
+		((readablechars[(byte) c] < ' ' || strchr(disallowed, readablechars[(byte) c])) ? '_' : readablechars[(byte) c])
 
 	in = string;
 	out = buf;

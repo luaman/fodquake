@@ -27,6 +27,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "ignore.h"
 #include "logging.h"
+#include "readablechars.h"
 
 #define		MINIMUM_CONBUFSIZE	(1 << 15)
 #define		DEFAULT_CONBUFSIZE	(1 << 16)
@@ -177,31 +178,6 @@ void Con_CheckResize (void)
 }
 
 
-char readableChars[256] =
-{
-	'.', '_' , '_' , '_' , '_' , '.' , '_' , '_' , '_' , '_' , 10 , '_' , 10 , '>' , '.' , '.',
-	'[', ']', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '.', '_', '_', '_'
-};
-
-
-static void Con_CreateReadableChars(void)
-{
-	int i;
-
-	for (i = 32; i < 127; i++)
-		readableChars[i] = readableChars[128 + i] = i;
-
-	readableChars[127] = readableChars[128 + 127] = '_';
-
-	for (i = 0; i < 32; i++)
-		readableChars[128 + i] = readableChars[i];
-
-	readableChars[128] = '_';
-	readableChars[10 + 128] = '_';
-	readableChars[12 + 128] = '_';
-}
-
-
 static void Con_InitConsoleBuffer(console_t *conbuffer, int size)
 {
 	con.maxsize = size;
@@ -247,8 +223,6 @@ void Con_Init(void)
 
 	con_linewidth = -1;
 	Con_CheckResize ();
-
-	Con_CreateReadableChars();	
 
 	con_initialized = true;
 	Com_Printf ("Console initialized\n");
@@ -298,7 +272,7 @@ void Con_Print(const char *txt)
 			tempbuf = Z_Malloc(strlen(txt) + 1);
 			strcpy(tempbuf, txt);
 			for (s = tempbuf; *s; s++)
-				*s = readableChars[(unsigned char) *s];
+				*s = readablechars[(unsigned char) *s];
 			Log_Write(tempbuf);
 			Z_Free(tempbuf);
 		}

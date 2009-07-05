@@ -39,6 +39,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "menu.h"
 #include "keys.h"
 #include "teamplay.h"
+#include "readablechars.h"
 #include <setjmp.h>
 
 #ifndef CLIENTONLY
@@ -195,6 +196,7 @@ void Host_Init (int argc, char **argv, int default_memsize)
 
 	Host_InitMemory (default_memsize);
 
+	ReadableChars_Init();
 	Cbuf_Init ();
 	Cmd_Init ();
 	Cvar_Init ();

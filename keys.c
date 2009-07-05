@@ -25,6 +25,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "quakedef.h"
 #include "keys.h"
 #include "menu.h"
+#include "readablechars.h"
 #ifdef _WINDOWS
 #include <windows.h>
 #endif
@@ -360,7 +361,6 @@ void CompleteCommand (void) {
 
 
 
-extern char readableChars[];
 char disallowed[] = {'\n', '\f', '\\', '/', '\"', ' ' , ';'};
 
 void RemoveColors(char *name) {
@@ -370,7 +370,7 @@ void RemoveColors(char *name) {
 		return;
 
 	while (*s) {
-		*s = readableChars[(unsigned char) *s] & 127;
+		*s = readablechars[(unsigned char) *s] & 127;
 		if (strchr(disallowed, *s))
 			*s = '_';
 		s++;
