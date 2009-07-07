@@ -149,8 +149,6 @@ static void set_up_conwidth_conheight()
 	vid.conheight = vid.height;
 #endif
 
-	printf("width: %d height: %d conwidth: %d conheight: %d\n", vid.width, vid.height, vid.conwidth, vid.conheight);
-
 	vid.recalc_refdef = 1;
 }
 
