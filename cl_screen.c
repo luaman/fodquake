@@ -353,6 +353,7 @@ static void SCR_CalcRefdef (void)
 
 	scr_vrect = r_refdef.vrect;
 
+	Draw_SizeChanged();
 #else
 
 	r_refdef.fov_x = scr_fov.value;

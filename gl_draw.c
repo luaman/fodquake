@@ -442,6 +442,12 @@ void Draw_InitConback (void) {
 	Hunk_FreeToLowMark (start);
 }
 
+void Draw_SizeChanged()
+{
+	conback.width = vid.conwidth;
+	conback.height = vid.conheight;
+}
+
 static int Draw_LoadCharset(char *name)
 {
 	int texnum;

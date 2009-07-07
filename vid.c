@@ -41,7 +41,29 @@ static void *display;
 
 static char *windowtitle;
 
-qboolean in_grab_windowed_mouse_callback(cvar_t *var, char *value)
+#ifdef GLQUAKE
+static void set_up_conwidth_conheight(void);
+
+static qboolean vid_conwidth_callback(cvar_t *var, char *value)
+{
+	var->value = Q_atof(value);
+
+	set_up_conwidth_conheight();
+
+	return false;
+}
+
+static qboolean vid_conheight_callback(cvar_t *var, char *value)
+{
+	var->value = Q_atof(value);
+
+	set_up_conwidth_conheight();
+
+	return false;
+}
+#endif
+
+static qboolean in_grab_windowed_mouse_callback(cvar_t *var, char *value)
 {
 	printf("in_grab_windowed_mouse changed to %s\n", value);
 
@@ -53,9 +75,9 @@ qboolean in_grab_windowed_mouse_callback(cvar_t *var, char *value)
 
 #warning Fixme
 #ifdef GLQUAKE
-cvar_t vid_ref = { "vid_ref", "gl", CVAR_ROM };
+static cvar_t vid_ref = { "vid_ref", "gl", CVAR_ROM };
 #else
-cvar_t vid_ref = { "vid_ref", "soft", CVAR_ROM };
+static cvar_t vid_ref = { "vid_ref", "soft", CVAR_ROM };
 #endif
 
 cvar_t vid_fullscreen = { "vid_fullscreen", "1", CVAR_ARCHIVE };
@@ -64,6 +86,8 @@ cvar_t vid_height = { "vid_height", "480", CVAR_ARCHIVE };
 
 #ifdef GLQUAKE
 cvar_t vid_depth = { "vid_depth", "24", CVAR_ARCHIVE };
+cvar_t vid_conwidth = { "vid_conwidth", "0", CVAR_ARCHIVE, vid_conwidth_callback };
+cvar_t vid_conheight = { "vid_conheight", "0", CVAR_ARCHIVE, vid_conheight_callback };
 #endif
 
 cvar_t in_grab_windowed_mouse = { "in_grab_windowed_mouse", "1", CVAR_ARCHIVE, in_grab_windowed_mouse_callback };
@@ -73,6 +97,62 @@ static unsigned char pal[768];
 #ifndef GLQUAKE
 static void *vid_surfcache;
 #endif
+
+static void set_up_conwidth_conheight()
+{
+	vid.width = Sys_Video_GetWidth(display);
+	vid.height = Sys_Video_GetHeight(display);
+
+#ifdef GLQUAKE
+	if (vid.width <= 640)
+	{
+		vid.conwidth = vid.width;
+		vid.conheight = vid.height;
+	}
+	else
+	{
+		vid.conwidth = vid.width/2;
+		vid.conheight = vid.height/2;
+	}
+
+	if (vid_conwidth.value)
+	{
+		vid.conwidth = vid_conwidth.value;
+
+		vid.conwidth &= 0xfff8; // make it a multiple of eight
+
+		if (vid.conwidth < 320)
+			vid.conwidth = 320;
+
+		// pick a conheight that matches with correct aspect
+		vid.conheight = vid.conwidth * 3 / 4;
+	}
+
+	if (vid_conheight.value)
+	{
+		vid.conheight = vid_conheight.value;
+
+		if (vid.conheight < 200)
+			vid.conheight = 200;
+	}
+
+	if (vid.conwidth > vid.width)
+		vid.conwidth = vid.width;
+	
+	if (vid.conheight > vid.height)
+		vid.conheight = vid.height;
+
+	vid.width = vid.conwidth;
+	vid.height = vid.conheight;
+#else
+	vid.conwidth = vid.width;
+	vid.conheight = vid.height;
+#endif
+
+	printf("width: %d height: %d conwidth: %d conheight: %d\n", vid.width, vid.height, vid.conwidth, vid.conheight);
+
+	vid.recalc_refdef = 1;
+}
 
 void VID_Init(unsigned char *palette)
 {
@@ -124,6 +204,8 @@ void VID_CvarInit()
 	Cvar_Register(&vid_height);
 #ifdef GLQUAKE
 	Cvar_Register(&vid_depth);
+	Cvar_Register(&vid_conwidth);
+	Cvar_Register(&vid_conheight);
 #endif
 
 	Cvar_SetCurrentGroup(CVAR_GROUP_INPUT_MOUSE);
@@ -215,61 +297,17 @@ void VID_Open()
 	display = Sys_Video_Open(width, height, depth, fullscreen, host_basepal);
 	if (display)
 	{
-		width = vid.width = Sys_Video_GetWidth(display);
-		height = vid.height = Sys_Video_GetHeight(display);
 #ifndef GLQUAKE
 		if (VID_SW_AllocBuffers(width, height))
 #endif
 		{
 			vid.numpages = Sys_Video_GetNumBuffers(display);
 
-#ifdef GLQUAKE
-#warning fixme
-			if (vid.width <= 640)
-			{
-				vid.conwidth = vid.width;
-				vid.conheight = vid.height;
-			}
-			else
-			{
-				vid.conwidth = vid.width/2;
-				vid.conheight = vid.height/2;
-			}
+			set_up_conwidth_conheight();
 
-			if ((i = COM_CheckParm("-conwidth")) && i + 1 < com_argc)
-			{
-				vid.conwidth = Q_atoi(com_argv[i + 1]);
-
-				vid.conwidth &= 0xfff8; // make it a multiple of eight
-
-				if (vid.conwidth < 320)
-					vid.conwidth = 320;
-
-				// pick a conheight that matches with correct aspect
-				vid.conheight = vid.conwidth * 3 / 4;
-			}
-
-			if ((i = COM_CheckParm("-conheight")) && i + 1 < com_argc)
-			{
-				vid.conheight = Q_atoi(com_argv[i + 1]);
-
-				if (vid.conheight < 200)
-					vid.conheight = 200;
-			}
-
-			if (vid.conwidth > vid.width)
-				vid.conwidth = vid.width;
-	
-			if (vid.conheight > vid.conheight)
-				vid.conheight = vid.height;
-
-			vid.width = vid.conwidth;
-			vid.height = vid.conheight;
-#else
+#ifndef GLQUAKE
 			vid.rowbytes = Sys_Video_GetBytesPerRow(display);
 			vid.buffer = Sys_Video_GetBuffer(display);
-			vid.conwidth = vid.width;
-			vid.conheight = vid.height;
 #endif
 
 			if (windowtitle)
