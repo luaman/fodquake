@@ -33,10 +33,20 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define		DEFAULT_CONBUFSIZE	(1 << 16)
 #define		MAXIMUM_CONBUFSIZE	(1 << 22)
 
+typedef struct
+{
+	char *text;
+	int maxsize;
+	int current;         // line where next message will be printed
+	int x;               // offset in current line for next print
+	int display;         // bottom of console displays this line
+	int numlines;        // number of non-blank text lines, used for backscroling
+} console_t;
+
 console_t	con;
 
 static int con_ormask;
-int con_linewidth;		// characters across screen
+static int con_linewidth;		// characters across screen
 static int con_totallines;		// total lines in console scrollback
 static float con_cursorspeed = 4;
 
