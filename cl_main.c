@@ -364,7 +364,7 @@ static void CL_CheckForResend (void)
 	{
 		// if the local server is running and we are not, then connect
 		Q_strncpyz (cls.servername, "local", sizeof(cls.servername));
-		NET_StringToAdr("local", &cls.server_adr);
+		NET_StringToAdr(0, "local", &cls.server_adr);
 		CL_SendConnectPacket ();	// we don't need a challenge on the local server
 		// FIXME: cls.state = ca_connecting so that we don't send the packet twice?
 		return;
@@ -386,7 +386,7 @@ static void CL_BeginServerConnect(void)
 {
 	connect_time = 0;
 
-	if (!NET_StringToAdr(cls.servername, &cls.server_adr))
+	if (!NET_StringToAdr(0, cls.servername, &cls.server_adr))
 	{
 		Com_Printf("Bad server address\n");
 		return;
@@ -497,7 +497,7 @@ void CL_DNS_f()
 		*s = 0;
 #endif
 
-	r = NET_StringToAdr(address, &addr);
+	r = NET_StringToAdr(0, address, &addr);
 	if (!r)
 	{
 		Com_Printf("Couldn't look up \"%s\"\n", address);

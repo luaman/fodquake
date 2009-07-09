@@ -22,6 +22,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifndef __NET_H__
 #define __NET_H__
 
+struct SysNetData;
+
 #define	PORT_ANY	-1
 
 enum netaddrtype
@@ -80,7 +82,7 @@ qboolean	NET_CompareBaseAdr(const struct netaddr *a, const struct netaddr *b);
 qboolean	NET_IsLocalAddress(const struct netaddr *a);
 char		*NET_AdrToString(const struct netaddr *a);
 char		*NET_BaseAdrToString(const struct netaddr *a);
-qboolean	NET_StringToAdr(const char *s, struct netaddr *a);
+qboolean	NET_StringToAdr(struct SysNetData *sysnetdata, const char *s, struct netaddr *a);
 char *NET_GetHostnameForAddress(const struct netaddr *addr);
 
 #endif

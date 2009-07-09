@@ -48,7 +48,7 @@ void FChecks_VersionResponse(void) {
 void FChecks_FServerResponse (void) {
 	struct netaddr adr;
 
-	if (!NET_StringToAdr (cls.servername, &adr))
+	if (!NET_StringToAdr(0, cls.servername, &adr))
 		return;
 
 #warning Only works with IPv4
@@ -112,7 +112,7 @@ qboolean FChecks_CheckFServerRequest (char *s) {
 	if (cl.spectator || (f_server_reply_time && cls.realtime - f_server_reply_time < 20))
 		return false;
 
-	if (Util_F_Match(s, "f_server") && NET_StringToAdr (cls.servername, &adr))	{
+	if (Util_F_Match(s, "f_server") && NET_StringToAdr(0, cls.servername, &adr))	{
 		FChecks_FServerResponse();
 		f_server_reply_time = cls.realtime;
 		return true;

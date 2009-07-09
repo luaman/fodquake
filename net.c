@@ -272,9 +272,12 @@ static unsigned int NET_StringToIPv4(const char *s, struct netaddr *a)
 	return s-origs;
 }
 
-unsigned int NET_StringToNetAddrNoPort(const char *s, struct netaddr *a)
+static unsigned int NET_StringToNetAddrNoPort(struct SysNetData *sysnetdata, const char *s, struct netaddr *a)
 {
 	unsigned int len;
+
+	if (sysnetdata == 0)
+		sysnetdata = netdata->sysnetdata;
 
 	if (strcmp(s, "local") == 0)
 	{
@@ -303,7 +306,7 @@ unsigned int NET_StringToNetAddrNoPort(const char *s, struct netaddr *a)
 		{
 			strlcpy(newstr, s, endofhostname - s + 1);
 
-			if (!Sys_Net_ResolveName(netdata->sysnetdata, newstr, a))
+			if (!Sys_Net_ResolveName(sysnetdata, newstr, a))
 			{
 				endofhostname = s;
 			}
@@ -317,14 +320,17 @@ unsigned int NET_StringToNetAddrNoPort(const char *s, struct netaddr *a)
 	}
 }
 
-qboolean NET_StringToAdr(const char *s, struct netaddr *a)
+qboolean NET_StringToAdr(struct SysNetData *sysnetdata, const char *s, struct netaddr *a)
 {
 	unsigned int len;
 	unsigned int port;
 
+	if (sysnetdata == 0)
+		sysnetdata = netdata->sysnetdata;
+
 	memset(a, 0, sizeof(*a));
 
-	len = NET_StringToNetAddrNoPort(s, a);
+	len = NET_StringToNetAddrNoPort(sysnetdata, s, a);
 	if (len == 0)
 		return false;
 

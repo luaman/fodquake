@@ -169,7 +169,7 @@ void CL_Packet_f(void) {
 		return;
 	}
 
-	if (!NET_StringToAdr(Cmd_Argv(1), &adr)) {
+	if (!NET_StringToAdr(0, Cmd_Argv(1), &adr)) {
 		Com_Printf("Bad address\n");
 		return;
 	}
@@ -241,7 +241,7 @@ void CL_Rcon_f (void)
 			Com_Printf ("You must either be connected or set 'rcon_address' to issue rcon commands\n");
 			return;
 		}
-		NET_StringToAdr (rcon_address.string, &to);
+		NET_StringToAdr(0, rcon_address.string, &to);
 #warning Only works with IPv4
 		if (to.addr.ipv4.port == 0)
 			to.addr.ipv4.port = BigShort (PORT_SERVER);
