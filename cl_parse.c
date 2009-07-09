@@ -162,22 +162,26 @@ int CL_CalcNet (void) {
 //=============================================================================
 
 //Returns true if the file exists, otherwise it attempts to start a download from the server.
-qboolean CL_CheckOrDownloadFile (char *filename) {
+qboolean CL_CheckOrDownloadFile (char *filename)
+{
 	FILE *f;
 
-	if (strstr (filename, "..")) {
+	if (strstr (filename, ".."))
+	{
 		Com_Printf ("Refusing to download a path with ..\n");
 		return true;
 	}
 
 	FS_FOpenFile (filename, &f);
-	if (f) {	// it exists, no need to download
+	if (f)
+	{	// it exists, no need to download
 		fclose (f);
 		return true;
 	}
 
 	//ZOID - can't download when recording
-	if (cls.demorecording) {
+	if (cls.demorecording)
+	{
 		Com_Printf ("Unable to download %s in record mode.\n", cls.downloadname);
 		return true;
 	}
@@ -202,36 +206,41 @@ qboolean CL_CheckOrDownloadFile (char *filename) {
 	return false;
 }
 
-void Model_NextDownload (void) {
+void Model_NextDownload (void)
+{
 	char mapname[MAX_QPATH];
 	int	i;
 
-	if (cls.downloadnumber == 0) {
+	if (cls.downloadnumber == 0)
+{
 		Com_Printf ("Checking models...\n");
 		cls.downloadnumber = 1;
 	}
 
 	cls.downloadtype = dl_model;
-	for ( ; cl.model_name[cls.downloadnumber][0]; cls.downloadnumber++)	{
+	for ( ; cl.model_name[cls.downloadnumber][0]; cls.downloadnumber++)
+	{
 		if (cl.model_name[cls.downloadnumber][0] == '*')
 			continue;	// inline brush model
 		if (!CL_CheckOrDownloadFile(cl.model_name[cls.downloadnumber]))
 			return;		// started a download
 	}
 
-	
-	if (!com_serveractive) {
+	if (!com_serveractive)
+	{
 		COM_StripExtension (COM_SkipPath(cl.model_name[1]), mapname);
 		R_PreMapLoad(mapname);
 	}
 
-	for (i = 1; i < MAX_MODELS; i++) {
+	for (i = 1; i < MAX_MODELS; i++)
+	{
 		if (!cl.model_name[i][0])
 			break;
 
 		cl.model_precache[i] = Mod_ForName (cl.model_name[i], false);
 
-		if (!cl.model_precache[i]) {
+		if (!cl.model_precache[i])
+		{
 			Com_Printf("\nThe required model file '%s' could not be found or downloaded.\n\n", cl.model_name[i]);
 			Host_EndGame();
 			return;
@@ -252,23 +261,27 @@ void Model_NextDownload (void) {
 	MSG_WriteString (&cls.netchan.message, va("prespawn %i 0 %i", cl.servercount, LittleLong(cl.worldmodel->checksum2)));
 }
 
-void Sound_NextDownload (void) {
+void Sound_NextDownload (void)
+{
 	char *s;
 	int i;
 
-	if (cls.downloadnumber == 0) {
+	if (cls.downloadnumber == 0)
+	{
 		Com_Printf ("Checking sounds...\n");
 		cls.downloadnumber = 1;
 	}
 
 	cls.downloadtype = dl_sound;
-	for ( ; cl.sound_name[cls.downloadnumber][0]; cls.downloadnumber++)	{
+	for ( ; cl.sound_name[cls.downloadnumber][0]; cls.downloadnumber++)
+	{
 		s = cl.sound_name[cls.downloadnumber];
 		if (!CL_CheckOrDownloadFile(va("sound/%s",s)))
 			return;		// started a download
 	}
 
-	for (i = 1; i < MAX_SOUNDS; i++) {
+	for (i = 1; i < MAX_SOUNDS; i++)
+	{
 		if (!cl.sound_name[i][0])
 			break;
 		cl.sound_precache[i] = S_PrecacheSound (cl.sound_name[i]);
@@ -672,7 +685,8 @@ void CL_StartUpload (char *filename) {
 =====================================================================
 */
 
-void CL_ParseServerData (void) {
+void CL_ParseServerData (void)
+{
 	char *str, fn[MAX_OSPATH];
 	FILE *f;
 	qboolean cflag = false;
