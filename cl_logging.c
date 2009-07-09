@@ -176,7 +176,7 @@ void Log_Shutdown(void)
 		Log_Stop();
 }
 
-void Log_Write(char *s)
+void Log_Write(const char *s)
 {
 	if (!Log_IsLogging())
 		return;
