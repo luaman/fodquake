@@ -19,4 +19,4 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 /* crc.h */
 
-unsigned short CRC_Block (byte *start, unsigned int count);
+unsigned short CRC_Block(const byte *start, unsigned int count);

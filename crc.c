@@ -65,7 +65,7 @@ static const unsigned short crctable[256] =
 	0x6e17,	0x7e36,	0x4e55,	0x5e74,	0x2e93,	0x3eb2,	0x0ed1,	0x1ef0
 };
 
-unsigned short CRC_Block (byte *start, unsigned int count)
+unsigned short CRC_Block(const byte *start, unsigned int count)
 {
 	unsigned short crc;
 
