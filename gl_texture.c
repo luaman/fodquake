@@ -310,26 +310,31 @@ void GL_Upload8 (byte *data, int width, int height, int mode) {
 	GL_Upload32 (trans, width, height, mode);
 }
 
-int GL_LoadTexture (char *identifier, int width, int height, byte *data, int mode, int bpp) {
-	int	i, scaled_width, scaled_height, crc = 0;
-	gltexture_t	*glt;
+int GL_LoadTexture(char *identifier, int width, int height, byte *data, int mode, int bpp)
+{
+	int i, scaled_width, scaled_height, crc = 0;
+	gltexture_t *glt;
 
 	ScaleDimensions(width, height, &scaled_width, &scaled_height, mode);
 
-
-	if (identifier[0]) {
+	if (identifier[0])
+	{
 		crc = CRC_Block (data, width * height * bpp);
-		for (i = 0, glt = gltextures; i < numgltextures; i++, glt++) {
-			if (!strncmp (identifier, glt->identifier, sizeof(glt->identifier) - 1)) {
-				if (
-					width == glt->width && height == glt->height &&
-					scaled_width == glt->scaled_width && scaled_height == glt->scaled_height &&
-					crc == glt->crc && glt->bpp == bpp &&
-					(mode & ~(TEX_COMPLAIN|TEX_NOSCALE)) == (glt->texmode & ~(TEX_COMPLAIN|TEX_NOSCALE))
-				) {
+		for (i = 0, glt = gltextures; i < numgltextures; i++, glt++)
+		{
+			if (!strncmp (identifier, glt->identifier, sizeof(glt->identifier) - 1))
+			{
+				if (width == glt->width && height == glt->height
+				 && scaled_width == glt->scaled_width && scaled_height == glt->scaled_height
+				 && crc == glt->crc
+				 && glt->bpp == bpp
+				 && (mode & ~(TEX_COMPLAIN|TEX_NOSCALE)) == (glt->texmode & ~(TEX_COMPLAIN|TEX_NOSCALE)))
+				{
 					GL_Bind(gltextures[i].texnum);
 					return gltextures[i].texnum;	
-				} else {
+				}
+				else
+				{
 					goto setup_gltexture;	
 				}
 			}
@@ -354,7 +359,8 @@ setup_gltexture:
 	glt->texmode = mode;
 	glt->crc = crc;
 	glt->bpp = bpp;
-	if (glt->pathname) {
+	if (glt->pathname)
+	{
 		Z_Free(glt->pathname);
 		glt->pathname = NULL;
 	}
@@ -363,19 +369,24 @@ setup_gltexture:
 
 	GL_Bind(glt->texnum);
 
-	switch (bpp) {
-	case 1:
-		GL_Upload8 (data, width, height, mode); break;
-	case 4:
-		GL_Upload32 ((void *) data, width, height, mode); break;
-	default:
-		Sys_Error("GL_LoadTexture: unknown bpp\n"); break;
+	switch (bpp)
+	{
+		case 1:
+			GL_Upload8 (data, width, height, mode);
+			break;
+		case 4:
+			GL_Upload32 ((void *) data, width, height, mode);
+			break;
+		default:
+			Sys_Error("GL_LoadTexture: unknown bpp\n");
+			break;
 	}
 
 	return glt->texnum;
 }
 
-int GL_LoadPicTexture (char *name, mpic_t *pic, byte *data) {
+int GL_LoadPicTexture(char *name, mpic_t *pic, byte *data)
+{
 	int glwidth, glheight, i;
 	char fullname[MAX_QPATH] = "pic:";
 	byte *src, *dest, *buf;
@@ -384,18 +395,22 @@ int GL_LoadPicTexture (char *name, mpic_t *pic, byte *data) {
 	Q_ROUND_POWER2(pic->height, glheight);
 
 	Q_strncpyz (fullname + 4, name, sizeof(fullname) - 4);
-	if (glwidth == pic->width && glheight == pic->height) {
+	if (glwidth == pic->width && glheight == pic->height)
+	{
 		pic->texnum = GL_LoadTexture (fullname, glwidth, glheight, data, TEX_ALPHA, 1);
 		pic->sl = 0;
 		pic->sh = 1;
 		pic->tl = 0;
 		pic->th = 1;
-	} else {
+	}
+	else
+	{
 		buf = Q_Calloc (glwidth * glheight, 1);
 
 		src = data;
 		dest = buf;
-		for (i = 0; i < pic->height; i++) {
+		for (i = 0; i < pic->height; i++)
+		{
 			memcpy (dest, src, pic->width);
 			src += pic->width;
 			dest += glwidth;
@@ -411,10 +426,12 @@ int GL_LoadPicTexture (char *name, mpic_t *pic, byte *data) {
 	return pic->texnum;
 }
 
-static gltexture_t *GL_FindTexture (char *identifier) {
+static gltexture_t *GL_FindTexture (char *identifier)
+{
 	int i;
 
-	for (i = 0; i < numgltextures; i++) {
+	for (i = 0; i < numgltextures; i++)
+	{
 		if (!strcmp (identifier, gltextures[i].identifier))
 			return &gltextures[i];
 	}
