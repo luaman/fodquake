@@ -1134,6 +1134,9 @@ static double CL_MinFrameTime (void) {
 
 void CL_Frame (double time)
 {
+	keynum_t key;
+	qboolean down;
+
 	static double extratime = 0.001;
 	double minframetime;
 
@@ -1189,8 +1192,8 @@ void CL_Frame (double time)
 		cl.gametime += cls.frametime;
 	}
 
-	// allow mice or other external controllers to add commands
-	VID_GetEvents();
+	while(VID_GetKeyEvent(&key, &down))
+		Key_Event(key, down);
 
 	// process console commands
 	Cbuf_Execute();

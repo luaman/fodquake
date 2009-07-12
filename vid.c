@@ -386,9 +386,9 @@ void VID_SetPalette(byte *palette)
 #endif
 
 
-void VID_GetEvents()
+int VID_GetKeyEvent(keynum_t *key, qboolean *down)
 {
-	Sys_Video_GetEvents(display);
+	return Sys_Video_GetKeyEvent(display, key, down);
 }
 
 void VID_GetMouseMovement(int *mousex, int *mousey)

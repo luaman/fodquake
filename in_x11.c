@@ -482,40 +482,64 @@ static void GetEvents(struct inputdata *id)
 				switch (event.xbutton.button)
 				{
 					case 1:
-						Key_Event(K_MOUSE1, event.type == ButtonPress);
+						id->keyq[id->keyq_head].key = K_MOUSE1;
+						id->keyq[id->keyq_head].down = event.type == ButtonPress;
+						id->keyq_head = (id->keyq_head + 1) & 63;
 						break;
 					case 2:
-						Key_Event(K_MOUSE3, event.type == ButtonPress);
+						id->keyq[id->keyq_head].key = K_MOUSE2;
+						id->keyq[id->keyq_head].down = event.type == ButtonPress;
+						id->keyq_head = (id->keyq_head + 1) & 63;
 						break;
 					case 3:
-						Key_Event(K_MOUSE2, event.type == ButtonPress);
+						id->keyq[id->keyq_head].key = K_MOUSE3;
+						id->keyq[id->keyq_head].down = event.type == ButtonPress;
+						id->keyq_head = (id->keyq_head + 1) & 63;
 						break;
 					case 4:
-						Key_Event(K_MWHEELUP, event.type == ButtonPress);
+						id->keyq[id->keyq_head].key = K_MWHEELUP;
+						id->keyq[id->keyq_head].down = event.type == ButtonPress;
+						id->keyq_head = (id->keyq_head + 1) & 63;
 						break;
 					case 5:
-						Key_Event(K_MWHEELDOWN, event.type == ButtonPress);
+						id->keyq[id->keyq_head].key = K_MWHEELDOWN;
+						id->keyq[id->keyq_head].down = event.type == ButtonPress;
+						id->keyq_head = (id->keyq_head + 1) & 63;
 						break;
 					case 6:
-						Key_Event(K_MOUSE4, event.type == ButtonPress);
+						id->keyq[id->keyq_head].key = K_MOUSE4;
+						id->keyq[id->keyq_head].down = event.type == ButtonPress;
+						id->keyq_head = (id->keyq_head + 1) & 63;
 						break;
 					case 7:
-						Key_Event(K_MOUSE5, event.type == ButtonPress);
+						id->keyq[id->keyq_head].key = K_MOUSE5;
+						id->keyq[id->keyq_head].down = event.type == ButtonPress;
+						id->keyq_head = (id->keyq_head + 1) & 63;
 						break;
 					case 8:
-						Key_Event(K_MOUSE6, event.type == ButtonPress);
+						id->keyq[id->keyq_head].key = K_MOUSE6;
+						id->keyq[id->keyq_head].down = event.type == ButtonPress;
+						id->keyq_head = (id->keyq_head + 1) & 63;
 						break;
 					case 9:
-						Key_Event(K_MOUSE7, event.type == ButtonPress);
+						id->keyq[id->keyq_head].key = K_MOUSE7;
+						id->keyq[id->keyq_head].down = event.type == ButtonPress;
+						id->keyq_head = (id->keyq_head + 1) & 63;
 						break;
 					case 10:
-						Key_Event(K_MOUSE8, event.type == ButtonPress);
+						id->keyq[id->keyq_head].key = K_MOUSE8;
+						id->keyq[id->keyq_head].down = event.type == ButtonPress;
+						id->keyq_head = (id->keyq_head + 1) & 63;
 						break;
 					case 11:
-						Key_Event(K_MOUSE9, event.type == ButtonPress);
+						id->keyq[id->keyq_head].key = K_MOUSE9;
+						id->keyq[id->keyq_head].down = event.type == ButtonPress;
+						id->keyq_head = (id->keyq_head + 1) & 63;
 						break;
 					case 12:
-						Key_Event(K_MOUSE10, event.type == ButtonPress);
+						id->keyq[id->keyq_head].key = K_MOUSE10;
+						id->keyq[id->keyq_head].down = event.type == ButtonPress;
+						id->keyq_head = (id->keyq_head + 1) & 63;
 						break;
 				}
 				break;
@@ -595,17 +619,23 @@ void X11_Input_Shutdown(void *inputdata)
 	free(inputdata);
 }
 
-void X11_Input_GetEvents(void *inputdata)
+int X11_Input_GetKeyEvent(void *inputdata, keynum_t *key, qboolean *down)
 {
 	struct inputdata *id = inputdata;
 
-	GetEvents(id);
+	if (id->keyq_head == id->keyq_tail)
+		GetEvents(id);
 
-	while(id->keyq_head != id->keyq_tail)
+	if (id->keyq_head != id->keyq_tail)
 	{
-		Key_Event(id->keyq[id->keyq_tail].key, id->keyq[id->keyq_tail].down);
+		*key = id->keyq[id->keyq_tail].key;
+		*down = id->keyq[id->keyq_tail].down;
 		id->keyq_tail = (id->keyq_tail + 1) & 63;
+
+		return 1;
 	}
+
+	return 0;
 }
 
 void X11_Input_WaitForShmMsg(void *inputdata)

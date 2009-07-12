@@ -603,11 +603,11 @@ unsigned int Sys_Video_GetNumBuffers(void *display)
 	return 2;
 }
 
-void Sys_Video_GetEvents(void *display)
+int Sys_Video_GetKeyEvent(void *display, keynum_t *key, qboolean *down)
 {
 	struct display *d = display;
 
-	X11_Input_GetEvents(d->inputdata);
+	return X11_Input_GetKeyEvent(d->inputdata, key, down);
 }
 
 void Sys_Video_GetMouseMovement(void *display, int *mousex, int *mousey)

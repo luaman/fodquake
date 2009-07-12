@@ -62,7 +62,7 @@ void Sys_Video_Close(void *display);
 unsigned int Sys_Video_GetNumBuffers(void *display);
 void Sys_Video_Update(void *display, vrect_t *rects);
 void Sys_Video_SetPalette(void *display, unsigned char *palette);
-void Sys_Video_GetEvents(void *display);
+int Sys_Video_GetKeyEvent(void *display, keynum_t *keynum, qboolean *down);
 void Sys_Video_GetMouseMovement(void *display, int *mousex, int *mousey);
 void Sys_Video_GrabMouse(void *display, int dograb);
 void Sys_Video_SetWindowTitle(void *display, const char *text);

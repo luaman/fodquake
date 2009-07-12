@@ -19,6 +19,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 // vid.h -- video driver defs
 
+#include "keys.h"
+
 #define VID_CBITS	6
 #define VID_GRADES	(1 << VID_CBITS)
 
@@ -77,7 +79,7 @@ int VID_SetMode (int modenum, unsigned char *palette);
 // sets the mode; only used by the Quake engine for resetting to mode 0 (the
 // base mode) on memory allocation failures
 
-void VID_GetEvents(void);
+int VID_GetKeyEvent(keynum_t *key, qboolean *down);
 
 void VID_LockBuffer (void);
 void VID_UnlockBuffer (void);
