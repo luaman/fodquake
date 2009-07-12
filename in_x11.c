@@ -487,12 +487,12 @@ static void GetEvents(struct inputdata *id)
 						id->keyq_head = (id->keyq_head + 1) & 63;
 						break;
 					case 2:
-						id->keyq[id->keyq_head].key = K_MOUSE2;
+						id->keyq[id->keyq_head].key = K_MOUSE3;
 						id->keyq[id->keyq_head].down = event.type == ButtonPress;
 						id->keyq_head = (id->keyq_head + 1) & 63;
 						break;
 					case 3:
-						id->keyq[id->keyq_head].key = K_MOUSE3;
+						id->keyq[id->keyq_head].key = K_MOUSE2;
 						id->keyq[id->keyq_head].down = event.type == ButtonPress;
 						id->keyq_head = (id->keyq_head + 1) & 63;
 						break;
