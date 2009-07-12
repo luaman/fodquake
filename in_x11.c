@@ -652,6 +652,8 @@ void X11_Input_GetMouseMovement(void *inputdata, int *mousex, int *mousey)
 {
 	struct inputdata *id = inputdata;
 
+	GetEvents(id);
+
 	*mousex = id->mousex;
 	*mousey = id->mousey;
 	id->mousex = 0;
