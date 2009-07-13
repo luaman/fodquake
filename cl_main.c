@@ -154,6 +154,8 @@ byte		*host_colormap;
 
 int			fps_count;
 
+static int cl_vidinitialised;
+
 void CL_InitClientVersionInfo();
 
 enum
@@ -1060,6 +1062,7 @@ void CL_Init (void)
 	V_Init ();
  
 	VID_Init(host_basepal);
+	cl_vidinitialised = 1;
 
 	Image_Init();
 #ifndef GLQUAKE
@@ -1256,7 +1259,8 @@ void CL_Frame (double time)
 
 //============================================================================
 
-void CL_Shutdown (void) {
+void CL_Shutdown (void)
+{
 	CL_Disconnect();
 
 	CL_WriteConfiguration();
@@ -1269,6 +1273,7 @@ void CL_Shutdown (void) {
 	Modules_Shutdown();
 #endif
 	Log_Shutdown();
-	if (host_basepal)
+	if (cl_vidinitialised)
 		VID_Shutdown();
 }
+
