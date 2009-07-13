@@ -145,114 +145,114 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // playerinfo flags from server
 // playerinfo always sends: playernum, flags, origin[] and framenumber
 
-#define	PF_MSEC			(1 << 0)
-#define	PF_COMMAND		(1 << 1)
-#define	PF_VELOCITY1	(1 << 2)
-#define	PF_VELOCITY2	(1 << 3)
-#define	PF_VELOCITY3	(1 << 4)
-#define	PF_MODEL		(1 << 5)
-#define	PF_SKINNUM		(1 << 6)
-#define	PF_EFFECTS		(1 << 7)
-#define	PF_WEAPONFRAME	(1 << 8)		// only sent for view player
-#define	PF_DEAD			(1 << 9)		// don't block movement any more
-#define	PF_GIB			(1 << 10)		// offset the view height differently
+#define	PF_MSEC         (1 << 0)
+#define	PF_COMMAND      (1 << 1)
+#define	PF_VELOCITY1    (1 << 2)
+#define	PF_VELOCITY2    (1 << 3)
+#define	PF_VELOCITY3    (1 << 4)
+#define	PF_MODEL        (1 << 5)
+#define	PF_SKINNUM      (1 << 6)
+#define	PF_EFFECTS      (1 << 7)
+#define	PF_WEAPONFRAME  (1 << 8)		// only sent for view player
+#define	PF_DEAD         (1 << 9)		// don't block movement any more
+#define	PF_GIB          (1 << 10)		// offset the view height differently
 // bits 11..13 are player move type bits
-#define PF_PMC_SHIFT	11
-#define	PF_PMC_MASK	7
+#define PF_PMC_SHIFT    11
+#define	PF_PMC_MASK     7
 
 // player move types
-#define PMC_NORMAL				0		// normal ground movement
-#define PMC_NORMAL_JUMP_HELD	1		// a fake move type for jump debouncing
-#define PMC_OLD_SPECTATOR		2		// fly through walls (QW compatibility mode)
-#define PMC_SPECTATOR			3		// fly through walls
-#define PMC_FLY					4		// fly, bump into walls
+#define PMC_NORMAL              0		// normal ground movement
+#define PMC_NORMAL_JUMP_HELD    1		// a fake move type for jump debouncing
+#define PMC_OLD_SPECTATOR       2		// fly through walls (QW compatibility mode)
+#define PMC_SPECTATOR           3		// fly through walls
+#define PMC_FLY                 4		// fly, bump into walls
 
 //==============================================
 
 // if the high bit of the client to server byte is set, the low bits are
 // client move cmd bits
 // ms and angle2 are always sent, the others are optional
-#define	CM_ANGLE1 	(1 << 0)
-#define	CM_ANGLE3 	(1 << 1)
-#define	CM_FORWARD	(1 << 2)
-#define	CM_SIDE		(1 << 3)
-#define	CM_UP		(1 << 4)
-#define	CM_BUTTONS	(1 << 5)
-#define	CM_IMPULSE	(1 << 6)
-#define	CM_ANGLE2 	(1 << 7)
+#define	CM_ANGLE1       (1 << 0)
+#define	CM_ANGLE3       (1 << 1)
+#define	CM_FORWARD      (1 << 2)
+#define	CM_SIDE         (1 << 3)
+#define	CM_UP           (1 << 4)
+#define	CM_BUTTONS      (1 << 5)
+#define	CM_IMPULSE      (1 << 6)
+#define	CM_ANGLE2       (1 << 7)
 
 //==============================================
 
 
-#define DF_ORIGIN		1
-#define DF_ANGLES		(1 << 3)
-#define DF_EFFECTS		(1 << 6)
-#define DF_SKINNUM		(1 << 7)
-#define DF_DEAD			(1 << 8)
-#define DF_GIB			(1 << 9)
-#define DF_WEAPONFRAME	(1 << 10)
-#define DF_MODEL		(1 << 11)
+#define DF_ORIGIN         1
+#define DF_ANGLES         (1 << 3)
+#define DF_EFFECTS        (1 << 6)
+#define DF_SKINNUM        (1 << 7)
+#define DF_DEAD           (1 << 8)
+#define DF_GIB            (1 << 9)
+#define DF_WEAPONFRAME    (1 << 10)
+#define DF_MODEL          (1 << 11)
 
 
 //==============================================
 
 // the first 16 bits of a packetentities update holds 9 bits of entity number and 7 bits of flags
-#define	U_ORIGIN1	(1 << 9)
-#define	U_ORIGIN2	(1 << 10)
-#define	U_ORIGIN3	(1 << 11)
-#define	U_ANGLE2	(1 << 12)
-#define	U_FRAME		(1 << 13)
-#define	U_REMOVE	(1 << 14)		// REMOVE this entity, don't add it
-#define	U_MOREBITS	(1 << 15)
+#define	U_ORIGIN1       (1 << 9)
+#define	U_ORIGIN2       (1 << 10)
+#define	U_ORIGIN3       (1 << 11)
+#define	U_ANGLE2        (1 << 12)
+#define	U_FRAME         (1 << 13)
+#define	U_REMOVE        (1 << 14)		// REMOVE this entity, don't add it
+#define	U_MOREBITS      (1 << 15)
 
 // if MOREBITS is set, these additional flags are read in next
-#define	U_ANGLE1	(1 << 0)
-#define	U_ANGLE3	(1 << 1)
-#define	U_MODEL		(1 << 2)
-#define	U_COLORMAP	(1 << 3)
-#define	U_SKIN		(1 << 4)
-#define	U_EFFECTS	(1 << 5)
-#define	U_SOLID		(1 << 6)		// the entity should be solid for prediction
+#define	U_ANGLE1        (1 << 0)
+#define	U_ANGLE3        (1 << 1)
+#define	U_MODEL	        (1 << 2)
+#define	U_COLORMAP      (1 << 3)
+#define	U_SKIN	        (1 << 4)
+#define	U_EFFECTS       (1 << 5)
+#define	U_SOLID         (1 << 6)		// the entity should be solid for prediction
 
 //==============================================
 
 // a sound with no channel is a local only sound
 // the sound field has bits 0-2: channel, 3-12: entity
-#define	SND_VOLUME		(1 << 15)		// a byte
-#define	SND_ATTENUATION	(1 << 14)		// a byte
+#define	SND_VOLUME         (1 << 15)		// a byte
+#define	SND_ATTENUATION    (1 << 14)		// a byte
 
 #define DEFAULT_SOUND_PACKET_VOLUME 255
 #define DEFAULT_SOUND_PACKET_ATTENUATION 1.0
 
 // svc_print messages have an id, so messages can be filtered
-#define	PRINT_LOW			0
-#define	PRINT_MEDIUM		1
-#define	PRINT_HIGH			2
-#define	PRINT_CHAT			3	// also go to chat buffer
+#define	PRINT_LOW               0
+#define	PRINT_MEDIUM            1
+#define	PRINT_HIGH              2
+#define	PRINT_CHAT              3	// also go to chat buffer
 
 // temp entity events
-#define	TE_SPIKE			0
-#define	TE_SUPERSPIKE		1
-#define	TE_GUNSHOT			2
-#define	TE_EXPLOSION		3
-#define	TE_TAREXPLOSION		4
-#define	TE_LIGHTNING1		5
-#define	TE_LIGHTNING2		6
-#define	TE_WIZSPIKE			7
-#define	TE_KNIGHTSPIKE		8
-#define	TE_LIGHTNING3		9
-#define	TE_LAVASPLASH		10
-#define	TE_TELEPORT			11
-#define	TE_BLOOD			12
-#define	TE_LIGHTNINGBLOOD	13
+#define	TE_SPIKE                0
+#define	TE_SUPERSPIKE           1
+#define	TE_GUNSHOT              2
+#define	TE_EXPLOSION            3
+#define	TE_TAREXPLOSION         4
+#define	TE_LIGHTNING1           5
+#define	TE_LIGHTNING2           6
+#define	TE_WIZSPIKE             7
+#define	TE_KNIGHTSPIKE          8
+#define	TE_LIGHTNING3           9
+#define	TE_LAVASPLASH           10
+#define	TE_TELEPORT             11
+#define	TE_BLOOD                12
+#define	TE_LIGHTNINGBLOOD       13
 
 //==============================================
 
 // ZQuake protocol extensions (*z_ext serverinfo key)
-#define Z_EXT_PM_TYPE			(1 << 0)
-#define Z_EXT_PM_TYPE_NEW		(1 << 1)
-#define Z_EXT_SERVERTIME		(1 << 3)
-#define SUPPORTED_EXTENSIONS	(Z_EXT_PM_TYPE|Z_EXT_PM_TYPE_NEW|Z_EXT_SERVERTIME)
+#define Z_EXT_PM_TYPE           (1 << 0)
+#define Z_EXT_PM_TYPE_NEW       (1 << 1)
+#define Z_EXT_SERVERTIME        (1 << 3)
+#define SUPPORTED_EXTENSIONS    (Z_EXT_PM_TYPE|Z_EXT_PM_TYPE_NEW|Z_EXT_SERVERTIME)
 
 #define QW_PROTOEXT_HUFF 0x46465548
 #define QW_PROTOEXT_FTEX 0x58455446
@@ -267,32 +267,34 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 ==========================================================
 */
 
-#define	MAX_CLIENTS		32
+#define	MAX_CLIENTS       32
 
-#define	UPDATE_BACKUP	64	// copies of entity_state_t to keep buffered (must be power of two)
-#define	UPDATE_MASK		(UPDATE_BACKUP - 1)
+#define	UPDATE_BACKUP     64	// copies of entity_state_t to keep buffered (must be power of two)
+#define	UPDATE_MASK       (UPDATE_BACKUP - 1)
 
 // entity_state_t is the information conveyed from the server
 // in an update message
-typedef struct entity_state_s {
-	int		number;			// edict index
-	int		flags;			// nolerp, etc
-	vec3_t	origin;
-	vec3_t	angles;
-	int		modelindex;
-	int		frame;
-	int		colormap;
-	int		skinnum;
-	int		effects;
+typedef struct entity_state_s
+{
+	int number;			// edict index
+	int flags;			// nolerp, etc
+	vec3_t origin;
+	vec3_t angles;
+	int modelindex;
+	int frame;
+	int colormap;
+	int skinnum;
+	int effects;
 } entity_state_t;
 
 #ifdef SERVERONLY
 
 #define	MAX_PACKET_ENTITIES	64
 
-typedef struct packet_entities_s {
-	int		num_entities;
-	entity_state_t	entities[MAX_PACKET_ENTITIES];
+typedef struct packet_entities_s
+{
+	int num_entities;
+	entity_state_t entities[MAX_PACKET_ENTITIES];
 } packet_entities_t;
 
 #else
@@ -300,31 +302,34 @@ typedef struct packet_entities_s {
 #define	MAX_MVD_PACKET_ENTITIES	300		
 #define	MAX_PACKET_ENTITIES	64
 
-typedef struct packet_entities_s {
-	int		num_entities;
-	entity_state_t	entities[MAX_MVD_PACKET_ENTITIES];
+typedef struct packet_entities_s
+{
+	int num_entities;
+	entity_state_t entities[MAX_MVD_PACKET_ENTITIES];
 } packet_entities_t;
 
 #endif
 
-typedef struct usercmd_s {
-	byte	msec;
-	vec3_t	angles;
-	short	forwardmove, sidemove, upmove;
-	byte	buttons;
-	byte	impulse;
+typedef struct usercmd_s
+{
+	byte msec;
+	vec3_t angles;
+	short forwardmove, sidemove, upmove;
+	byte buttons;
+	byte impulse;
 } usercmd_t;
 
 // usercmd button bits
-#define BUTTON_ATTACK	(1 << 0)
-#define BUTTON_JUMP		(1 << 1)
-#define BUTTON_USE		(1 << 2)
+#define BUTTON_ATTACK     (1 << 0)
+#define BUTTON_JUMP       (1 << 1)
+#define BUTTON_USE        (1 << 2)
 
 
-#define dem_cmd			0
-#define dem_read		1
-#define dem_set			2
-#define dem_multiple	3
-#define	dem_single		4
-#define dem_stats		5
-#define dem_all			6
+#define dem_cmd         0
+#define dem_read        1
+#define dem_set         2
+#define dem_multiple    3
+#define	dem_single      4
+#define dem_stats       5
+#define dem_all         6
+
