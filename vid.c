@@ -162,6 +162,7 @@ void VID_Shutdown()
 	VID_Close();
 
 	free(windowtitle);
+	windowtitle = 0;
 }
 
 void VID_Restart_f(void)
