@@ -18,10 +18,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 
 void X11_Input_CvarInit(void);
-void *X11_Input_Init(Display *x_disp, Window x_win, unsigned int windowwidth, unsigned int windowheight, int x_shmeventtype, void (*eventcallback)(void *eventcallbackdata, int type), void *eventcallbackdata);
+void *X11_Input_Init(Window x_win, unsigned int windowwidth, unsigned int windowheight, int fullscreen);
 void X11_Input_Shutdown(void *inputdata);
 int X11_Input_GetKeyEvent(void *inputdata, keynum_t *key, qboolean *down);
-void X11_Input_WaitForShmMsg(void *inputdata);
 void X11_Input_GetMouseMovement(void *inputdata, int *mousex, int *mousey);
 void X11_Input_GetConfigNotify(void *inputdata, int *config_notify, int *config_notify_width, int *config_notify_height);
 void X11_Input_GrabMouse(void *inputdata, int dograb);

@@ -72,6 +72,7 @@ struct display
 	int current_framebuffer;
 	XImage *x_framebuffer[2];
 	XShmSegmentInfo x_shminfo[2];
+	int x_shmeventtype;
 
 	int width;
 	int height;
@@ -344,7 +345,6 @@ void *Sys_Video_Open(unsigned int width, unsigned int height, unsigned int depth
 	int pnum, i, num_visuals, template_mask;
 	XVisualInfo template;
 	struct display *d;
-	int x_shmeventtype;
 
 	d = malloc(sizeof(*d));
 	if (d)
@@ -484,13 +484,12 @@ void *Sys_Video_Open(unsigned int width, unsigned int height, unsigned int depth
 
 			tmpcmap = XCreateColormap(d->x_disp, XRootWindow(d->x_disp, d->x_visinfo->screen), d->x_vis, AllocNone);
 
-			attribs.event_mask = StructureNotifyMask | KeyPressMask | KeyReleaseMask | ExposureMask | PointerMotionMask | ButtonPressMask | ButtonReleaseMask;
+			attribs.event_mask = StructureNotifyMask | ExposureMask;
 			attribs.border_pixel = 0;
 			attribs.colormap = tmpcmap;
 
 			if (fullscreen)
 			{
-				attribmask |= CWOverrideRedirect | CWSaveUnder | CWBackingStore;
 				attribmask = CWColormap | CWEventMask | CWSaveUnder | CWBackingStore | CWOverrideRedirect;
 				attribs.override_redirect = 1;
 				attribs.backing_store = NotUseful;
@@ -543,7 +542,6 @@ void *Sys_Video_Open(unsigned int width, unsigned int height, unsigned int depth
 #if USE_VMODE
 			XF86VidModeSetViewPort(d->x_disp, d->scrnum, 0, 0);
 #endif
-			XGrabKeyboard(d->x_disp, d->x_win, False, GrabModeAsync, GrabModeAsync, CurrentTime);
 		}
 
 		// wait for first exposure event
@@ -575,12 +573,13 @@ void *Sys_Video_Open(unsigned int width, unsigned int height, unsigned int depth
 		}
 		if (d->doShm)
 		{
-			x_shmeventtype = XShmGetEventBase(d->x_disp) + ShmCompletion;
+			d->x_shmeventtype = XShmGetEventBase(d->x_disp) + ShmCompletion;
 			ResetSharedFrameBuffers(d);
 		}
 		else
 		{
-			x_shmeventtype = 0;
+			Com_Printf("Unable to initialise X11 shared memory support.\n");
+			d->x_shmeventtype = 0;
 			ResetFrameBuffer(d);
 		}
 
@@ -589,8 +588,8 @@ void *Sys_Video_Open(unsigned int width, unsigned int height, unsigned int depth
 		//XSynchronize(d->x_disp, False);
 
 		shiftmask_init(d);
-		
-		d->inputdata = X11_Input_Init(d->x_disp, d->x_win, width, height, x_shmeventtype, 0, 0);
+
+		d->inputdata = X11_Input_Init(d->x_win, width, height, fullscreen);
 		
 		return d;
 	}
@@ -680,6 +679,7 @@ void Sys_Video_Close(void *display)
 void Sys_Video_Update(void *display, vrect_t *rects)
 {
 	struct display *d = display;
+	XEvent event;
 
 	int config_notify;
 	int config_notify_width;
@@ -716,7 +716,10 @@ void Sys_Video_Update(void *display, vrect_t *rects)
 			if (!XShmPutImage(d->x_disp, d->x_win, d->x_gc, d->x_framebuffer[d->current_framebuffer], rects->x, rects->y, rects->x, rects->y, rects->width, rects->height, True))
 				Sys_Error("VID_Update: XShmPutImage failed\n");
 
-			X11_Input_WaitForShmMsg(d->inputdata);
+			do
+			{
+				XNextEvent(d->x_disp, &event);
+			} while(event.type != d->x_shmeventtype);
 
 			rects = rects->pnext;
 		}

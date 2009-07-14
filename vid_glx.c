@@ -73,28 +73,9 @@ struct display
 };
 
 
-#define KEY_MASK (KeyPressMask | KeyReleaseMask)
-#define MOUSE_MASK (ButtonPressMask | ButtonReleaseMask | PointerMotionMask)
-
-#define X_MASK (KEY_MASK | MOUSE_MASK | VisibilityChangeMask)
+#define X_MASK (VisibilityChangeMask)
 
 static void RestoreHWGamma(struct display *d);
-
-static void eventcallback(void *display, int type)
-{
-	struct display *d = display;
-	switch(type)
-	{
-		case FocusIn:
-			d->hasfocus = 1;
-			V_UpdatePalette(true);
-			break;
-		case FocusOut:
-			d->hasfocus = 0;
-			RestoreHWGamma(display);
-			break;
-	}
-}
 
 int Sys_Video_GetKeyEvent(void *display, keynum_t *key, qboolean *down)
 {
@@ -216,8 +197,25 @@ static void RestoreHWGamma(struct display *d)
 void Sys_Video_BeginFrame(void *display, unsigned int *x, unsigned int *y, unsigned int *width, unsigned int *height)
 {
 	struct display *d;
+	XEvent event;
 
 	d = display;
+
+	while(XPending(d->x_disp))
+	{
+		XNextEvent(d->x_disp, &event);
+		switch (event.type)
+		{
+			case FocusIn:
+				d->hasfocus = 1;
+				V_UpdatePalette(true);
+				break;
+			case FocusOut:
+				d->hasfocus = 0;
+				RestoreHWGamma(display);
+				break;
+		}
+	}
 
 	*x = 0;
 	*y = 0;
@@ -415,7 +413,6 @@ void *Sys_Video_Open(unsigned int width, unsigned int height, unsigned int depth
 				XFlush(d->x_disp);
 				// Move the viewport to top left
 				XF86VidModeSetViewPort(d->x_disp, d->scrnum, 0, 0);
-				XGrabKeyboard(d->x_disp, d->x_win, False, GrabModeAsync, GrabModeAsync, CurrentTime);
 			}
 #endif
 
@@ -434,7 +431,7 @@ void *Sys_Video_Open(unsigned int width, unsigned int height, unsigned int depth
 
 			Com_Printf ("Video mode %dx%d initialized.\n", width, height);
 
-			d->inputdata = X11_Input_Init(d->x_disp, d->x_win, width, height, 0, eventcallback, d);
+			d->inputdata = X11_Input_Init(d->x_win, width, height, fullscreen);
 			if (d->inputdata)
 				return d;
 		}

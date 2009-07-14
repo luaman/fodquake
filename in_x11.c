@@ -23,7 +23,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <X11/keysym.h>
-#include <X11/extensions/XShm.h>
 #include <X11/extensions/xf86dga.h>
 
 #include "quakedef.h"
@@ -32,7 +31,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "in_x11.h"
 
-#define XINPUTFLAGS (StructureNotifyMask|KeyPressMask|KeyReleaseMask|ExposureMask|PointerMotionMask|ButtonPressMask|ButtonReleaseMask|FocusChangeMask)
+#define XINPUTFLAGS (KeyPressMask|KeyReleaseMask|PointerMotionMask|ButtonPressMask|ButtonReleaseMask)
 
 cvar_t cl_keypad = { "cl_keypad", "1" };
 cvar_t in_dga_mouse = { "in_dga_mouse", "0" };
@@ -47,22 +46,18 @@ struct inputdata
 {
 	Display *x_disp;
 	Window x_win;
-	int x_shmeventtype;
 	unsigned int windowwidth;
 	unsigned int windowheight;
-	void (*eventcallback)(void *eventcallbackdata, int type);
-	void *eventcallbackdata;
-	
+	int fullscreen;
+
 	int config_notify;
 	int config_notify_width;
 	int config_notify_height;
-	
-	int gotshmmsg;
 
 	keyq_t keyq[64];
 	int keyq_head;
 	int keyq_tail;
-	
+
 	int mousex;
 	int mousey;
 
@@ -449,11 +444,6 @@ static void GetEvents(struct inputdata *id)
 		XNextEvent(id->x_disp, &event);
 		switch (event.type)
 		{
-			case FocusIn:
-			case FocusOut:
-				if(id->eventcallback)
-					id->eventcallback(id->eventcallbackdata, event.type);
-				break;
 			case KeyPress:
 				id->keyq[id->keyq_head].key = XLateKey(&event.xkey);
 				id->keyq[id->keyq_head].down = true;
@@ -551,8 +541,6 @@ static void GetEvents(struct inputdata *id)
 				break;
 
 			default:
-				if(id->x_shmeventtype && event.type == id->x_shmeventtype)
-					id->gotshmmsg = 1;
 				break;
 		}
 	}
@@ -582,41 +570,66 @@ void X11_Input_CvarInit()
 	Cvar_ResetCurrentGroup();
 }
 
-void *X11_Input_Init(Display *x_disp, Window x_win, unsigned int windowwidth, unsigned int windowheight, int x_shmeventtype, void (*eventcallback)(void *eventcallbackdata, int type), void *eventcallbackdata)
+void *X11_Input_Init(Window x_win, unsigned int windowwidth, unsigned int windowheight, int fullscreen)
 {
 	struct inputdata *id;
+	XSetWindowAttributes attr;
+
 	id = malloc(sizeof(*id));
 	if (id)
 	{
-		id->x_disp = x_disp;
-		id->x_win = x_win;
-		id->x_shmeventtype = x_shmeventtype;
-		id->windowwidth = windowwidth;
-		id->windowheight = windowheight;
-		id->eventcallback = eventcallback;
-		id->eventcallbackdata = eventcallbackdata;
-		id->gotshmmsg = 0;
-		id->config_notify = 0;
-		id->keyq_head = 0;
-		id->keyq_tail = 0;
-		id->mousex = 0;
-		id->mousey = 0;
-		id->grabmouse = 0;
-		id->dga_mouse_enabled = 0;
+		id->x_disp = XOpenDisplay(0);
+		if (id->x_disp)
+		{
+			attr.event_mask = KeyPressMask | KeyReleaseMask | ButtonPressMask | ButtonReleaseMask | PointerMotionMask;
+			attr.override_redirect = 1;
+			XChangeWindowAttributes(id->x_disp, x_win, CWEventMask | CWOverrideRedirect, &attr);
 
-		Cvar_SetCurrentGroup(CVAR_GROUP_INPUT_KEYBOARD);
-		Cvar_Register(&cl_keypad);
-		Cvar_ResetCurrentGroup();
+			if (fullscreen)
+				XGrabKeyboard(id->x_disp, x_win, False, GrabModeAsync, GrabModeAsync, CurrentTime);
+
+			id->x_win = x_win;
+			id->windowwidth = windowwidth;
+			id->windowheight = windowheight;
+			id->fullscreen = 1;
+			id->config_notify = 0;
+			id->keyq_head = 0;
+			id->keyq_tail = 0;
+			id->mousex = 0;
+			id->mousey = 0;
+			id->grabmouse = 0;
+			id->dga_mouse_enabled = 0;
+
+			Cvar_SetCurrentGroup(CVAR_GROUP_INPUT_KEYBOARD);
+			Cvar_Register(&cl_keypad);
+			Cvar_ResetCurrentGroup();
+
+			return id;
+		}
+
+		free(id);
 	}
 
-	return id;
+	return 0;
 }
 
 void X11_Input_Shutdown(void *inputdata)
 {
-	X11_Input_GrabMouse(inputdata, 0);
+	struct inputdata *id;
+	XSetWindowAttributes attr;
 
-	free(inputdata);
+	id = inputdata;
+
+	X11_Input_GrabMouse(id, 0);
+	if (id->fullscreen)
+		XUngrabKeyboard(id->x_disp, CurrentTime);
+
+	attr.event_mask = 0;
+	XChangeWindowAttributes(id->x_disp, id->x_win, CWEventMask, &attr);
+
+	XCloseDisplay(id->x_disp);
+
+	free(id);
 }
 
 int X11_Input_GetKeyEvent(void *inputdata, keynum_t *key, qboolean *down)
@@ -636,16 +649,6 @@ int X11_Input_GetKeyEvent(void *inputdata, keynum_t *key, qboolean *down)
 	}
 
 	return 0;
-}
-
-void X11_Input_WaitForShmMsg(void *inputdata)
-{
-	struct inputdata *id = inputdata;
-	
-	while(id->gotshmmsg == 0)
-		GetEvents(id);
-		
-	id->gotshmmsg = 0;
 }
 
 void X11_Input_GetMouseMovement(void *inputdata, int *mousex, int *mousey)
