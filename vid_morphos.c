@@ -200,11 +200,11 @@ unsigned int Sys_Video_GetNumBuffers(void *display)
 	return d->screen ? 3 : 1;
 }
 
-void Sys_Video_GetEvents(void *display)
+int Sys_Video_GetKeyEvent(void *display, keynum_t *keynum, qboolean *down)
 {
 	struct display *d = display;
 
-	Sys_Input_GetEvents(d->inputdata);
+	return Sys_Input_GetKeyEvent(d->inputdata, keynum, down);
 }
  
 void Sys_Video_GetMouseMovement(void *display, int *mousex, int *mousey)

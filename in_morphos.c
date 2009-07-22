@@ -46,6 +46,8 @@ struct inputdata
 	int imsglow;
 	int imsghigh;
 
+	int upkey;
+
 	int mousebuf;
 	int mousex[3], mousey[3];
 
@@ -96,6 +98,8 @@ void *Sys_Input_Init(struct Screen *screen, struct Window *window)
 		id->screen = screen;
 		id->window = window;
 
+		id->upkey = -1;
+
 		id->inputport = CreateMsgPort();
 		if (id->inputport == 0)
 		{
@@ -130,91 +134,95 @@ void *Sys_Input_Init(struct Screen *screen, struct Window *window)
 	return id;
 }
 
-static void ExpireRingBuffer(struct inputdata *id)
-{
-	int i = 0;
-
-	while (id->imsgs[id->imsglow].ie_Class == IECLASS_NULL && id->imsglow != id->imsghigh)
-	{
-		id->imsglow++;
-		i++;
-		id->imsglow %= MAXIMSGS;
-	}
-
-	DEBUGRING(dprintf("Expired %d messages\n", i));
-}
-
-void Sys_Input_GetEvents(void *inputdata)
+int Sys_Input_GetKeyEvent(void *inputdata, keynum_t *keynum, qboolean *down)
 {
 	struct inputdata *id = inputdata;
-	char key;
+	int key;
+	qboolean dodown;
 	int i;
-	int down;
 
-	for (i = id->imsglow; i != id->imsghigh; i++, i %= MAXIMSGS)
+	if (id->upkey != -1)
 	{
+		*keynum = id->upkey;
+		*down = false;
+		id->upkey = -1;
+		return 1;
+	}
+
+	key = 0;
+	dodown = 0;
+
+	if (id->imsglow != id->imsghigh)
+	{
+		i = id->imsglow;
+
 		DEBUGRING(dprintf("%d %d\n", i, id->imsghigh));
 		if (id->imsgs[i].ie_Class == IECLASS_NEWMOUSE)
 		{
-			key = 0;
-
 			if (id->imsgs[i].ie_Code == NM_WHEEL_UP)
+			{
 				key = K_MWHEELUP;
+			}
 			else if (id->imsgs[i].ie_Code == NM_WHEEL_DOWN)
+			{
 				key = K_MWHEELDOWN;
+			}
 
 			if (id->imsgs[i].ie_Code == NM_BUTTON_FOURTH)
 			{
-				Key_Event(K_MOUSE4, true);
+				key = K_MOUSE4;
+				dodown = true;
 			}
 			else if (id->imsgs[i].ie_Code == (NM_BUTTON_FOURTH | IECODE_UP_PREFIX))
 			{
-				Key_Event(K_MOUSE4, false);
+				key = K_MOUSE4;
+				dodown = false;
 			}
 
 			if (key)
 			{
-				Key_Event(key, 1);
-				Key_Event(key, 0);
+				id->upkey = key;
+				dodown = 1;
 			}
 		}
 		else if (id->imsgs[i].ie_Class == IECLASS_RAWKEY)
 		{
-			down = !(id->imsgs[i].ie_Code & IECODE_UP_PREFIX);
+			dodown = !(id->imsgs[i].ie_Code & IECODE_UP_PREFIX);
 			id->imsgs[i].ie_Code &= ~IECODE_UP_PREFIX;
 
-			key = 0;
 			if (id->imsgs[i].ie_Code <= 255)
 				key = keyconv[id->imsgs[i].ie_Code];
 
-			if (key)
-				Key_Event(key, down);
-			else
+			if (!key && developer.value)
 			{
-				if (developer.value)
-					Com_Printf("Unknown key %d\n", id->imsgs[i].ie_Code);
+				Com_Printf("Unknown key %d\n", id->imsgs[i].ie_Code);
 			}
 		}
 		else if (id->imsgs[i].ie_Class == IECLASS_RAWMOUSE)
 		{
+			dodown = !(id->imsgs[i].ie_Code&IECODE_UP_PREFIX);
+			id->imsgs[i].ie_Code &= ~IECODE_UP_PREFIX;
+
 			if (id->imsgs[i].ie_Code == IECODE_LBUTTON)
-				Key_Event(K_MOUSE1, true);
-			else if (id->imsgs[i].ie_Code == (IECODE_LBUTTON | IECODE_UP_PREFIX))
-				Key_Event(K_MOUSE1, false);
+				key = K_MOUSE1;
 			else if (id->imsgs[i].ie_Code == IECODE_RBUTTON)
-				Key_Event(K_MOUSE2, true);
-			else if (id->imsgs[i].ie_Code == (IECODE_RBUTTON | IECODE_UP_PREFIX))
-				Key_Event(K_MOUSE2, false);
+				key = K_MOUSE2;
 			else if (id->imsgs[i].ie_Code == IECODE_MBUTTON)
-				Key_Event(K_MOUSE3, true);
-			else if (id->imsgs[i].ie_Code == (IECODE_MBUTTON | IECODE_UP_PREFIX))
-				Key_Event(K_MOUSE3, false);
+				key = K_MOUSE3;
 		}
 
-		id->imsgs[i].ie_Class = IECLASS_NULL;
+		id->imsglow++;
+		id->imsglow %= MAXIMSGS;
 	}
 
-	ExpireRingBuffer(id);
+	if (key)
+	{
+		*keynum = key;
+		*down = dodown;
+		return 1;
+	}
+
+	return 0;
 }
 
 void Sys_Input_GetMouseMovement(void *inputdata, int *mousex, int *mousey)
