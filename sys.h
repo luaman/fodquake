@@ -46,9 +46,6 @@ void Sys_SleepTime(unsigned int usec);
 
 char *Sys_ConsoleInput (void);
 
-// Perform Key_Event () callbacks until the input que is empty
-void Sys_SendKeyEvents (void);
-
 void Sys_LowFPPrecision (void);
 void Sys_HighFPPrecision (void);
 void Sys_SetFPCW (void);

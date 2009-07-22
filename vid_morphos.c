@@ -297,10 +297,6 @@ void Sys_Video_SetPalette(void *display, unsigned char *palette)
 	}
 }
 
-void Sys_SendKeyEvents()
-{
-}
-
 void VID_LockBuffer()
 {
 }
