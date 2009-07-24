@@ -24,7 +24,7 @@ extern struct EmulLibEntry myinputhandler;
 
 void *Sys_Input_Init(struct Screen *screen, struct Window *window);
 void Sys_Input_Shutdown(void *inputdata);
-void Sys_Input_GetEvents(void *inputdata);
+int Sys_Input_GetKeyEvent(void *inputdata, keynum_t *keynum, qboolean *down);
 void Sys_Input_GetMouseMovement(void *inputdata, int *mousex, int *mousey);
 void Sys_Input_GrabMouse(void *inputdata, int dograb);
 
