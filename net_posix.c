@@ -190,6 +190,8 @@ qboolean Sys_Net_Bind(struct SysNetData *netdata, struct SysSocket *socket, unsi
 		addr.addr6.sin6_scope_id = 0;
 		addrsize = sizeof(addr.addr6);
 	}
+	else
+		return false;
 
 	r = bind(socket->s, (struct sockaddr *)&addr, addrsize);
 	if (r == 0)
@@ -227,6 +229,8 @@ int Sys_Net_Send(struct SysNetData *netdata, struct SysSocket *socket, const voi
 			addr.addr6.sin6_scope_id = 0;
 			addrsize = sizeof(addr.addr6);
 		}
+		else
+			return -1;
 
 		r = sendto(socket->s, data, datalen, 0, (struct sockaddr *)&addr, addrsize);
 	}
