@@ -1,4 +1,7 @@
 
+#include "qtypes.h"
+#include "net.h"
+
 struct SysNetData;
 struct SysSocket;
 

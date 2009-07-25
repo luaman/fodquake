@@ -22,6 +22,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifndef __NET_H__
 #define __NET_H__
 
+#include "common.h"
+
 struct SysNetData;
 
 #define	PORT_ANY	-1
