@@ -19,6 +19,7 @@ ifeq ($(OS), morphos)
 	OSOBJS= \
 		sys_morphos.o \
 		net_amitcp.o \
+		thread_morphos.o \
 		cd_morphos.o \
 		snd_morphos.o \
 		in_morphos.o
@@ -34,10 +35,12 @@ ifeq ($(OS), linux)
 	OSOBJS= \
 		sys_linux.o \
 		net_posix.o \
+		thread_posix.o \
 		cd_linux.o \
 		snd_oss.o
 
 	OSCFLAGS=-DBUILD_STRL
+	OSLDFLAGS=-lpthread
 
 	OSSWOBJS=vid_x11.o in_x11.o
 	OSSWLDFLAGS=-L/usr/X11R6/lib -lX11 -lXext -lXxf86vm -lXxf86dga
