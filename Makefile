@@ -197,6 +197,7 @@ OBJS= \
 	r_part.o \
 	readablechars.o \
 	rulesets.o \
+	serverscanner.o \
 	skin.o \
 	sleep.o \
 	snd_main.o \
