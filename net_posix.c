@@ -17,6 +17,10 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 
+#ifdef linux
+#define _GNU_SOURCE
+#endif
+
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -27,6 +31,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include <stdlib.h>
 #include <string.h>
+
+#ifdef linux
+#include <poll.h>
+#endif
 
 #include "sys_net.h"
 
@@ -297,5 +305,73 @@ int Sys_Net_Receive(struct SysNetData *netdata, struct SysSocket *socket, void *
 	}
 
 	return r;
+}
+
+void Sys_Net_Wait(struct SysNetData *netdata, struct SysSocket *socket, unsigned int timeout_us)
+{
+#ifndef linux
+	/* On Linux, select() rounds up the sleeping time to the nearest X ms
+	 * even if its <sarcasm>hyperadvanced</sarcasm> NO_HZ option is set, so
+	 * this won't be useful. However, on such configurations, usleep()
+	 * works as advertised, so see below. */
+
+	struct timeval tv;
+	fd_set rfds;
+
+	FD_ZERO(&rfds);
+	FD_SET(socket->s, &rfds);
+
+	tv.tv_sec = timeout_us / 1000000;
+	tv.tv_usec = timeout_us % 1000000;
+
+	select(socket->s + 1, &rfds, 0, 0, &tv);
+#else
+#if 0
+	/* Here we trade off socket receive accuracy for sleep accuracy. */
+
+	struct timeval stv;
+	struct timeval tv;
+	fd_set rfds;
+	unsigned long long x;
+	int r;
+
+	gettimeofday(&stv, 0);
+
+	while(1)
+	{
+		gettimeofday(&tv, 0);
+
+		x = (tv.tv_sec * 1000000 + tv.tv_usec) - (stv.tv_sec * 1000000 + stv.tv_usec);
+		if (x >= timeout_us)
+			break;
+
+		FD_ZERO(&rfds);
+		FD_SET(socket->s, &rfds);
+
+		tv.tv_sec = 0;
+		tv.tv_usec = 0;
+
+		r = select(socket->s + 1, &rfds, 0, 0, &tv);
+		if (r > 0)
+			break;
+
+		x -= timeout_us;
+
+		if (x > 2500)
+			x = 2500;
+
+		usleep(x);
+	}
+#else
+	struct pollfd pfd;
+	struct timespec ts;
+
+	pfd.fd = socket->s;
+	pfd.events = POLLIN;
+	ts.tv_sec = timeout_us/1000000;
+	ts.tv_nsec = (timeout_us%1000000)*1000;
+	ppoll(&pfd, 1, &ts, 0);
+#endif
+#endif
 }
 

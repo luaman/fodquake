@@ -16,4 +16,5 @@ void Sys_Net_DeleteSocket(struct SysNetData *netdata, struct SysSocket *socket);
 qboolean Sys_Net_Bind(struct SysNetData *netdata, struct SysSocket *socket, unsigned short port);
 int Sys_Net_Send(struct SysNetData *netdata, struct SysSocket *socket, const void *data, int datalen, const struct netaddr *address);
 int Sys_Net_Receive(struct SysNetData *netdata, struct SysSocket *socket, void *data, int datalen, struct netaddr *address);
+void Sys_Net_Wait(struct SysNetData *netdata, struct SysSocket *socket, unsigned int timeout_us);
 
