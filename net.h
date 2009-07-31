@@ -32,7 +32,8 @@ enum netaddrtype
 {
 	NA_LOOPBACK,  /* Only used internally */
 	NA_IPV4,
-	NA_IPV6
+	NA_IPV6,
+	NA_NUMTYPES   /* Not a real type */
 };
 
 enum netsrc
