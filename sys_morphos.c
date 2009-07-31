@@ -117,10 +117,11 @@ char *Sys_ConsoleInput()
 	return 0;
 }
 
+static int secbase;
+
 double Sys_DoubleTime()
 {
 	struct timeval tp;
-	static int secbase;
 
 	gettimeofday(&tp, 0);
 
@@ -131,6 +132,24 @@ double Sys_DoubleTime()
 	}
 
 	return (tp.tv_sec - secbase) + tp.tv_usec / 1000000.0;
+}
+
+unsigned long long Sys_IntTime()
+{
+	struct timeval tp;
+	struct timezone tzp;
+	unsigned long long ret;
+
+	gettimeofday(&tp, &tzp);
+
+	if (!secbase)
+		secbase = tp.tv_sec;
+
+	ret = tp.tv_sec - secbase;
+	ret *= 1000000;
+	ret += tp.tv_usec;
+
+	return ret;
 }
 
 #include <devices/clipboard.h>

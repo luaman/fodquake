@@ -124,11 +124,12 @@ void Sys_mkdir(char *path)
 	mkdir(path, 0777);
 }
 
+static int secbase;
+
 double Sys_DoubleTime(void)
 {
 	struct timeval tp;
 	struct timezone tzp;
-	static int secbase;
 
 	gettimeofday(&tp, &tzp);
 
@@ -139,6 +140,24 @@ double Sys_DoubleTime(void)
 	}
 
 	return (tp.tv_sec - secbase) + tp.tv_usec / 1000000.0;
+}
+
+unsigned long long Sys_IntTime()
+{
+	struct timeval tp;
+	struct timezone tzp;
+	unsigned long long ret;
+
+	gettimeofday(&tp, &tzp);
+
+	if (!secbase)
+		secbase = tp.tv_sec;
+
+	ret = tp.tv_sec - secbase;
+	ret *= 1000000;
+	ret += tp.tv_usec;
+
+	return ret;
 }
 
 void floating_point_exception_handler(int whatever)

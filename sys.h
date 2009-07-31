@@ -41,6 +41,7 @@ void Sys_Printf (char *fmt, ...);
 void Sys_Quit (void);
 
 double Sys_DoubleTime (void);
+unsigned long long Sys_IntTime(void);
 
 void Sys_SleepTime(unsigned int usec);
 
