@@ -6,6 +6,7 @@
 #include "serverscanner.h"
 
 #define MAXCONCURRENTSCANS 16
+#define QWSERVERTIMEOUT 750000
 
 struct masterserver
 {
@@ -38,8 +39,6 @@ struct ServerScanner
 	unsigned int numqwservers;
 	unsigned int numqwserversinprogress;
 	unsigned int numqwserverswaiting;
-#warning Remove this
-	unsigned int numqwserverstoscan;
 	volatile unsigned int done;
 	unsigned int updated;
 };
@@ -418,6 +417,7 @@ static void ServerScanner_Thread_SendQWRequest(struct ServerScanner *serverscann
 {
 	static const char querystring[] = "\xff\xff\xff\xffstatus 23\n";
 
+	qwserver->packetsendtime = Sys_IntTime();
 	Sys_Net_Send(serverscanner->netdata, serverscanner->sockets[NA_IPV4], querystring, sizeof(querystring), &qwserver->pub.addr);
 	if (qwserver->pub.status != QWSS_REQUESTSENT)
 	{
@@ -506,7 +506,6 @@ static void ServerScanner_Thread_HandlePacket(struct ServerScanner *serverscanne
 				qwserver->next = serverscanner->qwservers;
 				serverscanner->qwservers = qwserver;
 				serverscanner->numqwservers++;
-				serverscanner->numqwserverstoscan++;
 
 				Sys_Thread_UnlockMutex(serverscanner->mutex);
 			}
@@ -514,10 +513,6 @@ static void ServerScanner_Thread_HandlePacket(struct ServerScanner *serverscanne
 			Sys_Thread_LockMutex(serverscanner->mutex);
 			serverscanner->updated = 1;
 			Sys_Thread_UnlockMutex(serverscanner->mutex);
-
-#ifdef DEBUG
-			printf("%d servers to scan\n", serverscanner->numqwserverstoscan);
-#endif
 
 			return;
 		}
@@ -532,7 +527,6 @@ static void ServerScanner_Thread_HandlePacket(struct ServerScanner *serverscanne
 			Sys_Thread_LockMutex(serverscanner->mutex);
 
 			serverscanner->updated = 1;
-			serverscanner->numqwserverstoscan--;
 
 			ServerScanner_Thread_ParseQWServerReply(serverscanner, qwserver, data, datalen);
 
@@ -556,6 +550,33 @@ static void ServerScanner_Thread_HandlePacket(struct ServerScanner *serverscanne
 			}
 
 			return;
+		}
+
+		prevqwserver = qwserver;
+		qwserver = qwserver->nextinprogress;
+	}
+}
+
+static void ServerScanner_Thread_CheckTimeout(struct ServerScanner *serverscanner)
+{
+	struct qwserverpriv *qwserver;
+	struct qwserverpriv *prevqwserver;
+	unsigned long long curtime;
+
+	curtime = Sys_IntTime();
+
+	prevqwserver = 0;
+	qwserver = serverscanner->qwserversinprogress;
+	while(qwserver)
+	{
+		if (qwserver->packetsendtime + QWSERVERTIMEOUT <= curtime)
+		{
+			qwserver->pub.status = QWSS_FAILED;
+
+			if (prevqwserver)
+				prevqwserver->nextinprogress = qwserver->nextinprogress;
+			else
+				serverscanner->qwserversinprogress = qwserver->nextinprogress;
 		}
 
 		prevqwserver = qwserver;
@@ -591,7 +612,7 @@ static void ServerScanner_Thread(void *arg)
 			{
 				if (!serverscanner->done)
 				{
-					if (serverscanner->numqwserverstoscan == 0 && Sys_IntTime() > starttime + 2000000)
+					if (serverscanner->qwserverswaiting == 0 && serverscanner->qwserversinprogress && Sys_IntTime() > starttime + 2000000)
 						serverscanner->done = 1;
 				}
 
@@ -608,6 +629,8 @@ static void ServerScanner_Thread(void *arg)
 						ServerScanner_Thread_HandlePacket(serverscanner, buf, r, &addr);
 					}
 				}
+
+				ServerScanner_Thread_CheckTimeout(serverscanner);
 			}
 		}
 
@@ -860,7 +883,10 @@ int main()
 					numspectators += servers[i]->numspectators;
 				}
 				else
+				{
+					printf("%s is down\n", NET_AdrToString(&servers[i]->addr));
 					numdown++;
+				}
 			}
 
 			printf("%d servers, %d up, %d down, %d players, %d spectators\n", numservers, numup, numdown, numplayers, numspectators);
