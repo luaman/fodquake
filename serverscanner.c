@@ -325,8 +325,6 @@ static void ServerScanner_Thread_ParseQWServerReply(struct ServerScanner *server
 
 		p2++;
 
-		printf("Doublequote?: %c %d\n", *p2, *p2);
-
 		if (*p2 == '"')
 		{
 			p2++;
