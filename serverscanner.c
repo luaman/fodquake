@@ -206,6 +206,10 @@ static void ServerScanner_Thread_ParseQWServerReply(struct ServerScanner *server
 			qwserver->pub.maxclients = strtoul(value, 0, 0);
 		else if (strcmp(key, "maxspectators") == 0)
 			qwserver->pub.maxspectators = strtoul(value, 0, 0);
+		else if (strcmp(key, "teamplay") == 0)
+			qwserver->pub.teamplay = strtoul(value, 0, 0);
+		else if (strcmp(key, "map") == 0)
+			qwserver->pub.map = strdup(value);
 		else if (strcmp(key, "hostname") == 0)
 			qwserver->pub.hostname = strdup(value);
 	}
@@ -303,6 +307,9 @@ static void ServerScanner_Thread_ParseQWServerReply(struct ServerScanner *server
 			break;
 
 		p2++;
+		if (*p2)
+			p2++;
+
 		topcolour[i] = atoi(p2);
 
 		p2 = strchr(p2, ' ');
@@ -317,6 +324,8 @@ static void ServerScanner_Thread_ParseQWServerReply(struct ServerScanner *server
 			break;
 
 		p2++;
+
+		printf("Doublequote?: %c %d\n", *p2, *p2);
 
 		if (*p2 == '"')
 		{
@@ -769,6 +778,7 @@ void ServerScanner_Delete(struct ServerScanner *serverscanner)
 	{
 		nextqwserver = qwserver->next;
 
+		free((void *)qwserver->pub.map);
 		free((void *)qwserver->pub.hostname);
 		free((void *)qwserver->pub.players);
 		free(qwserver);

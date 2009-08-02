@@ -54,6 +54,8 @@ struct QWServer
 	const char *hostname; /* Note, this is the _QW_ text 'hostname' */
 	unsigned int maxclients;
 	unsigned int maxspectators;
+	unsigned int teamplay;
+	const char *map; /* Can be 0 */
 	const struct QWPlayer *players;
 	unsigned int numplayers;
 	const struct QWSpectator *spectators;
