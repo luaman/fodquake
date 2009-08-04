@@ -19,6 +19,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "net.h"
 
+enum ServerScannerStatus
+{
+	SSS_SCANNING,
+	SSS_PINGING,
+	SSS_IDLE
+};
+
 enum QWServerStatus
 {
 	QWSS_WAITING,
@@ -63,12 +70,13 @@ struct QWServer
 };
 
 struct ServerScanner *ServerScanner_Create(const char *masters);
-void ServerScanner_Delete(struct ServerScanner *serverquery);
+void ServerScanner_Delete(struct ServerScanner *serverscanner);
 
-void ServerScanner_DoStuff(struct ServerScanner *serverquery);
-int ServerScanner_DataUpdated(struct ServerScanner *serverquery);
-struct QWServer **ServerScanner_GetServers(struct ServerScanner *serverquery, unsigned int *numservers);
-void ServerScanner_FreeServers(struct ServerScanner *serverscanner, struct QWServer **servers);
-int ServerScanner_ScanningComplete(struct ServerScanner *serverquery);
+void ServerScanner_DoStuff(struct ServerScanner *serverscanner);
+int ServerScanner_DataUpdated(struct ServerScanner *serverscanner);
+const struct QWServer **ServerScanner_GetServers(struct ServerScanner *serverscanner, unsigned int *numservers);
+void ServerScanner_FreeServers(struct ServerScanner *serverscanner, const struct QWServer **servers);
+void ServerScanner_RescanServer(struct ServerScanner *serverscanner, const struct QWServer *server);
+enum ServerScannerStatus ServerScanner_GetStatus(struct ServerScanner *serverscanner);
 
 
