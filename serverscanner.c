@@ -671,6 +671,8 @@ static void ServerScanner_Thread_CheckTimeout(struct ServerScanner *serverscanne
 	{
 		if (qwserver->packetsendtime + QWSERVERTIMEOUT <= curtime)
 		{
+			qwserver->pub.pingtime = 999999;
+
 			if (prevqwserver)
 				prevqwserver->nextpinginprogress = qwserver->nextpinginprogress;
 			else
@@ -736,6 +738,8 @@ static void ServerScanner_Thread(void *arg)
 					}
 				}
 
+				curtime = Sys_IntTime();
+
 #warning Needs to schedule servers for scanning
 				while (serverscanner->status == SSS_SCANNING && serverscanner->numqwserversscaninprogress < MAXCONCURRENTSCANS && serverscanner->qwserversscanwaiting)
 				{
@@ -754,7 +758,6 @@ static void ServerScanner_Thread(void *arg)
 				}
 
 				timeout = 50000;
-				curtime = Sys_IntTime();
 				if (serverscanner->status == SSS_SCANNING)
 				{
 					qwserver = serverscanner->qwserversscaninprogress;
