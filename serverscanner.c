@@ -329,12 +329,10 @@ static void ServerScanner_Thread_ParseQWServerReply(struct ServerScanner *server
 		bottomcolour[i] = atoi(p2);
 
 		p2 = strchr(p2, ' ');
-		if (!p2)
-			break;
+		if (p2)
+			p2++;
 
-		p2++;
-
-		if (*p2 == '"')
+		if (p2 && *p2 == '"')
 		{
 			p2++;
 			team[i] = p2;
