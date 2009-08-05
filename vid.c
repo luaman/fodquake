@@ -100,8 +100,16 @@ static void *vid_surfcache;
 
 static void set_up_conwidth_conheight()
 {
-	vid.width = Sys_Video_GetWidth(display);
-	vid.height = Sys_Video_GetHeight(display);
+	if (display)
+	{
+		vid.width = Sys_Video_GetWidth(display);
+		vid.height = Sys_Video_GetHeight(display);
+	}
+	else
+	{
+		vid.width = 320;
+		vid.height = 240;
+	}
 
 #ifdef GLQUAKE
 	if (vid.width <= 640)
