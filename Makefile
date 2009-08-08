@@ -12,6 +12,8 @@ TARGETSYSTEM?=$(shell $(CC) -dumpmachine)
 OS=$(shell echo $(TARGETSYSTEM) | sed "s/-gnu//" | sed "s/.*-//" | tr [A-Z] [a-z] | sed s/^mingw.*/win32/)
 CPU=$(shell echo $(TARGETSYSTEM) | cut -d '-' -f 1 | tr [A-Z] [a-z] | sed "s/powerpc/ppc/")
 
+TARGETS=sw gl
+
 # OS specific settings
 
 ifeq ($(OS), morphos)
@@ -267,17 +269,16 @@ GLOBJS= \
 	gl_warp.o \
 	vid_common_gl.o \
 	$(OSGLOBJS)
-	
-all: compilercheck
-	@echo $(TARGETSYSTEM)
-	@echo OS: $(OS)
-	@echo CPU: $(CPU)
 
-	mkdir -p objects/$(TARGETSYSTEM)/sw
-	(cd objects/$(TARGETSYSTEM)/sw; $(MAKE) -f $(VPATH)Makefile fodquake-sw)
+all: compilercheck $(TARGETS)
 
+gl: compilercheck
 	mkdir -p objects/$(TARGETSYSTEM)/gl
 	(cd objects/$(TARGETSYSTEM)/gl; $(MAKE) -f $(VPATH)Makefile fodquake-gl RENDERERCFLAGS=-DGLQUAKE)
+
+sw: compilercheck
+	mkdir -p objects/$(TARGETSYSTEM)/sw
+	(cd objects/$(TARGETSYSTEM)/sw; $(MAKE) -f $(VPATH)Makefile fodquake-sw)
 
 
 clean:
@@ -299,4 +300,6 @@ compilercheck:
 		echo "GCC version 4 is not supported because it generates broken code. Please use an older (and working) version of GCC."; \
 		exit 1; \
 	fi
+
+.PHONY: compilercheck
 
