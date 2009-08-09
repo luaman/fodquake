@@ -30,6 +30,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <windows.h>
 #endif
 
+#include "server_browser.h"
+
 //key up events are sent even if in console mode
 
 cvar_t	cl_chatmode = {"cl_chatmode", "2"};
@@ -1123,6 +1125,9 @@ void Key_Event (int key, qboolean down) {
 			else
 				M_ToggleMenu_f ();
 			break;
+		case key_serverbrowser:
+			SB_Key(key);
+			break;
 		default:
 			assert(!"Bad key_dest");
 		}
@@ -1187,6 +1192,9 @@ void Key_Event (int key, qboolean down) {
 	case key_game:
 	case key_console:
 		Key_Console (key);
+		break;
+	case key_serverbrowser:
+		SB_Key(key);
 		break;
 	default:
 		assert(!"Bad key_dest");
