@@ -80,3 +80,4 @@ void ServerScanner_RescanServer(struct ServerScanner *serverscanner, const struc
 enum ServerScannerStatus ServerScanner_GetStatus(struct ServerScanner *serverscanner);
 
 
+
