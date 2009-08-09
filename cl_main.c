@@ -52,6 +52,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "sleep.h"
 #include "strl.h"
 
+#include "server_browser.h"
+
 static qboolean cl_imitate_client_callback(cvar_t *var, char *string);
 static qboolean cl_imitate_os_callback(cvar_t *var, char *string);
 
@@ -1090,6 +1092,7 @@ void CL_Init (void)
 	SList_Init ();
 	SList_Load ();
 
+	SB_Init();
 
 	MT_Init();
 	CL_Demo_Init();

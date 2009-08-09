@@ -37,6 +37,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "config.h"
 
+#include "server_browser.h"
+
 #ifdef GLQUAKE
 #include "gl_local.h"
 #else
@@ -1067,6 +1069,8 @@ void SCR_UpdateScreen (void) {
 
 	SCR_DrawElements();
 
+	SB_Frame();
+
 	R_BrightenScreen ();
 
 	V_UpdatePalette(false);
@@ -1144,6 +1148,7 @@ void SCR_UpdateScreen (void) {
 
 	SCR_DrawElements();
 
+	SB_Frame();
 	D_DisableBackBufferAccess ();	// for adapters that can't stay mapped in for linear writes all the time
 	V_UpdatePalette(false);
 
