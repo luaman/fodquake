@@ -183,6 +183,7 @@ OBJS= \
 	huffman.o \
 	image.o \
 	keys.o \
+	linked_list.o \
 	match_tools.o \
 	mathlib.o \
 	mdfour.o \
@@ -199,6 +200,7 @@ OBJS= \
 	r_part.o \
 	readablechars.o \
 	rulesets.o \
+	server_browser.o \
 	serverscanner.o \
 	skin.o \
 	sleep.o \
