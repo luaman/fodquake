@@ -1121,7 +1121,7 @@ static void SB_Draw_Server(void)
 	struct QWPlayer **sorted_players;
 	struct QWServer *server;
 	struct QWPlayer *player;
-	struct QWSpectator *spectator;
+	const struct QWSpectator *spectator;
 
 	if (sb_server_insert)
 	{
@@ -1315,8 +1315,6 @@ static void SB_Draw_Server(void)
 		else
 			qsort(sorted_players, server->numplayers, sizeof(struct QWPlayer *), sort_players);
 
-		//player = (struct QWPlayer *)&server->players[0];
-		player = sorted_players;
 		for(i = 0;i<server->numplayers;i++)
 		{
 			player = sorted_players[i];
@@ -1329,12 +1327,11 @@ static void SB_Draw_Server(void)
 				else
 					Draw_ColoredString(0, y++ * 8, va("%4i %4i %4i  %4.4s&cFFF  %s", player->ping, player->time, player->frags, " ", player->name), 0);
 			}
-			player++;
 		}
 		
 		free(sorted_players);
 
-		spectator = (struct QWPlayer *)&server->spectators[0];
+		spectator = &server->spectators[0];
 		for(i = 0;i<server->numspectators;i++)
 		{
 			if (spectator->name)
