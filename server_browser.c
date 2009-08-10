@@ -493,6 +493,21 @@ static void SB_Help_Handler(int key)
 	}
 }
 
+static void SB_Close()
+{
+	if (serverscanner)
+	{
+		ServerScanner_FreeServers(serverscanner, sb_qw_server);
+		ServerScanner_Delete(serverscanner);
+		serverscanner = NULL;
+		sb_qw_server = NULL;
+		sb_qw_server_count = 0;
+	}
+
+	key_dest = old_keydest;
+	sb_open = 0;
+}
+
 void SB_Key(int key)
 {
 	extern keydest_t key_dest;
@@ -691,8 +706,7 @@ void SB_Key(int key)
 					server = sb_qw_server[tab->sb_position];
 				}
 				Cbuf_AddText(va("connect %s\n", NET_AdrToString(&server->addr)));
-				key_dest = old_keydest;
-				sb_open = 0;
+				SB_Close();
 				return;
 			}
 			Cbuf_AddText("spectator 0\n");
@@ -708,8 +722,7 @@ void SB_Key(int key)
 			}
 
 			Cbuf_AddText(va("connect %s\n", NET_AdrToString(&server->addr)));
-			key_dest = old_keydest;
-			sb_open = 0;
+			SB_Close();
 			return;
 		}
 
@@ -722,8 +735,7 @@ void SB_Key(int key)
 
 	if (key == K_ESCAPE)
 	{
-		key_dest = old_keydest;
-		sb_open = 0;
+		SB_Close();
 		return;
 	}
 
