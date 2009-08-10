@@ -1375,6 +1375,7 @@ static void SB_Draw_Help(void)
 
 void SB_Frame(void)
 {
+	enum ServerScannerStatus sss;
 	int count,todo;
 	int x;
 	if (!sb_open)
@@ -1385,15 +1386,21 @@ void SB_Frame(void)
 
 	if (serverscanner && sb_check_serverscanner)
 	{
-		if (ServerScanner_GetStatus(serverscanner) == SSS_IDLE)
+		sss = ServerScanner_GetStatus(serverscanner);
+		if (sss == SSS_IDLE)
 		{
+			SB_Set_Statusbar("All done. Press \"ctrl + h\" for help.");
 			sb_check_serverscanner = 0;
 		}
-		else
+		else if (sss == SSS_SCANNING)
 		{
 			todo = 0;//ServerScanner_ServersToScan(serverscanner);			
 			count = 0;//ServerScanner_Servers(serverscanner);
-			SB_Set_Statusbar("%4i/%4i servers scanned. press \"ctrl + h\" for help", count - todo, count);
+			SB_Set_Statusbar("Scanning servers. Press \"ctrl + h\" for help");
+		}
+		else if (sss == SSS_PINGING)
+		{
+			SB_Set_Statusbar("Pinging servers. Press \"ctrl + h\" for help.");
 		}
 	}
 
