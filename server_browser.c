@@ -26,8 +26,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "linked_list.h"
 #include "serverscanner.h"
 
-static char *not_set_dummy = "not set";
-
 static int Color_For_Map (int m)
 {
 	m = bound(0, m, 13);
@@ -46,10 +44,12 @@ static struct linked_list *server;
 static struct ServerScanner *serverscanner;
 
 cvar_t sb_masterserver = {"sb_masterserver", "asgaard.morphos-team.net:27000"};
-cvar_t	sb_player_drawing = {"sb_player_drawing", "0"};
+cvar_t sb_player_drawing = {"sb_player_drawing", "0"};
+cvar_t sb_refresh_on_activate = {"sb_refresh_on_activate", "0"};
+cvar_t sb_selected_server_ip = {"sb_selected_server_ip", "none"};
 
 static int sb_open = 0;
-static struct QWServer **sb_qw_server;
+static const struct QWServer **sb_qw_server;
 static unsigned int sb_qw_server_count = 0;
 
 static int sb_help_prev = -1;
@@ -74,8 +74,7 @@ static int sb_filter_edit;
 static int sb_filter_delete;
 
 // inserting filter
-static char sb_filter_insert_keyword[512];
-static int sb_filter_insert_keyword_position = 0;
+static int sb_filter_insert_selected_key;
 static int sb_filter_insert_selected_type;
 static char sb_filter_insert_value[512];
 static int sb_filter_insert_value_position = 0;
@@ -134,20 +133,131 @@ static char *get_sort_name(struct tab *tab)
 		return "map";
 	else if (tab->sort == SB_SORT_HOSTNAME)
 		return "hostname";
+	else
+		return "weird!";
 }
+
+#define SB_FILTER_TYPE_PLAYER 0
+#define SB_FILTER_TYPE_MAP 1
+#define SB_FILTER_TYPE_HOSTNAME 2
+#define SB_FILTER_TYPE_TEAMPLAY 3
+#define SB_FILTER_TYPE_MAX_CLIENTS 4
+#define SB_FILTER_TYPE_PING 5
+#define SB_FILTER_TYPE_MAX 6
 
 struct filter
 {
 	struct linked_list_node node;
+	int key;
 	char *keyword;
 	int type;
-	/* 0 - ==
-	 * 1 - <=
-	 * 2 - >=
-	 * 3 - isin
-	 * 4 - !isin
-	 */
 	char *value;
+	float fvalue;
+};
+
+struct filter_types
+{
+	int type; // 0 - float, 1 - string
+	char *name;
+	char *description;
+	int (*compare_function)(struct QWServer *server, struct filter *filter);
+};
+
+const char *filter_num_operators[] =
+{
+	"==",
+	"<=",
+	">="
+};
+
+const char *filter_char_operators[] =
+{
+	"isin",
+	"!isin"
+};
+
+static int num_check(float sv, float fv, int type)
+{
+	if (type == 0)
+	{
+		if (sv == fv)
+			return 1;
+	}
+	else if (type == 1)
+	{
+		if (sv <= fv)
+			return 1;
+	}
+	else if (type == 2)
+	{
+		if (sv >= fv)
+			return 1;
+	}
+	return 0;
+}
+
+static int char_check(const char *sv, char *fv, int type)
+{
+	if (type == 0)
+	{
+		if(strstr(fv, sv) == NULL)
+			return 0;
+		else
+			return 1;
+	}
+	else if (type ==1)
+	{
+		if(strstr(sv, fv) == NULL)
+			return 0;
+		else
+			return 1;
+	}
+
+	return 0;
+}
+
+static int filter_player_check(struct QWServer *server, struct filter *filter)
+{
+	return num_check(server->numplayers, filter->fvalue, filter->type);
+}
+
+static int filter_map_check(struct QWServer *server, struct filter *filter)
+{
+	if (server->map)
+		return char_check(server->map, filter->value, filter->type);
+	return 0;
+}
+
+static int filter_hostname_check(struct QWServer *server, struct filter *filter)
+{
+	if (server->hostname)
+		return char_check(server->hostname, filter->value, filter->type);
+	return 0;
+}
+
+static int filter_teamplay_check(struct QWServer *server, struct filter *filter)
+{
+	return num_check(server->teamplay, filter->fvalue, filter->type);
+}
+
+static int filter_max_clients_check(struct QWServer *server, struct filter *filter)
+{
+	return num_check(server->maxclients, filter->fvalue, filter->type);
+}
+
+static int filter_ping_check(struct QWServer *server, struct filter *filter)
+{
+	return num_check(server->pingtime/1000, filter->fvalue, filter->type);
+}
+
+struct filter_types filter_types[SB_FILTER_TYPE_MAX] =
+{
+	{ 0, "players", "amount of players on the servers", filter_player_check},
+	{ 1, "map", "mapname", filter_map_check},
+	{ 1, "hostname", "hostname", filter_hostname_check},
+	{ 0, "teamplay", "teamplay", filter_teamplay_check},
+	{ 0, "max_clients", "max clients allowed on server", filter_max_clients_check},
+	{ 0, "ping", "ping to the server", filter_ping_check}
 };
 
 static keydest_t old_keydest;
@@ -234,7 +344,6 @@ static void handle_textbox(int key, char *string, int *position, int size)
 	if (key < 32 || key > 127)
 		return;
 
-
 	if (length == size) 
 		return;
 	i = length;
@@ -248,37 +357,22 @@ static void handle_textbox(int key, char *string, int *position, int size)
 	*position += 1;
 }
 
-static int Check_Server_Against_Filter(struct tab *tab, struct QWServer *server)
+static int Check_Server_Against_Filter(struct tab *tab, const struct QWServer *server)
 {
 	struct filter *fe;
 
 	fe = (struct filter *) List_Get_Node(tab->filters, 0);
 	while (fe)
 	{
-		if (strcmp(fe->keyword, "players") == 0)
-		{
-			if (fe->type == 0)
-			{
-				if (atoi(fe->value) != server->numplayers)
-					return 0;
-			}
-			else if (fe->type == 1)
-			{
-				if (server->numplayers < atoi(fe->value))
-					return 0;
-			}
-			else if (fe->type == 2)
-			{
-				if (server->numplayers > atoi(fe->value))
-	 				return 0;
-			}
-		}
+		if (filter_types[fe->key].compare_function((struct QWServer *)server, fe) == 0)
+			return 0;
+		
 		fe = (struct filter *)fe->node.next;
 	}
 	return 1;
 }
 
-static int check_player(struct tab *tab, struct QWServer *server)
+static int check_player(struct tab *tab, const struct QWServer *server)
 {
 	int i;
 	char *player;
@@ -315,8 +409,8 @@ static int check_player(struct tab *tab, struct QWServer *server)
 static int player_count_compare(const void *a, const void *b)
 {
 	struct QWServer *x, *y;
-	x = sb_qw_server[*(int *)a];
-	y = sb_qw_server[*(int *)b];
+	x = (struct QWServer *) sb_qw_server[*(int *)a];
+	y = (struct QWServer *) sb_qw_server[*(int *)b];
 	return (y->numplayers - x->numplayers);
 }
 
@@ -324,8 +418,8 @@ static int ping_compare(const void *a, const void *b)
 {
 	struct QWServer *x, *y;
 
-	x = sb_qw_server[*(int *)a];
-	y = sb_qw_server[*(int *)b];
+	x = (struct QWServer *) sb_qw_server[*(int *)a];
+	y = (struct QWServer *) sb_qw_server[*(int *)b];
 
 	if (x->status == QWSS_FAILED && y->status == QWSS_FAILED)
 		return 0;
@@ -341,8 +435,8 @@ static int hostname_compare(const void *a, const void *b)
 {
 	struct QWServer *x, *y;
 	char buf[64];
-	x = sb_qw_server[*(int *)a];
-	y = sb_qw_server[*(int *)b];
+	x = (struct QWServer *) sb_qw_server[*(int *)a];
+	y = (struct QWServer *) sb_qw_server[*(int *)b];
 
 	if (x->hostname && y->hostname)
 		return (strcasecmp(x->hostname, y->hostname));
@@ -363,8 +457,8 @@ static int hostname_compare(const void *a, const void *b)
 static int map_compare(const void *a, const void *b)
 {
 	struct QWServer *x, *y;
-	x = sb_qw_server[*(int *)a];
-	y = sb_qw_server[*(int *)b];
+	x = (struct QWServer *) sb_qw_server[*(int *)a];
+	y = (struct QWServer *) sb_qw_server[*(int *)b];
 
 	if (x->map && y->map)
 		return (strcasecmp(x->map, y->map));
@@ -390,15 +484,15 @@ static void sort_tab(struct tab *tab)
 	qsort(tab->server_index, tab->server_count, sizeof(int), compare_functions[tab->sort]);
 }
 
-static int stubby (struct tab *tab, struct QWServer *server)
+static int stubby (struct tab *tab, const struct QWServer *server)
 {
 	return 1;
 }
 
 static void update_tab(struct tab *tab)
 {
-	int count, i, x, length;
-	int (*cf)(struct tab *tab, struct QWServer *server);
+	int count, i, x;
+	int (*cf)(struct tab *tab, const struct QWServer *server);
 
 	tab->max_hostname_length = 0;
 	count = 0;
@@ -495,7 +589,7 @@ static void SB_Help_Handler(int key)
 
 static void SB_Close()
 {
-	if (serverscanner)
+	if (serverscanner && sb_refresh_on_activate.value == 1)
 	{
 		ServerScanner_FreeServers(serverscanner, sb_qw_server);
 		ServerScanner_Delete(serverscanner);
@@ -512,7 +606,7 @@ void SB_Key(int key)
 {
 	extern keydest_t key_dest;
 	int i, update;
-	struct QWServer *server;
+	const struct QWServer *server;
 	struct tab *tab;
 
 	if (key == 'h' && keydown[K_CTRL])
@@ -562,6 +656,7 @@ void SB_Key(int key)
 			if (key == 'y')
 			{
 				SB_Filter_Delete_Filter();
+				SB_Update_Tabs();
 			}
 			sb_filter_delete = 0;
 			return;
@@ -656,37 +751,46 @@ void SB_Key(int key)
 
 		if (key == K_UPARROW)
 		{
-			tab->sb_position--;
+			if (keydown[K_SHIFT])
+				tab->sb_position -= 10;
+			else if (keydown[K_CTRL])
+				tab->sb_position -= 20;
+			else
+				tab->sb_position--;
+
 			if (tab->sb_position < 0)
 			{
 				tab->sb_position = tab->server_count - 1;
 				if (tab->sb_position < 0)
 					tab->sb_position = 0;
 			}
+
+			if (tab->server_count == 0 || tab->sb_position > tab->server_count)
+				return;
+
+			i = tab->server_index[tab->sb_position];
+			server = sb_qw_server[i];
+			Cvar_Set(&sb_selected_server_ip, NET_AdrToString(&server->addr));
 			return;
 		}
 
 		if (key == K_DOWNARROW)
 		{
-			tab->sb_position++;
+			if (keydown[K_SHIFT])
+				tab->sb_position += 10;
+			else if (keydown[K_CTRL])
+				tab->sb_position += 20;
+			else
+				tab->sb_position++;
 			if (tab->sb_position >= tab->server_count)
 				tab->sb_position = 0;
-			return;
-		}
 
-		if (key == K_PGDN)
-		{
-			tab->sb_position += 10;
-			if (tab->sb_position >= tab->server_count)
-				tab->sb_position = tab->server_count - 1;
-			return;
-		}
+			if (tab->server_count == 0 || tab->sb_position > tab->server_count)
+				return;
 
-		if (key == K_PGUP)
-		{
-			tab->sb_position -= 10;
-			if (tab->sb_position <= 0)
-				tab->sb_position = 0;
+			i = tab->server_index[tab->sb_position];
+			server = sb_qw_server[i];
+			Cvar_Set(&sb_selected_server_ip, NET_AdrToString(&server->addr));
 			return;
 		}
 
@@ -730,6 +834,36 @@ void SB_Key(int key)
 		{
 			sb_player_filter = 1;
 			return;
+		}
+
+		if (key == 'r')
+		{
+			if (keydown[K_CTRL])
+			{
+				ServerScanner_FreeServers(serverscanner, sb_qw_server);
+				ServerScanner_Delete(serverscanner);
+				serverscanner = NULL;
+				sb_qw_server = NULL;
+				sb_qw_server_count = 0;
+				serverscanner = ServerScanner_Create(sb_masterserver.string);
+				if (serverscanner == NULL)
+					SB_Set_Statusbar("error creating server scanner!");
+				return;
+			}
+			
+			if (tab->server_index)
+			{
+				i = tab->server_index[tab->sb_position];
+				server = sb_qw_server[i];
+			}
+			else
+			{
+				server = sb_qw_server[tab->sb_position];
+			}
+
+			ServerScanner_RescanServer(serverscanner, server);
+
+
 		}
 	}
 
@@ -798,7 +932,7 @@ void SB_Activate_f(void)
 	key_dest = key_serverbrowser;
 	sb_open = 1;
 
-	if (serverscanner)
+	if (serverscanner && sb_refresh_on_activate.value == 1)
 	{
 		ServerScanner_FreeServers(serverscanner, sb_qw_server);
 		ServerScanner_Delete(serverscanner);
@@ -844,17 +978,14 @@ static void SB_Server_Add(char *ip, int port)
 	*/
 }
 
-static void SB_Add_Filter_To_Tab(int tab, char *keyword, int type, char *value)
+static void SB_Add_Filter_To_Tab(int tab, int key , int type, char *value)
 {
 	struct filter *f;
 	int i;
 
-	if (tab > 11 || tab < 0)
+	if (tab > SB_MAX_TABS || tab < 0)
 		return;
 	
-	if (strlen(keyword) == 0)
-		return;
-
 	if (strlen(value) == 0)
 		return;
 
@@ -862,7 +993,9 @@ static void SB_Add_Filter_To_Tab(int tab, char *keyword, int type, char *value)
 	if (!f)
 		return;
 
-	f->keyword = strdup(keyword);
+	f->key = key;
+
+	f->keyword = strdup(filter_types[key].name);
 
 	if (!f->keyword)
 	{
@@ -871,6 +1004,9 @@ static void SB_Add_Filter_To_Tab(int tab, char *keyword, int type, char *value)
 	}	
 	f->type = type;
 	f->value = strdup(value);
+	if (filter_types[key].type == 0)
+		f->fvalue = atof(value);
+
 	if (!f->value)
 	{
 		free(f->keyword);
@@ -879,18 +1015,35 @@ static void SB_Add_Filter_To_Tab(int tab, char *keyword, int type, char *value)
 	}
 
 	List_Add_Node(tabs[tab].filters, f);
-	i = strlen(keyword);
+	i = strlen(f->keyword);
 	if (tabs[tab].max_filter_keyword_length < i)
 		tabs[tab].max_filter_keyword_length = i;
+}
+
+static int check_selected_type(int type)
+{
+	int max;	
+
+	if (filter_types[sb_filter_insert_selected_key].type == 0)
+		max = 3;
+	else
+		max = 2;
+
+	if (type < 0)
+		type = max - 1;
+	if (type >= max )
+		type = 0;
+
+	return type;
 }
 
 static void SB_Filter_Insert_Handler(int key)
 {
 	if (key == K_ENTER)
 	{
-		SB_Add_Filter_To_Tab(sb_active_tab, sb_filter_insert_keyword, sb_filter_insert_selected_type, sb_filter_insert_value);
+		SB_Add_Filter_To_Tab(sb_active_tab, sb_filter_insert_selected_key, sb_filter_insert_selected_type, sb_filter_insert_value);
 		sb_filter_insert = 0;
-		sb_filter_insert_keyword_position = sb_filter_insert_value_position = 0;
+		sb_filter_insert_value_position = 0;
 		update_tab(&tabs[sb_active_tab]);
 		return;
 	}
@@ -900,6 +1053,7 @@ static void SB_Filter_Insert_Handler(int key)
 		sb_filter_insert_selected_box++;
 		if (sb_filter_insert_selected_box > 2)
 			sb_filter_insert_selected_box = 0;
+
 		return;
 	}
 
@@ -913,12 +1067,10 @@ static void SB_Filter_Insert_Handler(int key)
 	{
 		if (key == K_DOWNARROW)
 			sb_filter_insert_selected_type--;
-		if (key == K_UPARROW)
+		else if (key == K_UPARROW)
 			sb_filter_insert_selected_type++;
-		if (sb_filter_insert_selected_type< 0)
-			sb_filter_insert_selected_type = 4;
-		if (sb_filter_insert_selected_type> 4)
-			sb_filter_insert_selected_type = 0;
+
+		sb_filter_insert_selected_type = check_selected_type(sb_filter_insert_selected_type);
 		return;
 	}
 
@@ -930,7 +1082,17 @@ static void SB_Filter_Insert_Handler(int key)
 	
 	if (sb_filter_insert_selected_box == 0)
 	{
-		handle_textbox(key, sb_filter_insert_keyword, &sb_filter_insert_keyword_position, sizeof(sb_filter_insert_keyword));
+		if (key == K_DOWNARROW)
+			sb_filter_insert_selected_key--;
+		else if (key == K_UPARROW)
+			sb_filter_insert_selected_key++;
+
+		if (sb_filter_insert_selected_key < 0)
+			sb_filter_insert_selected_key = SB_FILTER_TYPE_MAX - 1;
+		if (sb_filter_insert_selected_key >= SB_FILTER_TYPE_MAX)
+			sb_filter_insert_selected_key = 0;
+
+		sb_filter_insert_selected_type = check_selected_type(sb_filter_insert_selected_type);
 		return;
 	}
 }
@@ -1035,13 +1197,42 @@ static void SB_Draw_Background(void)
 
 static void SB_Draw_Filter_Insert(void)
 {
-	Draw_String(8,24, sb_filter_insert_keyword);
+	int i;
+
+	i = 0;
+	Draw_String(8,24, filter_types[sb_filter_insert_selected_key].name);
+	Draw_String(0, 24 + sb_filter_insert_selected_box * 8, ">");
+	Draw_String(8, 48 + 8 * i++, "press arrow up/down to switch trough available options");
+	Draw_String(8, 48 + 8 * i++, "tab to switch trough the entry fields");
+	Draw_String(8, 48 + 8 * i++, "esc to leave");
+
 	if (sb_filter_insert_selected_box == 0)
-		Draw_String(8 + 8*sb_filter_insert_keyword_position, 24, "_");
-	Draw_String(8, 32, Filter_Type_String(sb_filter_insert_selected_type));
+	{
+		Draw_String(8, 48 + 8 * i++, filter_types[sb_filter_insert_selected_key].description);
+	}
+
+	if (sb_filter_insert_selected_box == 1)
+	{
+		if (filter_types[sb_filter_insert_selected_key].type == 0)
+		{
+			Draw_String(8, 48 + 8 * i++, (char *)filter_num_operators[sb_filter_insert_selected_type]);
+		}
+		else
+		{
+			Draw_String(8, 48 + 8 * i++, (char *)filter_num_operators[sb_filter_insert_selected_type]);
+		}
+	}
+
+	if (filter_types[sb_filter_insert_selected_key].type == 0)
+		Draw_String(8, 32, (char *)filter_num_operators[sb_filter_insert_selected_type]);
+	else
+		Draw_String(8, 32, (char *)filter_char_operators[sb_filter_insert_selected_type]);
+
 	Draw_String(8, 40, sb_filter_insert_value);
 	if (sb_filter_insert_selected_box == 2)
+	{
 		Draw_String(8 + 8*sb_filter_insert_value_position, 40, "_");
+	}
 }
 
 static void SB_Draw_Filter(void)
@@ -1090,10 +1281,12 @@ static int sort_players_team(const void *a, const void *b)
 	y = *(struct QWPlayer **)b;
 	
 	if (x->team && y->team)
+	{
 		if ((i = strcmp(x->team ,y->team)) == 0)
 			return (y->frags - x->frags);
 		else 
 			return i;
+	}
 	
 	return (y->frags - x->frags);
 }
@@ -1101,7 +1294,6 @@ static int sort_players_team(const void *a, const void *b)
 static int sort_players(const void *a, const void *b)
 {
 	struct QWPlayer *x, *y;
-	int i;
 
 	x = *(struct QWPlayer **)a;
 	y = *(struct QWPlayer **)b;
@@ -1111,16 +1303,16 @@ static int sort_players(const void *a, const void *b)
 
 static void SB_Draw_Server(void)
 {
-	int i, x, y, z, team_width;
+	int i, x, y, z;
 	int line_space, player_space;
 	int offset;
 	struct tab *tab;
-	char *hostname, *map;
+	const char *hostname, *map;
 	char string[512];
 	int position;
-	struct QWPlayer **sorted_players;
-	struct QWServer *server;
-	struct QWPlayer *player;
+	const struct QWPlayer **sorted_players;
+	const struct QWServer *server;
+	const struct QWPlayer *player;
 	const struct QWSpectator *spectator;
 
 	if (sb_server_insert)
@@ -1129,7 +1321,11 @@ static void SB_Draw_Server(void)
 		return;
 	}
 
+	if (sb_qw_server_count == 0)
+		return;
+
 	tab = &tabs[sb_active_tab];
+	player_space = 0;
 
 	if (sb_player_filter == 1 || tab->player_filter)
 	{
@@ -1363,6 +1559,8 @@ static void SB_Draw_Help(void)
 	else if (sb_active_help_window == 1)
 	{
 		Draw_String(8, 8 + 8 * i++, "server screen:");
+		Draw_String(8, 8 + 8 * i++, " ctrl + r - rescan all server");
+		Draw_String(8, 8 + 8 * i++, " r - rescan selected server");
 		Draw_String(8, 8 + 8 * i++, " enter - to join as player");
 		Draw_String(8, 8 + 8 * i++, " ctrl + enter - to join as spectator");
 		Draw_String(8, 8 + 8 * i++, " enter - to join as player");
@@ -1387,6 +1585,7 @@ void SB_Frame(void)
 	enum ServerScannerStatus sss;
 	int count,todo;
 	int x;
+
 	if (!sb_open)
 		return;
 
@@ -1446,11 +1645,22 @@ void SB_Init(void)
 	Cmd_AddCommand("sb_activate", &SB_Activate_f);
 	Cvar_Register(&sb_masterserver);
 	Cvar_Register(&sb_player_drawing);
+	Cvar_Register(&sb_refresh_on_activate);
+	Cvar_Register(&sb_selected_server_ip);
 
 	for (i=0;i<SB_MAX_TABS;i++)
 	{
 		tabs[i].filters = List_Add(0, NULL, NULL);
 	}
+
+	SB_Add_Filter_To_Tab(1, 0, 2, "1");
+	SB_Add_Filter_To_Tab(1, 4, 0, "2");
+
+	SB_Add_Filter_To_Tab(2, 0, 2, "1");
+	SB_Add_Filter_To_Tab(2, 4, 0, "4");
+
+	SB_Add_Filter_To_Tab(3, 0, 2, "1");
+	SB_Add_Filter_To_Tab(3, 4, 0, "8");
 
 	server = List_Add(0, NULL, NULL);
 
