@@ -1606,11 +1606,15 @@ void SCR_CvarInit (void)
 	Cmd_AddCommand ("sizedown", SCR_SizeDown_f);
 }
 
-void SCR_Init(void)
+void SCR_LoadTextures()
 {
 	scr_ram = Draw_CacheWadPic ("ram");
 	scr_net = Draw_CacheWadPic ("net");
 	scr_turtle = Draw_CacheWadPic ("turtle");
+}
 
+void SCR_Init(void)
+{
 	scr_initialized = true;
 }
+
