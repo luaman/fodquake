@@ -93,7 +93,7 @@ qboolean CheckExtension (const char *extension)
 
 void CheckMultiTextureExtensions (void)
 {
-	if (!COM_CheckParm("-nomtex"))
+	if (COM_CheckParm("-nomtex"))
 		return;
 
 	if (strstr(gl_renderer, "Savage"))
