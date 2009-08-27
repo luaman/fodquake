@@ -30,6 +30,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "image.h"
 #include "utils.h"
 
+static unsigned char draw_inited;
+
 extern cvar_t crosshair, cl_crossx, cl_crossy, crosshaircolor, crosshairsize;
 extern cvar_t scr_coloredText;
 
@@ -487,28 +489,37 @@ static int Draw_LoadCharset(char *name)
 	return 0;
 }
 
-qboolean OnChange_gl_consolefont(cvar_t *var, char *string) {
-	return Draw_LoadCharset(string);
+qboolean OnChange_gl_consolefont(cvar_t *var, char *string)
+{
+	if (draw_inited)
+		return Draw_LoadCharset(string);
+
+	return 0;
 }
 
-void Draw_LoadCharset_f (void) {
-	switch (Cmd_Argc()) {
-	case 1:
-		Com_Printf("Current charset is \"%s\"\n", gl_consolefont.string);
-		break;
-	case 2:
-		Cvar_Set(&gl_consolefont, Cmd_Argv(1));
-		break;
-	default:
-		Com_Printf("Usage: %s <charset>\n", Cmd_Argv(0));
+void Draw_LoadCharset_f (void)
+{
+	switch (Cmd_Argc())
+	{
+		case 1:
+			Com_Printf("Current charset is \"%s\"\n", gl_consolefont.string);
+			break;
+		case 2:
+			Cvar_Set(&gl_consolefont, Cmd_Argv(1));
+			break;
+		default:
+			Com_Printf("Usage: %s <charset>\n", Cmd_Argv(0));
+			break;
 	}
 }
 
-void Draw_InitCharset(void) {
+void Draw_InitCharset(void)
+{
 	int i;
 
 	draw_chars = W_GetLumpName ("conchars");
-	for (i = 0; i < 256 * 64; i++) {
+	for (i = 0; i < 256 * 64; i++)
+	{
 		if (draw_chars[i] == 0)
 			draw_chars[i] = 255;
 	}
@@ -570,6 +581,8 @@ void Draw_Init (void)
 	// get the other pics we need
 	draw_disc = Draw_CacheWadPic ("disc");
 	draw_backtile = Draw_CacheWadPic ("backtile");
+
+	draw_inited = 1;
 }
 
 __inline static void Draw_CharPoly(int x, int y, int num) {
@@ -759,8 +772,8 @@ void Draw_Crosshair (void) {
 
 
 		if (gl_crosshairalpha.value) {
-            glDisable(GL_ALPHA_TEST);
-            glEnable (GL_BLEND);
+			glDisable(GL_ALPHA_TEST);
+			glEnable (GL_BLEND);
 			col[3] = bound(0, gl_crosshairalpha.value, 1) * 255;
 			glColor4ubv (col);
 		} else {
@@ -1086,15 +1099,16 @@ void Draw_BeginDisc (void) {
 //Call after completing any disc IO
 void Draw_EndDisc (void) {}
 
-void GL_Set2D (void) {
+void GL_Set2D (void)
+{
 	glViewport (glx, gly, glwidth, glheight);
 
 	glMatrixMode(GL_PROJECTION);
-    glLoadIdentity ();
+	glLoadIdentity ();
 	glOrtho (0, vid.width, vid.height, 0, -99999, 99999);
 
 	glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity ();
+	glLoadIdentity ();
 
 	glDisable (GL_DEPTH_TEST);
 	glDisable (GL_CULL_FACE);
