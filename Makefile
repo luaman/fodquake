@@ -26,8 +26,6 @@ ifeq ($(OS), morphos)
 		snd_morphos.o \
 		in_morphos.o
 
-	OSLDFLAGS=-lsyscall
-
 	OSSWOBJS=vid_morphos.o
 
 	OSGLOBJS=vid_tinygl.o
