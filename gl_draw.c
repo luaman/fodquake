@@ -30,7 +30,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "image.h"
 #include "utils.h"
 
-static unsigned char draw_inited;
+static unsigned char drawgl_inited;
 
 extern cvar_t crosshair, cl_crossx, cl_crossy, crosshaircolor, crosshairsize;
 extern cvar_t scr_coloredText;
@@ -491,7 +491,7 @@ static int Draw_LoadCharset(char *name)
 
 qboolean OnChange_gl_consolefont(cvar_t *var, char *string)
 {
-	if (draw_inited)
+	if (drawgl_inited)
 		return Draw_LoadCharset(string);
 
 	return 0;
@@ -554,7 +554,7 @@ void Draw_CvarInit(void)
 	GL_Texture_CvarInit();
 }
 
-void Draw_Init (void)
+void Draw_InitGL(void)
 {
 	int i;
 
@@ -565,14 +565,9 @@ void Draw_Init (void)
 	Draw_InitCharset ();
 	Draw_InitConback ();
 
-	// save a texture slot for translated picture
-	translate_texture = texture_extension_number++;
-
-	// save slots for scraps
-	Scrap_Init();
-
 	// Load the crosshair pics
-	for (i = 0; i < NUMCROSSHAIRS; i++) {
+	for (i = 0; i < NUMCROSSHAIRS; i++)
+	{
 		crosshairtextures[i] = GL_LoadTexture ("", 8, 8, crosshairdata[i], TEX_ALPHA, 1);
 		glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -582,7 +577,21 @@ void Draw_Init (void)
 	draw_disc = Draw_CacheWadPic ("disc");
 	draw_backtile = Draw_CacheWadPic ("backtile");
 
-	draw_inited = 1;
+	drawgl_inited = 1;
+}
+
+void Draw_ShutdownGL()
+{
+	drawgl_inited = 0;
+}
+
+void Draw_Init(void)
+{
+	// save a texture slot for translated picture
+	translate_texture = texture_extension_number++;
+
+	// save slots for scraps
+	Scrap_Init();
 }
 
 __inline static void Draw_CharPoly(int x, int y, int num) {

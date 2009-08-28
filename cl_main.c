@@ -1067,9 +1067,7 @@ void CL_Init (void)
 	cl_vidinitialised = 1;
 
 	Image_Init();
-#ifndef GLQUAKE
 	Draw_Init ();
-#endif
 	SCR_Init ();
 	R_Init ();
 
