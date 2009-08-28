@@ -28,6 +28,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "utils.h"
 
+static char sky_initialised;
+
 extern model_t *loadmodel;
 
 extern msurface_t *skychain;
@@ -401,7 +403,8 @@ void R_InitSky (miptex_t *mt) {
 static char *skybox_ext[6] = {"rt", "bk", "lf", "ft", "up", "dn"};
 
 
-int R_SetSky(char *skyname) {
+int R_SetSky(char *skyname)
+{
 	int i, error = 0;
 	byte *data[6] = {NULL, NULL, NULL, NULL, NULL, NULL};
 	extern int image_width, image_height, gl_max_size_default;
@@ -433,10 +436,17 @@ cleanup:
 		else
 			break;
 	}
+
+	sky_initialised = 1;
+
 	return error;
 }
 
-qboolean OnChange_r_skyname (cvar_t *v, char *skyname) {
+qboolean OnChange_r_skyname (cvar_t *v, char *skyname)
+{
+	if (!sky_initialised)
+		return false;
+
 	if (!skyname[0]) {		
 		r_skyboxloaded = false;
 		return false;
@@ -445,22 +455,24 @@ qboolean OnChange_r_skyname (cvar_t *v, char *skyname) {
 	return R_SetSky(skyname);
 }
 
-void R_LoadSky_f(void) {
-	switch (Cmd_Argc()) {
-	case 1:
-		if (r_skyboxloaded)
-			Com_Printf("Current skybox is \"%s\"\n", r_skyname.string);
-		else
-			Com_Printf("No skybox has been set\n");
-		break;
-	case 2:
-		if (!Q_strcasecmp(Cmd_Argv(1), "none"))
-			Cvar_Set(&r_skyname, "");
-		else
-			Cvar_Set(&r_skyname, Cmd_Argv(1));
-		break;
-	default:
-		Com_Printf("Usage: %s <skybox>\n", Cmd_Argv(0));
+void R_LoadSky_f(void)
+{
+	switch (Cmd_Argc())
+	{
+		case 1:
+			if (r_skyboxloaded)
+				Com_Printf("Current skybox is \"%s\"\n", r_skyname.string);
+			else
+				Com_Printf("No skybox has been set\n");
+			break;
+		case 2:
+			if (!Q_strcasecmp(Cmd_Argv(1), "none"))
+				Cvar_Set(&r_skyname, "");
+			else
+				Cvar_Set(&r_skyname, Cmd_Argv(1));
+			break;
+		default:
+			Com_Printf("Usage: %s <skybox>\n", Cmd_Argv(0));
 	}
 }
 
