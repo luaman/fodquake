@@ -1094,7 +1094,7 @@ void R_Clear(void)
 {
 	int clearbits = 0;
 
-	if (gl_clear.value || (!VID_HWGammaSupported && v_contrast.value > 1))
+	if (gl_clear.value || (!VID_HWGammaSupported() && v_contrast.value > 1))
 		clearbits |= GL_COLOR_BUFFER_BIT;
 
 	if (gl_ztrick.value)
