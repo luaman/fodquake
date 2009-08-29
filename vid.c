@@ -331,7 +331,7 @@ void VID_Open()
 
 			vid.recalc_refdef = 1;				// force a surface cache flush
 
-			GL_InitTextureStuff();
+			R_InitGL();
 			GL_Particles_TextureInit();
 			Draw_InitGL();
 			Sbar_Init();

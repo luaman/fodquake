@@ -26,6 +26,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "sound.h"
 #include "utils.h"
 
+static char gl_initialised;
+
 extern int gl_max_size_default;
 
 entity_t	r_worldentity;
@@ -1037,8 +1039,10 @@ void R_Init (void)
 	texture_extension_number += 6;
 }
 
-void GL_InitTextureStuff(void)
+void R_InitGL(void)
 {
+	byte *clearColor;
+
 	glGetIntegerv(GL_MAX_TEXTURE_SIZE, &gl_max_size_default);
 	Cvar_SetDefault(&gl_max_size, gl_max_size_default);
 
@@ -1052,6 +1056,11 @@ void GL_InitTextureStuff(void)
 	Classic_LoadParticleTextures();
 
 	R_InitOtherTextures ();		
+
+	clearColor = StringToRGB(gl_clearColor.string);
+	glClearColor(clearColor[0] / 255.0, clearColor[1] / 255.0, clearColor[2] / 255.0, 1.0);
+
+	gl_initialised = 1;
 }
 
 extern msurface_t *alphachain;
@@ -1084,8 +1093,11 @@ qboolean OnChange_gl_clearColor(cvar_t *v, char *s)
 {
 	byte *clearColor;
 
-	clearColor = StringToRGB(s);
-	glClearColor(clearColor[0] / 255.0, clearColor[1] / 255.0, clearColor[2] / 255.0, 1.0);
+	if (gl_initialised)
+	{
+		clearColor = StringToRGB(s);
+		glClearColor(clearColor[0] / 255.0, clearColor[1] / 255.0, clearColor[2] / 255.0, 1.0);
+	}
 
 	return false;
 }
