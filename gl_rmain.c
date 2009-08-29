@@ -1054,97 +1054,111 @@ void GL_InitTextureStuff(void)
 	R_InitOtherTextures ();		
 }
 
-extern msurface_t	*alphachain;
-void R_RenderScene (void) {
-	R_SetupFrame ();
+extern msurface_t *alphachain;
 
-	R_SetFrustum ();
+void R_RenderScene(void)
+{
+	R_SetupFrame();
 
-	R_SetupGL ();
+	R_SetFrustum();
 
-	R_MarkLeaves ();	// done here so we know if we're in water
+	R_SetupGL();
 
-	R_DrawWorld ();		// adds static entities to the list
+	R_MarkLeaves();	// done here so we know if we're in water
 
-	S_ExtraUpdate ();	// don't let sound get messed up if going slow
+	R_DrawWorld();		// adds static entities to the list
 
-	R_DrawEntitiesOnList (&cl_visents);
-	R_DrawEntitiesOnList (&cl_alphaents);
+	S_ExtraUpdate();	// don't let sound get messed up if going slow
 
-	R_DrawWaterSurfaces ();
+	R_DrawEntitiesOnList(&cl_visents);
+	R_DrawEntitiesOnList(&cl_alphaents);
+
+	R_DrawWaterSurfaces();
 
 	GL_DisableMultitexture();
 }
 
 int gl_ztrickframe = 0;
 
-qboolean OnChange_gl_clearColor(cvar_t *v, char *s) {
+qboolean OnChange_gl_clearColor(cvar_t *v, char *s)
+{
 	byte *clearColor;
 
 	clearColor = StringToRGB(s);
-	glClearColor (clearColor[0] / 255.0, clearColor[1] / 255.0, clearColor[2] / 255.0, 1.0);
+	glClearColor(clearColor[0] / 255.0, clearColor[1] / 255.0, clearColor[2] / 255.0, 1.0);
 
 	return false;
 }
 
-void R_Clear (void) {
+void R_Clear(void)
+{
 	int clearbits = 0;
 
 	if (gl_clear.value || (!VID_HWGammaSupported && v_contrast.value > 1))
 		clearbits |= GL_COLOR_BUFFER_BIT;
 
-	if (gl_ztrick.value) {
+	if (gl_ztrick.value)
+	{
 		if (clearbits)
-			glClear (clearbits);
+			glClear(clearbits);
 
 		gl_ztrickframe = !gl_ztrickframe;
-		if (gl_ztrickframe) {
+		if (gl_ztrickframe)
+		{
 			gldepthmin = 0;
 			gldepthmax = 0.49999;
-			glDepthFunc (GL_LEQUAL);
-		} else {
+			glDepthFunc(GL_LEQUAL);
+		}
+		else
+		{
 			gldepthmin = 1;
 			gldepthmax = 0.5;
-			glDepthFunc (GL_GEQUAL);
+			glDepthFunc(GL_GEQUAL);
 		}
-	} else {
+	}
+	else
+	{
 		clearbits |= GL_DEPTH_BUFFER_BIT;
-		glClear (clearbits);
+		glClear(clearbits);
 		gldepthmin = 0;
 		gldepthmax = 1;
-		glDepthFunc (GL_LEQUAL);
+		glDepthFunc(GL_LEQUAL);
 	}
 
-	glDepthRange (gldepthmin, gldepthmax);
+	glDepthRange(gldepthmin, gldepthmax);
 }
 
 
-void R_RenderView (void) {
+void R_RenderView(void)
+{
 	double time1 = 0, time2;
 
 	if (!r_worldentity.model || !cl.worldmodel)
-		Sys_Error ("R_RenderView: NULL worldmodel");
+		Sys_Error("R_RenderView: NULL worldmodel");
 
-	if (r_speeds.value) {
-		glFinish ();
-		time1 = Sys_DoubleTime ();
+	if (r_speeds.value)
+	{
+		glFinish();
+		time1 = Sys_DoubleTime();
 		c_brush_polys = 0;
 		c_alias_polys = 0;
 	}
 
 	if (gl_finish.value)
-		glFinish ();
+		glFinish();
 
-	R_Clear ();
+	R_Clear();
 
 	// render normal view
-	R_RenderScene ();
-	R_RenderDlights ();
-	R_DrawParticles ();
-	R_DrawViewModel ();
+	R_RenderScene();
+	R_RenderDlights();
+	R_DrawParticles();
+	R_DrawViewModel();
 
-	if (r_speeds.value) {
-		time2 = Sys_DoubleTime ();
-		Com_Printf ("%3i ms  %4i wpoly %4i epoly\n", (int)((time2 - time1) * 1000), c_brush_polys, c_alias_polys); 
+	if (r_speeds.value)
+	{
+		time2 = Sys_DoubleTime();
+		Com_Printf("%3i ms  %4i wpoly %4i epoly\n", (int)((time2 - time1) * 1000), c_brush_polys, c_alias_polys); 
 	}
 }
+
