@@ -143,43 +143,67 @@ static byte crosshairdata[NUMCROSSHAIRS][64] =
 	},
 };
 
-
-qboolean OnChange_gl_smoothfont (cvar_t *var, char *string) {
-	float newval;
-
-	newval = Q_atof (string);
-	if (!newval == !gl_smoothfont.value || !char_texture)
-		return false;
+static void SetupFontSmoothing()
+{
+	if (!char_texture)
+		return;
 
 	GL_Bind(char_texture);
 
-	if (newval)	{
+	if (gl_smoothfont.value)
+	{
 		glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	} else {
+	}
+	else
+	{
 		glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	}
+}
+
+qboolean OnChange_gl_smoothfont (cvar_t *var, char *string)
+{
+	if (drawgl_inited)
+	{
+		var->value = Q_atof(string);
+
+		SetupFontSmoothing();
+	}
+
 	return false;
 }
 
-
-qboolean OnChange_gl_crosshairimage(cvar_t *v, char *s) {
+static void Crosshair_LoadImage(const char *s)
+{
 	mpic_t *pic;
 
-	if (!s[0]) {
+	if (!s[0])
+	{
 		customcrosshair_loaded &= ~CROSSHAIR_IMAGE;
-		return false;
+		return;
 	}
-	if (!(pic = GL_LoadPicImage(va("crosshairs/%s", s), "crosshair", 0, 0, TEX_ALPHA))) {
+
+#warning This leaks memory if the cvar is changed, yes?
+	if (!(pic = GL_LoadPicImage(va("crosshairs/%s", s), "crosshair", 0, 0, TEX_ALPHA)))
+	{
 		customcrosshair_loaded &= ~CROSSHAIR_IMAGE;
 		Com_Printf("Couldn't load image %s\n", s);
-		return false;
+		return;
 	}
+
 	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	crosshairpic = *pic;
 	customcrosshair_loaded |= CROSSHAIR_IMAGE;
+
+}
+
+qboolean OnChange_gl_crosshairimage(cvar_t *v, char *s)
+{
+	if (drawgl_inited)
+		Crosshair_LoadImage(s);
+
 	return false;
 }
 
@@ -213,6 +237,8 @@ void customCrosshair_Init(void) {
 	glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	customcrosshair_loaded |= CROSSHAIR_TXT;
+
+	Crosshair_LoadImage(gl_crosshairimage.string);
 }
 
 
