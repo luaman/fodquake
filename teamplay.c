@@ -2352,14 +2352,17 @@ static qboolean CheckTrigger (void) {
 	return count;
 }
 
-static void ExecTookTrigger (char *s, int flag, vec3_t org) {
+static void ExecTookTrigger (char *s, int flag, vec3_t org)
+{
 	int pkflags_dmm, tookflags_dmm;
 
 	pkflags_dmm = pkflags;
 	tookflags_dmm = tookflags;
 	
-	if (!cl.teamfortress && cl.deathmatch >= 1 && cl.deathmatch <= 4) {
-		if (cl.deathmatch == 4) {
+	if (!cl.teamfortress && cl.deathmatch >= 1 && cl.deathmatch <= 4)
+	{
+		if (cl.deathmatch == 4)
+		{
 			pkflags_dmm &= ~(it_ammo|it_weapons);
 			tookflags_dmm &= ~(it_ammo|it_weapons);
 		}
@@ -2368,8 +2371,8 @@ static void ExecTookTrigger (char *s, int flag, vec3_t org) {
 		return;
 
 	vars.tooktime = cls.realtime;
-	strncpy (vars.tookname, s, sizeof(vars.tookname)-1);
-	strncpy (vars.tookloc, TP_LocationName (org), sizeof(vars.tookloc)-1);
+	strlcpy(vars.tookname, s, sizeof(vars.tookname));
+	strlcpy(vars.tookloc, TP_LocationName (org), sizeof(vars.tookloc));
 
 	if ((tookflags_dmm & flag) && CheckTrigger())
 		TP_ExecTrigger ("f_took");
