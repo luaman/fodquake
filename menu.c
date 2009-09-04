@@ -567,7 +567,7 @@ void M_Options_Key (int k) {
 	}
 
 	if (k == K_UPARROW || k == K_END || k == K_PGDN) {
-		if (options_cursor == 15 && !VID_IsFullscreen())
+		if (options_cursor == 15 && VID_IsFullscreen())
 			options_cursor = 14;
 
 		if (options_cursor == 14 && vid_menudrawfn == NULL)
@@ -576,7 +576,7 @@ void M_Options_Key (int k) {
 		if (options_cursor == 14 && vid_menudrawfn == NULL)
 			options_cursor = 15;
 
-		if (options_cursor == 15 && !VID_IsFullscreen())
+		if (options_cursor == 15 && VID_IsFullscreen())
 			options_cursor = 0;
 	}
 }
