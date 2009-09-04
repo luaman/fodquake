@@ -23,46 +23,16 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define __NET_H__
 
 #include "common.h"
+#include "sys_net.h"
 
 struct SysNetData;
 
 #define	PORT_ANY	-1
 
-enum netaddrtype
-{
-	NA_LOOPBACK,  /* Only used internally */
-	NA_IPV4,
-	NA_IPV6,
-	NA_NUMTYPES   /* Not a real type */
-};
-
 enum netsrc
 {
 	NS_CLIENT,
 	NS_SERVER
-};
-
-struct netaddr_ipv4
-{
-	unsigned char address[4];
-	unsigned short port;
-};
-
-struct netaddr_ipv6
-{
-	unsigned char address[16];
-	unsigned short port;
-};
-
-struct netaddr
-{
-	enum netaddrtype type;
-
-	union
-	{
-		struct netaddr_ipv4 ipv4;
-		struct netaddr_ipv6 ipv6;
-	} addr;
 };
 
 #warning Get rid of these externs
