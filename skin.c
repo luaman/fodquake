@@ -164,7 +164,9 @@ byte *Skin_Cache (skin_t *skin) {
 
 	return out;
 }
-void Skin_NextDownload (void) {
+
+void Skin_NextDownload(void)
+{
 	player_info_t *sc;
 	int i;
 
@@ -173,13 +175,17 @@ void Skin_NextDownload (void) {
 
 	cls.downloadtype = dl_skin;
 
-	for ( ; cls.downloadnumber != MAX_CLIENTS; cls.downloadnumber++) {
+	for ( ; cls.downloadnumber != MAX_CLIENTS; cls.downloadnumber++)
+	{
 		sc = &cl.players[cls.downloadnumber];
 		if (!sc->name[0])
 			continue;
-		Skin_Find (sc);
+
+		Skin_Find(sc);
+
 		if (noskins.value)
 			continue;
+
 		if (!CL_CheckOrDownloadFile(va("skins/%s.pcx", sc->skin->name)))
 			return;		// started a download
 	}
@@ -187,18 +193,21 @@ void Skin_NextDownload (void) {
 	cls.downloadtype = dl_none;
 
 	// now load them in for real
-	for (i = 0; i < MAX_CLIENTS; i++) {
+	for (i = 0; i < MAX_CLIENTS; i++)
+	{
 		sc = &cl.players[i];
 		if (!sc->name[0])
 			continue;
-		Skin_Cache (sc->skin);
+
+		Skin_Cache(sc->skin);
 		sc->skin = NULL;
 	}
 
-	if (cls.state == ca_onserver && cbuf_current != &cbuf_main) {	//only download when connecting
+	if (cls.state == ca_onserver && cbuf_current != &cbuf_main)	//only download when connecting
+	{
 		MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
 		MSG_WriteString (&cls.netchan.message, va("begin %i", cl.servercount));
-		Cache_Report ();		// print remaining memory
+		Cache_Report();		// print remaining memory
 	}
 }
 
