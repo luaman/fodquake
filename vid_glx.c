@@ -263,7 +263,8 @@ unsigned int Sys_Video_GetNumBuffers(void *display)
 
 /************************************* VID INIT *************************************/
 
-static Cursor CreateNullCursor(Display *display, Window root) {
+static Cursor CreateNullCursor(Display *display, Window root)
+{
 	Pixmap cursormask;
 	XGCValues xgc;
 	GC gc;
@@ -316,129 +317,129 @@ void *Sys_Video_Open(unsigned int width, unsigned int height, unsigned int depth
 
 		d->hasfocus = 1;
 		d->fullscreen = fullscreen;
-	d->x_disp = XOpenDisplay(NULL);
-	if (d->x_disp)
-	{
-		d->scrnum = DefaultScreen(d->x_disp);
-		visinfo = glXChooseVisual(d->x_disp, d->scrnum, attrib);
-		if (visinfo)
+		d->x_disp = XOpenDisplay(NULL);
+		if (d->x_disp)
 		{
-
-			root = RootWindow(d->x_disp, d->scrnum);
+			d->scrnum = DefaultScreen(d->x_disp);
+			visinfo = glXChooseVisual(d->x_disp, d->scrnum, attrib);
+			if (visinfo)
+			{
+				root = RootWindow(d->x_disp, d->scrnum);
 
 #ifdef USE_VMODE
-			if (fullscreen)
-			{
-				int version, revision;
-				int best_fit, best_dist, dist, x, y;
-				int num_vidmodes;
-
-				if (XF86VidModeQueryVersion(d->x_disp, &version, &revision))
+				if (fullscreen)
 				{
-					XF86VidModeGetModeLine(d->x_disp, d->scrnum, &d->origvidmode.dotclock, (XF86VidModeModeLine *)&d->origvidmode.hdisplay);
+					int version, revision;
+					int best_fit, best_dist, dist, x, y;
+					int num_vidmodes;
 
-					XF86VidModeGetAllModeLines(d->x_disp, d->scrnum, &num_vidmodes, &d->vidmodes);
-
-					best_dist = 9999999;
-					best_fit = -1;
-
-					for (i = 0; i < num_vidmodes; i++)
+					if (XF86VidModeQueryVersion(d->x_disp, &version, &revision))
 					{
-						if (width > d->vidmodes[i]->hdisplay || height > d->vidmodes[i]->vdisplay)
-							continue;
+						XF86VidModeGetModeLine(d->x_disp, d->scrnum, &d->origvidmode.dotclock, (XF86VidModeModeLine *)&d->origvidmode.hdisplay);
 
-						x = width - d->vidmodes[i]->hdisplay;
-						y = height - d->vidmodes[i]->vdisplay;
-						dist = x * x + y * y;
-						if (dist < best_dist)
+						XF86VidModeGetAllModeLines(d->x_disp, d->scrnum, &num_vidmodes, &d->vidmodes);
+
+						best_dist = 9999999;
+						best_fit = -1;
+
+						for (i = 0; i < num_vidmodes; i++)
 						{
-							best_dist = dist;
-							best_fit = i;
-						}
-					}
+							if (width > d->vidmodes[i]->hdisplay || height > d->vidmodes[i]->vdisplay)
+								continue;
 
-					if (best_fit != -1)
-					{
+							x = width - d->vidmodes[i]->hdisplay;
+							y = height - d->vidmodes[i]->vdisplay;
+							dist = x * x + y * y;
+							if (dist < best_dist)
+							{
+								best_dist = dist;
+								best_fit = i;
+							}
+						}
+
+						if (best_fit != -1)
+						{
 /*
-						actualWidth = vidmodes[best_fit]->hdisplay;
-						actualHeight = vidmodes[best_fit]->vdisplay;
+							actualWidth = vidmodes[best_fit]->hdisplay;
+							actualHeight = vidmodes[best_fit]->vdisplay;
 */
-						// change to the mode
-						XF86VidModeSwitchToMode(d->x_disp, d->scrnum, d->vidmodes[best_fit]);
-						d->vidmode_active = true;
-						// Move the viewport to top left
-						XF86VidModeSetViewPort(d->x_disp, d->scrnum, 0, 0);
+							// change to the mode
+							XF86VidModeSwitchToMode(d->x_disp, d->scrnum, d->vidmodes[best_fit]);
+							d->vidmode_active = true;
+							// Move the viewport to top left
+							XF86VidModeSetViewPort(d->x_disp, d->scrnum, 0, 0);
+						}
+						else
+							fullscreen = 0;
 					}
 					else
+					{
+						Com_Printf("Unable to use the XF86 vidmode extension.\n");
 						fullscreen = 0;
+					}
 				}
-				else
-				{
-					Com_Printf("Unable to use the XF86 vidmode extension.\n");
-					fullscreen = 0;
-				}
-			}
 #else
-			fullscreen = 0;
+				fullscreen = 0;
 #endif
 
-			// window attributes
-			attr.background_pixel = 0;
-			attr.border_pixel = 0;
-			attr.colormap = XCreateColormap(d->x_disp, root, visinfo->visual, AllocNone);
-			attr.event_mask = X_MASK;
-			mask = CWBackPixel | CWBorderPixel | CWColormap | CWEventMask;
+				// window attributes
+				attr.background_pixel = 0;
+				attr.border_pixel = 0;
+				attr.colormap = XCreateColormap(d->x_disp, root, visinfo->visual, AllocNone);
+				attr.event_mask = X_MASK;
+				mask = CWBackPixel | CWBorderPixel | CWColormap | CWEventMask;
+	
+				if (fullscreen)
+				{
+					mask = CWBackPixel | CWBorderPixel | CWColormap | CWEventMask | CWSaveUnder | CWBackingStore | CWOverrideRedirect;
+					attr.override_redirect = True;
+					attr.backing_store = NotUseful;
+					attr.save_under = False;
+				}
 
-			if (fullscreen)
-			{
-				mask = CWBackPixel | CWBorderPixel | CWColormap | CWEventMask | CWSaveUnder | CWBackingStore | CWOverrideRedirect;
-				attr.override_redirect = True;
-				attr.backing_store = NotUseful;
-				attr.save_under = False;
-			}
+				d->x_win = XCreateWindow(d->x_disp, root, 0, 0, width, height,0, visinfo->depth, InputOutput, visinfo->visual, mask, &attr);
 
-			d->x_win = XCreateWindow(d->x_disp, root, 0, 0, width, height,0, visinfo->depth, InputOutput, visinfo->visual, mask, &attr);
+				XStoreName(d->x_disp, d->x_win, "FodQuake");
 
-			XStoreName(d->x_disp, d->x_win, "FodQuake");
+				XDefineCursor(d->x_disp, d->x_win, CreateNullCursor(d->x_disp, d->x_win));
 
-			XDefineCursor(d->x_disp, d->x_win, CreateNullCursor(d->x_disp, d->x_win));
-
-			XMapWindow(d->x_disp, d->x_win);
+				XMapWindow(d->x_disp, d->x_win);
 
 #if USE_VMODE
-			if (fullscreen)
-			{
-				XRaiseWindow(d->x_disp, d->x_win);
-				XWarpPointer(d->x_disp, None, d->x_win, 0, 0, 0, 0, 0, 0);
-				XFlush(d->x_disp);
-				// Move the viewport to top left
-				XF86VidModeSetViewPort(d->x_disp, d->scrnum, 0, 0);
-			}
+				if (fullscreen)
+				{
+					XRaiseWindow(d->x_disp, d->x_win);
+					XWarpPointer(d->x_disp, None, d->x_win, 0, 0, 0, 0, 0, 0);
+					XFlush(d->x_disp);
+					// Move the viewport to top left
+					XF86VidModeSetViewPort(d->x_disp, d->scrnum, 0, 0);
+				}
 #endif
 
-			XFlush(d->x_disp);
+				XFlush(d->x_disp);
 
-			d->ctx = glXCreateContext(d->x_disp, visinfo, NULL, True);
+				d->ctx = glXCreateContext(d->x_disp, visinfo, NULL, True);
 
-			glXMakeCurrent(d->x_disp, d->x_win, d->ctx);
+				glXMakeCurrent(d->x_disp, d->x_win, d->ctx);
 
-			d->width = width;
-			d->height = height;
+				d->width = width;
+				d->height = height;
 
-			InitSig(); // trap evil signals
+				InitSig(); // trap evil signals
 
-			InitHWGamma(d);
+				InitHWGamma(d);
 
-			Com_Printf ("Video mode %dx%d initialized.\n", width, height);
+				Com_Printf ("Video mode %dx%d initialized.\n", width, height);
 
-			d->inputdata = X11_Input_Init(d->x_win, width, height, fullscreen);
-			if (d->inputdata)
-				return d;
+				d->inputdata = X11_Input_Init(d->x_win, width, height, fullscreen);
+				if (d->inputdata)
+					return d;
+			}
+
+			XCloseDisplay(d->x_disp);
 		}
 
-		XCloseDisplay(d->x_disp);
-	}
-	free(d);
+		free(d);
 	}
 
 	return 0;
