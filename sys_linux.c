@@ -22,6 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <stdlib.h>
 #include <limits.h>
 #include <sys/time.h>
+#include <time.h>
 #include <sys/types.h>
 #include <unistd.h>
 #include <fcntl.h>
@@ -124,38 +125,36 @@ void Sys_mkdir(char *path)
 	mkdir(path, 0777);
 }
 
-static int secbase;
+static unsigned int secbase;
 
 double Sys_DoubleTime(void)
 {
-	struct timeval tp;
-	struct timezone tzp;
+	struct timespec ts;
 
-	gettimeofday(&tp, &tzp);
+	clock_gettime(CLOCK_MONOTONIC, &ts);
 
 	if (!secbase)
 	{
-		secbase = tp.tv_sec;
-		return tp.tv_usec / 1000000.0;
+		secbase = ts.tv_sec;
+		return ts.tv_nsec / 1000000000.0;
 	}
 
-	return (tp.tv_sec - secbase) + tp.tv_usec / 1000000.0;
+	return (ts.tv_sec - secbase) + ts.tv_nsec / 1000000000.0;
 }
 
 unsigned long long Sys_IntTime()
 {
-	struct timeval tp;
-	struct timezone tzp;
+	struct timespec ts;
 	unsigned long long ret;
 
-	gettimeofday(&tp, &tzp);
+	clock_gettime(CLOCK_MONOTONIC, &ts);
 
 	if (!secbase)
-		secbase = tp.tv_sec;
+		secbase = ts.tv_sec;
 
-	ret = tp.tv_sec - secbase;
+	ret = ts.tv_sec - secbase;
 	ret *= 1000000;
-	ret += tp.tv_usec;
+	ret += ts.tv_nsec/1000;
 
 	return ret;
 }

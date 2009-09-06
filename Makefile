@@ -40,7 +40,7 @@ ifeq ($(OS), linux)
 		snd_oss.o
 
 	OSCFLAGS=-DBUILD_STRL
-	OSLDFLAGS=-lpthread
+	OSLDFLAGS=-lpthread -lrt
 
 	OSSWOBJS=vid_x11.o in_x11.o
 	OSSWLDFLAGS=-L/usr/X11R6/lib -lX11 -lXext -lXxf86vm -lXxf86dga
