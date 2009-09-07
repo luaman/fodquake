@@ -447,7 +447,15 @@ static void GetEvents(struct inputdata *id)
 			case KeyPress:
 				id->keyq[id->keyq_head].key = XLateKey(&event.xkey);
 				id->keyq[id->keyq_head].down = true;
-				id->keyq_head = (id->keyq_head + 1) & 63;
+				if (id->keyq_tail != id->keyq_head && id->keyq[id->keyq_head].key == id->keyq[(id->keyq_head - 1) & 63].key)
+				{
+					id->keyq[(id->keyq_head - 1) & 63].key = id->keyq[id->keyq_head].key;
+					id->keyq[(id->keyq_head - 1) & 63].down = true;
+				}
+				else
+				{
+					id->keyq_head = (id->keyq_head + 1) & 63;
+				}
 				break;
 			case KeyRelease:
 				id->keyq[id->keyq_head].key = XLateKey(&event.xkey);
