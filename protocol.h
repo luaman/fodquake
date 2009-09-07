@@ -17,6 +17,10 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */
+
+#ifndef PROTOCOL_H
+#define PROTOCOL_H
+
 // protocol.h -- communications protocols
 
 #include "qtypes.h"
@@ -334,4 +338,6 @@ typedef struct usercmd_s
 #define	dem_single      4
 #define dem_stats       5
 #define dem_all         6
+
+#endif
 
