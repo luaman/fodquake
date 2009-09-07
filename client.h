@@ -451,6 +451,7 @@ extern byte		*host_colormap;
 
 // cl_main
 void CL_UserinfoChanged(char *key, char *string);
+void CL_CvarInit(void);
 void CL_Init (void);
 void CL_WriteConfiguration (void);
 void CL_ClearState (void);
@@ -470,6 +471,7 @@ void CL_WriteDemoEntities (void);
 void CL_StopPlayback (void);
 void CL_Stop_f (void);
 void CL_CheckQizmoCompletion(void);
+void CL_CvarDemoInit(void);
 void CL_Demo_Init(void);
 
 void CL_AutoRecord_StopMatch(void);
