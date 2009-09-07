@@ -64,13 +64,13 @@ int Sys_Video_GetKeyEvent(void *display, keynum_t *keynum, qboolean *down);
 void Sys_Video_GetMouseMovement(void *display, int *mousex, int *mousey);
 void Sys_Video_GrabMouse(void *display, int dograb);
 void Sys_Video_SetWindowTitle(void *display, const char *text);
+unsigned int Sys_Video_GetWidth(void *display);
+unsigned int Sys_Video_GetHeight(void *display);
 #ifdef GLQUAKE
 void Sys_Video_BeginFrame(void *display, unsigned int *x, unsigned int *y, unsigned int *width, unsigned int *height);
 void Sys_Video_SetGamma(void *display, unsigned short *ramps);
 qboolean Sys_Video_HWGammaSupported(void *display);
 #else
-unsigned int Sys_Video_GetWidth(void *display);
-unsigned int Sys_Video_GetHeight(void *display);
 unsigned int Sys_Video_GetBytesPerRow(void *display);
 void *Sys_Video_GetBuffer(void *display);
 #endif
