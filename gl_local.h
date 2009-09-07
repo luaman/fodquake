@@ -200,6 +200,7 @@ extern qboolean	r_skyboxloaded;
 
 // gl_draw.c
 void GL_Set2D (void);
+void Draw_SizeChanged(void);
 
 // gl_rmain.c
 qboolean R_CullBox (vec3_t mins, vec3_t maxs);
