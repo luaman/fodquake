@@ -36,7 +36,6 @@ enum netsrc
 };
 
 #warning Get rid of these externs
-extern struct netaddr	net_from;		// address of who sent the packet
 extern	sizebuf_t	net_message;
 
 qboolean NET_OpenSocket(enum netsrc socknum, enum netaddrtype type);
@@ -46,7 +45,7 @@ void		NET_Shutdown (void);
 void		NET_ServerConfig (qboolean enable);	// open/close server socket
 
 void		NET_ClearLoopback (void);
-qboolean	NET_GetPacket(enum netsrc sock);
+qboolean	NET_GetPacket(enum netsrc sock, struct netaddr *from);
 void		NET_SendPacket(enum netsrc sock, int length, void *data, const struct netaddr *to);
 void		NET_Sleep (int msec);
 

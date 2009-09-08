@@ -578,7 +578,7 @@ void SV_Snap (int uid) {
 	}
 	strcpy(cl->uploadfn, checkname);
 
-	memcpy(&cl->snap_from, &net_from, sizeof(net_from));
+	memcpy(&cl->snap_from, &sv_net_from, sizeof(sv_net_from));
 	cl->remote_snap  =  (sv_redirected != RD_NONE);
 
 	ClientReliableWrite_Begin (cl, svc_stufftext, 24);

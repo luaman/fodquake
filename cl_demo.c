@@ -1188,7 +1188,7 @@ void CL_Play_f (void)
 	cls.demoplayback = true;
 	cls.mvdplayback = !Q_strcasecmp(name + strlen(name) - 3, "mvd") ? true : false;	
 	cls.state = ca_demostart;
-	Netchan_Setup (NS_CLIENT, &cls.netchan, net_from, 0);
+	Netchan_Setup (NS_CLIENT, &cls.netchan, cl_net_from, 0);
 	cls.demotime = 0;
 	demostarttime = -1.0;		
 

@@ -29,7 +29,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define INADDR_LOOPBACK 0x7f000001
 #endif
 
-struct netaddr	net_from;
 sizebuf_t	net_message;
 
 #define	MAX_UDP_PACKET	(MAX_MSGLEN*2)	// one more than msg + header
@@ -378,7 +377,7 @@ LOOPBACK BUFFERS FOR LOCAL PLAYER
 =============================================================================
 */
 
-static qboolean NET_GetLoopPacket (enum netsrc sock)
+static qboolean NET_GetLoopPacket(enum netsrc sock, struct netaddr *from)
 {
 	int i;
 	struct loopback *loop;
@@ -396,8 +395,8 @@ static qboolean NET_GetLoopPacket (enum netsrc sock)
 
 	memcpy (net_message.data, loop->msgs[i].data, loop->msgs[i].datalen);
 	net_message.cursize = loop->msgs[i].datalen;
-	memset (&net_from, 0, sizeof(net_from));
-	net_from.type = NA_LOOPBACK;
+	memset (from, 0, sizeof(*from));
+	from->type = NA_LOOPBACK;
 
 	return true;
 }
@@ -430,19 +429,19 @@ void NET_ClearLoopback(void)
 	netdata->loopbacks[1].send = netdata->loopbacks[1].get = 0;
 }
 
-qboolean NET_GetPacket(enum netsrc sock)
+qboolean NET_GetPacket(enum netsrc sock, struct netaddr *from)
 {
 	int ret;
 	struct SysSocket *net_socket;
 
-	if (NET_GetLoopPacket (sock))
+	if (NET_GetLoopPacket(sock, from))
 		return true;
 
 	net_socket = netdata->sockets[sock];
 	if (net_socket == 0)
 		return false;
 
-	ret = Sys_Net_Receive(netdata->sysnetdata, net_socket, net_message_buffer, sizeof(net_message_buffer), &net_from);
+	ret = Sys_Net_Receive(netdata->sysnetdata, net_socket, net_message_buffer, sizeof(net_message_buffer), from);
 
 	if (ret <= 0)
 	{

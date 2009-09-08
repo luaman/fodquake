@@ -21,6 +21,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "net_chan.h"
 
+extern struct netaddr cl_net_from;
+
 #define	MAX_PROJECTILES	32 
 
 typedef struct {

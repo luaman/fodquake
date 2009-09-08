@@ -44,7 +44,7 @@ static char	sv_outputbuf[MAX_MSGLEN - 1];
 void SV_FlushRedirect (void) {
 	if (sv_redirected == RD_PACKET) {
 		// send even if sv_outputbuf is empty
-		Netchan_OutOfBandPrint (NS_SERVER, net_from, "%c%s", A2C_PRINT, sv_outputbuf);
+		Netchan_OutOfBandPrint (NS_SERVER, sv_net_from, "%c%s", A2C_PRINT, sv_outputbuf);
 	} else if (sv_redirected == RD_CLIENT) {
 		if (!sv_outputbuf[0])
 			return;
