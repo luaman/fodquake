@@ -23,6 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "progs.h"
 
 extern struct netaddr sv_net_from;
+extern sizebuf_t sv_net_message;
 
 extern int server_hunklevel;
 

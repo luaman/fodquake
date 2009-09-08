@@ -29,16 +29,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define INADDR_LOOPBACK 0x7f000001
 #endif
 
-sizebuf_t	net_message;
-
-#define	MAX_UDP_PACKET	(MAX_MSGLEN*2)	// one more than msg + header
-static byte		net_message_buffer[MAX_UDP_PACKET];
-
 #define	MAX_LOOPBACK	4	// must be a power of two
 
 struct loopmsg
 {
-	byte data[MAX_UDP_PACKET];
+	byte data[MAX_MSGLEN*2];
 	int datalen;
 };
 
@@ -377,7 +372,7 @@ LOOPBACK BUFFERS FOR LOCAL PLAYER
 =============================================================================
 */
 
-static qboolean NET_GetLoopPacket(enum netsrc sock, struct netaddr *from)
+static qboolean NET_GetLoopPacket(enum netsrc sock, sizebuf_t *message, struct netaddr *from)
 {
 	int i;
 	struct loopback *loop;
@@ -393,8 +388,8 @@ static qboolean NET_GetLoopPacket(enum netsrc sock, struct netaddr *from)
 	i = loop->get & (MAX_LOOPBACK-1);
 	loop->get++;
 
-	memcpy (net_message.data, loop->msgs[i].data, loop->msgs[i].datalen);
-	net_message.cursize = loop->msgs[i].datalen;
+	memcpy (message->data, loop->msgs[i].data, loop->msgs[i].datalen);
+	message->cursize = loop->msgs[i].datalen;
 	memset (from, 0, sizeof(*from));
 	from->type = NA_LOOPBACK;
 
@@ -429,19 +424,19 @@ void NET_ClearLoopback(void)
 	netdata->loopbacks[1].send = netdata->loopbacks[1].get = 0;
 }
 
-qboolean NET_GetPacket(enum netsrc sock, struct netaddr *from)
+qboolean NET_GetPacket(enum netsrc sock, sizebuf_t *message, struct netaddr *from)
 {
 	int ret;
 	struct SysSocket *net_socket;
 
-	if (NET_GetLoopPacket(sock, from))
+	if (NET_GetLoopPacket(sock, message, from))
 		return true;
 
 	net_socket = netdata->sockets[sock];
 	if (net_socket == 0)
 		return false;
 
-	ret = Sys_Net_Receive(netdata->sysnetdata, net_socket, net_message_buffer, sizeof(net_message_buffer), from);
+	ret = Sys_Net_Receive(netdata->sysnetdata, net_socket, message->data, message->maxsize, from);
 
 	if (ret <= 0)
 	{
@@ -451,7 +446,7 @@ qboolean NET_GetPacket(enum netsrc sock, struct netaddr *from)
 		return false;
 	}
 
-	net_message.cursize = ret;
+	message->cursize = ret;
 
 	return true;
 }
@@ -594,9 +589,6 @@ void NET_Init(void)
 		netdata->sysnetdata = Sys_Net_Init();
 		if (netdata->sysnetdata == 0)
 			Com_Printf("Failed to initialise networking\n");
-
-		// init the message buffer
-		SZ_Init(&net_message, net_message_buffer, sizeof(net_message_buffer));
 	}
 }
 

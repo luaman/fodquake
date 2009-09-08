@@ -35,9 +35,6 @@ enum netsrc
 	NS_SERVER
 };
 
-#warning Get rid of these externs
-extern	sizebuf_t	net_message;
-
 qboolean NET_OpenSocket(enum netsrc socknum, enum netaddrtype type);
 
 void		NET_Init (void);
@@ -45,7 +42,7 @@ void		NET_Shutdown (void);
 void		NET_ServerConfig (qboolean enable);	// open/close server socket
 
 void		NET_ClearLoopback (void);
-qboolean	NET_GetPacket(enum netsrc sock, struct netaddr *from);
+qboolean	NET_GetPacket(enum netsrc sock, sizebuf_t *message, struct netaddr *from);
 void		NET_SendPacket(enum netsrc sock, int length, void *data, const struct netaddr *to);
 void		NET_Sleep (int msec);
 

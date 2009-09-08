@@ -32,6 +32,8 @@ struct netaddr	master_adr[MAX_MASTERS];	// address of group servers
 client_t	*sv_client;					// current client
 
 struct netaddr sv_net_from;
+sizebuf_t sv_net_message;
+static byte sv_net_message_buffer[MAX_MSGLEN*2];
 
 cvar_t	sv_mintic = {"sv_mintic", "0.013"};	// bound the size of the
 cvar_t	sv_maxtic = {"sv_maxtic", "0.1"};	//
@@ -101,18 +103,18 @@ void SV_FinalMessage (char *message) {
 	if (!sv.state)
 		return;
 
-	SZ_Clear (&net_message);
-	MSG_WriteByte (&net_message, svc_print);
-	MSG_WriteByte (&net_message, PRINT_HIGH);
-	MSG_WriteString (&net_message, message);
-	MSG_WriteByte (&net_message, svc_disconnect);
+	SZ_Clear(&sv_net_message);
+	MSG_WriteByte(&sv_net_message, svc_print);
+	MSG_WriteByte(&sv_net_message, PRINT_HIGH);
+	MSG_WriteString(&sv_net_message, message);
+	MSG_WriteByte(&sv_net_message, svc_disconnect);
 
 	for (i = 0; i < MAX_CLIENTS; i++)
 	{
 		cl = svs.clients[i];
 
 		if (cl && cl->state >= cs_spawned)
-			Netchan_Transmit (&cl->netchan, net_message.cursize, net_message.data);
+			Netchan_Transmit (&cl->netchan, sv_net_message.cursize, sv_net_message.data);
 	}
 }
 
@@ -611,12 +613,12 @@ Redirect all printfs
 */
 void SVC_RemoteCommand (void) {
 	if (!Rcon_Validate ()) {
-		Com_Printf ("Bad rcon from %s:\n%s\n", NET_AdrToString(&sv_net_from), net_message.data + 4);
+		Com_Printf ("Bad rcon from %s:\n%s\n", NET_AdrToString(&sv_net_from), sv_net_message.data + 4);
 
 		SV_BeginRedirect (RD_PACKET);
 		Com_Printf ("Bad rcon_password.\n");
 	} else {
-		Com_Printf ("Rcon from %s:\n%s\n", NET_AdrToString(&sv_net_from), net_message.data + 4);
+		Com_Printf ("Rcon from %s:\n%s\n", NET_AdrToString(&sv_net_from), sv_net_message.data + 4);
 		SV_BeginRedirect (RD_PACKET);
 
 		Cmd_ExecuteString (Cmd_MakeArgs(2));
@@ -629,7 +631,7 @@ void SVC_RemoteCommand (void) {
 void SV_ConnectionlessPacket (void) {
 	char *s, *c;
 
-	MSG_BeginReading ();
+	MSG_BeginReading(&sv_net_message);
 	MSG_ReadLong ();		// skip the -1 marker
 
 	s = MSG_ReadStringLine ();
@@ -845,21 +847,21 @@ void SV_ReadPackets (void) {
 	int i, qport;
 	client_t *cl;
 
-	while (NET_GetPacket(NS_SERVER, &sv_net_from)) {
+	while (NET_GetPacket(NS_SERVER, &sv_net_message, &sv_net_from)) {
 		if (SV_FilterPacket ()) {
 			SV_SendBan ();	// tell them we aren't listening...
 			continue;
 		}
 
 		// check for connectionless packet (0xffffffff) first
-		if (*(int *)net_message.data == -1) {
+		if (*(int *)sv_net_message.data == -1) {
 			SV_ConnectionlessPacket ();
 			continue;
 		}
 		
 		// read the qport out of the message so we can fix up
 		// stupid address translating routers
-		MSG_BeginReading ();
+		MSG_BeginReading(&sv_net_message);
 		MSG_ReadLong ();		// sequence number
 		MSG_ReadLong ();		// sequence number
 		qport = MSG_ReadShort () & 0xffff;
@@ -878,7 +880,7 @@ void SV_ReadPackets (void) {
 				Com_DPrintf ("SV_ReadPackets: fixing up a translated port\n");
 				cl->netchan.remote_address.addr.ipv4.port = sv_net_from.addr.ipv4.port;
 			}
-			if (Netchan_Process(&cl->netchan)) {	
+			if (Netchan_Process(&cl->netchan, &sv_net_message)) {	
 				// this is a valid, sequenced packet, so process it
 				svs.stats.packets++;
 				cl->send_message = true;	// reply at end of frame
@@ -1161,6 +1163,8 @@ void SV_InitLocal (void) {
 
 	SZ_Init (&svs.log[1], svs.log_buf[1], sizeof(svs.log_buf[1]));
 	svs.log[1].allowoverflow = true;
+
+	SZ_Init(&sv_net_message, sv_net_message_buffer, sizeof(sv_net_message_buffer));
 }
 
 //============================================================================
@@ -1326,3 +1330,4 @@ void SV_Init (void) {
 
 	svs.last_heartbeat = -99999;		// send immediately
 }
+

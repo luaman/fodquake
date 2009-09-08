@@ -589,18 +589,18 @@ readnext:
 	case dem_read:
 readit:
 		// get the next message
-		CL_Demo_Read(&net_message.cursize, 4);
-		net_message.cursize = LittleLong (net_message.cursize);
-		if (net_message.cursize > net_message.maxsize) {
-			Com_DPrintf("CL_GetDemoMessage: net_message.cursize > net_message.maxsize");
+		CL_Demo_Read(&cl_net_message.cursize, 4);
+		cl_net_message.cursize = LittleLong (cl_net_message.cursize);
+		if (cl_net_message.cursize > cl_net_message.maxsize) {
+			Com_DPrintf("CL_GetDemoMessage: cl_net_message.cursize > cl_net_message.maxsize");
 			Host_EndGame();
 			Host_Abort();
 		}
 
-		if (net_message.cursize == 0)
+		if (cl_net_message.cursize == 0)
 			goto readnext;
 
-		CL_Demo_Read(net_message.data, net_message.cursize);
+		CL_Demo_Read(cl_net_message.data, cl_net_message.cursize);
 		
 		if (cls.mvdplayback) {
 			switch(cls.lasttype) {
@@ -683,11 +683,11 @@ static void CL_StopRecording (void) {
 		return;
 
 	// write a disconnect message to the demo file
-	SZ_Clear (&net_message);
-	MSG_WriteLong (&net_message, -1);	// -1 sequence means out of band
-	MSG_WriteByte (&net_message, svc_disconnect);
-	MSG_WriteString (&net_message, "EndOfDemo");
-	CL_WriteDemoMessage (&net_message);
+	SZ_Clear (&cl_net_message);
+	MSG_WriteLong (&cl_net_message, -1);	// -1 sequence means out of band
+	MSG_WriteByte (&cl_net_message, svc_disconnect);
+	MSG_WriteString (&cl_net_message, "EndOfDemo");
+	CL_WriteDemoMessage (&cl_net_message);
 
 	// finish up
 	CL_Demo_Close();

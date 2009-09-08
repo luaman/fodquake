@@ -159,6 +159,8 @@ int			fps_count;
 static int cl_vidinitialised;
 
 struct netaddr cl_net_from;
+sizebuf_t cl_net_message;
+static byte cl_net_message_buffer[MAX_MSGLEN*2];
 
 void CL_InitClientVersionInfo();
 
@@ -639,7 +641,7 @@ void CL_ConnectionlessPacket(void)
 	int c;
 	char *s, cmdtext[2048];
 
-	MSG_BeginReading ();
+	MSG_BeginReading(&cl_net_message);
 	MSG_ReadLong ();        // skip the -1
 
 	c = MSG_ReadByte ();
@@ -776,7 +778,7 @@ qboolean CL_GetMessage (void) {
 	if (cls.demoplayback)
 		return CL_GetDemoMessage();
 
-	if (!NET_GetPacket(NS_CLIENT, &cl_net_from))
+	if (!NET_GetPacket(NS_CLIENT, &cl_net_message, &cl_net_from))
 		return false;
 
 	return true;
@@ -785,12 +787,12 @@ qboolean CL_GetMessage (void) {
 void CL_ReadPackets (void) {
 	while (CL_GetMessage()) {
 		// remote command packet
-		if (*(int *)net_message.data == -1)	{
+		if (*(int *)cl_net_message.data == -1)	{
 			CL_ConnectionlessPacket ();
 			continue;
 		}
 
-		if (net_message.cursize < 8 && !cls.mvdplayback) {	
+		if (cl_net_message.cursize < 8 && !cls.mvdplayback) {	
 			Com_DPrintf ("%s: Runt packet\n", NET_AdrToString(&cl_net_from));
 			continue;
 		}
@@ -802,9 +804,9 @@ void CL_ReadPackets (void) {
 		}
 
 		if (cls.mvdplayback) {		
-			MSG_BeginReading ();
+			MSG_BeginReading(&cl_net_message);
 		} else {
-			if (!Netchan_Process(&cls.netchan))
+			if (!Netchan_Process(&cls.netchan, &cl_net_message))
 				continue;			// wasn't accepted for some reason
 		}
 		CL_ParseServerMessage ();
@@ -1036,6 +1038,8 @@ void CL_Init (void)
 {
 	if (dedicated)
 		return;
+
+	SZ_Init(&cl_net_message, cl_net_message_buffer, sizeof(cl_net_message_buffer));
 
 	cls.state = ca_disconnected;
 

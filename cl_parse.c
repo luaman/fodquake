@@ -581,7 +581,7 @@ static void CL_ParseQWDownload (void)
 		}
 	}
 
-	fwrite (net_message.data + msg_readcount, 1, size, cls.download);
+	fwrite (cl_net_message.data + msg_readcount, 1, size, cls.download);
 	msg_readcount += size;
 
 	if (percent != 100)
@@ -1467,7 +1467,7 @@ void CL_ParseServerMessage (void) {
 	int msg_svc_start;
 
 	if (cl_shownet.value == 1)
-		Com_Printf ("%i ", net_message.cursize);
+		Com_Printf ("%i ", cl_net_message.cursize);
 	else if (cl_shownet.value == 2)
 		Com_Printf ("------------------\n");
 
@@ -1768,12 +1768,12 @@ void CL_ParseServerMessage (void) {
 		if (cls.demorecording) {
 			if (!cls.demomessage.cursize) {
 				SZ_Init(&cls.demomessage, cls.demomessage_data, sizeof(cls.demomessage_data));
-				SZ_Write (&cls.demomessage, net_message.data, 8);
+				SZ_Write (&cls.demomessage, cl_net_message.data, 8);
 			}
 			if (cmd == svc_deltapacketentities)
 				CL_WriteDemoEntities();
 			else
-				SZ_Write(&cls.demomessage, net_message.data + msg_svc_start, msg_readcount - msg_svc_start);
+				SZ_Write(&cls.demomessage, cl_net_message.data + msg_svc_start, msg_readcount - msg_svc_start);
 		}
 	}
 

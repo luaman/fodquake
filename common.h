@@ -323,7 +323,7 @@ void MSG_EmitPacketEntities (packet_entities_t *from, int delta_sequence, packet
 extern	int			msg_readcount;
 extern	qboolean	msg_badread;		// set if a read goes beyond end of message
 
-void MSG_BeginReading (void);
+void MSG_BeginReading(sizebuf_t *message);
 int MSG_GetReadCount(void);
 qboolean MSG_ReadData(void *destination, unsigned int size);
 int MSG_ReadChar (void);

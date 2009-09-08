@@ -556,7 +556,7 @@ void SV_NextUpload (void) {
 			OutofBandPrintf(sv_client->snap_from, "Server receiving %s from %d...\n", sv_client->uploadfn, sv_client->userid);
 	}
 
-	fwrite (net_message.data + msg_readcount, 1, size, sv_client->upload);
+	fwrite (sv_net_message.data + msg_readcount, 1, size, sv_client->upload);
 	msg_readcount += size;
 
 	Com_DPrintf ("UPLOAD: %d received\n", size);
@@ -1409,7 +1409,7 @@ void SV_ExecuteClientMove (client_t *cl, usercmd_t oldest, usercmd_t oldcmd, use
 }
 
 
-//The current net_message is parsed for the given client
+//The current sv_net_message is parsed for the given client
 void SV_ExecuteClientMessage (client_t *cl) {
 	int c, seq_hash, checksumIndex;
 	char *s;
@@ -1488,7 +1488,7 @@ void SV_ExecuteClientMessage (client_t *cl) {
 
 			// if the checksum fails, ignore the rest of the packet
 			calculatedChecksum = COM_BlockSequenceCRCByte(
-				net_message.data + checksumIndex + 1,
+				sv_net_message.data + checksumIndex + 1,
 				MSG_GetReadCount() - checksumIndex - 1,
 				seq_hash);
 

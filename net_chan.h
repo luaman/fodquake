@@ -62,7 +62,7 @@ void Netchan_CvarInit(void);
 void Netchan_Transmit (netchan_t *chan, int length, byte *data);
 void Netchan_OutOfBand(enum netsrc sock, struct netaddr adr, int length, byte *data);
 void Netchan_OutOfBandPrint(enum netsrc sock, struct netaddr adr, char *format, ...);
-qboolean Netchan_Process (netchan_t *chan);
+qboolean Netchan_Process(netchan_t *chan, sizebuf_t *message);
 void Netchan_Setup (enum netsrc sock, netchan_t *chan, struct netaddr adr, int qport);
 
 qboolean Netchan_CanPacket (netchan_t *chan);

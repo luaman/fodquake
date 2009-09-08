@@ -306,11 +306,13 @@ void MSG_EmitPacketEntities (packet_entities_t *from, int delta_sequence, packet
 
 int msg_readcount;
 qboolean msg_badread;
+sizebuf_t *msg_message;
 
-void MSG_BeginReading (void)
+void MSG_BeginReading(sizebuf_t *message)
 {
 	msg_readcount = 0;
 	msg_badread = false;
+	msg_message = message;
 }
 
 int MSG_GetReadCount(void)
@@ -320,9 +322,9 @@ int MSG_GetReadCount(void)
 
 qboolean MSG_ReadData(void *destination, unsigned int size)
 {
-	if (msg_readcount + size <= net_message.cursize)
+	if (msg_readcount + size <= msg_message->cursize)
 	{
-		memcpy(destination, net_message.data+msg_readcount, size);
+		memcpy(destination, msg_message->data+msg_readcount, size);
 		msg_readcount+= size;
 		return true;
 	}
@@ -335,13 +337,13 @@ int MSG_ReadChar (void)
 {
 	int	c;
 
-	if (msg_readcount + 1 > net_message.cursize)
+	if (msg_readcount + 1 > msg_message->cursize)
 	{
 		msg_badread = true;
 		return -1;
 	}
 
-	c = (signed char)net_message.data[msg_readcount];
+	c = (signed char)msg_message->data[msg_readcount];
 	msg_readcount++;
 	
 	return c;
@@ -351,13 +353,13 @@ int MSG_ReadByte (void)
 {
 	int	c;
 
-	if (msg_readcount + 1 > net_message.cursize)
+	if (msg_readcount + 1 > msg_message->cursize)
 	{
 		msg_badread = true;
 		return -1;
 	}
 
-	c = (unsigned char)net_message.data[msg_readcount];
+	c = (unsigned char)msg_message->data[msg_readcount];
 	msg_readcount++;
 
 	return c;
@@ -367,14 +369,14 @@ int MSG_ReadShort (void)
 {
 	int	c;
 
-	if (msg_readcount + 2 > net_message.cursize)
+	if (msg_readcount + 2 > msg_message->cursize)
 	{
 		msg_badread = true;
 		return -1;
 	}
 
-	c = (short)(net_message.data[msg_readcount]
-	+ (net_message.data[msg_readcount + 1] << 8));
+	c = (short)(msg_message->data[msg_readcount]
+	+ (msg_message->data[msg_readcount + 1] << 8));
 
 	msg_readcount += 2;
 
@@ -385,16 +387,16 @@ int MSG_ReadLong (void)
 {
 	int	c;
 
-	if (msg_readcount + 4 > net_message.cursize)
+	if (msg_readcount + 4 > msg_message->cursize)
 	{
 		msg_badread = true;
 		return -1;
 	}
 
-	c = net_message.data[msg_readcount]
-		+ (net_message.data[msg_readcount + 1] << 8)
-		+ (net_message.data[msg_readcount + 2] << 16)
-		+ (net_message.data[msg_readcount + 3] << 24);
+	c = msg_message->data[msg_readcount]
+		+ (msg_message->data[msg_readcount + 1] << 8)
+		+ (msg_message->data[msg_readcount + 2] << 16)
+		+ (msg_message->data[msg_readcount + 3] << 24);
 
 	msg_readcount += 4;
 
@@ -410,10 +412,10 @@ float MSG_ReadFloat (void)
 		int	l;
 	} dat;
 
-	dat.b[0] = net_message.data[msg_readcount];
-	dat.b[1] = net_message.data[msg_readcount + 1];
-	dat.b[2] = net_message.data[msg_readcount + 2];
-	dat.b[3] = net_message.data[msg_readcount + 3];
+	dat.b[0] = msg_message->data[msg_readcount];
+	dat.b[1] = msg_message->data[msg_readcount + 1];
+	dat.b[2] = msg_message->data[msg_readcount + 2];
+	dat.b[3] = msg_message->data[msg_readcount + 3];
 	msg_readcount += 4;
 
 	dat.l = LittleLong (dat.l);

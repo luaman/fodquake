@@ -286,12 +286,12 @@ void Netchan_Transmit (netchan_t *chan, int length, byte *data)
 
 //called when the current net_message is from remote_address
 //modifies net_message so that it points to the packet payload
-qboolean Netchan_Process (netchan_t *chan)
+qboolean Netchan_Process(netchan_t *chan, sizebuf_t *message)
 {
 	unsigned sequence, sequence_ack, reliable_ack, reliable_message;
 
 	// get sequence numbers		
-	MSG_BeginReading ();
+	MSG_BeginReading(message);
 	sequence = MSG_ReadLong ();
 	sequence_ack = MSG_ReadLong ();
 
@@ -311,7 +311,7 @@ qboolean Netchan_Process (netchan_t *chan)
 			, reliable_message
 			, sequence_ack
 			, reliable_ack
-			, net_message.cursize);
+			, message->cursize);
 
 	// discard stale or duplicated packets
 	if (sequence <= (unsigned)chan->incoming_sequence)
@@ -360,7 +360,7 @@ qboolean Netchan_Process (netchan_t *chan)
 	chan->last_received = curtime;
 
 	if (chan->huffcontext)
-		Huff_DecompressPacket(chan->huffcontext, &net_message, chan->sock==NS_SERVER?10:8);
+		Huff_DecompressPacket(chan->huffcontext, message, chan->sock==NS_SERVER?10:8);
 	
 	return true;
 }
