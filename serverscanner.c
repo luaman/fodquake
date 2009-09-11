@@ -54,6 +54,8 @@ struct ServerScanner
 	struct SysSocket *sockets[NA_NUMTYPES];
 	struct SysThread *thread;
 	struct SysMutex *mutex;
+	unsigned int initialstuffdone;
+	unsigned long long starttime;
 	struct masterserver *masterservers;
 	struct qwserverpriv *qwservers;
 	struct qwserverpriv *qwserversscaninprogress;
@@ -685,135 +687,154 @@ static void ServerScanner_Thread_CheckTimeout(struct ServerScanner *serverscanne
 	}
 }
 
-static void ServerScanner_Thread(void *arg)
+unsigned int ServerScanner_DoStuffInternal(struct ServerScanner *serverscanner)
 {
-	struct ServerScanner *serverscanner;
 	struct qwserverpriv *qwserver;
 	unsigned int i;
 	unsigned long long curtime;
-	unsigned long long starttime;
 	unsigned int timeout;
 	int r;
 	unsigned char buf[8192];
 	struct netaddr addr;
 
-	serverscanner = arg;
+	if (serverscanner->status == SSS_ERROR || serverscanner->status == SSS_IDLE)
+		return 50000;
 
-	if (ServerScanner_Thread_Init(serverscanner))
+	if (!serverscanner->initialstuffdone)
 	{
-		ServerScanner_Thread_LookUpMasters(serverscanner);
-
-		ServerScanner_Thread_OpenSockets(serverscanner);
-
-		if (serverscanner->numvalidmasterservers)
+		if (!ServerScanner_Thread_Init(serverscanner))
 		{
-			starttime = Sys_IntTime();
-
-			ServerScanner_Thread_QueryMasters(serverscanner);
-
-			while(!serverscanner->quit)
-			{
-				Sys_Thread_LockMutex(serverscanner->mutex);
-
-				ServerScanner_Thread_CheckTimeout(serverscanner);
-
-				if (serverscanner->status == SSS_SCANNING)
-				{
-					if (serverscanner->qwserversscanwaiting == 0 && serverscanner->qwserversscaninprogress == 0 && Sys_IntTime() > starttime + 2000000)
-					{
-						serverscanner->status = SSS_PINGING;
-					}
-				}
-
-				if (serverscanner->status == SSS_PINGING)
-				{
-					if (serverscanner->qwserverspingwaiting == 0 && serverscanner->qwserverspinginprogress == 0)
-					{
-						if (serverscanner->qwserversscanwaiting)
-							serverscanner->status = SSS_SCANNING;
-						else
-							serverscanner->status = SSS_IDLE;
-					}
-				}
-
-				curtime = Sys_IntTime();
-
-#warning Needs to schedule servers for scanning
-				while (serverscanner->status == SSS_SCANNING && serverscanner->numqwserversscaninprogress < MAXCONCURRENTSCANS && serverscanner->qwserversscanwaiting)
-				{
-					qwserver = serverscanner->qwserversscanwaiting;
-					ServerScanner_Thread_SendQWRequest(serverscanner, qwserver);
-					serverscanner->qwserversscanwaiting = qwserver->nextscanwaiting;
-					qwserver->nextscanwaiting = 0;
-				}
-			
-				while (serverscanner->status == SSS_PINGING && serverscanner->numqwserverspinginprogress < MAXCONCURRENTPINGS && serverscanner->qwserverspingwaiting && serverscanner->lastpingtime + PINGINTERVAL <= curtime)
-				{
-					qwserver = serverscanner->qwserverspingwaiting;
-					ServerScanner_Thread_SendQWPingRequest(serverscanner, qwserver);
-					serverscanner->qwserverspingwaiting = qwserver->nextpingwaiting;
-					qwserver->nextpingwaiting = 0;
-				}
-
-				timeout = 50000;
-				if (serverscanner->status == SSS_SCANNING)
-				{
-					qwserver = serverscanner->qwserversscaninprogress;
-					while(qwserver)
-					{
-						if (qwserver->packetsendtime + QWSERVERTIMEOUT >= curtime && qwserver->packetsendtime + QWSERVERTIMEOUT - curtime < timeout)
-						{
-							timeout = qwserver->packetsendtime + QWSERVERTIMEOUT - curtime;
-						}
-				
-						qwserver = qwserver->nextscaninprogress;
-					}
-				}
-				else if (serverscanner->status == SSS_PINGING)
-				{
-					qwserver = serverscanner->qwserverspinginprogress;
-					while(qwserver)
-					{
-						if (qwserver->packetsendtime + QWSERVERTIMEOUT >= curtime && qwserver->packetsendtime + QWSERVERTIMEOUT - curtime < timeout)
-						{
-							timeout = qwserver->packetsendtime + QWSERVERTIMEOUT - curtime;
-						}
-				
-						qwserver = qwserver->nextpinginprogress;
-					}
-
-					if (serverscanner->qwserverspingwaiting && serverscanner->lastpingtime + PINGINTERVAL >= curtime)
-					{
-						if (serverscanner->lastpingtime + PINGINTERVAL - curtime < timeout)
-						{
-							timeout = serverscanner->lastpingtime + PINGINTERVAL - curtime;
-						}
-					}
-				}
-
-				Sys_Thread_UnlockMutex(serverscanner->mutex);
-
-				Sys_Net_Wait(serverscanner->netdata, serverscanner->sockets[NA_IPV4], timeout);
-
-				for(i=1;i<NA_NUMTYPES;i++)
-				{
-					if (!serverscanner->sockets[i])
-						continue;
-
-					while((r = Sys_Net_Receive(serverscanner->netdata, serverscanner->sockets[i], buf, sizeof(buf), &addr)) > 0)
-					{
-						ServerScanner_Thread_HandlePacket(serverscanner, buf, r, &addr);
-					}
-				}
-			}
+			serverscanner->status = SSS_ERROR;
+			return 50000;
 		}
 
-		ServerScanner_Thread_CloseSockets(serverscanner);
+		ServerScanner_Thread_LookUpMasters(serverscanner);
+		ServerScanner_Thread_OpenSockets(serverscanner);
 
-		ServerScanner_Thread_Deinit(serverscanner);
+		if (!serverscanner->numvalidmasterservers)
+		{
+			serverscanner->status = SSS_ERROR;
+			return 50000;
+		}
+
+		serverscanner->starttime = Sys_IntTime();
+
+		ServerScanner_Thread_QueryMasters(serverscanner);
+
+		serverscanner->initialstuffdone = 1;
 	}
 
-	serverscanner->status = SSS_IDLE;
+	for(i=1;i<NA_NUMTYPES;i++)
+	{
+		if (!serverscanner->sockets[i])
+			continue;
+
+		while((r = Sys_Net_Receive(serverscanner->netdata, serverscanner->sockets[i], buf, sizeof(buf), &addr)) > 0)
+		{
+			ServerScanner_Thread_HandlePacket(serverscanner, buf, r, &addr);
+		}
+	}
+
+	Sys_Thread_LockMutex(serverscanner->mutex);
+
+	ServerScanner_Thread_CheckTimeout(serverscanner);
+
+	if (serverscanner->status == SSS_SCANNING)
+	{
+		if (serverscanner->qwserversscanwaiting == 0 && serverscanner->qwserversscaninprogress == 0 && Sys_IntTime() > serverscanner->starttime + 2000000)
+		{
+			serverscanner->status = SSS_PINGING;
+		}
+	}
+
+	if (serverscanner->status == SSS_PINGING)
+	{
+		if (serverscanner->qwserverspingwaiting == 0 && serverscanner->qwserverspinginprogress == 0)
+		{
+			if (serverscanner->qwserversscanwaiting)
+				serverscanner->status = SSS_SCANNING;
+			else
+				serverscanner->status = SSS_IDLE;
+		}
+	}
+
+	curtime = Sys_IntTime();
+
+#warning Needs to schedule servers for scanning
+	while (serverscanner->status == SSS_SCANNING && serverscanner->numqwserversscaninprogress < MAXCONCURRENTSCANS && serverscanner->qwserversscanwaiting)
+	{
+		qwserver = serverscanner->qwserversscanwaiting;
+		ServerScanner_Thread_SendQWRequest(serverscanner, qwserver);
+		serverscanner->qwserversscanwaiting = qwserver->nextscanwaiting;
+		qwserver->nextscanwaiting = 0;
+	}
+			
+	while (serverscanner->status == SSS_PINGING && serverscanner->numqwserverspinginprogress < MAXCONCURRENTPINGS && serverscanner->qwserverspingwaiting && serverscanner->lastpingtime + PINGINTERVAL <= curtime)
+	{
+		qwserver = serverscanner->qwserverspingwaiting;
+		ServerScanner_Thread_SendQWPingRequest(serverscanner, qwserver);
+		serverscanner->qwserverspingwaiting = qwserver->nextpingwaiting;
+		qwserver->nextpingwaiting = 0;
+	}
+
+	timeout = 50000;
+	if (serverscanner->status == SSS_SCANNING)
+	{
+		qwserver = serverscanner->qwserversscaninprogress;
+		while(qwserver)
+		{
+			if (qwserver->packetsendtime + QWSERVERTIMEOUT >= curtime && qwserver->packetsendtime + QWSERVERTIMEOUT - curtime < timeout)
+			{
+				timeout = qwserver->packetsendtime + QWSERVERTIMEOUT - curtime;
+			}
+		
+			qwserver = qwserver->nextscaninprogress;
+		}
+	}
+	else if (serverscanner->status == SSS_PINGING)
+	{
+		qwserver = serverscanner->qwserverspinginprogress;
+		while(qwserver)
+		{
+			if (qwserver->packetsendtime + QWSERVERTIMEOUT >= curtime && qwserver->packetsendtime + QWSERVERTIMEOUT - curtime < timeout)
+			{
+				timeout = qwserver->packetsendtime + QWSERVERTIMEOUT - curtime;
+			}
+	
+			qwserver = qwserver->nextpinginprogress;
+		}
+
+		if (serverscanner->qwserverspingwaiting && serverscanner->lastpingtime + PINGINTERVAL >= curtime)
+		{
+			if (serverscanner->lastpingtime + PINGINTERVAL - curtime < timeout)
+			{
+				timeout = serverscanner->lastpingtime + PINGINTERVAL - curtime;
+			}
+		}
+	}
+
+	Sys_Thread_UnlockMutex(serverscanner->mutex);
+
+	return timeout;
+}
+
+static void ServerScanner_Thread(void *arg)
+{
+	struct ServerScanner *serverscanner;
+	unsigned int timeout;
+
+	serverscanner = arg;
+
+	while(!serverscanner->quit)
+	{
+		timeout = ServerScanner_DoStuffInternal(serverscanner);
+
+		Sys_Net_Wait(serverscanner->netdata, serverscanner->sockets[NA_IPV4], timeout);
+	}
+
+	ServerScanner_Thread_CloseSockets(serverscanner);
+
+	ServerScanner_Thread_Deinit(serverscanner);
 }
 
 struct ServerScanner *ServerScanner_Create(const char *masters)
@@ -890,7 +911,9 @@ struct ServerScanner *ServerScanner_Create(const char *masters)
 					serverscanner->numvalidmasterservers = nummasterservers;
 
 					serverscanner->thread = Sys_Thread_CreateThread(ServerScanner_Thread, serverscanner);
+#if 0
 					if (serverscanner->thread)
+#endif
 						return serverscanner;
 
 					Sys_Thread_DeleteMutex(serverscanner->mutex);
@@ -916,7 +939,10 @@ void ServerScanner_Delete(struct ServerScanner *serverscanner)
 
 	serverscanner->quit = 1;
 
-	Sys_Thread_DeleteThread(serverscanner->thread);
+	if (serverscanner->thread)
+		Sys_Thread_DeleteThread(serverscanner->thread);
+	else
+		ServerScanner_Thread_CloseSockets(serverscanner);
 
 	Sys_Thread_DeleteMutex(serverscanner->mutex);
 
@@ -947,6 +973,7 @@ void ServerScanner_DoStuff(struct ServerScanner *serverscanner)
 {
 	if (!serverscanner->thread)
 	{
+		ServerScanner_DoStuffInternal(serverscanner);
 	}
 }
 

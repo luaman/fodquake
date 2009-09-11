@@ -23,7 +23,8 @@ enum ServerScannerStatus
 {
 	SSS_SCANNING,
 	SSS_PINGING,
-	SSS_IDLE
+	SSS_IDLE,
+	SSS_ERROR
 };
 
 enum QWServerStatus
