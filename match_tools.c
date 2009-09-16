@@ -734,7 +734,8 @@ char *MT_TempDirectory(void) {
 	static char dir[MAX_OSPATH * 2] = {0};
 
 	if (!dir[0])
-		Q_snprintfz(dir, sizeof(dir), "%s/fuhquake/temp", com_basedir);
+		Q_snprintfz(dir, sizeof(dir), "%s/fodquake/temp", com_basedir);
+
 	return dir;
 }
 
@@ -1121,7 +1122,8 @@ void MT_CvarInit(void)
 
 void MT_Init(void)
 {
-	Sys_mkdir(va("%s/fuhquake/temp", com_basedir));
+	Sys_mkdir(va("%s/fodquake/temp", com_basedir));
+
 	MT_ClearClientState();
 
 	MT_AddMapGroups();
