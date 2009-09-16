@@ -27,7 +27,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 void  FMod_Response (void);
 
-qboolean FMod_IsModelModified(char *name, int flags, byte *buf, int len) {
+qboolean FMod_IsModelModified(char *name, int flags, byte *buf, int len)
+{
 #ifdef SECURITY_NONSENSE
 	int *n;
 	qboolean retval, failsafe = true;
@@ -56,7 +57,8 @@ qboolean FMod_IsModelModified(char *name, int flags, byte *buf, int len) {
 #define	FMOD_DM 1
 #define FMOD_TF 2
 
-typedef struct check_models_s {
+typedef struct check_models_s
+{
 	char			name[MAX_QPATH];
 	qboolean		modified;
 	qboolean		checked;
@@ -69,7 +71,8 @@ int check_models_num = 0;
 
 static float fmod_warn_time = 0;
 
-static void FMod_AddModel(char *name, qboolean flags) {
+static void FMod_AddModel(char *name, qboolean flags)
+{
     if (check_models_num >= MAX_CHECK_MODELS)
         return;
 
@@ -79,11 +82,13 @@ static void FMod_AddModel(char *name, qboolean flags) {
 	check_models_num++;
 }
 
-void FMod_CheckModel(char *name, void *buf, int len) {
+void FMod_CheckModel(char *name, void *buf, int len)
+{
 	int i;
 	qboolean modified, relevent;
 
-	for (i = 0; i < MAX_CHECK_MODELS && i < check_models_num; i++) {
+	for (i = 0; i < MAX_CHECK_MODELS && i < check_models_num; i++)
+	{
 		relevent =	(cl.teamfortress && (check_models[i].flags & FMOD_TF)) || 
 					(!cl.teamfortress && (check_models[i].flags & FMOD_DM));
 		if (relevent && !Q_strcasecmp(name, check_models[i].name))
@@ -94,8 +99,10 @@ void FMod_CheckModel(char *name, void *buf, int len) {
 
 	modified = FMod_IsModelModified(name, check_models[i].flags, buf, len);
 
-	if (check_models[i].checked && !check_models[i].modified && modified)	{
-		if (!fmod_warn_time || cls.realtime - fmod_warn_time >= 3) {
+	if (check_models[i].checked && !check_models[i].modified && modified)
+	{
+		if (!fmod_warn_time || cls.realtime - fmod_warn_time >= 3)
+		{
 			Cbuf_AddText("say warning: models changed !!  Use f_modified again\n");
 			fmod_warn_time = cls.realtime;
 		}
@@ -181,25 +188,34 @@ void FMod_Init(void)
 	FMod_AddModel("gfx/palette.lmp", FMOD_DM | FMOD_TF);
 }
 
-void FMod_Response (void) {
+void FMod_Response (void)
+{
 	int i, count;
 	char buf[512] = {'m', 'o', 'd', 'i', 'f', 'i', 'e', 'd', ':', '\0'};
 	qboolean relevent;
 
-	for (i = count = 0; i < check_models_num; i++) {
+	for (i = count = 0; i < check_models_num; i++)
+	{
 		relevent =	(cl.teamfortress && (check_models[i].flags & FMOD_TF)) || 
 					(!cl.teamfortress && (check_models[i].flags & FMOD_DM));
-		if (check_models[i].checked && check_models[i].modified && relevent ) {
-			if (strlen(buf) < 240) {
+		if (check_models[i].checked && check_models[i].modified && relevent )
+		{
+			if (strlen(buf) < 240)
+			{
 				strcat(buf, va(" %s", COM_SkipPath(check_models[i].name)));
 				count++;
-			} else {
+			}
+			else
+			{
 				strcat(buf, " & more...");
 				break;
 			}
 		}
 	}
+
 	if (!count)
 		strcpy(buf, "all models ok");
+
 	Cbuf_AddText(va("%s %s\n", cls.state == ca_disconnected ? "echo" : "say", buf));
 }
+
