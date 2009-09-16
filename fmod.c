@@ -73,10 +73,10 @@ static float fmod_warn_time = 0;
 
 static void FMod_AddModel(char *name, qboolean flags)
 {
-    if (check_models_num >= MAX_CHECK_MODELS)
-        return;
+	if (check_models_num >= MAX_CHECK_MODELS)
+		return;
 
-    Q_strncpyz(check_models[check_models_num].name, name, sizeof(check_models[check_models_num].name));	
+	Q_strncpyz(check_models[check_models_num].name, name, sizeof(check_models[check_models_num].name));	
 	check_models[check_models_num].checked = check_models[check_models_num].modified = false;
 	check_models[check_models_num].flags = flags;
 	check_models_num++;
@@ -85,13 +85,12 @@ static void FMod_AddModel(char *name, qboolean flags)
 void FMod_CheckModel(char *name, void *buf, int len)
 {
 	int i;
-	qboolean modified, relevent;
+	qboolean modified, relevant;
 
 	for (i = 0; i < MAX_CHECK_MODELS && i < check_models_num; i++)
 	{
-		relevent =	(cl.teamfortress && (check_models[i].flags & FMOD_TF)) || 
-					(!cl.teamfortress && (check_models[i].flags & FMOD_DM));
-		if (relevent && !Q_strcasecmp(name, check_models[i].name))
+		relevant = (cl.teamfortress && (check_models[i].flags & FMOD_TF)) || (!cl.teamfortress && (check_models[i].flags & FMOD_DM));
+		if (relevant && !Q_strcasecmp(name, check_models[i].name))
 			break;
 	}
 	if (i >= check_models_num)
@@ -192,13 +191,13 @@ void FMod_Response (void)
 {
 	int i, count;
 	char buf[512] = {'m', 'o', 'd', 'i', 'f', 'i', 'e', 'd', ':', '\0'};
-	qboolean relevent;
+	qboolean relevant;
 
 	for (i = count = 0; i < check_models_num; i++)
 	{
-		relevent =	(cl.teamfortress && (check_models[i].flags & FMOD_TF)) || 
-					(!cl.teamfortress && (check_models[i].flags & FMOD_DM));
-		if (check_models[i].checked && check_models[i].modified && relevent )
+		relevant = (cl.teamfortress && (check_models[i].flags & FMOD_TF)) || (!cl.teamfortress && (check_models[i].flags & FMOD_DM));
+
+		if (check_models[i].checked && check_models[i].modified && relevant )
 		{
 			if (strlen(buf) < 240)
 			{
