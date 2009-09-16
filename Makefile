@@ -184,6 +184,7 @@ OBJS= \
 	linked_list.o \
 	match_tools.o \
 	mathlib.o \
+	md5.o \
 	mdfour.o \
 	menu.o \
 	modules.o \

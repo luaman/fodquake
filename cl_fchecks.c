@@ -152,6 +152,5 @@ void FChecks_CvarInit(void)
 
 void FChecks_Init(void)
 {
-	FMod_Init();
 }
 
