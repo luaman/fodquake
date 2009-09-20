@@ -123,7 +123,7 @@ void Sbar_Changed (void) {
 
 /************************************ INIT ************************************/
 
-void SBar_CvarInit(void)
+void Sbar_CvarInit(void)
 {
 	Cvar_SetCurrentGroup(CVAR_GROUP_SBAR);
 	Cvar_Register (&scr_centerSbar);

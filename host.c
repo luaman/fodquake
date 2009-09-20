@@ -40,6 +40,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "keys.h"
 #include "teamplay.h"
 #include "readablechars.h"
+#include "input.h"
+#include "config_manager.h"
+#include "movie.h"
+#include "sbar.h"
 #include <setjmp.h>
 
 #ifndef CLIENTONLY
@@ -226,7 +230,7 @@ void Host_Init (int argc, char **argv, int default_memsize)
 	Movie_CvarInit();
 	MT_CvarInit();
 	SV_CvarInit();
-	SBar_CvarInit();
+	Sbar_CvarInit();
 	TP_CvarInit();
 	Ignore_CvarInit();
 	Auth_CvarInit();
