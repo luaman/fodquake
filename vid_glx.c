@@ -331,7 +331,6 @@ void *Sys_Video_Open(unsigned int width, unsigned int height, unsigned int depth
 				{
 					int version, revision;
 					int best_fit, best_dist, dist, x, y;
-					unsigned int best_dotclock;
 					int num_vidmodes;
 
 					if (XF86VidModeQueryVersion(d->x_disp, &version, &revision))
@@ -342,7 +341,6 @@ void *Sys_Video_Open(unsigned int width, unsigned int height, unsigned int depth
 
 						best_dist = 9999999;
 						best_fit = -1;
-						best_dotclock = 0;
 
 						for (i = 0; i < num_vidmodes; i++)
 						{
@@ -355,12 +353,6 @@ void *Sys_Video_Open(unsigned int width, unsigned int height, unsigned int depth
 							if (dist < best_dist)
 							{
 								best_dist = dist;
-								best_dotclock = d->vidmodes[i]->dotclock;
-								best_fit = i;
-							}
-							else if (dist == best_dist && best_dotclock < d->vidmodes[i]->dotclock)
-							{
-								best_dotclock = d->vidmodes[i]->dotclock;
 								best_fit = i;
 							}
 						}
