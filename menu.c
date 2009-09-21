@@ -3250,7 +3250,7 @@ void M_SEdit_Draw (void) {
 
 void M_SEdit_Key (int key) {
 	int	l;
-	char *cliptext;
+	const char *cliptext;
 
 	switch (key) {
 		case K_ESCAPE:
