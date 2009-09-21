@@ -177,6 +177,9 @@ void VID_Restart_f(void)
 {
 	int i;
 
+	if (!display)
+		return;
+
 #ifndef GLQUAKE
 	D_FlushCaches();
 #endif
