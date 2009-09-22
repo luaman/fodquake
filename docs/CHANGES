@@ -31,6 +31,7 @@ version 0.1 (since Fuhquake 0.31)
 - No longer consumes 100% CPU time when much less is actually required.
 - Fixed GLX support for smart drivers and graphics hardware which isn't fast
   enough.
+- Fixed various issues with displays that don't have a 4:3 ratio.
 - Added support for FTE chunked downloads. Downloads can be much faster now on
   compatible servers.
 - Now works correctly as a spectator on servers which support
