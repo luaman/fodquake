@@ -3441,10 +3441,10 @@ void M_Draw (void) {
 #ifdef GLQUAKE
 	if (scr_scaleMenu.value)
 	{
-		if (((double)vid.width)/4.0 > ((double)vid.height)/3.0)
+		if (((double)vid.width)/320 > ((double)vid.height)/200)
 		{
-			menuwidth = ((double)vid.width)*(240.0/((double)vid.height));
-			menuheight = 240;
+			menuwidth = ((double)vid.width)*(200.0/((double)vid.height));
+			menuheight = 200;
 		}
 		else
 		{
