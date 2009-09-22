@@ -112,7 +112,7 @@ static void set_up_conwidth_conheight()
 	}
 
 #ifdef GLQUAKE
-	if (vid.width <= 640)
+	if (vid.width <= 640 || vid.height < 400)
 	{
 		vid.conwidth = vid.width;
 		vid.conheight = vid.height;
