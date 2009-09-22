@@ -3439,13 +3439,25 @@ void M_Draw (void) {
 	}
 
 #ifdef GLQUAKE
-	if (scr_scaleMenu.value) {
-		menuwidth = 320;
-		menuheight = min (vid.height, 240);
+	if (scr_scaleMenu.value)
+	{
+		if (((double)vid.width)/4.0 > ((double)vid.height)/3.0)
+		{
+			menuwidth = ((double)vid.width)*(240.0/((double)vid.height));
+			menuheight = 240;
+		}
+		else
+		{
+			menuwidth = 320;
+			menuheight = ((double)vid.height)*(320.0/((double)vid.width));
+		}
+
 		glMatrixMode(GL_PROJECTION);
 		glLoadIdentity ();
 		glOrtho  (0, menuwidth, menuheight, 0, -99999, 99999);
-	} else {
+	}
+	else
+	{
 		menuwidth = vid.width;
 		menuheight = vid.height;
 	}
