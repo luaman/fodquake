@@ -431,19 +431,8 @@ void *Sys_Video_Open(unsigned int width, unsigned int height, unsigned int depth
 		fullscreen = 0;
 #endif
 
-		// specify a visual id
-		if ((pnum = COM_CheckParm("-visualid")))
-		{
-			if (pnum >= com_argc - 1)
-				Sys_Error("VID: -visualid <id#>\n");
-			template.visualid = Q_atoi(com_argv[pnum + 1]);
-			template_mask = VisualIDMask;
-		}
-		else
-		{		// If not specified, use default visual
-			template.visualid = XVisualIDFromVisual(XDefaultVisual(d->x_disp, d->scrnum));
-			template_mask = VisualIDMask;
-		}
+		template.visualid = XVisualIDFromVisual(XDefaultVisual(d->x_disp, d->scrnum));
+		template_mask = VisualIDMask;
 
 		// pick a visual- warn if more than one was available
 		d->x_visinfo = XGetVisualInfo(d->x_disp, template_mask, &template, &num_visuals);
