@@ -37,6 +37,7 @@ struct display
 {
 	unsigned int width;
 	unsigned int height;
+	int fullscreen;
 
 	void *inputdata;
 
@@ -86,6 +87,8 @@ void *Sys_Video_Open(unsigned int width, unsigned int height, unsigned int depth
 					width = d->screen->Width;
 					height = d->screen->Height;
 				}
+				else
+					fullscreen = 0;
 			}
 
 			d->window = OpenWindowTags(0,
@@ -95,8 +98,8 @@ void *Sys_Video_Open(unsigned int width, unsigned int height, unsigned int depth
 				WA_DragBar, d->screen ? FALSE : TRUE,
 				WA_DepthGadget, d->screen ? FALSE : TRUE,
 				WA_Borderless, d->screen ? TRUE : FALSE,
-				WA_RMBTrap, TRUE, d->screen ?
-				WA_PubScreen : TAG_IGNORE, (ULONG) d->screen,
+				WA_RMBTrap, TRUE,
+				d->screen ? WA_PubScreen : TAG_IGNORE, (ULONG) d->screen,
 				WA_Activate, TRUE,
 				WA_ReportMouse, TRUE,
 				TAG_DONE);
@@ -122,6 +125,7 @@ void *Sys_Video_Open(unsigned int width, unsigned int height, unsigned int depth
 					{
 						d->width = width;
 						d->height = height;
+						d->fullscreen = fullscreen;
 
 						d->currentbuffer = 0;
 
@@ -338,6 +342,15 @@ unsigned int Sys_Video_GetHeight(void *display)
 	d = display;
 
 	return d->height;
+}
+
+qboolean Sys_Video_GetFullscreen(void *display)
+{
+	struct display *d;
+
+	d = display;
+
+	return d->fullscreen;
 }
 
 unsigned int Sys_Video_GetBytesPerRow(void *display)

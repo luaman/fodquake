@@ -440,12 +440,6 @@ void VID_SetCaption(const char *text)
 	}
 }
 
-qboolean VID_IsFullscreen()
-{
-#warning fixme
-	return false;
-}
-
 const char *VID_GetClipboardText()
 {
 	return Sys_Video_GetClipboardText(display);
@@ -459,5 +453,10 @@ void VID_FreeClipboardText(const char *text)
 void VID_SetClipboardText(const char *text)
 {
 	Sys_Video_SetClipboardText(display, text);
+}
+
+qboolean VID_GetFullscreen()
+{
+	return Sys_Video_GetFullscreen(display);
 }
 

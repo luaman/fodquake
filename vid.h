@@ -88,8 +88,6 @@ void VID_SetCaption(const char *text);
 
 void VID_GetMouseMovement(int *mousex, int *mousey);
 
-qboolean VID_IsFullscreen(void);
-
 const char *VID_GetClipboardText(void);
 void VID_FreeClipboardText(const char *text);
 void VID_SetClipboardText(const char *text);
@@ -99,4 +97,6 @@ void VID_BeginFrame(int *x, int *y, int *width, int *height);
 void VID_SetDeviceGammaRamp (unsigned short *ramps);
 qboolean VID_HWGammaSupported(void);
 #endif
+
+qboolean VID_GetFullscreen(void);
 

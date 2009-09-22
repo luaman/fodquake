@@ -76,7 +76,6 @@ struct display
 
 	int width;
 	int height;
-	int depth;
 	int fullscreen;
 
 	byte current_palette[768];
@@ -351,11 +350,6 @@ void *Sys_Video_Open(unsigned int width, unsigned int height, unsigned int depth
 	{
 		bzero(d, sizeof(*d));
 
-		d->width = width;
-		d->height = height;
-		d->depth = depth;
-		d->fullscreen = fullscreen;
-
 		srandom(getpid());
 
 		// open the display
@@ -430,6 +424,10 @@ void *Sys_Video_Open(unsigned int width, unsigned int height, unsigned int depth
 #else
 		fullscreen = 0;
 #endif
+
+		d->width = width;
+		d->height = height;
+		d->fullscreen = fullscreen;
 
 		template.visualid = XVisualIDFromVisual(XDefaultVisual(d->x_disp, d->scrnum));
 		template_mask = VisualIDMask;
@@ -773,6 +771,15 @@ unsigned int Sys_Video_GetHeight(void *display)
 	d = display;
 
 	return d->height;
+}
+
+qboolean Sys_Video_GetFullscreen(void *display)
+{
+	struct display *d;
+
+	d = display;
+
+	return d->fullscreen;
 }
 
 unsigned int Sys_Video_GetBytesPerRow(void *display)

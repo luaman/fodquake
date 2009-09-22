@@ -60,6 +60,7 @@ struct display
 	void *inputdata;
 
 	unsigned int width, height;
+	int fullscreen;
 
 	struct Screen *screen;
 	struct Window *window;
@@ -122,6 +123,8 @@ void *Sys_Video_Open(unsigned int width, unsigned int height, unsigned int depth
 						}
 					}
 				}
+				else
+					fullscreen = 0;
 			}
 
 			if (d->screen || !fullscreen)
@@ -161,6 +164,7 @@ void *Sys_Video_Open(unsigned int width, unsigned int height, unsigned int depth
 
 								d->width = width;
 								d->height = height;
+								d->fullscreen = fullscreen;
 
 								d->inputdata = Sys_Input_Init(d->screen, d->window);
 								if (d->inputdata)
@@ -272,6 +276,15 @@ unsigned int Sys_Video_GetHeight(void *display)
 	d = display;
 
 	return d->height;
+}
+
+qboolean Sys_Video_GetFullscreen(void *display)
+{
+	struct display *d;
+
+	d = display;
+
+	return d->fullscreen;
 }
 
 void Sys_Video_BeginFrame(void *display, unsigned int *x, unsigned int *y, unsigned int *width, unsigned int *height)

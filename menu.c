@@ -486,7 +486,7 @@ void M_Options_Draw (void) {
 	if (vid_menudrawfn)
 		M_Print (16, 144, "           Video modes");
 
-	if (!VID_IsFullscreen())
+	if (!VID_GetFullscreen())
 	{
 		M_Print (16, 152, "             Use mouse");
 		M_DrawCheckbox (220, 152, in_grab_windowed_mouse.value);
@@ -567,7 +567,7 @@ void M_Options_Key (int k) {
 	}
 
 	if (k == K_UPARROW || k == K_END || k == K_PGDN) {
-		if (options_cursor == 15 && VID_IsFullscreen())
+		if (options_cursor == 15 && VID_GetFullscreen())
 			options_cursor = 14;
 
 		if (options_cursor == 14 && vid_menudrawfn == NULL)
@@ -576,7 +576,7 @@ void M_Options_Key (int k) {
 		if (options_cursor == 14 && vid_menudrawfn == NULL)
 			options_cursor = 15;
 
-		if (options_cursor == 15 && VID_IsFullscreen())
+		if (options_cursor == 15 && VID_GetFullscreen())
 			options_cursor = 0;
 	}
 }

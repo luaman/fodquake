@@ -66,6 +66,7 @@ void Sys_Video_GrabMouse(void *display, int dograb);
 void Sys_Video_SetWindowTitle(void *display, const char *text);
 unsigned int Sys_Video_GetWidth(void *display);
 unsigned int Sys_Video_GetHeight(void *display);
+qboolean Sys_Video_GetFullscreen(void *display);
 #ifdef GLQUAKE
 void Sys_Video_BeginFrame(void *display, unsigned int *x, unsigned int *y, unsigned int *width, unsigned int *height);
 void Sys_Video_SetGamma(void *display, unsigned short *ramps);

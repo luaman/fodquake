@@ -125,6 +125,14 @@ unsigned int Sys_Video_GetHeight(void *display)
 	return d->height;
 }
 
+unsigned int Sys_Video_GetFullscreen(void *display)
+{
+	struct display *d;
+
+	d = display;
+
+	return d->fullscreen;
+}
 
 void signal_handler(int sig) {
 	printf("Received signal %d, exiting...\n", sig);
@@ -316,7 +324,6 @@ void *Sys_Video_Open(unsigned int width, unsigned int height, unsigned int depth
 		bzero(d, sizeof(*d));
 
 		d->hasfocus = 1;
-		d->fullscreen = fullscreen;
 		d->x_disp = XOpenDisplay(NULL);
 		if (d->x_disp)
 		{
@@ -381,6 +388,8 @@ void *Sys_Video_Open(unsigned int width, unsigned int height, unsigned int depth
 #else
 				fullscreen = 0;
 #endif
+
+				d->fullscreen = fullscreen;
 
 				// window attributes
 				attr.background_pixel = 0;
