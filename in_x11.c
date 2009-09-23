@@ -78,6 +78,9 @@ int is_evdev_rules(struct inputdata *id)
 	unsigned long bytes;
 	unsigned char *data;
 	int status;
+	int ret;
+
+	ret = 0;
 
 	window = RootWindow(id->x_disp, 0);
 
@@ -85,10 +88,12 @@ int is_evdev_rules(struct inputdata *id)
 	if (status == Success)
 	{
 		if (strcmp(data, "evdev") == 0)
-			return 1;
+			ret = 1;
+
+		XFree(data);
 	}
 
-	return 0;
+	return ret;
 }
 
 static const unsigned char keytable_xorg[] =
