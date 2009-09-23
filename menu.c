@@ -3732,9 +3732,13 @@ void M_Quit_Draw (void)
 {
 	static char *quitmsg[] =
 	{
-		"0FodQuake "FODQUAKE_VERSION" by Mark Olsen",
+		"0FodQuake "FODQUAKE_VERSION,
 		"0",
-		"0Based on:",
+		"1Programming:",
+		"0Juergen Legler",
+		"0Mark Olsen",
+		"0",
+		"1Based on:",
 		"0FuhQuake by A Nourai",
 		"0ZQuake by Anton Garilov",
 		"0Quakeworld by Id Software",
