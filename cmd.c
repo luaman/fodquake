@@ -40,10 +40,6 @@ extern cvar_t vid_conheight;
 #endif
 extern cvar_t s_nosound;
 
-#ifdef GLQUAKE
-extern cvar_t vid_depth;
-#endif
-
 #ifndef SERVERONLY
 qboolean CL_CheckServerCommand (void);
 #endif
@@ -283,10 +279,6 @@ void Cmd_ParseLegacyCmdLineCmds()
 			Cvar_Set(&vid_fullscreen, "0");
 		else if (strcmp(com_argv[i], "-nosound") == 0)
 			Cvar_Set(&s_nosound, "1");
-#ifdef GLQUAKE
-		else if (strcmp(com_argv[i], "-depth") == 0 && i+1 < com_argc)
-			Cvar_Set(&vid_depth, com_argv[i+1]);
-#endif
 	}
 }
 
