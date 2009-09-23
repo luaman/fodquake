@@ -42,10 +42,10 @@ ifeq ($(OS), linux)
 	OSCFLAGS=-DBUILD_STRL
 	OSLDFLAGS=-lpthread -lrt
 
-	OSSWOBJS=vid_x11.o in_x11.o
+	OSSWOBJS=vid_x11.o vid_mode_x11.o in_x11.o
 	OSSWLDFLAGS=-L/usr/X11R6/lib -lX11 -lXext -lXxf86vm -lXxf86dga
 
-	OSGLOBJS=vid_glx.o in_x11.o
+	OSGLOBJS=vid_glx.o vid_mode_x11.o in_x11.o
 	OSGLLDFLAGS=-L/usr/X11R6/lib -lX11 -lXext -lXxf86vm -lXxf86dga -lGL
 endif
 

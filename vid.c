@@ -83,9 +83,9 @@ static cvar_t vid_ref = { "vid_ref", "soft", CVAR_ROM };
 cvar_t vid_fullscreen = { "vid_fullscreen", "1", CVAR_ARCHIVE };
 cvar_t vid_width = { "vid_width", "640", CVAR_ARCHIVE };
 cvar_t vid_height = { "vid_height", "480", CVAR_ARCHIVE };
+cvar_t vid_mode = { "vid_mode", "", CVAR_ARCHIVE };
 
 #ifdef GLQUAKE
-cvar_t vid_depth = { "vid_depth", "24", CVAR_ARCHIVE };
 cvar_t vid_conwidth = { "vid_conwidth", "0", CVAR_ARCHIVE, vid_conwidth_callback };
 cvar_t vid_conheight = { "vid_conheight", "0", CVAR_ARCHIVE, vid_conheight_callback };
 #endif
@@ -212,8 +212,8 @@ void VID_CvarInit()
 	Cvar_Register(&vid_fullscreen);
 	Cvar_Register(&vid_width);
 	Cvar_Register(&vid_height);
+	Cvar_Register(&vid_mode);
 #ifdef GLQUAKE
-	Cvar_Register(&vid_depth);
 	Cvar_Register(&vid_conwidth);
 	Cvar_Register(&vid_conheight);
 #endif
@@ -263,7 +263,7 @@ static void VID_SW_FreeBuffers()
 
 void VID_Open()
 {
-	int width, height, depth, fullscreen;
+	int width, height, fullscreen;
 	int i;
 
 	fullscreen = vid_fullscreen.value;
@@ -284,18 +284,6 @@ void VID_Open()
 	}
 #endif
 
-#ifdef GLQUAKE
-	depth = vid_depth.value;
-
-	if (depth != 15 && depth != 16 && depth != 24)
-	{
-		Sys_Printf("VID: Bad depth\n");
-		depth = 24;
-	}
-#else
-	depth = 8;
-#endif
-
 	vid.colormap = host_colormap;
 	vid.aspect = ((float)height / (float)width) * (320.0 / 240.0);
 
@@ -304,7 +292,7 @@ void VID_Open()
 	vid.maxwarpheight = WARP_HEIGHT;
 #endif
 
-	display = Sys_Video_Open(width, height, depth, fullscreen, host_basepal);
+	display = Sys_Video_Open(vid_mode.string, width, height, fullscreen, host_basepal);
 	if (display)
 	{
 #ifndef GLQUAKE
@@ -455,8 +443,26 @@ void VID_SetClipboardText(const char *text)
 	Sys_Video_SetClipboardText(display, text);
 }
 
+unsigned int VID_GetWidth()
+{
+	return Sys_Video_GetWidth(display);
+}
+
+unsigned int VID_GetHeight()
+{
+	return Sys_Video_GetHeight(display);
+}
+
 qboolean VID_GetFullscreen()
 {
 	return Sys_Video_GetFullscreen(display);
+}
+
+const char *VID_GetMode()
+{
+	if (Sys_Video_GetFullscreen(display))
+		return Sys_Video_GetMode(display);
+
+	return "";
 }
 

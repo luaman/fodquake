@@ -46,6 +46,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #endif
 
 #include "in_x11.h"
+#include "vid_mode_x11.h"
 
 struct display
 {
@@ -54,7 +55,6 @@ struct display
 	unsigned int width, height;
 
 #ifdef USE_VMODE
-	XF86VidModeModeInfo **vidmodes;
 	XF86VidModeModeInfo origvidmode;
 	qboolean vidmode_active;
 	qboolean customgamma;
@@ -66,6 +66,7 @@ struct display
 	int hasfocus;
 
 	int fullscreen;
+	char used_mode[256];
 
 	qboolean vid_gammaworks;
 	unsigned short systemgammaramp[3][256];
@@ -132,6 +133,15 @@ unsigned int Sys_Video_GetFullscreen(void *display)
 	d = display;
 
 	return d->fullscreen;
+}
+
+const char *Sys_Video_GetMode(void *display)
+{
+	struct display *d;
+
+	d = display;
+
+	return d->used_mode;
 }
 
 void signal_handler(int sig) {
@@ -298,7 +308,7 @@ void Sys_Video_CvarInit()
 	X11_Input_CvarInit();
 }
 
-void *Sys_Video_Open(unsigned int width, unsigned int height, unsigned int depth, int fullscreen, unsigned char *palette)
+void *Sys_Video_Open(const char *mode, unsigned int width, unsigned int height, int fullscreen, unsigned char *palette)
 {
 	struct display *d;
 
@@ -337,58 +347,79 @@ void *Sys_Video_Open(unsigned int width, unsigned int height, unsigned int depth
 				if (fullscreen)
 				{
 					int version, revision;
-					int best_fit, best_dist, dist, x, y;
+					XF86VidModeModeInfo **vidmodes;
 					int num_vidmodes;
+					int wanted_mode;
+					struct x11mode x11mode;
 
-					if (XF86VidModeQueryVersion(d->x_disp, &version, &revision))
+					if (*mode == 0 || modeline_to_x11mode(mode, &x11mode))
 					{
-						XF86VidModeGetModeLine(d->x_disp, d->scrnum, &d->origvidmode.dotclock, (XF86VidModeModeLine *)&d->origvidmode.hdisplay);
-
-						XF86VidModeGetAllModeLines(d->x_disp, d->scrnum, &num_vidmodes, &d->vidmodes);
-
-						best_dist = 9999999;
-						best_fit = -1;
-
-						for (i = 0; i < num_vidmodes; i++)
+						if (XF86VidModeQueryVersion(d->x_disp, &version, &revision))
 						{
-							if (width > d->vidmodes[i]->hdisplay || height > d->vidmodes[i]->vdisplay)
-								continue;
+							XF86VidModeGetModeLine(d->x_disp, d->scrnum, &d->origvidmode.dotclock, (XF86VidModeModeLine *)&d->origvidmode.hdisplay);
 
-							x = width - d->vidmodes[i]->hdisplay;
-							y = height - d->vidmodes[i]->vdisplay;
-							dist = x * x + y * y;
-							if (dist < best_dist)
+							XF86VidModeGetAllModeLines(d->x_disp, d->scrnum, &num_vidmodes, &vidmodes);
+
+							if (*mode)
 							{
-								best_dist = dist;
-								best_fit = i;
+								for (i = 0; i < num_vidmodes; i++)
+								{
+									if (vidmodes[i]->dotclock == x11mode.dotclock
+									 && vidmodes[i]->hdisplay == x11mode.hdisplay
+									 && vidmodes[i]->hsyncstart == x11mode.hsyncstart
+									 && vidmodes[i]->hsyncend == x11mode.hsyncend
+									 && vidmodes[i]->htotal == x11mode.htotal
+									 && vidmodes[i]->hskew == x11mode.hskew
+									 && vidmodes[i]->vdisplay == x11mode.vdisplay
+									 && vidmodes[i]->vsyncstart == x11mode.vsyncstart
+									 && vidmodes[i]->vsyncend == x11mode.vsyncend
+									 && vidmodes[i]->vtotal == x11mode.vtotal
+									 && vidmodes[i]->flags == x11mode.flags)
+									{
+										wanted_mode = i;
+										break;
+									}
+								}
 							}
-						}
+							else
+								i = num_vidmodes;
 
-						if (best_fit != -1)
-						{
-/*
-							actualWidth = vidmodes[best_fit]->hdisplay;
-							actualHeight = vidmodes[best_fit]->vdisplay;
-*/
-							// change to the mode
-							XF86VidModeSwitchToMode(d->x_disp, d->scrnum, d->vidmodes[best_fit]);
-							d->vidmode_active = true;
-							// Move the viewport to top left
-							XF86VidModeSetViewPort(d->x_disp, d->scrnum, 0, 0);
+							if (i != num_vidmodes)
+							{
+								XF86VidModeSwitchToMode(d->x_disp, d->scrnum, vidmodes[wanted_mode]);
+								d->vidmode_active = true;
+								XF86VidModeSetViewPort(d->x_disp, d->scrnum, 0, 0);
+
+								width = vidmodes[wanted_mode]->hdisplay;
+								height = vidmodes[wanted_mode]->vdisplay;
+
+								snprintf(d->used_mode, sizeof(d->used_mode), "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d", vidmodes[wanted_mode]->dotclock, vidmodes[wanted_mode]->hdisplay, vidmodes[wanted_mode]->hsyncstart, vidmodes[wanted_mode]->hsyncend, vidmodes[wanted_mode]->htotal, vidmodes[wanted_mode]->hskew, vidmodes[wanted_mode]->vdisplay, vidmodes[wanted_mode]->vsyncstart, vidmodes[wanted_mode]->vsyncend, vidmodes[wanted_mode]->vtotal, vidmodes[wanted_mode]->flags);
+							}
+							else
+							{
+								width = d->origvidmode.hdisplay;
+								height = d->origvidmode.vdisplay;
+
+								snprintf(d->used_mode, sizeof(d->used_mode), "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d", d->origvidmode.dotclock, d->origvidmode.hdisplay, d->origvidmode.hsyncstart, d->origvidmode.hsyncend, d->origvidmode.htotal, d->origvidmode.hskew, d->origvidmode.vdisplay, d->origvidmode.vsyncstart, d->origvidmode.vsyncend, d->origvidmode.vtotal, d->origvidmode.flags);
+							}
+
+							XFree(vidmodes);
 						}
 						else
+						{
+							Com_Printf("Unable to use the XF86 vidmode extension.\n");
 							fullscreen = 0;
+						}
 					}
 					else
-					{
-						Com_Printf("Unable to use the XF86 vidmode extension.\n");
 						fullscreen = 0;
-					}
 				}
 #else
 				fullscreen = 0;
 #endif
 
+				d->width = width;
+				d->height = height;
 				d->fullscreen = fullscreen;
 
 				// window attributes
@@ -417,9 +448,10 @@ void *Sys_Video_Open(unsigned int width, unsigned int height, unsigned int depth
 #if USE_VMODE
 				if (fullscreen)
 				{
+					XSync(d->x_disp, 0);
 					XRaiseWindow(d->x_disp, d->x_win);
 					XWarpPointer(d->x_disp, None, d->x_win, 0, 0, 0, 0, 0, 0);
-					XFlush(d->x_disp);
+					XSync(d->x_disp, 0);
 					// Move the viewport to top left
 					XF86VidModeSetViewPort(d->x_disp, d->scrnum, 0, 0);
 				}
@@ -430,9 +462,6 @@ void *Sys_Video_Open(unsigned int width, unsigned int height, unsigned int depth
 				d->ctx = glXCreateContext(d->x_disp, visinfo, NULL, True);
 
 				glXMakeCurrent(d->x_disp, d->x_win, d->ctx);
-
-				d->width = width;
-				d->height = height;
 
 				InitSig(); // trap evil signals
 

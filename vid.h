@@ -98,5 +98,8 @@ void VID_SetDeviceGammaRamp (unsigned short *ramps);
 qboolean VID_HWGammaSupported(void);
 #endif
 
+unsigned int VID_GetWidth(void);
+unsigned int VID_GetHeight(void);
 qboolean VID_GetFullscreen(void);
+const char *VID_GetMode(void);
 

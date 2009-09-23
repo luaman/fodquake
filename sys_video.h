@@ -18,7 +18,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 
 void Sys_Video_CvarInit(void);
-void *Sys_Video_Open(unsigned int width, unsigned int height, unsigned int depth, int fullscreen, unsigned char *palette);
+void *Sys_Video_Open(const char *mode, unsigned int width, unsigned int height, int fullscreen, unsigned char *palette);
 void Sys_Video_Close(void *display);
 unsigned int Sys_Video_GetNumBuffers(void *display);
 void Sys_Video_Update(void *display, vrect_t *rects);
@@ -30,6 +30,7 @@ void Sys_Video_SetWindowTitle(void *display, const char *text);
 unsigned int Sys_Video_GetWidth(void *display);
 unsigned int Sys_Video_GetHeight(void *display);
 qboolean Sys_Video_GetFullscreen(void *display);
+const char *Sys_Video_GetMode(void *display);
 #ifdef GLQUAKE
 void Sys_Video_BeginFrame(void *display, unsigned int *x, unsigned int *y, unsigned int *width, unsigned int *height);
 void Sys_Video_SetGamma(void *display, unsigned short *ramps);
@@ -38,6 +39,11 @@ qboolean Sys_Video_HWGammaSupported(void *display);
 unsigned int Sys_Video_GetBytesPerRow(void *display);
 void *Sys_Video_GetBuffer(void *display);
 #endif
+
+const char * const *Sys_Video_GetModeList(void);
+void Sys_Video_FreeModeList(const char * const *displaymodes);
+const char *Sys_Video_GetModeDescription(const char *mode);
+void Sys_Video_FreeModeDescription(const char *modedescription);
 
 const char *Sys_Video_GetClipboardText(void *display);
 void Sys_Video_FreeClipboardText(void *display, const char *text);
