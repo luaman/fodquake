@@ -829,7 +829,10 @@ static void ServerScanner_Thread(void *arg)
 	{
 		timeout = ServerScanner_DoStuffInternal(serverscanner);
 
-		Sys_Net_Wait(serverscanner->netdata, serverscanner->sockets[NA_IPV4], timeout);
+		if (serverscanner->sockets[NA_IPV4])
+			Sys_Net_Wait(serverscanner->netdata, serverscanner->sockets[NA_IPV4], timeout);
+		else
+			usleep(timeout);
 	}
 
 	ServerScanner_Thread_CloseSockets(serverscanner);
