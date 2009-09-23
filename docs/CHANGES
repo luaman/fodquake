@@ -47,4 +47,5 @@ version 0.1 (since Fuhquake 0.31)
   'v_centerspeed' cvars and the '+mlook', '-mlook' and 'centerview' commands.
 - Added a server browser (made by Jogi)
 - Added file checksumming used by f_modified.
+- Added a video mode selection menu.
 

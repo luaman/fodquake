@@ -47,11 +47,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <sys/stat.h>
 #endif
 
-void (*vid_menudrawfn)(void);
-void (*vid_menukeyfn)(int key);
-
 enum {m_none, m_main, m_singleplayer, m_load, m_save, m_multiplayer,
-	m_setup, m_options, m_video, m_keys, m_help, m_quit,
+	m_setup, m_options, m_video, m_video_verify, m_keys, m_help, m_quit,
 	m_gameoptions, m_slist, m_sedit, m_fps, m_demos, m_mp3_control, m_mp3_playlist} m_state;
 
 void M_Menu_Main_f (void);
@@ -132,11 +129,11 @@ void M_DrawCharacter (int cx, int line, int num) {
 	Draw_Character (cx + ((menuwidth - 320)>>1), line + m_yofs, num);
 }
 
-void M_Print (int cx, int cy, char *str) {
+void M_Print (int cx, int cy, const char *str) {
 	Draw_Alt_String (cx + ((menuwidth - 320)>>1), cy + m_yofs, str);
 }
 
-void M_PrintWhite (int cx, int cy, char *str) {
+void M_PrintWhite (int cx, int cy, const char *str) {
 	Draw_String (cx + ((menuwidth - 320)>>1), cy + m_yofs, str);
 }
 
@@ -483,8 +480,7 @@ void M_Options_Draw (void) {
 
 	M_Print (16, 136, "          FPS settings");
 
-	if (vid_menudrawfn)
-		M_Print (16, 144, "           Video modes");
+	M_Print (16, 144, "           Video modes");
 
 	if (!VID_GetFullscreen())
 	{
@@ -569,13 +565,7 @@ void M_Options_Key (int k) {
 	if (k == K_UPARROW || k == K_END || k == K_PGDN) {
 		if (options_cursor == 15 && VID_GetFullscreen())
 			options_cursor = 14;
-
-		if (options_cursor == 14 && vid_menudrawfn == NULL)
-			options_cursor = 13;
 	} else {
-		if (options_cursor == 14 && vid_menudrawfn == NULL)
-			options_cursor = 15;
-
 		if (options_cursor == 15 && VID_GetFullscreen())
 			options_cursor = 0;
 	}
@@ -1038,16 +1028,407 @@ void M_Fps_Key (int k) {
 //=============================================================================
 /* VIDEO MENU */
 
-void M_Menu_Video_f (void) {
+extern cvar_t vid_width;
+extern cvar_t vid_height;
+extern cvar_t vid_mode;
+extern cvar_t vid_fullscreen;
+
+static char *video_verify_oldcvar_width;
+static char *video_verify_oldcvar_height;
+static char *video_verify_oldcvar_fullscreen;
+static char *video_verify_oldcvar_mode;
+
+static unsigned int video_verify_oldactive_width;
+static unsigned int video_verify_oldactive_height;
+static qboolean video_verify_oldactive_fullscreen;
+static char *video_verify_oldactive_mode;
+
+static char *video_selectedmodeline;
+
+static double video_verify_fail_time;
+
+static void M_Menu_Video_Verify_Revert()
+{
+	Cvar_SetValue(&vid_width, video_verify_oldactive_width);
+	Cvar_SetValue(&vid_height, video_verify_oldactive_height);
+	Cvar_SetValue(&vid_fullscreen, video_verify_oldactive_fullscreen);
+	Cvar_Set(&vid_mode, video_verify_oldactive_mode);
+	VID_Restart_f();
+	Cvar_Set(&vid_width, video_verify_oldcvar_width);
+	Cvar_Set(&vid_height, video_verify_oldcvar_height);
+	Cvar_Set(&vid_fullscreen, video_verify_oldcvar_fullscreen);
+	Cvar_Set(&vid_mode, video_verify_oldcvar_mode);
+}
+
+static void M_Menu_Video_Verify_Cleanup()
+{
+	free(video_verify_oldcvar_width);
+	free(video_verify_oldcvar_height);
+	free(video_verify_oldcvar_fullscreen);
+	free(video_verify_oldcvar_mode);
+	free(video_verify_oldactive_mode);
+}
+
+void M_Menu_Video_Verify_f(void)
+{
+	video_verify_oldcvar_width = strdup(vid_width.string);
+	video_verify_oldcvar_height = strdup(vid_height.string);
+	video_verify_oldcvar_fullscreen = strdup(vid_fullscreen.string);
+	video_verify_oldcvar_mode = strdup(vid_mode.string);
+
+	video_verify_oldactive_width = VID_GetWidth();
+	video_verify_oldactive_height = VID_GetHeight();
+	video_verify_oldactive_fullscreen = VID_GetFullscreen();
+	video_verify_oldactive_mode = strdup(VID_GetMode());
+
+	if (video_verify_oldcvar_width == 0
+	 || video_verify_oldcvar_height == 0
+	 || video_verify_oldcvar_fullscreen == 0
+	 || video_verify_oldcvar_mode == 0
+	 || video_verify_oldactive_mode == 0)
+	{
+		M_Menu_Video_Verify_Cleanup();
+		return;
+	}
+
+	Cvar_Set(&vid_mode, video_selectedmodeline);
+	Cvar_SetValue(&vid_fullscreen, 1);
+	VID_Restart_f();
+
+	video_verify_fail_time = curtime + 15;
+
+	M_EnterMenu(m_video_verify);
+}
+
+void M_Video_Verify_Draw(void)
+{
+	int timeremaining;
+	char buf[40];
+	unsigned int middle;
+
+	if (scr_centerMenu.value)
+		middle = 100;
+	else
+		middle = 36+8;
+
+	M_Print(160-(32*4), middle-36, "Testing your selected video mode");
+	M_Print(160-(38*4), middle-28, "If you can see this text, then press y");
+	M_Print(160-(36*4), middle-20, "to verify that this video mode works");
+
+	timeremaining = video_verify_fail_time - curtime;
+	if (timeremaining < 0)
+		timeremaining = 0;
+
+	snprintf(buf, sizeof(buf), "Reverting in %d seconds", timeremaining);
+
+	M_PrintWhite(160-(strlen(buf)*4), middle-4, buf);
+
+	M_Print(160-(35*4), middle+12, "Press escape or n to cancel setting");
+	M_Print(160-(15*4), middle+20, "this video mode");
+
+}
+
+void M_Video_Verify_Key(int key)
+{
+	switch(key)
+	{
+		case K_BACKSPACE:
+		case K_ESCAPE:
+		case 'n':
+			M_Menu_Video_Verify_Revert();
+			M_Menu_Video_Verify_Cleanup();
+			M_LeaveMenu(m_video);
+			break;
+
+		case 'y':
+			M_Menu_Video_Verify_Cleanup();
+			M_LeaveMenu(m_video);
+			break;
+	}
+}
+
+struct
+{
+	unsigned int width;
+	unsigned int height;
+} static const windowedresolutions[] =
+{
+	{ 320, 200 },
+	{ 320, 240 },
+	{ 512, 384 },
+	{ 640, 400 },
+	{ 640, 480 },
+	{ 800, 600 },
+	{ 1024, 768 },
+	{ 1280, 800 },
+	{ 1280, 1024 },
+	{ 1440, 900 },
+	{ 1600, 1200 },
+	{ 1680, 1050 },
+};
+
+static const char *windowedresolutionnames[] =
+{
+	"320x200",
+	"320x240",
+	"512x384",
+	"640x400",
+	"640x480",
+	"800x600",
+	"1024x768",
+	"1280x800",
+	"1280x1024",
+	"1440x900",
+	"1600x1200",
+	"1680x1050",
+};
+
+#define NUMWINDOWEDRESOLUTIONS (sizeof(windowedresolutions)/sizeof(*windowedresolutions))
+
+static unsigned int video_fullscreenmodecursor;
+static unsigned int video_fullscreenmodelistbegin;
+static unsigned int video_windowmodecursor;
+static unsigned int video_windowmodelistbegin;
+static unsigned int video_typenum;
+
+void M_Menu_Video_f(void)
+{
 	M_EnterMenu (m_video);
+
+	if (vid_fullscreen.value)
+	{
+		if (*vid_mode.string)
+			video_typenum = 2;
+		else
+			video_typenum = 1;
+	}
+	else
+		video_typenum = 0;
+
+	video_fullscreenmodelistbegin = 0;
+	video_windowmodelistbegin = 0;
 }
 
-void M_Video_Draw (void) {
-	(*vid_menudrawfn) ();
+void M_Video_Draw (void)
+{
+	const char * const *vidmodes;
+	const char *t;
+	char modestring[40];
+	mpic_t *p;
+	unsigned int i;
+	unsigned int j;
+	unsigned int maxwidth;
+	unsigned int bottom;
+	unsigned int modelines;
+	const char *curmode;
+	static const char *displaytypes[] =
+	{
+		"Windowed",
+		"Fullscreen, clone desktop",
+		"Fullscreen, custom mode"
+	};
+
+	if (scr_centerMenu.value)
+		bottom = 200;
+	else
+		bottom = menuheight;
+
+	p = Draw_CachePic ("gfx/vidmodes.lmp");
+	M_DrawPic ((320 - p->width) / 2, 4, p);
+
+	curmode = VID_GetMode();
+
+	M_Print(160-(6*8)-4, 36, "Current mode:");
+	if (VID_GetFullscreen())
+	{
+		strlcpy(modestring, "Fullscreen, unknown mode", sizeof(modestring));
+
+		if (*curmode)
+		{
+			t = Sys_Video_GetModeDescription(curmode);
+			if (t)
+			{
+				strlcpy(modestring, t, sizeof(modestring));
+
+				Sys_Video_FreeModeDescription(t);
+			}
+		}
+	}
+	else
+	{
+		snprintf(modestring, sizeof(modestring), "Windowed, %dx%d", VID_GetWidth(), VID_GetHeight());
+	}
+
+	M_Print(160-(strlen(modestring)*4), 44, modestring);
+
+	M_Print(160-(6*8)-4, 60, "Display type:");
+	M_Print(160-((strlen(displaytypes[video_typenum])*8)/2), 68, displaytypes[video_typenum]);
+
+	modelines = (bottom-32-92)/8;
+
+	if (video_typenum == 0)
+	{
+		if (video_windowmodecursor >= NUMWINDOWEDRESOLUTIONS)
+		{
+			video_windowmodecursor = NUMWINDOWEDRESOLUTIONS - 1;
+		}
+
+		if (video_windowmodecursor < video_windowmodelistbegin)
+			video_windowmodelistbegin = video_windowmodecursor;
+		else if (video_windowmodecursor >= modelines + video_windowmodelistbegin)
+			video_windowmodelistbegin = video_windowmodecursor - modelines + 1;
+
+		maxwidth = 0 /* 16 */;
+		for(i=0;i<NUMWINDOWEDRESOLUTIONS;i++)
+		{
+			if (strlen(windowedresolutionnames[i]) > maxwidth)
+				maxwidth = strlen(windowedresolutionnames[i]);
+		}
+
+		M_Print(160-((16*8)/2), 84, "Available modes:");
+		for(i=video_windowmodelistbegin,j=0;i<NUMWINDOWEDRESOLUTIONS && j<modelines;i++,j++)
+		{
+			if (VID_GetFullscreen() == 0 && VID_GetWidth() == windowedresolutions[i].width && VID_GetHeight() == windowedresolutions[i].height)
+				M_PrintWhite(160-((maxwidth*8)/2), 92+j*8, windowedresolutionnames[i]);
+			else
+				M_Print(160-((maxwidth*8)/2), 92+j*8, windowedresolutionnames[i]);
+		}
+
+		M_DrawCharacter(160-((maxwidth*8)/2)-16, 92 + (video_windowmodecursor - video_windowmodelistbegin) * 8, 12 + ((int)(curtime * 4) & 1));
+	}
+	else if (video_typenum == 2)
+	{
+		vidmodes = Sys_Video_GetModeList();
+		if (vidmodes)
+		{
+			maxwidth = 16;
+			for(i=0;vidmodes[i];i++)
+			{
+				t = Sys_Video_GetModeDescription(vidmodes[i]);
+				if (t)
+				{
+					if (strlen(t) > maxwidth)
+						maxwidth = strlen(t);
+
+					Sys_Video_FreeModeDescription(t);
+				}
+			}
+
+			if (maxwidth > (menuwidth/8)-4)
+				maxwidth = (menuwidth/8)-4;
+
+			M_Print(160-((maxwidth*8)/2), 84, "Available modes:");
+			for(i=video_fullscreenmodelistbegin,j=0;vidmodes[i] && j<modelines;i++,j++)
+			{
+				t = Sys_Video_GetModeDescription(vidmodes[i]);
+				if (t)
+				{
+					if (strcmp(curmode, vidmodes[i]) == 0)
+						M_PrintWhite(160-((maxwidth*8)/2), 92+j*8, t);
+					else
+						M_Print(160-((maxwidth*8)/2), 92+j*8, t);
+
+					Sys_Video_FreeModeDescription(t);
+				}
+				else
+					M_Print(160-((maxwidth*8)/2), 92+j*8, "Unknown");
+			}
+
+			if (video_fullscreenmodecursor >= i)
+			{
+				if (i > 0)
+					video_fullscreenmodecursor = i - 1;
+				else
+					video_fullscreenmodecursor = 0;
+			}
+
+			free(video_selectedmodeline);
+			video_selectedmodeline = strdup(vidmodes[video_fullscreenmodecursor]);
+
+			Sys_Video_FreeModeList(vidmodes);
+
+			if (video_fullscreenmodecursor < video_fullscreenmodelistbegin)
+				video_fullscreenmodelistbegin = video_fullscreenmodecursor;
+			else if (video_fullscreenmodecursor >= modelines + video_fullscreenmodelistbegin)
+				video_fullscreenmodelistbegin = video_fullscreenmodecursor - modelines + 1;
+
+			M_DrawCharacter(160-((maxwidth*8)/2)-16, 92 + (video_fullscreenmodecursor - video_fullscreenmodelistbegin) * 8, 12 + ((int)(curtime * 4) & 1));
+		}
+	}
+
+	M_Print(160-(37*4), bottom-24, "Left/right arrows change display type");
+	M_Print(160-(35*4), bottom-16, "Up/down arrows scroll the mode list");
+	M_Print(160-(20*4), bottom-8, "Enter selects a mode");
 }
 
-void M_Video_Key (int key) {
-	(*vid_menukeyfn) (key);
+void M_Video_Key (int key)
+{
+	switch(key)
+	{
+		case K_BACKSPACE:
+			m_topmenu = m_none;	// intentional fallthrough
+		case K_ESCAPE:
+			free(video_selectedmodeline);
+			video_selectedmodeline = 0;
+			M_LeaveMenu(m_options);
+			break;
+
+		case K_UPARROW:
+			if (video_typenum == 0)
+			{
+				if (video_windowmodecursor)
+					video_windowmodecursor--;
+			}
+			else if (video_typenum == 2)
+			{
+				if (video_fullscreenmodecursor)
+					video_fullscreenmodecursor--;
+			}
+			break;
+		case K_DOWNARROW:
+			if (video_typenum == 0 && video_windowmodecursor < NUMWINDOWEDRESOLUTIONS - 1)
+				video_windowmodecursor++;
+			else if (video_typenum == 2)
+				video_fullscreenmodecursor++;
+			break;
+
+		case K_LEFTARROW:
+			if (video_typenum)
+				video_typenum--;
+			else
+				video_typenum = 2;
+			break;
+
+		case K_RIGHTARROW:
+			video_typenum++;
+			if (video_typenum > 2)
+				video_typenum = 0;
+
+			break;
+
+		case K_ENTER:
+			if (video_typenum == 0)
+			{
+				if (!(VID_GetFullscreen() == 0 && VID_GetWidth() == windowedresolutions[video_windowmodecursor].width && VID_GetHeight() == windowedresolutions[video_windowmodecursor].height))
+				{
+					Cvar_SetValue(&vid_width, windowedresolutions[video_windowmodecursor].width);
+					Cvar_SetValue(&vid_height, windowedresolutions[video_windowmodecursor].height);
+					Cvar_SetValue(&vid_fullscreen, 0);
+					Cbuf_AddText("vid_restart\n");
+				}
+			}
+			else if (video_typenum == 1)
+			{
+				Cvar_SetValue(&vid_fullscreen, 1);
+				Cvar_Set(&vid_mode, "");
+				Cbuf_AddText("vid_restart\n");
+			}
+			else if (video_typenum == 2)
+			{
+				M_Menu_Video_Verify_f();
+			}
+			break;
+	}
 }
 
 //=============================================================================
@@ -3514,6 +3895,10 @@ void M_Draw (void) {
 		M_Video_Draw ();
 		break;
 
+	case m_video_verify:
+		M_Video_Verify_Draw ();
+		break;
+
 	case m_help:
 		M_Help_Draw ();
 		break;
@@ -3618,6 +4003,10 @@ void M_Keydown (int key) {
 
 	case m_video:
 		M_Video_Key (key);
+		return;
+
+	case m_video_verify:
+		M_Video_Verify_Key (key);
 		return;
 
 	case m_help:
