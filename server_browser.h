@@ -18,5 +18,17 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 
 void SB_Init(void);
+void SB_CvarInit(void);
 void SB_Frame(void);
 void SB_Key(int key);
+
+
+char *SB_Macro_Ip(void);
+char *SB_Macro_Hostname(void);
+char *SB_Macro_Map(void);
+char *SB_Macro_Ping(void);
+char *SB_Macro_Player(void);
+char *SB_Macro_Max_Player(void);
+char *SB_Macro_Player_Names(void);
+
+void SB_Quit(void);

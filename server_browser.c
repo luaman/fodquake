@@ -25,6 +25,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "keys.h"
 #include "linked_list.h"
 #include "serverscanner.h"
+#include "readablechars.h"
+
+void SB_AddMacros(void);
 
 static int Color_For_Map (int m)
 {
@@ -39,16 +42,16 @@ struct server
 	int port;
 };
 
-static struct linked_list *server;
-
 static struct ServerScanner *serverscanner;
 
 cvar_t sb_masterserver = {"sb_masterserver", "asgaard.morphos-team.net:27000"};
 cvar_t sb_player_drawing = {"sb_player_drawing", "0"};
-cvar_t sb_refresh_on_activate = {"sb_refresh_on_activate", "0"};
-cvar_t sb_selected_server_ip = {"sb_selected_server_ip", "none"};
+cvar_t sb_refresh_on_activate = {"sb_refresh_on_activate", "1"};
+
+char sb_macro_buf[512];
 
 static int sb_open = 0;
+static int sb_default_settings = 1;
 static const struct QWServer **sb_qw_server;
 static unsigned int sb_qw_server_count = 0;
 
@@ -59,7 +62,6 @@ static int sb_active_help_window = 0;
 static int sb_check_serverscanner = 0;
 
 // general display
-static int sb_active_tab = 0;
 static int sb_active_window= 0;
 static int sb_selected_filter = 0;
 static char sb_status_bar[512];
@@ -103,16 +105,21 @@ static int sb_server_insert_port_position;
 #define SB_SORT_PING 3
 #define SB_SORT_MAX 4
 
-static char *tab_names[12] = { "all", "duel", "2on2", "4on4", "ffa", "empty", "empty", "empty", "empty", "empty", "empty", "empty"};
+const struct QWServer *current_selected_server;
 
 struct tab
 {
+
+	struct tab *prev, *next;
+	
+	char *name;
 	int max_filter_keyword_length;
 	int server_count;
 	int player_count;
 	int max_hostname_length;
 	int max_map_length;
 	int sb_position;
+	int changed;
 	int sort;
 	int sort_dir;
 	struct server **servers;
@@ -121,7 +128,10 @@ struct tab
 	struct linked_list *filters;
 };
 
-static struct tab tabs[SB_MAX_TABS];
+static struct tab *tab_first;
+static struct tab *tab_last;
+static struct tab *tab_active;
+
 
 static char *get_sort_name(struct tab *tab)
 {
@@ -136,14 +146,6 @@ static char *get_sort_name(struct tab *tab)
 	else
 		return "weird!";
 }
-
-#define SB_FILTER_TYPE_PLAYER 0
-#define SB_FILTER_TYPE_MAP 1
-#define SB_FILTER_TYPE_HOSTNAME 2
-#define SB_FILTER_TYPE_TEAMPLAY 3
-#define SB_FILTER_TYPE_MAX_CLIENTS 4
-#define SB_FILTER_TYPE_PING 5
-#define SB_FILTER_TYPE_MAX 6
 
 struct filter
 {
@@ -250,6 +252,8 @@ static int filter_ping_check(struct QWServer *server, struct filter *filter)
 	return num_check(server->pingtime/1000, filter->fvalue, filter->type);
 }
 
+#define SB_FILTER_TYPE_MAX 6
+
 struct filter_types filter_types[SB_FILTER_TYPE_MAX] =
 {
 	{ 0, "players", "amount of players on the servers", filter_player_check},
@@ -284,12 +288,162 @@ static char *Filter_Type_String(int type)
 		return NULL;
 }
 
+
+static struct tab *sb_add_tab(char *name)
+{
+	struct tab *tab;
+
+	if (name == NULL)
+		return NULL;
+	
+	tab = calloc(1, sizeof(struct tab));
+
+	if (tab == NULL)
+		return NULL;
+
+
+	tab->filters = List_Add(0, NULL, NULL);
+	if (tab->filters == NULL)
+	{
+		free(tab);
+		return NULL;
+	}
+
+	tab->name = strdup(name);
+	if (tab->name == NULL)
+	{
+		free(tab->filters);
+		free(tab);
+		return NULL;
+	}
+
+	if (tab_first == NULL)
+		tab_first = tab;
+	
+	if (tab_last == NULL)
+	{
+		tab_last = tab;
+	}
+	else
+	{
+		tab_last->next = tab;
+		tab->prev = tab_last;
+		tab_last = tab_last->next;
+	}
+
+	if (tab_active == NULL)
+		tab_active = tab;
+
+
+	return tab;
+}
+
+
+static void sb_del_tab(struct tab *tab)
+{
+	if (tab->next == NULL && tab->prev == NULL)
+	{
+		tab_first = tab_last = tab_active = NULL;
+	}
+	else if (tab->next && tab->prev == NULL)
+	{
+		tab_first = tab->next;
+		tab->next->prev = NULL;
+		if (tab == tab_active)
+			tab_active = tab->next;
+	}
+	else if (tab->next == NULL && tab->prev)
+	{
+		tab->prev->next = NULL;
+		tab_last = tab->prev;
+		if (tab == tab_active)
+			tab_active = tab->prev;
+	}
+	else
+	{
+		tab->prev->next = tab->next;
+		tab->next->prev = tab->prev;
+		if (tab == tab_active)
+			tab_active = tab->next;
+	}
+	
+	free(tab->name);
+	free(tab->player_filter);
+	free(tab->server_index);
+	free(tab);
+}
+
+static void sb_del_tab_by_name(char *name)
+{
+	struct tab *tab;
+	
+	tab = tab_first;
+
+	while(tab)
+	{
+		if (strcmp(tab->name, name) == 0)
+		{
+			sb_del_tab(tab);			
+			return;
+		}
+		tab = tab->next;
+	}
+
+	Com_Printf("tab \"%s\" not found.\n", name);
+}
+
+static void sb_activate_tab(int num)
+{
+	struct tab *tab, *ptab;
+	int i;
+	
+	tab = tab_first;
+	i = 0;
+
+	if (!tab)
+		return;
+
+	while (tab && i++ < num)
+	{
+		ptab = tab;
+		tab = tab->next;
+	}
+
+	if (tab)
+		tab_active = tab;
+	else
+		tab_active = ptab;
+}
+
 static void SB_Set_Statusbar (const char *format, ...)
 {
 	va_list args;
 	va_start(args, format);
 	vsnprintf(sb_status_bar, sizeof(sb_status_bar), format, args);
 	va_end(args);
+}
+
+static void SB_Refresh(void)
+{
+	struct tab *tab;
+
+	ServerScanner_FreeServers(serverscanner, sb_qw_server);
+	ServerScanner_Delete(serverscanner);
+	serverscanner = NULL;
+	sb_qw_server = NULL;
+	sb_qw_server_count = 0;
+	serverscanner = ServerScanner_Create(sb_masterserver.string);
+	if (serverscanner == NULL)
+		SB_Set_Statusbar("error creating server scanner!");
+
+	tab = tab_first;
+	while (tab)
+	{
+		tab->sb_position = 0;
+		tab->changed = 0;
+		tab = tab->next;
+	}
+
 }
 
 static void handle_textbox(int key, char *string, int *position, int size)
@@ -372,10 +526,53 @@ static int Check_Server_Against_Filter(struct tab *tab, const struct QWServer *s
 	return 1;
 }
 
+static char *remove_colors(char *string, int size)
+{
+	char *ptr, *ptr1, *new_string;
+	int x = 0;
+
+	new_string = calloc(size+1, sizeof(char));
+
+	if (new_string == NULL)
+		return NULL;
+
+	ptr = string;
+	ptr1 = new_string;
+
+	while (*ptr != '\0' && x < size)
+	{
+		if (*ptr == '&')
+		{
+			if (x + 1 < size)
+			{
+				if (*(ptr + 1) == 'c')
+				{
+					if (x + 5 >= size)
+						break;
+					ptr += 5;
+					x += 5;
+				}
+			}
+			else
+			{
+				break;
+			}
+		}
+		*ptr1 = readablechars[(unsigned char)*ptr];
+
+		ptr++;
+		ptr1++;
+		x++;
+	}
+
+	return new_string;
+}
+
 static int check_player(struct tab *tab, const struct QWServer *server)
 {
 	int i;
 	char *player;
+	char *player_uncolored;
 
 	player = tab->player_filter;
 
@@ -386,10 +583,16 @@ static int check_player(struct tab *tab, const struct QWServer *server)
 	{
 		if (server->players[i].name)
 		{
-			if (strstr(server->players[i].name, player))
+
+			player_uncolored = remove_colors(server->players[i].name , strlen(server->players[i].name));
+			if (player_uncolored == NULL)
+				continue;
+			if (strcasestr(player_uncolored, player))
 			{
+				free(player_uncolored);
 				return 1;
 			}
+			free(player_uncolored);
 		}
 	}
 
@@ -538,7 +741,6 @@ static void update_tab(struct tab *tab)
 	{
 		if (cf(tab, sb_qw_server[x]))
 				tab->server_index[i++] = x;		
-
 	}
 
 	if (tab->sb_position >= tab->server_count)
@@ -547,17 +749,41 @@ static void update_tab(struct tab *tab)
 		tab->sb_position = 0;
 
 	sort_tab(tab);
+
+	if (tab->changed == 0)
+		return;
+
+	if (tab == tab_active)
+	{
+		if (current_selected_server)
+		{
+			for (i=0; i< tab->server_count; i++)
+				if (current_selected_server == sb_qw_server[tab->server_index[i]])
+					break;
+			if (i == tab->server_count)
+			{
+				return;
+			}
+			tab->sb_position = i;
+		}
+		else
+		{
+			i = tab->server_index[tab->sb_position];
+			current_selected_server = sb_qw_server[i];
+		}
+	}
 }
 
 static void SB_Update_Tabs(void)
 {
-	int i;
 	struct tab *tab;
 
-	for (i=0;i<SB_MAX_TABS;i++)
+	tab = tab_first;
+
+	while (tab)
 	{
-		tab = &tabs[i];
 		update_tab(tab);
+		tab = tab->next;
 	}
 }
 
@@ -608,6 +834,9 @@ void SB_Key(int key)
 	int i, update;
 	const struct QWServer *server;
 	struct tab *tab;
+	char cmd[1024];
+	char *kb;
+	extern qboolean keyactive[256];
 
 	if (key == 'h' && keydown[K_CTRL])
 	{
@@ -639,7 +868,7 @@ void SB_Key(int key)
 
 		if (sb_active_window == SB_SERVER)
 		{
-			tab = &tabs[sb_active_tab];
+			tab = tab_active;
 			tab->sort++;
 			if (tab->sort >= SB_SORT_MAX)
 				tab->sort = 0;
@@ -671,7 +900,7 @@ void SB_Key(int key)
 		if (key == K_DOWNARROW)
 		{
 			sb_selected_filter++;
-			if (sb_selected_filter >= List_Node_Count(tabs[sb_active_tab].filters))
+			if (sb_selected_filter >= List_Node_Count(tab_active->filters))
 				sb_selected_filter = 0;
 			return;
 		}
@@ -680,7 +909,7 @@ void SB_Key(int key)
 		{
 			sb_selected_filter--;		
 			if (sb_selected_filter < 0)
-				sb_selected_filter = List_Node_Count(tabs[sb_active_tab].filters);
+				sb_selected_filter = List_Node_Count(tab_active->filters);
 			return;
 		}
 
@@ -705,7 +934,7 @@ void SB_Key(int key)
 
 	if (sb_active_window == SB_SERVER)
 	{
-		tab = &tabs[sb_active_tab];
+		tab = tab_active;
 
 		if (sb_player_filter == 1)
 		{
@@ -729,6 +958,8 @@ void SB_Key(int key)
 			if (strlen(sb_player_filter_entry) > 0)
 			{
 				tab->player_filter = strdup(sb_player_filter_entry);
+				if (tab->player_filter == NULL)
+					Com_Printf("warning: strdup failed in \"%s\", line: %s.\n", __func__, __LINE__);
 				update_tab(tab);
 			}
 			if (update)
@@ -751,6 +982,9 @@ void SB_Key(int key)
 
 		if (key == K_UPARROW)
 		{
+			if (sb_qw_server == NULL)
+				return;
+
 			if (keydown[K_SHIFT])
 				tab->sb_position -= 10;
 			else if (keydown[K_CTRL])
@@ -766,16 +1000,22 @@ void SB_Key(int key)
 			}
 
 			if (tab->server_count == 0 || tab->sb_position > tab->server_count)
+			{
+				current_selected_server = NULL;
 				return;
+			}
 
 			i = tab->server_index[tab->sb_position];
-			server = sb_qw_server[i];
-			Cvar_Set(&sb_selected_server_ip, NET_AdrToString(&server->addr));
+			current_selected_server = sb_qw_server[i];
+			tab->changed = 1;
 			return;
 		}
 
 		if (key == K_DOWNARROW)
 		{
+			if (sb_qw_server == NULL)
+				return;
+
 			if (keydown[K_SHIFT])
 				tab->sb_position += 10;
 			else if (keydown[K_CTRL])
@@ -786,16 +1026,22 @@ void SB_Key(int key)
 				tab->sb_position = 0;
 
 			if (tab->server_count == 0 || tab->sb_position > tab->server_count)
+			{
+				current_selected_server = NULL;
 				return;
+			}
 
 			i = tab->server_index[tab->sb_position];
-			server = sb_qw_server[i];
-			Cvar_Set(&sb_selected_server_ip, NET_AdrToString(&server->addr));
+			current_selected_server = sb_qw_server[i];
+			tab->changed = 1;
 			return;
 		}
 
 		if (key == K_ENTER)
 		{
+			if (sb_qw_server == NULL)
+				return; 
+
 			if (keydown[K_CTRL])
 			{
 				Cbuf_AddText("spectator 1\n");
@@ -813,7 +1059,7 @@ void SB_Key(int key)
 				SB_Close();
 				return;
 			}
-			Cbuf_AddText("spectator 0\n");
+
 
 			if (tab->server_index)
 			{
@@ -824,6 +1070,12 @@ void SB_Key(int key)
 			{
 				server = sb_qw_server[tab->sb_position];
 			}
+
+
+			if (server->maxclients == server->numplayers)
+				Cbuf_AddText("spectator 1\n");
+			else
+				Cbuf_AddText("spectator 0\n");
 
 			Cbuf_AddText(va("connect %s\n", NET_AdrToString(&server->addr)));
 			SB_Close();
@@ -840,30 +1092,24 @@ void SB_Key(int key)
 		{
 			if (keydown[K_CTRL])
 			{
-				ServerScanner_FreeServers(serverscanner, sb_qw_server);
-				ServerScanner_Delete(serverscanner);
-				serverscanner = NULL;
-				sb_qw_server = NULL;
-				sb_qw_server_count = 0;
-				serverscanner = ServerScanner_Create(sb_masterserver.string);
-				if (serverscanner == NULL)
-					SB_Set_Statusbar("error creating server scanner!");
+				SB_Refresh();
 				return;
 			}
 			
-			if (tab->server_index)
+			if (sb_qw_server)
 			{
-				i = tab->server_index[tab->sb_position];
-				server = sb_qw_server[i];
-			}
-			else
-			{
-				server = sb_qw_server[tab->sb_position];
+				if (tab->server_index)
+				{
+					i = tab->server_index[tab->sb_position];
+					server = sb_qw_server[i];
+				}
+				else
+				{
+					server = sb_qw_server[tab->sb_position];
+				}
 			}
 
 			ServerScanner_RescanServer(serverscanner, server);
-
-
 		}
 	}
 
@@ -875,79 +1121,72 @@ void SB_Key(int key)
 
 	if (key == K_LEFTARROW)
 	{
-		sb_active_tab--;
-		if (sb_active_tab < 0)
-			sb_active_tab = SB_MAX_TABS - 1;
+		if (tab_active->prev)
+			tab_active = tab_active->prev;
+		else
+			tab_active = tab_last;
 		return;
 	}
 
 	if (key == K_RIGHTARROW)
 	{
-		sb_active_tab++;
-		if (sb_active_tab >= SB_MAX_TABS)
-			sb_active_tab = 0;
+		if (tab_active->next)
+			tab_active = tab_active->next;
+		else
+			tab_active = tab_first;
+
 		return;
 	}
 
 	switch (key)
 	{
 		case '1':
-			sb_active_tab = 0;
+			sb_activate_tab(0);
 			break;
 		case '2':
-			sb_active_tab = 1;
+			sb_activate_tab(1);
 			break;
 		case '3':
-			sb_active_tab = 2;
+			sb_activate_tab(2);
 			break;
 		case '4':
-			sb_active_tab = 3;
+			sb_activate_tab(3);
 			break;
 		case '5':
-			sb_active_tab = 4;
+			sb_activate_tab(4);
 			break;
 		case '6':
-			sb_active_tab = 5;
+			sb_activate_tab(5);
 			break;
 		case '7':
-			sb_active_tab = 6;
+			sb_activate_tab(6);
 			break;
 		case '8':
-			sb_active_tab = 7;
+			sb_activate_tab(7);
 			break;
 		case '9':
-			sb_active_tab = 8;
+			sb_activate_tab(8);
 			break;
 		case '0':
-			sb_active_tab = 9;
+			sb_activate_tab(9);
 			break;
 	}
-}
 
-void SB_Activate_f(void)
-{
-	extern keydest_t key_dest;
-	
-	old_keydest = key_dest;
-	key_dest = key_serverbrowser;
-	sb_open = 1;
-
-	if (serverscanner && sb_refresh_on_activate.value == 1)
+	if (key >= K_F1 && key <= K_F12)
 	{
-		ServerScanner_FreeServers(serverscanner, sb_qw_server);
-		ServerScanner_Delete(serverscanner);
-		serverscanner = NULL;
-		sb_qw_server = NULL;
-		sb_qw_server_count = 0;
-	}
+		kb = keybindings[key];
+		if (kb) {
+			if (kb[0] == '+'){	// button commands add keynum as a parm
+				snprintf (cmd, sizeof(cmd), "%s %i\n", kb, key);
+				Cbuf_AddText (cmd);
+				keyactive[key] = true;
+			} else {
+				Cbuf_AddText (kb);
+				Cbuf_AddText ("\n");
+			}
+		}
 
-	if (serverscanner == NULL)
-	{
-		serverscanner = ServerScanner_Create(sb_masterserver.string);
-		if (serverscanner == NULL)
-			SB_Set_Statusbar("error creating server scanner!");
 	}
-	SB_Update_Tabs();
 }
 
 static void SB_Server_Add(char *ip, int port)
@@ -978,12 +1217,12 @@ static void SB_Server_Add(char *ip, int port)
 	*/
 }
 
-static void SB_Add_Filter_To_Tab(int tab, int key , int type, char *value)
+static void SB_Add_Filter_To_Tab(struct tab *tab, int key , int type, char *value)
 {
 	struct filter *f;
 	int i;
 
-	if (tab > SB_MAX_TABS || tab < 0)
+	if (!tab)
 		return;
 	
 	if (strlen(value) == 0)
@@ -997,28 +1236,79 @@ static void SB_Add_Filter_To_Tab(int tab, int key , int type, char *value)
 
 	f->keyword = strdup(filter_types[key].name);
 
-	if (!f->keyword)
+	if (f->keyword == NULL)
 	{
+		Com_Printf("error: strdup failed in \"%s\", line: %s\n.", __func__, __LINE__);
 		free(f);
 		return;
 	}	
-	f->type = type;
-	f->value = strdup(value);
-	if (filter_types[key].type == 0)
-		f->fvalue = atof(value);
 
-	if (!f->value)
+	f->type = type;
+
+	f->value = strdup(value);
+	if (f->value == NULL)
 	{
+		Com_Printf("error: strdup failed in \"%s\", line: %s\n.", __func__, __LINE__);
 		free(f->keyword);
 		free(f);
 		return;
+	}	
+
+	if (filter_types[key].type == 0)
+		f->fvalue = atof(value);
+
+	List_Add_Node(tab->filters, f);
+	i = strlen(f->keyword);
+	if (tab->max_filter_keyword_length < i)
+		tab->max_filter_keyword_length = i;
+}
+
+static void sb_default_tabs(void)
+{
+	struct tab *tab;
+
+	tab = sb_add_tab("all");
+	tab = sb_add_tab("duel");
+	SB_Add_Filter_To_Tab(tab, 0, 2, "1");
+	SB_Add_Filter_To_Tab(tab, 4, 0, "2");
+	tab = sb_add_tab("2on2");
+	SB_Add_Filter_To_Tab(tab, 0, 2, "1");
+	SB_Add_Filter_To_Tab(tab, 4, 0, "4");
+	tab = sb_add_tab("4on4");
+	SB_Add_Filter_To_Tab(tab, 0, 2, "1");
+	SB_Add_Filter_To_Tab(tab, 4, 0, "8");
+}
+
+void SB_Activate_f(void)
+{
+	extern keydest_t key_dest;
+	
+	old_keydest = key_dest;
+	key_dest = key_serverbrowser;
+	sb_open = 1;
+
+	if (tab_first == NULL)
+	{
+		sb_default_tabs();
+		tab_active = tab_first;
+	}
+	
+
+	if (serverscanner && sb_refresh_on_activate.value == 1)
+	{
+		SB_Refresh();
 	}
 
-	List_Add_Node(tabs[tab].filters, f);
-	i = strlen(f->keyword);
-	if (tabs[tab].max_filter_keyword_length < i)
-		tabs[tab].max_filter_keyword_length = i;
+	if (serverscanner == NULL)
+	{
+		serverscanner = ServerScanner_Create(sb_masterserver.string);
+		if (serverscanner == NULL)
+			SB_Set_Statusbar("error creating server scanner!");
+	}
+	SB_Update_Tabs();
 }
+
+
 
 static int check_selected_type(int type)
 {
@@ -1041,10 +1331,11 @@ static void SB_Filter_Insert_Handler(int key)
 {
 	if (key == K_ENTER)
 	{
-		SB_Add_Filter_To_Tab(sb_active_tab, sb_filter_insert_selected_key, sb_filter_insert_selected_type, sb_filter_insert_value);
+		SB_Add_Filter_To_Tab(tab_active, sb_filter_insert_selected_key, sb_filter_insert_selected_type, sb_filter_insert_value);
 		sb_filter_insert = 0;
 		sb_filter_insert_value_position = 0;
-		update_tab(&tabs[sb_active_tab]);
+		update_tab(tab_active);
+		sb_default_settings = 0;
 		return;
 	}
 
@@ -1099,7 +1390,7 @@ static void SB_Filter_Insert_Handler(int key)
 
 void SB_Filter_Delete_Filter(void)
 {
-	List_Remove_Node(tabs[sb_active_tab].filters, sb_selected_filter, 1);
+	List_Remove_Node(tab_active->filters, sb_selected_filter, 1);
 }
 
 static void SB_Server_Insert_Handler(int key)
@@ -1140,54 +1431,47 @@ static void SB_Server_Insert_Handler(int key)
 
 static void SB_Draw_Tabs(void)
 {
-	int width, tabs_width;
-	int x,i, diff;
-	static char tabstring[512];
-	static double last_time = 0;
-	static int last_tab = -1;
-	static int current_position = 0;
-	static int desired_position = 0;
+	int width, x, l, r, i;
+	struct tab *tab;
 
 	width = vid.conwidth/8;
 
-	// will be returned by a function
-	if (last_tab != sb_active_tab)
-	{
-		tabstring[0] = '\0';
-		last_time = cls.realtime;
-		last_tab = sb_active_tab;
 
-		for (i = 0; i < SB_MAX_TABS; i++)
-		{
-			if (i == sb_active_tab)
-				strlcat(tabstring, va("<%s>", tab_names[i]), sizeof(tabstring));
-			else
-				strlcat(tabstring, va(" %s ", tab_names[i]), sizeof(tabstring));
-		}
-		tabs_width = strlen(tabstring);
-	}
-	else
+	x = strlen(tab_active->name);
+	if (x % 2)
+		x++;
+
+	l = x;
+	x = x/ 2 + 1;
+
+	Draw_ColoredString((width/2 - x) * 8, 0, va("&cf44<%-*s>",l ,tab_active->name), 1);
+	l = width/2 - x - 1;
+	r = width/2 + x + 1;
+
+	tab = tab_active->prev;
+	i = l;
+	while (tab)
 	{
-		if (cls.realtime - last_time < 1)
-		{
-			x = (desired_position-current_position) *((cls.realtime-last_time)/1) + current_position;
-		}
-		else
-		{
-			x = current_position = desired_position;
-		}
-		Draw_String(x, 8, tabstring);
-		return;
+		x = strlen(tab->name);
+		i -= x;
+		Draw_String(i*8, 0, tab->name);
+		i--;
+		tab = tab->prev;
 	}
 
-	diff = 0;
-	if (width < tabs_width)
-		for (i=0;i<sb_active_tab && diff<(tabs_width - width) ;i++)
-			diff += strlen(tab_names[i]);
+	tab = tab_active->next;
+	i = r;
+	while (tab)
+	{
+		x = strlen(tab->name);
+		Draw_String(i*8, 0, tab->name);
+		i += x;
+		i++;
+		tab = tab->next;
+	}
+
 	
-	desired_position = -diff * 8;
 
-	Draw_String(current_position, 8, tabstring);
 }
 
 static void SB_Draw_Background(void)
@@ -1247,7 +1531,7 @@ static void SB_Draw_Filter(void)
 	}
 
 	Draw_String(8, 16, "Filter:");
-	filter = List_Get_Node(tabs[sb_active_tab].filters, 0);
+	filter = List_Get_Node(tab_active->filters, 0);
 	i = 0;
 	while(filter)
 	{
@@ -1255,7 +1539,7 @@ static void SB_Draw_Filter(void)
 		{
 			Draw_String(0, 24+i*8,">");
 		}
-		Draw_String(8, 24 + i++ * 8, va("%*s %5s %s", tabs[sb_active_tab].max_filter_keyword_length, filter->keyword, Filter_Type_String(filter->type), filter->value)); 
+		Draw_String(8, 24 + i++ * 8, va("%*s %5s %s", tab_active->max_filter_keyword_length, filter->keyword, Filter_Type_String(filter->type), filter->value)); 
 		filter = (struct filter *)filter->node.next;
 	}
 }
@@ -1324,7 +1608,9 @@ static void SB_Draw_Server(void)
 	if (sb_qw_server_count == 0)
 		return;
 
-	tab = &tabs[sb_active_tab];
+	tab = tab_active;
+	if (!tab)
+		return;
 	player_space = 0;
 
 	if (sb_player_filter == 1 || tab->player_filter)
@@ -1551,7 +1837,7 @@ static void SB_Draw_Help(void)
 	if (sb_active_help_window == 0)
 	{
 		Draw_String(8, 8 + 8 * i++, "general controls:");
-		Draw_String(8, 8 + 8 * i++, " F1->F12, arrow left/right -  to switch tabs");
+		Draw_String(8, 8 + 8 * i++, " 1->0, arrow left/right -  to switch tabs");
 		Draw_String(8, 8 + 8 * i++, " pgup/pgdown, arrow up/down - to scroll");
 		Draw_String(8, 8 + 8 * i++, " esc - will quit submenus, browser");
 		
@@ -1639,31 +1925,321 @@ void SB_Frame(void)
 	sb_check_serverscanner = 1;
 }
 
+void SB_Quit(void)
+{
+	if (serverscanner == NULL)
+		return;
+	ServerScanner_FreeServers(serverscanner, sb_qw_server);
+	ServerScanner_Delete(serverscanner);
+}
+
+static void SB_List_Tabs_f(void)
+{
+	struct tab *tab;
+
+	tab = tab_first;
+
+	while(tab)
+	{
+		Com_Printf("%s\n", tab->name);
+		tab = tab->next;
+	}
+}
+
+static void SB_Add_Tab_f(void)
+{
+	if (Cmd_Argc() != 2)
+	{
+		Com_Printf("Usage: %s [tab name]\n", Cmd_Argv(0));
+	}
+
+	sb_default_settings = 0;
+	sb_add_tab(Cmd_Argv(1));
+}
+
+static void SB_Del_Tab_f(void)
+{
+	if (Cmd_Argc() != 2)
+	{
+		Com_Printf("Usage: %s [tab name]\n", Cmd_Argv(0));
+	}
+
+	sb_del_tab_by_name(Cmd_Argv(1));
+}
+
+static void SB_Add_Filter_f(void)
+{
+	struct tab *tab;
+	int filter, operator, i, x;
+	char **operators;
+
+	if (Cmd_Argc() != 5)
+	{
+		Com_Printf("Usage: %s [tab name] [filter name] [filter operator] [value]\n", Cmd_Argv(0));
+	}
+
+	tab = tab_first;
+
+	while (tab)
+	{
+		if (strcmp(tab->name, Cmd_Argv(1)) == 0)
+			break;
+		tab = tab->next;
+	}
+
+	if (tab == NULL)
+	{
+		Com_Printf("%s: tab %s not found.\n", Cmd_Argv(0), Cmd_Argv(1));
+		return;
+	}
+
+	filter = -1;
+
+	for (i = 0; i < SB_FILTER_TYPE_MAX; i++)
+	{
+		if (strcmp(filter_types[i].name, Cmd_Argv(2)) == 0)
+		{
+			filter = i;
+			break;
+		}
+	}
+
+	if (filter == -1)
+	{
+		Com_Printf("%s: filter type %s not found.\n", Cmd_Argv(0), Cmd_Argv(2));
+		Com_Printf("use sb_list_filter_types to get a list of available filters.\n", Cmd_Argv(0), Cmd_Argv(2));
+		return;
+	}
+
+	operator = -1;
+
+	if (filter_types[filter].type == 0)
+	{
+		x = 3;
+		operators = filter_num_operators;
+	}
+	else
+	{
+		x = 2;
+		operators = filter_char_operators;
+	}
+
+	for (i=0; i<x; i++)
+	{
+		if (strcmp(operators[i], Cmd_Argv(3)) == 0)
+		{
+			operator = i;
+			break;
+		}
+	}
+
+	if (operator == -1)
+	{
+		Com_Printf("%s: filter operator %s not found.\n", Cmd_Argv(0), Cmd_Argv(3));
+		Com_Printf("use sb_list_filter_types to get a list of available filters and operators.\n", Cmd_Argv(0), Cmd_Argv(2));
+		return;
+	}
+
+	sb_default_settings = 0;
+
+	SB_Add_Filter_To_Tab(tab, filter, operator, Cmd_Argv(4));
+}
+
+
+void Dump_SB_Config(FILE *f);
+static void SB_Write_Config(void)
+{
+	FILE *f;
+	char *file;
+
+	file = va("%s/qw/%s.cfg", com_basedir, Cmd_Argv(1));
+
+	f = fopen(file, "wb");
+
+	Dump_SB_Config(f);
+
+	fclose(f);
+}
+
+static void SB_Set_Clipboard_f(void)
+{
+	char buf[512];
+	char *s;
+	int i;
+
+	if (Cmd_Argc() < 2)
+	{
+		Com_Printf("Usage: %s [clip bord text]\n", Cmd_Argv(0));
+	}
+
+	for (i=1; i<Cmd_Argc();i++)
+	{
+		strlcat(buf, Cmd_Argv(i), sizeof(buf));
+		strlcat(buf, " ", sizeof(buf));
+	}
+
+	s = buf;
+
+	while (*s)
+	{
+		*s = readablechars[(unsigned char) *s] & 127;	
+		s++;
+	}
+
+	VID_SetClipboardText(buf);
+
+}
+
 void SB_Init(void)
 {
-	int i;
 	Cmd_AddCommand("sb_activate", &SB_Activate_f);
+	Cmd_AddCommand("sb_list", &SB_List_Tabs_f);
+	Cmd_AddCommand("sb_add_tab", &SB_Add_Tab_f);
+	Cmd_AddCommand("sb_del_tab", &SB_Del_Tab_f);
+	Cmd_AddCommand("sb_add_filter", &SB_Add_Filter_f);
+	Cmd_AddCommand("sb_write_config", &SB_Write_Config);
+	Cmd_AddCommand("sb_set_clipboard", &SB_Set_Clipboard_f);
+	SB_Set_Statusbar("just started!. press \"ctrl + h\" for help\n");
+	SB_AddMacros();
+}
+
+void SB_CvarInit(void)
+{
 	Cvar_Register(&sb_masterserver);
 	Cvar_Register(&sb_player_drawing);
 	Cvar_Register(&sb_refresh_on_activate);
-	Cvar_Register(&sb_selected_server_ip);
-
-	for (i=0;i<SB_MAX_TABS;i++)
-	{
-		tabs[i].filters = List_Add(0, NULL, NULL);
-	}
-
-	SB_Add_Filter_To_Tab(1, 0, 2, "1");
-	SB_Add_Filter_To_Tab(1, 4, 0, "2");
-
-	SB_Add_Filter_To_Tab(2, 0, 2, "1");
-	SB_Add_Filter_To_Tab(2, 4, 0, "4");
-
-	SB_Add_Filter_To_Tab(3, 0, 2, "1");
-	SB_Add_Filter_To_Tab(3, 4, 0, "8");
-
-	server = List_Add(0, NULL, NULL);
-
-	SB_Set_Statusbar("just started!. press \"ctrl + h\" for help\n");
 }
 
+
+void Dump_SB_Config(FILE *f)
+{
+	struct tab *tab;
+	struct filter *filter;
+
+	if (f == NULL)
+		return;
+
+	if (sb_default_settings == 1)
+		return;
+
+	tab = tab_first;
+
+	while(tab)
+	{
+		fprintf(f, va("sb_add_tab %s\n", tab->name));
+
+		filter = List_Get_Node(tab->filters, 0);
+
+		while (filter)
+		{
+			if (filter_types[filter->key].type == 0)
+				fprintf(f, va("sb_add_filter %s %s %s %f\n", tab->name, filter_types[filter->key].name, filter_num_operators[filter->type], filter->fvalue));
+			else
+				fprintf(f, va("sb_add_filter %s %s %s %s\n", tab->name, filter_types[filter->key].name, filter_char_operators[filter->type], filter->value));
+			filter = (struct filter *)filter->node.next;
+		}
+
+		tab = tab->next;
+	}
+}
+
+char *SB_Macro_Ip(void)
+{
+	if (current_selected_server)
+		return NET_AdrToString(&current_selected_server->addr);
+	else
+		return "none";
+}
+
+char *SB_Macro_Hostname(void)
+{
+	if (current_selected_server)
+	{
+		if(current_selected_server->hostname)
+			return current_selected_server->hostname;
+		else
+			return "none";
+	}
+	else
+		return "none";
+}
+
+char *SB_Macro_Map(void)
+{
+	if (current_selected_server)
+	{
+		if(current_selected_server->map)
+			return current_selected_server->map;
+		else
+			return "none";
+	}
+	else
+		return "none";
+}
+
+char *SB_Macro_Player(void)
+{
+	if (current_selected_server)
+		snprintf(sb_macro_buf, sizeof(sb_macro_buf), "%i", current_selected_server->numplayers);
+	else
+		snprintf(sb_macro_buf, sizeof(sb_macro_buf), "%i", -1);
+	return sb_macro_buf;
+}
+
+char *SB_Macro_Max_Player(void)
+{
+	if (current_selected_server)
+		snprintf(sb_macro_buf, sizeof(sb_macro_buf), "%i", current_selected_server->maxclients);
+	else
+		snprintf(sb_macro_buf, sizeof(sb_macro_buf), "%i", -1);
+	return sb_macro_buf;
+}
+
+char *SB_Macro_Ping(void)
+{
+	if (current_selected_server)
+		snprintf(sb_macro_buf, sizeof(sb_macro_buf), "%i", current_selected_server->pingtime / 1000);
+	else
+		snprintf(sb_macro_buf, sizeof(sb_macro_buf), "%i", -1);
+	return sb_macro_buf;
+}
+
+char *SB_Macro_Player_Names(void)
+{
+	struct QWPlayer *player;
+	int i;
+
+	if (current_selected_server)
+	{
+		if (current_selected_server->numplayers > 0)
+		{
+			sb_macro_buf[0] = '\0';
+			for (i=0, player=current_selected_server->players; i<current_selected_server->numplayers && player;i++)
+			{
+				if (i != 0)
+					strlcat(sb_macro_buf, " - ", sizeof(sb_macro_buf));	
+				if (player->name)
+				{
+					strlcat(sb_macro_buf, player->name, sizeof(sb_macro_buf));	
+				}
+				player++;
+			}
+			return sb_macro_buf;
+		}
+		else
+			return "none";
+	}
+	else
+		return "none";
+}
+
+void SB_AddMacros(void)
+{
+	Cmd_AddMacro("sb_player_names", SB_Macro_Player_Names);
+	Cmd_AddMacro("sb_max_player", SB_Macro_Max_Player);
+	Cmd_AddMacro("sb_hostname", SB_Macro_Hostname);
+	Cmd_AddMacro("sb_player", SB_Macro_Player);
+	Cmd_AddMacro("sb_ping", SB_Macro_Ping);
+	Cmd_AddMacro("sb_map", SB_Macro_Map);
+	Cmd_AddMacro("sb_ip", SB_Macro_Ip);
+}

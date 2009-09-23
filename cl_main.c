@@ -1006,6 +1006,8 @@ void CL_CvarInit(void)
 	Cmd_AddMacro("connectiontype", CL_Macro_ConnectionType);
 	Cmd_AddMacro("demoplayback", CL_Macro_Demoplayback);
 	Cmd_AddMacro("matchstatus", CL_Macro_Serverstatus);
+
+	SB_Init();
 }
 
 void CL_InitClientVersionInfo()
@@ -1096,7 +1098,6 @@ void CL_Init (void)
 	SList_Init ();
 	SList_Load ();
 
-	SB_Init();
 
 	MT_Init();
 	CL_Demo_Init();

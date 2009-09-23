@@ -45,6 +45,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "movie.h"
 #include "sbar.h"
 #include <setjmp.h>
+#include "server_browser.h"
 
 #ifndef CLIENTONLY
 #include "server.h"
@@ -245,6 +246,7 @@ void Host_Init (int argc, char **argv, int default_memsize)
 	FMod_CvarInit();
 	FChecks_CvarInit();
 	Sys_CvarInit();
+	SB_CvarInit();
 
 	cvarsregged = 1;
 	Cvar_Register(&dummycvar);
@@ -328,6 +330,7 @@ void Host_Shutdown (void) {
 	}
 	isdown = true;
 
+	SB_Quit();
 	SV_Shutdown ("Server quit\n");
 	QLib_Shutdown();
 	CL_Shutdown ();
