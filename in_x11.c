@@ -19,6 +19,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 
 #include <stdlib.h>
+#include <string.h>
 
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
@@ -34,7 +35,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define XINPUTFLAGS (KeyPressMask|KeyReleaseMask|PointerMotionMask|ButtonPressMask|ButtonReleaseMask)
 
 cvar_t cl_keypad = { "cl_keypad", "1" };
-cvar_t in_dga_mouse = { "in_dga_mouse", "0" };
+cvar_t in_dga_mouse = { "in_dga_mouse", "1" };
 
 typedef struct
 {
@@ -49,6 +50,9 @@ struct inputdata
 	unsigned int windowwidth;
 	unsigned int windowheight;
 	int fullscreen;
+
+	const unsigned char *keytable;
+	unsigned int keytablesize;
 
 	int config_notify;
 	int config_notify_width;
@@ -65,7 +69,29 @@ struct inputdata
 	int dga_mouse_enabled;
 };
 
-static const unsigned char keytable[] =
+int is_evdev_rules(struct inputdata *id)
+{
+	Window window;
+	Atom actual_type;
+	int actual_format;
+	unsigned long nitems;
+	unsigned long bytes;
+	unsigned char *data;
+	int status;
+
+	window = RootWindow(id->x_disp, 0);
+
+	status = XGetWindowProperty(id->x_disp, window, XInternAtom(id->x_disp, "_XKB_RULES_NAMES", True), 0, ~0, False, AnyPropertyType, &actual_type, &actual_format, &nitems, &bytes, &data);
+	if (status == Success)
+	{
+		if (strcmp(data, "evdev") == 0)
+			return 1;
+	}
+
+	return 0;
+}
+
+static const unsigned char keytable_xorg[] =
 {
 	0, /* 0 */
 	0,
@@ -187,15 +213,159 @@ static const unsigned char keytable[] =
 	K_MENU,
 };
 
-static int XLateKey(XKeyEvent * ev)
+static const unsigned char keytable_evdev[] =
+{
+	0, /* 0 */
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	K_ESCAPE,
+	'1', /* 10 */
+	'2',
+	'3',
+	'4',
+	'5',
+	'6',
+	'7',
+	'8',
+	'9',
+	'0',
+	'-', /* 20 */
+	'=',
+	K_BACKSPACE,
+	K_TAB,
+	'q',
+	'w',
+	'e',
+	'r',
+	't',
+	'y',
+	'u', /* 30 */
+	'i',
+	'o',
+	'p',
+	'[',
+	']',
+	K_ENTER,
+	K_LCTRL,
+	'a',
+	's',
+	'd', /* 40 */
+	'f',
+	'g',
+	'h',
+	'j',
+	'k',
+	'l',
+	';',
+	'\'',
+	'`',
+	K_LSHIFT, /* 50 */
+	'\\',
+	'z',
+	'x',
+	'c',
+	'v',
+	'b',
+	'n',
+	'm',
+	',',
+	'.', /* 60 */
+	'/',
+	K_RSHIFT,
+	0,
+	K_LALT,
+	' ',
+	K_CAPSLOCK,
+	K_F1,
+	K_F2,
+	K_F3,
+	K_F4, /* 70 */
+	K_F5,
+	K_F6,
+	K_F7,
+	K_F8,
+	K_F9,
+	K_F10,
+	0,
+	0,
+	0,
+	0, /* 80 */
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	0, /* 90 */
+	0,
+	0,
+	0,
+	'<',
+	K_F11,
+	K_F12,
+	0,
+	0,
+	0,
+	0, /* 100 */
+	0,
+	0,
+	0,
+	0,
+	K_RCTRL,
+	0,
+	0,
+	K_RALT,
+	0,
+	K_HOME, /* 110 */
+	K_UPARROW,
+	K_PGUP,
+	K_LEFTARROW,
+	K_RIGHTARROW,
+	K_END,
+	K_DOWNARROW,
+	K_PGDN,
+	K_INS,
+	K_DEL,
+	0, /* 120 */
+	0,
+	0,
+	0,
+	0,
+	0,
+	0,
+	K_PAUSE,
+	0,
+	0,
+	0, /* 130 */
+	0,
+	0,
+	K_LWIN,
+	K_RWIN,
+	K_MENU,
+	0,
+	0,
+	0,
+	0,
+};
+
+static int XLateKey(struct inputdata *id, XKeyEvent * ev)
 {
 	int key, kp;
 	char buf[64];
 	KeySym keysym;
 
-	if (ev->keycode < sizeof(keytable))
+	if (ev->keycode < id->keytablesize)
 	{
-		key = keytable[ev->keycode];
+		key = id->keytable[ev->keycode];
 		if (key)
 			return key;
 	}
@@ -445,7 +615,7 @@ static void GetEvents(struct inputdata *id)
 		switch (event.type)
 		{
 			case KeyPress:
-				id->keyq[id->keyq_head].key = XLateKey(&event.xkey);
+				id->keyq[id->keyq_head].key = XLateKey(id, &event.xkey);
 				id->keyq[id->keyq_head].down = true;
 				if (id->keyq_tail != id->keyq_head && id->keyq[id->keyq_head].key == id->keyq[(id->keyq_head - 1) & 63].key && !id->keyq[id->keyq_head].down)
 				{
@@ -458,7 +628,7 @@ static void GetEvents(struct inputdata *id)
 				}
 				break;
 			case KeyRelease:
-				id->keyq[id->keyq_head].key = XLateKey(&event.xkey);
+				id->keyq[id->keyq_head].key = XLateKey(id, &event.xkey);
 				id->keyq[id->keyq_head].down = false;
 				id->keyq_head = (id->keyq_head + 1) & 63;
 				break;
@@ -589,6 +759,17 @@ void *X11_Input_Init(Window x_win, unsigned int windowwidth, unsigned int window
 		id->x_disp = XOpenDisplay(0);
 		if (id->x_disp)
 		{
+			if (is_evdev_rules(id))
+			{
+				id->keytable = keytable_evdev;
+				id->keytablesize = sizeof(keytable_evdev);
+			}
+			else
+			{
+				id->keytable = keytable_xorg;
+				id->keytablesize = sizeof(keytable_xorg);
+			}
+
 			attr.event_mask = KeyPressMask | KeyReleaseMask | ButtonPressMask | ButtonReleaseMask | PointerMotionMask;
 			attr.override_redirect = 1;
 			XChangeWindowAttributes(id->x_disp, x_win, CWEventMask | CWOverrideRedirect, &attr);
