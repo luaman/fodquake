@@ -1,7 +1,17 @@
 // version.h
 
+#ifdef __GNUC__
+#if __GNUC__ > 3 || (__GNUC__ == 3 && __GNUC_MINOR__ < 3) || (__GNUC__ == 3 && __GNUC_MINOR__ == 3 && __GNUC_PATCHLEVEL__ < 6) || (__GNUC__ == 3 && __GNUC_MINOR__ == 4 && __GNUC_PATCHLEVEL__ < 6)
+#define COMPILERVERSIONSTRINGAPPEND " (broken GCC)"
+#endif
+#endif
+
+#ifndef COMPILERVERSIONSTRINGAPPEND
+#define COMPILERVERSIONSTRINGAPPEND
+#endif
+
 #define	QW_VERSION              2.40
-#define FODQUAKE_VERSION        "0.1"
+#define FODQUAKE_VERSION        "0.1" COMPILERVERSIONSTRINGAPPEND
 
 #ifdef _WIN32
 #define QW_PLATFORM     "Win32"
