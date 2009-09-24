@@ -60,7 +60,7 @@ void Sys_Video_CvarInit(void)
 {
 }
 
-void *Sys_Video_Open(unsigned int width, unsigned int height, unsigned int depth, int fullscreen, unsigned char *palette)
+void *Sys_Video_Open(const char *mode, unsigned int width, unsigned int height, int fullscreen, unsigned char *palette)
 {
 	struct display *d;
 	int i;
@@ -351,6 +351,11 @@ qboolean Sys_Video_GetFullscreen(void *display)
 	d = display;
 
 	return d->fullscreen;
+}
+
+const char *Sys_Video_GetMode(void *display)
+{
+	return 0;
 }
 
 unsigned int Sys_Video_GetBytesPerRow(void *display)

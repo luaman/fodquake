@@ -78,7 +78,7 @@ void Sys_Video_CvarInit(void)
 {
 }
 
-void *Sys_Video_Open(unsigned int width, unsigned int height, unsigned int depth, int fullscreen, unsigned char *palette)
+void *Sys_Video_Open(const char *mode, unsigned int width, unsigned int height, int fullscreen, unsigned char *palette)
 {
 	struct display *d;
 
@@ -102,7 +102,7 @@ void *Sys_Video_Open(unsigned int width, unsigned int height, unsigned int depth
 				d->screen = OpenScreenTags(0,
 					SA_Width, width,
 					SA_Height, height,
-					SA_Depth, depth,
+					SA_Depth, 24,
 					SA_Quiet, TRUE,
 					SA_GammaControl, TRUE,
 					SA_3DSupport, TRUE,
@@ -285,6 +285,11 @@ qboolean Sys_Video_GetFullscreen(void *display)
 	d = display;
 
 	return d->fullscreen;
+}
+
+const char *Sys_Video_GetMode(void *display)
+{
+	return 0;
 }
 
 void Sys_Video_BeginFrame(void *display, unsigned int *x, unsigned int *y, unsigned int *width, unsigned int *height)

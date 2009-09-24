@@ -26,9 +26,9 @@ ifeq ($(OS), morphos)
 		snd_morphos.o \
 		in_morphos.o
 
-	OSSWOBJS=vid_morphos.o
+	OSSWOBJS=vid_mode_morphos.o vid_morphos.o
 
-	OSGLOBJS=vid_tinygl.o
+	OSGLOBJS=vid_mode_morphos.o vid_tinygl.o
 endif
 
 ifeq ($(OS), linux)
