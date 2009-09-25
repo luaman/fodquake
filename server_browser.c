@@ -614,6 +614,11 @@ static int player_count_compare(const void *a, const void *b)
 	struct QWServer *x, *y;
 	x = (struct QWServer *) sb_qw_server[*(int *)a];
 	y = (struct QWServer *) sb_qw_server[*(int *)b];
+
+	if (y->numplayers == x->numplayers)
+		return y->numspectators - x->numspectators;
+
+
 	return (y->numplayers - x->numplayers);
 }
 
