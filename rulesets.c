@@ -45,7 +45,7 @@ typedef struct rulesetDef_s
 
 static rulesetDef_t rulesetDef =
 {
-	s_default,
+	rs_default,
 	72,
 	false,
 	false,
