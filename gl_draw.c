@@ -748,8 +748,9 @@ void Draw_ColoredString (int x, int y, char *text, int red)
 						glColor3f(r / 16.0, g / 16.0, b / 16.0);
 						white = false;
 					}
-					text += 5;
+					text += 4;
 				}
+				continue;
 			}
 			else if (text[1] == 'r')
 			{
@@ -758,7 +759,8 @@ void Draw_ColoredString (int x, int y, char *text, int red)
 					glColor3ubv(color_white);
 					white = true;
 				}
-				text += 2;
+				text += 1;
+				continue;
 			}
 		}
 
