@@ -427,10 +427,14 @@ static void SB_Refresh(void)
 {
 	struct tab *tab;
 
-	ServerScanner_FreeServers(serverscanner, sb_qw_server);
-	ServerScanner_Delete(serverscanner);
+	if (serverscanner)
+	{
+		ServerScanner_FreeServers(serverscanner, sb_qw_server);
+		ServerScanner_Delete(serverscanner);
+	}
 	serverscanner = NULL;
 	sb_qw_server = NULL;
+	current_selected_server = NULL;
 	sb_qw_server_count = 0;
 	serverscanner = ServerScanner_Create(sb_masterserver.string);
 	if (serverscanner == NULL)
@@ -1299,16 +1303,9 @@ void SB_Activate_f(void)
 	}
 	
 
-	if (serverscanner && sb_refresh_on_activate.value == 1)
+	if (sb_refresh_on_activate.value == 1 || serverscanner == NULL)
 	{
 		SB_Refresh();
-	}
-
-	if (serverscanner == NULL)
-	{
-		serverscanner = ServerScanner_Create(sb_masterserver.string);
-		if (serverscanner == NULL)
-			SB_Set_Statusbar("error creating server scanner!");
 	}
 	SB_Update_Tabs();
 }
