@@ -127,6 +127,7 @@ void Sys_mkdir(char *path)
 
 static unsigned int secbase;
 
+#if LINUX_DOES_NOT_SUCK /* haha, good joke! */
 double Sys_DoubleTime(void)
 {
 	struct timespec ts;
@@ -158,6 +159,41 @@ unsigned long long Sys_IntTime()
 
 	return ret;
 }
+#else
+double Sys_DoubleTime(void)
+{
+	struct timeval tp;
+	struct timezone tzp;
+
+	gettimeofday(&tp, &tzp);
+
+	if (!secbase)
+	{
+		secbase = tp.tv_sec;
+		return tp.tv_usec / 1000000.0;
+	}
+
+	return (tp.tv_sec - secbase) + tp.tv_usec / 1000000.0;
+}
+
+unsigned long long Sys_IntTime()
+{
+	struct timeval tp;
+	struct timezone tzp;
+	unsigned long long ret;
+
+	gettimeofday(&tp, &tzp);
+
+	if (!secbase)
+		secbase = tp.tv_sec;
+
+	ret = tp.tv_sec - secbase;
+	ret *= 1000000;
+	ret += tp.tv_usec;
+
+	return ret;
+}
+#endif
 
 void floating_point_exception_handler(int whatever)
 {
