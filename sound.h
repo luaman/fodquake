@@ -120,15 +120,6 @@ channel_t *SND_PickChannel(int entnum, int entchannel);
 // spatializes a channel
 void SND_Spatialize(channel_t *ch);
 
-// initializes cycling through a DMA buffer and returns information on it
-qboolean SNDDMA_Init(void);
-
-// gets the current DMA position
-int SNDDMA_GetDMAPos(void);
-
-// shutdown the DMA xfer.
-void SNDDMA_Shutdown(void);
-
 // ====================================================================
 // User-setable variables
 // ====================================================================
@@ -162,6 +153,5 @@ sfxcache_t *S_LoadSound (sfx_t *s);
 wavinfo_t GetWavinfo (char *name, byte *wav, int wavlength);
 
 void SND_InitScaletable (void);
-void SNDDMA_Submit(void);
 
 #endif
