@@ -143,7 +143,6 @@ static qboolean oss_init_internal(struct SoundCard *sc, const char *device, int 
 										{
 											sc->samples = info.fragstotal * info.fragsize / (sc->samplebits/8);
 											sc->samplepos = 0;
-											sc->submission_chunk = 1;
 											sc->speed = rate;
 
 											sc->driverprivate = p;

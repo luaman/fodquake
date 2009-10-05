@@ -279,7 +279,6 @@ static qboolean wav_init(struct SoundCard *sc, int rate, int channels, int bits)
 
 	sc->samples = gSndBufSize/(sc->samplebits/8);
 	sc->samplepos = 0;
-	sc->submission_chunk = 1;
 	sc->buffer = (unsigned char *) p->lpData;
 	p->samplebytes = (sc->samplebits/8);
 

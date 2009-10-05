@@ -120,7 +120,6 @@ void S_SoundInfo_f (void) {
     Com_Printf ("%5d samples\n", soundcard->samples);
     Com_Printf ("%5d samplepos\n", soundcard->samplepos);
     Com_Printf ("%5d samplebits\n", soundcard->samplebits);
-    Com_Printf ("%5d submission_chunk\n", soundcard->submission_chunk);
     Com_Printf ("%5d speed\n", soundcard->speed);
     Com_Printf ("0x%x dma buffer\n", soundcard->buffer);
 	Com_Printf ("%5d total_channels\n", total_channels);

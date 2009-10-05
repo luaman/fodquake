@@ -383,7 +383,6 @@ static qboolean ds7_init (struct SoundCard *sc, int rate, int channels, int bits
 
 									sc->samples = p->gSndBufSize/(sc->samplebits/8);
 									sc->samplepos = 0;
-									sc->submission_chunk = 1;
 									sc->buffer = NULL;
 									p->samplebytes = (sc->samplebits/8);
 
