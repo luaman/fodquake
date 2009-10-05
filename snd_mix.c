@@ -93,7 +93,7 @@ void S_TransferStereo16 (int endtime)
 	while (lpaintedtime < endtime)
 	{
 	// handle recirculating buffer issues
-		lpos = lpaintedtime & ((soundcard->samples>>1)-1);
+		lpos = lpaintedtime % ((soundcard->samples>>1));
 
 		snd_out = (short *) pbuf + (lpos<<1);
 
