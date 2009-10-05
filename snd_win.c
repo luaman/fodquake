@@ -124,7 +124,7 @@ static int wav_getdmapos(struct SoundCard *sc)
 }
 
 //Send sound to device if buffer isn't really the dma buffer
-static void wav_submit(struct SoundCard *sc)
+static void wav_submit(struct SoundCard *sc, unsigned int count)
 {
 	struct wav_private *p = sc->driverprivate;
 	LPWAVEHDR h;

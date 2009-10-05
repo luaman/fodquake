@@ -76,7 +76,7 @@ struct SoundCard
 {
 	void *driverprivate;
 	int (*GetDMAPos)(struct SoundCard *);
-	void (*Submit)(struct SoundCard *);
+	void (*Submit)(struct SoundCard *, unsigned int count);
 	void (*Shutdown)(struct SoundCard *);
 
 	unsigned char *(*Lock)(struct SoundCard *);

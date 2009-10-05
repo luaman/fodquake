@@ -111,7 +111,7 @@ static int ds7_getdmapos(struct SoundCard *sc)
 }
 
 //Send sound to device if buffer isn't really the dma buffer
-static void ds7_submit(struct SoundCard *sc)
+static void ds7_submit(struct SoundCard *sc, unsigned int count)
 {
 }
 

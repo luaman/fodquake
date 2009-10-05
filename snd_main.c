@@ -742,7 +742,7 @@ static void S_Update_ (void) {
 
 	S_PaintChannels (endtime);
 
-	soundcard->Submit(soundcard);
+	soundcard->Submit(soundcard, paintedtime - soundtime);
 }
 
 /*

@@ -53,7 +53,7 @@ static int oss_getdmapos(struct SoundCard *sc)
 	return sc->samplepos;
 }
 
-static void oss_submit(struct SoundCard *sc)
+static void oss_submit(struct SoundCard *sc, unsigned int count)
 {
 }
 

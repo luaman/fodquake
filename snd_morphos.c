@@ -97,7 +97,7 @@ int ahi_getdmapos(struct SoundCard *sc)
 	return sc->samplepos;
 }
 
-void ahi_submit(struct SoundCard *sc)
+void ahi_submit(struct SoundCard *sc, unsigned int count)
 {
 }
 
