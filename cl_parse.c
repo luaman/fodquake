@@ -539,7 +539,9 @@ static void CL_ParseFTEChunkedDownload()
 	}
 	else
 	{
-		Com_Printf("Got file data chunk while not receiving file\n");
+		char buf[FTEFILECHUNKSIZE];
+
+		MSG_ReadData(buf, FTEFILECHUNKSIZE);
 	}
 }
 
