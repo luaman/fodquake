@@ -165,7 +165,6 @@ OBJS= \
 	cl_main.o \
 	cl_parse.o \
 	cl_pred.o \
-	cl_slist.o \
 	cl_tent.o \
 	cl_view.o \
 	cmd.o \

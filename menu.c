@@ -24,7 +24,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "quakedef.h"
 #include "filesystem.h"
 #include "winquake.h"
-#include "cl_slist.h"
 #include "input.h"
 #include "keys.h"
 #include "sound.h"
@@ -49,14 +48,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 enum {m_none, m_main, m_singleplayer, m_load, m_save, m_multiplayer,
 	m_setup, m_options, m_video, m_video_verify, m_keys, m_help, m_quit,
-	m_gameoptions, m_slist, m_sedit, m_fps, m_demos, m_mp3_control, m_mp3_playlist} m_state;
+	m_gameoptions, m_fps, m_demos, m_mp3_control, m_mp3_playlist} m_state;
 
 void M_Menu_Main_f (void);
 	void M_Menu_SinglePlayer_f (void);
 		void M_Menu_Load_f (void);
 		void M_Menu_Save_f (void);
 	void M_Menu_MultiPlayer_f (void);
-		void M_Menu_ServerList_f (void);
 			void M_Menu_SEdit_f (void);
 		void M_Menu_Setup_f (void);
 		void M_Menu_Demos_f (void);
@@ -73,7 +71,6 @@ void M_Main_Draw (void);
 		void M_Load_Draw (void);
 		void M_Save_Draw (void);
 	void M_MultiPlayer_Draw (void);
-		void M_ServerList_Draw (void);
 			void M_SEdit_Draw (void);
 		void M_Setup_Draw (void);
 		void M_Demos_Draw (void);
@@ -90,7 +87,6 @@ void M_Main_Key (int key);
 		void M_Load_Key (int key);
 		void M_Save_Key (int key);
 	void M_MultiPlayer_Key (int key);
-		void M_ServerList_Key (int key);
 			void M_SEdit_Key (int key);
 		void M_Setup_Key (int key);
 		void M_Demos_Key (int key);
@@ -1889,7 +1885,7 @@ void M_MultiPlayer_Draw (void) {
 	M_DrawTransPic (16, 4, Draw_CachePic ("gfx/qplaque.lmp") );
 	p = Draw_CachePic ("gfx/p_multi.lmp");
 	M_DrawPic ( (320-p->width)/2, 4, p);
-	M_Print (80, 40, "Server List");
+	M_Print (80, 40, "Server Browser");
 	M_Print (80, 48, "Player Setup");
 	M_Print (80, 56, "Demos");
 #ifndef CLIENTONLY
@@ -1936,7 +1932,7 @@ void M_MultiPlayer_Key (int key) {
 		m_entersound = true;
 		switch (m_multiplayer_cursor) {
 		case 0:
-			M_Menu_ServerList_f ();
+			SB_Activate_f();
 			break;
 
 		case 1:
@@ -3423,321 +3419,6 @@ void M_Setup_Key (int k) {
 		setup_bottom = 13;
 }
 
-// SLIST -->
-
-#define MENU_X 50
-#define TITLE_Y 4
-#define MENU_Y 21
-#define STAT_Y 166
-
-int m_multip_cursor = 0, m_multip_mins = 0, m_multip_maxs = 16, m_multip_state;
-
-void M_Menu_ServerList_f (void) {
-	M_EnterMenu (m_slist);
-	m_multip_state = 0;
-}
-
-void M_ServerList_Draw (void) {
-	int serv, line;
-
-	M_DrawTransPic(16, 4, Draw_CachePic("gfx/qplaque.lmp"));
-	M_DrawTextBox(MENU_X, TITLE_Y, 23, 1);
-	M_PrintWhite(MENU_X + 60, TITLE_Y + 8, "Server List");
-
-	if (!slist[0].server) {
-		M_PrintWhite(84, MENU_Y + 16 + 16, "Empty server list");
-		M_Print(60, MENU_Y + 16 + 32, "Press INS to add a server");
-		M_Print(64, MENU_Y + 16 + 40, "Press E to edit a server");
-		return;
-	}
-
-	M_DrawTextBox(MENU_X, STAT_Y, 23, 1);
-	M_DrawTextBox(MENU_X, MENU_Y, 23, m_multip_maxs - m_multip_mins + 1);
-	for (serv = m_multip_mins, line = 1; serv <= m_multip_maxs && serv < MAX_SERVER_LIST && slist[serv].server; serv++, line++)
-		M_Print(MENU_X + 18, line * 8 + MENU_Y, va("%1.21s", slist[serv].description));
-	M_PrintWhite(MENU_X + 18, STAT_Y + 8, va("%1.22s", slist[m_multip_cursor].server));
-	M_DrawCharacter(MENU_X + 8, (m_multip_cursor - m_multip_mins + 1) * 8 + MENU_Y, 12 + ((int) (curtime * 4) & 1));
-}
-
-void M_ServerList_Key (key) {
-	int slist_length;
-	extern cvar_t spectator;
-
-	if (!slist[0].server && key != K_ESCAPE && key != K_INS)
-		return;
-
-	switch(key)	{
-	case K_BACKSPACE:
-		m_topmenu = m_none;	// intentional fallthrough
-	case K_ESCAPE:
-		M_LeaveMenu (m_multiplayer);
-		break;
-
-	case K_UPARROW:
-		S_LocalSound("misc/menu1.wav");
-		if (m_multip_cursor > 0) {
-			if (keydown[K_CTRL]) {
-				SList_Switch(m_multip_cursor, m_multip_cursor - 1);
-				m_multip_cursor--;
-			} else {
-				m_multip_cursor--;
-			}
-		}
-		break;
-
-	case K_DOWNARROW:
-		S_LocalSound("misc/menu1.wav");
-		if (keydown[K_CTRL]) {
-			if (m_multip_cursor != SList_Length() - 1) {
-				SList_Switch(m_multip_cursor, m_multip_cursor + 1);
-				m_multip_cursor++;
-			}
-		} else if (m_multip_cursor < MAX_SERVER_LIST - 1 && slist[m_multip_cursor + 1].server) {
-			m_multip_cursor++;
-		}
-		break;
-
-	case K_HOME:
-		S_LocalSound("misc/menu1.wav");
-		m_multip_cursor = 0;
-		break;
-
-	case K_END:
-		S_LocalSound("misc/menu1.wav");
-		m_multip_cursor = SList_Length() - 1;
-		break;
-
-	case K_PGUP:
-		S_LocalSound("misc/menu1.wav");
-		m_multip_cursor -= (m_multip_maxs - m_multip_mins);
-		if (m_multip_cursor < 0)
-			m_multip_cursor = 0;
-		break;
-
-	case K_PGDN:
-		S_LocalSound("misc/menu1.wav");
-		m_multip_cursor += (m_multip_maxs - m_multip_mins);
-		if (m_multip_cursor >= MAX_SERVER_LIST)
-			m_multip_cursor = MAX_SERVER_LIST - 1;
-		while (!(slist[m_multip_cursor].server))
-			m_multip_cursor--;
-		break;
-
-	case K_ENTER:
-		if (keydown[K_CTRL]) {
-			M_Menu_SEdit_f();
-			break;
-		}
-		m_state = m_main;
-		M_ToggleMenu_f();
-		Cbuf_AddText(va("%s %s\n", keydown[K_SHIFT] ? "observe" : "join", slist[m_multip_cursor].server));
-		break;
-
-	case 'j': case 'J':
-		m_state = m_main;
-		M_ToggleMenu_f();
-		Cbuf_AddText(va("join %s\n", slist[m_multip_cursor].server));
-		break;
-
-	case 'o': case 'O':
-		m_state = m_main;
-		M_ToggleMenu_f();
-		Cbuf_AddText(va("observe %s\n", slist[m_multip_cursor].server));
-		break;
-
-	case 'e': case 'E':
-		M_Menu_SEdit_f();
-		break;
-
-	case 'c': case 'C':
-	case 'x': case 'X':
-		if (keydown[K_CTRL])
-			VID_SetClipboardText(slist[m_multip_cursor].server);
-		break;
-
-	case K_INS:
-		S_LocalSound("misc/menu2.wav");
-		if ((slist_length = SList_Length()) < MAX_SERVER_LIST) {
-			if (keydown[K_CTRL] && slist_length > 0) {
-				if (m_multip_cursor < slist_length - 1)
-					memmove(&slist[m_multip_cursor + 2], &slist[m_multip_cursor + 1], (slist_length - m_multip_cursor - 1) * sizeof(slist[0]));
-				SList_Reset_NoFree(m_multip_cursor + 1);
-				SList_Set(m_multip_cursor + 1, "127.0.0.1", "<BLANK>");
-				if (slist_length)
-					m_multip_cursor++;
-			} else {
-				memmove(&slist[m_multip_cursor + 1], &slist[m_multip_cursor], (slist_length - m_multip_cursor) * sizeof(slist[0]));
-				SList_Reset_NoFree(m_multip_cursor);
-				SList_Set(m_multip_cursor, "127.0.0.1", "<BLANK>");
-			}
-		}
-		break;
-
-	case K_DEL:
-		S_LocalSound("misc/menu2.wav");
-		if ((slist_length = SList_Length()) > 0) {
-			SList_Reset(m_multip_cursor);
-			if (m_multip_cursor > 0 && slist_length - 1 == m_multip_cursor) {
-				m_multip_cursor--;
-			} else {
-				memmove(&slist[m_multip_cursor], &slist[m_multip_cursor + 1], (slist_length - m_multip_cursor - 1) * sizeof(slist[0]));
-				SList_Reset_NoFree(slist_length - 1);
-			}
-		}
-		break;
-	}
-	if (m_multip_cursor < m_multip_mins) {
-		m_multip_maxs -= (m_multip_mins - m_multip_cursor);
-		m_multip_mins = m_multip_cursor;
-	}
-	if (m_multip_cursor > m_multip_maxs) {
-		m_multip_mins += (m_multip_cursor - m_multip_maxs);
-		m_multip_maxs = m_multip_cursor;
-	}
-}
-#define SERV_X 60
-#define SERV_Y 64
-#define DESC_X 60
-#define DESC_Y 40
-#define SERV_L 23
-#define DESC_L 23
-
-#define SLIST_BUFSIZE 128
-
-static char slist_serv[SLIST_BUFSIZE], slist_desc[SLIST_BUFSIZE];
-static int slist_serv_max, slist_serv_min, slist_desc_max, slist_desc_min, sedit_state;
-
-void M_Menu_SEdit_f (void) {
-	int size;
-
-	M_EnterMenu (m_sedit);
-	sedit_state = 0;
-	Q_strncpyz (slist_serv, slist[m_multip_cursor].server, sizeof(slist_serv));
-	Q_strncpyz (slist_desc, slist[m_multip_cursor].description, sizeof(slist_desc));
-	slist_serv_max = (size = strlen(slist_serv)) > SERV_L ? size : SERV_L;
-	slist_serv_min = slist_serv_max - SERV_L;
-	slist_desc_max = (size = strlen(slist_desc)) > DESC_L ? size : DESC_L;
-	slist_desc_min = slist_desc_max - DESC_L;
-}
-
-void M_SEdit_Draw (void) {
-	mpic_t *p;
-
-	M_DrawTransPic(16, 4, Draw_CachePic("gfx/qplaque.lmp"));
-	p = Draw_CachePic("gfx/p_multi.lmp");
-	M_DrawPic((320 - p->width) / 2, 4, p);
-
-	M_DrawTextBox(SERV_X,SERV_Y, 23, 1);
-	M_DrawTextBox(DESC_X,DESC_Y, 23, 1);
-	M_PrintWhite(SERV_X,SERV_Y - 4, "Hostname/IP:");
-	M_PrintWhite(DESC_X,DESC_Y - 4, "Description:");
-	M_Print(SERV_X + 9, SERV_Y + 8, va("%1.23s", slist_serv + slist_serv_min));
-	M_Print(DESC_X + 9, DESC_Y + 8, va("%1.23s", slist_desc + slist_desc_min));
-	if (sedit_state == 0)
-		M_DrawCharacter(SERV_X + 9 + 8 * (strlen(slist_serv) - slist_serv_min), SERV_Y + 8, 10 + ((int) (curtime * 4) & 1));
-	else
-		M_DrawCharacter(DESC_X + 9 + 8 * (strlen(slist_desc) - slist_desc_min), DESC_Y + 8, 10 + ((int) (curtime * 4) & 1));
-}
-
-void M_SEdit_Key (int key) {
-	int	l;
-	const char *cliptext;
-
-	switch (key) {
-		case K_ESCAPE:
-			M_Menu_ServerList_f ();
-			break;
-		case K_ENTER:
-			SList_Set(m_multip_cursor, slist_serv, slist_desc);
-			M_Menu_ServerList_f ();
-			break;
-		case K_UPARROW:
-			S_LocalSound("misc/menu1.wav");
-			sedit_state = !sedit_state;
-			break;
-		case K_DOWNARROW:
-			S_LocalSound("misc/menu1.wav");
-			sedit_state = !sedit_state;
-			break;
-		case K_BACKSPACE:
-			if (sedit_state == 0) {
-				if ((l = strlen(slist_serv)))
-					slist_serv[--l] = 0;
-				if (strlen(slist_serv) - 6 < slist_serv_min && slist_serv_min) {
-					slist_serv_min--;
-					slist_serv_max--;
-				}
-			} else {
-				if ((l = strlen(slist_desc)))
-					slist_desc[--l] = 0;
-				if (strlen(slist_desc) - 6 < slist_desc_min && slist_desc_min) {
-					slist_desc_min--;
-					slist_desc_max--;
-				}
-			}
-			break;
-		case 'v': case 'V':
-			if (keydown[K_CTRL])
-			{
-				if ((cliptext = VID_GetClipboardText()))
-				{
-					if (sedit_state == 0)
-					{
-						strncat(slist_serv, cliptext, sizeof(slist_serv) - strlen(slist_serv) - 1);
-						l = strlen(slist_serv);
-						if (l > slist_serv_max)
-						{
-							slist_serv_min += (l - slist_serv_max);
-							slist_serv_max += (l - slist_serv_max);
-						}
-					}
-					else
-					{
-						strncat(slist_desc, cliptext, sizeof(slist_desc) - strlen(slist_desc) - 1);
-						l = strlen(slist_desc);
-						if (l > slist_desc_max)
-						{
-							slist_desc_min += (l - slist_desc_max);
-							slist_desc_max += (l - slist_desc_max);
-						}
-					}
-
-					VID_FreeClipboardText(cliptext);
-				}
-				return;
-			}
-
-		default:
-			if (key < 32 || key > 127)
-				break;
-			if (sedit_state == 0) {
-				l = strlen(slist_serv);
-				if (l < SLIST_BUFSIZE - 1) {
-					slist_serv[l + 1] = 0;
-					slist_serv[l] = key;
-					l++;
-				}
-				if (l > slist_serv_max) {
-					slist_serv_min++;
-					slist_serv_max++;
-				}
-			} else {
-				l = strlen(slist_desc);
-				if (l < SLIST_BUFSIZE - 1) {
-					slist_desc[l + 1] = 0;
-					slist_desc[l] = key;
-					l++;
-				}
-				if (l > slist_desc_max) {
-					slist_desc_min++;
-					slist_desc_max++;
-				}
-			}
-	}
-}
-
-// <-- SLIST
-
 void M_Quit_Draw (void)
 {
 	static char *quitmsg[] =
@@ -3792,7 +3473,6 @@ void M_CvarInit (void)
 	Cmd_AddCommand ("menu_save", M_Menu_Save_f);
 #endif
 	Cmd_AddCommand ("menu_multiplayer", M_Menu_MultiPlayer_f);
-	Cmd_AddCommand ("menu_slist", M_Menu_ServerList_f);
 	Cmd_AddCommand ("menu_setup", M_Menu_Setup_f);
 #if defined(_WIN32) || defined(__XMMS__)
 	Cmd_AddCommand ("menu_mp3_control", M_Menu_MP3_Control_f);
@@ -3927,14 +3607,6 @@ void M_Draw (void) {
 		break;
 #endif
 
-	case m_slist:
-		M_ServerList_Draw ();
-		break;
-
-	case m_sedit:
-		M_SEdit_Draw ();
-		break;
-
 	case m_demos:
 		M_Demos_Draw ();
 		break;
@@ -4036,14 +3708,6 @@ void M_Keydown (int key) {
 		M_GameOptions_Key (key);
 		return;
 #endif
-
-	case m_slist:
-		M_ServerList_Key (key);
-		return;
-
-	case m_sedit:
-		M_SEdit_Key (key);
-		break;
 
 	case m_demos:
 		M_Demos_Key (key);

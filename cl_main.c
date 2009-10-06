@@ -27,7 +27,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "filesystem.h"
 #include "winquake.h"
 #include "cdaudio.h"
-#include "cl_slist.h"
 #include "input.h"
 #include "keys.h"
 #include "menu.h"
@@ -1095,9 +1094,6 @@ void CL_Init (void)
 
 #warning If I want to keep compatibility with Win32 server browsers, I need to open a socket on port 27001 here.
 
-	SList_Init ();
-	SList_Load ();
-
 
 	MT_Init();
 	CL_Demo_Init();
@@ -1273,7 +1269,6 @@ void CL_Shutdown (void)
 
 	CL_WriteConfiguration();
 
-	SList_Shutdown();
 	CDAudio_Shutdown();
 	S_Shutdown();
 	MP3_Shutdown();
