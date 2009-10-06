@@ -154,7 +154,6 @@ qboolean ahi_init(struct SoundCard *sc, int rate, int channels, int bits)
 							sc->samplebits = bits;
 							sc->channels = channels;
 							sc->samples = 16384*(rate/11025);
-							sc->submission_chunk = 1;
 
 							p->samplebuffer = AllocVec(16384*(rate/11025)*(bits/8)*channels, MEMF_CLEAR);
 							if (p->samplebuffer)
