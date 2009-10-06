@@ -1066,7 +1066,7 @@ void CL_Init (void)
 	FMod_CheckModel("gfx/colormap.lmp", host_colormap, com_filesize); 
 
 	Sys_mkdir(va("%s/qw", com_basedir));
-	Sys_mkdir(va("%s/fuhquake", com_basedir));	
+	Sys_mkdir(va("%s/fodquake", com_basedir));	
 
 	Key_Init ();
 	V_Init ();
