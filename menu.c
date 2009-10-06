@@ -1374,6 +1374,8 @@ void M_Video_Key (int key)
 			break;
 
 		case K_UPARROW:
+			S_LocalSound ("misc/menu1.wav");
+
 			if (video_typenum == 0)
 			{
 				if (video_windowmodecursor)
@@ -1386,6 +1388,8 @@ void M_Video_Key (int key)
 			}
 			break;
 		case K_DOWNARROW:
+			S_LocalSound ("misc/menu1.wav");
+
 			if (video_typenum == 0 && video_windowmodecursor < NUMWINDOWEDRESOLUTIONS - 1)
 				video_windowmodecursor++;
 			else if (video_typenum == 2)
@@ -1393,6 +1397,8 @@ void M_Video_Key (int key)
 			break;
 
 		case K_LEFTARROW:
+			S_LocalSound ("misc/menu1.wav");
+
 			if (video_typenum)
 				video_typenum--;
 			else
@@ -1400,6 +1406,8 @@ void M_Video_Key (int key)
 			break;
 
 		case K_RIGHTARROW:
+			S_LocalSound ("misc/menu1.wav");
+
 			video_typenum++;
 			if (video_typenum > 2)
 				video_typenum = 0;
@@ -1407,6 +1415,8 @@ void M_Video_Key (int key)
 			break;
 
 		case K_ENTER:
+			m_entersound = true;
+
 			if (video_typenum == 0)
 			{
 				if (!(VID_GetFullscreen() == 0 && VID_GetWidth() == windowedresolutions[video_windowmodecursor].width && VID_GetHeight() == windowedresolutions[video_windowmodecursor].height))
