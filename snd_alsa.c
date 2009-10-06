@@ -237,7 +237,7 @@ static qboolean alsa_init_internal(struct SoundCard *sc, const char *device, int
 
 			//WARNING: 'default' as the default sucks arse. it adds about a second's worth of lag.
 
-			Com_Printf("Initing ALSA sound device \"%s\"\n", device);
+			Com_Printf("Initialising ALSA sound device \"%s\"\n", device);
 
 			pcm = 0;
 			err = p->psnd_pcm_open(&pcm, device, SND_PCM_STREAM_PLAYBACK, SND_PCM_NONBLOCK);
@@ -440,13 +440,22 @@ static qboolean alsa_init_internal(struct SoundCard *sc, const char *device, int
 static qboolean alsa_init(struct SoundCard *sc, int rate, int channels, int bits)
 {
 	qboolean ret;
+	const char *prevattempt;
 
+	prevattempt = snd_alsa_device.string;
 	ret = alsa_init_internal(sc, snd_alsa_device.string, rate, channels, bits);
 	if (ret == 0 && strcmp(snd_alsa_device.string, "hw") != 0)
 	{
 		Com_Printf("Opening \"%s\" failed, trying \"hw\"\n", snd_alsa_device.string);
 
+		prevattempt = "hw";
 		ret = alsa_init_internal(sc, "hw", rate, channels, bits);
+        }
+	if (ret == 0 && strcmp(snd_alsa_device.string, "default") != 0)
+	{
+		Com_Printf("Opening \"%s\" failed, trying \"default\"\n", prevattempt);
+
+		ret = alsa_init_internal(sc, "default", rate, channels, bits);
         }
 
         return ret;
