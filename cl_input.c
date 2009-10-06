@@ -395,12 +395,13 @@ void CL_BaseMove (usercmd_t *cmd) {
 	}	
 }
 
-int MakeChar (int i) {
-	i &= ~3;
-	if (i < -127 * 4)
-		i = -127 * 4;
-	if (i > 127 * 4)
-		i = 127 * 4;
+static short MakeShort (int i)
+{
+	if (i < -32768)
+		i = -32768;
+	if (i > 32767)
+		i = 32767;
+
 	return i;
 }
 
@@ -441,9 +442,9 @@ void CL_FinishMove (usercmd_t *cmd) {
 	in_impulse = 0;
 
 	// chop down so no extra bits are kept that the server wouldn't get
-	cmd->forwardmove = MakeChar (cmd->forwardmove);
-	cmd->sidemove = MakeChar (cmd->sidemove);
-	cmd->upmove = MakeChar (cmd->upmove);
+	cmd->forwardmove = MakeShort(cmd->forwardmove);
+	cmd->sidemove = MakeShort(cmd->sidemove);
+	cmd->upmove = MakeShort(cmd->upmove);
 
 	for (i = 0; i < 3; i++)
 		cmd->angles[i] = (Q_rint(cmd->angles[i] * 65536.0 / 360.0) & 65535) * (360.0 / 65536.0);
