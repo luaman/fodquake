@@ -286,9 +286,9 @@ float CL_KeyState (kbutton_t *key) {
 //==========================================================================
 
 cvar_t	cl_upspeed = {"cl_upspeed","200"};
-cvar_t	cl_forwardspeed = {"cl_forwardspeed","200",CVAR_ARCHIVE};
-cvar_t	cl_backspeed = {"cl_backspeed","200",CVAR_ARCHIVE};
-cvar_t	cl_sidespeed = {"cl_sidespeed","350",CVAR_ARCHIVE};
+cvar_t	cl_forwardspeed = {"cl_forwardspeed","400",CVAR_ARCHIVE};
+cvar_t	cl_backspeed = {"cl_backspeed","400",CVAR_ARCHIVE};
+cvar_t	cl_sidespeed = {"cl_sidespeed","400",CVAR_ARCHIVE};
 
 cvar_t	cl_movespeedkey = {"cl_movespeedkey","2.0",CVAR_ARCHIVE};
 cvar_t	cl_anglespeedkey = {"cl_anglespeedkey","1.5"};
