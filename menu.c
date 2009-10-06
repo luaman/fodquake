@@ -1423,7 +1423,7 @@ void M_Video_Key (int key)
 				Cvar_Set(&vid_mode, "");
 				Cbuf_AddText("vid_restart\n");
 			}
-			else if (video_typenum == 2)
+			else if (video_typenum == 2 && video_selectedmodeline)
 			{
 				M_Menu_Video_Verify_f();
 			}
