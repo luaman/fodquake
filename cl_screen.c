@@ -252,15 +252,59 @@ void SCR_EraseCenterString(void)
 
 /************************************ FOV ************************************/
 
-static float CalcFov (float fov_x, float width, float height)
+static void CalcFov(float fov, float *fov_x, float *fov_y, float width, float height)
 {
-	float x;
+	float t;
+	float fovx;
+	float fovy;
 
-	if (fov_x < 1 || fov_x > 179)
-		Sys_Error ("CalcFov: Bad fov (%f)", fov_x);
+	if (fov < 10)
+		fov = 10;
+	else if (fov > 140)
+		fov = 140;
 
-	x = width / tan(fov_x / 360 * M_PI);
-	return atan (height / x) * 360 / M_PI;
+	if (width / 4 < height /3)
+	{
+		fovx = fov;
+		t = width / tan(fovx / 360 * M_PI);
+		fovy = atan (height / t) * 360 / M_PI;
+	}
+	else
+	{
+		fovx = fov;
+		t = 4.0 / tan(fovx / 360 * M_PI);
+		fovy = atan (3.0 / t) * 360 / M_PI;
+		t = height / tan(fovy / 360 * M_PI);
+		fovx = atan (width / t) * 360 / M_PI;
+	}
+
+	if (fovx < 10 || fovx > 140)
+	{
+		if (fovx < 10)
+			fovx = 10;
+		else if (fovx > 140)
+			fovx = 140;
+
+		t = width / tan(fovx / 360 * M_PI);
+		fovy = atan (height / t) * 360 / M_PI;
+	}
+
+	if (fovy < 10 || fovy > 140)
+	{
+		if (fovy < 10)
+			fovy = 10;
+		else if (fovy > 140)
+			fovy = 140;
+
+		t = height / tan(fovy / 360 * M_PI);
+		fovx = atan (width / t) * 360 / M_PI;
+	}
+
+	if (fovx < 1 || fovx > 179 || fovy < 1 || fovy > 179)
+		Sys_Error ("CalcFov: Bad fov (%f, %f)", fovx, fovy);
+
+	*fov_x = fovx;
+	*fov_y = fovy;
 }
 
 //Must be called whenever vid changes
@@ -350,16 +394,14 @@ static void SCR_CalcRefdef (void)
 	else 
 		r_refdef.vrect.y = (h - r_refdef.vrect.height) / 2;
 
-	r_refdef.fov_x = scr_fov.value;
-	r_refdef.fov_y = CalcFov (r_refdef.fov_x, r_refdef.vrect.width, r_refdef.vrect.height);
+	CalcFov(scr_fov.value, &r_refdef.fov_x, &r_refdef.fov_y, r_refdef.vrect.width, r_refdef.vrect.height);
 
 	scr_vrect = r_refdef.vrect;
 
 	Draw_SizeChanged();
 #else
 
-	r_refdef.fov_x = scr_fov.value;
-	r_refdef.fov_y = CalcFov (r_refdef.fov_x, r_refdef.vrect.width, r_refdef.vrect.height);
+	CalcFov(scr_fov.value, &r_refdef.fov_x, &r_refdef.fov_y, r_refdef.vrect.width, r_refdef.vrect.height);
 
 	// these calculations mirror those in R_Init() for r_refdef, but take noaccount of water warping
 	vrect.x = 0;
