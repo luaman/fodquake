@@ -656,7 +656,8 @@ void Draw_Character (int x, int y, int num) {
 	glEnd ();
 }
 
-void Draw_String (int x, int y, char *str) {
+void Draw_String(int x, int y, const char *str)
+{
 	int num;
 
 	if (y <= -8)
@@ -679,7 +680,8 @@ void Draw_String (int x, int y, char *str) {
 	glEnd ();
 }
 
-void Draw_Alt_String (int x, int y, char *str) {
+void Draw_Alt_String(int x, int y, const char *str)
+{
 	int num;
 
 	if (y <= -8)

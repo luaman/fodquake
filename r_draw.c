@@ -186,7 +186,7 @@ void Draw_Character (int x, int y, int num) {
 	}
 }
 
-void Draw_String (int x, int y, char *str) {
+void Draw_String (int x, int y, const char *str) {
 	while (*str) {
 		Draw_Character (x, y, *str);
 		str++;
@@ -194,7 +194,7 @@ void Draw_String (int x, int y, char *str) {
 	}
 }
 
-void Draw_Alt_String (int x, int y, char *str) {
+void Draw_Alt_String (int x, int y, const char *str) {
 	while (*str) {
 		Draw_Character (x, y, (*str) | 0x80);
 		str++;
