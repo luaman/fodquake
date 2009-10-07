@@ -310,7 +310,7 @@ void M_Main_Key (int key) {
 //=============================================================================
 /* OPTIONS MENU */
 
-#define	OPTIONS_ITEMS	16
+#define	OPTIONS_ITEMS	15
 
 #define	SLIDER_RANGE	10
 
@@ -462,26 +462,23 @@ void M_Options_Draw (void) {
 	r = s_volume.value;
 	M_DrawSlider (220, 96, r);
 
-	M_Print (16, 104,  "            Always run");
-	M_DrawCheckbox (220, 104, cl_forwardspeed.value > 200);
+	M_Print (16, 104, "          Invert mouse");
+	M_DrawCheckbox (220, 104, m_pitch.value < 0);
 
-	M_Print (16, 112, "          Invert mouse");
-	M_DrawCheckbox (220, 112, m_pitch.value < 0);
+	M_Print (16, 112, "    Use old status bar");
+	M_DrawCheckbox (220, 112, cl_sbar.value);
 
-	M_Print (16, 120, "    Use old status bar");
-	M_DrawCheckbox (220, 120, cl_sbar.value);
+	M_Print (16, 120, "      HUD on left side");
+	M_DrawCheckbox (220, 120, cl_hudswap.value);
 
-	M_Print (16, 128, "      HUD on left side");
-	M_DrawCheckbox (220, 128, cl_hudswap.value);
+	M_Print (16, 128, "          FPS settings");
 
-	M_Print (16, 136, "          FPS settings");
-
-	M_Print (16, 144, "           Video modes");
+	M_Print (16, 136, "           Video modes");
 
 	if (!VID_GetFullscreen())
 	{
-		M_Print (16, 152, "             Use mouse");
-		M_DrawCheckbox (220, 152, in_grab_windowed_mouse.value);
+		M_Print (16, 144, "             Use mouse");
+		M_DrawCheckbox (220, 144, in_grab_windowed_mouse.value);
 	}
 
 	// cursor
@@ -559,10 +556,10 @@ void M_Options_Key (int k) {
 	}
 
 	if (k == K_UPARROW || k == K_END || k == K_PGDN) {
-		if (options_cursor == 15 && VID_GetFullscreen())
-			options_cursor = 14;
+		if (options_cursor == 14 && VID_GetFullscreen())
+			options_cursor = 13;
 	} else {
-		if (options_cursor == 15 && VID_GetFullscreen())
+		if (options_cursor == 14 && VID_GetFullscreen())
 			options_cursor = 0;
 	}
 }
