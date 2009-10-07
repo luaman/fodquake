@@ -379,29 +379,19 @@ void M_AdjustSliders (int dir) {
 		Cvar_SetValue (&s_volume, s_volume.value);
 		break;
 		
-	case 9:	// always run
-		if (cl_forwardspeed.value > 200) {
-			Cvar_SetValue (&cl_forwardspeed, 200);
-			Cvar_SetValue (&cl_backspeed, 200);
-		} else {
-			Cvar_SetValue (&cl_forwardspeed, 400);
-			Cvar_SetValue (&cl_backspeed, 400);
-		}
-		break;
-	
-	case 10:	// invert mouse
+	case 9:	// invert mouse
 		Cvar_SetValue (&m_pitch, -m_pitch.value);
 		break;
 	
-	case 11:
+	case 10:
 		Cvar_SetValue (&cl_sbar, !cl_sbar.value);
 		break;
 
-	case 12:
+	case 11:
 		Cvar_SetValue (&cl_hudswap, !cl_hudswap.value);
 		break;
 
-	case 15:	// _windowed_mouse
+	case 14:	// _windowed_mouse
 		Cvar_SetValue (&in_grab_windowed_mouse, !in_grab_windowed_mouse.value);
 		break;
 	}
@@ -508,10 +498,10 @@ void M_Options_Key (int k) {
 	case 2:
 		Cbuf_AddText ("exec default.cfg\n");
 		break;
-	case 13:
+	case 12:
 		M_Menu_Fps_f ();
 		break;
-	case 14:
+	case 13:
 		M_Menu_Video_f ();
 		break;
 	default:
