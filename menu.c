@@ -1297,6 +1297,19 @@ void M_Video_Draw (void)
 				}
 			}
 
+			if (video_fullscreenmodecursor >= i)
+			{
+				if (i > 0)
+					video_fullscreenmodecursor = i - 1;
+				else
+					video_fullscreenmodecursor = 0;
+			}
+
+			if (video_fullscreenmodecursor < video_fullscreenmodelistbegin)
+				video_fullscreenmodelistbegin = video_fullscreenmodecursor;
+			else if (video_fullscreenmodecursor >= modelines + video_fullscreenmodelistbegin)
+				video_fullscreenmodelistbegin = video_fullscreenmodecursor - modelines + 1;
+
 			if (maxwidth > (menuwidth/8)-4)
 				maxwidth = (menuwidth/8)-4;
 
@@ -1315,14 +1328,6 @@ void M_Video_Draw (void)
 				}
 				else
 					M_Print(160-((maxwidth*8)/2), 92+j*8, "Unknown");
-			}
-
-			if (video_fullscreenmodecursor >= i)
-			{
-				if (i > 0)
-					video_fullscreenmodecursor = i - 1;
-				else
-					video_fullscreenmodecursor = 0;
 			}
 
 			free(video_selectedmodeline);
