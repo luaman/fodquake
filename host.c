@@ -46,6 +46,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "sbar.h"
 #include <setjmp.h>
 #include "server_browser.h"
+#include "ruleset.h"
 
 #ifndef CLIENTONLY
 #include "server.h"
@@ -247,6 +248,7 @@ void Host_Init (int argc, char **argv, int default_memsize)
 	FChecks_CvarInit();
 	Sys_CvarInit();
 	SB_CvarInit();
+	Ruleset_CvarInit();
 
 	cvarsregged = 1;
 	Cvar_Register(&dummycvar);

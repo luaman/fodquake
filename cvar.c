@@ -26,6 +26,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "common.h"
 #include "quakedef.h"
 #include "console.h"
+#include "ruleset.h"
 
 #include "utils.h"
 
@@ -161,6 +162,7 @@ void Cvar_Set (cvar_t *var, char *value) {
 	extern cvar_t cl_warncmd;	
 #endif
 	static qboolean	changing = false;
+	float floatvalue;
 
 	if (!var)
 		return;
@@ -180,6 +182,13 @@ void Cvar_Set (cvar_t *var, char *value) {
 		return;
 	}
 
+	floatvalue = Q_atof(value);
+
+	if (!Ruleset_ValidateCvarChange(var, value, floatvalue))
+	{
+		Com_Printf("Ruleset disallows setting \"%s\" variable to \"%s\".\n", var->name, value);
+	}
+
 	var->flags|= CVAR_CHANGED;
 
 	if (var->OnChange && !changing) {
@@ -194,7 +203,7 @@ void Cvar_Set (cvar_t *var, char *value) {
 	Z_Free (var->string);	// free the old value string
 
 	var->string = CopyString (value);
-	var->value = Q_atof (var->string);
+	var->value = floatvalue;
 
 #ifndef CLIENTONLY
 	if (var->flags & CVAR_SERVERINFO)

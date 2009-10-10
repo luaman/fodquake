@@ -29,7 +29,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "version.h"
 
 #include "config_manager.h"
-#include "rulesets.h"
+#include "ruleset.h"
 #include "server_browser.h"
 
 #include "strl.h"
@@ -165,7 +165,7 @@ void CL_Packet_f(void) {
 		return;
 	}
 
-	if (cbuf_current && cbuf_current != &cbuf_svc && Rulesets_RestrictPacket()) {
+	if (cbuf_current && cbuf_current != &cbuf_svc && !Ruleset_AllowPacketCmd()) {
 		Com_Printf("Packet commands is disabled during match\n");
 		return;
 	}

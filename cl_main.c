@@ -42,7 +42,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "ignore.h"
 #include "fmod.h"
 #include "fchecks.h"
-#include "rulesets.h"
 #include "modules.h"
 #include "config_manager.h"
 #include "mp3_player.h"
@@ -1087,7 +1086,6 @@ void CL_Init (void)
 	CL_InitClientVersionInfo();
 	CL_InitEnts ();
 	CL_InitTEnts ();
-	Rulesets_Init();
 #ifndef GLQUAKE
 	Sbar_Init ();
 #endif
@@ -1131,7 +1129,7 @@ static double CL_MinFrameTime (void) {
 			return 0;
 		fps = max (30.0, cl_maxfps.value);
 	} else {
-		fpscap = cl.maxfps ? max (30.0, cl.maxfps) : Rulesets_MaxFPS();
+		fpscap = cl.maxfps ? max (30.0, cl.maxfps) : 72;
 
 		fps = cl_maxfps.value ? bound (30.0, cl_maxfps.value, fpscap) : com_serveractive ? fpscap : bound (30.0, rate.value / 80.0, fpscap);
 	}

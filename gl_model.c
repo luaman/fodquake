@@ -31,7 +31,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "teamplay.h"	
 
 #include "fmod.h"
-#include "rulesets.h"
 
 model_t	*loadmodel;
 char	loadname[32];	// for hunk tags
@@ -1414,7 +1413,8 @@ static int Mod_LoadExternalSkin(char *identifier, int *fb_texnum) {
 	char loadpath[64];
 	int texmode, texnum;
 
-	if (RuleSets_DisallowExternalTexture(loadmodel)) {
+	if (loadmodel->modhint == MOD_EYES || loadmodel->modhint == MOD_BACKPACK)
+	{
 		*fb_texnum = 0;
 		return 0;
 	}

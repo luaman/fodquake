@@ -25,7 +25,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "utils.h"
 #include "fmod.h"
 #include "modules.h"
-#include "rulesets.h"
+#include "ruleset.h"
 
 static float f_ruleset_reply_time, f_reply_time, f_mod_reply_time, f_version_reply_time, f_skins_reply_time, f_server_reply_time;
 extern cvar_t r_fullbrightSkins;
@@ -125,7 +125,7 @@ qboolean FChecks_CheckFRulesetRequest (char *s) {
 		return false;
 
 	if (Util_F_Match(s, "f_ruleset"))	{
-		Cbuf_AddText(va("say FodQuake Ruleset: %s\n", Rulesets_Ruleset() ));
+		Cbuf_AddText(va("say FodQuake Ruleset: %s\n", Ruleset_GetName()));
 		f_ruleset_reply_time = cls.realtime;
 		return true;
 	}

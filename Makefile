@@ -197,7 +197,7 @@ OBJS= \
 	pr_cmds.o \
 	r_part.o \
 	readablechars.o \
-	rulesets.o \
+	ruleset.o \
 	server_browser.o \
 	serverscanner.o \
 	skin.o \

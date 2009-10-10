@@ -33,7 +33,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <string.h>
 
 #include "ignore.h"
-#include "rulesets.h"
+#include "ruleset.h"
 
 #include "strl.h"
 
@@ -183,23 +183,22 @@ tvars_t vars;
 
 typedef struct f_trigger_s {
 	char *name;
-	qboolean restricted;
 	qboolean teamplay;		
 } f_trigger_t;
 
 f_trigger_t f_triggers[] = {
-	{"f_newmap", false, false},
-	{"f_spawn", false, false},
-	{"f_mapend", false, false},
-	{"f_reloadstart", false, false},
-	{"f_reloadend", false, false},
+	{"f_newmap", false},
+	{"f_spawn", false},
+	{"f_mapend", false},
+	{"f_reloadstart", false},
+	{"f_reloadend", false},
 
-	{"f_weaponchange", false, false},
+	{"f_weaponchange", false},
 
-	{"f_took", true, true},
-	{"f_respawn", true, true},
-	{"f_death", true, true},
-	{"f_flagdeath", true, true},
+	{"f_took", true},
+	{"f_respawn", true},
+	{"f_death", true},
+	{"f_flagdeath", true},
 };
 
 #define num_f_triggers	(sizeof(f_triggers) / sizeof(f_triggers[0]))
@@ -234,8 +233,10 @@ void TP_ExecTrigger (char *trigger) {
 			return;
 	}
 
-	if ((alias = Cmd_FindAlias(trigger))) {
-		if (!(f_triggers[i].restricted && Rulesets_RestrictTriggers())) {
+	if ((alias = Cmd_FindAlias(trigger)))
+	{
+		if (Ruleset_AllowFTrigger(trigger))
+		{
 			Cbuf_AddTextEx (&cbuf_main, va("%s\n", alias->value));
 		} 
 	}
@@ -979,7 +980,7 @@ char *Macro_Count_Last_NearbyFriendlyPlayers (void) {
 // Note: longer macro names like "armortype" must be defined
 // _before_ the shorter ones like "armor" to be parsed properly
 void TP_AddMacros(void) {
-	qboolean teamplay = Rulesets_RestrictTriggers();
+	qboolean teamplay = 1; /* Yeah, I should fix this up some day */
 
 	Cmd_AddMacro("qt", Macro_Quote_f);
 	Cmd_AddMacro("latency", Macro_Latency);
@@ -1789,7 +1790,7 @@ void TP_SearchForMsgTriggers (char *s, int level) {
 
 	if (cls.demoplayback)
 		return;
-	if (!tp_msgtriggers.value || Rulesets_RestrictTriggers())
+	if (!tp_msgtriggers.value || Ruleset_AllowMsgTriggers())
 		return;
 
 	for (t = msg_triggers; t; t = t->next) {
@@ -2333,7 +2334,7 @@ static qboolean CheckTrigger (void) {
 	player_info_t *player;
 	char *myteam;
 
-	if (cl.spectator || Rulesets_RestrictTriggers())
+	if (cl.spectator)
 		return false;
 
 	if (tp_forceTriggers.value)

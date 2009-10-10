@@ -25,7 +25,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "quakedef.h"
 #include "gl_local.h"
 
-#include "rulesets.h"
+#include "ruleset.h"
 
 
 void R_InitOtherTextures (void) {
@@ -264,7 +264,7 @@ void R_TimeRefresh_f (void) {
 	if (cls.state != ca_active)
 		return;
 
-	if (!Rulesets_AllowTimerefresh()) {
+	if (!(cl.spectator || cls.demoplayback || cl.standby) && !Ruleset_AllowTimeRefresh()) {
 		Com_Printf("Timerefresh's disabled during match\n");
 		return;
 	}
