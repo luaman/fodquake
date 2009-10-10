@@ -49,6 +49,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "config.h"
 #include "sleep.h"
 #include "strl.h"
+#include "ruleset.h"
 
 #include "server_browser.h"
 
@@ -258,9 +259,6 @@ static qboolean cl_imitate_os_callback(cvar_t *var, char *string)
 		return true;
 	}
 
-	if (strcasecmp(string, validosnames[imitatedosnum]) == 0)
-		return false;
-
 	imitatedosnum = i;
 
 	return false;
@@ -340,6 +338,8 @@ static void CL_SendConnectPacket(void) {
 
 	if (cls.state != ca_disconnected)
 		return;
+
+	Ruleset_Activate();
 
 	connect_time = cls.realtime;	// for retransmit requests
 	cls.qport = Cvar_VariableValue("qport");

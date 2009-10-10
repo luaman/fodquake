@@ -2,6 +2,7 @@
 
 #include "qtypes.h"
 #include "cvar.h"
+#include "common.h"
 #include "ruleset.h"
 
 struct ruleset
@@ -68,6 +69,17 @@ static const struct ruleset ruleset_default =
 
 static void Ruleset_EQL_Init()
 {
+#ifndef GLQUAKE
+	extern cvar_t r_aliasstats;
+#endif
+	extern cvar_t cl_imitate_client;
+	extern cvar_t cl_imitate_os;
+
+#ifndef GLQUAKE
+	Cvar_Set(&r_aliasstats, "0");
+#endif
+	Cvar_Set(&cl_imitate_client, "none");
+	Cvar_Set(&cl_imitate_os, "none");
 }
 
 static qboolean Ruleset_EQL_AllowRJScripts()
@@ -168,7 +180,56 @@ qboolean Ruleset_AllowMsgTriggers()
 
 /* --- */
 
-static cvar_t cl_ruleset = { "cl_ruleset", "default" };
+static const struct ruleset *rulesets[] =
+{
+	&ruleset_default,
+	&ruleset_eql,
+	0
+};
+
+static qboolean cl_ruleset_callback(cvar_t *var, char *string)
+{
+	unsigned int i;
+
+	for(i=0;rulesets[i];i++)
+	{
+		if (strcmp(rulesets[i]->name, string) == 0)
+			break;
+	}
+
+	if (rulesets[i] == 0)
+	{
+		Com_Printf("Invalid ruleset name. Available rulesets are:\n");
+
+		for(i=0;rulesets[i];i++)
+		{
+			Com_Printf("%s\n", rulesets[i]->name);
+		}
+
+		return true;
+	}
+
+	return false;
+}
+
+static cvar_t cl_ruleset = { "cl_ruleset", "default", 0, cl_ruleset_callback };
+
+void Ruleset_Activate()
+{
+	unsigned int i;
+
+	ruleset = &ruleset_default;
+
+	for(i=0;rulesets[i];i++)
+	{
+		if (strcmp(rulesets[i]->name, cl_ruleset.string) == 0)
+		{
+			rulesets[i]->Init();
+			ruleset = rulesets[i];
+			break;
+		}
+	}
+}
 
 void Ruleset_CvarInit()
 {
