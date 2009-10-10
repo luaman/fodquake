@@ -37,7 +37,8 @@ ifeq ($(OS), linux)
 		net_posix.o \
 		thread_posix.o \
 		cd_linux.o \
-		snd_oss.o
+		snd_oss.o \
+		snd_alsa.o
 
 	OSCFLAGS=-DBUILD_STRL
 	OSLDFLAGS=-lpthread -lrt
