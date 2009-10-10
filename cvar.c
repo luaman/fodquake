@@ -187,6 +187,7 @@ void Cvar_Set (cvar_t *var, char *value) {
 	if (!Ruleset_ValidateCvarChange(var, value, floatvalue))
 	{
 		Com_Printf("Ruleset disallows setting \"%s\" variable to \"%s\".\n", var->name, value);
+		return;
 	}
 
 	var->flags|= CVAR_CHANGED;
