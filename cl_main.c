@@ -229,6 +229,9 @@ static qboolean cl_imitate_client_callback(cvar_t *var, char *string)
 		return true;
 	}
 
+	if (strcasecmp(string, validclientnames[imitatedclientnum]) == 0)
+		return false;
+
 	imitatedclientnum = i;
 	CL_InitClientVersionInfo();
 	Com_Printf("Client information will be updated after (re)connecting to a server.\n");
@@ -254,6 +257,9 @@ static qboolean cl_imitate_os_callback(cvar_t *var, char *string)
 
 		return true;
 	}
+
+	if (strcasecmp(string, validosnames[imitatedosnum]) == 0)
+		return false;
 
 	imitatedosnum = i;
 
