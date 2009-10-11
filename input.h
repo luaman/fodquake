@@ -29,7 +29,6 @@ typedef struct
 } kbutton_t;
 
 extern kbutton_t 	in_strafe;
-extern kbutton_t 	in_speed;
 
 void CL_CvarInitInput (void);
 void CL_SendCmd (void);
@@ -41,8 +40,6 @@ extern cvar_t	cl_upspeed;
 extern cvar_t	cl_forwardspeed;
 extern cvar_t	cl_backspeed;
 extern cvar_t	cl_sidespeed;
-extern cvar_t	cl_movespeedkey;
-extern cvar_t	cl_anglespeedkey;
 extern cvar_t	cl_yawspeed;
 extern cvar_t	cl_pitchspeed;
 

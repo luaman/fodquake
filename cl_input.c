@@ -58,7 +58,7 @@ state bit 2 is edge triggered on the down to up transition
 
 kbutton_t	in_left, in_right, in_forward, in_back;
 kbutton_t	in_lookup, in_lookdown, in_moveleft, in_moveright;
-kbutton_t	in_strafe, in_speed, in_use, in_jump, in_attack;
+kbutton_t	in_strafe, in_use, in_jump, in_attack;
 kbutton_t	in_up, in_down;
 
 int			in_impulse;
@@ -140,8 +140,6 @@ void IN_MoveleftUp(void) {KeyUp(&in_moveleft);}
 void IN_MoverightDown(void) {KeyDown(&in_moveright);}
 void IN_MoverightUp(void) {KeyUp(&in_moveright);}
 
-void IN_SpeedDown(void) {KeyDown(&in_speed);}
-void IN_SpeedUp(void) {KeyUp(&in_speed);}
 void IN_StrafeDown(void) {KeyDown(&in_strafe);}
 void IN_StrafeUp(void) {KeyUp(&in_strafe);}
 
@@ -285,9 +283,6 @@ cvar_t	cl_forwardspeed = {"cl_forwardspeed","400",CVAR_ARCHIVE};
 cvar_t	cl_backspeed = {"cl_backspeed","400",CVAR_ARCHIVE};
 cvar_t	cl_sidespeed = {"cl_sidespeed","400",CVAR_ARCHIVE};
 
-cvar_t	cl_movespeedkey = {"cl_movespeedkey","2.0",CVAR_ARCHIVE};
-cvar_t	cl_anglespeedkey = {"cl_anglespeedkey","1.5"};
-
 cvar_t	cl_yawspeed = {"cl_yawspeed","140"};
 cvar_t	cl_pitchspeed = {"cl_pitchspeed","150"};
 
@@ -319,18 +314,15 @@ void CL_Force_CenterView_f (void)
 
 //Moves the local angle positions
 void CL_AdjustAngles (void) {
-	float basespeed, speed, up, down, frametime;
+	float speed, up, down, frametime;
 
 	if (Movie_IsCapturing() && movie_steadycam.value)
 		frametime = movie_fps.value > 0 ? 1.0 / movie_fps.value : 1 / 30.0;
 	else
 		frametime = cls.trueframetime;
 
-	basespeed = ((in_speed.state & 1) ? cl_anglespeedkey.value : 1);
-
-	
 	if (!(in_strafe.state & 1)) {
-		speed = basespeed * cl_yawspeed.value;
+		speed = cl_yawspeed.value;
 		if ((cl.fpd & FPD_LIMIT_YAW) || !Ruleset_AllowRJScripts())
 			speed = bound(-900, speed, 900);
 		speed *= frametime;
@@ -340,7 +332,7 @@ void CL_AdjustAngles (void) {
 	}
 
 	
-	speed = basespeed * cl_pitchspeed.value;
+	speed = cl_pitchspeed.value;
 	if ((cl.fpd & FPD_LIMIT_PITCH) || !Ruleset_AllowRJScripts())
 		speed = bound(-700, speed, 700);
 	speed *= frametime;
@@ -372,13 +364,6 @@ void CL_BaseMove (usercmd_t *cmd) {
 
 	cmd->upmove += cl_upspeed.value * CL_KeyState (&in_up);
 	cmd->upmove -= cl_upspeed.value * CL_KeyState (&in_down);
-
-	// adjust for speed key
-	if (in_speed.state & 1)	{
-		cmd->forwardmove *= cl_movespeedkey.value;
-		cmd->sidemove *= cl_movespeedkey.value;
-		cmd->upmove *= cl_movespeedkey.value;
-	}	
 }
 
 static short MakeShort (int i)
@@ -644,8 +629,6 @@ void CL_CvarInitInput(void)
 	Cmd_AddCommand ("-moveleft", IN_MoveleftUp);
 	Cmd_AddCommand ("+moveright", IN_MoverightDown);
 	Cmd_AddCommand ("-moveright", IN_MoverightUp);
-	Cmd_AddCommand ("+speed", IN_SpeedDown);
-	Cmd_AddCommand ("-speed", IN_SpeedUp);
 	Cmd_AddCommand ("+attack", IN_AttackDown);
 	Cmd_AddCommand ("-attack", IN_AttackUp);
 	Cmd_AddCommand ("+use", IN_UseDown);
@@ -668,10 +651,8 @@ void CL_CvarInitInput(void)
 	Cvar_Register (&cl_forwardspeed);
 	Cvar_Register (&cl_backspeed);
 	Cvar_Register (&cl_sidespeed);
-	Cvar_Register (&cl_movespeedkey);
 	Cvar_Register (&cl_yawspeed);
 	Cvar_Register (&cl_pitchspeed);
-	Cvar_Register (&cl_anglespeedkey);
 
 	Cvar_SetCurrentGroup(CVAR_GROUP_INPUT_MISC);
 	Cvar_Register (&sensitivity);

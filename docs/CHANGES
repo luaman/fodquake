@@ -43,9 +43,10 @@ version 0.1 (since Fuhquake 0.31)
   userinfo will be changed, and the value will be restored when disconneting
   from the server.
 - '%%' can now be used to output a literal '%' in chat strings.
-- Removed the 'lookstrafe', 'lookspring', 'freelook', 'v_centermove' and
-  'v_centerspeed' cvars and the '+mlook', '-mlook', '+klook', '-klook' and
-  'centerview' commands.
+- Removed the 'lookstrafe', 'lookspring', 'freelook', 'v_centermove',
+  'v_centerspeed', 'cl_anglespeedkey' and 'cl_movespeedkey' cvars and the
+  '+mlook', '-mlook', '+klook', '-klook', '+speed', '-speed' and 'centerview'
+  commands.
 - Added a server browser (made by Jogi)
 - Added file checksumming used by f_modified.
 - Added a video mode selection menu.
