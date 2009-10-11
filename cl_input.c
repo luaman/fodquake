@@ -364,6 +364,9 @@ void CL_BaseMove (usercmd_t *cmd) {
 
 	cmd->upmove += cl_upspeed.value * CL_KeyState (&in_up);
 	cmd->upmove -= cl_upspeed.value * CL_KeyState (&in_down);
+
+	cmd->forwardmove += cl_forwardspeed.value * CL_KeyState (&in_forward);
+	cmd->forwardmove -= cl_backspeed.value * CL_KeyState (&in_back);
 }
 
 static short MakeShort (int i)
