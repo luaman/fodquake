@@ -52,7 +52,6 @@ the release.
 
 state bit 0 is the current state of the key
 state bit 1 is edge triggered on the up to down transition
-state bit 2 is edge triggered on the down to up transition
 ===============================================================================
 */
 
@@ -99,7 +98,7 @@ void KeyUp (kbutton_t *b) {
 		k = atoi(c);
 	} else { // typed manually at the console, assume for unsticking, so clear all
 		b->down[0] = b->down[1] = 0;
-		b->state = 4;	// impulse up
+		b->state &= ~1;
 		return;
 	}
 
@@ -116,7 +115,6 @@ void KeyUp (kbutton_t *b) {
 	if (!(b->state & 1))
 		return;		// still up (this should not happen)
 	b->state &= ~1;		// now up
-	b->state |= 4; 		// impulse up
 }
 
 void IN_UpDown(void) {KeyDown(&in_up);}
@@ -232,44 +230,19 @@ void IN_Impulse (void) {
 // <-- Tonik
 
 /*
-Returns 0.25 if a key was pressed and released during the frame,
+Does not return 0.25 if a key was pressed and released during the frame,
 0.5 if it was pressed and held
-0 if held then released, and
+0 if held then released, or
 1.0 if held for the entire time
+
+ - because that's just retarded.
+
+Returns 1 if a key is pressed, 0 otherwise.
 */
 float CL_KeyState (kbutton_t *key) {
 	float val;
-	qboolean impulsedown, impulseup, down;
 	
-	impulsedown = key->state & 2;
-	impulseup = key->state & 4;
-	down = key->state & 1;
-	val = 0;
-	
-	if (impulsedown && !impulseup) {
-		if (down)
-			val = 0.5;	// pressed and held this frame
-		else
-			val = 0;	//	I_Error ();
-	}
-	if (impulseup && !impulsedown) {
-		if (down)
-			val = 0;	//	I_Error ();
-		else
-			val = 0;	// released this frame
-	}
-	if (!impulsedown && !impulseup)	{
-		if (down)
-			val = 1.0;	// held the entire frame
-		else
-			val = 0;	// up the entire frame
-	}
-	if (impulsedown && impulseup) {
-		if (down)
-			val = 0.75;	// released and re-pressed this frame
-		else
-			val = 0.25;	// pressed and released this frame
-	}
+	val = !!key->state;
 
 	key->state &= 1;		// clear impulses
 	
