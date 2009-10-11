@@ -45,7 +45,7 @@ extern cvar_group_t *cvar_groups;
 extern cmd_alias_t *cmd_alias;
 extern cvar_t *cvar_vars;
 
-extern kbutton_t	in_klook,	in_left, in_right, in_forward, in_back;
+extern kbutton_t	in_left, in_right, in_forward, in_back;
 extern kbutton_t	in_lookup, in_lookdown,	in_moveleft, in_moveright;
 extern kbutton_t	in_strafe, in_speed, in_use, in_jump, in_attack, in_up,	in_down;
 
@@ -351,7 +351,6 @@ static void DumpPlusCommands(FILE *f) {
 	DumpPlusCommand(f, &in_attack, "attack");
 	DumpPlusCommand(f, &in_use,	"use");
 	DumpPlusCommand(f, &in_jump, "jump");
-	DumpPlusCommand(f, &in_klook, "klook");
 
 	fprintf(f, sb_showscores ? "+showscores\n" : "-showscores\n");
 	fprintf(f, sb_showteamscores ? "+showteamscores\n" : "-showteamscores\n");
@@ -473,7 +472,6 @@ static void ResetPlusCommands(void) {
 	Cbuf_AddText("-attack\n");
 	Cbuf_AddText("-use\n");
 	Cbuf_AddText("-jump\n");
-	Cbuf_AddText("-klook\n");
 
 	Cbuf_AddText("-showscores\n");
 	Cbuf_AddText("-showteamscores\n");

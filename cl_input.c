@@ -56,7 +56,6 @@ state bit 2 is edge triggered on the down to up transition
 ===============================================================================
 */
 
-kbutton_t	in_klook;
 kbutton_t	in_left, in_right, in_forward, in_back;
 kbutton_t	in_lookup, in_lookdown, in_moveleft, in_moveright;
 kbutton_t	in_strafe, in_speed, in_use, in_jump, in_attack;
@@ -119,10 +118,6 @@ void KeyUp (kbutton_t *b) {
 	b->state &= ~1;		// now up
 	b->state |= 4; 		// impulse up
 }
-
-void IN_KLookDown (void) {KeyDown(&in_klook);}
-void IN_KLookUp (void) {KeyUp(&in_klook);}
-
 
 void IN_UpDown(void) {KeyDown(&in_up);}
 void IN_UpUp(void) {KeyUp(&in_up);}
@@ -349,10 +344,6 @@ void CL_AdjustAngles (void) {
 	if ((cl.fpd & FPD_LIMIT_PITCH) || !Ruleset_AllowRJScripts())
 		speed = bound(-700, speed, 700);
 	speed *= frametime;
-	if (in_klook.state & 1)	{
-		cl.viewangles[PITCH] -= speed * CL_KeyState(&in_forward);
-		cl.viewangles[PITCH] += speed * CL_KeyState(&in_back);
-	}
 
 	
 	up = CL_KeyState(&in_lookup);
@@ -381,11 +372,6 @@ void CL_BaseMove (usercmd_t *cmd) {
 
 	cmd->upmove += cl_upspeed.value * CL_KeyState (&in_up);
 	cmd->upmove -= cl_upspeed.value * CL_KeyState (&in_down);
-
-	if (!(in_klook.state & 1)) {	
-		cmd->forwardmove += cl_forwardspeed.value * CL_KeyState (&in_forward);
-		cmd->forwardmove -= cl_backspeed.value * CL_KeyState (&in_back);
-	}	
 
 	// adjust for speed key
 	if (in_speed.state & 1)	{
@@ -667,8 +653,6 @@ void CL_CvarInitInput(void)
 	Cmd_AddCommand ("+jump", IN_JumpDown);
 	Cmd_AddCommand ("-jump", IN_JumpUp);
 	Cmd_AddCommand ("impulse", IN_Impulse);
-	Cmd_AddCommand ("+klook", IN_KLookDown);
-	Cmd_AddCommand ("-klook", IN_KLookUp);
 
 	
 	Cmd_AddCommand ("rotate",CL_Rotate_f);

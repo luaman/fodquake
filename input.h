@@ -28,7 +28,6 @@ typedef struct
 	int		state;			// low bit is down state
 } kbutton_t;
 
-extern kbutton_t	in_klook;
 extern kbutton_t 	in_strafe;
 extern kbutton_t 	in_speed;
 
