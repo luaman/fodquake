@@ -220,6 +220,9 @@ typedef struct {
 	int			qport;
 	char		servername[MAX_OSPATH];	// name of server from original connect
 	struct netaddr	server_adr;
+#ifdef NETQW
+	struct NetQW *netqw;
+#endif
 
 	// private userinfo for sending to masterless servers
 	char		userinfo[MAX_INFO_STRING];
@@ -288,6 +291,7 @@ typedef struct {
 								// packetentity_t we got.  If this is 0, we can't
 								// render a frame yet
 	int			oldvalidsequence;
+#warning The following field can be removed.
 	int			delta_sequence;	// sequence number of the packet we can request
 								// delta from
 

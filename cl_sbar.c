@@ -1069,9 +1069,18 @@ static void Sbar_DeathmatchOverlay()
 		// request new ping times every two seconds
 		if (cls.realtime - cl.last_ping_request >= 2)
 		{
+			char buf[7];
+
 			cl.last_ping_request = cls.realtime;
+
+#ifdef NETQW
+			buf[0] = clc_stringcmd;
+			strcpy(buf + 1, "pings");
+			NetQW_AppendReliableBuffer(cls.netqw, buf, 7);
+#else
 			MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
 			SZ_Print (&cls.netchan.message, "pings");
+#endif
 		}
 	}
 
