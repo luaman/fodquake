@@ -28,8 +28,6 @@ typedef struct
 	int		state;			// low bit is down state
 } kbutton_t;
 
-extern kbutton_t 	in_strafe;
-
 void CL_CvarInitInput (void);
 void CL_SendCmd (void);
 void CL_BaseMove (usercmd_t *cmd);

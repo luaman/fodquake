@@ -57,7 +57,7 @@ state bit 1 is edge triggered on the up to down transition
 
 kbutton_t	in_left, in_right, in_forward, in_back;
 kbutton_t	in_lookup, in_lookdown, in_moveleft, in_moveright;
-kbutton_t	in_strafe, in_use, in_jump, in_attack;
+kbutton_t	in_use, in_jump, in_attack;
 kbutton_t	in_up, in_down;
 
 int			in_impulse;
@@ -137,9 +137,6 @@ void IN_MoveleftDown(void) {KeyDown(&in_moveleft);}
 void IN_MoveleftUp(void) {KeyUp(&in_moveleft);}
 void IN_MoverightDown(void) {KeyDown(&in_moveright);}
 void IN_MoverightUp(void) {KeyUp(&in_moveright);}
-
-void IN_StrafeDown(void) {KeyDown(&in_strafe);}
-void IN_StrafeUp(void) {KeyUp(&in_strafe);}
 
 void IN_AttackDown(void) {KeyDown(&in_attack);}
 void IN_AttackUp(void) {KeyUp(&in_attack);}
@@ -294,16 +291,13 @@ void CL_AdjustAngles (void) {
 	else
 		frametime = cls.trueframetime;
 
-	if (!(in_strafe.state & 1)) {
-		speed = cl_yawspeed.value;
-		if ((cl.fpd & FPD_LIMIT_YAW) || !Ruleset_AllowRJScripts())
-			speed = bound(-900, speed, 900);
-		speed *= frametime;
-		cl.viewangles[YAW] -= speed * CL_KeyState(&in_right);
-		cl.viewangles[YAW] += speed * CL_KeyState(&in_left);
-		cl.viewangles[YAW] = anglemod(cl.viewangles[YAW]);
-	}
-
+	speed = cl_yawspeed.value;
+	if ((cl.fpd & FPD_LIMIT_YAW) || !Ruleset_AllowRJScripts())
+		speed = bound(-900, speed, 900);
+	speed *= frametime;
+	cl.viewangles[YAW] -= speed * CL_KeyState(&in_right);
+	cl.viewangles[YAW] += speed * CL_KeyState(&in_left);
+	cl.viewangles[YAW] = anglemod(cl.viewangles[YAW]);
 	
 	speed = cl_pitchspeed.value;
 	if ((cl.fpd & FPD_LIMIT_PITCH) || !Ruleset_AllowRJScripts())
@@ -327,10 +321,6 @@ void CL_BaseMove (usercmd_t *cmd) {
 	memset (cmd, 0, sizeof(*cmd));
 	
 	VectorCopy (cl.viewangles, cmd->angles);
-	if (in_strafe.state & 1) {
-		cmd->sidemove += cl_sidespeed.value * CL_KeyState (&in_right);
-		cmd->sidemove -= cl_sidespeed.value * CL_KeyState (&in_left);
-	}
 
 	cmd->sidemove += cl_sidespeed.value * CL_KeyState (&in_moveright);
 	cmd->sidemove -= cl_sidespeed.value * CL_KeyState (&in_moveleft);
@@ -434,20 +424,10 @@ void CL_Move(usercmd_t *cmd)
 		my *= sensitivity.value;
 	}
 
-	if ((in_strafe.state & 1))
-		cmd->sidemove += m_side.value * mx;
-	else
-		cl.viewangles[YAW] -= m_yaw.value * mx;
+	cl.viewangles[YAW] -= m_yaw.value * mx;
 
-	if (!(in_strafe.state & 1))
-	{
-		cl.viewangles[PITCH] += m_pitch.value * my;
-		cl.viewangles[PITCH] = bound(-70, cl.viewangles[PITCH], 80);
-	}
-	else
-	{   
-		cmd->forwardmove -= m_forward.value * my;
-	}
+	cl.viewangles[PITCH] += m_pitch.value * my;
+	cl.viewangles[PITCH] = bound(-70, cl.viewangles[PITCH], 80);
 }
 
 void CL_SendCmd (void) {
@@ -599,8 +579,6 @@ void CL_CvarInitInput(void)
 	Cmd_AddCommand ("-lookup", IN_LookupUp);
 	Cmd_AddCommand ("+lookdown", IN_LookdownDown);
 	Cmd_AddCommand ("-lookdown", IN_LookdownUp);
-	Cmd_AddCommand ("+strafe", IN_StrafeDown);
-	Cmd_AddCommand ("-strafe", IN_StrafeUp);
 	Cmd_AddCommand ("+moveleft", IN_MoveleftDown);
 	Cmd_AddCommand ("-moveleft", IN_MoveleftUp);
 	Cmd_AddCommand ("+moveright", IN_MoverightDown);
