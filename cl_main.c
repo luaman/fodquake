@@ -321,7 +321,8 @@ void CL_UserinfoChanged(char *key, char *string)
 
 	s = TP_ParseFunChars (string, false);
 
-	if (strcmp(s, Info_ValueForKey (cls.userinfo, key))) {
+	if (strcmp(s, Info_ValueForKey (cls.userinfo, key)))
+	{
 		Info_SetValueForKey (cls.userinfo, key, s, MAX_INFO_STRING);
 
 		if (cls.state >= ca_connected) {
@@ -630,7 +631,8 @@ void CL_Reconnect_f (void) {
 		return;
 	}
 
-	if (!*cls.servername) {
+	if (!*cls.servername)
+	{
 		Com_Printf ("No server to reconnect to.\n");
 		return;
 	}
@@ -1217,10 +1219,8 @@ void CL_Frame (double time)
 
 	TP_UpdateSkins();
 
-
 	if (cls.mvdplayback)
 		MVD_Interpolate();
-
 
 	// process stuffed commands
 	Cbuf_ExecuteEx(&cbuf_svc);
