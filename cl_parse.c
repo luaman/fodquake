@@ -858,7 +858,8 @@ void CL_ParseSoundlist (void) {
 
 	n = MSG_ReadByte();
 
-	if (n) {
+	if (n)
+	{
 		MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
 		MSG_WriteString (&cls.netchan.message, va("soundlist %i %i", cl.servercount, n));
 		return;
@@ -869,14 +870,16 @@ void CL_ParseSoundlist (void) {
 	Sound_NextDownload ();
 }
 
-void CL_ParseModellist (void) {
+void CL_ParseModellist(void)
+{
 	int	i, nummodels, n;
 	char *str;
 
 	// precache models and note certain default indexes
 	nummodels = MSG_ReadByte();
 
-	while (1) {
+	while (1)
+	{
 		str = MSG_ReadString ();
 		if (!str[0])
 			break;
@@ -885,15 +888,18 @@ void CL_ParseModellist (void) {
 
 		Q_strncpyz (cl.model_name[nummodels], str, sizeof(cl.model_name[nummodels]));
 
-		for (i = 0; i < cl_num_modelindices; i++) {
-			if (!strcmp(cl_modelnames[i], cl.model_name[nummodels])) {
+		for (i = 0; i < cl_num_modelindices; i++)
+		{
+			if (!strcmp(cl_modelnames[i], cl.model_name[nummodels]))
+			{
 				cl_modelindices[i] = nummodels;
 				break;
 			}
 		}
 	}
 
-	if ((n = MSG_ReadByte())) {
+	if ((n = MSG_ReadByte()))
+	{
 		MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
 		MSG_WriteString (&cls.netchan.message, va("modellist %i %i", cl.servercount, n));
 		return;
@@ -1546,15 +1552,18 @@ void CL_ParseServerMessage (void) {
 			break;
 
 		case svc_setangle:
-			if (cls.mvdplayback) {	
+			if (cls.mvdplayback)
+			{
 				j = MSG_ReadByte();
 				mvd_fixangle |= 1 << j;
-				if (j != Cam_TrackNum()) {
+				if (j != Cam_TrackNum())
+				{
 					for (i = 0; i < 3; i++)
 						MSG_ReadAngle();
 				}
 			}
-			if (!cls.mvdplayback || (cls.mvdplayback && j == Cam_TrackNum())) {	
+			if (!cls.mvdplayback || (cls.mvdplayback && j == Cam_TrackNum()))
+			{
 				for (i = 0; i < 3; i++)
 					cl.viewangles[i] = MSG_ReadAngle ();
 			}
