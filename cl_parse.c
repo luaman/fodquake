@@ -34,6 +34,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "fchecks.h"
 #include "config_manager.h"
 #include "utils.h"
+#ifdef NETQW
+#include "netqw.h"
+#endif
 
 void R_TranslatePlayerSkin (int playernum);
 void R_PreMapLoad(char *mapname);
@@ -164,6 +167,8 @@ int CL_CalcNet (void) {
 //Returns true if the file exists, otherwise it attempts to start a download from the server.
 qboolean CL_CheckOrDownloadFile (char *filename)
 {
+	char buf[1500];
+	unsigned int i;
 	FILE *f;
 
 	if (strstr (filename, ".."))
@@ -198,16 +203,31 @@ qboolean CL_CheckOrDownloadFile (char *filename)
 	COM_StripExtension (cls.downloadname, cls.downloadtempname);
 	strcat (cls.downloadtempname, ".tmp");
 
+#ifdef NETQW
+	i = snprintf(buf, sizeof(buf), "%cdownload %s", clc_stringcmd, cls.downloadname);
+	if (i < sizeof(buf))
+	{
+		NetQW_AppendReliableBuffer(cls.netqw, buf, i + 1);
+
+		cls.downloadnumber++;
+
+		return false;
+	}
+
+	return true;
+#else
 	MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
 	MSG_WriteString (&cls.netchan.message, va("download %s", cls.downloadname));
 
 	cls.downloadnumber++;
 
 	return false;
+#endif
 }
 
 void Model_NextDownload (void)
 {
+	char buf[128];
 	char mapname[MAX_QPATH];
 	int	i;
 
@@ -256,13 +276,24 @@ void Model_NextDownload (void)
 	Stats_NewMap();
 	Hunk_Check();		// make sure nothing is hurt
 
+#ifdef NETQW
+	if (cls.netqw)
+	{
+		// done with modellist, request first of static signon messages
+		i = snprintf(buf, sizeof(buf), "%cprespawn %i 0 %i", clc_stringcmd, cl.servercount, LittleLong(cl.worldmodel->checksum2));
+		if (i < sizeof(buf))
+			NetQW_AppendReliableBuffer(cls.netqw, buf, i + 1);
+	}
+#else
 	// done with modellist, request first of static signon messages
 	MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
 	MSG_WriteString (&cls.netchan.message, va("prespawn %i 0 %i", cl.servercount, LittleLong(cl.worldmodel->checksum2)));
+#endif
 }
 
 void Sound_NextDownload (void)
 {
+	char buf[128];
 	char *s;
 	int i;
 
@@ -292,8 +323,17 @@ void Sound_NextDownload (void)
 	for (i = 0; i < cl_num_modelindices; i++)
 		cl_modelindices[i] = -1;
 
+#ifdef NETQW
+	if (cls.netqw)
+	{
+		i = snprintf(buf, sizeof(buf), "%cmodellist %i %i", clc_stringcmd, cl.servercount, 0);
+		if (i < sizeof(buf))
+			NetQW_AppendReliableBuffer(cls.netqw, buf, i + 1);
+	}
+#else
 	MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
 	MSG_WriteString (&cls.netchan.message, va("modellist %i %i", cl.servercount, 0));
+#endif
 }
 
 void CL_RequestNextDownload (void) {
@@ -547,6 +587,8 @@ static void CL_ParseFTEChunkedDownload()
 
 static void CL_ParseQWDownload (void)
 {
+	char buf[128];
+	int i;
 	int size, percent;
 
 	// read the data
@@ -592,8 +634,14 @@ static void CL_ParseQWDownload (void)
 		// request next block
 		cls.downloadpercent = percent;
 
+#ifdef NETQW
+		i = snprintf(buf, sizeof(buf), "%cnextdl", clc_stringcmd);
+		if (i < sizeof(buf))
+			NetQW_AppendReliableBuffer(cls.netqw, buf, i + 1);
+#else
 		MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
 		SZ_Print (&cls.netchan.message, "nextdl");
+#endif
 	}
 	else
 	{
@@ -689,6 +737,7 @@ void CL_StartUpload (char *filename) {
 
 void CL_ParseServerData (void)
 {
+	char buf[128];
 	char *str, fn[MAX_OSPATH];
 	FILE *f;
 	qboolean cflag = false;
@@ -828,17 +877,30 @@ void CL_ParseServerData (void)
 	Com_Printf ("\n\n\35\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\36\37\n\n");
 	Com_Printf ("%c%s\n", 2, str);
 
+#ifdef NETQW
+	if (cls.netqw)
+	{
+		// ask for the sound list next
+		memset(cl.sound_name, 0, sizeof(cl.sound_name));
+		i = snprintf(buf, sizeof(buf), "%csoundlist %i %i", clc_stringcmd, cl.servercount, 0);
+		if (i < sizeof(buf))
+			NetQW_AppendReliableBuffer(cls.netqw, buf, i + 1);
+	}
+#else
 	// ask for the sound list next
 	memset(cl.sound_name, 0, sizeof(cl.sound_name));
 	MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
 	MSG_WriteString (&cls.netchan.message, va("soundlist %i %i", cl.servercount, 0));
+#endif
 
 	// now waiting for downloads, etc
 	cls.state = ca_onserver;
 }
 
 void CL_ParseSoundlist (void) {
+	char buf[128];
 	int	numsounds, n;
+	int i;
 	char *str;
 
 	// precache sounds
@@ -860,8 +922,18 @@ void CL_ParseSoundlist (void) {
 
 	if (n)
 	{
+#ifdef NETQW
+		if (cls.netqw)
+		{
+			i = snprintf(buf, sizeof(buf), "%csoundlist %i %i", clc_stringcmd, cl.servercount, n);
+			if (i < sizeof(buf))
+				NetQW_AppendReliableBuffer(cls.netqw, buf, i + 1);
+		}
+#else
 		MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
 		MSG_WriteString (&cls.netchan.message, va("soundlist %i %i", cl.servercount, n));
+#endif
+
 		return;
 	}
 
@@ -872,6 +944,7 @@ void CL_ParseSoundlist (void) {
 
 void CL_ParseModellist(void)
 {
+	char buf[128];
 	int	i, nummodels, n;
 	char *str;
 
@@ -900,8 +973,18 @@ void CL_ParseModellist(void)
 
 	if ((n = MSG_ReadByte()))
 	{
+#ifdef NETQW
+		if (cls.netqw)
+		{
+			i = snprintf(buf, sizeof(buf), "%cmodellist %i %i", clc_stringcmd, cl.servercount, n);
+			if (i < sizeof(buf))
+				NetQW_AppendReliableBuffer(cls.netqw, buf, i + 1);
+		}
+#else
 		MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
 		MSG_WriteString (&cls.netchan.message, va("modellist %i %i", cl.servercount, n));
+#endif
+
 		return;
 	}
 
@@ -1188,6 +1271,10 @@ void CL_ProcessServerInfo (void) {
 	// server side fps restriction
 	cl.maxfps = Q_atof(Info_ValueForKey(cl.serverinfo, "maxfps"));
 
+#ifdef NETQW
+	if (cls.netqw)
+		NetQW_SetFPS(cls.netqw, cl.maxfps);
+#endif
 
 	if (cls.demoplayback) {
 		cl.watervis = cl.allow_lumas = true;
