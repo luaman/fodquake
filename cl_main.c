@@ -48,6 +48,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "huffman.h"
 #include "config.h"
 #include "sleep.h"
+#ifdef NETQW
+#include "netqw.h"
+#endif
 #include "strl.h"
 #include "ruleset.h"
 
@@ -325,9 +328,24 @@ void CL_UserinfoChanged(char *key, char *string)
 	{
 		Info_SetValueForKey (cls.userinfo, key, s, MAX_INFO_STRING);
 
-		if (cls.state >= ca_connected) {
+		if (cls.state >= ca_connected)
+		{
+#ifdef NETQW
+			if (cls.netqw)
+			{
+				unsigned int i;
+				char buf[1400];
+
+				i = snprintf(buf, sizeof(buf), "%csetinfo \"%s\" \"%s\"\n", clc_stringcmd, key, s);
+				if (i < sizeof(buf))
+				{
+					NetQW_AppendReliableBuffer(cls.netqw, buf, i+1);
+				}
+			}
+#else
 			MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
 			SZ_Print (&cls.netchan.message, va("setinfo \"%s\" \"%s\"\n", key, s));
+#endif
 		}
 	}
 }
