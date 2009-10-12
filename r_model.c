@@ -1234,19 +1234,33 @@ void Mod_LoadAliasModel (model_t *mod, void *buffer) {
 
 	if (mod->modhint == MOD_PLAYER || mod->modhint == MOD_EYES) {
 		unsigned short crc;
-		char st[40];
+		char st[128];
 
 		crc = CRC_Block (buffer, com_filesize);
 	
 		sprintf(st, "%d", (int) crc);
 		Info_SetValueForKey (cls.userinfo, mod->modhint == MOD_PLAYER ? pmodel_name : emodel_name, st, MAX_INFO_STRING);
 
-		if (cls.state >= ca_connected) {
+		if (cls.state >= ca_connected)
+		{
+#ifdef NETQW
+			if (cls.netqw)
+			{
+				i = snprintf(st, sizeof(st), "%csetinfo %s %d", 
+					clc_stringcmd,
+					mod->modhint == MOD_PLAYER ? pmodel_name : emodel_name,
+					(int)crc);
+
+				if (i < sizeof(st))
+					NetQW_AppendReliableBuffer(cls.netqw, st, i + 1);
+			}
+#else
 			MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
 			sprintf(st, "setinfo %s %d", 
 				mod->modhint == MOD_PLAYER ? pmodel_name : emodel_name,
 				(int)crc);
 			SZ_Print (&cls.netchan.message, st);
+#endif
 		}
 	}
 

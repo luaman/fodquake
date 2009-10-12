@@ -167,6 +167,7 @@ byte *Skin_Cache (skin_t *skin) {
 
 void Skin_NextDownload(void)
 {
+	char buf[128];
 	player_info_t *sc;
 	int i;
 
@@ -205,8 +206,17 @@ void Skin_NextDownload(void)
 
 	if (cls.state == ca_onserver && cbuf_current != &cbuf_main)	//only download when connecting
 	{
+#ifdef NETQW
+		if (cls.netqw)
+		{
+			i = snprintf(buf, sizeof(buf), "%cbegin %i", clc_stringcmd, cl.servercount);
+			if (i < sizeof(buf))
+				NetQW_AppendReliableBuffer(cls.netqw, buf, i + 1);
+		}
+#else
 		MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
 		MSG_WriteString (&cls.netchan.message, va("begin %i", cl.servercount));
+#endif
 		Cache_Report();		// print remaining memory
 	}
 }
