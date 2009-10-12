@@ -31,7 +31,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "png.h"
 #endif
 
-#ifdef WITH_JPEG
+#ifdef USE_JPEG
 #include "jpeglib.h"
 #include <setjmp.h>
 #endif
@@ -1068,7 +1068,7 @@ int Image_WriteTGA (char *filename, byte *pixels, int width, int height) {
 
 /*********************************** JPEG ************************************/
 
-#ifdef WITH_JPEG
+#ifdef USE_JPEG
 
 #define qjpeg_create_compress(cinfo) \
     qjpeg_CreateCompress((cinfo), JPEG_LIB_VERSION, (size_t) sizeof(struct jpeg_compress_struct))
@@ -1473,7 +1473,7 @@ void Image_CvarInit(void)
 #if USE_PNG
 	Cvar_Register (&image_png_compression_level);
 #endif
-#ifdef WITH_JPEG
+#ifdef USE_JPEG
 	Cvar_Register (&image_jpeg_quality_level);
 #endif
 
@@ -1486,7 +1486,7 @@ void Image_Init(void)
 	if (PNG_LoadLibrary())
 		QLib_RegisterModule(qlib_libpng, PNG_FreeLibrary);
 #endif
-#ifdef WITH_JPEG
+#ifdef USE_JPEG
 	if (JPEG_LoadLibrary())
 		QLib_RegisterModule(qlib_libjpeg, JPEG_FreeLibrary);
 #endif

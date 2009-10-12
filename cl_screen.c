@@ -1267,7 +1267,7 @@ static image_format_t SShot_FormatForName(char *name) {
 		return IMAGE_PNG;
 #endif
 
-#ifdef WITH_JPEG
+#ifdef USE_JPEG
 	else if (!Q_strcasecmp(ext, "jpg"))
 		return IMAGE_JPEG;
 #endif
@@ -1277,7 +1277,7 @@ static image_format_t SShot_FormatForName(char *name) {
 		return IMAGE_PNG;
 #endif
 
-#ifdef WITH_JPEG
+#ifdef USE_JPEG
 	else if (!Q_strcasecmp(scr_sshot_format.string, "jpg") || !Q_strcasecmp(scr_sshot_format.string, "jpeg"))
 		return IMAGE_JPEG;
 #endif
@@ -1337,7 +1337,7 @@ int SCR_Screenshot(char *name) {
 	}
 #endif
 
-#ifdef WITH_JPEG
+#ifdef USE_JPEG
 	if (format == IMAGE_JPEG) {
 		if (QLib_isModuleLoaded(qlib_libjpeg)) {
 			applyHWGamma(buffer, buffersize);
@@ -1433,7 +1433,7 @@ void SCR_ScreenShot_f (void) {
 		if (!Q_strcasecmp(scr_sshot_format.string, "png"))
 			Q_strncpyz(ext, "png", 4);
 #endif
-#ifdef WITH_JPEG
+#ifdef USE_JPEG
 		if (!Q_strcasecmp(scr_sshot_format.string, "jpeg") || !Q_strcasecmp(scr_sshot_format.string, "jpg"))
 			Q_strncpyz(ext, "jpg", 4);
 #endif
@@ -1497,7 +1497,7 @@ void SCR_RSShot_f (void) {
 
 	glReadPixels (glx, gly, glwidth, glheight, GL_RGB, GL_UNSIGNED_BYTE, base);
 	Image_Resample (base, glwidth, glheight, pixels, width, height, 3, 0);
-#ifdef WITH_JPEG
+#ifdef USE_JPEG
 	if (QLib_isModuleLoaded(qlib_libjpeg)) {
 		success = Image_WriteJPEG (filename, 70, pixels + 3 * width * (height - 1), -width, height)
 			? SSHOT_SUCCESS : SSHOT_FAILED;
