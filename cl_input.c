@@ -256,25 +256,22 @@ cvar_t	cl_sidespeed = {"cl_sidespeed","400",CVAR_ARCHIVE};
 cvar_t	cl_yawspeed = {"cl_yawspeed","140"};
 cvar_t	cl_pitchspeed = {"cl_pitchspeed","150"};
 
-cvar_t	sensitivity = {"sensitivity","3",CVAR_ARCHIVE};
+void CL_Rotate_f (void)
+{
+	vec3_t angles;
 
-cvar_t	m_pitch = {"m_pitch","0.022", CVAR_ARCHIVE};
-cvar_t	m_yaw = {"m_yaw","0.022"};
-cvar_t	m_forward = {"m_forward","1"};
-cvar_t	m_side = {"m_side","0.8"};
-cvar_t	m_accel = {"m_accel", "0"};
-cvar_t  m_filter = {"m_filter", "0"};
-
-
-void CL_Rotate_f (void) {
 	if (Cmd_Argc() != 2) {
 		Com_Printf("Usage: %s <degrees>\n", Cmd_Argv(0));
 		return;
 	}
 	if ((cl.fpd & FPD_LIMIT_YAW) || !Ruleset_AllowRJScripts())
 		return;
-	cl.viewangles[YAW] += atof(Cmd_Argv(1));
-	cl.viewangles[YAW] = anglemod(cl.viewangles[YAW]);
+
+	angles[PITCH] = 0;
+	angles[ROLL] = 0;
+	angles[YAW] = atof(Cmd_Argv(1));
+
+	Mouse_AddViewAngles(angles);
 }
 
 void CL_Force_CenterView_f (void)
@@ -387,49 +384,6 @@ void CL_FinishMove (usercmd_t *cmd) {
 		cmd->angles[i] = (Q_rint(cmd->angles[i] * 65536.0 / 360.0) & 65535) * (360.0 / 65536.0);
 }
 
-void CL_Move(usercmd_t *cmd)
-{
-	double mx, my;
-	static int oldmousex, oldmousey;
-	int mousex, mousey;
-	float filterfrac;
-	float mousespeed;
-
-	VID_GetMouseMovement(&mousex, &mousey);
-
-	if (m_filter.value)
-	{
-		filterfrac = bound(0, m_filter.value, 1) / 2.0;
-		mx = (mousex * (1 - filterfrac) + oldmousex * filterfrac);
-		my = (mousey * (1 - filterfrac) + oldmousey * filterfrac);
-	}
-	else
-	{
-		mx = mousex;
-		my = mousey;
-	}
-	
-	oldmousex = mousex;
-	oldmousey = mousey;
-
-	if (m_accel.value)
-	{
-		mousespeed = sqrt(mousex * mousex + mousey * mousey);
-		mx *= (mousespeed * m_accel.value + sensitivity.value);
-		my *= (mousespeed * m_accel.value + sensitivity.value);
-	}   
-	else
-	{
-		mx *= sensitivity.value;
-		my *= sensitivity.value;
-	}
-
-	cl.viewangles[YAW] -= m_yaw.value * mx;
-
-	cl.viewangles[PITCH] += m_pitch.value * my;
-	cl.viewangles[PITCH] = bound(-70, cl.viewangles[PITCH], 80);
-}
-
 void CL_SendCmd (void) {
 	sizebuf_t buf;
 	byte data[256];
@@ -451,8 +405,7 @@ void CL_SendCmd (void) {
 	// get basic movement from keyboard
 	CL_BaseMove (cmd);
 
-	// allow mice or other external controllers to add to the move
-	CL_Move (cmd);
+	Mouse_GetViewAngles(cl.viewangles);
 
 	// if we are spectator, try autocam
 	if (cl.spectator)
@@ -607,17 +560,6 @@ void CL_CvarInitInput(void)
 	Cvar_Register (&cl_sidespeed);
 	Cvar_Register (&cl_yawspeed);
 	Cvar_Register (&cl_pitchspeed);
-
-	Cvar_SetCurrentGroup(CVAR_GROUP_INPUT_MISC);
-	Cvar_Register (&sensitivity);
-
-	Cvar_SetCurrentGroup(CVAR_GROUP_INPUT_MOUSE);
-	Cvar_Register (&m_pitch);
-	Cvar_Register (&m_yaw);
-	Cvar_Register (&m_forward);
-	Cvar_Register (&m_side);
-	Cvar_Register (&m_accel);
-	Cvar_Register (&m_filter);
 
 	Cvar_SetCurrentGroup(CVAR_GROUP_NETWORK);
 	Cvar_Register (&cl_nodelta);

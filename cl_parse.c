@@ -1653,6 +1653,8 @@ void CL_ParseServerMessage (void) {
 			{
 				for (i = 0; i < 3; i++)
 					cl.viewangles[i] = MSG_ReadAngle ();
+
+				Mouse_SetViewAngles(cl.viewangles);
 			}
 			break;
 

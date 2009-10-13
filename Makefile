@@ -188,6 +188,7 @@ OBJS= \
 	mdfour.o \
 	menu.o \
 	modules.o \
+	mouse.o \
 	mp3_player.o \
 	net_chan.o \
 	net.o \

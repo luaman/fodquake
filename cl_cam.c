@@ -33,6 +33,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "sbar.h"
 #include "teamplay.h"	
 #include "utils.h"
+#include "mouse.h"
 
 static vec3_t desired_position; // where the camera wants to be
 static qboolean locked = false;
@@ -358,7 +359,11 @@ void Cam_Track(usercmd_t *cmd) {
 		VectorSubtract(player->origin, desired_position, vec);
 		vectoangles(vec, cl.viewangles);
 		cl.viewangles[0] = -cl.viewangles[0];
+		if (cl.viewangles[0] < 0)
+			cl.viewangles[0] += 360;
 	}
+
+	Mouse_SetViewAngles(cl.viewangles);
 }
 
 void Cam_FinishMove(usercmd_t *cmd) {

@@ -228,6 +228,7 @@ void Host_Init (int argc, char **argv, int default_memsize)
 		CL_CvarInitCam();
 		CL_CvarDemoInit();
 	}
+	Mouse_CvarInit();
 	ConfigManager_CvarInit();
 	Movie_CvarInit();
 	MT_CvarInit();
@@ -278,6 +279,11 @@ void Host_Init (int argc, char **argv, int default_memsize)
 
 	Cmd_ParseLegacyCmdLineCmds();
 	Cbuf_Execute ();
+
+	if (!Mouse_Init())
+	{
+		Host_Error("Unable to initialise mouse input\n");
+	}
 
 	Con_Init ();
 	NET_Init ();
@@ -338,6 +344,7 @@ void Host_Shutdown (void) {
 	CL_Shutdown ();
 	FS_ShutdownFilesystem();
 	NET_Shutdown ();
+	Mouse_Shutdown();
 #ifndef SERVERONLY
 	Con_Shutdown();
 #endif
