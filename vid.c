@@ -65,8 +65,6 @@ static qboolean vid_conheight_callback(cvar_t *var, char *value)
 
 static qboolean in_grab_windowed_mouse_callback(cvar_t *var, char *value)
 {
-	printf("in_grab_windowed_mouse changed to %s\n", value);
-
 	if (display)
 		Sys_Video_GrabMouse(display, atoi(value));
 
