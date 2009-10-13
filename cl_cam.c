@@ -34,6 +34,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "teamplay.h"	
 #include "utils.h"
 #include "mouse.h"
+#ifdef NETQW
+#include "netqw.h"
+#endif
 
 static vec3_t desired_position; // where the camera wants to be
 static qboolean locked = false;
@@ -102,11 +105,26 @@ qboolean Cam_DrawPlayer(int playernum) {
 }
 
 void Cam_Unlock(void) {
+	char st[40];
+	unsigned int i;
+
 	if (!autocam)
 		return;
 
+#ifdef NETQW
+	if (cls.netqw)
+	{
+		i = snprintf(st, sizeof(st), "%cptrack", clc_stringcmd);
+		if (i < sizeof(st))
+			NetQW_AppendReliableBuffer(cls.netqw, st, i + 1);
+
+		NetQW_UnlockMovement(cls.netqw);
+	}
+#else
 	MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
 	MSG_WriteString (&cls.netchan.message, "ptrack");
+#endif
+
 	autocam = CAM_NONE;
 	locked = false;
 	Sbar_Changed();
@@ -117,8 +135,7 @@ void Cam_Unlock(void) {
 
 void Cam_Lock(int playernum) {
 	char st[40];
-
-	sprintf(st, "ptrack %i", playernum);
+	unsigned int i;
 
 	if (cls.mvdplayback) {
 		memcpy(cl.stats, cl.players[playernum].stats, sizeof(cl.stats));
@@ -126,8 +143,21 @@ void Cam_Lock(int playernum) {
 	}	
 	last_lock = cls.realtime;
 
+#ifdef NETQW
+	if (cls.netqw)
+	{
+		i = snprintf(st, sizeof(st), "%cptrack %d", clc_stringcmd, playernum);
+		if (i < sizeof(st))
+			NetQW_AppendReliableBuffer(cls.netqw, st, i + 1);
+
+		NetQW_LockMovement(cls.netqw);
+	}
+#else
+	snprintf(st, sizeof(st), "ptrack %i", playernum);
 	MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
 	MSG_WriteString (&cls.netchan.message, st);
+#endif
+
 	spec_track = playernum;
 	locked = false;
 	Sbar_Changed();
@@ -277,6 +307,7 @@ void Cam_Track(usercmd_t *cmd) {
 	player_state_t *player, *self;
 	frame_t *frame;
 	vec3_t vec;
+	int do_tmove;
 
 	if (!cl.spectator)
 		return;
@@ -328,16 +359,16 @@ void Cam_Track(usercmd_t *cmd) {
 	if (!locked || !autocam)
 		return;
 
+	do_tmove = 0;
+
 	if (cl_chasecam.value) {
 		cmd->forwardmove = cmd->sidemove = cmd->upmove = 0;
 
 		VectorCopy(player->viewangles, cl.viewangles);
 		VectorCopy(player->origin, desired_position);
-		if (memcmp(&desired_position, &self->origin, sizeof(desired_position)) != 0) {
-			MSG_WriteByte (&cls.netchan.message, clc_tmove);
-			MSG_WriteCoord (&cls.netchan.message, desired_position[0]);
-			MSG_WriteCoord (&cls.netchan.message, desired_position[1]);
-			MSG_WriteCoord (&cls.netchan.message, desired_position[2]);
+		if (memcmp(&desired_position, &self->origin, sizeof(desired_position)) != 0)
+		{
+			do_tmove = 1;
 			// move there locally immediately
 			VectorCopy(desired_position, self->origin);
 		}
@@ -346,11 +377,10 @@ void Cam_Track(usercmd_t *cmd) {
 		// the player
 		VectorSubtract(desired_position, self->origin, vec);
 		cmd->forwardmove = cmd->sidemove = cmd->upmove = 0;
-		if (VectorLength(vec) > 16) { // close enough?
-			MSG_WriteByte (&cls.netchan.message, clc_tmove);
-			MSG_WriteCoord (&cls.netchan.message, desired_position[0]);
-			MSG_WriteCoord (&cls.netchan.message, desired_position[1]);
-			MSG_WriteCoord (&cls.netchan.message, desired_position[2]);
+		if (VectorLength(vec) > 16)
+		{
+			// close enough?
+			do_tmove = 1;
 		}
 
 		// move there locally immediately
@@ -364,6 +394,16 @@ void Cam_Track(usercmd_t *cmd) {
 	}
 
 	Mouse_SetViewAngles(cl.viewangles);
+
+#ifdef NETQW
+	if (do_tmove && cls.netqw)
+		NetQW_SetTeleport(cls.netqw, desired_position);
+#else
+	MSG_WriteByte (&cls.netchan.message, clc_tmove);
+	MSG_WriteCoord (&cls.netchan.message, desired_position[0]);
+	MSG_WriteCoord (&cls.netchan.message, desired_position[1]);
+	MSG_WriteCoord (&cls.netchan.message, desired_position[2]);
+#endif
 }
 
 void Cam_FinishMove(usercmd_t *cmd) {
