@@ -34,6 +34,7 @@ endif
 ifeq ($(OS), linux)
 	OSOBJS= \
 		sys_linux.o \
+		sys_error_gtk.o \
 		net_posix.o \
 		thread_posix.o \
 		cd_linux.o \

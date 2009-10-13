@@ -38,6 +38,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <errno.h>
 
 #include "quakedef.h"
+#include "sys_error_gtk.h"
 
 int noconinput = 0;
 
@@ -104,8 +105,10 @@ void Sys_Error(char *error, ...)
 	va_end(argptr);
 	fprintf(stderr, "Error: %s\n", string);
 
-	*(int *)0 = 0;
 	Host_Shutdown();
+
+	Sys_Error_GTK_DisplayError(string);
+
 	exit(1);
 }
 
