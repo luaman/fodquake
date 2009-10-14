@@ -295,6 +295,8 @@ fodquake-gl: $(OBJS) $(GLOBJS)
 	$(CC) $(CFLAGS) $^ -lm $(OSLDFLAGS) $(OSGLLDFLAGS) -o $@.db
 	$(STRIP) $(STRIPFLAGS) $@.db -o $@
 
+sys_error_gtk.o: CFLAGS+=`pkg-config --cflags gtk+-2.0`
+
 compilercheck:
 # Check for GCC 4
 
