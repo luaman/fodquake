@@ -302,8 +302,17 @@ compilercheck:
 
 	@if [ ! -z "`$(CC) -v 2>&1 | grep \"gcc version 4\"`" ]; \
 	then \
-		echo "GCC version 4 is not supported because it generates broken code. Please use an older (and working) version of GCC."; \
-		exit 1; \
+		echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"; \
+		echo "GCC version 4 was detected."; \
+		echo ""; \
+		echo "Please note that builds done with GCC 4 or newer are not supported. If you"; \
+		echo "experience any problems with Fodquake built with this compiler, please either"; \
+		echo "disable optimisations or build Fodquake with GCC 2.95.3, GCC 3.3.6 or GCC"; \
+		echo "3.4.6."; \
+		echo ""; \
+		echo "Build will continue in 15 seconds."; \
+		echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"; \
+		sleep 15; \
 	fi
 
 .PHONY: compilercheck
