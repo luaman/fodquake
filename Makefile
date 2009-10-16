@@ -273,13 +273,13 @@ GLOBJS= \
 	vid_common_gl.o \
 	$(OSGLOBJS)
 
-all: compilercheck $(TARGETS)
+all: $(TARGETS) compilercheck
 
-gl: compilercheck
+gl:
 	mkdir -p objects/$(TARGETSYSTEM)/gl
 	(cd objects/$(TARGETSYSTEM)/gl; $(MAKE) -f $(VPATH)Makefile fodquake-gl RENDERERCFLAGS=-DGLQUAKE)
 
-sw: compilercheck
+sw:
 	mkdir -p objects/$(TARGETSYSTEM)/sw
 	(cd objects/$(TARGETSYSTEM)/sw; $(MAKE) -f $(VPATH)Makefile fodquake-sw)
 
@@ -302,6 +302,8 @@ compilercheck:
 
 	@if [ ! -z "`$(CC) -v 2>&1 | grep \"gcc version 4\"`" ]; \
 	then \
+		echo ""; \
+		echo ""; \
 		echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"; \
 		echo "GCC version 4 was detected."; \
 		echo ""; \
@@ -309,10 +311,9 @@ compilercheck:
 		echo "experience any problems with Fodquake built with this compiler, please either"; \
 		echo "disable optimisations or build Fodquake with GCC 2.95.3, GCC 3.3.6 or GCC"; \
 		echo "3.4.6."; \
-		echo ""; \
-		echo "Build will continue in 15 seconds."; \
 		echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"; \
-		sleep 15; \
+		echo ""; \
+		echo ""; \
 	fi
 
 .PHONY: compilercheck
