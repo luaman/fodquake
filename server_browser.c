@@ -45,7 +45,7 @@ struct server
 static struct ServerScanner *serverscanner;
 
 cvar_t sb_masterserver = {"sb_masterserver", "asgaard.morphos-team.net:27000"};
-cvar_t sb_player_drawing = {"sb_player_drawing", "0"};
+cvar_t sb_player_drawing = {"sb_player_drawing", "1"};
 cvar_t sb_refresh_on_activate = {"sb_refresh_on_activate", "1"};
 
 char sb_macro_buf[512];
@@ -824,15 +824,6 @@ static void SB_Help_Handler(int key)
 
 static void SB_Close()
 {
-	if (serverscanner && sb_refresh_on_activate.value == 1)
-	{
-		ServerScanner_FreeServers(serverscanner, sb_qw_server);
-		ServerScanner_Delete(serverscanner);
-		serverscanner = NULL;
-		sb_qw_server = NULL;
-		sb_qw_server_count = 0;
-	}
-
 	key_dest = old_keydest;
 	sb_open = 0;
 }
@@ -947,6 +938,7 @@ void SB_Key(int key)
 
 		if (sb_player_filter == 1)
 		{
+			tab->changed = 1;
 			update = 0;
 			if (key == K_ESCAPE)
 			{
@@ -1655,7 +1647,7 @@ static void SB_Draw_Server(void)
 		return;
 
 	line_space = vid.conheight/8 - 4;
-	if (sb_player_drawing.value == 0)
+	if (sb_player_drawing.value == 1)
 	{
 		if (tab->server_index == NULL)
 		{
@@ -1669,8 +1661,6 @@ static void SB_Draw_Server(void)
 		if (sb_qw_server[z]->numplayers || sb_qw_server[z]->numspectators)
 		{
 			player_space = sb_qw_server[z]->numspectators + sb_qw_server[z]->numplayers + 1;
-			if (player_space > line_space/2)
-				line_space -= player_space;
 			z = 0;
 		}
 		else
@@ -1771,14 +1761,17 @@ static void SB_Draw_Server(void)
 	if (!server)
 		return;
 
-	if (sb_player_drawing.value == 0)
+	if (sb_player_drawing.value == 1)
 	{
 		if (server->numplayers == 0 && server->numspectators == 0)
 			return;
 		y = (line_space - player_space) + 3;
+		if (y<offset+3)
+			y = offset+1+3;
 		z = vid.conwidth/8;
 
-		if (player_space < line_space/2)
+
+		//if (player_space < line_space/2)
 			Draw_Fill(0, y*8, vid.conwidth, player_space * 8, 2);
 		Draw_Fill(0, y*8, vid.conwidth, 8, 20);
 		Draw_String(0, (y++)*8, "ping time frags team");
@@ -1793,7 +1786,6 @@ static void SB_Draw_Server(void)
 			sorted_players[i] = &server->players[i];
 		}
 
-		//qsort(tab->server_index, tab->server_count, sizeof(int), player_count_compare);
 		if (server->teamplay > 0)
 			qsort(sorted_players, server->numplayers, sizeof(struct QWPlayer *), sort_players_team);
 		else
