@@ -804,8 +804,42 @@ qboolean CL_GetMessage (void) {
 	if (cls.demoplayback)
 		return CL_GetDemoMessage();
 
+#ifndef NETQW
 	if (NET_GetPacket(NS_CLIENT, &cl_net_message, &cl_net_from))
 		return true;
+#endif
+
+#ifdef NETQW
+	if (cls.netqw)
+	{
+		unsigned int size;
+		void *p;
+
+		size = NetQW_GetPacketLength(cls.netqw);
+		if (size)
+		{
+			if (size > sizeof(cl_net_message_buffer))
+				size = sizeof(cl_net_message_buffer);
+
+			p = NetQW_GetPacketData(cls.netqw);
+
+			memcpy(cl_net_message_buffer, p, size);
+
+			NetQW_FreePacket(cls.netqw);
+
+			SZ_Init(&cl_net_message, cl_net_message_buffer, sizeof(cl_net_message_buffer));
+
+			cl_net_message.cursize = size;
+
+			if (cls.state == ca_disconnected)
+				cls.state = ca_connected;
+
+			CL_DoNetQWStuff();
+
+			return true;
+		}
+	}
+#endif
 
 	return false;
 }
