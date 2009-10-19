@@ -89,25 +89,28 @@ static void Huff_CompressPacketSizebuf(struct HuffContext *huffcontext, sizebuf_
 	char buf[MAX_MSGLEN+1];
 	unsigned int newlen;
 
-	newlen = Huff_CompressPacket(huffcontext, msg->data, msg->cursize, buf, sizeof(buf));
-
-	if (newlen > msg->maxsize)
+	if (offset > msg->cursize)
 		return;
 
-	memcpy(msg->data, buf, newlen);
-	msg->cursize = newlen;
+	newlen = Huff_CompressPacket(huffcontext, msg->data + offset, msg->cursize - offset, buf, sizeof(buf));
+
+	if (newlen + offset > msg->maxsize)
+		return;
+
+	memcpy(msg->data + offset, buf, newlen);
+	msg->cursize = newlen + offset;
 }
 
 static void Huff_DecompressPacketSizebuf(struct HuffContext *huffcontext, sizebuf_t *msg, int offset)
 {
 	char buf[MAX_MSGLEN+1];
 
-	if (msg->cursize > sizeof(buf))
+	if (msg->cursize > sizeof(buf) || msg->cursize < offset + 1)
 		return;
 
-	memcpy(buf, msg->data, msg->cursize);
+	memcpy(buf, msg->data + offset, msg->cursize - offset);
 
-	msg->cursize = Huff_DecompressPacket(huffcontext, buf, msg->cursize, msg->data, msg->maxsize);
+	msg->cursize = Huff_DecompressPacket(huffcontext, buf, msg->cursize - offset, msg->data + offset, msg->maxsize - offset) + offset;
 }
 
 void Netchan_CvarInit(void)
