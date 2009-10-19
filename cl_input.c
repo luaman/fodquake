@@ -384,6 +384,7 @@ void CL_FinishMove (usercmd_t *cmd) {
 		cmd->angles[i] = (Q_rint(cmd->angles[i] * 65536.0 / 360.0) & 65535) * (360.0 / 65536.0);
 }
 
+#ifndef NETQW
 void CL_SendCmd (void) {
 	sizebuf_t buf;
 	byte data[256];
@@ -513,6 +514,7 @@ void CL_SendCmd (void) {
 	// deliver the message
 	Netchan_Transmit (&cls.netchan, buf.cursize, buf.data);	
 }
+#endif
 
 void CL_CvarInitInput(void)
 {
