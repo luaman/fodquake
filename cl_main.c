@@ -675,6 +675,7 @@ void CL_ConnectionlessPacket(void)
 
 	switch(c)
 	{
+#ifndef NETQW
 	case S2C_CHALLENGE:
 		if (!NET_CompareAdr(&cl_net_from, &cls.server_adr))
 			return;
@@ -733,6 +734,7 @@ void CL_ConnectionlessPacket(void)
 			Com_Printf("Connected.\n");
 		allowremotecmd = false; // localid required now for remote cmds
 		break;
+#endif
 
 #warning This is b0rken in so many ways.
 	case A2C_CLIENT_COMMAND:	// remote command from gui front end
@@ -802,10 +804,10 @@ qboolean CL_GetMessage (void) {
 	if (cls.demoplayback)
 		return CL_GetDemoMessage();
 
-	if (!NET_GetPacket(NS_CLIENT, &cl_net_message, &cl_net_from))
-		return false;
+	if (NET_GetPacket(NS_CLIENT, &cl_net_message, &cl_net_from))
+		return true;
 
-	return true;
+	return false;
 }
 
 void CL_ReadPackets (void) {
