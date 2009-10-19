@@ -44,10 +44,12 @@ void S_StopAllSounds (qboolean clear);
 //adds the current command line as a clc_stringcmd to the client message.
 //things like kill, say, etc, are commands directed to the server,
 //so when they are typed in at the console, they will need to be forwarded.
-void Cmd_ForwardToServer (void) {
+void Cmd_ForwardToServer(void)
+{
 	char *s;
 
-	if (cls.state == ca_disconnected) {
+	if (cls.state == ca_disconnected)
+	{
 		Com_Printf ("Can't \"%s\", not connected\n", Cmd_Argv(0));
 		return;
 	}
@@ -64,8 +66,10 @@ void Cmd_ForwardToServer (void) {
 }
 
 // don't forward the first argument
-void CL_ForwardToServer_f (void) {
-	if (cls.state == ca_disconnected) {
+void CL_ForwardToServer_f(void)
+{
+	if (cls.state == ca_disconnected)
+	{
 		Com_Printf ("Can't \"%s\", not connected\n", Cmd_Argv(0));
 		return;
 	}
@@ -78,7 +82,8 @@ void CL_ForwardToServer_f (void) {
 	if (cls.demoplayback)
 		return;		// not really connected
 
-	if (Cmd_Argc() > 1) {
+	if (Cmd_Argc() > 1)
+	{
 		MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
 		SZ_Print (&cls.netchan.message, Cmd_Args());
 	}
@@ -93,7 +98,8 @@ void CL_Say_f (void) {
 	if (Cmd_Argc() < 2)
 		return;
 
-	if (cls.state == ca_disconnected) {
+	if (cls.state == ca_disconnected)
+	{
 		Com_Printf ("Can't \"%s\", not connected\n", Cmd_Argv(0));
 		return;
 	}
