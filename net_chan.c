@@ -84,6 +84,32 @@ cvar_t	showpackets = {"showpackets", "0"};
 cvar_t	showdrop	= {"showdrop", "0"};
 cvar_t	qport		= {"qport", "0"};
 
+static void Huff_CompressPacketSizebuf(struct HuffContext *huffcontext, sizebuf_t *msg, int offset)
+{
+	char buf[MAX_MSGLEN+1];
+	unsigned int newlen;
+
+	newlen = Huff_CompressPacket(huffcontext, msg->data, msg->cursize, buf, sizeof(buf));
+
+	if (newlen > msg->maxsize)
+		return;
+
+	memcpy(msg->data, buf, newlen);
+	msg->cursize = newlen;
+}
+
+static void Huff_DecompressPacketSizebuf(struct HuffContext *huffcontext, sizebuf_t *msg, int offset)
+{
+	char buf[MAX_MSGLEN+1];
+
+	if (msg->cursize > sizeof(buf))
+		return;
+
+	memcpy(buf, msg->data, msg->cursize);
+
+	msg->cursize = Huff_DecompressPacket(huffcontext, buf, msg->cursize, msg->data, msg->maxsize);
+}
+
 void Netchan_CvarInit(void)
 {
 	int port;
@@ -260,7 +286,7 @@ void Netchan_Transmit (netchan_t *chan, int length, byte *data)
 #endif
 	{
 		if (cls.netchan.huffcontext)
-			Huff_CompressPacket(chan->huffcontext, &send, chan->sock==NS_CLIENT?10:8);
+			Huff_CompressPacketSizebuf(chan->huffcontext, &send, chan->sock==NS_CLIENT?10:8);
 		NET_SendPacket (chan->sock, send.cursize, send.data, &chan->remote_address);
 	}
 
@@ -360,7 +386,7 @@ qboolean Netchan_Process(netchan_t *chan, sizebuf_t *message)
 	chan->last_received = curtime;
 
 	if (chan->huffcontext)
-		Huff_DecompressPacket(chan->huffcontext, message, chan->sock==NS_SERVER?10:8);
+		Huff_DecompressPacketSizebuf(chan->huffcontext, message, chan->sock==NS_SERVER?10:8);
 	
 	return true;
 }

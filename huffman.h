@@ -20,6 +20,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 struct HuffContext;
 
 struct HuffContext *Huff_Init(unsigned int tablecrc);
-void Huff_CompressPacket(struct HuffContext *huffcontext, sizebuf_t *msg, int offset);
-void Huff_DecompressPacket(struct HuffContext *huffcontext, sizebuf_t *msg, int offset);
+unsigned int Huff_CompressPacket(struct HuffContext *huffcontext, const void *inbuf, unsigned int inbuflen, void *outbuf, unsigned int outbuflen);
+unsigned int Huff_DecompressPacket(struct HuffContext *huffcontext, const void *inbuf, unsigned int inbuflen, void *outbuf, unsigned int outbuflen);
 

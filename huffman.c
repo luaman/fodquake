@@ -58,9 +58,9 @@ static void huffencbyte(struct huffenctable_s *huffenctable, unsigned char inbyt
 	*len = l;
 }
 
-static unsigned char huffdecbyte(struct huffdectable_s *huffdectable, unsigned char *inbuf, unsigned int *len)
+static unsigned char huffdecbyte(struct huffdectable_s *huffdectable, const unsigned char *inbuf, unsigned int *len)
 {
-	unsigned char *o;
+	const unsigned char *o;
 	unsigned short index;
 	unsigned int l;
 	
@@ -87,73 +87,71 @@ struct HuffContext *Huff_Init(unsigned int tablecrc)
 		return 0;
 }
 
-void Huff_CompressPacket(struct HuffContext *huffcontext, sizebuf_t *msg, int offset)
+unsigned int Huff_CompressPacket(struct HuffContext *huffcontext, const void *inbuf, unsigned int inbuflen, void *outbuf, unsigned int outbuflen)
 {
 	struct hufftables *ht = (struct hufftables *)huffcontext;
-	unsigned char *decmsg;
-	unsigned char buffer[MAX_MSGLEN+1];
-	unsigned int inlen, outlen;
+	const unsigned char *decmsg;
+	unsigned char *buffer;
+	unsigned int outlen;
 	int i;
 
-	inlen = msg->cursize-offset;
-	decmsg = msg->data+offset;
-	if (inlen >= MAX_MSGLEN)
-		return;
+	if (!(outbuflen > inbuflen))
+		return 0;
+
+	decmsg = inbuf;
+	buffer = outbuf + 1;
 
 	outlen = 0;
-	for(i=0;i<inlen&&outlen/8<inlen;i++)
+	for(i=0;i<inbuflen&&outlen/8<inbuflen;i++)
 		huffencbyte(ht->huffenctable, decmsg[i], buffer, &outlen);
 
-	if (outlen/8 >= inlen)
+	if (outlen/8 >= inbuflen)
 	{
-		memmove(decmsg+1, decmsg, inlen);
-		decmsg[0] = 0x80;
-		msg->cursize+= 1;
-		return;
+		memcpy(buffer, inbuf, inbuflen);
+		buffer[-1] = 0x80;
+		return inbuflen + 1;
 	}
 
 	/* Wasting 1 byte, but we must be compatible... */
-	decmsg[0] = 8-(outlen%8);
+	buffer[-1] = 8-(outlen%8);
 	outlen+= 8;
 	outlen/= 8;
 
-	memcpy(decmsg+1, buffer, outlen);
-	msg->cursize = offset+outlen+1;
+	return outlen + 1;
 }
 
-void Huff_DecompressPacket(struct HuffContext *huffcontext, sizebuf_t *msg, int offset)
+unsigned int Huff_DecompressPacket(struct HuffContext *huffcontext, const void *inbuf, unsigned int inbuflen, void *outbuf, unsigned int outbuflen)
 {
 	struct hufftables *ht = (struct hufftables *)huffcontext;
-	unsigned char *encmsg;
-	unsigned char buffer[MAX_MSGLEN+1];
-	unsigned int inlen, outlen;
+	const unsigned char *encmsg;
+	unsigned char *buffer;
+	unsigned int outlen;
 	int i;
 
-	inlen = msg->cursize-offset;
-	encmsg = msg->data+offset;
-	if (inlen >= MAX_MSGLEN || inlen <= 0)
-		return;
+	if (outbuflen < inbuflen)
+		return 0;
+
+	encmsg = inbuf;
+	buffer = outbuf;
 
 	if (encmsg[0] == 0x80)
 	{
-		memmove(encmsg, encmsg+1, inlen-1);
-		msg->cursize--;
-		return;
+		memcpy(outbuf, inbuf + 1, inbuflen - 1);
+		return inbuflen - 1;
 	}
 
 	encmsg++;
-	inlen--;
-	inlen*= 8;
-	inlen-= encmsg[-1];
+	inbuflen--;
+	inbuflen*= 8;
+	inbuflen-= encmsg[-1];
 
 	outlen = 0;
 	i = 0;
-	while(outlen < inlen && i < MAX_MSGLEN)
+	while(outlen < inbuflen && i < MAX_MSGLEN)
 	{
 		buffer[i++] = huffdecbyte(ht->huffdectable, encmsg, &outlen);
 	}
 
-	memcpy(msg->data+offset, buffer, i);
-	msg->cursize = offset+i;
+	return i;
 }
 
