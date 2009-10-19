@@ -35,7 +35,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "server.h"
 #endif
 
+#include "sys_thread.h"
+
 #include "sbar.h"
+
+static struct SysMutex *display_mutex;
 
 static void *display;
 
@@ -161,11 +165,19 @@ static void set_up_conwidth_conheight()
 void VID_Init(unsigned char *palette)
 {
 	memcpy(pal, palette, sizeof(pal));
+
+	display_mutex = Sys_Thread_CreateMutex();
+	if (display_mutex)
+	{
+		return;
+	}
 }
 
 void VID_Shutdown()
 {
 	VID_Close();
+
+	Sys_Thread_DeleteMutex(display_mutex);
 
 	free(windowtitle);
 	windowtitle = 0;
@@ -290,7 +302,9 @@ void VID_Open()
 	vid.maxwarpheight = WARP_HEIGHT;
 #endif
 
+	Sys_Thread_LockMutex(display_mutex);
 	display = Sys_Video_Open(vid_mode.string, width, height, fullscreen, host_basepal);
+	Sys_Thread_UnlockMutex(display_mutex);
 	if (display)
 	{
 		width = Sys_Video_GetWidth(display);
@@ -332,7 +346,13 @@ void VID_Open()
 			return;
 		}
 
+		Sys_Thread_LockMutex(display_mutex);
+
 		Sys_Video_Close(display);
+
+		display = 0;
+
+		Sys_Thread_UnlockMutex(display_mutex);
 	}
 
 	Sys_Error("VID: Unable to open a display\n");
@@ -340,6 +360,7 @@ void VID_Open()
 
 void VID_Close()
 {
+	Sys_Thread_LockMutex(display_mutex);
 #ifdef GLQUAKE
 	Sbar_Shutdown();
 	Draw_ShutdownGL();
@@ -359,6 +380,8 @@ void VID_Close()
 
 		display = 0;
 	}
+
+	Sys_Thread_UnlockMutex(display_mutex);
 }
 
 #ifdef GLQUAKE
@@ -395,7 +418,17 @@ int VID_GetKeyEvent(keynum_t *key, qboolean *down)
 
 void VID_GetMouseMovement(int *mousex, int *mousey)
 {
-	Sys_Video_GetMouseMovement(display, mousex, mousey);
+	Sys_Thread_LockMutex(display_mutex);
+
+	if (display)
+		Sys_Video_GetMouseMovement(display, mousex, mousey);
+	else
+	{
+		*mousex = 0;
+		*mousey = 0;
+	}
+
+	Sys_Thread_UnlockMutex(display_mutex);
 }
 
 #ifdef GLQUAKE
