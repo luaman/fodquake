@@ -1256,9 +1256,16 @@ static double CL_MinFrameTime (void) {
 			return 0;
 		fps = max (30.0, cl_maxfps.value);
 	} else {
+#ifdef NETQW
+#warning This needs updating for in sync net/video.
+		if (!cl_maxfps.value)
+			return 0;
+		fps = max (30.0, cl_maxfps.value);
+#else
 		fpscap = cl.maxfps ? max (30.0, cl.maxfps) : 72;
 
 		fps = cl_maxfps.value ? bound (30.0, cl_maxfps.value, fpscap) : com_serveractive ? fpscap : bound (30.0, rate.value / 80.0, fpscap);
+#endif
 	}
 
 	return 1 / fps;
@@ -1315,7 +1322,11 @@ void CL_Frame (double time)
 		host_skipframe = false;
 	}
 
+#ifdef NETQW
+	cls.realtime = Sys_DoubleTime();
+#else
 	cls.realtime += cls.frametime;
+#endif
 
 	if (!cl.paused) {
 		cl.time += cls.frametime;

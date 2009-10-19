@@ -17,6 +17,9 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */
+
+#include <math.h>
+
 #include "quakedef.h"
 #include "pmove.h"
 #include "teamplay.h"
@@ -141,6 +144,12 @@ void CL_CalcCrouch (void) {
 	}
 }
 
+#ifdef NETQW
+#define INTERPOLATEDPHYSICS 1
+#else
+#define INTERPOLATEDPHYSICS 0
+#endif
+
 void CL_PredictMove (void) {
 	int i, oldphysent;
 	frame_t *from = NULL, *to;
@@ -175,7 +184,8 @@ void CL_PredictMove (void) {
 		goto out;
 	}
 
-	if ((cl_nopred.value && !cls.mvdplayback) || cl.validsequence + 1 >= cls.netchan.outgoing_sequence) {
+	if (INTERPOLATEDPHYSICS && ((cl_nopred.value && !cls.mvdplayback) || cl.validsequence + 1 >= cls.netchan.outgoing_sequence))
+	{
 		VectorCopy (to->playerstate[cl.playernum].velocity, cl.simvel);
 		VectorCopy (to->playerstate[cl.playernum].origin, cl.simorg);
 		CL_CategorizePosition ();
@@ -189,13 +199,46 @@ void CL_PredictMove (void) {
 	playertime = min(playertime, cls.realtime);
 
 	// run frames until to->senttime >= playertime
-	for (i = 1; i < cls.netchan.outgoing_sequence - cl.validsequence; i++) {
-		from = to;
-		to = &cl.frames[(cl.validsequence + i) & UPDATE_MASK];
-		CL_PredictUsercmd(&from->playerstate[cl.playernum], &to->playerstate[cl.playernum], &to->cmd);
-		cl.onground = pmove.onground;
-		if (to->senttime >= playertime)
-			break;
+
+	if (INTERPOLATEDPHYSICS)
+	{
+		double curtime;
+
+		if (cl.validsequence >= 0)
+		{
+			for(i=cl.validsequence;i<cls.netchan.outgoing_sequence - 1;i++)
+			{
+				from = &cl.frames[i & UPDATE_MASK];
+				to = &cl.frames[(i + 1) & UPDATE_MASK];
+				CL_PredictUsercmd(&from->playerstate[cl.playernum], &to->playerstate[cl.playernum], &to->cmd);
+				cl.onground = pmove.onground;
+			}
+		}
+	
+		curtime = Sys_DoubleTime();
+
+		from = &cl.frames[(cls.netchan.outgoing_sequence - 2) & UPDATE_MASK];
+		to = &cl.frames[(cls.netchan.outgoing_sequence - 1) & UPDATE_MASK];
+
+		playertime = from->senttime + (curtime - to->senttime);
+	}
+	else
+	{
+		for (i = 1; i < cls.netchan.outgoing_sequence - cl.validsequence - 1; i++) {
+			from = to;
+			to = &cl.frames[(cl.validsequence + i) & UPDATE_MASK];
+			CL_PredictUsercmd(&from->playerstate[cl.playernum], &to->playerstate[cl.playernum], &to->cmd);
+			cl.onground = pmove.onground;
+			if (to->senttime >= playertime)
+				break;
+		}
+	}
+
+	if (from == 0)
+	{
+		VectorCopy(to->playerstate[cl.playernum].origin, cl.simorg);
+		VectorCopy(to->playerstate[cl.playernum].velocity, cl.simvel);
+		goto out;
 	}
 
 	pmove.numphysent = oldphysent;
