@@ -351,6 +351,8 @@ void R_DrawSkyChain (void) {
 	skychain_tail = &skychain;
 }
 
+qboolean OnChange_r_skyname (cvar_t *v, char *skyname);
+
 //A sky texture is 256 * 128, with the right side being a masked overlay
 void R_InitSky (miptex_t *mt) {
 	int i, j, p, r, g, b;
@@ -397,6 +399,10 @@ void R_InitSky (miptex_t *mt) {
 	glTexImage2D (GL_TEXTURE_2D, 0, gl_alpha_format, 128, 128, 0, GL_RGBA, GL_UNSIGNED_BYTE, trans);
 	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	sky_initialised = 1;
+
+	OnChange_r_skyname(&r_skyname, r_skyname.string);
 }
 
 
@@ -436,8 +442,6 @@ cleanup:
 		else
 			break;
 	}
-
-	sky_initialised = 1;
 
 	return error;
 }
