@@ -4,7 +4,7 @@ VPATH=../../../
 CC=gcc
 STRIP=strip
 
-CFLAGS=-O2 -g -Wall -fno-strict-aliasing $(OSCFLAGS) $(CPUCFLAGS) $(RENDERERCFLAGS)
+CFLAGS=-O2 -g -Wall -fno-strict-aliasing -DNETQW $(OSCFLAGS) $(CPUCFLAGS) $(RENDERERCFLAGS)
 STRIPFLAGS=--strip-unneeded --remove-section=.comment
 
 TARGETSYSTEM:=$(shell $(CC) -dumpmachine)
@@ -193,6 +193,7 @@ OBJS= \
 	mp3_player.o \
 	net_chan.o \
 	net.o \
+	netqw.o \
 	pmove.o \
 	pmovetst.o \
 	pr_edict.o \
