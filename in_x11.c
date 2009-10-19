@@ -30,6 +30,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "input.h"
 #include "keys.h"
 
+#include "sys_thread.h"
 #include "in_x11.h"
 
 #define XINPUTFLAGS (KeyPressMask|KeyReleaseMask|PointerMotionMask|ButtonPressMask|ButtonReleaseMask)
@@ -45,6 +46,7 @@ typedef struct
 
 struct inputdata
 {
+	struct SysMutex *mutex;
 	Display *x_disp;
 	Window x_win;
 	unsigned int windowwidth;
@@ -612,6 +614,8 @@ static void GetEvents(struct inputdata *id)
 	newmousex = id->windowwidth/2;
 	newmousey = id->windowheight/2;
 
+	Sys_Thread_LockMutex(id->mutex);
+
 	XSync(id->x_disp, 0);
 
 	while(XPending(id->x_disp))
@@ -744,12 +748,16 @@ static void GetEvents(struct inputdata *id)
 			XFlush(id->x_disp);
 		}
 	}
+
+	Sys_Thread_UnlockMutex(id->mutex);
 }
 
 void X11_Input_CvarInit()
 {
 	Cvar_SetCurrentGroup(CVAR_GROUP_INPUT_MOUSE);
 	Cvar_Register(&in_dga_mouse);
+	Cvar_SetCurrentGroup(CVAR_GROUP_INPUT_KEYBOARD);
+	Cvar_Register(&cl_keypad);
 	Cvar_ResetCurrentGroup();
 }
 
@@ -761,44 +769,46 @@ void *X11_Input_Init(Window x_win, unsigned int windowwidth, unsigned int window
 	id = malloc(sizeof(*id));
 	if (id)
 	{
-		id->x_disp = XOpenDisplay(0);
-		if (id->x_disp)
+		id->mutex = Sys_Thread_CreateMutex();
+		if (id->mutex)
 		{
-			if (is_evdev_rules(id))
+			id->x_disp = XOpenDisplay(0);
+			if (id->x_disp)
 			{
-				id->keytable = keytable_evdev;
-				id->keytablesize = sizeof(keytable_evdev);
+				if (is_evdev_rules(id))
+				{
+					id->keytable = keytable_evdev;
+					id->keytablesize = sizeof(keytable_evdev);
+				}
+				else
+				{
+					id->keytable = keytable_xorg;
+					id->keytablesize = sizeof(keytable_xorg);
+				}
+
+				attr.event_mask = KeyPressMask | KeyReleaseMask | ButtonPressMask | ButtonReleaseMask | PointerMotionMask;
+				attr.override_redirect = 1;
+				XChangeWindowAttributes(id->x_disp, x_win, CWEventMask | CWOverrideRedirect, &attr);
+
+				if (fullscreen)
+					XGrabKeyboard(id->x_disp, x_win, False, GrabModeAsync, GrabModeAsync, CurrentTime);
+
+				id->x_win = x_win;
+				id->windowwidth = windowwidth;
+				id->windowheight = windowheight;
+				id->fullscreen = 1;
+				id->config_notify = 0;
+				id->keyq_head = 0;
+				id->keyq_tail = 0;
+				id->mousex = 0;
+				id->mousey = 0;
+				id->grabmouse = 0;
+				id->dga_mouse_enabled = 0;
+	
+				return id;
 			}
-			else
-			{
-				id->keytable = keytable_xorg;
-				id->keytablesize = sizeof(keytable_xorg);
-			}
 
-			attr.event_mask = KeyPressMask | KeyReleaseMask | ButtonPressMask | ButtonReleaseMask | PointerMotionMask;
-			attr.override_redirect = 1;
-			XChangeWindowAttributes(id->x_disp, x_win, CWEventMask | CWOverrideRedirect, &attr);
-
-			if (fullscreen)
-				XGrabKeyboard(id->x_disp, x_win, False, GrabModeAsync, GrabModeAsync, CurrentTime);
-
-			id->x_win = x_win;
-			id->windowwidth = windowwidth;
-			id->windowheight = windowheight;
-			id->fullscreen = 1;
-			id->config_notify = 0;
-			id->keyq_head = 0;
-			id->keyq_tail = 0;
-			id->mousex = 0;
-			id->mousey = 0;
-			id->grabmouse = 0;
-			id->dga_mouse_enabled = 0;
-
-			Cvar_SetCurrentGroup(CVAR_GROUP_INPUT_KEYBOARD);
-			Cvar_Register(&cl_keypad);
-			Cvar_ResetCurrentGroup();
-
-			return id;
+			Sys_Thread_DeleteMutex(id->mutex);
 		}
 
 		free(id);
@@ -822,6 +832,8 @@ void X11_Input_Shutdown(void *inputdata)
 	XChangeWindowAttributes(id->x_disp, id->x_win, CWEventMask, &attr);
 
 	XCloseDisplay(id->x_disp);
+
+	Sys_Thread_DeleteMutex(id->mutex);
 
 	free(id);
 }
@@ -874,6 +886,8 @@ void X11_Input_GrabMouse(void *inputdata, int dograb)
 
 	struct inputdata *id = inputdata;
 
+	Sys_Thread_LockMutex(id->mutex);
+
 	if (dograb && !id->grabmouse)
 	{
 		/* grab the pointer */
@@ -919,5 +933,7 @@ void X11_Input_GrabMouse(void *inputdata, int dograb)
 	}
 
 	id->grabmouse = dograb;
+
+	Sys_Thread_UnlockMutex(id->mutex);
 }
 
