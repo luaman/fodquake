@@ -1344,7 +1344,24 @@ void CL_Frame (double time)
 	// process stuffed commands
 	Cbuf_ExecuteEx(&cbuf_svc);
 
+#ifdef NETQW
+	if (cls.netqw)
+	{
+		CL_DoNetQWStuff();
+	}
+
+	Mouse_GetViewAngles(cl.viewangles);
+
+	// if we are spectator, try autocam
+	if (cl.spectator)
+	{
+#warning Get rid of the cmd arg.
+		usercmd_t cmd;
+		Cam_Track(&cmd);
+	}
+#else
 	CL_SendToServer();
+#endif
 
 	if (cls.state >= ca_onserver) {	// !!! Tonik
 		Cam_SetViewPlayer();
