@@ -59,7 +59,8 @@ void Cmd_ForwardToServer(void)
 	for (s = Cmd_Argv(0); *s; s++)
 		*s = (char) tolower(*s);
 	SZ_Print (&cls.netchan.message, Cmd_Argv(0));
-	if (Cmd_Argc() > 1) {
+	if (Cmd_Argc() > 1)
+	{
 		SZ_Print (&cls.netchan.message, " ");
 		SZ_Print (&cls.netchan.message, Cmd_Args());
 	}
@@ -135,11 +136,14 @@ void CL_Say_f (void) {
 
 	s = TP_ParseMacroString (Cmd_Args());
 	s = TP_ParseFunChars (s, true);
-	if (*s && *s < 32) {
+	if (*s && *s < 32)
+	{
 		SZ_Print (&cls.netchan.message, "\"");
 		SZ_Print (&cls.netchan.message, s);
 		SZ_Print (&cls.netchan.message, "\"");
-	} else {
+	}
+	else
+	{
 		SZ_Print (&cls.netchan.message, s);
 	}
 
