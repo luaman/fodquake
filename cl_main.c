@@ -626,6 +626,14 @@ void CL_Disconnect (void) {
 	cls.state = ca_disconnected;
 	connect_time = 0;
 
+#ifdef NETQW
+	if (cls.netqw)
+	{
+		NetQW_Delete(cls.netqw);
+		cls.netqw = 0;
+	}
+#endif
+
 	Cam_Reset();
 
 	if (cls.download) {
@@ -655,10 +663,22 @@ void CL_Reconnect_f (void) {
 
 	S_StopAllSounds (true);
 
-	if (cls.state == ca_connected) {
+	if (cls.state == ca_connected)
+	{
 		Com_Printf ("reconnecting...\n");
-		MSG_WriteChar (&cls.netchan.message, clc_stringcmd);
-		MSG_WriteString (&cls.netchan.message, "new");
+#ifdef NETQW
+		char buf[5];
+
+		if (cls.netqw)
+		{
+			buf[0] = clc_stringcmd;
+			strcpy(buf+1, "new");
+			NetQW_AppendReliableBuffer(cls.netqw, buf, 5);
+		}
+#else
+		MSG_WriteChar(&cls.netchan.message, clc_stringcmd);
+		MSG_WriteString(&cls.netchan.message, "new");
+#endif
 		return;
 	}
 
