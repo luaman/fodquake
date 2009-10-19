@@ -51,7 +51,11 @@ void Cmd_ForwardToServer(void)
 	unsigned int i;
 	char *s;
 
-	if (cls.state == ca_disconnected)
+	if (cls.state == ca_disconnected
+#ifdef NETQW
+	 || cls.netqw == 0
+#endif
+	)
 	{
 		Com_Printf ("Can't \"%s\", not connected\n", Cmd_Argv(0));
 		return;
@@ -90,7 +94,11 @@ void CL_ForwardToServer_f (void)
 	char buf[1500];
 	unsigned int i;
 
-	if (cls.state == ca_disconnected)
+	if (cls.state == ca_disconnected
+#ifdef NETQW
+	 || cls.netqw == 0
+#endif
+	)
 	{
 		Com_Printf ("Can't \"%s\", not connected\n", Cmd_Argv(0));
 		return;
@@ -128,7 +136,11 @@ void CL_Say_f (void) {
 	if (Cmd_Argc() < 2)
 		return;
 
-	if (cls.state == ca_disconnected)
+	if (cls.state == ca_disconnected
+#ifdef NETQW
+	 || cls.netqw == 0
+#endif
+	)
 	{
 		Com_Printf ("Can't \"%s\", not connected\n", Cmd_Argv(0));
 		return;
@@ -307,7 +319,11 @@ void CL_Download_f (void)
 	unsigned int i;
 	char *p, *q;
 
-	if (cls.state == ca_disconnected)
+	if (cls.state == ca_disconnected
+#ifdef NETQW
+	 || cls.netqw == 0
+#endif
+	)
 	{
 		Com_Printf ("Must be connected.\n");
 		return;
