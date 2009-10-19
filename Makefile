@@ -7,7 +7,7 @@ STRIP=strip
 CFLAGS=-O2 -g -Wall -fno-strict-aliasing $(OSCFLAGS) $(CPUCFLAGS) $(RENDERERCFLAGS)
 STRIPFLAGS=--strip-unneeded --remove-section=.comment
 
-TARGETSYSTEM?=$(shell $(CC) -dumpmachine)
+TARGETSYSTEM:=$(shell $(CC) -dumpmachine)
 
 OS=$(shell echo $(TARGETSYSTEM) | sed "s/-gnu//" | sed "s/.*-//" | tr [A-Z] [a-z] | sed s/^mingw.*/win32/)
 CPU=$(shell echo $(TARGETSYSTEM) | cut -d '-' -f 1 | tr [A-Z] [a-z] | sed "s/powerpc/ppc/")
