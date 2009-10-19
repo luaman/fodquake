@@ -35,6 +35,7 @@ void TP_ParsePlayerInfo(player_state_t *, player_state_t *, player_info_t *info)
 
 #define ISDEAD(i) ( (i) >= 41 && (i) <= 102 )
 
+extern cvar_t cl_nodelta;
 extern cvar_t cl_predictPlayers, cl_solidPlayers, cl_rocket2grenade;
 extern cvar_t cl_model_bobbing;		
 extern cvar_t cl_nolerp;
@@ -490,6 +491,14 @@ void CL_ParsePacketEntities (qboolean delta) {
 	}
 
 	newp->num_entities = newindex;
+
+#ifdef NETQW
+	if (cl_nodelta.value)
+		cl.delta_sequence = 0;
+
+	if (cls.netqw)
+		NetQW_SetDeltaPoint(cls.netqw, cl.delta_sequence?cl.delta_sequence:-1);
+#endif
 
 	if (cls.state == ca_onserver)	// we can now render a frame
 		CL_MakeActive();

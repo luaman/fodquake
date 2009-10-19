@@ -27,6 +27,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "menu.h"
 #include "teamplay.h"
 #include "version.h"
+#include "netqw.h"
 
 #include "config_manager.h"
 #include "ruleset.h"
@@ -46,6 +47,8 @@ void S_StopAllSounds (qboolean clear);
 //so when they are typed in at the console, they will need to be forwarded.
 void Cmd_ForwardToServer(void)
 {
+	char buf[1500];
+	unsigned int i;
 	char *s;
 
 	if (cls.state == ca_disconnected)
@@ -54,21 +57,39 @@ void Cmd_ForwardToServer(void)
 		return;
 	}
 
-	MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
 	// lowercase command
 	for (s = Cmd_Argv(0); *s; s++)
 		*s = (char) tolower(*s);
+
+#ifdef NETQW
+	if (Cmd_Argc() > 1)
+	{
+		i = snprintf(buf, sizeof(buf), "%c%s %s", clc_stringcmd, Cmd_Argv(0), Cmd_Args());
+	}
+	else
+	{
+		i = snprintf(buf, sizeof(buf), "%c%s", clc_stringcmd, Cmd_Argv(0));
+	}
+
+	if (i < sizeof(buf))
+		NetQW_AppendReliableBuffer(cls.netqw, buf, i + 1);
+#else
+	MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
 	SZ_Print (&cls.netchan.message, Cmd_Argv(0));
 	if (Cmd_Argc() > 1)
 	{
 		SZ_Print (&cls.netchan.message, " ");
 		SZ_Print (&cls.netchan.message, Cmd_Args());
 	}
+#endif
 }
 
 // don't forward the first argument
-void CL_ForwardToServer_f(void)
+void CL_ForwardToServer_f (void)
 {
+	char buf[1500];
+	unsigned int i;
+
 	if (cls.state == ca_disconnected)
 	{
 		Com_Printf ("Can't \"%s\", not connected\n", Cmd_Argv(0));
@@ -85,13 +106,21 @@ void CL_ForwardToServer_f(void)
 
 	if (Cmd_Argc() > 1)
 	{
+#ifdef NETQW
+		i = snprintf(buf, sizeof(buf), "%c%s", clc_stringcmd, Cmd_Args());
+		if (i < sizeof(buf))
+			NetQW_AppendReliableBuffer(cls.netqw, buf, i + 1);
+#else
 		MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
 		SZ_Print (&cls.netchan.message, Cmd_Args());
+#endif
 	}
 }
 
 //Handles both say and say_team
 void CL_Say_f (void) {
+	char buf[1500];
+	unsigned int i;
 	char *s;
 	int tmp;
 	qboolean qizmo = false;
@@ -105,11 +134,9 @@ void CL_Say_f (void) {
 		return;
 	}
 
-	MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
 	// lowercase command
 	for (s = Cmd_Argv(0); *s; s++)
 		*s = (char) tolower(*s);
-	SZ_Print (&cls.netchan.message, Cmd_Argv(0));
 
 	if (CL_ConnectedToProxy()) {	
 		for (s = Cmd_Argv(1); *s == ' '; s++)
@@ -131,22 +158,35 @@ void CL_Say_f (void) {
 		}
 	}
 	
-
-	SZ_Print (&cls.netchan.message, " ");
-
 	s = TP_ParseMacroString (Cmd_Args());
 	s = TP_ParseFunChars (s, true);
+
+#ifdef NETQW
 	if (*s && *s < 32)
 	{
-		SZ_Print (&cls.netchan.message, "\"");
-		SZ_Print (&cls.netchan.message, s);
-		SZ_Print (&cls.netchan.message, "\"");
+		i = snprintf(buf, sizeof(buf), "%c%s \"%s\"", clc_stringcmd, Cmd_Argv(0), s);
 	}
 	else
 	{
-		SZ_Print (&cls.netchan.message, s);
+		i = snprintf(buf, sizeof(buf), "%c%s %s", clc_stringcmd, Cmd_Argv(0), s);
 	}
 
+	if (i < sizeof(buf))
+		NetQW_AppendReliableBuffer(cls.netqw, buf, i + 1);
+#else
+	MSG_WriteByte(&cls.netchan.message, clc_stringcmd);
+	SZ_Print(&cls.netchan.message, Cmd_Argv(0));
+	if (*s && *s < 32)
+	{
+		SZ_Print(&cls.netchan.message, "\"");
+		SZ_Print(&cls.netchan.message, s);
+		SZ_Print(&cls.netchan.message, "\"");
+	}
+	else
+	{
+		SZ_Print(&cls.netchan.message, s);
+	}
+#endif
 	
 	if (!qizmo) {
 		cl.whensaidhead++;
@@ -263,6 +303,8 @@ void CL_Rcon_f (void)
 
 void CL_Download_f (void)
 {
+	char buf[1500];
+	unsigned int i;
 	char *p, *q;
 
 	if (cls.state == ca_disconnected)
@@ -296,8 +338,16 @@ void CL_Download_f (void)
 	strcpy(cls.downloadtempname, cls.downloadname);
 	cls.downloadtype = dl_single;
 
+#ifdef NETQW
+	i = snprintf(buf, sizeof(buf), "%cdownload %s", clc_stringcmd, Cmd_Argv(1));
+	if (i < sizeof(buf))
+	{
+		NetQW_AppendReliableBuffer(cls.netqw, buf, i + 1);
+	}
+#else
 	MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
 	SZ_Print (&cls.netchan.message, va("download %s\n",Cmd_Argv(1)));
+#endif
 }
 
 void CL_User_f (void) {
@@ -574,6 +624,11 @@ void CL_Changing_f (void) {
 
 	S_StopAllSounds (true);
 	cls.state = ca_connected;	// not active anymore, but not disconnected
+
+#ifdef NETQW
+	if (cls.netqw)
+		NetQW_SetDeltaPoint(cls.netqw, -1);
+#endif
 
 	Com_Printf ("\nChanging map...\n");
 }
