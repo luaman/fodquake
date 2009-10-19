@@ -828,6 +828,28 @@ void CL_ConnectionlessPacket(void)
 	}
 }
 
+#ifdef NETQW
+void CL_DoNetQWStuff()
+{
+	unsigned int startframe, numframes;
+
+	NetQW_GenerateFrames(cls.netqw);
+	NetQW_CopyFrames(cls.netqw, cl.frames, &cls.netchan.outgoing_sequence, &startframe, &numframes);
+
+	while(numframes)
+	{
+		Cam_FinishMove(&cl.frames[startframe].cmd);
+
+		if (cls.demorecording)
+			CL_WriteDemoCmd(&cl.frames[startframe].cmd);
+
+		startframe++;
+		startframe &= UPDATE_MASK;
+		numframes--;
+	}
+}
+#endif
+
 //Handles playback of demos, on top of NET_ code
 qboolean CL_GetMessage (void) {
 #ifdef _WIN32
@@ -899,12 +921,19 @@ void CL_ReadPackets (void) {
 		if (cls.mvdplayback) {		
 			MSG_BeginReading(&cl_net_message);
 		} else {
+#ifdef NETQW
+			MSG_BeginReading(&cl_net_message);
+			cls.netchan.incoming_sequence = MSG_ReadLong() & 0x7fffffff;
+			cls.netchan.incoming_acknowledged = MSG_ReadLong() & 0x7fffffff;
+#else
 			if (!Netchan_Process(&cls.netchan, &cl_net_message))
 				continue;			// wasn't accepted for some reason
+#endif
 		}
 		CL_ParseServerMessage ();
 	}
 
+#ifndef NETQW
 	// check timeout
 	if (!cls.demoplayback && cls.state >= ca_connected ) {
 		if (curtime - cls.netchan.last_received > (cl_timeout.value > 0 ? cl_timeout.value : 60)) {
@@ -913,8 +942,10 @@ void CL_ReadPackets (void) {
 			return;
 		}
 	}
+#endif
 }
 
+#ifndef NETQW
 void CL_SendToServer (void) {
 	// when recording demos, request new ping times every cl_demoPingInterval.value seconds
 	if (cls.demorecording && !cls.demoplayback && cls.state == ca_active && cl_demoPingInterval.value > 0) {
@@ -932,6 +963,7 @@ void CL_SendToServer (void) {
 	else
 		CL_SendCmd ();
 }
+#endif
 
 //=============================================================================
 
