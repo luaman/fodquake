@@ -26,10 +26,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "crc.h"
 #include "filesystem.h"
 #include "console.h"
+#include "sys_thread.h"
 
 #include "strl.h"
 
 #define MAX_NUM_ARGVS	50
+
+static struct SysMutex *com_mutex;
 
 usercmd_t nullcmd; // guaranteed to be zero
 
@@ -605,18 +608,27 @@ void COM_InitArgv(int argc, char **argv)
 	com_argv = largv;
 }
 
-void COM_Init(void)
+int COM_Init(void)
 {
-	Cvar_SetCurrentGroup(CVAR_GROUP_NO_GROUP);
-	Cvar_Register (&developer);
-	Cvar_Register (&registered);
-	Cvar_Register (&mapname);
+	com_mutex = Sys_Thread_CreateMutex();
+	if (com_mutex)
+	{
+		Cvar_SetCurrentGroup(CVAR_GROUP_NO_GROUP);
+		Cvar_Register (&developer);
+		Cvar_Register (&registered);
+		Cvar_Register (&mapname);
 
-	Cvar_ResetCurrentGroup();
+		Cvar_ResetCurrentGroup();
+
+		return 1;
+	}
+
+	return 0;
 }
 
 void COM_Shutdown(void)
 {
+	Sys_Thread_DeleteMutex(com_mutex);
 }
 
 //does a varargs printf into a temp buffer, so I don't need to have varargs versions of all text functions.
@@ -1020,12 +1032,14 @@ static void (*rd_print) (char *) = NULL;
 
 void Com_BeginRedirect (void (*RedirectedPrint) (char *))
 {
+	Sys_Thread_LockMutex(com_mutex);
 	rd_print = RedirectedPrint;
 }
 
 void Com_EndRedirect (void)
 {
 	rd_print = NULL;
+	Sys_Thread_UnlockMutex(com_mutex);
 }
 
 //All console printing must go through this in order to be logged to disk
@@ -1037,6 +1051,8 @@ void Com_Printf(const char *fmt, ...)
 	va_start (argptr, fmt);
 	vsnprintf (msg, sizeof(msg), fmt, argptr);
 	va_end (argptr);
+
+	Sys_Thread_LockMutex(com_mutex);
 
 	if (rd_print)
 	{
@@ -1050,6 +1066,8 @@ void Com_Printf(const char *fmt, ...)
 
 	// write it to the scrollable buffer
 	Con_Print (msg);
+
+	Sys_Thread_UnlockMutex(com_mutex);
 }
 
 //A Com_Printf that only shows up if the "developer" cvar is set

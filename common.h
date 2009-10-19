@@ -244,7 +244,7 @@ void COM_ClearArgv (int arg);
 int COM_CheckParm (char *parm);
 void COM_AddParm (char *parm);
 
-void COM_Init (void);
+int COM_Init (void);
 void COM_Shutdown (void);
 
 char *COM_SkipPath (char *pathname);
