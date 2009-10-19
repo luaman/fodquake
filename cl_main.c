@@ -417,6 +417,16 @@ static void CL_BeginServerConnect(void)
 {
 	connect_time = 0;
 
+#ifdef NETQW
+	cls.netqw = NetQW_Create(cls.servername, cls.userinfo, rand()&0xffff);
+	if (cls.netqw)
+		Com_Printf("Connecting to %s...\n", cls.servername);
+	else
+		Com_Printf("Unable to create connection\n");
+#endif
+
+#if 1
+#warning This is currently needed for /packet to work.
 	if (!NET_StringToAdr(0, cls.servername, &cls.server_adr))
 	{
 		Com_Printf("Bad server address\n");
@@ -428,9 +438,12 @@ static void CL_BeginServerConnect(void)
 		Com_Printf("Unable to create socket\n");
 		return;
 	}
+#endif
 
+#ifndef NETQW
 	connect_time = -999;	// CL_CheckForResend() will fire immediately
 	CL_CheckForResend();
+#endif
 }
 
 void CL_Connect_f (void) {
