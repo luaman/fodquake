@@ -44,7 +44,7 @@ struct server
 
 static struct ServerScanner *serverscanner;
 
-cvar_t sb_masterserver = {"sb_masterserver", "asgaard.morphos-team.net:27000"};
+cvar_t sb_masterserver = {"sb_masterserver", "qwmaster.fodquake.net:27000 master.quakeservers.net:27000 satan.idsoftware.com:27000"};
 cvar_t sb_player_drawing = {"sb_player_drawing", "1"};
 cvar_t sb_refresh_on_activate = {"sb_refresh_on_activate", "1"};
 
