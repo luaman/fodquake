@@ -460,7 +460,7 @@ typedef struct cache_system_s {
 	struct cache_system_s	*lru_prev, *lru_next;	// for LRU flushing	
 } cache_system_t;
 
-static cache_system_t *Cache_TryAlloc (int size, qboolean nobottom);
+cache_system_t *Cache_TryAlloc (int size, qboolean nobottom);
 
 cache_system_t	cache_head;
 
@@ -538,7 +538,7 @@ void Cache_MakeLRU (cache_system_t *cs) {
 
 //Looks for a free block of memory between the high and low hunk marks
 //Size should already include the header and padding
-static cache_system_t *Cache_TryAlloc (int size, qboolean nobottom) {
+cache_system_t *Cache_TryAlloc (int size, qboolean nobottom) {
 	cache_system_t *cs, *new;
 
 	// is the cache completely empty?
