@@ -42,8 +42,8 @@ typedef struct {
 	memblock_t	*rover;
 } memzone_t;
 
-void Cache_FreeLow (int new_low_hunk);
-void Cache_FreeHigh (int new_high_hunk);
+static void Cache_FreeLow (int new_low_hunk);
+static void Cache_FreeHigh (int new_high_hunk);
 
 //Use it instead of malloc so that if memory allocation fails,
 //the program exits with a message saying there's not enough memory
@@ -460,7 +460,7 @@ typedef struct cache_system_s {
 	struct cache_system_s	*lru_prev, *lru_next;	// for LRU flushing	
 } cache_system_t;
 
-cache_system_t *Cache_TryAlloc (int size, qboolean nobottom);
+static cache_system_t *Cache_TryAlloc (int size, qboolean nobottom);
 
 cache_system_t	cache_head;
 
@@ -483,7 +483,7 @@ void Cache_Move ( cache_system_t *c) {
 }
 
 //Throw things out until the hunk can be expanded to the given point
-void Cache_FreeLow (int new_low_hunk) {
+static void Cache_FreeLow (int new_low_hunk) {
 	cache_system_t *c;
 	
 	while (1) {
@@ -497,7 +497,7 @@ void Cache_FreeLow (int new_low_hunk) {
 }
 
 //Throw things out until the hunk can be expanded to the given point
-void Cache_FreeHigh (int new_high_hunk) {
+static void Cache_FreeHigh (int new_high_hunk) {
 	cache_system_t *c, *prev;
 
 	prev = NULL;
@@ -538,7 +538,7 @@ void Cache_MakeLRU (cache_system_t *cs) {
 
 //Looks for a free block of memory between the high and low hunk marks
 //Size should already include the header and padding
-cache_system_t *Cache_TryAlloc (int size, qboolean nobottom) {
+static cache_system_t *Cache_TryAlloc (int size, qboolean nobottom) {
 	cache_system_t *cs, *new;
 
 	// is the cache completely empty?

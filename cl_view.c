@@ -57,7 +57,7 @@ cvar_t	v_viewheight = {"v_viewheight", "0"};
 cvar_t	cl_drawgun = {"r_drawviewmodel", "1"};
 cvar_t	r_viewmodelsize = {"r_viewmodelSize", "1"};	
 
-qboolean Change_v_idle (cvar_t *var, char *value);
+static qboolean Change_v_idle (cvar_t *var, char *value);
 cvar_t	v_iyaw_cycle = {"v_iyaw_cycle", "2", 0, Change_v_idle};
 cvar_t	v_iroll_cycle = {"v_iroll_cycle", "0.5", 0, Change_v_idle};
 cvar_t	v_ipitch_cycle = {"v_ipitch_cycle", "1", 0, Change_v_idle};
@@ -89,7 +89,7 @@ float	v_dmg_time, v_dmg_roll, v_dmg_pitch;
 frame_t			*view_frame;
 player_state_t	*view_message;
 
-qboolean Change_v_idle (cvar_t *var, char *value) {
+static qboolean Change_v_idle (cvar_t *var, char *value) {
 	// Don't allow cheating in TF
 	return (cl.teamfortress && cls.state >= ca_connected &&	cbuf_current != &cbuf_svc);
 }
