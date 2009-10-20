@@ -62,7 +62,8 @@ kbutton_t	in_up, in_down;
 
 int			in_impulse;
 
-void KeyDown (kbutton_t *b) {
+void KeyDown(kbutton_t *b)
+{
 	int k;
 	char *c;
 	
@@ -75,28 +76,33 @@ void KeyDown (kbutton_t *b) {
 	if (k == b->down[0] || k == b->down[1])
 		return;		// repeating key
 	
-	if (!b->down[0]) {
+	if (!b->down[0])
 		b->down[0] = k;
-	} else if (!b->down[1]) {
+	else if (!b->down[1])
 		b->down[1] = k;
-	} else {
+	else
+	{
 		Com_Printf ("Three keys down for a button!\n");
 		return;
 	}
 	
 	if (b->state & 1)
 		return;		// still down
+
 	b->state |= 1 + 2;	// down + impulse down
 }
 
-void KeyUp (kbutton_t *b) {
+void KeyUp(kbutton_t *b)
+{
 	int k;
 	char *c;
 	
 	c = Cmd_Argv(1);
-	if (c[0]) {
+	if (c[0])
 		k = atoi(c);
-	} else { // typed manually at the console, assume for unsticking, so clear all
+	else
+	{
+		// typed manually at the console, assume for unsticking, so clear all
 		b->down[0] = b->down[1] = 0;
 		b->state &= ~1;
 		return;
@@ -114,6 +120,7 @@ void KeyUp (kbutton_t *b) {
 
 	if (!(b->state & 1))
 		return;		// still up (this should not happen)
+
 	b->state &= ~1;		// now up
 }
 
