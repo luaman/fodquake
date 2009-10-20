@@ -274,7 +274,6 @@ static void VID_SW_FreeBuffers()
 void VID_Open()
 {
 	int width, height, fullscreen;
-	int i;
 
 	fullscreen = vid_fullscreen.value;
 	width = vid_width.value;
