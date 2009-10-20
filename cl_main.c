@@ -1361,6 +1361,14 @@ void CL_Frame (double time)
 	if (cls.netqw)
 	{
 		CL_DoNetQWStuff();
+
+		if (cl.spectator)
+		{
+			usercmd_t cmd;
+
+#warning Get rid of the cmd arg.
+			Cam_Track(&cmd);
+		}
 	}
 	else if (cls.mvdplayback)
 	{
@@ -1373,7 +1381,6 @@ void CL_Frame (double time)
 		// if we are spectator, try autocam
 		if (cl.spectator)
 		{
-#warning Get rid of the cmd arg.
 			Cam_Track(cmd);
 		}
 		CL_FinishMove(cmd);
