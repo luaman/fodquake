@@ -1227,7 +1227,7 @@ void M_Video_Draw (void)
 	{
 		strlcpy(modestring, "Fullscreen, unknown mode", sizeof(modestring));
 
-		if (*curmode)
+		if (curmode && *curmode)
 		{
 			t = Sys_Video_GetModeDescription(curmode);
 			if (t)
