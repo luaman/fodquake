@@ -17,7 +17,7 @@ TARGETS=sw gl
 # OS specific settings
 
 ifeq ($(OS), morphos)
-	OSCFLAGS=-noixemul
+	OSCFLAGS=-noixemul -D__MORPHOS_SHAREDLIBS
 	OSOBJS= \
 		sys_morphos.o \
 		net_amitcp.o \
