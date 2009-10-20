@@ -406,8 +406,6 @@ static int NetQW_Thread_DoReceive(struct NetQW *netqw)
 
 					netqw->challenge = atoi(challengebuf);
 
-					printf("Got challenge\n");
-
 					if (len)
 					{
 						p++;
@@ -615,8 +613,10 @@ static int NetQW_Thread_DoSend(struct NetQW *netqw)
 			if (!netqw->framestosend)
 				break;
 
+#if 0
 			if (netqw->framestosend > 1)
 				printf("Have to send %d frames!\n", netqw->framestosend);
+#endif
 
 			i = 0;
 
@@ -710,7 +710,9 @@ static int NetQW_Thread_DoSend(struct NetQW *netqw)
 	{
 		if (netqw->resendtime <= curtime)
 		{
+#if 0
 			printf("Resending!\n");
+#endif
 
 			if (netqw->state == state_sendchallenge)
 			{
@@ -802,8 +804,6 @@ struct NetQW *NetQW_Create(const char *hoststring, const char *userinfo, unsigne
 {
 	struct NetQW *netqw;
 	int r;
-
-	printf("%s: %s\n", __func__, hoststring);
 
 	netqw = malloc(sizeof(*netqw));
 	if (netqw)
@@ -944,7 +944,9 @@ void NetQW_SetFPS(struct NetQW *netqw, unsigned int fps)
 			netqw->microsecondsperframe -= netqw->microsecondsperframe % 1000;
 		}
 
+#if 0
 		printf("us per frame: %d\n", netqw->microsecondsperframe);
+#endif
 
 		if (netqw->mutex)
 			Sys_Thread_UnlockMutex(netqw->mutex);
