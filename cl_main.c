@@ -1362,16 +1362,28 @@ void CL_Frame (double time)
 	{
 		CL_DoNetQWStuff();
 	}
-
-	Mouse_GetViewAngles(cl.viewangles);
-
-	// if we are spectator, try autocam
-	if (cl.spectator)
+	else if (cls.mvdplayback)
 	{
+		usercmd_t *cmd;
+
+		cmd = &cl.frames[cls.netchan.outgoing_sequence & UPDATE_MASK].cmd;
+		cl.frames[cls.netchan.outgoing_sequence & UPDATE_MASK].senttime = cls.realtime;
+		cl.frames[cls.netchan.outgoing_sequence & UPDATE_MASK].receivedtime = -1;
+		CL_BaseMove(cmd);
+		// if we are spectator, try autocam
+		if (cl.spectator)
+		{
 #warning Get rid of the cmd arg.
-		usercmd_t cmd;
-		Cam_Track(&cmd);
+			Cam_Track(cmd);
+		}
+		CL_FinishMove(cmd);
+		Cam_FinishMove(cmd);
+		cls.netchan.outgoing_sequence++;
 	}
+
+	if (!cls.demoplayback || cls.mvdplayback)
+		Mouse_GetViewAngles(cl.viewangles);
+
 #else
 	CL_SendToServer();
 #endif
