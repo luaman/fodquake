@@ -419,6 +419,8 @@ static void CL_BeginServerConnect(void)
 	connect_time = 0;
 
 #ifdef NETQW
+	Ruleset_Activate();
+
 	cls.netqw = NetQW_Create(cls.servername, cls.userinfo, rand()&0xffff);
 	if (cls.netqw)
 		Com_Printf("Connecting to %s...\n", cls.servername);
