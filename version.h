@@ -11,7 +11,7 @@
 #endif
 
 #define	QW_VERSION              2.40
-#define FODQUAKE_VERSION        "0.1" COMPILERVERSIONSTRINGAPPEND
+#define FODQUAKE_VERSION        "0.2 CVS" COMPILERVERSIONSTRINGAPPEND
 
 #ifdef _WIN32
 #define QW_PLATFORM     "Win32"

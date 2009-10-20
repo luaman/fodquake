@@ -1,4 +1,9 @@
-version 0.1 (since Fuhquake 0.31)
+Version 0.2
+===========
+- Rewrote the QW networking code.
+- New ruleset code including EQL support.
+
+Version 0.1 (since Fuhquake 0.31)
 =================================
 - Rewrote build system. It no longer sucks.
 - Support for big endian systems.
