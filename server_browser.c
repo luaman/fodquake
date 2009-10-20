@@ -1868,6 +1868,9 @@ void SB_Frame(void)
 	int count,todo;
 	int x;
 
+	if (key_dest != key_serverbrowser)
+		sb_open = 0;
+
 	if (!sb_open)
 		return;
 
