@@ -291,9 +291,10 @@ typedef struct {
 								// packetentity_t we got.  If this is 0, we can't
 								// render a frame yet
 	int			oldvalidsequence;
-#warning The following field can be removed.
+#ifndef NETQW
 	int			delta_sequence;	// sequence number of the packet we can request
 								// delta from
+#endif
 
 	int			spectator;
 

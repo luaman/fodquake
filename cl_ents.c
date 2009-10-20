@@ -340,7 +340,9 @@ void FlushEntityPacket (void) {
 
 	memset (&olde, 0, sizeof(olde));
 
+#ifndef NETQW
 	cl.delta_sequence = 0;
+#endif
 	cl.frames[cls.netchan.incoming_sequence & UPDATE_MASK].invalid = true;
 
 	// read it all, but ignore it
@@ -363,6 +365,7 @@ void CL_ParsePacketEntities(qboolean delta)
 {
 	int oldpacket, newpacket, oldindex, newindex, word, newnum, oldnum;
 	packet_entities_t *oldp, *newp, dummy;
+	unsigned int deltasequence;
 	qboolean full;
 	byte from;
 
@@ -417,7 +420,7 @@ void CL_ParsePacketEntities(qboolean delta)
 
 	cl.oldvalidsequence = cl.validsequence;
 	cl.validsequence = cls.netchan.incoming_sequence;
-	cl.delta_sequence = cl.validsequence;
+	deltasequence = cl.validsequence;
 
 	oldindex = 0;
 	newindex = 0;
@@ -499,7 +502,7 @@ void CL_ParsePacketEntities(qboolean delta)
 			if (full)
 			{
 				cl.validsequence = 0;
-				cl.delta_sequence = 0;
+				deltasequence = 0;
 				Com_Printf ("WARNING: delta on full update");
 			}
 			if (word & U_REMOVE)
@@ -518,10 +521,12 @@ void CL_ParsePacketEntities(qboolean delta)
 
 #ifdef NETQW
 	if (cl_nodelta.value)
-		cl.delta_sequence = 0;
+		deltasequence = 0;
 
 	if (cls.netqw)
-		NetQW_SetDeltaPoint(cls.netqw, cl.delta_sequence?cl.delta_sequence:-1);
+		NetQW_SetDeltaPoint(cls.netqw, deltasequence?deltasequence:-1);
+#else
+	cl.delta_sequence = deltasequence;
 #endif
 
 	if (cls.state == ca_onserver)	// we can now render a frame
