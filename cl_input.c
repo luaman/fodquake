@@ -28,6 +28,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "pmove.h"		
 #include "teamplay.h"	
 #include "movie.h"
+#include "mouse.h"
 #include "ruleset.h"
 
 cvar_t	cl_nodelta = {"cl_nodelta","0"};
