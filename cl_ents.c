@@ -359,7 +359,8 @@ void FlushEntityPacket (void) {
 }
 
 //An svc_packetentities has just been parsed, deal with the rest of the data stream.
-void CL_ParsePacketEntities (qboolean delta) {
+void CL_ParsePacketEntities(qboolean delta)
+{
 	int oldpacket, newpacket, oldindex, newindex, word, newnum, oldnum;
 	packet_entities_t *oldp, *newp, dummy;
 	qboolean full;
@@ -369,28 +370,32 @@ void CL_ParsePacketEntities (qboolean delta) {
 	newp = &cl.frames[newpacket].packet_entities;
 	cl.frames[newpacket].invalid = false;
 
-	if (delta) {
+	if (delta)
+	{
 		from = MSG_ReadByte ();
 
 		oldpacket = cl.frames[newpacket].delta_sequence;
 		if (cls.mvdplayback)	
 			from = oldpacket = cls.netchan.incoming_sequence - 1;
 
-		if (cls.netchan.outgoing_sequence - cls.netchan.incoming_sequence >= UPDATE_BACKUP - 1) {
+		if (cls.netchan.outgoing_sequence - cls.netchan.incoming_sequence >= UPDATE_BACKUP - 1)
+		{
 			// there are no valid frames left, so drop it
 			FlushEntityPacket ();
 			cl.validsequence = 0;
 			return;
 		}
 
-		if ((from & UPDATE_MASK) != (oldpacket & UPDATE_MASK)) {
+		if ((from & UPDATE_MASK) != (oldpacket & UPDATE_MASK))
+		{
 			Com_DPrintf ("WARNING: from mismatch\n");
 			FlushEntityPacket ();
 			cl.validsequence = 0;
 			return;
 		}
 
-		if (cls.netchan.outgoing_sequence - oldpacket >= UPDATE_BACKUP - 1) {
+		if (cls.netchan.outgoing_sequence - oldpacket >= UPDATE_BACKUP - 1)
+		{
 			// we can't use this, it is too old
 			FlushEntityPacket ();
 			// don't clear cl.validsequence, so that frames can still be rendered;
@@ -401,7 +406,9 @@ void CL_ParsePacketEntities (qboolean delta) {
 
 		oldp = &cl.frames[oldpacket & UPDATE_MASK].packet_entities;
 		full = false;
-	} else {
+	}
+	else
+	{
 		// this is a full update that we can start delta compressing from now
 		oldp = &dummy;
 		dummy.num_entities = 0;
@@ -416,16 +423,20 @@ void CL_ParsePacketEntities (qboolean delta) {
 	newindex = 0;
 	newp->num_entities = 0;
 
-	while (1) {
+	while (1)
+	{
 		word = (unsigned short) MSG_ReadShort ();
-		if (msg_badread) {
+		if (msg_badread)
+		{
 			// something didn't parse right...
 			Host_Error ("msg_badread in packetentities");
 			return;
 		}
 
-		if (!word) {
-			while (oldindex < oldp->num_entities) {
+		if (!word)
+		{
+			while (oldindex < oldp->num_entities)
+			{
 				// copy all the rest of the entities from the old packet
 				if (newindex >= MAX_MVD_PACKET_ENTITIES || (newindex >= MAX_PACKET_ENTITIES && !cls.mvdplayback))
 					Host_Error ("CL_ParsePacketEntities: newindex == MAX_PACKET_ENTITIES");
@@ -434,13 +445,16 @@ void CL_ParsePacketEntities (qboolean delta) {
 				newindex++;
 				oldindex++;
 			}
+
 			break;
 		}
 		newnum = word & 511;
 		oldnum = oldindex >= oldp->num_entities ? 9999 : oldp->entities[oldindex].number;
 
-		while (newnum > oldnum) 	{
-			if (full) {
+		while (newnum > oldnum)
+		{
+			if (full)
+			{
 				Com_Printf ("WARNING: oldcopy on full update");
 				FlushEntityPacket ();
 				cl.validsequence = 0;	// can't render a frame
@@ -457,10 +471,13 @@ void CL_ParsePacketEntities (qboolean delta) {
 			oldnum = oldindex >= oldp->num_entities ? 9999 : oldp->entities[oldindex].number;
 		}
 
-		if (newnum < oldnum) {
+		if (newnum < oldnum)
+		{
 			// new from baseline
-			if (word & U_REMOVE) {
-				if (full) {
+			if (word & U_REMOVE)
+			{
+				if (full)
+				{
 					Com_Printf ("WARNING: U_REMOVE on full update\n");
 					FlushEntityPacket ();
 					cl.validsequence = 0;	// can't render a frame
@@ -476,14 +493,17 @@ void CL_ParsePacketEntities (qboolean delta) {
 			continue;
 		}
 
-		if (newnum == oldnum) {
+		if (newnum == oldnum)
+		{
 			// delta from previous
-			if (full) {
+			if (full)
+			{
 				cl.validsequence = 0;
 				cl.delta_sequence = 0;
 				Com_Printf ("WARNING: delta on full update");
 			}
-			if (word & U_REMOVE) {
+			if (word & U_REMOVE)
+			{
 				oldindex++;
 				continue;
 			}
