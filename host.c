@@ -195,7 +195,6 @@ char *Host_PrintBars(char *s, int len) {
 
 void CL_SaveArgv(int, char **);
 
-static cvar_t dummycvar = { "dummycvar", "0" };
 int cvarsregged;
 
 void Host_Init (int argc, char **argv, int default_memsize)
@@ -258,8 +257,6 @@ void Host_Init (int argc, char **argv, int default_memsize)
 	Ruleset_CvarInit();
 
 	cvarsregged = 1;
-	Cvar_Register(&dummycvar);
-	Cmd_AddCommand("Dummy", 0);
 	
 	FS_InitFilesystem();
 	COM_CheckRegistered ();
