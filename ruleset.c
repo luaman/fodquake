@@ -34,6 +34,7 @@ struct ruleset
 	qboolean (*ValidateCvarChange)(const cvar_t *cvar, const char *newstringvalue, float newfloatvalue);
 	qboolean (*AllowFTrigger)(const char *triggername);
 	qboolean (*AllowMsgTriggers)(void);
+	qboolean (*AllowMovementScripts)(void);
 };
 
 /* --- Default ruleset */
@@ -72,6 +73,11 @@ static qboolean Ruleset_Default_AllowMsgTriggers()
 	return true;
 }
 
+static qboolean Ruleset_Default_AllowMovementScripts()
+{
+	return true;
+}
+
 static const struct ruleset ruleset_default =
 {
 	"default",
@@ -82,6 +88,7 @@ static const struct ruleset ruleset_default =
 	Ruleset_Default_ValidateCvarChange,
 	Ruleset_Default_AllowFTrigger,
 	Ruleset_Default_AllowMsgTriggers,
+	Ruleset_Default_AllowMovementScripts,
 };
 
 /* --- EQL ruleset */
@@ -146,6 +153,11 @@ static qboolean Ruleset_EQL_AllowMsgTriggers()
 	return false;
 }
 
+static qboolean Ruleset_EQL_AllowMovementScripts()
+{
+	return false;
+}
+
 static const struct ruleset ruleset_eql =
 {
 	"eql",
@@ -156,6 +168,7 @@ static const struct ruleset ruleset_eql =
 	Ruleset_EQL_ValidateCvarChange,
 	Ruleset_EQL_AllowFTrigger,
 	Ruleset_EQL_AllowMsgTriggers,
+	Ruleset_EQL_AllowMovementScripts,
 };
 
 /* --- */
@@ -195,6 +208,11 @@ qboolean Ruleset_AllowFTrigger(const char *triggername)
 qboolean Ruleset_AllowMsgTriggers()
 {
 	return ruleset->AllowMsgTriggers();
+}
+
+qboolean Ruleset_AllowMovementScripts()
+{
+	return ruleset->AllowMovementScripts();
 }
 
 /* --- */

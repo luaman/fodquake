@@ -57,6 +57,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "server_browser.h"
 
+int movementkey;
+
 static qboolean cl_imitate_client_callback(cvar_t *var, char *string);
 static qboolean cl_imitate_os_callback(cvar_t *var, char *string);
 
@@ -1309,6 +1311,9 @@ void CL_Frame (double time)
 #endif
 
 	cls.framedev = extratime;
+
+	/* Ugliest hack ever */
+	movementkey = rand();
 
 	if (Movie_IsCapturing())
 		cls.frametime = Movie_StartFrame();

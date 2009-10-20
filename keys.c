@@ -1070,9 +1070,28 @@ void Key_Init(void)
 		menubound[K_F1 + i] = true;
 }
 
+static int ismovementcommand(const char *s)
+{
+	/* World's ugliest hack */
+
+	if (s[0] != '+' && s[0] != '-')
+		return 0;
+
+	if (strcmp(s+1, "forward") == 0
+	 || strcmp(s+1, "back") == 0
+	 || strcmp(s+1, "moveleft") == 0
+	 || strcmp(s+1, "moveright") == 0)
+	{
+		return 1;
+	}
+
+	return 0;
+}
+
 //Called by the system between frames for both key up and key down events Should NOT be called during an interrupt!
 void Key_Event (int key, qboolean down) {
 	char *kb, cmd[1024];
+	extern int movementkey;
 
 	//	Com_Printf ("%i : %i\n", key, down); //@@@
 
@@ -1140,14 +1159,20 @@ void Key_Event (int key, qboolean down) {
 	if (!down) {
 		kb = keybindings[key];
 		if (kb && kb[0] == '+' && keyactive[key]) {
-			snprintf(cmd, sizeof(cmd), "-%s %i\n", kb+1, key);
+			if (ismovementcommand(kb))
+				snprintf(cmd, sizeof(cmd), "-%s %i %d\n", kb+1, key, movementkey);
+			else
+				snprintf(cmd, sizeof(cmd), "-%s %i\n", kb+1, key);
 			Cbuf_AddText (cmd);
 			keyactive[key] = false;
 		}
 		if (keyshift[key] != key) {
 			kb = keybindings[keyshift[key]];
 			if (kb && kb[0] == '+' && keyactive[keyshift[key]]) {
-				snprintf(cmd, sizeof(cmd), "-%s %i\n", kb+1, key);
+				if (ismovementcommand(kb))
+					snprintf(cmd, sizeof(cmd), "-%s %i %d\n", kb+1, key, movementkey);
+				else
+					snprintf(cmd, sizeof(cmd), "-%s %i\n", kb+1, key);
 				Cbuf_AddText (cmd);
 				keyactive[keyshift[key]] = false;
 			}
@@ -1164,7 +1189,10 @@ void Key_Event (int key, qboolean down) {
 		kb = keybindings[key];
 		if (kb) {
 			if (kb[0] == '+'){	// button commands add keynum as a parm
-				snprintf(cmd, sizeof(cmd), "%s %i\n", kb, key);
+				if (ismovementcommand(kb))
+					snprintf(cmd, sizeof(cmd), "%s %i %d\n", kb, key, movementkey);
+				else
+					snprintf(cmd, sizeof(cmd), "%s %i\n", kb, key);
 				Cbuf_AddText (cmd);
 				keyactive[key] = true;
 			} else {

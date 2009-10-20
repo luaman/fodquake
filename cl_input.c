@@ -63,6 +63,23 @@ kbutton_t	in_up, in_down;
 
 int			in_impulse;
 
+static int checkmovementruleset()
+{
+	/* Ugliest hack in the world */
+	extern int movementkey;
+
+	if (Ruleset_AllowMovementScripts())
+		return 1;
+
+	if (atoi(Cmd_Argv(2)) != movementkey)
+	{
+		Com_Printf("Movement scripts disallowed by ruleset\n");
+		return 0;
+	}
+
+	return 1;
+}
+
 void KeyDown(kbutton_t *b)
 {
 	int k;
@@ -133,18 +150,18 @@ void IN_LeftDown(void) {KeyDown(&in_left);}
 void IN_LeftUp(void) {KeyUp(&in_left);}
 void IN_RightDown(void) {KeyDown(&in_right);}
 void IN_RightUp(void) {KeyUp(&in_right);}
-void IN_ForwardDown(void) {KeyDown(&in_forward);}
-void IN_ForwardUp(void) {KeyUp(&in_forward);}
-void IN_BackDown(void) {KeyDown(&in_back);}
-void IN_BackUp(void) {KeyUp(&in_back);}
+void IN_ForwardDown(void) {if (checkmovementruleset()) KeyDown(&in_forward);}
+void IN_ForwardUp(void) {if (checkmovementruleset()) KeyUp(&in_forward);}
+void IN_BackDown(void) {if (checkmovementruleset()) KeyDown(&in_back);}
+void IN_BackUp(void) {if (checkmovementruleset()) KeyUp(&in_back);}
 void IN_LookupDown(void) {KeyDown(&in_lookup);}
 void IN_LookupUp(void) {KeyUp(&in_lookup);}
 void IN_LookdownDown(void) {KeyDown(&in_lookdown);}
 void IN_LookdownUp(void) {KeyUp(&in_lookdown);}
-void IN_MoveleftDown(void) {KeyDown(&in_moveleft);}
-void IN_MoveleftUp(void) {KeyUp(&in_moveleft);}
-void IN_MoverightDown(void) {KeyDown(&in_moveright);}
-void IN_MoverightUp(void) {KeyUp(&in_moveright);}
+void IN_MoveleftDown(void) {if (checkmovementruleset()) KeyDown(&in_moveleft);}
+void IN_MoveleftUp(void) {if (checkmovementruleset()) KeyUp(&in_moveleft);}
+void IN_MoverightDown(void) {if (checkmovementruleset()) KeyDown(&in_moveright);}
+void IN_MoverightUp(void) {if (checkmovementruleset()) KeyUp(&in_moveright);}
 
 void IN_AttackDown(void) {KeyDown(&in_attack);}
 void IN_AttackUp(void) {KeyUp(&in_attack);}
