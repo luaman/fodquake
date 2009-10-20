@@ -666,9 +666,10 @@ void CL_Reconnect_f (void) {
 
 	if (cls.state == ca_connected)
 	{
+		char buf[5];
+
 		Com_Printf ("reconnecting...\n");
 #ifdef NETQW
-		char buf[5];
 
 		if (cls.netqw)
 		{
