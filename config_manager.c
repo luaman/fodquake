@@ -535,9 +535,9 @@ static void Config_PrintPreamble(FILE *f) {
 	Config_PrintBorder(f);
 	Config_PrintLine(f, "", 3);
 	Config_PrintLine(f, "", 3);
-	Config_PrintLine(f, "F U H Q U A K E   C O N F I G U R A T I O N", 3);
+	Config_PrintLine(f, "F O D Q U A K E   C O N F I G U R A T I O N", 3);
 	Config_PrintLine(f, "", 3);
-	Config_PrintLine(f, "http://www.fuhquake.net/", 3);
+	Config_PrintLine(f, "http://www.fodquake.net/", 3);
 	Config_PrintLine(f, "", 3);
 	Config_PrintLine(f, "", 3);
 	Config_PrintBorder(f);

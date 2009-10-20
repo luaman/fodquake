@@ -768,7 +768,7 @@ void CL_ParseServerData (void)
 
 	if (protover != PROTOCOL_VERSION &&
 		!(cls.demoplayback && (protover == 26 || protover == 27 || protover == 28)))
-		Host_Error ("Server returned version %i, not %i\nYou probably need to upgrade.\nCheck http://www.fuhquake.net/", protover, PROTOCOL_VERSION);
+		Host_Error ("Server returned version %i, not %i\nYou probably need to upgrade.\nCheck http://www.fodquake.net/", protover, PROTOCOL_VERSION);
 
 	cl.protoversion = protover;
 	cl.servercount = MSG_ReadLong ();
