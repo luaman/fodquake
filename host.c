@@ -35,10 +35,16 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #else
 #include "d_iface.h"
 #endif
+#include "auth.h"
+#include "fchecks.h"
+#include "fmod.h"
+#include "ignore.h"
 #include "image.h"
+#include "logging.h"
 #include "menu.h"
 #include "keys.h"
 #include "teamplay.h"
+#include "mouse.h"
 #include "readablechars.h"
 #include "input.h"
 #include "config_manager.h"

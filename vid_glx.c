@@ -24,6 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #endif
 
 #include <stdlib.h>
+#include <string.h>
 
 #include <sys/ioctl.h>
 #include <sys/stat.h>
@@ -331,7 +332,7 @@ void *Sys_Video_Open(const char *mode, unsigned int width, unsigned int height, 
 	d = malloc(sizeof(*d));
 	if (d)
 	{
-		bzero(d, sizeof(*d));
+		memset(d, 0, sizeof(*d));
 
 		d->hasfocus = 1;
 		d->x_disp = XOpenDisplay(NULL);

@@ -58,6 +58,7 @@ int GL_LoadCharsetImage (char *, char *);
 
 void GL_FlushTextures(void);
 
+void GL_Texture_CvarInit(void);
 void GL_Texture_Init(void);
 
 

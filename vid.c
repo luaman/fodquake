@@ -183,7 +183,7 @@ void VID_Shutdown()
 	windowtitle = 0;
 }
 
-void VID_Restart_f(void)
+void VID_Restart(void)
 {
 	int i;
 
@@ -233,7 +233,7 @@ void VID_CvarInit()
 	Cmd_AddLegacyCommand("_windowed_mouse", "in_grab_windowed_mouse");
 	Cvar_ResetCurrentGroup();
 
-	Cmd_AddCommand("vid_restart", VID_Restart_f);
+	Cmd_AddCommand("vid_restart", VID_Restart);
 
 	Sys_Video_CvarInit();
 }

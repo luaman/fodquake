@@ -67,6 +67,7 @@ extern	int glx, gly, glwidth, glheight;
 #endif
 
 
+void R_InitGL(void);
 void R_TimeRefresh_f (void);
 texture_t *R_TextureAnimation (texture_t *base);
 
@@ -91,6 +92,10 @@ void QMB_StaticBubble (entity_t *ent);
 
 extern qboolean qmb_initialized;
 
+void GL_Particles_CvarInit(void);
+void GL_Particles_TextureInit(void);
+
+void Classic_LoadParticleTextures(void);
 
 //====================================================
 

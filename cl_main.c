@@ -48,6 +48,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "huffman.h"
 #include "config.h"
 #include "sleep.h"
+#include "mouse.h"
 #ifdef NETQW
 #include "netqw.h"
 #endif

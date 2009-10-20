@@ -21,6 +21,7 @@ void SB_Init(void);
 void SB_CvarInit(void);
 void SB_Frame(void);
 void SB_Key(int key);
+void SB_Activate_f(void);
 
 
 char *SB_Macro_Ip(void);

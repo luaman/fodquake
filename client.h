@@ -592,6 +592,7 @@ char *MT_MatchName(void);
 
 // fragstats.c
 
+void Stats_CvarInit(void);
 void Stats_Init(void);
 void Stats_Reset(void);
 void Stats_NewMap(void);

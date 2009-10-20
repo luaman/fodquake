@@ -26,6 +26,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "winquake.h"
 #include "input.h"
 #include "keys.h"
+#include "server_browser.h"
 #include "sound.h"
 #include "version.h"
 #ifndef CLIENTONLY
@@ -1036,7 +1037,7 @@ static void M_Menu_Video_Verify_Revert()
 	Cvar_SetValue(&vid_height, video_verify_oldactive_height);
 	Cvar_SetValue(&vid_fullscreen, video_verify_oldactive_fullscreen);
 	Cvar_Set(&vid_mode, video_verify_oldactive_mode);
-	VID_Restart_f();
+	VID_Restart();
 	Cvar_Set(&vid_width, video_verify_oldcvar_width);
 	Cvar_Set(&vid_height, video_verify_oldcvar_height);
 	Cvar_Set(&vid_fullscreen, video_verify_oldcvar_fullscreen);
@@ -1076,7 +1077,7 @@ void M_Menu_Video_Verify_f(void)
 
 	Cvar_Set(&vid_mode, video_selectedmodeline);
 	Cvar_SetValue(&vid_fullscreen, 1);
-	VID_Restart_f();
+	VID_Restart();
 
 	video_verify_fail_time = curtime + 15;
 
