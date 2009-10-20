@@ -3,6 +3,7 @@
 
 #include "sys_thread.h"
 #include "sys_net.h"
+#include "mouse.h"
 #include "net.h"
 #include "huffman.h"
 #include "protocol.h"
