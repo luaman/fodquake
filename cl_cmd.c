@@ -188,6 +188,7 @@ void CL_Say_f (void) {
 #else
 	MSG_WriteByte(&cls.netchan.message, clc_stringcmd);
 	SZ_Print(&cls.netchan.message, Cmd_Argv(0));
+	SZ_Print(&cls.netchan.message, " ");
 	if (*s && *s < 32)
 	{
 		SZ_Print(&cls.netchan.message, "\"");
