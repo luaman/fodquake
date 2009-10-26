@@ -49,6 +49,7 @@ struct inputdata
 	struct SysMutex *mutex;
 	Display *x_disp;
 	Window x_win;
+	int window_focused;
 	unsigned int windowwidth;
 	unsigned int windowheight;
 	int fullscreen;
@@ -67,11 +68,12 @@ struct inputdata
 	int mousex;
 	int mousey;
 
-	int grabmouse;
+	int grab_mouse;
 	int dga_mouse_enabled;
+	int mouse_grabbed;
 };
 
-int is_evdev_rules(struct inputdata *id)
+static int is_evdev_rules(struct inputdata *id)
 {
 	Window window;
 	Atom actual_type;
@@ -96,6 +98,62 @@ int is_evdev_rules(struct inputdata *id)
 	}
 
 	return ret;
+}
+
+static void DoGrabMouse(struct inputdata *id)
+{
+	Window grab_win;
+	unsigned int dgaflags;
+
+	if (id->mouse_grabbed)
+		return;
+
+	if (in_dga_mouse.value)
+	{
+		grab_win = DefaultRootWindow(id->x_disp);
+	}
+	else
+	{
+		grab_win = id->x_win;
+
+		XSelectInput(id->x_disp, id->x_win, XINPUTFLAGS&(~PointerMotionMask));
+		XWarpPointer(id->x_disp, None, id->x_win, 0, 0, 0, 0, id->windowwidth/2, id->windowheight/2);
+	}
+
+	XSelectInput(id->x_disp, id->x_win, XINPUTFLAGS);
+
+	XGrabPointer(id->x_disp, grab_win, True, PointerMotionMask | ButtonPressMask | ButtonReleaseMask, GrabModeAsync, GrabModeAsync, grab_win, None, CurrentTime);
+
+	if (in_dga_mouse.value)
+	{
+		XF86DGAQueryDirectVideo(id->x_disp, DefaultScreen(id->x_disp), &dgaflags);
+
+		if ((dgaflags&XF86DGADirectPresent))
+		{
+			if (XF86DGADirectVideo(id->x_disp, DefaultScreen(id->x_disp), XF86DGADirectMouse))
+			{
+				id->dga_mouse_enabled = 1;
+			}
+		}
+	}
+
+	id->mouse_grabbed = 1;
+}
+
+static void DoUngrabMouse(struct inputdata *id)
+{
+	if (!id->mouse_grabbed)
+		return;
+
+	if (id->dga_mouse_enabled)
+	{
+		id->dga_mouse_enabled = 0;
+		XF86DGADirectVideo(id->x_disp, DefaultScreen(id->x_disp), 0);
+	}
+	XUngrabPointer(id->x_disp, CurrentTime);
+	XSelectInput(id->x_disp, id->x_win, StructureNotifyMask | KeyPressMask | KeyReleaseMask | ExposureMask | ButtonPressMask | ButtonReleaseMask);
+
+	id->mouse_grabbed = 0;
 }
 
 static const unsigned char keytable_xorg[] =
@@ -623,6 +681,15 @@ static void GetEvents(struct inputdata *id)
 		XNextEvent(id->x_disp, &event);
 		switch (event.type)
 		{
+			case FocusIn:
+				id->window_focused = 1;
+				if (id->grab_mouse)
+					DoGrabMouse(id);
+				break;
+			case FocusOut:
+				id->window_focused = 0;
+				DoUngrabMouse(id);
+				break;
 			case KeyPress:
 				id->keyq[id->keyq_head].key = XLateKey(id, &event.xkey);
 				id->keyq[id->keyq_head].down = true;
@@ -732,14 +799,14 @@ static void GetEvents(struct inputdata *id)
 		}
 	}
 
-	if (!id->dga_mouse_enabled && (newmousex != id->windowwidth/2 || newmousey != id->windowheight/2) && id->grabmouse)
+	if (!id->dga_mouse_enabled && (newmousex != id->windowwidth/2 || newmousey != id->windowheight/2) && id->grab_mouse)
 	{
 		newmousex-= id->windowwidth/2;
 		newmousey-= id->windowheight/2;
 		id->mousex+= newmousex;
 		id->mousey+= newmousey;
 	
-		if (id->grabmouse)
+		if (id->grab_mouse)
 		{
 			/* move the mouse to the window center again */
 			XSelectInput(id->x_disp, id->x_win, XINPUTFLAGS&(~PointerMotionMask));
@@ -765,6 +832,8 @@ void *X11_Input_Init(Window x_win, unsigned int windowwidth, unsigned int window
 {
 	struct inputdata *id;
 	XSetWindowAttributes attr;
+	Window focuswindow;
+	int revertto;
 
 	id = malloc(sizeof(*id));
 	if (id)
@@ -786,9 +855,16 @@ void *X11_Input_Init(Window x_win, unsigned int windowwidth, unsigned int window
 					id->keytablesize = sizeof(keytable_xorg);
 				}
 
-				attr.event_mask = KeyPressMask | KeyReleaseMask | ButtonPressMask | ButtonReleaseMask | PointerMotionMask;
+				attr.event_mask = KeyPressMask | KeyReleaseMask | ButtonPressMask | ButtonReleaseMask | PointerMotionMask | FocusChangeMask;
 				attr.override_redirect = 1;
 				XChangeWindowAttributes(id->x_disp, x_win, CWEventMask | CWOverrideRedirect, &attr);
+
+				XGetInputFocus(id->x_disp, &focuswindow, &revertto);
+
+				if (focuswindow == x_win)
+					id->window_focused = 1;
+				else
+					id->window_focused = 0;
 
 				if (fullscreen)
 					XGrabKeyboard(id->x_disp, x_win, False, GrabModeAsync, GrabModeAsync, CurrentTime);
@@ -802,8 +878,9 @@ void *X11_Input_Init(Window x_win, unsigned int windowwidth, unsigned int window
 				id->keyq_tail = 0;
 				id->mousex = 0;
 				id->mousey = 0;
-				id->grabmouse = 0;
+				id->grab_mouse = 0;
 				id->dga_mouse_enabled = 0;
+				id->mouse_grabbed = 0;
 	
 				return id;
 			}
@@ -824,7 +901,7 @@ void X11_Input_Shutdown(void *inputdata)
 
 	id = inputdata;
 
-	X11_Input_GrabMouse(id, 0);
+	DoUngrabMouse(id);
 	if (id->fullscreen)
 		XUngrabKeyboard(id->x_disp, CurrentTime);
 
@@ -881,58 +958,23 @@ void X11_Input_GetConfigNotify(void *inputdata, int *config_notify, int *config_
 
 void X11_Input_GrabMouse(void *inputdata, int dograb)
 {
-	Window grab_win;
-	unsigned int dgaflags;
-
 	struct inputdata *id = inputdata;
 
 	Sys_Thread_LockMutex(id->mutex);
 
-	if (dograb && !id->grabmouse)
+	if (id->window_focused)
 	{
-		/* grab the pointer */
-		if (in_dga_mouse.value)
+		if (dograb)
 		{
-			grab_win = DefaultRootWindow(id->x_disp);
+			DoGrabMouse(id);
 		}
-		else
+		else if (!dograb)
 		{
-			grab_win = id->x_win;
-
-			XSelectInput(id->x_disp, id->x_win, XINPUTFLAGS&(~PointerMotionMask));
-			XWarpPointer(id->x_disp, None, id->x_win, 0, 0, 0, 0, id->windowwidth/2, id->windowheight/2);
-		}
-
-		XSelectInput(id->x_disp, id->x_win, XINPUTFLAGS);
-
-		XGrabPointer(id->x_disp, grab_win, True, PointerMotionMask | ButtonPressMask | ButtonReleaseMask, GrabModeAsync, GrabModeAsync, grab_win, None, CurrentTime);
-
-		if (in_dga_mouse.value)
-		{
-			XF86DGAQueryDirectVideo(id->x_disp, DefaultScreen(id->x_disp), &dgaflags);
-
-			if ((dgaflags&XF86DGADirectPresent))
-			{
-				if (XF86DGADirectVideo(id->x_disp, DefaultScreen(id->x_disp), XF86DGADirectMouse))
-				{
-					id->dga_mouse_enabled = 1;
-				}
-			}
+			DoUngrabMouse(id);
 		}
 	}
-	else if (!dograb && id->grabmouse)
-	{
-		/* ungrab the pointer */
-		if (id->dga_mouse_enabled)
-		{
-			id->dga_mouse_enabled = 0;
-			XF86DGADirectVideo(id->x_disp, DefaultScreen(id->x_disp), 0);
-		}
-		XUngrabPointer(id->x_disp, CurrentTime);
-		XSelectInput(id->x_disp, id->x_win, StructureNotifyMask | KeyPressMask | KeyReleaseMask | ExposureMask | ButtonPressMask | ButtonReleaseMask);
-	}
 
-	id->grabmouse = dograb;
+	id->grab_mouse = dograb;
 
 	Sys_Thread_UnlockMutex(id->mutex);
 }

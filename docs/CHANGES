@@ -1,3 +1,9 @@
+Version 0.3
+===========
+- Starting in window mode on X11 with mouse grab enabled and with automatic
+  focusing of new windows disabled no longer results in an onfocused window
+  you can't select.
+
 Version 0.2
 ===========
 - Rewrote the QW networking code.
