@@ -40,6 +40,7 @@ static const usercmd_t zerocmd;
 
 enum state
 {
+	state_uninitialised,
 	state_sendchallenge,
 	state_sendconnection,
 	state_connected
@@ -65,7 +66,6 @@ struct NetQW
 {
 #warning Not really used for anything.
 	int error;
-	enum state state;
 	unsigned short qport;
 	int challenge;
 	unsigned long long resendtime;
@@ -95,6 +95,7 @@ struct NetQW
 
 	/* Shared between threads */
 	volatile int quit;
+	enum state state;
 	unsigned int microsecondsperframe;
 	unsigned long long lastmovesendtime;
 	unsigned long long movetimecounter;
@@ -211,6 +212,9 @@ void NetQW_GenerateFrames(struct NetQW *netqw)
 	unsigned long long curtime;
 
 	curtime = Sys_IntTime();
+
+	if (netqw->state != state_connected)
+		return;
 
 	Sys_Thread_LockMutex(netqw->mutex);
 
@@ -836,6 +840,8 @@ struct NetQW *NetQW_Create(const char *hoststring, const char *userinfo, unsigne
 		netqw->reliablebuffertail = 0;
 		netqw->netpackethead = 0;
 		netqw->netpackettail = 0;
+		netqw->packetloss = 0;
+		netqw->state = state_uninitialised;
 
 		netqw->lastsentframe = 0;
 		netqw->framestosend = 0;
