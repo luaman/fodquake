@@ -296,7 +296,11 @@ void CL_Rcon_f (void)
 
 	if (cls.state >= ca_connected)
 	{
+#ifdef NETQW
+		to = cls.server_adr;
+#else
 		to = cls.netchan.remote_address;
+#endif
 	}
 	else
 	{

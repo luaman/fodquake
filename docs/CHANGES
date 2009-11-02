@@ -4,6 +4,7 @@ Version 0.3
 - Starting in window mode on X11 with mouse grab enabled and with automatic
   focusing of new windows disabled no longer results in an onfocused window
   you can't select.
+- Fixed rcon to work again.
 
 Version 0.2
 ===========

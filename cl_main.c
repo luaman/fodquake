@@ -905,7 +905,20 @@ qboolean CL_GetMessage (void) {
 	return false;
 }
 
-void CL_ReadPackets (void) {
+void CL_ReadPackets(void)
+{
+#ifdef NETQW
+	/* Check connectionless messages (such as rcon) over the non-game socket */
+
+	while(NET_GetPacket(NS_CLIENT, &cl_net_message, &cl_net_from))
+	{
+		if (*(int *)cl_net_message.data == -1)
+		{
+			CL_ConnectionlessPacket();
+		}
+	}
+#endif
+
 	while (CL_GetMessage()) {
 		// remote command packet
 		if (*(int *)cl_net_message.data == -1)	{
