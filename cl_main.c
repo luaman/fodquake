@@ -866,8 +866,13 @@ qboolean CL_GetMessage (void) {
 		return CL_GetDemoMessage();
 
 #ifndef NETQW
-	if (NET_GetPacket(NS_CLIENT, &cl_net_message, &cl_net_from))
-		return true;
+	while(NET_GetPacket(NS_CLIENT, &cl_net_message, &cl_net_from))
+	{
+		if (!NET_CompareAdr(&cl_net_from, &cls.netchan.remote_address))
+			Com_DPrintf ("%s: sequenced packet without connection\n", NET_AdrToString(&cl_net_from));
+		else
+			return true;
+	}
 #endif
 
 #ifdef NETQW
@@ -928,12 +933,6 @@ void CL_ReadPackets(void)
 
 		if (cl_net_message.cursize < 8 && !cls.mvdplayback) {	
 			Com_DPrintf ("%s: Runt packet\n", NET_AdrToString(&cl_net_from));
-			continue;
-		}
-
-		// packet from server
-		if (!cls.demoplayback && !NET_CompareAdr(&cl_net_from, &cls.netchan.remote_address)) {
-			Com_DPrintf ("%s: sequenced packet without connection\n", NET_AdrToString(&cl_net_from));
 			continue;
 		}
 
