@@ -506,15 +506,18 @@ cvar_t *Cvar_Create(char *name, char *string, int cvarflags)
 }
 
 //returns true if the cvar was found (and deleted)
-qboolean Cvar_Delete (char *name) {
+qboolean Cvar_Delete(char *name)
+{
 	cvar_t *var, *prev;
 	int key;
 
-	key = Com_HashKey (name);
+	key = Com_HashKey(name);
 
 	prev = NULL;
-	for (var = cvar_hash[key]; var; var = var->hash_next) {
-		if (!Q_strcasecmp(var->name, name)) {
+	for (var = cvar_hash[key]; var; var = var->hash_next)
+	{
+		if (!Q_strcasecmp(var->name, name))
+		{
 			// unlink from hash
 			if (prev)
 				prev->hash_next = var->hash_next;
@@ -529,8 +532,10 @@ qboolean Cvar_Delete (char *name) {
 		return false;
 
 	prev = NULL;
-	for (var = cvar_vars; var; var=var->next)	{
-		if (!Q_strcasecmp(var->name, name)) {
+	for (var = cvar_vars; var; var=var->next)
+	{
+		if (!Q_strcasecmp(var->name, name))
+		{
 			// unlink from cvar list
 			if (prev)
 				prev->next = var->next;
@@ -538,10 +543,10 @@ qboolean Cvar_Delete (char *name) {
 				cvar_vars = var->next;
 
 			// free
-			Z_Free (var->defaultvalue);  
-			Z_Free (var->string);
-			Z_Free (var->name);
-			Z_Free (var);
+			Z_Free(var->defaultvalue);  
+			Z_Free(var->string);
+			Z_Free(var->name);
+			Z_Free(var);
 			return true;
 		}
 		prev = var;
@@ -554,72 +559,83 @@ qboolean Cvar_Delete (char *name) {
 
 static qboolean cvar_seta = false;
 
-void Cvar_Set_f (void) {
+void Cvar_Set_f(void)
+{
 	cvar_t *var;
 	char *var_name;
 
-	if (Cmd_Argc() != 3) {
-		Com_Printf ("Usage: %s <cvar> <value>\n", Cmd_Argv(0));
+	if (Cmd_Argc() != 3)
+	{
+		Com_Printf("Usage: %s <cvar> <value>\n", Cmd_Argv(0));
 		return;
 	}
 
-	var_name = Cmd_Argv (1);
-	var = Cvar_FindVar (var_name);
+	var_name = Cmd_Argv(1);
+	var = Cvar_FindVar(var_name);
 
-	if (var) {
-		Cvar_Set (var, Cmd_Argv(2));
-	} else {
-		if (Cmd_Exists(var_name)) {
-			Com_Printf ("\"%s\" is a command\n", var_name);
+	if (var)
+	{
+		Cvar_Set(var, Cmd_Argv(2));
+	}
+	else
+	{
+		if (Cmd_Exists(var_name))
+		{
+			Com_Printf("\"%s\" is a command\n", var_name);
 			return;
 		}
-		var = Cvar_Create (var_name, Cmd_Argv(2), CVAR_USER_CREATED|CVAR_CHANGED);
+		var = Cvar_Create(var_name, Cmd_Argv(2), CVAR_USER_CREATED|CVAR_CHANGED);
 	}
 
 	if (cvar_seta)
 		var->flags |= CVAR_USER_ARCHIVE;
 }
 
-void Cvar_Seta_f (void) {
+void Cvar_Seta_f(void)
+{
 	cvar_seta = true;
-	Cvar_Set_f ();
+	Cvar_Set_f();
 	cvar_seta = false;
 }
 
-void Cvar_Inc_f (void) {
+void Cvar_Inc_f(void)
+{
 	int c;
 	cvar_t *var;
 	float delta;
 
 	c = Cmd_Argc();
-	if (c != 2 && c != 3) {
-		Com_Printf ("inc <cvar> [value]\n");
+	if (c != 2 && c != 3)
+	{
+		Com_Printf("inc <cvar> [value]\n");
 		return;
 	}
 
-	var = Cvar_FindVar (Cmd_Argv(1));
-	if (!var) {
-		Com_Printf ("Unknown variable \"%s\"\n", Cmd_Argv(1));
+	var = Cvar_FindVar(Cmd_Argv(1));
+	if (!var)
+	{
+		Com_Printf("Unknown variable \"%s\"\n", Cmd_Argv(1));
 		return;
 	}
 	delta = (c == 3) ? atof (Cmd_Argv(2)) : 1;
 
-	Cvar_SetValue (var, var->value + delta);
+	Cvar_SetValue(var, var->value + delta);
 }
 
-void Cvar_Init (void) {
-	Cmd_AddCommand ("cvarlist", Cvar_CvarList_f);
-	Cmd_AddCommand ("toggle", Cvar_Toggle_f);
-	Cmd_AddCommand ("set", Cvar_Set_f);
-	//Cmd_AddCommand ("seta", Cvar_Seta_f);
-	Cmd_AddCommand ("inc", Cvar_Inc_f);
+void Cvar_Init(void)
+{
+	Cmd_AddCommand("cvarlist", Cvar_CvarList_f);
+	Cmd_AddCommand("toggle", Cvar_Toggle_f);
+	Cmd_AddCommand("set", Cvar_Set_f);
+	//Cmd_AddCommand("seta", Cvar_Seta_f);
+	Cmd_AddCommand("inc", Cvar_Inc_f);
 
 
-	Cmd_AddCommand ("cvar_reset", Cvar_Reset_f);
+	Cmd_AddCommand("cvar_reset", Cvar_Reset_f);
 
 
 	Cvar_SetCurrentGroup(CVAR_GROUP_CONSOLE);
-	Cvar_Register (&cvar_viewdefault);		
+	Cvar_Register(&cvar_viewdefault);		
 
 	Cvar_ResetCurrentGroup();
 }
