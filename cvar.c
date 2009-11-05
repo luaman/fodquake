@@ -479,26 +479,28 @@ void Cvar_CvarList_f (void) {
 	Com_Printf ("-------------\n%d variables\n", count);
 }
 
-cvar_t *Cvar_Create (char *name, char *string, int cvarflags) {
+cvar_t *Cvar_Create(char *name, char *string, int cvarflags)
+{
 	cvar_t *v;
 	int key;
 
 	if ((v = Cvar_FindVar(name)))
 		return v;
+
 	v = (cvar_t *) Z_Malloc(sizeof(cvar_t));
 	// Cvar doesn't exist, so we create it
 	v->next = cvar_vars;
 	cvar_vars = v;
 
-	key = Com_HashKey (name);
+	key = Com_HashKey(name);
 	v->hash_next = cvar_hash[key];
 	cvar_hash[key] = v;
 
-	v->name = CopyString (name);
-	v->string = CopyString (string);
-	v->defaultvalue = CopyString (string);	
+	v->name = CopyString(name);
+	v->string = CopyString(string);
+	v->defaultvalue = CopyString(string);	
 	v->flags = cvarflags;
-	v->value = Q_atof (v->string);
+	v->value = Q_atof(v->string);
 
 	return v;
 }
