@@ -285,7 +285,8 @@ Commands lead with a +, and continue until a - or another +
 quake +prog jctest.qp +cmd amlev1
 quake -nosound +cmd amlev1
 */
-void Cmd_StuffCmds_f (void) {
+void Cmd_StuffCmds_f(void)
+{
 	int k, len;
 	char *s, *text, *token;
 
@@ -298,7 +299,8 @@ void Cmd_StuffCmds_f (void) {
 		return;
 
 	text = Z_Malloc (len + 1);
-	for (k = 1; k < com_argc; k++) {
+	for (k = 1; k < com_argc; k++)
+	{
 		strcat (text, com_argv[k]);
 		if (k != com_argc - 1)
 			strcat (text, " ");
@@ -308,18 +310,24 @@ void Cmd_StuffCmds_f (void) {
 	token = Z_Malloc (len + 1);
 
 	s = text;
-	while (*s) {
-		if (*s == '+')	{
+	while (*s)
+	{
+		if (*s == '+')
+		{
 			k = 0;
 			for (s = s + 1; s[0] && (s[0] != ' ' || (s[1] != '-' && s[1] != '+')); s++)
 				token[k++] = s[0];
 			token[k++] = '\n';
 			token[k] = 0;
 			Cbuf_AddText (token);
-		} else if (*s == '-') {
+		}
+		else if (*s == '-')
+		{
 			for (s = s + 1; s[0] && s[0] != ' '; s++)
 				;
-		} else {
+		}
+		else
+		{
 			s++;
 		}
 	}

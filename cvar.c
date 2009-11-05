@@ -327,7 +327,8 @@ The flags will be or'ed in if the variable exists.
 
 extern int cvarsregged;
 
-void Cvar_Register (cvar_t *var) {
+void Cvar_Register(cvar_t *var)
+{
 	char string[512];
 	int key;
 	cvar_t *old;
@@ -336,36 +337,43 @@ void Cvar_Register (cvar_t *var) {
 	{
 		printf("Cvar \"%s\" registered too late\n", var->name);
 	}
+
 	// first check to see if it has already been defined
-	old = Cvar_FindVar (var->name);
-	if (old && !(old->flags & CVAR_USER_CREATED)) {
-		Com_Printf ("Can't register variable %s, already defined\n", var->name);
+	old = Cvar_FindVar(var->name);
+	if (old && !(old->flags & CVAR_USER_CREATED))
+	{
+		Com_Printf("Can't register variable %s, already defined\n", var->name);
 		return;
 	}
 
 	// check for overlap with a command
-	if (Cmd_Exists (var->name))	{
-		Com_Printf ("Cvar_Register: %s is a command\n", var->name);
+	if (Cmd_Exists(var->name))
+	{
+		Com_Printf("Cvar_Register: %s is a command\n", var->name);
 		return;
 	}
 
-	var->defaultvalue = CopyString (var->string);	
-	if (old) {
+	var->defaultvalue = CopyString(var->string);	
+	if (old)
+	{
 		var->flags |= old->flags & ~CVAR_USER_CREATED;
-		Q_strncpyz (string, old->string, sizeof(string));
-		Cvar_Delete (old->name);
+		Q_strncpyz(string, old->string, sizeof(string));
+		Cvar_Delete(old->name);
 		if (!(var->flags & CVAR_ROM))
-			var->string = CopyString (string);
+			var->string = CopyString(string);
 		else
-			var->string = CopyString (var->string);
-	} else {
-		// allocate the string on zone because future sets will Z_Free it
-		var->string = CopyString (var->string);
+			var->string = CopyString(var->string);
 	}
-	var->value = Q_atof (var->string);
+	else
+	{
+		// allocate the string on zone because future sets will Z_Free it
+		var->string = CopyString(var->string);
+	}
+
+	var->value = Q_atof(var->string);
 
 	// link the variable in
-	key = Com_HashKey (var->name);
+	key = Com_HashKey(var->name);
 	var->hash_next = cvar_hash[key];
 	cvar_hash[key] = var;
 	var->next = cvar_vars;
