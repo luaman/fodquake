@@ -43,7 +43,7 @@ void ResampleSfx (sfx_t *sfx, int inrate, int inwidth, byte *data)
 	int		sample, samplefrac, fracstep;
 	sfxcache_t	*sc;
 	
-	sc = Cache_Check (&sfx->cache);
+	sc = sfx->sfxcache;
 	if (!sc)
 		return;
 
@@ -98,7 +98,7 @@ void ResampleSfx (sfx_t *sfx, int inrate, int inwidth, byte *data)
 S_LoadSound
 ==============
 */
-sfxcache_t *S_LoadSound (sfx_t *s)
+sfxcache_t *S_LoadSound(sfx_t *s)
 {
 	char	namebuffer[256];
 	byte	*data;
@@ -112,9 +112,8 @@ sfxcache_t *S_LoadSound (sfx_t *s)
 		return 0;
 
 // see if still in memory
-	sc = Cache_Check (&s->cache);
-	if (sc)
-		return sc;
+	if (s->sfxcache)
+		return s->sfxcache;
 
 // load it in
 	strcpy(namebuffer, "sound/");
@@ -142,7 +141,7 @@ sfxcache_t *S_LoadSound (sfx_t *s)
 
 	len = len * info.width * info.channels;
 
-	sc = Cache_Alloc ( &s->cache, len + sizeof(sfxcache_t), s->name);
+	sc = malloc(len + sizeof(sfxcache_t));
 	if (!sc)
 		return NULL;
 	
@@ -153,6 +152,8 @@ sfxcache_t *S_LoadSound (sfx_t *s)
 	sc->stereo = info.channels;
 
 	ResampleSfx (s, sc->speed, sc->width, data + info.dataofs);
+
+	s->sfxcache = sc;
 
 	return sc;
 }

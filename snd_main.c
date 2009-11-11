@@ -199,10 +199,8 @@ void SND_Restart_f (void)
 
 	for(i=0;i<num_sfx;i++)
 	{
-		if (Cache_Check(&known_sfx[i].cache))
-		{
-			Cache_Free(&known_sfx[i].cache);
-		}
+		free(&known_sfx[i].sfxcache);
+		known_sfx[i].sfxcache = 0;
 	}
 
 	if (!s_nosound.value)
@@ -806,7 +804,7 @@ static void S_SoundList_f(void)
 	total = 0;
 	for (sfx = known_sfx, i = 0; i < num_sfx; i++, sfx++)
 	{
-		sc = Cache_Check(&sfx->cache);
+		sc = sfx->sfxcache;
 		if (!sc)
 			continue;
 		size = sc->length * sc->width * (sc->stereo + 1);
