@@ -339,8 +339,8 @@ void VID_Open()
 			GL_Particles_TextureInit();
 			Draw_InitGL();
 			Sbar_Init();
-			SCR_LoadTextures();
 #endif
+			SCR_LoadTextures();
 
 			return;
 		}
