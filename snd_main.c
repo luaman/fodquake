@@ -27,12 +27,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 struct SoundCard *soundcard;
 
-void S_Play_f (void);
-void S_PlayVol_f (void);
-void S_SoundList_f (void);
-static void S_Update_ ();
-void S_StopAllSounds (qboolean clear);
-void S_StopAllSounds_f (void);
+static void S_Play_f(void);
+static void S_PlayVol_f(void);
+static void S_SoundList_f(void);
+static void S_Update_();
+static void S_StopAllSounds_f(void);
 
 // =======================================================================
 // Internal sound data & structures
@@ -513,7 +512,8 @@ void S_StopAllSounds (qboolean clear) {
 		S_ClearBuffer ();
 }
 
-void S_StopAllSounds_f (void) {
+static void S_StopAllSounds_f(void)
+{
 	S_StopAllSounds (true);
 }
 
@@ -725,7 +725,8 @@ void S_ExtraUpdate (void) {
 	S_Update_();
 }
 
-static void S_Update_ (void) {
+static void S_Update_(void)
+{
 	unsigned endtime;
 	int samps;
 	
@@ -736,7 +737,8 @@ static void S_Update_ (void) {
 	GetSoundtime();
 
 	// check to make sure that we haven't overshot
-	if (paintedtime < soundtime) {
+	if (paintedtime < soundtime)
+	{
 		//Com_Printf ("S_Update_ : overflow\n");
 		paintedtime = soundtime;
 	}
@@ -750,7 +752,7 @@ static void S_Update_ (void) {
 	if (soundcard->Restore)
 		soundcard->Restore(soundcard);
 
-	S_PaintChannels (endtime);
+	S_PaintChannels(endtime);
 
 	soundcard->Submit(soundcard, paintedtime - soundtime);
 }
@@ -761,55 +763,61 @@ console functions
 ===============================================================================
 */
 
-void S_Play_f (void) {
+static void S_Play_f(void)
+{
 	int i;
 	char name[256];
 	sfx_t *sfx;
 	static int hash = 345;
 
-	for (i = 1; i < Cmd_Argc(); i++) {
+	for (i = 1; i < Cmd_Argc(); i++)
+	{
 		Q_strncpyz(name, Cmd_Argv(i), sizeof(name));
-		COM_DefaultExtension (name, ".wav");
+		COM_DefaultExtension(name, ".wav");
 		sfx = S_PrecacheSound(name);
 		S_StartSound(hash++, 0, sfx, listener_origin, 1.0, 0.0);
 	}
 }
 
-void S_PlayVol_f (void) {
+static void S_PlayVol_f(void)
+{
 	int i;
 	float vol;
 	char name[256];
 	sfx_t *sfx;
 	static int hash = 543;
 
-	for (i = 1; i+1 < Cmd_Argc(); i += 2) {
+	for (i = 1; i+1 < Cmd_Argc(); i += 2)
+	{
 		Q_strncpyz(name, Cmd_Argv(i), sizeof(name));
-		COM_DefaultExtension (name, ".wav");
+		COM_DefaultExtension(name, ".wav");
 		sfx = S_PrecacheSound(name);
 		vol = Q_atof(Cmd_Argv(i + 1));
 		S_StartSound(hash++, 0, sfx, listener_origin, vol, 0.0);
 	}
 }
 
-void S_SoundList_f (void) {
+static void S_SoundList_f(void)
+{
 	int i, size, total;
 	sfx_t *sfx;
 	sfxcache_t *sc;
 
 	total = 0;
-	for (sfx = known_sfx, i = 0; i < num_sfx; i++, sfx++) {
-		sc = Cache_Check (&sfx->cache);
+	for (sfx = known_sfx, i = 0; i < num_sfx; i++, sfx++)
+	{
+		sc = Cache_Check(&sfx->cache);
 		if (!sc)
 			continue;
 		size = sc->length * sc->width * (sc->stereo + 1);
 		total += size;
 		if (sc->loopstart >= 0)
-			Com_Printf ("L");
+			Com_Printf("L");
 		else
-			Com_Printf (" ");
-		Com_Printf ("(%2db) %6i : %s\n",sc->width*8,  size, sfx->name);
+			Com_Printf(" ");
+		Com_Printf("(%2db) %6i : %s\n",sc->width*8,  size, sfx->name);
 	}
-	Com_Printf ("Total resident: %i\n", total);
+	Com_Printf("Total resident: %i\n", total);
 }
 
 void S_LocalSound (char *sound) {
