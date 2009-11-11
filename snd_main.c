@@ -126,7 +126,8 @@ void S_SoundInfo_f (void) {
 	Com_Printf ("%5d total_channels\n", total_channels);
 }
 
-void S_Startup (void) {
+static void S_InitDriver()
+{
 	int rc = false;
 	int i;
 	unsigned int rate;
@@ -168,6 +169,8 @@ void S_Startup (void) {
 	if (!rc)
 	{
 		Com_Printf("Unable to initialise sound output.\n");
+		free(soundcard);
+		soundcard = 0;
 		sound_started = 0;
 		return;
 	}
@@ -175,11 +178,24 @@ void S_Startup (void) {
 	sound_started = 1;
 }
 
+static void S_ShutdownDriver()
+{
+	if (!sound_started)
+		return;
+
+	sound_started = 0;
+
+	soundcard->Shutdown(soundcard);
+
+	free(soundcard);
+	soundcard = 0;
+}
+
 void SND_Restart_f (void)
 {
 	int i;
 
-	S_Shutdown();
+	S_ShutdownDriver();
 	sound_started = 0;
 
 	for(i=0;i<num_sfx;i++)
@@ -277,16 +293,9 @@ void S_Init(void)
 // Shutdown sound engine
 // =======================================================================
 
-void S_Shutdown (void) {
-	if (!sound_started)
-		return;
-
-	sound_started = 0;
-
-	soundcard->Shutdown(soundcard);
-
-	free(soundcard);
-	soundcard = 0;
+void S_Shutdown(void)
+{
+	S_ShutdownDriver();
 }
 
 // =======================================================================
