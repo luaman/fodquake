@@ -208,7 +208,7 @@ void SND_Restart_f (void)
 
 	if (!s_nosound.value)
 	{
-		S_Startup();
+		S_InitDriver();
 
 		for(i=0;i<num_sfx;i++)
 		{
@@ -276,17 +276,17 @@ void S_CvarInit(void)
 void S_Init(void)
 {
 	if (!s_nosound.value)
-		S_Startup ();
+		S_InitDriver();
 
-	SND_InitScaletable ();
+	SND_InitScaletable();
 
-	known_sfx = Hunk_AllocName (MAX_SFX*sizeof(sfx_t), "sfx_t");
+	known_sfx = Hunk_AllocName(MAX_SFX*sizeof(sfx_t), "sfx_t");
 	num_sfx = 0;
 
-	ambient_sfx[AMBIENT_WATER] = S_PrecacheSound ("ambience/water1.wav");
-	ambient_sfx[AMBIENT_SKY] = S_PrecacheSound ("ambience/wind2.wav");
+	ambient_sfx[AMBIENT_WATER] = S_PrecacheSound("ambience/water1.wav");
+	ambient_sfx[AMBIENT_SKY] = S_PrecacheSound("ambience/wind2.wav");
 
-	S_StopAllSounds (true);
+	S_StopAllSounds(true);
 }
 
 // =======================================================================
