@@ -124,7 +124,8 @@ void Skin_Find (player_info_t *sc) {
 }
 
 //Returns a pointer to the skin bitmap, or NULL to use the default
-byte *Skin_Cache (skin_t *skin) {
+byte *Skin_Cache (skin_t *skin)
+{
 	int y;
 	byte *pic, *out, *pix;
 	char name[MAX_OSPATH];
@@ -136,18 +137,20 @@ byte *Skin_Cache (skin_t *skin) {
 	if (skin->failedload)
 		return NULL;
 
-	if ((out = Cache_Check (&skin->cache)))
-		return out;
+	if (skin->data)
+		return skin->data;
 
 	// load the pic from disk
 	Q_snprintfz (name, sizeof(name), "skins/%s.pcx", skin->name);
-	if (!(pic = Image_LoadPCX (NULL, name, 0, 0)) || image_width > 320 || image_height > 200) {
+	if (!(pic = Image_LoadPCX (NULL, name, 0, 0)) || image_width > 320 || image_height > 200)
+	{
 		if (pic)
 			free (pic);
 		Com_Printf ("Couldn't load skin %s\n", name);
 
 		Q_snprintfz (name, sizeof(name), "skins/%s.pcx", baseskin.string);
-		if (!(pic = Image_LoadPCX (NULL, name, 0, 0)) || image_width > 320 || image_height > 200) {
+		if (!(pic = Image_LoadPCX (NULL, name, 0, 0)) || image_width > 320 || image_height > 200)
+		{
 			if (pic)
 				free (pic);
 			skin->failedload = true;
@@ -155,8 +158,10 @@ byte *Skin_Cache (skin_t *skin) {
 		}
 	}
 
-	if (!(out = pix = Cache_Alloc (&skin->cache, 320 * 200, skin->name)))
+	if (!(out = pix = malloc(320 * 200)))
 		Sys_Error ("Skin_Cache: couldn't allocate");
+
+	skin->data = out;
 
 	memset (out, 0, 320 * 200);
 	for (y = 0; y < image_height; y++, pix += 320)
@@ -220,7 +225,6 @@ void Skin_NextDownload(void)
 		MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
 		MSG_WriteString (&cls.netchan.message, va("begin %i", cl.servercount));
 #endif
-		Cache_Report();		// print remaining memory
 	}
 }
 
@@ -228,9 +232,10 @@ void Skin_NextDownload(void)
 void Skin_Skins_f (void) {
 	int i;
 
-	for (i = 0; i < numskins; i++) {
-		if (skins[i].cache.data)
-			Cache_Free (&skins[i].cache);
+	for (i = 0; i < numskins; i++)
+	{
+		if (skins[i].data)
+			free(skins[i].data);
 	}
 	numskins = 0;
 
@@ -260,8 +265,8 @@ void Skin_Reload()
 
 	for(i=0;i<numskins;i++)
 	{
-		if (skins[i].cache.data)
-			Cache_Free(&skins[i].cache);
+		if (skins[i].data)
+			free(skins[i].data);
 	}
 			
 	numskins = 0;
