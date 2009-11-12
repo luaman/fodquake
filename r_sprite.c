@@ -244,7 +244,7 @@ void R_DrawSprite (void) {
 	VectorCopy (currententity->origin, r_entorigin);
 	VectorSubtract (r_origin, r_entorigin, modelorg);
 
-	psprite = currententity->model->cache.data;
+	psprite = currententity->model->extradata;
 
 	r_spritedesc.pspriteframe = R_GetSpriteframe (psprite);
 

@@ -29,7 +29,7 @@ extern sizebuf_t cl_net_message;
 typedef struct {
 	char		name[16];
 	qboolean	failedload;		// the name isn't a valid skin
-	cache_user_t	cache;
+	void *data;
 } skin_t;
 
 // player_state_t is the information needed by a player entity

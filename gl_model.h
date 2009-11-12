@@ -370,8 +370,7 @@ typedef struct model_s {
 	qboolean	isworldmodel;
 
 	// additional model data
-	cache_user_t	cache;		// only access through Mod_Extradata
-
+	void *extradata;
 } model_t;
 
 

@@ -52,18 +52,14 @@ void Mod_Init (void) {
 }
 
 //Caches the data if needed
-void *Mod_Extradata (model_t *mod) {
-	void *r;
+void *Mod_Extradata(model_t *mod)
+{
+	if (mod->extradata)
+		return mod->extradata;
 
-	if ((r = Cache_Check (&mod->cache)))
-		return r;
+	Mod_LoadModel(mod, true);
 
-	Mod_LoadModel (mod, true);
-
-	if (!mod->cache.data)
-		Sys_Error ("Mod_Extradata: caching failed");
-
-	return mod->cache.data;
+	return mod->extradata;
 }
 
 mleaf_t *Mod_PointInLeaf (vec3_t p, model_t *model) {
@@ -143,8 +139,11 @@ void Mod_ClearAll(void)
 
 	for (i = 0, mod = mod_known; i < mod_numknown ; i++, mod++)
 	{
-		if (mod->type == mod_alias && mod->cache.data)
-			Cache_Free(&mod->cache);
+		if (mod->type == mod_alias)
+		{
+			free(mod->extradata);
+			mod->extradata = 0;
+		}
 
 		mod->needload = true;
 	}
@@ -174,17 +173,20 @@ model_t *Mod_FindName (char *name) {
 }
 
 //Loads a model into the cache
-model_t *Mod_LoadModel (model_t *mod, qboolean crash) {
-	void *d;
+model_t *Mod_LoadModel (model_t *mod, qboolean crash)
+{
 	unsigned *buf;
 	byte stackbuf[1024];		// avoid dirtying the cache heap
 
-	if (!mod->needload) {
-		if (mod->type == mod_alias) {
-			d = Cache_Check (&mod->cache);
-			if (d)
+	if (!mod->needload)
+	{
+		if (mod->type == mod_alias)
+		{
+			if (mod->extradata)
 				return mod;
-		} else {
+		}
+		else
+		{
 			return mod;		// not cached at all
 		}
 	}
@@ -1423,11 +1425,12 @@ void Mod_LoadAliasModel (model_t *mod, void *buffer) {
 	// move the complete, relocatable alias model to the cache
 	end = Hunk_LowMark ();
 	total = end - start;
-	
-	Cache_Alloc (&mod->cache, total, loadname);
-	if (!mod->cache.data)
-		return;
-	memcpy (mod->cache.data, pheader, total);
+
+	mod->extradata = malloc(total);
+	if (mod->extradata == 0)
+		Host_Error("Out of memory\n");
+
+	memcpy(mod->extradata, pheader, total);
 
 	Hunk_FreeToLowMark (start);
 }
@@ -1523,9 +1526,11 @@ void Mod_LoadSpriteModel (model_t *mod, void *buffer) {
 
 	size = sizeof (msprite_t) +	(numframes - 1) * sizeof (psprite->frames);
 
-	psprite = Hunk_AllocName (size, loadname);
+	psprite = malloc(size);
+	if (psprite == 0)
+		Host_Error("Mod_LoadSpriteModel: Out of memory\n");
 
-	mod->cache.data = psprite;
+	mod->extradata = psprite;
 
 	psprite->type = LittleLong (pin->type);
 	psprite->maxwidth = LittleLong (pin->width);
