@@ -52,7 +52,7 @@ void customCrosshair_Init(void);
 
 typedef struct cachepic_s {
 	char			name[MAX_QPATH];
-	cache_user_t	cache;
+	void *data;
 } cachepic_t;
 
 #define	MAX_CACHED_PICS		128
@@ -71,35 +71,34 @@ mpic_t *Draw_CacheWadPic (char *name) {
 	return pic;
 }
 
-mpic_t *Draw_CachePic (char *path) {
+mpic_t *Draw_CachePic(char *path)
+{
 	cachepic_t *pic;
 	int i;
 	qpic_t *dat;
 
 	for (pic = cachepics, i = 0; i < numcachepics; pic++, i++)
-		if (!strcmp (path, pic->name))
+		if (!strcmp(path, pic->name))
 			break;
 
-	if (i == numcachepics) {
+	if (i == numcachepics)
+	{
 		if (numcachepics == MAX_CACHED_PICS)
-			Sys_Error ("numcachepics == MAX_CACHED_PICS");
+			Sys_Error("numcachepics == MAX_CACHED_PICS");
 		numcachepics++;
-		strcpy (pic->name, path);
+		strcpy(pic->name, path);
 	}
 
-	dat = Cache_Check (&pic->cache);
-
-	if (dat)
-		return (mpic_t *)dat;
+	if (pic->data)
+		return pic->data;
 
 	// load the pic from disk
-	FS_LoadCacheFile (path, &pic->cache);
-	
-	dat = (qpic_t *)pic->cache.data;
-	if (!dat)
+	pic->data = FS_LoadFile(path, 0);
+	if (!pic->data)
 		Sys_Error ("Draw_CachePic: failed to load %s", path);
 
-	SwapPic (dat);
+	dat = (qpic_t *)pic->data;
+	SwapPic(dat);
 
 	((mpic_t *) dat)->width = dat->width;
 	((mpic_t *) dat)->alpha = memchr (&dat->data, 255, dat->width * ((mpic_t *)dat)->height) != NULL;
