@@ -262,7 +262,6 @@ char *CopyString(char *s);
 
 extern int com_filesize;
 extern char	com_netpath[MAX_OSPATH];
-struct cache_user_s;
 
 extern char	com_gamedir[MAX_OSPATH];
 extern char	com_basedir[MAX_OSPATH];
