@@ -224,7 +224,6 @@ int FS_FOpenFile(char *filename, FILE ** file)
 
 //Filename are relative to the quake directory.
 //Always appends a 0 byte to the loaded data.
-static cache_user_t *loadcache;
 static byte *loadbuf;
 static int loadsize;
 byte *FS_LoadFile(char *path, int usehunk)
