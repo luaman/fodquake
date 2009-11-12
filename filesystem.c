@@ -256,10 +256,6 @@ byte *FS_LoadFile(char *path, int usehunk)
 	{
 		buf = Z_Malloc(len + 1);
 	}
-	else if (usehunk == 3)
-	{
-		buf = Cache_Alloc(loadcache, len + 1, base);
-	}
 	else if (usehunk == 4)
 	{
 		if (len + 1 > loadsize)
@@ -296,12 +292,6 @@ void *FS_LoadHunkFile(char *path)
 void *FS_LoadTempFile(char *path)
 {
 	return FS_LoadFile(path, 2);
-}
-
-void FS_LoadCacheFile(char *path, struct cache_user_s *cu)
-{
-	loadcache = cu;
-	FS_LoadFile(path, 3);
 }
 
 // uses temp hunk if larger than bufsize
@@ -444,9 +434,6 @@ void FS_SetGamedir(char *dir)
 		free(com_searchpaths);
 		com_searchpaths = next;
 	}
-
-	// flush all data, so it will be forced to reload
-	Cache_Flush();
 
 	Q_snprintfz(com_gamedir, sizeof(com_gamedir), "%s/%s", com_basedir, dir);
 
