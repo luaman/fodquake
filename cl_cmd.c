@@ -671,7 +671,7 @@ void CL_FullServerinfo_f (void) {
 	if (strcasecmp(p, "mvdsv 0.26") == 0)
 		Com_Printf ("== BROKEN SERVER ==\nDownloads will not work! Please report download bugs to the MVDSV project.\n");
 	else if (strncasecmp(p, "mvdsv", 5) == 0)
-		Com_Printf ("== BROKEN SERVER ==\nDownloads will probably not work! Please report problems with downloadsing to the MVDSV project.\n");
+		Com_Printf ("== BROKEN SERVER ==\nDownloads will probably not work! Please report problems with downloading to the MVDSV project.\n");
 
 	CL_ProcessServerInfo ();
 }
