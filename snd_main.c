@@ -199,7 +199,7 @@ void SND_Restart_f (void)
 
 	for(i=0;i<num_sfx;i++)
 	{
-		free(&known_sfx[i].sfxcache);
+		free(known_sfx[i].sfxcache);
 		known_sfx[i].sfxcache = 0;
 	}
 
