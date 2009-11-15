@@ -144,16 +144,16 @@ sfxcache_t *S_LoadSound(sfx_t *s)
 	sc = malloc(len + sizeof(sfxcache_t));
 	if (!sc)
 		return NULL;
-	
+
 	sc->length = info.samples;
 	sc->loopstart = info.loopstart;
 	sc->speed = info.rate;
 	sc->width = info.width;
 	sc->stereo = info.channels;
 
-	ResampleSfx (s, sc->speed, sc->width, data + info.dataofs);
-
 	s->sfxcache = sc;
+
+	ResampleSfx (s, sc->speed, sc->width, data + info.dataofs);
 
 	return sc;
 }
