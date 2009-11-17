@@ -32,8 +32,6 @@ static qboolean mouse_cvar_callback(cvar_t *var, char *string);
 cvar_t sensitivity = { "sensitivity", "3", CVAR_ARCHIVE, mouse_cvar_callback };
 cvar_t m_pitch = { "m_pitch", "0.022", CVAR_ARCHIVE, mouse_cvar_callback };
 cvar_t m_yaw = { "m_yaw", "0.022", 0, mouse_cvar_callback };
-cvar_t m_forward = { "m_forward", "1", 0, mouse_cvar_callback };
-cvar_t m_side = { "m_side", "0.8", 0, mouse_cvar_callback };
 cvar_t m_accel = { "m_accel", "0", 0, mouse_cvar_callback };
 cvar_t m_filter = { "m_filter", "0", 0, mouse_cvar_callback };
 
@@ -49,8 +47,6 @@ struct Mouse
 	float sensitivity;
 	float m_pitch;
 	float m_yaw;
-	float m_forward;
-	float m_side;
 	float m_accel;
 	float m_filter;
 };
@@ -71,10 +67,6 @@ static qboolean mouse_cvar_callback(cvar_t *var, char *string)
 			mouse_global->m_pitch = m_pitch.value;
 		else if (var == &m_yaw)
 			mouse_global->m_yaw = m_yaw.value;
-		else if (var == &m_forward)
-			mouse_global->m_forward = m_forward.value;
-		else if (var == &m_side)
-			mouse_global->m_side = m_side.value;
 		else if (var == &m_accel)
 			mouse_global->m_accel = m_accel.value;
 		else if (var == &m_filter)
@@ -173,8 +165,6 @@ int Mouse_Init()
 			mouse_global->sensitivity = sensitivity.value;
 			mouse_global->m_pitch = m_pitch.value;
 			mouse_global->m_yaw = m_yaw.value;
-			mouse_global->m_forward = m_forward.value;
-			mouse_global->m_side = m_side.value;
 			mouse_global->m_accel = m_accel.value;
 			mouse_global->m_filter = m_filter.value;
 
@@ -202,8 +192,6 @@ void Mouse_CvarInit()
 	Cvar_Register(&sensitivity);
 	Cvar_Register(&m_pitch);
 	Cvar_Register(&m_yaw);
-	Cvar_Register(&m_forward);
-	Cvar_Register(&m_side);
 	Cvar_Register(&m_accel);
 	Cvar_Register(&m_filter);
 }

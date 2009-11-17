@@ -5,6 +5,7 @@ Version 0.3
   focusing of new windows disabled no longer results in an onfocused window
   you can't select.
 - Fixed rcon to work again.
+- Removed the obsolete m_side and m_forward cvars.
 
 Version 0.2
 ===========
