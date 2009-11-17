@@ -184,7 +184,7 @@ void CL_PredictMove (void) {
 		goto out;
 	}
 
-	if (INTERPOLATEDPHYSICS && ((cl_nopred.value && !cls.mvdplayback) || cl.validsequence + 1 >= cls.netchan.outgoing_sequence))
+	if (!INTERPOLATEDPHYSICS && ((cl_nopred.value && !cls.mvdplayback) || cl.validsequence + 1 >= cls.netchan.outgoing_sequence))
 	{
 		VectorCopy (to->playerstate[cl.playernum].velocity, cl.simvel);
 		VectorCopy (to->playerstate[cl.playernum].origin, cl.simorg);
@@ -224,7 +224,7 @@ void CL_PredictMove (void) {
 	}
 	else
 	{
-		for (i = 1; i < cls.netchan.outgoing_sequence - cl.validsequence - 1; i++) {
+		for (i = 1; i < cls.netchan.outgoing_sequence - cl.validsequence; i++) {
 			from = to;
 			to = &cl.frames[(cl.validsequence + i) & UPDATE_MASK];
 			CL_PredictUsercmd(&from->playerstate[cl.playernum], &to->playerstate[cl.playernum], &to->cmd);
