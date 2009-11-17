@@ -868,8 +868,10 @@ qboolean CL_GetMessage (void) {
 #ifndef NETQW
 	while(NET_GetPacket(NS_CLIENT, &cl_net_message, &cl_net_from))
 	{
-		if (!NET_CompareAdr(&cl_net_from, &cls.netchan.remote_address))
+		if ((*(int *)cl_net_message.data != -1) && !NET_CompareAdr(&cl_net_from, &cls.netchan.remote_address))
+		{
 			Com_DPrintf ("%s: sequenced packet without connection\n", NET_AdrToString(&cl_net_from));
+		}
 		else
 			return true;
 	}
