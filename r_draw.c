@@ -93,7 +93,7 @@ mpic_t *Draw_CachePic(char *path)
 		return pic->data;
 
 	// load the pic from disk
-	pic->data = FS_LoadFile(path, 0);
+	pic->data = FS_LoadZFile(path);
 	if (!pic->data)
 		Sys_Error ("Draw_CachePic: failed to load %s", path);
 
