@@ -232,6 +232,7 @@ byte *FS_LoadFile(char *path, int usehunk)
 	byte *buf;
 	char base[32];
 	int len;
+	int r;
 
 	buf = NULL;		// quiet compiler warning
 
@@ -271,16 +272,26 @@ byte *FS_LoadFile(char *path, int usehunk)
 		Sys_Error("FS_LoadFile: not enough space for %s", path);
 
 	((byte *) buf)[len] = 0;
+
 #ifndef SERVERONLY
 	Draw_BeginDisc();
 #endif
-	fread(buf, 1, len, h);
+
+	r = fread(buf, 1, len, h);
 	fclose(h);
+	if (r != len)
+		Sys_Error("FS_LoadFile: Error while reading file %s", path);
+
 #ifndef SERVERONLY
 	Draw_EndDisc();
 #endif
 
 	return buf;
+}
+
+void *FS_LoadZFile(char *path)
+{
+	return FS_LoadFile(path, 0);
 }
 
 void *FS_LoadHunkFile(char *path)
