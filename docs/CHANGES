@@ -5,6 +5,8 @@ Version 0.3
   focusing of new windows disabled no longer results in an onfocused window
   you can't select.
 - Fixed rcon to work again.
+- Fixed a problem where movement would not work when joining a game after
+  having tracked a player through Qizmo.
 - Removed the obsolete m_side and m_forward cvars.
 
 Version 0.2

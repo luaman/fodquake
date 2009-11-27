@@ -1181,7 +1181,14 @@ void CL_ProcessUserInfo (int slot, player_info_t *player, char *key) {
 	player->spectator = (Info_ValueForKey (player->userinfo, "*spectator")[0]) ? true : false;
 
 	if (slot == cl.playernum && player->name[0])
+	{
 		cl.spectator = player->spectator;
+
+#ifdef NETQW
+		if (!cl.spectator && cls.netqw)
+			NetQW_UnlockMovement(cls.netqw);
+#endif
+	}
 
 	Sbar_Changed ();
 
