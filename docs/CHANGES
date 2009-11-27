@@ -7,6 +7,8 @@ Version 0.3
 - Fixed rcon to work again.
 - Fixed a problem where movement would not work when joining a game after
   having tracked a player through Qizmo.
+- Fixed a crash in the software renderer when displaying any of the 'low
+  memory', 'low speed' or 'network lag' icons.
 - Removed the obsolete m_side and m_forward cvars.
 
 Version 0.2
