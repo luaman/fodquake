@@ -206,7 +206,7 @@ void CL_PredictMove (void) {
 
 		if (cl.validsequence >= 0)
 		{
-			for(i=cl.validsequence;i<cls.netchan.outgoing_sequence - 1;i++)
+			for(i=cl.validsequence;i<cls.netchan.outgoing_sequence;i++)
 			{
 				from = &cl.frames[i & UPDATE_MASK];
 				to = &cl.frames[(i + 1) & UPDATE_MASK];
