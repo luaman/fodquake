@@ -487,7 +487,8 @@ void R_AliasSetupLighting(entity_t *ent) {
 		ambientlight = shadelight = minlight;
 }
 
-void R_DrawAliasModel (entity_t *ent) {
+void R_DrawAliasModel(entity_t *ent)
+{
 	int i, anim, skinnum, texture, fb_texture;
 	float scale;
 	vec3_t mins, maxs;
@@ -502,11 +503,13 @@ void R_DrawAliasModel (entity_t *ent) {
 	clmodel = ent->model;
 	paliashdr = (aliashdr_t *) Mod_Extradata (ent->model);	//locate the proper data
 
-	if (ent->frame >= paliashdr->numframes || ent->frame < 0) {
+	if (ent->frame >= paliashdr->numframes || ent->frame < 0)
+	{
 		Com_DPrintf ("R_DrawAliasModel: no such frame %d\n", ent->frame);
 		ent->frame = 0;
 	}
-	if (ent->oldframe >= paliashdr->numframes || ent->oldframe < 0) {
+	if (ent->oldframe >= paliashdr->numframes || ent->oldframe < 0)
+	{
 		Com_DPrintf ("R_DrawAliasModel: no such oldframe %d\n", ent->oldframe);
 		ent->oldframe = 0;
 	}
@@ -520,18 +523,25 @@ void R_DrawAliasModel (entity_t *ent) {
 	else
 		r_framelerp = min (ent->framelerp, 1);
 
-
 	//culling
-	if (!(ent->flags & RF_WEAPONMODEL)) {
-		if (ent->angles[0] || ent->angles[1] || ent->angles[2]) {
+	if (!(ent->flags & RF_WEAPONMODEL))
+	{
+		if (ent->angles[0] || ent->angles[1] || ent->angles[2])
+		{
 			if (R_CullSphere (ent->origin, max(oldframe->radius, frame->radius)))
 				return;
-		} else {
-			if (r_framelerp == 1) {	
+		}
+		else
+		{
+			if (r_framelerp == 1)
+			{
 				VectorAdd(ent->origin, frame->bboxmin, mins);
 				VectorAdd(ent->origin, frame->bboxmax, maxs);
-			} else {
-				for (i = 0; i < 3; i++) {
+			}
+			else
+			{
+				for (i = 0; i < 3; i++)
+				{
 					mins[i] = ent->origin[i] + min (oldframe->bboxmin[i], frame->bboxmin[i]);
 					maxs[i] = ent->origin[i] + max (oldframe->bboxmax[i], frame->bboxmax[i]);
 				}
@@ -551,22 +561,28 @@ void R_DrawAliasModel (entity_t *ent) {
 	glPushMatrix ();
 	R_RotateForEntity (ent);
 
-	if (clmodel->modhint == MOD_EYES) {
+	if (clmodel->modhint == MOD_EYES)
+	{
 		glTranslatef (paliashdr->scale_origin[0], paliashdr->scale_origin[1], paliashdr->scale_origin[2] - (22 + 8));
 		// double size of eyes, since they are really hard to see in gl
 		glScalef (paliashdr->scale[0] * 2, paliashdr->scale[1] * 2, paliashdr->scale[2] * 2);
-	} else if (ent->flags & RF_WEAPONMODEL) {	
+	}
+	else if (ent->flags & RF_WEAPONMODEL)
+	{
 		scale = 0.5 + bound(0, r_viewmodelsize.value, 1) / 2;
-        glTranslatef (paliashdr->scale_origin[0], paliashdr->scale_origin[1], paliashdr->scale_origin[2]);
-        glScalef (paliashdr->scale[0] * scale, paliashdr->scale[1], paliashdr->scale[2]);
-    } else {
+		glTranslatef (paliashdr->scale_origin[0], paliashdr->scale_origin[1], paliashdr->scale_origin[2]);
+		glScalef (paliashdr->scale[0] * scale, paliashdr->scale[1], paliashdr->scale[2]);
+	}
+	else
+	{
 		glTranslatef (paliashdr->scale_origin[0], paliashdr->scale_origin[1], paliashdr->scale_origin[2]);
 		glScalef (paliashdr->scale[0], paliashdr->scale[1], paliashdr->scale[2]);
 	}
 
 	anim = (int) (cl.time * 10) & 3;
 	skinnum = ent->skinnum;
-	if (skinnum >= paliashdr->numskins || skinnum < 0) {
+	if (skinnum >= paliashdr->numskins || skinnum < 0)
+	{
 		Com_DPrintf ("R_DrawAliasModel: no such skin # %d\n", skinnum);
 		skinnum = 0;
 	}
@@ -574,16 +590,17 @@ void R_DrawAliasModel (entity_t *ent) {
 	texture = paliashdr->gl_texturenum[skinnum][anim];
 	fb_texture = paliashdr->fb_texturenum[skinnum][anim];
 
-	
 	r_modelalpha = ((ent->flags & RF_WEAPONMODEL) && gl_mtexable) ? bound(0, cl_drawgun.value, 1) : 1;
 
 	// we can't dynamically colormap textures, so they are cached separately for the players.  Heads are just uncolored.
-	if (ent->scoreboard && !gl_nocolors.value) {
+	if (ent->scoreboard && !gl_nocolors.value)
+	{
 		i = ent->scoreboard - cl.players;
-		if (i >= 0 && i < MAX_CLIENTS) {
+		if (i >= 0 && i < MAX_CLIENTS)
+		{
 			if (!ent->scoreboard->skin)
 				CL_NewTranslation(i);
-		    texture = playertextures + i;
+			texture = playertextures + i;
 			fb_texture = playerfbtextures[i];
 		}
 	}
@@ -597,7 +614,8 @@ void R_DrawAliasModel (entity_t *ent) {
 	if (gl_affinemodels.value)
 		glHint (GL_PERSPECTIVE_CORRECTION_HINT, GL_FASTEST);
 
-	if (fb_texture && gl_mtexable) {
+	if (fb_texture && gl_mtexable)
+	{
 		GL_DisableMultitexture ();
 		GL_Bind (texture);
 		glTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
@@ -609,14 +627,17 @@ void R_DrawAliasModel (entity_t *ent) {
 		R_SetupAliasFrame (oldframe, frame, paliashdr, true);
 
 		GL_DisableMultitexture ();
-	} else {
+	}
+	else
+	{
 		GL_DisableMultitexture();
 		GL_Bind (texture);
 		glTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 
 		R_SetupAliasFrame (oldframe, frame, paliashdr, false);
 
-		if (fb_texture) {
+		if (fb_texture)
+		{
 			glTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
 			glEnable (GL_ALPHA_TEST);
 			GL_Bind (fb_texture);
@@ -633,7 +654,8 @@ void R_DrawAliasModel (entity_t *ent) {
 
 	glPopMatrix ();
 
-	if (r_shadows.value && !full_light && !(ent->flags & RF_NOSHADOW)) {
+	if (r_shadows.value && !full_light && !(ent->flags & RF_NOSHADOW))
+	{
 		float theta;
 		static float shadescale = 0;
 
