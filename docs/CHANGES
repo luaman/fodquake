@@ -10,6 +10,7 @@ Version 0.3
 - Fixed a crash in the software renderer when displaying any of the 'low
   memory', 'low speed' or 'network lag' icons.
 - Removed the obsolete m_side and m_forward cvars.
+- Added support for client side lag via the net_lag and net_lag_ezcheat cvars.
 
 Version 0.2
 ===========

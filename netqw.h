@@ -14,4 +14,6 @@ void NetQW_SetDeltaPoint(struct NetQW *netqw, int delta_sequence_number);
 void NetQW_SetTeleport(struct NetQW *netqw, float *position);
 void NetQW_LockMovement(struct NetQW *netqw);
 void NetQW_UnlockMovement(struct NetQW *netqw);
+void NetQW_SetLag(struct NetQW *netqw, unsigned int microseconds);
+void NetQW_SetLagEzcheat(struct NetQW *netqw, int enabled);
 

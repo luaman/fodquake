@@ -59,6 +59,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 int movementkey;
 
+static qboolean net_lag_callback(cvar_t *var, char *string);
+static qboolean net_lag_ezcheat_callback(cvar_t *var, char *string);
+
 static qboolean cl_imitate_client_callback(cvar_t *var, char *string);
 static qboolean cl_imitate_os_callback(cvar_t *var, char *string);
 
@@ -101,6 +104,9 @@ cvar_t cl_fp_messages		= {"cl_fp_messages", "4"};
 cvar_t cl_fp_persecond		= {"cl_fp_persecond", "4"};		
 cvar_t cl_cmdline			= {"cl_cmdline", "", CVAR_ROM};	
 cvar_t cl_useproxy			= {"cl_useproxy", "0"};			
+
+static cvar_t net_lag = { "net_lag", "0", 0, net_lag_callback };
+static cvar_t net_lag_ezcheat = { "net_lag_ezcheat", "0", 0, net_lag_ezcheat_callback };
 
 cvar_t cl_imitate_client = { "cl_imitate_client", "none", 0, cl_imitate_client_callback };
 cvar_t cl_imitate_os = { "cl_imitate_os", "none", 0, cl_imitate_os_callback };
@@ -166,6 +172,28 @@ static int cl_vidinitialised;
 struct netaddr cl_net_from;
 sizebuf_t cl_net_message;
 static byte cl_net_message_buffer[MAX_MSGLEN*2];
+
+static qboolean net_lag_callback(cvar_t *var, char *string)
+{
+	float value;
+
+	value = Q_atof(string);
+	if (cls.netqw)
+		NetQW_SetLag(cls.netqw, value*1000);
+
+	return false;
+}
+
+static qboolean net_lag_ezcheat_callback(cvar_t *var, char *string)
+{
+	float value;
+
+	value = Q_atof(string);
+	if (cls.netqw)
+		NetQW_SetLagEzcheat(cls.netqw, value!=0);
+
+	return false;
+}
 
 void CL_InitClientVersionInfo();
 
@@ -425,7 +453,11 @@ static void CL_BeginServerConnect(void)
 
 	cls.netqw = NetQW_Create(cls.servername, cls.userinfo, rand()&0xffff);
 	if (cls.netqw)
+	{
 		Com_Printf("Connecting to %s...\n", cls.servername);
+		NetQW_SetLag(cls.netqw, net_lag.value*1000);
+		NetQW_SetLagEzcheat(cls.netqw, net_lag_ezcheat.value!=0);
+	}
 	else
 		Com_Printf("Unable to create connection\n");
 #endif
@@ -1113,6 +1145,9 @@ void CL_CvarInit(void)
 	Cvar_Register (&cl_oldPL);
 	Cvar_Register (&cl_timeout);
 	Cvar_Register (&cl_useproxy);
+
+	Cvar_Register(&net_lag);
+	Cvar_Register(&net_lag_ezcheat);
 
 	Cvar_SetCurrentGroup(CVAR_GROUP_NO_GROUP);
 	Cvar_Register (&password);

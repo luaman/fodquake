@@ -56,10 +56,23 @@ struct ReliableBuffer
 
 struct NetPacket
 {
-	struct NetPacket *next;
+	struct NetPacket *clientnext;
+	struct NetPacket *internalnext;
+	unsigned long long delayuntil;
 	unsigned int length;
+	unsigned int usecount;
 
 	/* data follows :) */
+};
+
+struct SendPacket
+{
+	/* Like above, but for sent packets */
+	struct SendPacket *next;
+	unsigned long long delayuntil;
+	unsigned int length;
+
+	/* Data follows */
 };
 
 struct NetQW
@@ -93,6 +106,11 @@ struct NetQW
 	struct HuffContext *huffcontext;
 	unsigned int huffcrc;
 
+	struct NetPacket *internalnetpackethead;
+	struct NetPacket *internalnetpackettail;
+	struct SendPacket *sendpackethead;
+	struct SendPacket *sendpackettail;
+
 	/* Shared between threads */
 	volatile int quit;
 	enum state state;
@@ -102,10 +120,12 @@ struct NetQW
 	int send_tmove;
 	int movement_locked;
 	unsigned char tmove_buffer[6];
+	unsigned int lag;
+	int lag_ezcheat;
 	struct ReliableBuffer *reliablebufferhead;
 	struct ReliableBuffer *reliablebuffertail;
-	struct NetPacket *netpackethead;
-	struct NetPacket *netpackettail;
+	struct NetPacket *clientnetpackethead;
+	struct NetPacket *clientnetpackettail;
 
 	struct
 	{
@@ -302,16 +322,41 @@ static void NetQW_Thread_Deinit(struct NetQW *netqw)
 	Sys_Net_Shutdown(netqw->netdata);
 }
 
-static unsigned int NetQW_Thread_SendPacket(struct NetQW *netqw, const void *buf, unsigned int buflen, const struct netaddr *to)
+void NetQW_Thread_QueuePacket(struct NetQW *netqw, const void *buf, unsigned int buflen)
+{
+	struct SendPacket *sendpacket;
+
+	sendpacket = malloc(sizeof(*sendpacket) + buflen);
+	if (sendpacket)
+	{
+		sendpacket->next = 0;
+		sendpacket->length = buflen;
+		memcpy(sendpacket + 1, buf, buflen);
+		if (netqw->lag_ezcheat)
+			sendpacket->delayuntil = Sys_IntTime() + netqw->lag;
+		else
+			sendpacket->delayuntil = Sys_IntTime() + netqw->lag / 2;
+
+		if (netqw->sendpackettail)
+		{
+			netqw->sendpackettail->next = sendpacket;
+			netqw->sendpackettail = sendpacket;
+		}
+		else
+		{
+			netqw->sendpackethead = sendpacket;
+			netqw->sendpackettail = sendpacket;
+		}
+	}
+}
+
+void NetQW_Thread_SendPacket(struct NetQW *netqw, const void *buf, unsigned int buflen, const struct netaddr *to, int force)
 {
 	unsigned char compressedbuf[1500];
-	unsigned int r;
 	unsigned int i;
 
 	if (buflen >= sizeof(compressedbuf))
-		return 0;
-
-	r = 0;
+		return;
 
 	if (netqw->huffcontext)
 	{
@@ -323,17 +368,19 @@ static unsigned int NetQW_Thread_SendPacket(struct NetQW *netqw, const void *buf
 		}
 		else
 		{
-			r = Sys_Net_Send(netqw->netdata, netqw->socket, compressedbuf, i + 10, &netqw->addr);
-			if (r == i + 10)
-				r = buflen;
+			if (netqw->lag && !force)
+				NetQW_Thread_QueuePacket(netqw, compressedbuf, i+10);
+			else
+				Sys_Net_Send(netqw->netdata, netqw->socket, compressedbuf, i + 10, &netqw->addr);
 		}
 	}
 	else
 	{
-		r = Sys_Net_Send(netqw->netdata, netqw->socket, buf, buflen, &netqw->addr);
+		if (netqw->lag && !force)
+			NetQW_Thread_QueuePacket(netqw, buf, buflen);
+		else
+			Sys_Net_Send(netqw->netdata, netqw->socket, buf, buflen, &netqw->addr);
 	}
-
-	return r;
 }
 
 static void NetQW_Thread_Disconnect(struct NetQW *netqw)
@@ -361,12 +408,90 @@ static void NetQW_Thread_Disconnect(struct NetQW *netqw)
 			disconnectmessage[10] = clc_stringcmd;
 			strcpy(disconnectmessage + 11, "drop");
 
-			NetQW_Thread_SendPacket(netqw, disconnectmessage, 16, &netqw->addr);
+			NetQW_Thread_SendPacket(netqw, disconnectmessage, 16, &netqw->addr, 1);
 
 			netqw->current_outgoing_sequence_number++;
 		}
 	}
 }
+
+#if 1
+void NetQW_Thread_HandleReceivedPacket(struct NetQW *netqw, struct NetPacket *netpacket)
+{
+	struct ReliableBuffer *reliablebuffer;
+	unsigned int sequence_number;
+	unsigned int i;
+	unsigned int j;
+	unsigned int lostpackets;
+	unsigned char *buf;
+
+	buf = (unsigned char *)(netpacket + 1);
+
+	sequence_number = buf[0];
+	sequence_number |= buf[1]<<8;
+	sequence_number |= buf[2]<<16;
+	sequence_number |= (buf[3]&0x7f)<<24;
+
+#if 0
+	printf("Incoming sequence number: %d\n", sequence_number);
+#endif
+
+	netqw->last_incoming_sequence_number = sequence_number;
+
+	if ((buf[3]&0x80))
+		netqw->outgoing_reliable_xor ^= 1;
+
+	if (sequence_number + PLPACKETHISTORYCOUNT > netqw->current_outgoing_sequence_number)
+	{
+		netqw->replyreceived[sequence_number%PLPACKETHISTORYCOUNT] = 1;
+
+		lostpackets = 0;
+		j = netqw->current_outgoing_sequence_number;
+		if (j > PLPACKETHISTORYCOUNT)
+			j = PLPACKETHISTORYCOUNT;
+
+		j -= netqw->current_outgoing_sequence_number - sequence_number + 1;
+
+		for(i=0;i<j;i++)
+		{
+			if (netqw->replyreceived[(sequence_number-i)%PLPACKETHISTORYCOUNT] == 0)
+				lostpackets++;
+		}
+
+#warning Not taking svc_chokecount into account
+		netqw->packetloss = ((lostpackets * 100) + (PLPACKETHISTORYCOUNT - 1))/PLPACKETHISTORYCOUNT;
+	}
+
+	if (netqw->reliable_buffers_sent && sequence_number >= netqw->reliable_sequence_number)
+	{
+		/* The server should have seen our reliable packet by now... */
+
+		if ((!netqw->incoming_reliable_xor) ^ (!(buf[7]&0x80)))
+		{
+			/* ... but it hasn't :/ */
+
+			netqw->reliable_buffers_sent = 0;
+			netqw->incoming_reliable_xor ^= 1;
+		}
+		else
+		{
+			/* And it has! Great, free up the buffers then. */
+
+			for(i=0;i<netqw->reliable_buffers_sent;i++)
+			{
+				reliablebuffer = netqw->reliablebufferhead;
+				netqw->reliablebufferhead = reliablebuffer->next;
+				free(reliablebuffer);
+			}
+
+			if (netqw->reliablebufferhead == 0)
+				netqw->reliablebuffertail = 0;
+
+			netqw->reliable_buffers_sent = 0;
+		}
+	}
+}
+#endif
 
 static int NetQW_Thread_DoReceive(struct NetQW *netqw)
 {
@@ -374,15 +499,12 @@ static int NetQW_Thread_DoReceive(struct NetQW *netqw)
 	unsigned char buf[1500];
 	unsigned char compressedbuf[1500];
 	unsigned char challengebuf[16];
-	struct ReliableBuffer *reliablebuffer;
 	struct NetPacket *netpacket;
 	unsigned int sequence_number;
 	unsigned char *p;
 	int r;
 	unsigned int i;
-	unsigned int j;
 	unsigned int len;
-	unsigned int lostpackets;
 	unsigned int extension;
 	unsigned int value;
 
@@ -520,11 +642,6 @@ static int NetQW_Thread_DoReceive(struct NetQW *netqw)
 				if (sequence_number <= netqw->last_incoming_sequence_number)
 					continue;
 
-				netqw->last_incoming_sequence_number = sequence_number;
-
-				if ((buf[3]&0x80))
-					netqw->outgoing_reliable_xor ^= 1;
-
 				sequence_number = buf[4];
 				sequence_number |= buf[5]<<8;
 				sequence_number |= buf[6]<<16;
@@ -533,77 +650,49 @@ static int NetQW_Thread_DoReceive(struct NetQW *netqw)
 				if (sequence_number >= netqw->current_outgoing_sequence_number)
 					continue;
 
-#if 0
-				printf("Incoming acknowledge number: %d\n", sequence_number);
-#endif
-
-				if (sequence_number + PLPACKETHISTORYCOUNT > netqw->current_outgoing_sequence_number)
-				{
-					netqw->replyreceived[sequence_number%PLPACKETHISTORYCOUNT] = 1;
-
-					lostpackets = 0;
-					j = netqw->current_outgoing_sequence_number;
-					if (j > PLPACKETHISTORYCOUNT)
-						j = PLPACKETHISTORYCOUNT;
-
-					j -= netqw->current_outgoing_sequence_number - sequence_number + 1;
-
-					for(i=0;i<j;i++)
-					{
-						if (netqw->replyreceived[(sequence_number-i)%PLPACKETHISTORYCOUNT] == 0)
-							lostpackets++;
-					}
-
-#warning Not taking svc_chokecount into account
-					netqw->packetloss = ((lostpackets * 100) + (PLPACKETHISTORYCOUNT - 1))/PLPACKETHISTORYCOUNT;
-				}
-
-				if (netqw->reliable_buffers_sent && sequence_number >= netqw->reliable_sequence_number)
-				{
-					/* The server should have seen our reliable packet by now... */
-
-					if ((!netqw->incoming_reliable_xor) ^ (!(buf[7]&0x80)))
-					{
-						/* ... but it hasn't :/ */
-
-						netqw->reliable_buffers_sent = 0;
-						netqw->incoming_reliable_xor ^= 1;
-					}
-					else
-					{
-						/* And it has! Great, free up the buffers then. */
-
-						for(i=0;i<netqw->reliable_buffers_sent;i++)
-						{
-							reliablebuffer = netqw->reliablebufferhead;
-							netqw->reliablebufferhead = reliablebuffer->next;
-							free(reliablebuffer);
-						}
-
-						if (netqw->reliablebufferhead == 0)
-							netqw->reliablebuffertail = 0;
-
-						netqw->reliable_buffers_sent = 0;
-					}
-				}
-
 				netpacket = malloc(sizeof(*netpacket) + r);
 				if (netpacket)
 				{
-					netpacket->next = 0;
+					netpacket->clientnext = 0;
+					netpacket->internalnext = 0;
+					if (netqw->lag && !netqw->lag_ezcheat)
+						netpacket->delayuntil = Sys_IntTime() + netqw->lag / 2;
+					else
+						netpacket->delayuntil = 0;
 					netpacket->length = r;
+					netpacket->usecount = 1;
 					memcpy(netpacket + 1, buf, r);
 
-					Sys_Thread_LockMutex(netqw->mutex);
-					if (netqw->netpackettail)
+					if (netpacket->delayuntil == 0)
 					{
-						netqw->netpackettail->next = netpacket;
-						netqw->netpackettail = netpacket;
+						NetQW_Thread_HandleReceivedPacket(netqw, netpacket);
 					}
 					else
 					{
-						netqw->netpackethead = netpacket;
-						netqw->netpackettail = netpacket;
+						if (netqw->internalnetpackettail)
+						{
+							netqw->internalnetpackettail->internalnext = netpacket;
+							netqw->internalnetpackettail = netpacket;
+						}
+						else
+						{
+							netqw->internalnetpackethead = netpacket;
+							netqw->internalnetpackettail = netpacket;
+						}
+
+						netpacket->usecount++;
+					}
+
+					Sys_Thread_LockMutex(netqw->mutex);
+					if (netqw->clientnetpackettail)
+					{
+						netqw->clientnetpackettail->clientnext = netpacket;
+						netqw->clientnetpackettail = netpacket;
+					}
+					else
+					{
+						netqw->clientnetpackethead = netpacket;
+						netqw->clientnetpackettail = netpacket;
 					}
 					Sys_Thread_UnlockMutex(netqw->mutex);
 				}
@@ -717,7 +806,7 @@ static int NetQW_Thread_DoSend(struct NetQW *netqw)
 				}
 			}
 
-			NetQW_Thread_SendPacket(netqw, buf, i, &netqw->addr);
+			NetQW_Thread_SendPacket(netqw, buf, i, &netqw->addr, 0);
 
 			netqw->replyreceived[netqw->current_outgoing_sequence_number%PLPACKETHISTORYCOUNT] = 0;
 
@@ -764,6 +853,8 @@ static int NetQW_Thread_DoSend(struct NetQW *netqw)
 static void NetQW_Thread(void *arg)
 {
 	struct NetQW *netqw;
+	struct NetPacket *netpacket;
+	struct SendPacket *sendpacket;
 	int r;
 	unsigned long long curtime;
 	unsigned int waittime;
@@ -798,6 +889,65 @@ static void NetQW_Thread(void *arg)
 					waittime = netqw->resendtime - curtime;
 				else
 					waittime = 0;
+			}
+
+			/* Mmm, sanity checks... */
+			if ((netpacket = netqw->internalnetpackethead) && netpacket->delayuntil > curtime + 1000000)
+			{
+				while(netpacket)
+				{
+					netpacket->delayuntil = curtime;
+					netpacket = netpacket->internalnext;
+				}
+			}
+
+			while((netpacket = netqw->internalnetpackethead) && netpacket->delayuntil <= curtime)
+			{
+				NetQW_Thread_HandleReceivedPacket(netqw, netpacket);
+
+				netqw->internalnetpackethead = netpacket->internalnext;
+				if (netqw->internalnetpackethead == 0)
+					netqw->internalnetpackettail = 0;
+
+				Sys_Thread_LockMutex(netqw->mutex);
+
+				netpacket->usecount--;
+				if (netpacket->usecount == 0)
+					free(netpacket);
+
+				Sys_Thread_UnlockMutex(netqw->mutex);
+			}
+
+			if ((sendpacket = netqw->sendpackethead) && sendpacket->delayuntil > curtime + 1000000)
+			{
+				while(sendpacket)
+				{
+					sendpacket->delayuntil = curtime;
+					sendpacket = sendpacket->next;
+				}
+			}
+
+			while((sendpacket = netqw->sendpackethead) && sendpacket->delayuntil <= curtime)
+			{
+				Sys_Net_Send(netqw->netdata, netqw->socket, sendpacket + 1, sendpacket->length, &netqw->addr);
+
+				netqw->sendpackethead = sendpacket->next;
+				if (netqw->sendpackethead == 0)
+					netqw->sendpackettail = 0;
+
+				free(sendpacket);
+			}
+
+			if ((netpacket = netqw->internalnetpackethead))
+			{
+				if (netpacket->delayuntil - curtime < waittime)
+					waittime = netpacket->delayuntil - curtime;
+			}
+
+			if ((sendpacket = netqw->sendpackethead))
+			{
+				if (sendpacket->delayuntil - curtime < waittime)
+					waittime = sendpacket->delayuntil - curtime;
 			}
 
 			if (waittime)
@@ -838,8 +988,12 @@ struct NetQW *NetQW_Create(const char *hoststring, const char *userinfo, unsigne
 		netqw->reliable_buffers_sent = 0;
 		netqw->reliablebufferhead = 0;
 		netqw->reliablebuffertail = 0;
-		netqw->netpackethead = 0;
-		netqw->netpackettail = 0;
+		netqw->clientnetpackethead = 0;
+		netqw->clientnetpackettail = 0;
+		netqw->internalnetpackethead = 0;
+		netqw->internalnetpackettail = 0;
+		netqw->sendpackethead = 0;
+		netqw->sendpackettail = 0;
 		netqw->packetloss = 0;
 		netqw->state = state_uninitialised;
 
@@ -858,6 +1012,9 @@ struct NetQW *NetQW_Create(const char *hoststring, const char *userinfo, unsigne
 
 		netqw->send_tmove = 0;
 		netqw->movement_locked = 0;
+
+		netqw->lag = 0;
+		netqw->lag_ezcheat = 0;
 
 		netqw->hoststring = malloc(strlen(hoststring)+1);
 		if (netqw->hoststring)
@@ -929,10 +1086,20 @@ void NetQW_Delete(struct NetQW *netqw)
 		free(reliablebuffer);
 	}
 
-	while((netpacket = netqw->netpackethead))
+	while((netpacket = netqw->clientnetpackethead))
 	{
-		netqw->netpackethead = netpacket->next;
-		free(netpacket);
+		netqw->clientnetpackethead = netpacket->clientnext;
+		netpacket->usecount--;
+		if (netpacket->usecount == 0)
+			free(netpacket);
+	}
+
+	while((netpacket = netqw->internalnetpackethead))
+	{
+		netqw->internalnetpackethead = netpacket->internalnext;
+		netpacket->usecount--;
+		if (netpacket->usecount == 0)
+			free(netpacket);
 	}
 
 	free(netqw->userinfo);
@@ -1016,8 +1183,8 @@ unsigned int NetQW_GetPacketLength(struct NetQW *netqw)
 
 	Sys_Thread_LockMutex(netqw->mutex);
 
-	if (netqw->netpackethead)
-		ret = netqw->netpackethead->length;
+	if (netqw->clientnetpackethead && netqw->clientnetpackethead->delayuntil <= Sys_IntTime())
+		ret = netqw->clientnetpackethead->length;
 	else
 		ret = 0;
 
@@ -1032,8 +1199,8 @@ void *NetQW_GetPacketData(struct NetQW *netqw)
 
 	Sys_Thread_LockMutex(netqw->mutex);
 
-	if (netqw->netpackethead)
-		ret = netqw->netpackethead + 1;
+	if (netqw->clientnetpackethead && netqw->clientnetpackethead->delayuntil <= Sys_IntTime())
+		ret = netqw->clientnetpackethead + 1;
 	else
 		ret = 0;
 
@@ -1048,11 +1215,13 @@ void NetQW_FreePacket(struct NetQW *netqw)
 
 	Sys_Thread_LockMutex(netqw->mutex);
 
-	netpacket = netqw->netpackethead;
-	netqw->netpackethead = netpacket->next;
-	free(netpacket);
-	if (netqw->netpackethead == 0)
-		netqw->netpackettail = 0;
+	netpacket = netqw->clientnetpackethead;
+	netqw->clientnetpackethead = netpacket->clientnext;
+	netpacket->usecount--;
+	if (netpacket->usecount == 0)
+		free(netpacket);
+	if (netqw->clientnetpackethead == 0)
+		netqw->clientnetpackettail = 0;
 
 	Sys_Thread_UnlockMutex(netqw->mutex);
 }
@@ -1130,5 +1299,18 @@ void NetQW_LockMovement(struct NetQW *netqw)
 void NetQW_UnlockMovement(struct NetQW *netqw)
 {
 	netqw->movement_locked = 0;
+}
+
+void NetQW_SetLag(struct NetQW *netqw, unsigned int microseconds)
+{
+	if (microseconds > 500000)
+		microseconds = 500000;
+
+	netqw->lag = microseconds;
+}
+
+void NetQW_SetLagEzcheat(struct NetQW *netqw, int enabled)
+{
+	netqw->lag_ezcheat = enabled;
 }
 
