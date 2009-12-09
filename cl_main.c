@@ -177,9 +177,11 @@ static qboolean net_lag_callback(cvar_t *var, char *string)
 {
 	float value;
 
+#ifdef NETQW
 	value = Q_atof(string);
 	if (cls.netqw)
 		NetQW_SetLag(cls.netqw, value*1000);
+#endif
 
 	return false;
 }
@@ -188,9 +190,11 @@ static qboolean net_lag_ezcheat_callback(cvar_t *var, char *string)
 {
 	float value;
 
+#ifdef NETQW
 	value = Q_atof(string);
 	if (cls.netqw)
 		NetQW_SetLagEzcheat(cls.netqw, value!=0);
+#endif
 
 	return false;
 }
