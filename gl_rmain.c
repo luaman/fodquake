@@ -34,7 +34,7 @@ entity_t	r_worldentity;
 
 qboolean	r_cache_thrash;		// compatability
 
-vec3_t		modelorg, r_entorigin;
+vec3_t		modelorg;
 entity_t	*currententity;
 
 int			r_visframecount;	// bumped when going to a new PVS
@@ -568,8 +568,7 @@ static void R_DrawAliasModel(entity_t *ent)
 	maliasframedesc_t *oldframe, *frame;
 	extern	cvar_t r_viewmodelsize, cl_drawgun;
 
-	VectorCopy (ent->origin, r_entorigin);
-	VectorSubtract (r_origin, r_entorigin, modelorg);
+	VectorSubtract (r_origin, ent->origin, modelorg);
 
 	clmodel = ent->model;
 	paliashdr = (aliashdr_t *) Mod_Extradata (ent->model);	//locate the proper data
