@@ -754,7 +754,8 @@ void R_DrawAliasModel(entity_t *ent)
 }
 
 
-void R_DrawEntitiesOnList (visentlist_t *vislist) {
+void R_DrawEntitiesOnList(visentlist_t *vislist)
+{
 	int i;
 
 	if (!r_drawentities.value || !vislist->count)
@@ -764,9 +765,11 @@ void R_DrawEntitiesOnList (visentlist_t *vislist) {
 		glEnable (GL_ALPHA_TEST);
 
 	// draw sprites separately, because of alpha_test
-	for (i = 0; i < vislist->count; i++) {
+	for (i = 0; i < vislist->count; i++)
+	{
 		currententity = &vislist->list[i];
-		switch (currententity->model->type) {
+		switch (currententity->model->type)
+		{
 			case mod_alias:
 				R_DrawAliasModel (currententity);
 				break;
@@ -783,7 +786,8 @@ void R_DrawEntitiesOnList (visentlist_t *vislist) {
 		glDisable (GL_ALPHA_TEST);
 }
 
-void R_DrawViewModel (void) {
+void R_DrawViewModel(void)
+{
 	centity_t *cent;
 	static entity_t gun;
 
@@ -801,30 +805,32 @@ void R_DrawViewModel (void) {
 	VectorCopy(cent->current.angles, gun.angles);
 	gun.colormap = vid.colormap;
 	gun.flags = RF_WEAPONMODEL | RF_NOSHADOW;
-	if (r_lerpmuzzlehack.value) {
-		if (cent->current.modelindex != cl_modelindices[mi_vaxe] &&
-			cent->current.modelindex != cl_modelindices[mi_vbio] &&
-			cent->current.modelindex != cl_modelindices[mi_vgrap] &&
-			cent->current.modelindex != cl_modelindices[mi_vknife] &&
-			cent->current.modelindex != cl_modelindices[mi_vknife2] &&
-			cent->current.modelindex != cl_modelindices[mi_vmedi] &&
-			cent->current.modelindex != cl_modelindices[mi_vspan])
+	if (r_lerpmuzzlehack.value)
+	{
+		if (cent->current.modelindex != cl_modelindices[mi_vaxe]
+		 && cent->current.modelindex != cl_modelindices[mi_vbio]
+		 && cent->current.modelindex != cl_modelindices[mi_vgrap]
+		 && cent->current.modelindex != cl_modelindices[mi_vknife]
+		 && cent->current.modelindex != cl_modelindices[mi_vknife2]
+		 && cent->current.modelindex != cl_modelindices[mi_vmedi]
+		 && cent->current.modelindex != cl_modelindices[mi_vspan])
 		{
 			gun.flags |= RF_LIMITLERP;			
 			r_lerpdistance =  135;
 		}
 	}
 
-
 	gun.frame = cent->current.frame;
-	if (cent->frametime >= 0 && cent->frametime <= cl.time) {
+	if (cent->frametime >= 0 && cent->frametime <= cl.time)
+	{
 		gun.oldframe = cent->oldframe;
 		gun.framelerp = (cl.time - cent->frametime) * 10;
-	} else {
+	}
+	else
+	{
 		gun.oldframe = gun.frame;
 		gun.framelerp = -1;
 	}
-
 
 	// hack the depth range to prevent view model from poking into walls
 	glDepthRange (gldepthmin, gldepthmin + 0.3 * (gldepthmax - gldepthmin));
