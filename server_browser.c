@@ -800,7 +800,6 @@ static void SB_Update_Tabs(void)
 
 static void SB_Help_Handler(int key)
 {
-
 	if (key == K_ESCAPE)
 	{
 		sb_active_window = sb_help_prev;
@@ -840,16 +839,33 @@ void SB_Key(int key)
 	char *kb;
 	extern qboolean keyactive[256];
 
-	if (key == 'h' && keydown[K_CTRL])
+	if (key >= K_F1 && key <= K_F12)
 	{
-		sb_help_prev = sb_active_window;
-		sb_active_window = SB_HELP;
+		kb = keybindings[key];
+		if (kb) {
+			if (kb[0] == '+'){	// button commands add keynum as a parm
+				snprintf (cmd, sizeof(cmd), "%s %i\n", kb, key);
+				Cbuf_AddText (cmd);
+				keyactive[key] = true;
+			} else {
+				Cbuf_AddText (kb);
+				Cbuf_AddText ("\n");
+			}
+		}
+
 		return;
 	}
 
 	if (sb_active_window == SB_HELP)
 	{
 		SB_Help_Handler(key);
+		return;
+	}
+
+	if (key == 'h' && keydown[K_CTRL])
+	{
+		sb_help_prev = sb_active_window;
+		sb_active_window = SB_HELP;
 		return;
 	}
 
@@ -1174,22 +1190,6 @@ void SB_Key(int key)
 			sb_activate_tab(9);
 			break;
 	}
-
-	if (key >= K_F1 && key <= K_F12)
-	{
-		kb = keybindings[key];
-		if (kb) {
-			if (kb[0] == '+'){	// button commands add keynum as a parm
-				snprintf (cmd, sizeof(cmd), "%s %i\n", kb, key);
-				Cbuf_AddText (cmd);
-				keyactive[key] = true;
-			} else {
-				Cbuf_AddText (kb);
-				Cbuf_AddText ("\n");
-			}
-		}
-
-	}
 }
 
 static void SB_Server_Add(char *ip, int port)
@@ -1285,7 +1285,10 @@ static void sb_default_tabs(void)
 void SB_Activate_f(void)
 {
 	extern keydest_t key_dest;
-	
+
+	if (sb_open)
+		return;
+
 	old_keydest = key_dest;
 	key_dest = key_serverbrowser;
 	sb_open = 1;
