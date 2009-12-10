@@ -75,7 +75,6 @@ cvar_t	r_speeds = {"r_speeds", "0"};
 cvar_t	r_fullbright = {"r_fullbright", "0"};
 cvar_t	r_lightmap = {"r_lightmap", "0"};
 cvar_t	gl_shaftlight = {"gl_shaftlight", "1"};
-cvar_t	r_shadows = {"r_shadows", "0"};
 cvar_t	r_wateralpha = {"r_wateralpha", "1"};
 cvar_t  r_fastturb = {"r_fastturb", "0"};
 cvar_t	r_dynamic = {"r_dynamic", "1"};
@@ -724,31 +723,6 @@ static void R_DrawAliasModel(entity_t *ent)
 
 	glPopMatrix ();
 
-	if (r_shadows.value && !full_light && !(ent->flags & RF_NOSHADOW))
-	{
-		float theta;
-		static float shadescale = 0;
-
-		if (!shadescale)
-			shadescale = 1 / sqrt(2);
-		theta = -ent->angles[1] / 180 * M_PI;
-
-		VectorSet(shadevector, cos(theta) * shadescale, sin(theta) * shadescale, shadescale);
-
-		glPushMatrix ();
-		glTranslatef (ent->origin[0],  ent->origin[1],  ent->origin[2]);
-		glRotatef (ent->angles[1],  0, 0, 1);
-
-		glDisable (GL_TEXTURE_2D);
-		glEnable (GL_BLEND);
-		glColor4f (0, 0, 0, 0.5);
-		GL_DrawAliasShadow (paliashdr, lastposenum);
-		glEnable (GL_TEXTURE_2D);
-		glDisable (GL_BLEND);
-
-		glPopMatrix ();
-	}
-
 	glColor3ubv (color_white);
 }
 
@@ -1087,7 +1061,6 @@ void R_CvarInit(void)
 	Cvar_Register (&gl_fb_models);
 	Cvar_Register (&gl_lightmode);
 	Cvar_Register (&gl_flashblend);
-	Cvar_Register (&r_shadows);
 	Cvar_Register (&r_fullbright);
 	Cvar_Register (&r_lightmap);
 	Cvar_Register (&gl_shaftlight);

@@ -11,6 +11,7 @@ Version 0.3
   memory', 'low speed' or 'network lag' icons.
 - Removed the obsolete m_side and m_forward cvars.
 - Added support for client side lag via the net_lag and net_lag_ezcheat cvars.
+- Removed the uglier than ugly r_shadows in GL.
 
 Version 0.2
 ===========
