@@ -94,7 +94,7 @@ cvar_t	gl_caustics			= {"gl_caustics", "0"};
 
 cvar_t	gl_subdivide_size = {"gl_subdivide_size", "128", CVAR_ARCHIVE};
 cvar_t	gl_clear = {"gl_clear", "0"};
-qboolean OnChange_gl_clearColor(cvar_t *v, char *s);
+static qboolean OnChange_gl_clearColor(cvar_t *v, char *s);
 cvar_t	gl_clearColor = {"gl_clearColor", "0 0 0", 0, OnChange_gl_clearColor};
 cvar_t	gl_cull = {"gl_cull", "1"};
 cvar_t	gl_ztrick = {"gl_ztrick", "1"};
@@ -154,7 +154,7 @@ qboolean R_CullSphere (vec3_t centre, float radius) {
 	return false;
 }
 
-void R_RotateForEntity (entity_t *e) {
+static void R_RotateForEntity (entity_t *e) {
 	glTranslatef (e->origin[0],  e->origin[1],  e->origin[2]);
 
 	glRotatef (e->angles[1], 0, 0, 1);
@@ -163,7 +163,7 @@ void R_RotateForEntity (entity_t *e) {
 }
 
 
-mspriteframe_t *R_GetSpriteFrame (entity_t *currententity) {
+static mspriteframe_t *R_GetSpriteFrame (entity_t *currententity) {
 	msprite_t *psprite;
 	mspritegroup_t *pspritegroup;
 	mspriteframe_t *pspriteframe;
@@ -203,7 +203,7 @@ mspriteframe_t *R_GetSpriteFrame (entity_t *currententity) {
 	return pspriteframe;
 }
 
-void R_DrawSpriteModel (entity_t *e) {
+static void R_DrawSpriteModel (entity_t *e) {
 	vec3_t point, right, up;
 	mspriteframe_t *frame;
 	msprite_t *psprite;
@@ -279,7 +279,7 @@ float	r_framelerp;
 float	r_modelalpha;
 float	r_lerpdistance;
 
-void GL_DrawAliasFrame_Lerp(aliashdr_t *paliashdr, int pose1, int pose2, qboolean mtex)
+static void GL_DrawAliasFrame_Lerp(aliashdr_t *paliashdr, int pose1, int pose2, qboolean mtex)
 {
 	int *order, count;
 	vec3_t interpolated_verts;
@@ -352,7 +352,7 @@ void GL_DrawAliasFrame_Lerp(aliashdr_t *paliashdr, int pose1, int pose2, qboolea
 		glDisable(GL_BLEND);
 }
 
-void GL_DrawAliasFrame_NoLerp(aliashdr_t *paliashdr, int pose, qboolean mtex)
+static void GL_DrawAliasFrame_NoLerp(aliashdr_t *paliashdr, int pose, qboolean mtex)
 {
 	int *order, count;
 	float l;
@@ -415,7 +415,7 @@ void GL_DrawAliasFrame_NoLerp(aliashdr_t *paliashdr, int pose, qboolean mtex)
 		glDisable(GL_BLEND);
 }
 
-void GL_DrawAliasFrame(aliashdr_t *paliashdr, int pose1, int pose2, qboolean mtex)
+static void GL_DrawAliasFrame(aliashdr_t *paliashdr, int pose1, int pose2, qboolean mtex)
 {
 	if (pose1 == pose2)
 		GL_DrawAliasFrame_NoLerp(paliashdr, pose1, mtex);
@@ -423,7 +423,7 @@ void GL_DrawAliasFrame(aliashdr_t *paliashdr, int pose1, int pose2, qboolean mte
 		GL_DrawAliasFrame_Lerp(paliashdr, pose1, pose2, mtex);
 }
 
-void R_SetupAliasFrame (maliasframedesc_t *oldframe, maliasframedesc_t *frame, aliashdr_t *paliashdr, qboolean mtex)
+static void R_SetupAliasFrame (maliasframedesc_t *oldframe, maliasframedesc_t *frame, aliashdr_t *paliashdr, qboolean mtex)
 {
 	int oldpose, pose, numposes;
 	float interval;
@@ -449,7 +449,7 @@ void R_SetupAliasFrame (maliasframedesc_t *oldframe, maliasframedesc_t *frame, a
 
 extern vec3_t lightspot;
 
-void GL_DrawAliasShadow (aliashdr_t *paliashdr, int posenum) {
+static void GL_DrawAliasShadow (aliashdr_t *paliashdr, int posenum) {
 	int *order, count;
 	vec3_t point;
 	float lheight = currententity->origin[2] - lightspot[2], height = 1 - lheight;
@@ -490,7 +490,7 @@ void GL_DrawAliasShadow (aliashdr_t *paliashdr, int posenum) {
 	}	
 }
 
-void R_AliasSetupLighting(entity_t *ent) {
+static void R_AliasSetupLighting(entity_t *ent) {
 	int minlight, lnum;
 	float add, fbskins;
 	vec3_t dist;
@@ -558,7 +558,7 @@ void R_AliasSetupLighting(entity_t *ent) {
 		ambientlight = shadelight = minlight;
 }
 
-void R_DrawAliasModel(entity_t *ent)
+static void R_DrawAliasModel(entity_t *ent)
 {
 	int i, anim, skinnum, texture, fb_texture;
 	float scale;
@@ -786,7 +786,7 @@ void R_DrawEntitiesOnList(visentlist_t *vislist)
 		glDisable (GL_ALPHA_TEST);
 }
 
-void R_DrawViewModel(void)
+static void R_DrawViewModel(void)
 {
 	centity_t *cent;
 	static entity_t gun;
@@ -901,7 +901,7 @@ void R_BrightenScreen (void) {
 	glColor3ubv (color_white);
 }
 
-int SignbitsForPlane (mplane_t *out) {
+static int SignbitsForPlane (mplane_t *out) {
 	int	bits, j;
 
 	// for fast box on planeside test
@@ -914,7 +914,7 @@ int SignbitsForPlane (mplane_t *out) {
 }
 
 
-void R_SetFrustum (void) {
+static void R_SetFrustum (void) {
 	int i;
 
 	// rotate VPN right by FOV_X/2 degrees
@@ -933,7 +933,7 @@ void R_SetFrustum (void) {
 	}
 }
 
-void R_SetupFrame (void) {
+static void R_SetupFrame (void) {
 	vec3_t testorigin;
 	mleaf_t	*leaf;
 
@@ -994,7 +994,7 @@ __inline void MYgluPerspective(GLdouble fovy, GLdouble aspect, GLdouble zNear, G
 	glFrustum(xmin, xmax, ymin, ymax, zNear, zFar);
 }
 
-void R_SetupGL (void) {
+static void R_SetupGL (void) {
 	float screenaspect;
 	extern int glwidth, glheight;
 	int x, x2, y2, y, w, h, farclip;
@@ -1164,7 +1164,7 @@ void R_InitGL(void)
 
 extern msurface_t *alphachain;
 
-void R_RenderScene(void)
+static void R_RenderScene(void)
 {
 	R_SetupFrame();
 
@@ -1188,7 +1188,7 @@ void R_RenderScene(void)
 
 int gl_ztrickframe = 0;
 
-qboolean OnChange_gl_clearColor(cvar_t *v, char *s)
+static qboolean OnChange_gl_clearColor(cvar_t *v, char *s)
 {
 	byte *clearColor;
 
@@ -1201,7 +1201,7 @@ qboolean OnChange_gl_clearColor(cvar_t *v, char *s)
 	return false;
 }
 
-void R_Clear(void)
+static void R_Clear(void)
 {
 	int clearbits = 0;
 
