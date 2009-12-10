@@ -279,7 +279,7 @@ float	r_framelerp;
 float	r_modelalpha;
 float	r_lerpdistance;
 
-void GL_DrawAliasFrame(aliashdr_t *paliashdr, int pose1, int pose2, qboolean mtex)
+void GL_DrawAliasFrame_Lerp(aliashdr_t *paliashdr, int pose1, int pose2, qboolean mtex)
 {
 	int *order, count;
 	vec3_t interpolated_verts;
@@ -350,6 +350,77 @@ void GL_DrawAliasFrame(aliashdr_t *paliashdr, int pose1, int pose2, qboolean mte
 
 	if (r_modelalpha < 1)
 		glDisable(GL_BLEND);
+}
+
+void GL_DrawAliasFrame_NoLerp(aliashdr_t *paliashdr, int pose, qboolean mtex)
+{
+	int *order, count;
+	float l;
+	trivertx_t *verts;
+	vec3_t v3;
+
+	verts = (trivertx_t *) ((byte *) paliashdr + paliashdr->posedata);
+
+	verts += pose * paliashdr->poseverts;
+
+	order = (int *) ((byte *) paliashdr + paliashdr->commands);
+
+	if (r_modelalpha < 1)
+		glEnable(GL_BLEND);
+
+	while ((count = *order++))
+	{
+		if (count < 0)
+		{
+			count = -count;
+			glBegin(GL_TRIANGLE_FAN);
+		}
+		else if (count > 0)
+		{
+			glBegin(GL_TRIANGLE_STRIP);
+		}
+
+		do
+		{
+			// texture coordinates come from the draw list
+			if (mtex)
+			{
+				qglMultiTexCoord2f (GL_TEXTURE0_ARB, ((float *) order)[0], ((float *) order)[1]);
+				qglMultiTexCoord2f (GL_TEXTURE1_ARB, ((float *) order)[0], ((float *) order)[1]);
+			}
+			else
+			{
+				glTexCoord2f (((float *) order)[0], ((float *) order)[1]);
+			}
+
+			order += 2;
+
+			l = (float)shadedots[verts->lightnormalindex] / 127.0;
+			l = (l * shadelight + ambientlight) / 256.0;
+			l = min(l , 1);
+			glColor4f (l, l, l, r_modelalpha);
+
+			v3[0] = verts->v[0];
+			v3[1] = verts->v[1];
+			v3[2] = verts->v[2];
+			glVertex3fv(v3);
+			
+			verts++;
+		} while (--count);
+
+		glEnd();
+	}
+
+	if (r_modelalpha < 1)
+		glDisable(GL_BLEND);
+}
+
+void GL_DrawAliasFrame(aliashdr_t *paliashdr, int pose1, int pose2, qboolean mtex)
+{
+	if (pose1 == pose2)
+		GL_DrawAliasFrame_NoLerp(paliashdr, pose1, mtex);
+	else
+		GL_DrawAliasFrame_Lerp(paliashdr, pose1, pose2, mtex);
 }
 
 void R_SetupAliasFrame (maliasframedesc_t *oldframe, maliasframedesc_t *frame, aliashdr_t *paliashdr, qboolean mtex)
@@ -616,7 +687,6 @@ void R_DrawAliasModel(entity_t *ent)
 
 	if (fb_texture && gl_mtexable)
 	{
-		GL_DisableMultitexture ();
 		GL_Bind (texture);
 		glTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 
@@ -630,7 +700,6 @@ void R_DrawAliasModel(entity_t *ent)
 	}
 	else
 	{
-		GL_DisableMultitexture();
 		GL_Bind (texture);
 		glTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 
@@ -648,7 +717,9 @@ void R_DrawAliasModel(entity_t *ent)
 		}
 	}
 
-	glShadeModel (GL_FLAT);
+	if (gl_smoothmodels.value)
+		glShadeModel (GL_FLAT);
+
 	if (gl_affinemodels.value)
 		glHint (GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
 
