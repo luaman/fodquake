@@ -546,9 +546,10 @@ static int Check_Server_Against_Filter(struct tab *tab, const struct QWServer *s
 	return 1;
 }
 
-static char *remove_colors(char *string, int size)
+static char *remove_colors(const char *string, int size)
 {
-	char *ptr, *ptr1, *new_string;
+	const char *ptr;
+	char *ptr1, *new_string;
 	int x = 0;
 
 	new_string = calloc(size+1, sizeof(char));
@@ -2318,7 +2319,7 @@ void SB_Add_Friend_f(void)
 {
 	if (Cmd_Argc() != 2)
 	{
-		Com_Printf("Usage: %s friend\n", Cmd_Argv(1));
+		Com_Printf("Usage: %s friend\n", Cmd_Argv(0));
 		return;
 	}
 	
@@ -2329,7 +2330,7 @@ void SB_Remove_Friend_f(void)
 {
 	if (Cmd_Argc() != 2)
 	{
-		Com_Printf("Usage: %s friend\n", Cmd_Argv(1));
+		Com_Printf("Usage: %s friend\n", Cmd_Argv(0));
 		return;
 	}
 	
