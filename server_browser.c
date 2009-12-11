@@ -44,7 +44,15 @@ struct server
 	int port;
 };
 
+struct sb_friend
+{
+	struct sb_friend *next, *prev;
+	char *name;
+};
+
 static struct ServerScanner *serverscanner;
+
+static struct sb_friend *friends;
 
 cvar_t sb_masterserver = {"sb_masterserver", "qwmaster.fodquake.net:27000 master.quakeservers.net:27000 satan.idsoftware.com:27000"};
 cvar_t sb_player_drawing = {"sb_player_drawing", "1"};
@@ -109,6 +117,7 @@ static int sb_server_insert_port_position;
 
 const struct QWServer *current_selected_server;
 
+static int friend_name_max_len = 0;
 struct tab
 {
 
@@ -128,6 +137,8 @@ struct tab
 	int *server_index;
 	char *player_filter;
 	struct linked_list *filters;
+	int friends;
+	struct sb_friend **friend_links;
 };
 
 static struct tab *tab_first;
@@ -335,6 +346,9 @@ static struct tab *sb_add_tab(char *name)
 
 	if (tab_active == NULL)
 		tab_active = tab;
+
+	if (strcmp(name, "friends") == 0)
+		tab->friends = 1;
 
 
 	return tab;
@@ -574,13 +588,13 @@ static char *remove_colors(char *string, int size)
 	return new_string;
 }
 
-static int check_player(struct tab *tab, const struct QWServer *server)
+static int check_player_name(char *name, const struct QWServer *server)
 {
 	int i;
 	char *player;
 	char *player_uncolored;
 
-	player = tab->player_filter;
+	player = name;
 
 	if (server->numplayers == 0 && server->numspectators == 0)
 		return 0;
@@ -613,6 +627,11 @@ static int check_player(struct tab *tab, const struct QWServer *server)
 		}
 	}
 	return 0;
+}
+
+static int check_player(struct tab *tab, const struct QWServer *server)
+{
+	return check_player_name(tab->player_filter, server);
 }
 
 static int player_count_compare(const void *a, const void *b)
@@ -703,6 +722,87 @@ static int stubby (struct tab *tab, const struct QWServer *server)
 	return 1;
 }
 
+
+static void update_friends_tab(struct tab *tab)
+{
+	int count, i, x;
+	int (*cf)(struct tab *tab, const struct QWServer *server);
+	struct sb_friend *s;
+
+	tab->max_hostname_length = 0;
+	count = 0;
+
+	s = friends;
+
+	count = 0;
+	while (s)
+	{
+		for (x = 0; x < sb_qw_server_count; x++)
+		{
+			if (check_player_name(s->name, sb_qw_server[x]))
+				count++;
+		}
+		s = s->next;
+	}
+
+	if (tab->server_index)
+	{
+		free(tab->server_index);
+		tab->server_index = NULL;
+	}
+
+	if (tab->friend_links)
+	{
+		free(tab->friend_links);
+		tab->friend_links = NULL;
+	}
+
+	if (count > 10000 || count <= 0)
+	{
+		tab->server_count = 0;
+		tab->sb_position = 0;
+		return;
+	}
+
+	tab->server_index = calloc(count, sizeof(int));
+
+	if (tab->server_index == NULL)
+	{
+		tab->server_count = 0;
+		tab->sb_position = 0;
+		return;
+	}
+
+	tab->friend_links = calloc(count, sizeof(struct sb_friend *));
+
+	if (tab->friend_links == NULL)
+	{
+		tab->server_count = 0;
+		tab->sb_position = 0;
+		free(tab->server_index);
+		return;
+	}
+
+
+	tab->server_count = count;
+
+	s = friends;
+	i = 0;
+	while (s)
+	{
+		for (x=0;x<sb_qw_server_count; x++)
+		{
+			if (check_player_name(s->name, sb_qw_server[x]))
+			{
+					tab->friend_links[i] = s;
+					tab->server_index[i++] = x;		
+			}
+		}
+		
+		s = s->next;
+	}
+}
+
 static void update_tab(struct tab *tab)
 {
 	int count, i, x;
@@ -710,6 +810,12 @@ static void update_tab(struct tab *tab)
 
 	tab->max_hostname_length = 0;
 	count = 0;
+
+	if (tab->friends)
+	{
+		update_friends_tab(tab);
+		return;
+	}
 
 	if (List_Node_Count(tab->filters) && tab->player_filter == NULL)
 		cf = Check_Server_Against_Filter;
@@ -873,6 +979,8 @@ void SB_Key(int key)
 	{
 		if (keydown[K_CTRL])
 		{
+			if (tab_active->friends == 1)
+				return;
 			if (sb_active_window == SB_SERVER)
 			{
 				sb_active_window = SB_FILTER;
@@ -996,6 +1104,8 @@ void SB_Key(int key)
 
 		if (key == K_INS)
 		{
+			if (tab_active->friends == 1)
+				return;
 			sb_server_insert = 1;
 		}
 
@@ -1280,6 +1390,7 @@ static void sb_default_tabs(void)
 	tab = sb_add_tab("4on4");
 	SB_Add_Filter_To_Tab(tab, 0, 2, "1");
 	SB_Add_Filter_To_Tab(tab, 4, 0, "8");
+	sb_add_tab("friends");
 }
 
 void SB_Activate_f(void)
@@ -1593,6 +1704,7 @@ static void SB_Draw_Server(void)
 	const char *hostname, *map;
 	char string[512];
 	int position;
+	char *friend_name;
 	const struct QWPlayer **sorted_players;
 	const struct QWServer *server;
 	const struct QWPlayer *player;
@@ -1726,7 +1838,14 @@ static void SB_Draw_Server(void)
 		else
 			map = server->map;
 
-		snprintf(string, sizeof(string),"%*i: %3i %2i/%2i %-*.*s %s", sb_server_count_width, y, server->pingtime/1000, server->numplayers, server->maxclients, 8, 8, map, hostname);
+		if (tab->friends == 0)
+			snprintf(string, sizeof(string),"%*i: %3i %2i/%2i %-*.*s %s", sb_server_count_width, y, server->pingtime/1000, server->numplayers, server->maxclients, 8, 8, map, hostname);
+		else
+		{
+			friend_name = tab->friend_links[x]->name;
+			snprintf(string, sizeof(string),"%-*s: %2i/%2i %-*.*s %s",friend_name_max_len, friend_name, server->numplayers, server->maxclients, 8, 8, map, hostname);
+		}
+			
 		Draw_String(8, 24 + i * 8, string);
 		y++;
 	}
@@ -2092,6 +2211,131 @@ static void SB_Set_Clipboard_f(void)
 
 }
 
+void SB_Update_Friend_Name_Length(void)
+{
+	struct sb_friend *s;
+	int i;
+
+	if (friends == NULL)
+	{
+		friend_name_max_len = 0;
+	}
+	else
+	{
+		s = friends;
+		while (s)
+		{
+			i = strlen(s->name);
+			if (i > friend_name_max_len)
+				friend_name_max_len = i;
+			s = s->next;
+		}
+	}
+}
+
+int SB_Add_Friend(char *name)
+{
+	struct sb_friend *s;
+	if (friends != NULL)
+	{
+		s = friends;
+		while (s)
+		{
+			if (strcmp(s->name, name) == 0)
+			{
+				Com_Printf("A friend with the name \"%s\" already exists.\n", name);
+				return 1;
+			}
+			if (s->next)
+				s = s->next;
+			else 
+				break;
+		}
+
+		s->next = calloc(1, sizeof(struct sb_friend));
+		if (s->next == NULL)
+		{
+			Com_Printf("Error calloc sb_friend\n");
+			return 1;
+		}
+
+		s->next->prev = s;
+	
+		s = s->next;
+	}
+	else
+	{
+		s = calloc(1, sizeof(struct sb_friend));
+		if (s == NULL)
+		{
+			Com_Printf("Error calloc sb_friend\n");
+			return 1;
+		}
+		friends = s;
+	}
+
+	s->name = strdup(name);
+	SB_Update_Friend_Name_Length();
+	return 0;
+}
+
+void SB_Remove_Friend(char *name)
+{
+	struct sb_friend *s;
+
+	if (friends == NULL)
+	{
+		Com_Printf("no friends in the friend list\n");
+		return;
+	}
+
+	s = friends;
+	while (s)
+	{
+		if (strcmp(s->name, name) == 0)
+		{
+			if (s == friends)
+			{
+				s->next->prev = NULL;
+				friends = s->next;
+			}
+			else
+			{
+				if (s->next)
+					s->next->prev = s->prev;
+				if (s->prev)
+					s->prev->next = s->next;
+			}
+			free(s);
+			SB_Update_Friend_Name_Length();
+			return;
+		}
+		s = s->next;
+	}
+}
+
+void SB_Add_Friend_f(void)
+{
+	if (Cmd_Argc() != 2)
+	{
+		Com_Printf("Usage: %s friend\n", Cmd_Argv(1));
+		return;
+	}
+	
+	SB_Add_Friend(Cmd_Argv(1));
+}
+
+void SB_Remove_Friend_f(void)
+{
+	if (Cmd_Argc() != 2)
+	{
+		Com_Printf("Usage: %s friend\n", Cmd_Argv(1));
+		return;
+	}
+	
+	SB_Remove_Friend(Cmd_Argv(1));
+}
+
 void SB_Init(void)
 {
 	Cmd_AddCommand("sb_activate", &SB_Activate_f);
@@ -2101,6 +2345,8 @@ void SB_Init(void)
 	Cmd_AddCommand("sb_add_filter", &SB_Add_Filter_f);
 	Cmd_AddCommand("sb_write_config", &SB_Write_Config);
 	Cmd_AddCommand("sb_set_clipboard", &SB_Set_Clipboard_f);
+	Cmd_AddCommand("sb_add_friend", &SB_Add_Friend_f);
+	Cmd_AddCommand("sb_remove_friend", &SB_Remove_Friend_f);
 	SB_Set_Statusbar("just started!. press \"ctrl + h\" for help\n");
 	SB_AddMacros();
 }
@@ -2111,7 +2357,6 @@ void SB_CvarInit(void)
 	Cvar_Register(&sb_player_drawing);
 	Cvar_Register(&sb_refresh_on_activate);
 }
-
 
 void Dump_SB_Config(FILE *f)
 {
@@ -2130,17 +2375,22 @@ void Dump_SB_Config(FILE *f)
 	{
 		fprintf(f, va("sb_add_tab %s\n", tab->name));
 
-		filter = List_Get_Node(tab->filters, 0);
-
-		while (filter)
+		if (strcmp(tab->name, "friends") == 0)
 		{
-			if (filter_types[filter->key].type == 0)
-				fprintf(f, va("sb_add_filter %s %s %s %f\n", tab->name, filter_types[filter->key].name, filter_num_operators[filter->type], filter->fvalue));
-			else
-				fprintf(f, va("sb_add_filter %s %s %s %s\n", tab->name, filter_types[filter->key].name, filter_char_operators[filter->type], filter->value));
-			filter = (struct filter *)filter->node.next;
+			
 		}
-
+		else
+		{
+			filter = List_Get_Node(tab->filters, 0);
+			while (filter)
+			{
+				if (filter_types[filter->key].type == 0)
+					fprintf(f, va("sb_add_filter %s %s %s %f\n", tab->name, filter_types[filter->key].name, filter_num_operators[filter->type], filter->fvalue));
+				else
+					fprintf(f, va("sb_add_filter %s %s %s %s\n", tab->name, filter_types[filter->key].name, filter_char_operators[filter->type], filter->value));
+				filter = (struct filter *)filter->node.next;
+			}
+		}
 		tab = tab->next;
 	}
 }
