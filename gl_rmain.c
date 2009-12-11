@@ -489,6 +489,20 @@ static void GL_DrawAliasShadow (aliashdr_t *paliashdr, int posenum) {
 	}	
 }
 
+static void R_AliasSetupFullLight(model_t *model)
+{
+	if (model->modhint == MOD_THUNDERBOLT
+	 || model->modhint == MOD_FLAME
+	 || (model->modhint == MOD_PLAYER && bound(0, r_fullbrightSkins.value, cl.fbskins)))
+	{
+		full_light = true;
+	}
+	else
+	{
+		full_light = false;
+	}
+}
+
 static void R_AliasSetupLighting(entity_t *ent) {
 	int minlight, lnum;
 	float add, fbskins;
@@ -501,17 +515,14 @@ static void R_AliasSetupLighting(entity_t *ent) {
 	if (clmodel->modhint == MOD_THUNDERBOLT) {
 		ambientlight = 60 + 150 * bound(0, gl_shaftlight.value, 1);
 		shadelight = 0;
-		full_light = true;
 		return;
 	} else if (clmodel->modhint == MOD_FLAME) {
 		ambientlight = 255;
 		shadelight = 0;
-		full_light = true;
 		return;
 	}
 
 	//normal lighting
-	full_light = false;
 	ambientlight = shadelight = R_LightPoint (ent->origin);
 
 	for (lnum = 0; lnum < MAX_DLIGHTS; lnum++) {
@@ -547,7 +558,6 @@ static void R_AliasSetupLighting(entity_t *ent) {
 		if (fbskins) {
 			ambientlight = max(ambientlight, 8 + fbskins * 120);
 			shadelight = max(shadelight, 8 + fbskins * 120);
-			full_light = true;
 		}
 	}
 
@@ -555,6 +565,219 @@ static void R_AliasSetupLighting(entity_t *ent) {
 
 	if (ambientlight < minlight)
 		ambientlight = shadelight = minlight;
+}
+
+static void R_DrawAliasModelList2TMU(entity_t *ent, unsigned int entcount)
+{
+	int i, anim, skinnum, texture, fb_texture;
+	int oldtexture;
+	int oldfb_texture;
+	int oldmtex;
+	float scale;
+	vec3_t mins, maxs;
+	aliashdr_t *paliashdr;
+	model_t *clmodel;
+	maliasframedesc_t *oldframe, *frame;
+	extern	cvar_t r_viewmodelsize, cl_drawgun;
+
+	oldmtex = 0;
+	oldtexture = -1;
+	oldfb_texture = -1;
+
+	VectorSubtract (r_origin, ent->origin, modelorg);
+
+	clmodel = ent->model;
+	paliashdr = (aliashdr_t *) Mod_Extradata (ent->model);	//locate the proper data
+
+	R_AliasSetupFullLight(clmodel);
+
+	if (gl_smoothmodels.value)
+		glShadeModel (GL_SMOOTH);
+
+	if (gl_affinemodels.value)
+		glHint (GL_PERSPECTIVE_CORRECTION_HINT, GL_FASTEST);
+
+	c_alias_polys += paliashdr->numtris * entcount;
+	anim = (int) (cl.time * 10) & 3;
+
+	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+	if (!(full_light || !gl_fb_models.value))
+	{
+		GL_SelectTexture(GL_TEXTURE1_ARB);
+		glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
+		GL_SelectTexture(GL_TEXTURE0_ARB);
+	}
+
+	/* Stuff that depends on the entity itself. */
+
+	ent--;
+
+	while(ent++, entcount--)
+	{
+		currententity = ent;
+
+		if (ent->frame >= paliashdr->numframes || ent->frame < 0)
+		{
+			Com_DPrintf ("R_DrawAliasModel: no such frame %d\n", ent->frame);
+			ent->frame = 0;
+		}
+		if (ent->oldframe >= paliashdr->numframes || ent->oldframe < 0)
+		{
+			Com_DPrintf ("R_DrawAliasModel: no such oldframe %d\n", ent->oldframe);
+			ent->oldframe = 0;
+		}
+
+		frame = &paliashdr->frames[ent->frame];
+		oldframe = &paliashdr->frames[ent->oldframe];
+
+		if (!r_lerpframes.value || ent->framelerp < 0 || ent->oldframe == ent->frame)
+			r_framelerp = 1.0;
+		else
+			r_framelerp = min (ent->framelerp, 1);
+
+		//culling
+		if (!(ent->flags & RF_WEAPONMODEL))
+		{
+			if (ent->angles[0] || ent->angles[1] || ent->angles[2])
+			{
+				if (R_CullSphere (ent->origin, max(oldframe->radius, frame->radius)))
+					continue;
+			}
+			else
+			{
+				if (r_framelerp == 1)
+				{
+					VectorAdd(ent->origin, frame->bboxmin, mins);
+					VectorAdd(ent->origin, frame->bboxmax, maxs);
+				}
+				else
+				{
+					for (i = 0; i < 3; i++)
+					{
+						mins[i] = ent->origin[i] + min (oldframe->bboxmin[i], frame->bboxmin[i]);
+						maxs[i] = ent->origin[i] + max (oldframe->bboxmax[i], frame->bboxmax[i]);
+					}
+				}
+				if (R_CullBox (mins, maxs))
+					continue;
+			}
+		}
+
+		//get lighting information
+		R_AliasSetupLighting(ent);
+
+		shadedots = r_avertexnormal_dots[((int) (ent->angles[1] * (SHADEDOT_QUANT / 360.0))) & (SHADEDOT_QUANT - 1)];
+
+		//draw all the triangles
+		glPushMatrix ();
+		R_RotateForEntity (ent);
+
+		if (clmodel->modhint == MOD_EYES)
+		{
+			glTranslatef (paliashdr->scale_origin[0], paliashdr->scale_origin[1], paliashdr->scale_origin[2] - (22 + 8));
+			// double size of eyes, since they are really hard to see in gl
+			glScalef (paliashdr->scale[0] * 2, paliashdr->scale[1] * 2, paliashdr->scale[2] * 2);
+		}
+		else if (ent->flags & RF_WEAPONMODEL)
+		{
+			scale = 0.5 + bound(0, r_viewmodelsize.value, 1) / 2;
+			glTranslatef (paliashdr->scale_origin[0], paliashdr->scale_origin[1], paliashdr->scale_origin[2]);
+			glScalef (paliashdr->scale[0] * scale, paliashdr->scale[1], paliashdr->scale[2]);
+		}
+		else
+		{
+			glTranslatef (paliashdr->scale_origin[0], paliashdr->scale_origin[1], paliashdr->scale_origin[2]);
+			glScalef (paliashdr->scale[0], paliashdr->scale[1], paliashdr->scale[2]);
+		}
+
+		skinnum = ent->skinnum;
+		if (skinnum >= paliashdr->numskins || skinnum < 0)
+		{
+			Com_DPrintf ("R_DrawAliasModel: no such skin # %d\n", skinnum);
+			skinnum = 0;
+		}
+
+		texture = paliashdr->gl_texturenum[skinnum][anim];
+		fb_texture = paliashdr->fb_texturenum[skinnum][anim];
+
+		if (full_light || !gl_fb_models.value)
+			fb_texture = 0;
+
+		r_modelalpha = ((ent->flags & RF_WEAPONMODEL) && gl_mtexable) ? bound(0, cl_drawgun.value, 1) : 1;
+
+		// we can't dynamically colormap textures, so they are cached separately for the players.  Heads are just uncolored.
+		if (ent->scoreboard && !gl_nocolors.value)
+		{
+			i = ent->scoreboard - cl.players;
+			if (i >= 0 && i < MAX_CLIENTS)
+			{
+				if (!ent->scoreboard->skin)
+					CL_NewTranslation(i);
+				texture = playertextures + i;
+				fb_texture = playerfbtextures[i];
+			}
+		}
+
+		if (fb_texture)
+		{
+			if (oldmtex != 1)
+			{
+				GL_EnableMultitexture();
+				oldmtex = 1;
+			}
+
+			if (texture != oldtexture)
+			{
+				GL_SelectTexture(GL_TEXTURE0_ARB);
+				GL_Bind(texture);
+				oldtexture = texture;
+			}
+
+			if (fb_texture != oldfb_texture)
+			{
+				GL_SelectTexture(GL_TEXTURE1_ARB);
+				GL_Bind(fb_texture);
+				oldfb_texture = fb_texture;
+			}
+
+			R_SetupAliasFrame(oldframe, frame, paliashdr, true);
+		}
+		else
+		{
+			if (oldmtex != 0)
+			{
+				GL_SelectTexture(GL_TEXTURE1_ARB);
+				GL_DisableMultitexture();
+				oldmtex = 0;
+			}
+
+			if (texture != oldtexture)
+			{
+				GL_Bind(texture);
+				oldtexture = texture;
+			}
+
+			R_SetupAliasFrame(oldframe, frame, paliashdr, false);
+		}
+
+		glPopMatrix ();
+	}
+
+	/* End of per-entity stuff */
+
+	if (oldmtex == 1)
+	{
+		GL_SelectTexture(GL_TEXTURE1_ARB);
+		GL_DisableMultitexture();
+	}
+
+	if (gl_smoothmodels.value)
+		glShadeModel (GL_FLAT);
+
+	if (gl_affinemodels.value)
+		glHint (GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
+
+	glColor3ubv (color_white);
 }
 
 static void R_DrawAliasModel(entity_t *ent)
@@ -621,6 +844,7 @@ static void R_DrawAliasModel(entity_t *ent)
 	}
 
 	//get lighting information
+	R_AliasSetupFullLight(clmodel);
 	R_AliasSetupLighting(ent);
 
 	shadedots = r_avertexnormal_dots[((int) (ent->angles[1] * (SHADEDOT_QUANT / 360.0))) & (SHADEDOT_QUANT - 1)];
@@ -730,6 +954,7 @@ static void R_DrawAliasModel(entity_t *ent)
 void R_DrawEntitiesOnList(visentlist_t *vislist)
 {
 	int i;
+	int j;
 
 	if (!r_drawentities.value || !vislist->count)
 		return;
@@ -744,6 +969,17 @@ void R_DrawEntitiesOnList(visentlist_t *vislist)
 		switch (currententity->model->type)
 		{
 			case mod_alias:
+				if (gl_mtexable)
+				{
+					for(j=1;i+j < vislist->count && vislist->list[i+j].model == currententity->model;j++);
+					if (j > 1)
+					{
+						R_DrawAliasModelList2TMU(currententity, j);
+						i += j-1;
+						break;
+					}
+				}
+
 				R_DrawAliasModel (currententity);
 				break;
 			case mod_brush:
