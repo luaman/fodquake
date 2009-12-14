@@ -207,7 +207,8 @@ qboolean OnChange_gl_crosshairimage(cvar_t *v, char *s)
 	return false;
 }
 
-void customCrosshair_Init(void) {
+void customCrosshair_Init(void)
+{
 	FILE *f;
 	int i = 0, c;
 
@@ -216,16 +217,19 @@ void customCrosshair_Init(void) {
 	if (FS_FOpenFile("crosshairs/crosshair.txt", &f) == -1)
 		return;
 
-	while (i < 64) {
+	while (i < 64)
+	{
 		c = fgetc(f);
-		if (c == EOF) {
+		if (c == EOF)
+		{
 			Com_Printf("Invalid format in crosshair.txt (Need 64 X's and O's)\n");	
 			fclose(f);
 			return;
 		}
 		if (isspace(c))
 			continue;
-		if (tolower(c) != 'x' && tolower(c) != 'o') {
+		if (tolower(c) != 'x' && tolower(c) != 'o')
+		{
 			Com_Printf("Invalid format in crosshair.txt (Only X's and O's and whitespace permitted)\n");
 			fclose(f);
 			return;
@@ -275,21 +279,25 @@ void Scrap_Init()
 }
 
 // returns false if allocation failed
-qboolean Scrap_AllocBlock (int scrapnum, int w, int h, int *x, int *y) {
+qboolean Scrap_AllocBlock(int scrapnum, int w, int h, int *x, int *y)
+{
 	int i, j, best, best2;
 
 	best = BLOCK_HEIGHT;
 	
-	for (i = 0; i < BLOCK_WIDTH - w; i++) {
+	for (i = 0; i < BLOCK_WIDTH - w; i++)
+	{
 		best2 = 0;
 		
-		for (j = 0; j < w; j++) {
+		for (j = 0; j < w; j++)
+		{
 			if (scrap_allocated[scrapnum][i + j] >= best)
 				break;
 			if (scrap_allocated[scrapnum][i + j] > best2)
 				best2 = scrap_allocated[scrapnum][i + j];
 		}
-		if (j == w) {	// this is a valid spot
+		if (j == w)
+		{	// this is a valid spot
 			*x = i;
 			*y = best = best2;
 		}
@@ -306,25 +314,28 @@ qboolean Scrap_AllocBlock (int scrapnum, int w, int h, int *x, int *y) {
 	return true;
 }
 
-int	scrap_uploads;
+int scrap_uploads;
 
-void Scrap_Upload (void) {
+void Scrap_Upload(void)
+{
 	int i;
 
 	scrap_uploads++;
-	for (i = 0; i < 2 ; i++) {
+	for (i = 0; i < 2 ; i++)
+	{
 		if (!(scrap_dirty & (1 << i)))
 			continue;
 		scrap_dirty &= ~(1 << i);
 		GL_Bind(scrap_texnum + i);
-		GL_Upload8 (scrap_texels[i], BLOCK_WIDTH, BLOCK_HEIGHT, TEX_ALPHA);
+		GL_Upload8(scrap_texels[i], BLOCK_WIDTH, BLOCK_HEIGHT, TEX_ALPHA);
 	}
 }
 
 //=============================================================================
 /* Support Routines */
 
-typedef struct cachepic_s {
+typedef struct cachepic_s
+{
 	char		name[MAX_QPATH];
 	mpic_t		pic;
 } cachepic_t;
@@ -337,7 +348,8 @@ byte	menuplyr_pixels[4096];
 
 int		pic_texels;
 
-mpic_t *Draw_CacheWadPic (char *name) {
+mpic_t *Draw_CacheWadPic (char *name)
+{
 	qpic_t	*p;
 	mpic_t	*pic, *pic_24bit;
 
@@ -399,31 +411,32 @@ void Draw_FreeWadPic(mpic_t *pic)
 	free(pic);
 }
 
-mpic_t *Draw_CachePic (char *path) {
+mpic_t *Draw_CachePic(char *path)
+{
 	cachepic_t *pic;
 	int i;
 	qpic_t *dat;
 	mpic_t *pic_24bit;
 
 	for (pic = cachepics, i = 0; i < numcachepics; pic++, i++)
-		if (!strcmp (path, pic->name))
+		if (!strcmp(path, pic->name))
 			return &pic->pic;
 
 	if (numcachepics == MAX_CACHED_PICS)
-		Sys_Error ("numcachepics == MAX_CACHED_PICS");
+		Sys_Error("numcachepics == MAX_CACHED_PICS");
 	numcachepics++;
-	Q_strncpyz (pic->name, path, sizeof(pic->name));
+	Q_strncpyz(pic->name, path, sizeof(pic->name));
 
 	// load the pic from disk
-	if (!(dat = (qpic_t *)FS_LoadTempFile (path)))
-		Sys_Error ("Draw_CachePic: failed to load %s", path);
-	SwapPic (dat);
+	if (!(dat = (qpic_t *)FS_LoadTempFile(path)))
+		Sys_Error("Draw_CachePic: failed to load %s", path);
+	SwapPic(dat);
 
 	// HACK HACK HACK --- we need to keep the bytes for
 	// the translatable player picture just for the menu
 	// configuration dialog
-	if (!strcmp (path, "gfx/menuplyr.lmp"))
-		memcpy (menuplyr_pixels, dat->data, dat->width*dat->height);
+	if (!strcmp(path, "gfx/menuplyr.lmp"))
+		memcpy(menuplyr_pixels, dat->data, dat->width*dat->height);
 
 	pic->pic.width = dat->width;
 	pic->pic.height = dat->height;
@@ -432,7 +445,7 @@ mpic_t *Draw_CachePic (char *path) {
 	if ((pic_24bit = GL_LoadPicImage(path, NULL, 0, 0, TEX_ALPHA)))
 		memcpy(&pic->pic.texnum, &pic_24bit->texnum, sizeof(mpic_t) - 8);
 	else
-		GL_LoadPicTexture (path, &pic->pic, dat->data);
+		GL_LoadPicTexture(path, &pic->pic, dat->data);
 
 	return &pic->pic;
 }
@@ -442,7 +455,8 @@ void GL_FlushPics()
 		  numcachepics = 0;
 }
 
-void Draw_InitConback (void) {
+void Draw_InitConback(void)
+{
 	qpic_t *cb;
 	int start;
 	mpic_t *pic_24bit;
@@ -457,13 +471,17 @@ void Draw_InitConback (void) {
 		Sys_Error ("Draw_InitConback: conback.lmp size is not 320x200");
 
 
-	if ((pic_24bit = GL_LoadPicImage("gfx/conback", "conback", 0, 0, 0))) {
+	if ((pic_24bit = GL_LoadPicImage("gfx/conback", "conback", 0, 0, 0)))
+	{
 		memcpy(&conback.texnum, &pic_24bit->texnum, sizeof(mpic_t) - 8);
-	} else {
+	}
+	else
+	{
 		conback.width = cb->width;
 		conback.height = cb->height;
 		GL_LoadPicTexture ("conback", &conback, cb->data);
 	}
+
 	conback.width = vid.conwidth;
 	conback.height = vid.conheight;
 	// free loaded console
@@ -620,7 +638,8 @@ void Draw_Init(void)
 	Scrap_Init();
 }
 
-__inline static void Draw_CharPoly(int x, int y, int num) {
+__inline static void Draw_CharPoly(int x, int y, int num)
+{
 	float frow, fcol;
 
 	frow = (num >> 4) * 0.0625;
@@ -638,7 +657,8 @@ __inline static void Draw_CharPoly(int x, int y, int num) {
 
 //Draws one 8*8 graphics character with 0 being transparent.
 //It can be clipped to the top of the screen to allow the console to be smoothly scrolled off.
-void Draw_Character (int x, int y, int num) {
+void Draw_Character(int x, int y, int num)
+{
 
 	if (y <= -8)
 		return;			// totally off screen
@@ -649,11 +669,11 @@ void Draw_Character (int x, int y, int num) {
 	num &= 255;
 
 
-	GL_Bind (char_texture);
+	GL_Bind(char_texture);
 
-	glBegin (GL_QUADS);
+	glBegin(GL_QUADS);
 	Draw_CharPoly(x, y, num);
-	glEnd ();
+	glEnd();
 }
 
 void Draw_String(int x, int y, const char *str)
@@ -666,9 +686,9 @@ void Draw_String(int x, int y, const char *str)
 	if (!*str)
 		return;
 
-	GL_Bind (char_texture);
+	GL_Bind(char_texture);
 
-	glBegin (GL_QUADS);
+	glBegin(GL_QUADS);
 
 	while (*str) {	// stop rendering when out of characters		
 		if ((num = *str++) != 32)	// skip spaces
@@ -677,7 +697,7 @@ void Draw_String(int x, int y, const char *str)
 		x += 8;
 	}
 
-	glEnd ();
+	glEnd();
 }
 
 void Draw_Alt_String(int x, int y, const char *str)
@@ -690,9 +710,9 @@ void Draw_Alt_String(int x, int y, const char *str)
 	if (!*str)
 		return;
 
-	GL_Bind (char_texture);
+	GL_Bind(char_texture);
 
-	glBegin (GL_QUADS);
+	glBegin(GL_QUADS);
 
 	while (*str) {// stop rendering when out of characters
 		if ((num = *str++ | 128) != (32 | 128))	// skip spaces
@@ -701,11 +721,12 @@ void Draw_Alt_String(int x, int y, const char *str)
 		x += 8;
 	}
 
-	glEnd ();
+	glEnd();
 }
 
 
-static int HexToInt(char c) {
+static int HexToInt(char c)
+{
 	if (isdigit(c))
 		return c - '0';
 	else if (c >= 'a' && c <= 'f')
@@ -727,12 +748,12 @@ void Draw_ColoredString (int x, int y, char *text, int red)
 	if (!*text)
 		return;
 
-	GL_Bind (char_texture);
+	GL_Bind(char_texture);
 
 	if (scr_coloredText.value)
 		glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 
-	glBegin (GL_QUADS);
+	glBegin(GL_QUADS);
 
 	for ( ; *text; text++)
 	{
@@ -776,51 +797,51 @@ void Draw_ColoredString (int x, int y, char *text, int red)
 		x += 8;
 	}
 
-	glEnd ();
+	glEnd();
 
 	if (!white)
 		glColor3ubv(color_white);
 
 	if (scr_coloredText.value)
-		glTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+		glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
 }
 
 
-void Draw_Crosshair (void) {
+void Draw_Crosshair(void)
+{
 	float x, y, ofs1, ofs2, sh, th, sl, tl;
 	byte *col;
 	extern vrect_t scr_vrect;
 
-	if ((crosshair.value >= 2 && crosshair.value <= NUMCROSSHAIRS + 1) || 
-		((customcrosshair_loaded & CROSSHAIR_TXT) && crosshair.value == 1) ||
-		(customcrosshair_loaded & CROSSHAIR_IMAGE)
-	) {
+	if ((crosshair.value >= 2 && crosshair.value <= NUMCROSSHAIRS + 1)
+	 || ((customcrosshair_loaded & CROSSHAIR_TXT) && crosshair.value == 1)
+	 || (customcrosshair_loaded & CROSSHAIR_IMAGE))
+	{
 		x = scr_vrect.x + scr_vrect.width / 2 + cl_crossx.value; 
 		y = scr_vrect.y + scr_vrect.height / 2 + cl_crossy.value;
-
 
 		if (!gl_crosshairalpha.value)
 			return;
 
-
-		glTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-
+		glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 
 		col = StringToRGB(crosshaircolor.string);
 
-
-
-		if (gl_crosshairalpha.value) {
+		if (gl_crosshairalpha.value)
+		{
 			glDisable(GL_ALPHA_TEST);
 			glEnable (GL_BLEND);
 			col[3] = bound(0, gl_crosshairalpha.value, 1) * 255;
 			glColor4ubv (col);
-		} else {
+		}
+		else
+		{
 			glColor3ubv (col);
 		}
 
 
-		if (customcrosshair_loaded & CROSSHAIR_IMAGE) {
+		if (customcrosshair_loaded & CROSSHAIR_IMAGE)
+		{
 			GL_Bind (crosshairpic.texnum);
 			ofs1 = 4 - 4.0 / crosshairpic.width;
 			ofs2 = 4 + 4.0 / crosshairpic.width;
@@ -828,7 +849,9 @@ void Draw_Crosshair (void) {
 			sl = crosshairpic.sl;
 			th = crosshairpic.th;
 			tl = crosshairpic.tl;
-		} else {
+		}
+		else
+		{
 			GL_Bind ((crosshair.value >= 2) ? crosshairtextures[(int) crosshair.value - 2] : crosshairtexture_txt);	
 			ofs1 = 3.5;
 			ofs2 = 4.5;
@@ -838,122 +861,130 @@ void Draw_Crosshair (void) {
 		ofs1 *= (vid.width / 320) * bound(0, crosshairsize.value, 20);
 		ofs2 *= (vid.width / 320) * bound(0, crosshairsize.value, 20);
 
-		glBegin (GL_QUADS);
-		glTexCoord2f (sl, tl);
-		glVertex2f (x - ofs1, y - ofs1);
-		glTexCoord2f (sh, tl);
-		glVertex2f (x + ofs2, y - ofs1);
-		glTexCoord2f (sh, th);
-		glVertex2f (x + ofs2, y + ofs2);
-		glTexCoord2f (sl, th);
-		glVertex2f (x - ofs1, y + ofs2);
-		glEnd ();
+		glBegin(GL_QUADS);
+		glTexCoord2f(sl, tl);
+		glVertex2f(x - ofs1, y - ofs1);
+		glTexCoord2f(sh, tl);
+		glVertex2f(x + ofs2, y - ofs1);
+		glTexCoord2f(sh, th);
+		glVertex2f(x + ofs2, y + ofs2);
+		glTexCoord2f(sl, th);
+		glVertex2f(x - ofs1, y + ofs2);
+		glEnd();
 
-
-		if (gl_crosshairalpha.value) {
+		if (gl_crosshairalpha.value)
+		{
 			glDisable(GL_BLEND);
-			glEnable (GL_ALPHA_TEST);
+			glEnable(GL_ALPHA_TEST);
 		}
 
-
-		glTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
-		glColor3ubv (color_white);
-	} else if (crosshair.value) {
-		Draw_Character (scr_vrect.x + scr_vrect.width / 2 - 4 + cl_crossx.value, scr_vrect.y + scr_vrect.height / 2 - 4 + cl_crossy.value, '+');
+		glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+		glColor3ubv(color_white);
+	}
+	else if (crosshair.value)
+	{
+		Draw_Character(scr_vrect.x + scr_vrect.width / 2 - 4 + cl_crossx.value, scr_vrect.y + scr_vrect.height / 2 - 4 + cl_crossy.value, '+');
 	}
 }
 
-void Draw_TextBox (int x, int y, int width, int lines) {
+void Draw_TextBox(int x, int y, int width, int lines)
+{
 	mpic_t *p;
 	int cx, cy, n;
 
 	// draw left side
 	cx = x;
 	cy = y;
-	p = Draw_CachePic ("gfx/box_tl.lmp");
-	Draw_TransPic (cx, cy, p);
-	p = Draw_CachePic ("gfx/box_ml.lmp");
-	for (n = 0; n < lines; n++) {
+	p = Draw_CachePic("gfx/box_tl.lmp");
+	Draw_TransPic(cx, cy, p);
+	p = Draw_CachePic("gfx/box_ml.lmp");
+	for (n = 0; n < lines; n++)
+	{
 		cy += 8;
-		Draw_TransPic (cx, cy, p);
+		Draw_TransPic(cx, cy, p);
 	}
-	p = Draw_CachePic ("gfx/box_bl.lmp");
-	Draw_TransPic (cx, cy+8, p);
+	p = Draw_CachePic("gfx/box_bl.lmp");
+	Draw_TransPic(cx, cy+8, p);
 
 	// draw middle
 	cx += 8;
-	while (width > 0) {
+	while (width > 0)
+	{
 		cy = y;
-		p = Draw_CachePic ("gfx/box_tm.lmp");
-		Draw_TransPic (cx, cy, p);
-		p = Draw_CachePic ("gfx/box_mm.lmp");
-		for (n = 0; n < lines; n++) {
+		p = Draw_CachePic("gfx/box_tm.lmp");
+		Draw_TransPic(cx, cy, p);
+		p = Draw_CachePic("gfx/box_mm.lmp");
+		for (n = 0; n < lines; n++)
+		{
 			cy += 8;
 			if (n == 1)
-				p = Draw_CachePic ("gfx/box_mm2.lmp");
-			Draw_TransPic (cx, cy, p);
+				p = Draw_CachePic("gfx/box_mm2.lmp");
+			Draw_TransPic(cx, cy, p);
 		}
-		p = Draw_CachePic ("gfx/box_bm.lmp");
-		Draw_TransPic (cx, cy+8, p);
+		p = Draw_CachePic("gfx/box_bm.lmp");
+		Draw_TransPic(cx, cy+8, p);
 		width -= 2;
 		cx += 16;
 	}
 
 	// draw right side
 	cy = y;
-	p = Draw_CachePic ("gfx/box_tr.lmp");
+	p = Draw_CachePic("gfx/box_tr.lmp");
 	Draw_TransPic (cx, cy, p);
-	p = Draw_CachePic ("gfx/box_mr.lmp");
+	p = Draw_CachePic("gfx/box_mr.lmp");
 	for (n = 0; n < lines; n++)
 	{
 		cy += 8;
-		Draw_TransPic (cx, cy, p);
+		Draw_TransPic(cx, cy, p);
 	}
-	p = Draw_CachePic ("gfx/box_br.lmp");
-	Draw_TransPic (cx, cy+8, p);
+	p = Draw_CachePic("gfx/box_br.lmp");
+	Draw_TransPic(cx, cy+8, p);
 }
 
-void Draw_Pic (int x, int y, mpic_t *pic) {
+void Draw_Pic(int x, int y, mpic_t *pic)
+{
 	if (scrap_dirty)
-		Scrap_Upload ();
-	GL_Bind (pic->texnum);
-	glBegin (GL_QUADS);
-	glTexCoord2f (pic->sl, pic->tl);
-	glVertex2f (x, y);
-	glTexCoord2f (pic->sh, pic->tl);
-	glVertex2f (x + pic->width, y);
-	glTexCoord2f (pic->sh, pic->th);
-	glVertex2f (x + pic->width, y + pic->height);
-	glTexCoord2f (pic->sl, pic->th);
-	glVertex2f (x, y + pic->height);
-	glEnd ();
+		Scrap_Upload();
+	GL_Bind(pic->texnum);
+	glBegin(GL_QUADS);
+	glTexCoord2f(pic->sl, pic->tl);
+	glVertex2f(x, y);
+	glTexCoord2f(pic->sh, pic->tl);
+	glVertex2f(x + pic->width, y);
+	glTexCoord2f(pic->sh, pic->th);
+	glVertex2f(x + pic->width, y + pic->height);
+	glTexCoord2f(pic->sl, pic->th);
+	glVertex2f(x, y + pic->height);
+	glEnd();
 }
 
-void Draw_AlphaPic (int x, int y, mpic_t *pic, float alpha) {
+void Draw_AlphaPic(int x, int y, mpic_t *pic, float alpha)
+{
 	if (scrap_dirty)
 		Scrap_Upload ();
 	glDisable(GL_ALPHA_TEST);
-	glEnable (GL_BLEND);
+	glEnable(GL_BLEND);
 //	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glCullFace(GL_FRONT);
-	glColor4f (1, 1, 1, alpha);
-	GL_Bind (pic->texnum);
-	glBegin (GL_QUADS);
-	glTexCoord2f (pic->sl, pic->tl);
-	glVertex2f (x, y);
-	glTexCoord2f (pic->sh, pic->tl);
-	glVertex2f (x + pic->width, y);
-	glTexCoord2f (pic->sh, pic->th);
-	glVertex2f (x + pic->width, y + pic->height);
-	glTexCoord2f (pic->sl, pic->th);
-	glVertex2f (x, y + pic->height);
-	glEnd ();
-	glColor3ubv (color_white);
+	glColor4f(1, 1, 1, alpha);
+	GL_Bind(pic->texnum);
+	glBegin(GL_QUADS);
+	glTexCoord2f(pic->sl, pic->tl);
+	glVertex2f(x, y);
+	glTexCoord2f(pic->sh, pic->tl);
+	glVertex2f(x + pic->width, y);
+	glTexCoord2f(pic->sh, pic->th);
+	glVertex2f(x + pic->width, y + pic->height);
+	glTexCoord2f(pic->sl, pic->th);
+	glVertex2f(x, y + pic->height);
+	glEnd();
+	glColor3ubv(color_white);
 	glEnable(GL_ALPHA_TEST);
-	glDisable (GL_BLEND);
+	glDisable(GL_BLEND);
 }
 
-void Draw_SubPic(int x, int y, mpic_t *pic, int srcx, int srcy, int width, int height) {
+void Draw_SubPic(int x, int y, mpic_t *pic, int srcx, int srcy, int width, int height)
+{
 	float newsl, newtl, newsh, newth, oldglwidth, oldglheight;
 
 	if (scrap_dirty)
@@ -968,28 +999,30 @@ void Draw_SubPic(int x, int y, mpic_t *pic, int srcx, int srcy, int width, int h
 	newtl = pic->tl + (srcy * oldglheight) / pic->height;
 	newth = newtl + (height * oldglheight) / pic->height;
 
-	GL_Bind (pic->texnum);
-	glBegin (GL_QUADS);
-	glTexCoord2f (newsl, newtl);
-	glVertex2f (x, y);
-	glTexCoord2f (newsh, newtl);
-	glVertex2f (x + width, y);
-	glTexCoord2f (newsh, newth);
-	glVertex2f (x + width, y + height);
-	glTexCoord2f (newsl, newth);
-	glVertex2f (x, y + height);
-	glEnd ();
+	GL_Bind(pic->texnum);
+	glBegin(GL_QUADS);
+	glTexCoord2f(newsl, newtl);
+	glVertex2f(x, y);
+	glTexCoord2f(newsh, newtl);
+	glVertex2f(x + width, y);
+	glTexCoord2f(newsh, newth);
+	glVertex2f(x + width, y + height);
+	glTexCoord2f(newsl, newth);
+	glVertex2f(x, y + height);
+	glEnd();
 }
 
-void Draw_TransPic (int x, int y, mpic_t *pic) {
+void Draw_TransPic(int x, int y, mpic_t *pic)
+{
 	if (x < 0 || (unsigned) (x + pic->width) > vid.width || y < 0 || (unsigned) (y + pic->height) > vid.height)
-		Sys_Error ("Draw_TransPic: bad coordinates");
+		Sys_Error("Draw_TransPic: bad coordinates");
 		
-	Draw_Pic (x, y, pic);
+	Draw_Pic(x, y, pic);
 }
 
 //Only used for the player color selection menu
-void Draw_TransPicTranslate (int x, int y, mpic_t *pic, byte *translation) {
+void Draw_TransPicTranslate(int x, int y, mpic_t *pic, byte *translation)
+{
 	int v, u, c, p;
 	unsigned trans[64 * 64], *dest;
 	byte *src;
@@ -999,125 +1032,143 @@ void Draw_TransPicTranslate (int x, int y, mpic_t *pic, byte *translation) {
 	c = pic->width * pic->height;
 
 	dest = trans;
-	for (v = 0; v < 64; v++, dest += 64) {
+	for (v = 0; v < 64; v++, dest += 64)
+	{
 		src = &menuplyr_pixels[ ((v * pic->height) >> 6) *pic->width];
-		for (u = 0; u < 64; u++) {
+		for (u = 0; u < 64; u++)
+		{
 			p = src[(u * pic->width) >> 6];
 			dest[u] = (p == 255) ? p : d_8to24table[translation[p]];
 		}
 	}
 
-	glTexImage2D (GL_TEXTURE_2D, 0, gl_alpha_format, 64, 64, 0, GL_RGBA, GL_UNSIGNED_BYTE, trans);
+	glTexImage2D(GL_TEXTURE_2D, 0, gl_alpha_format, 64, 64, 0, GL_RGBA, GL_UNSIGNED_BYTE, trans);
 
 	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-	glBegin (GL_QUADS);
-	glTexCoord2f (0, 0);
-	glVertex2f (x, y);
-	glTexCoord2f (1, 0);
-	glVertex2f (x + pic->width, y);
-	glTexCoord2f (1, 1);
-	glVertex2f (x + pic->width, y + pic->height);
-	glTexCoord2f (0, 1);
-	glVertex2f (x, y + pic->height);
-	glEnd ();
+	glBegin(GL_QUADS);
+	glTexCoord2f(0, 0);
+	glVertex2f(x, y);
+	glTexCoord2f(1, 0);
+	glVertex2f(x + pic->width, y);
+	glTexCoord2f(1, 1);
+	glVertex2f(x + pic->width, y + pic->height);
+	glTexCoord2f(0, 1);
+	glVertex2f(x, y + pic->height);
+	glEnd();
 }
 
-void Draw_ConsoleBackground (int lines) {
+void Draw_ConsoleBackground(int lines)
+{
 	char ver[80];
 
-	if (SCR_NEED_CONSOLE_BACKGROUND) {
+	if (SCR_NEED_CONSOLE_BACKGROUND)
+	{
 		Draw_Pic(0, lines - vid.height, &conback);
-	} else {
+	}
+	else
+	{
 		if (scr_conalpha.value)
 			Draw_AlphaPic (0, lines - vid.height, &conback, bound (0, scr_conalpha.value, 1));
 	}
 
-	sprintf (ver, "FodQuake %s", FODQUAKE_VERSION);
-	Draw_Alt_String (vid.conwidth - strlen(ver) * 8 - 8, lines - 10, ver);
+	sprintf(ver, "FodQuake %s", FODQUAKE_VERSION);
+	Draw_Alt_String(vid.conwidth - strlen(ver) * 8 - 8, lines - 10, ver);
 }
 
 //This repeats a 64 * 64 tile graphic to fill the screen around a sized down refresh window.
-void Draw_TileClear (int x, int y, int w, int h) {
-	GL_Bind (draw_backtile->texnum);
-	glBegin (GL_QUADS);
-	glTexCoord2f (x / 64.0, y / 64.0);
-	glVertex2f (x, y);
-	glTexCoord2f ((x + w) / 64.0, y / 64.0);
-	glVertex2f (x + w, y);
-	glTexCoord2f ((x + w) / 64.0, (y + h) / 64.0);
-	glVertex2f (x + w, y + h);
-	glTexCoord2f (x / 64.0, (y + h) / 64.0 );
-	glVertex2f (x, y + h);
-	glEnd ();
+void Draw_TileClear(int x, int y, int w, int h)
+{
+	GL_Bind(draw_backtile->texnum);
+	glBegin(GL_QUADS);
+	glTexCoord2f(x / 64.0, y / 64.0);
+	glVertex2f(x, y);
+	glTexCoord2f((x + w) / 64.0, y / 64.0);
+	glVertex2f(x + w, y);
+	glTexCoord2f((x + w) / 64.0, (y + h) / 64.0);
+	glVertex2f(x + w, y + h);
+	glTexCoord2f(x / 64.0, (y + h) / 64.0 );
+	glVertex2f(x, y + h);
+	glEnd();
 }
 
-void Draw_AlphaFill (int x, int y, int w, int h, int c, float alpha) {
+void Draw_AlphaFill(int x, int y, int w, int h, int c, float alpha)
+{
 	alpha = bound(0, alpha, 1);
 
 	if (!alpha)
 		return;
 
-	glDisable (GL_TEXTURE_2D);
-	if (alpha < 1) {
-		glEnable (GL_BLEND);
+	glDisable(GL_TEXTURE_2D);
+	if (alpha < 1)
+	{
+		glEnable(GL_BLEND);
 		glDisable(GL_ALPHA_TEST);
-		glColor4f (host_basepal[c * 3] / 255.0,  host_basepal[c * 3 + 1] / 255.0, host_basepal[c * 3 + 2] / 255.0, alpha);
-	} else {
-		glColor3f (host_basepal[c * 3] / 255.0, host_basepal[c * 3 + 1] / 255.0, host_basepal[c * 3 + 2]  /255.0);
+		glColor4f(host_basepal[c * 3] / 255.0,  host_basepal[c * 3 + 1] / 255.0, host_basepal[c * 3 + 2] / 255.0, alpha);
+	}
+	else
+	{
+		glColor3f(host_basepal[c * 3] / 255.0, host_basepal[c * 3 + 1] / 255.0, host_basepal[c * 3 + 2]  /255.0);
 	}
 
-	glBegin (GL_QUADS);
-	glVertex2f (x, y);
-	glVertex2f (x + w, y);
-	glVertex2f (x + w, y + h);
-	glVertex2f (x, y + h);
-	glEnd ();
+	glBegin(GL_QUADS);
+	glVertex2f(x, y);
+	glVertex2f(x + w, y);
+	glVertex2f(x + w, y + h);
+	glVertex2f(x, y + h);
+	glEnd();
 
-	glEnable (GL_TEXTURE_2D);
-	if (alpha < 1) {
+	glEnable(GL_TEXTURE_2D);
+	if (alpha < 1)
+	{
 		glEnable(GL_ALPHA_TEST);
-		glDisable (GL_BLEND);
+		glDisable(GL_BLEND);
 	}
-	glColor3ubv (color_white);
+	glColor3ubv(color_white);
 }
 
-void Draw_Fill (int x, int y, int w, int h, int c) {
+void Draw_Fill(int x, int y, int w, int h, int c)
+{
 	Draw_AlphaFill(x, y, w, h, c, 1);
 }
 
 //=============================================================================
 
-void Draw_FadeScreen (void) {
+void Draw_FadeScreen(void)
+{
 	float alpha;
 
 	alpha = bound(0, scr_menualpha.value, 1);
 	if (!alpha)
 		return;
 
-	if (alpha < 1) {
-		glDisable (GL_ALPHA_TEST);
-		glEnable (GL_BLEND);
-		glColor4f (0, 0, 0, alpha);
-	} else {
-		glColor3f (0, 0, 0);
+	if (alpha < 1)
+	{
+		glDisable(GL_ALPHA_TEST);
+		glEnable(GL_BLEND);
+		glColor4f(0, 0, 0, alpha);
 	}
-	glDisable (GL_TEXTURE_2D);
-
-	glBegin (GL_QUADS);
-	glVertex2f (0, 0);
-	glVertex2f (vid.width, 0);
-	glVertex2f (vid.width, vid.height);
-	glVertex2f (0, vid.height);
-	glEnd ();
-
-	if (alpha < 1) {
-		glDisable (GL_BLEND);
-		glEnable (GL_ALPHA_TEST);
+	else
+	{
+		glColor3f(0, 0, 0);
 	}
-	glColor3ubv (color_white);
-	glEnable (GL_TEXTURE_2D);
+	glDisable(GL_TEXTURE_2D);
+
+	glBegin(GL_QUADS);
+	glVertex2f(0, 0);
+	glVertex2f(vid.width, 0);
+	glVertex2f(vid.width, vid.height);
+	glVertex2f(0, vid.height);
+	glEnd();
+
+	if (alpha < 1)
+	{
+		glDisable(GL_BLEND);
+		glEnable(GL_ALPHA_TEST);
+	}
+	glColor3ubv(color_white);
+	glEnable(GL_TEXTURE_2D);
 
 	Sbar_Changed();
 }
@@ -1126,33 +1177,37 @@ void Draw_FadeScreen (void) {
 
 //Draws the little blue disc in the corner of the screen. 
 //Call before beginning any disc IO.
-void Draw_BeginDisc (void) {
+void Draw_BeginDisc(void)
+{
 	if (!draw_disc)
 		return;
-	glDrawBuffer  (GL_FRONT);
-	Draw_Pic (vid.width - 24, 0, draw_disc);
-	glDrawBuffer  (GL_BACK);
+	glDrawBuffer(GL_FRONT);
+	Draw_Pic(vid.width - 24, 0, draw_disc);
+	glDrawBuffer(GL_BACK);
 }
 
 //Erases the disc icon.
 //Call after completing any disc IO
-void Draw_EndDisc (void) {}
-
-void GL_Set2D (void)
+void Draw_EndDisc(void)
 {
-	glViewport (glx, gly, glwidth, glheight);
+}
+
+void GL_Set2D(void)
+{
+	glViewport(glx, gly, glwidth, glheight);
 
 	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity ();
-	glOrtho (0, vid.width, vid.height, 0, -99999, 99999);
+	glLoadIdentity();
+	glOrtho(0, vid.width, vid.height, 0, -99999, 99999);
 
 	glMatrixMode(GL_MODELVIEW);
-	glLoadIdentity ();
+	glLoadIdentity();
 
-	glDisable (GL_DEPTH_TEST);
-	glDisable (GL_CULL_FACE);
-	glDisable (GL_BLEND);
-	glEnable (GL_ALPHA_TEST);
+	glDisable(GL_DEPTH_TEST);
+	glDisable(GL_CULL_FACE);
+	glDisable(GL_BLEND);
+	glEnable(GL_ALPHA_TEST);
 
-	glColor3ubv (color_white);
+	glColor3ubv(color_white);
 }
+
