@@ -458,18 +458,7 @@ void GL_FlushPics()
 void Draw_InitConback(void)
 {
 	qpic_t *cb;
-	int start;
 	mpic_t *pic_24bit;
-
-	start = Hunk_LowMark ();
-
-	if (!(cb = (qpic_t *) FS_LoadHunkFile ("gfx/conback.lmp")))
-		Sys_Error ("Couldn't load gfx/conback.lmp");
-	SwapPic (cb);
-
-	if (cb->width != 320 || cb->height != 200)
-		Sys_Error ("Draw_InitConback: conback.lmp size is not 320x200");
-
 
 	if ((pic_24bit = GL_LoadPicImage("gfx/conback", "conback", 0, 0, 0)))
 	{
@@ -477,15 +466,26 @@ void Draw_InitConback(void)
 	}
 	else
 	{
+		if (!(cb = (qpic_t *) FS_LoadZFile("gfx/conback.lmp")))
+			Sys_Error ("Couldn't load gfx/conback.lmp");
+
+		SwapPic (cb);
+
+		if (cb->width != 320 || cb->height != 200)
+		{
+			Z_Free(cb);
+			Sys_Error ("Draw_InitConback: conback.lmp size is not 320x200");
+		}
+
 		conback.width = cb->width;
 		conback.height = cb->height;
 		GL_LoadPicTexture ("conback", &conback, cb->data);
+
+		Z_Free(cb);
 	}
 
 	conback.width = vid.conwidth;
 	conback.height = vid.conheight;
-	// free loaded console
-	Hunk_FreeToLowMark (start);
 }
 
 void Draw_SizeChanged()
