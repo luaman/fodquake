@@ -57,7 +57,7 @@ cvar_t	gl_scaleTurbTextures		= {"gl_scaleTurbTextures", "1"};
 cvar_t	gl_externalTextures_world	= {"gl_externalTextures_world", "1"};
 cvar_t	gl_externalTextures_bmodels	= {"gl_externalTextures_bmodels", "1"};
 
-typedef struct
+struct gltexture
 {
 	int			texnum;
 	char		identifier[MAX_QPATH];
@@ -67,9 +67,9 @@ typedef struct
 	int			texmode;
 	unsigned	crc;
 	int			bpp;
-} gltexture_t;
+};
 
-static gltexture_t	gltextures[MAX_GLTEXTURES];
+static struct gltexture	gltextures[MAX_GLTEXTURES];
 static int	numgltextures;
 
 #define Q_ROUND_POWER2(in, out) {						\
@@ -100,13 +100,13 @@ static qboolean OnChange_gl_max_size(cvar_t *var, char *string)
 	return false;
 }
 
-typedef struct
+struct glmode
 {
 	char *name;
 	int	minimize, maximize;
-} glmode_t;
+};
 
-glmode_t modes[] =
+static struct glmode modes[] =
 {
 	{"GL_NEAREST", GL_NEAREST, GL_NEAREST},
 	{"GL_LINEAR", GL_LINEAR, GL_LINEAR},
@@ -116,7 +116,7 @@ glmode_t modes[] =
 	{"GL_LINEAR_MIPMAP_LINEAR", GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR}
 };
 
-#define GLMODE_NUMODES	(sizeof(modes) / sizeof(glmode_t))
+#define GLMODE_NUMODES	(sizeof(modes) / sizeof(*modes))
 
 static int gl_filter_min = GL_LINEAR_MIPMAP_NEAREST;
 static int gl_filter_max = GL_LINEAR;
@@ -124,7 +124,7 @@ static int gl_filter_max = GL_LINEAR;
 static qboolean OnChange_gl_texturemode(cvar_t *var, char *string)
 {
 	int i;
-	gltexture_t	*glt;
+	struct gltexture *glt;
 
 	for (i = 0; i < GLMODE_NUMODES; i++)
 	{
@@ -352,7 +352,7 @@ void GL_Upload8(byte *data, int width, int height, int mode)
 int GL_LoadTexture(char *identifier, int width, int height, byte *data, int mode, int bpp)
 {
 	int i, scaled_width, scaled_height, crc = 0;
-	gltexture_t *glt;
+	struct gltexture *glt;
 
 	ScaleDimensions(width, height, &scaled_width, &scaled_height, mode);
 
@@ -465,7 +465,7 @@ int GL_LoadPicTexture(char *name, mpic_t *pic, byte *data)
 	return pic->texnum;
 }
 
-static gltexture_t *GL_FindTexture(char *identifier)
+static struct gltexture *GL_FindTexture(const char *identifier)
 {
 	int i;
 
@@ -480,7 +480,7 @@ static gltexture_t *GL_FindTexture(char *identifier)
 
 static void GL_FlushTextures()
 {
-	gltexture_t *glt;
+	struct gltexture *glt;
 	int textures[MAX_GLTEXTURES];
 	int i;
 
@@ -495,7 +495,7 @@ static void GL_FlushTextures()
 	numgltextures = 0;
 }
 
-static gltexture_t *current_texture = NULL;
+static struct gltexture *current_texture = NULL;
 
 #define CHECK_TEXTURE_ALREADY_LOADED	\
 	if (CheckTextureLoaded(mode)) {		\
@@ -601,7 +601,7 @@ int GL_LoadTextureImage(char *filename, char *identifier, int matchwidth, int ma
 {
 	int texnum;
 	byte *data;
-	gltexture_t *gltexture;
+	struct gltexture *gltexture;
 
 	if (no24bit)
 		return 0;
