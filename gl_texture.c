@@ -28,9 +28,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "config.h"
 
-qboolean OnChange_gl_max_size(cvar_t *var, char *string);
-qboolean OnChange_gl_texturemode(cvar_t *var, char *string);
-qboolean OnChange_gl_miptexLevel(cvar_t *var, char *string);
+static qboolean OnChange_gl_max_size(cvar_t *var, char *string);
+static qboolean OnChange_gl_texturemode(cvar_t *var, char *string);
+static qboolean OnChange_gl_miptexLevel(cvar_t *var, char *string);
 
 
 static qboolean no24bit, forceTextureReload;
@@ -42,15 +42,15 @@ extern float vid_gamma;
 
 
 int texture_extension_number = 1;
-int	gl_max_size_default;
-int	gl_lightmap_format = 3, gl_solid_format = 3, gl_alpha_format = 4;
+int gl_max_size_default;
+int gl_lightmap_format = 3, gl_solid_format = 3, gl_alpha_format = 4;
 
 
 cvar_t	gl_max_size			= {"gl_max_size", "1024", 0, OnChange_gl_max_size};
-cvar_t	gl_picmip			= {"gl_picmip", "0"};
+static cvar_t	gl_picmip			= {"gl_picmip", "0"};
 cvar_t	gl_miptexLevel		= {"gl_miptexLevel", "0", 0, OnChange_gl_miptexLevel};
-cvar_t	gl_lerpimages		= {"gl_lerpimages", "1"};
-cvar_t	gl_texturemode		= {"gl_texturemode", "GL_LINEAR_MIPMAP_NEAREST", 0, OnChange_gl_texturemode};
+static cvar_t	gl_lerpimages		= {"gl_lerpimages", "1"};
+static cvar_t	gl_texturemode		= {"gl_texturemode", "GL_LINEAR_MIPMAP_NEAREST", 0, OnChange_gl_texturemode};
 
 cvar_t	gl_scaleModelTextures		= {"gl_scaleModelTextures", "0"};
 cvar_t	gl_scaleTurbTextures		= {"gl_scaleTurbTextures", "1"};
@@ -69,8 +69,8 @@ typedef struct
 	int			bpp;
 } gltexture_t;
 
-gltexture_t	gltextures[MAX_GLTEXTURES];
-int	numgltextures;
+static gltexture_t	gltextures[MAX_GLTEXTURES];
+static int	numgltextures;
 
 #define Q_ROUND_POWER2(in, out) {						\
 	_mathlib_temp_int1 = in;							\
@@ -78,7 +78,7 @@ int	numgltextures;
 	;												\
 }
 
-qboolean OnChange_gl_max_size(cvar_t *var, char *string)
+static qboolean OnChange_gl_max_size(cvar_t *var, char *string)
 {
 	int i;
 	float newvalue = Q_atof(string);
@@ -121,7 +121,7 @@ glmode_t modes[] =
 static int gl_filter_min = GL_LINEAR_MIPMAP_NEAREST;
 static int gl_filter_max = GL_LINEAR;
 
-qboolean OnChange_gl_texturemode(cvar_t *var, char *string)
+static qboolean OnChange_gl_texturemode(cvar_t *var, char *string)
 {
 	int i;
 	gltexture_t	*glt;
@@ -154,7 +154,7 @@ qboolean OnChange_gl_texturemode(cvar_t *var, char *string)
 	return false;
 }
 
-qboolean OnChange_gl_miptexLevel(cvar_t *var, char *string)
+static qboolean OnChange_gl_miptexLevel(cvar_t *var, char *string)
 {
 	float newval = Q_atof(string);
 
@@ -478,7 +478,7 @@ static gltexture_t *GL_FindTexture(char *identifier)
 	return NULL;
 }
 
-void GL_FlushTextures()
+static void GL_FlushTextures()
 {
 	gltexture_t *glt;
 	int textures[MAX_GLTEXTURES];
@@ -750,5 +750,10 @@ void GL_Texture_Init(void)
 
 	no24bit = COM_CheckParm("-no24bit") ? true : false;
 	forceTextureReload = COM_CheckParm("-forceTextureReload") ? true : false;
+}
+
+void GL_Texture_Shutdown()
+{
+	GL_FlushTextures();
 }
 

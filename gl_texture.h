@@ -56,10 +56,9 @@ int GL_LoadTextureImage (char * , char *, int, int, int);
 mpic_t *GL_LoadPicImage (char *, char *, int, int, int);
 int GL_LoadCharsetImage (char *, char *);
 
-void GL_FlushTextures(void);
-
 void GL_Texture_CvarInit(void);
 void GL_Texture_Init(void);
+void GL_Texture_Shutdown(void);
 
 
 extern int gl_lightmap_format, gl_solid_format, gl_alpha_format;
