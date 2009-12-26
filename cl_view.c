@@ -576,6 +576,33 @@ void V_UpdatePalette(qboolean force_update)
 	VID_SetPalette (current_pal);	
 }
 
+unsigned char V_LookUpColour(float r, float g, float b)
+{
+	double bestdistance;
+	double distance;
+	unsigned int bestfit;
+	unsigned int i;
+
+	bestdistance = 256*256*256;
+	bestfit = 0;
+
+	r = r * 255 + 0.5;
+	g = g * 255 + 0.5;
+	b = b * 255 + 0.5;
+
+	for(i=0;i<256;i++)
+	{
+		distance = sqrt(pow(r-host_basepal[i*3+0], 2) + pow(g-host_basepal[i*3+1], 2) + pow(b-host_basepal[i*3+2], 2));
+		if (distance < bestdistance)
+		{
+			bestfit = i;
+			bestdistance = distance;
+		}
+	}
+
+	return bestfit;
+}
+
 #endif	// !GLQUAKE
 
 /* 
