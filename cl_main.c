@@ -62,8 +62,12 @@ int movementkey;
 static qboolean net_lag_callback(cvar_t *var, char *string);
 static qboolean net_lag_ezcheat_callback(cvar_t *var, char *string);
 
+#include "pmove.h"
+
 static qboolean cl_imitate_client_callback(cvar_t *var, char *string);
 static qboolean cl_imitate_os_callback(cvar_t *var, char *string);
+
+static qboolean r_drawflat_enable_callback(cvar_t *var, char *string);
 
 cvar_t	rcon_password = {"rcon_password", ""};
 cvar_t	rcon_address = {"rcon_address", ""};
@@ -124,6 +128,7 @@ cvar_t r_lightflicker			= {"r_lightflicker", "1"};
 cvar_t r_rockettrail			= {"r_rocketTrail", "1"};
 cvar_t r_grenadetrail			= {"r_grenadeTrail", "1"};
 cvar_t r_powerupglow			= {"r_powerupGlow", "1"};
+cvar_t r_drawflat_enable		= {"r_drawflat_enable", "0", 0, r_drawflat_enable_callback };
 
 // info mirrors
 cvar_t	password = {"password", "", CVAR_USERINFO};
@@ -245,6 +250,424 @@ char *fversion_osnames[] =
 	"MorphOS",
 	"Win32"
 };
+
+static int Point_On_Surface(vec3_t *points, int count, vec3_t point)
+{
+	vec3_t temp3, temp4, p, q;
+	int i;
+
+	VectorSubtract(points[count-1], point, temp3);
+	VectorSubtract(points[0], point, temp4);
+
+	CrossProduct(temp3, temp4, p);
+
+	for (i=0;i<count-1;i++)
+	{
+		VectorSubtract(points[i], point, temp3);
+		VectorSubtract(points[i+1], point, temp4);
+		CrossProduct(temp3, temp4, q);
+		if (DotProduct(p,q) < 0)
+			return 0;
+	}
+
+	return 1;
+}
+
+static qboolean r_drawflat_enable_callback(cvar_t *var, char *string)
+{
+#ifndef GLQUAKE
+	model_t *model;
+	unsigned int i;
+
+	if (!cl.worldmodel)
+		return;
+
+	model = cl.worldmodel;
+
+	for (i=0;i<model->numsurfaces;i++)
+	{
+		D_UncacheSurface(&model->surfaces[i]);
+	}
+#endif
+
+	return false;
+}
+
+static void R_DrawFlat_UpdateSWSurface(msurface_t *surface)
+{
+#ifndef GLQUAKE
+	surface->palcolor = V_LookUpColour(surface->color[0], surface->color[1], surface->color[2]);
+	if (r_drawflat_enable.value == 1)
+		D_UncacheSurface(surface);
+#endif
+}
+
+static void R_DrawFlatShoot_f(void)
+{
+	model_t *model;
+	vec3_t	vec, vec1;
+	vec3_t *points;
+	pmtrace_t trace;
+	mleaf_t	*leaf;
+	msurface_t **surface;
+	mvertex_t *vertex;
+	int e, x, i;
+	float color[3];
+
+	if (!cl.worldmodel)
+		return;
+
+	if (Cmd_Argc() != 4)
+	{
+		Com_Printf("Usage: r_drawflat_shoot [r] [g] [b], colors should be in range of 0 to 1\n");
+		return;
+	}
+
+	color[0] = bound(0, atof(Cmd_Argv(1)), 1);
+	color[1] = bound(0, atof(Cmd_Argv(2)), 1);
+	color[2] = bound(0, atof(Cmd_Argv(3)), 1);
+
+	model = cl.worldmodel;
+	AngleVectors(r_refdef.viewangles, vec1, NULL, NULL);
+
+	VectorMA(r_refdef.vieworg, 10000.0f, vec1, vec);
+
+	trace = PM_TraceLine (r_refdef.vieworg, vec);
+
+	leaf = Mod_PointInLeaf(trace.endpos, model);
+
+	if (!leaf)
+	{
+		Com_Printf("no leaf returned\n");
+		return;
+	}
+
+	for (i=0, surface = leaf->firstmarksurface; i<leaf->nummarksurfaces; i++, surface++)
+	{
+		points = calloc((*surface)->numedges , sizeof(vec3_t));
+		if (points == NULL)
+		{
+			Com_Printf("alloc error\n");
+			return;
+		}
+		for (x=0;x<(*surface)->numedges;x++)
+		{
+			e = model->surfedges[(*surface)->firstedge + x];
+			if (abs(e) >= model->numedges)
+				return;
+
+			if (e >= 0)
+				vertex = &model->vertexes[model->edges[e].v[0]];
+			else
+				vertex = &model->vertexes[model->edges[-e].v[1]];
+			points[x][0] = vertex->position[0];
+			points[x][1] = vertex->position[1];
+			points[x][2] = vertex->position[2];
+		}
+
+		if (Point_On_Surface(points, (*surface)->numedges, trace.endpos) && trace.draw_plane == (*surface)->plane )
+		{
+			(*surface)->is_drawflat = 1;
+			(*surface)->color[0] = color[0];
+			(*surface)->color[1] = color[1];
+			(*surface)->color[2] = color[2];
+
+			R_DrawFlat_UpdateSWSurface(*surface);
+		}
+		free(points);
+	}
+	return;
+}
+
+static void R_DrawFlatShootUnset_f(void)
+{
+	model_t *model;
+	vec3_t	vec, vec1;
+	vec3_t *points;
+	pmtrace_t trace;
+	mleaf_t	*leaf;
+	msurface_t **surface;
+	mvertex_t *vertex;
+	int e, x, i;
+
+	if (!cl.worldmodel)
+		return;
+
+	model = cl.worldmodel;
+	AngleVectors(r_refdef.viewangles, vec1, NULL, NULL);
+
+	VectorMA(r_refdef.vieworg, 10000.0f, vec1, vec);
+
+	trace = PM_TraceLine (r_refdef.vieworg, vec);
+
+	leaf = Mod_PointInLeaf(trace.endpos, model);
+
+	if (!leaf)
+	{
+		Com_Printf("no leaf returned\n");
+		return;
+	}
+
+	for (i=0, surface = leaf->firstmarksurface; i<leaf->nummarksurfaces; i++, surface++)
+	{
+		points = calloc((*surface)->numedges , sizeof(vec3_t));
+		if (points == NULL)
+		{
+			Com_Printf("alloc error\n");
+			return;
+		}
+		for (x=0;x<(*surface)->numedges;x++)
+		{
+			e = model->surfedges[(*surface)->firstedge + x];
+			if (abs(e) >= model->numedges)
+				return;
+
+			if (e >= 0)
+				vertex = &model->vertexes[model->edges[e].v[0]];
+			else
+				vertex = &model->vertexes[model->edges[-e].v[1]];
+			points[x][0] = vertex->position[0];
+			points[x][1] = vertex->position[1];
+			points[x][2] = vertex->position[2];
+		}
+
+		if (Point_On_Surface(points, (*surface)->numedges, trace.endpos) && trace.draw_plane == (*surface)->plane )
+		{
+			(*surface)->is_drawflat = 0;
+		}
+		free(points);
+	}
+	return;
+}
+
+
+static void R_Draw_Flat(float x_lower_limit, float x_upper_limit, float y_lower_limit, float y_upper_limit, float z_lower_limit, float z_upper_limit, float r, float g, float b)
+{
+	model_t *model;
+	vec3_t	vec;
+	int i;
+
+	if (!cl.worldmodel)
+		return;
+
+	model = cl.worldmodel;
+
+	for (i=0;i<model->numsurfaces;i++)
+	{
+		VectorCopy(model->surfaces[i].plane->normal, vec);
+		VectorNormalize(vec);
+		if (vec[2] <= z_upper_limit && vec[2] >= z_lower_limit
+		 && vec[1] <= y_upper_limit && vec[1] >= y_lower_limit
+		 && vec[0] <= x_upper_limit && vec[0] >= x_lower_limit)
+		{
+			model->surfaces[i].is_drawflat = 1;
+			model->surfaces[i].color[0] = r;
+			model->surfaces[i].color[1] = g;
+			model->surfaces[i].color[2] = b;
+
+			R_DrawFlat_UpdateSWSurface(&model->surfaces[i]);
+		}
+	}
+
+	return;
+}
+
+static void R_DrawFlat_f(void)
+{
+	float limit[6], color[3];
+
+	if (Cmd_Argc() != 10)
+	{
+		Com_Printf("Usage: r_drawflat [x_lower_limit] [y_upper_limit] [y_lower_limit] [y_upper_limit] [z_lower_limit] [z_upper_limit] [r] [g] [b], limits go from -1 to 1, colors should be in the range of 0 to 1.\n");
+		return;
+	}
+
+	limit[0] = atof(Cmd_Argv(1));
+	limit[1] = atof(Cmd_Argv(2));
+	limit[2] = atof(Cmd_Argv(3));
+	limit[3] = atof(Cmd_Argv(4));
+	limit[4] = atof(Cmd_Argv(5));
+	limit[5] = atof(Cmd_Argv(6));
+	color[0] = bound(0, atof(Cmd_Argv(7)), 1);
+	color[1] = bound(0, atof(Cmd_Argv(8)), 1);
+	color[2] = bound(0, atof(Cmd_Argv(9)), 1);
+
+	R_Draw_Flat(limit[0], limit[1], limit[2], limit[3], limit[4], limit[5], color[0], color[1], color[2]);
+}
+
+static void R_DrawFlat_Walls_f(void)
+{
+	float r, g, b;
+
+	if (Cmd_Argc() != 4)
+	{
+		Com_Printf("Usage: r_drawflat_walls [r] [g] [b], colors should be in the range of 0 to 1.\n");
+		return;
+	}
+	r = bound(0, atof(Cmd_Argv(1)), 1);
+	g = bound(0, atof(Cmd_Argv(2)), 1);
+	b = bound(0, atof(Cmd_Argv(3)), 1);
+
+	R_Draw_Flat(-1, 1, -1, 1, 0, 0, r, g, b);
+}
+
+static void R_DrawFlat_Slopes_f(void)
+{
+	float r, g, b;
+
+	if (Cmd_Argc() != 4)
+	{
+		Com_Printf("Usage: r_drawflat_slopes [r] [g] [b], colors should be in the range of 0 to 1.\n");
+		return;
+	}
+	r = bound(0, atof(Cmd_Argv(1)), 1);
+	g = bound(0, atof(Cmd_Argv(2)), 1);
+	b = bound(0, atof(Cmd_Argv(3)), 1);
+
+	R_Draw_Flat(-1, 1, -1, 1, -0.999999, -0.00001, r, g, b);
+	R_Draw_Flat(-1, 1, -1, 1, 0.000001, 0.999999, r, g, b);
+}
+
+static void R_DrawFlat_Floors_Ceilings_f(void)
+{
+	float r, g, b;
+
+	if (Cmd_Argc() != 4)
+	{
+		Com_Printf("Usage: r_drawflat_floors_ceilings [r] [g] [b], colors should be in the range of 0 to 1.\n");
+		return;
+	}
+	r = bound(0, atof(Cmd_Argv(1)), 1);
+	g = bound(0, atof(Cmd_Argv(2)), 1);
+	b = bound(0, atof(Cmd_Argv(3)), 1);
+
+	R_Draw_Flat(-1, 1, -1, 1, -1, -1, r, g, b);
+	R_Draw_Flat(-1, 1, -1, 1, 1, 1, r, g, b);
+}
+
+static void R_DrawFlat_Set_f(void)
+{
+	model_t *model;
+	float r, g, b;
+	int surface;
+
+	if (!cl.worldmodel)
+		return;
+
+	if (Cmd_Argc() != 5)
+	{
+		Com_Printf("Usage: r_drawflat_set [surface] [r] [g] [b], colors should be in range of 0 to 1\n");
+		return;
+	}
+
+	model = cl.worldmodel;
+
+	surface = atoi(Cmd_Argv(1));
+	r = bound(0, atof(Cmd_Argv(2)), 1);
+	g = bound(0, atof(Cmd_Argv(3)), 1);
+	b = bound(0, atof(Cmd_Argv(4)), 1);
+
+	if (surface < 0 || surface >= model->numsurfaces)
+	{
+		Com_Printf("Surface out of range.\n");
+		return;
+	}
+
+	model->surfaces[surface].is_drawflat = 1;
+	model->surfaces[surface].color[0] = r;
+	model->surfaces[surface].color[1] = g;
+	model->surfaces[surface].color[2] = b;
+
+	R_DrawFlat_UpdateSWSurface(&model->surfaces[surface]);
+}
+
+static void R_DrawFlat_Unset_f(void)
+{
+	model_t *model;
+	int surface;
+
+	if (!cl.worldmodel)
+		return;
+
+	if (Cmd_Argc() != 2)
+	{
+		Com_Printf("Usage: r_drawflat_unset [surface number]\n");
+		return;
+	}
+
+	model = cl.worldmodel;
+
+	surface = atoi(Cmd_Argv(1));
+
+	if (surface < 0 || surface >= model->numsurfaces)
+	{
+		Com_Printf("Surface out of range.\n");
+		return;
+	}
+
+	model->surfaces[surface].is_drawflat = 0;
+}
+
+
+
+static void R_DrawFlat_Write_Config(void)
+{
+	FILE *f;
+	char *file;
+	model_t *model;
+	int i;
+
+	if (!cl.worldmodel)
+		return;
+
+	model = cl.worldmodel;
+
+	file = va("%s/qw/%s.dfcfg", com_basedir, mapname.string);
+
+	f = fopen(file, "r");
+	if (f)
+	{
+		fclose(f);
+		if (Cmd_Argc() != 2)
+		{
+			Com_Printf("File \"%s\" exists. Please use \"r_drawflat_writeconfig overwrite\" to overwrite the old file.\n", mapname.string);
+			return;
+		}
+		else
+		{
+			if (strcmp(Cmd_Argv(1), "overwrite") != 0)
+			{
+				Com_Printf("If you really want to overwrite please spell overwrite right.\n");
+				return;
+			}
+		}
+	}
+
+	f = fopen(file, "wb");
+
+	if (!f)
+		return;
+
+	for (i=0;i<model->numsurfaces;i++)
+	{
+		if(model->surfaces[i].is_drawflat == 1)
+		{
+			fprintf(f,"r_drawflat_set %i %f %f %f\n",i ,model->surfaces[i].color[0], model->surfaces[i].color[1], model->surfaces[i].color[2]);
+		}
+	}
+	fclose(f);
+}
+
+void R_DrawFlat_NewMap (void)
+{
+	if (r_drawflat_enable.value == 1)
+	{
+		Cbuf_AddText(va("exec %s.dfcfg\n", mapname.string));
+	}
+}
+
+
+
 
 #define NUMVALIDCLIENTNAMES (sizeof(validclientnames)/sizeof(*validclientnames))
 #define NUMVALIDOSNAMES (sizeof(validosnames)/sizeof(*validosnames))
@@ -1168,6 +1591,8 @@ void CL_CvarInit(void)
 	Cvar_Register(&cl_imitate_client);
 	Cvar_Register(&cl_imitate_os);
 
+	Cvar_Register(&r_drawflat_enable);
+
 	Cmd_AddLegacyCommand ("demotimescale", "cl_demospeed");
 
 	CL_InitCommands();
@@ -1176,6 +1601,17 @@ void CL_CvarInit(void)
 	Cmd_AddCommand("huff_load", huff_load_f);
 	Cmd_AddCommand("huff_save", huff_save_f);
 #endif
+
+	Cmd_AddCommand ("r_drawflat", R_DrawFlat_f);
+	Cmd_AddCommand ("r_drawflat_shoot", R_DrawFlatShoot_f);
+	Cmd_AddCommand ("r_drawflat_shoot_unset", R_DrawFlatShootUnset_f);
+	Cmd_AddCommand ("r_drawflat_set", R_DrawFlat_Set_f);
+	Cmd_AddCommand ("r_drawflat_unset", R_DrawFlat_Unset_f);
+	Cmd_AddCommand ("r_drawflat_writeconfig", R_DrawFlat_Write_Config);
+
+	Cmd_AddCommand ("r_drawflat_walls", R_DrawFlat_Walls_f);
+	Cmd_AddCommand ("r_drawflat_slopes", R_DrawFlat_Slopes_f);
+	Cmd_AddCommand ("r_drawflat_floors_ceilings", R_DrawFlat_Floors_Ceilings_f);
 
 	Cmd_AddCommand ("disconnect", CL_Disconnect_f);
 	Cmd_AddCommand ("connect", CL_Connect_f);

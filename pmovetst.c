@@ -202,6 +202,8 @@ qboolean PM_RecursiveHullCheck (hull_t *hull, int num, float p1f, float p2f, vec
 		trace->plane.dist = -plane->dist;
 	}
 
+	trace->draw_plane = plane;
+
 	while (PM_HullPointContents (hull, hull->firstclipnode, mid) == CONTENTS_SOLID) { 
 		// shouldn't really happen, but does occasionally
 		frac -= 0.1;

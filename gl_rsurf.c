@@ -670,6 +670,7 @@ void DrawTextureChains (model_t *model) {
 	msurface_t *s;
 	texture_t *t;
 	float *v;
+	extern cvar_t r_drawflat_enable;
 
 	qboolean render_lightmaps = false, render_caustics = false, render_details = false;
 	qboolean drawLumasGlowing, doMtex1, doMtex2;
@@ -767,6 +768,8 @@ void DrawTextureChains (model_t *model) {
 				continue;	
 
 			for ( ; s; s = s->texturechain) {
+				if (s->is_drawflat && r_drawflat_enable.value == 1)
+					continue;
 				if (mtex_lightmaps) {
 					//bind the lightmap texture
 					GL_SelectTexture(GL_LIGHTMAP_TEXTURE);
@@ -855,6 +858,71 @@ void DrawTextureChains (model_t *model) {
 }
 
 
+
+static void R_DrawFlat (model_t *model) {
+	msurface_t *s;
+	int waterline, i, k;
+	float *v;
+	vec3_t n;
+	int draw_caustics = underwatertexture && gl_caustics.value;
+	extern cvar_t r_drawflat_enable;
+
+	if (r_drawflat_enable.value == 0)
+		return;
+	
+	glPushAttrib(GL_ENABLE_BIT | GL_TEXTURE_BIT);
+	
+	GL_DisableMultitexture();
+
+	glTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_BLEND);
+	
+	GL_SelectTexture(GL_TEXTURE0_ARB);
+	
+	for (i = 0; i < model->numtextures; i++) {
+		if (!model->textures[i] || (!model->textures[i]->texturechain[0] && !model->textures[i]->texturechain[1]))
+			continue;
+				
+		for (waterline = 0; waterline < 2; waterline++) {
+			if (!(s = model->textures[i]->texturechain[waterline]))
+				continue;
+			
+			for ( ; s; s = s->texturechain) {
+				if (!s->is_drawflat)
+					continue;
+				GL_Bind (lightmap_textures + s->lightmaptexturenum);
+
+				R_RenderDynamicLightmaps (s);
+				
+				k = s->lightmaptexturenum;
+				if (lightmap_modified[k])
+					R_UploadLightMap(k);
+
+				v = s->polys->verts[0];
+				glColor3f(s->color[0], s->color[1], s->color[2]);
+												
+				glBegin(GL_POLYGON);
+				for (k = 0; k < s->polys->numverts; k++, v += VERTEXSIZE) {
+					glTexCoord2f(v[5], v[6]);
+					glVertex3fv (v);
+				}
+				glEnd ();
+
+				if (waterline && draw_caustics) {
+					s->polys->caustics_chain = caustics_polys;
+					caustics_polys = s->polys;
+				}
+			}
+		}		
+	}
+
+
+	glColor3f(1.0f, 1.0f, 1.0f);
+	glPopAttrib();
+	EmitCausticsPolys();
+}
+
+
+
 void R_DrawBrushModel (entity_t *e) {
 	int i, k, underwater;
 	vec3_t mins, maxs;
@@ -863,6 +931,7 @@ void R_DrawBrushModel (entity_t *e) {
 	mplane_t *pplane;
 	model_t *clmodel;
 	qboolean rotated;
+	extern cvar_t r_drawflat_enable;
 
 	currententity = e;
 	currenttexture = -1;
@@ -942,6 +1011,7 @@ void R_DrawBrushModel (entity_t *e) {
 
 	//draw the textures chains for the model
 	DrawTextureChains(clmodel);
+	R_DrawFlat(clmodel);
 	R_DrawSkyChain();
 	R_DrawAlphaChain ();
 
@@ -1065,6 +1135,7 @@ void R_DrawWorld (void) {
 
 	//draw the world
 	DrawTextureChains (cl.worldmodel);
+	R_DrawFlat(cl.worldmodel);
 
 	//draw the world alpha textures
 	R_DrawAlphaChain ();

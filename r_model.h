@@ -124,6 +124,11 @@ typedef struct msurface_s {
 	short		texturemins[2];
 	short		extents[2];
 
+
+	int		is_drawflat;
+	float 		color[3];
+	unsigned char	palcolor;
+
 	mtexinfo_t	*texinfo;
 	
 // lighting info

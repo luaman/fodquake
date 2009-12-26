@@ -31,6 +31,7 @@ typedef struct {
 	vec3_t		endpos;			// final position
 	pmplane_t		plane;			// surface normal at impact
 	int			ent;			// entity the surface is on
+	mplane_t	*draw_plane;
 } pmtrace_t;
 
 #define	MAX_PHYSENTS	64 

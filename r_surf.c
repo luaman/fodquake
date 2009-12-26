@@ -38,13 +38,28 @@ int				r_stepback;
 int				r_lightwidth;
 int				r_numhblocks, r_numvblocks;
 unsigned char	*r_source, *r_sourcemax;
+static unsigned char flatpalcolour;
+
+static void R_DrawFlatSurfaceBlock8_mip0(void);
+static void R_DrawFlatSurfaceBlock8_mip1(void);
+static void R_DrawFlatSurfaceBlock8_mip2(void);
+static void R_DrawFlatSurfaceBlock8_mip3(void);
 
 void R_DrawSurfaceBlock8_mip0 (void);
 void R_DrawSurfaceBlock8_mip1 (void);
 void R_DrawSurfaceBlock8_mip2 (void);
 void R_DrawSurfaceBlock8_mip3 (void);
 
-static void	(*surfmiptable[4])(void) = {
+static void (*flatsurfmiptable[4])(void) =
+{
+	R_DrawFlatSurfaceBlock8_mip0,
+	R_DrawFlatSurfaceBlock8_mip1,
+	R_DrawFlatSurfaceBlock8_mip2,
+	R_DrawFlatSurfaceBlock8_mip3
+};
+
+static void (*surfmiptable[4])(void) =
+{
 	R_DrawSurfaceBlock8_mip0,
 	R_DrawSurfaceBlock8_mip1,
 	R_DrawSurfaceBlock8_mip2,
@@ -249,6 +264,7 @@ qboolean R_DrawSurface (void) {
 	int smax, tmax, twidth, u, soffset, basetoffset, texwidth, horzblockstep;
 	void (*pblockdrawer)(void);
 	texture_t *mt;
+	extern cvar_t r_drawflat_enable;
 
 	// build a list of dlights that touch this surface
 	if (r_drawsurf.surf->dlightframe == r_framecount)
@@ -286,7 +302,13 @@ qboolean R_DrawSurface (void) {
 
 //==============================
 
-	pblockdrawer = surfmiptable[r_drawsurf.surfmip];
+	if (r_drawsurf.surf->is_drawflat && r_drawflat_enable.value == 1)
+	{
+		pblockdrawer = flatsurfmiptable[r_drawsurf.surfmip];
+		flatpalcolour = r_drawsurf.surf->palcolor;
+	}
+	else
+		pblockdrawer = surfmiptable[r_drawsurf.surfmip];
 	// TODO: only needs to be set when there is a display settings change
 	horzblockstep = blocksize;
 
@@ -487,3 +509,156 @@ void R_DrawSurfaceBlock8_mip3 (void) {
 }
 
 #endif
+
+static void R_DrawFlatSurfaceBlock8_mip0(void)
+{
+	int v, i, b, lightstep, lighttemp, light;
+	unsigned char pix, *prowdest;
+
+	pix = flatpalcolour;
+	prowdest = prowdestbase;
+
+	for (v = 0; v < r_numvblocks; v++)
+	{
+		// FIXME: make these locals?
+		// FIXME: use delta rather than both right and left, like ASM?
+		lightleft = r_lightptr[0];
+		lightright = r_lightptr[1];
+		r_lightptr += r_lightwidth;
+		lightleftstep = (r_lightptr[0] - lightleft) >> 4;
+		lightrightstep = (r_lightptr[1] - lightright) >> 4;
+
+		for (i = 0; i < 16; i++)
+		{
+			lighttemp = lightleft - lightright;
+			lightstep = lighttemp >> 4;
+
+			light = lightright;
+
+			for (b = 15; b >= 0; b--)
+			{
+				prowdest[b] = ((unsigned char *) vid.colormap) [(light & 0xFF00) + pix];
+				light += lightstep;
+			}
+
+			lightright += lightrightstep;
+			lightleft += lightleftstep;
+			prowdest += surfrowbytes;
+		}
+	}
+}
+
+static void R_DrawFlatSurfaceBlock8_mip1 (void)
+{
+	int v, i, b, lightstep, lighttemp, light;
+	unsigned char pix, *prowdest;
+
+	pix = flatpalcolour;
+	prowdest = prowdestbase;
+
+	for (v = 0; v < r_numvblocks; v++)
+	{
+		// FIXME: make these locals?
+		// FIXME: use delta rather than both right and left, like ASM?
+		lightleft = r_lightptr[0];
+		lightright = r_lightptr[1];
+		r_lightptr += r_lightwidth;
+		lightleftstep = (r_lightptr[0] - lightleft) >> 3;
+		lightrightstep = (r_lightptr[1] - lightright) >> 3;
+
+		for (i = 0; i < 8; i++)
+		{
+			lighttemp = lightleft - lightright;
+			lightstep = lighttemp >> 3;
+
+			light = lightright;
+
+			for (b = 7; b >= 0; b--)
+			{
+				prowdest[b] = ((unsigned char *) vid.colormap) [(light & 0xFF00) + pix];
+				light += lightstep;
+			}
+
+			lightright += lightrightstep;
+			lightleft += lightleftstep;
+			prowdest += surfrowbytes;
+		}
+	}
+}
+
+static void R_DrawFlatSurfaceBlock8_mip2 (void)
+{
+	int v, i, b, lightstep, lighttemp, light;
+	unsigned char pix, *prowdest;
+
+	pix = flatpalcolour;
+	prowdest = prowdestbase;
+
+	for (v = 0; v < r_numvblocks; v++)
+	{
+		// FIXME: make these locals?
+		// FIXME: use delta rather than both right and left, like ASM?
+		lightleft = r_lightptr[0];
+		lightright = r_lightptr[1];
+		r_lightptr += r_lightwidth;
+		lightleftstep = (r_lightptr[0] - lightleft) >> 2;
+		lightrightstep = (r_lightptr[1] - lightright) >> 2;
+
+		for (i = 0; i < 4; i++)
+		{
+			lighttemp = lightleft - lightright;
+			lightstep = lighttemp >> 2;
+
+			light = lightright;
+
+			for (b = 3; b >= 0; b--)
+			{
+				prowdest[b] = ((unsigned char *)vid.colormap) [(light & 0xFF00) + pix];
+				light += lightstep;
+			}
+
+			lightright += lightrightstep;
+			lightleft += lightleftstep;
+			prowdest += surfrowbytes;
+		}
+	}
+}
+
+static void R_DrawFlatSurfaceBlock8_mip3(void)
+{
+	int v, i, b, lightstep, lighttemp, light;
+	unsigned char pix, *prowdest;
+
+	pix = flatpalcolour;
+	prowdest = prowdestbase;
+
+	for (v = 0; v < r_numvblocks; v++)
+	{
+		// FIXME: make these locals?
+		// FIXME: use delta rather than both right and left, like ASM?
+		lightleft = r_lightptr[0];
+		lightright = r_lightptr[1];
+		r_lightptr += r_lightwidth;
+		lightleftstep = (r_lightptr[0] - lightleft) >> 1;
+		lightrightstep = (r_lightptr[1] - lightright) >> 1;
+
+		for (i = 0; i < 2; i++)
+		{
+			lighttemp = lightleft - lightright;
+			lightstep = lighttemp >> 1;
+
+			light = lightright;
+
+			for (b = 1; b >= 0; b--)
+			{
+				prowdest[b] = ((unsigned char *) vid.colormap) [(light & 0xFF00) + pix];
+				light += lightstep;
+			}
+
+			lightright += lightrightstep;
+			lightleft += lightleftstep;
+			prowdest += surfrowbytes;
+		}
+	}
+}
+
