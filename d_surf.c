@@ -126,7 +126,7 @@ void D_FlushCaches (void)
 D_SCAlloc
 =================
 */
-surfcache_t     *D_SCAlloc (int width, int size)
+static surfcache_t     *D_SCAlloc (int width, int size)
 {
 	surfcache_t             *new;
 	qboolean                wrapped_this_time;
@@ -211,6 +211,14 @@ D_CheckCacheGuard ();   // DEBUG
 	return new;
 }
 
+static void D_SCFree(surfcache_t *sc)
+{
+	if (sc->owner)
+	{
+		*sc->owner = NULL;
+		sc->owner = NULL;
+	}
+}
 
 /*
 =================
@@ -344,4 +352,17 @@ surfcache_t *D_CacheSurface (msurface_t *surface, int miplevel)
 	return surface->cachespots[miplevel];
 }
 
+void D_UncacheSurface(msurface_t *surface)
+{
+	surfcache_t *cache;
+	unsigned int i;
+
+	for(i=0;i<4;i++)
+	{
+		cache = surface->cachespots[i];
+
+		if (cache)
+			D_SCFree(cache);
+	}
+}
 

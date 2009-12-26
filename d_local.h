@@ -75,6 +75,7 @@ void D_SpriteDrawSpans (sspan_t *pspan);
 void D_DrawSkyScans8 (espan_t *pspan);
 
 surfcache_t	*D_CacheSurface (msurface_t *surface, int miplevel);
+void D_UncacheSurface(msurface_t *surface);
 
 extern int D_MipLevelForScale (float scale);
 
