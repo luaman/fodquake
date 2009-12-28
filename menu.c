@@ -572,12 +572,10 @@ char *bindnames[][2] =
 {"+movedown",		"swim down"},
 {"impulse 12", 		"previous weapon"},
 {"impulse 10", 		"next weapon"},
-{"+speed", 			"run"},
 {"+left", 			"turn left"},
 {"+right", 			"turn right"},
 {"+lookup", 		"look up"},
 {"+lookdown", 		"look down"},
-{"centerview", 		"center view"},
 };
 
 #define	NUMCOMMANDS	(sizeof(bindnames)/sizeof(bindnames[0]))
