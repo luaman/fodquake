@@ -1853,6 +1853,9 @@ void CL_Frame (double time)
 	// process stuffed commands
 	Cbuf_ExecuteEx(&cbuf_svc);
 
+	if (!cls.demoplayback || cls.mvdplayback)
+		Mouse_GetViewAngles(cl.viewangles);
+
 #ifdef NETQW
 	if (cls.netqw)
 	{
@@ -1883,9 +1886,6 @@ void CL_Frame (double time)
 		Cam_FinishMove(cmd);
 		cls.netchan.outgoing_sequence++;
 	}
-
-	if (!cls.demoplayback || cls.mvdplayback)
-		Mouse_GetViewAngles(cl.viewangles);
 
 #else
 	CL_SendToServer();
