@@ -12,6 +12,7 @@ Version 0.3
 - Removed the obsolete m_side and m_forward cvars.
 - Added support for client side lag via the net_lag and net_lag_ezcheat cvars.
 - Removed the uglier than ugly r_shadows in GL.
+- Changed the default volume from 0.7 to 0.5.
 
 Version 0.2
 ===========
