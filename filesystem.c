@@ -343,7 +343,7 @@ static struct pack *FS_LoadPackFile(char *packfile)
 		return NULL;
 
 	fread(&header, 1, sizeof(header), packhandle);
-	if (header.id[0] != 'P' || header.id[1] != 'A' || header.id[2] != 'C' || header.id[3] != 'K')
+	if (filelen < 12 || header.id[0] != 'P' || header.id[1] != 'A' || header.id[2] != 'C' || header.id[3] != 'K')
 		Sys_Error("%s is not a packfile", packfile);
 	header.dirofs = LittleLong(header.dirofs);
 	header.dirlen = LittleLong(header.dirlen);
