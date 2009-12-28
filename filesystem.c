@@ -332,12 +332,14 @@ static struct pack *FS_LoadPackFile(char *packfile)
 
 	struct dpackheader header;
 	int i;
+	int j;
+	int filelen;
 	struct packfile *newfiles;
 	struct pack *pack;
 	FILE *packhandle;
 	struct dpackfile *info;
 
-	if (FS_FileOpenRead(packfile, &packhandle) == -1)
+	if ((filelen = FS_FileOpenRead(packfile, &packhandle)) == -1)
 		return NULL;
 
 	fread(&header, 1, sizeof(header), packhandle);
@@ -345,6 +347,9 @@ static struct pack *FS_LoadPackFile(char *packfile)
 		Sys_Error("%s is not a packfile", packfile);
 	header.dirofs = LittleLong(header.dirofs);
 	header.dirlen = LittleLong(header.dirlen);
+
+	if (header.dirofs < 0 || header.dirlen < 0 || header.dirofs > filelen || header.dirofs + header.dirlen > filelen || header.dirofs + header.dirlen < header.dirofs)
+		Sys_Error("%s is a malformed packfile", packfile);
 
 	pack = Q_Malloc(sizeof(*pack));
 	strcpy(pack->filename, packfile);
@@ -360,9 +365,18 @@ static struct pack *FS_LoadPackFile(char *packfile)
 	// parse the directory
 	for (i = 0; i < pack->numfiles; i++)
 	{
+		for(j=0;info[i].name[j]&&j<sizeof(info[i].name);j++);
+
+		if (j == sizeof(info[i].name))
+			Sys_Error("%s is a malformed packfile", packfile);
+
 		strcpy(newfiles[i].name, info[i].name);
 		newfiles[i].filepos = LittleLong(info[i].filepos);
 		newfiles[i].filelen = LittleLong(info[i].filelen);
+
+		if (newfiles[i].filepos < 0 || newfiles[i].filelen < 0 || newfiles[i].filepos > filelen || newfiles[i].filepos + newfiles[i].filelen > filelen || newfiles[i].filepos + newfiles[i].filelen < newfiles[i].filepos)
+			Sys_Error("%s is a malformed packfile", packfile);
+
 	}
 
 	free(info);
