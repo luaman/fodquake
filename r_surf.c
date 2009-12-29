@@ -26,10 +26,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 drawsurf_t	r_drawsurf;
 
-int				sourcesstep, blocksize, sourcetstep;
+int				blocksize, sourcetstep;
 int				lightdelta, lightdeltastep;
 int				blockdivshift;
-unsigned		blockdivmask;
 void			*prowdestbase;
 unsigned char	*pbasesource;
 int				surfrowbytes;	// used by ASM files
@@ -293,7 +292,6 @@ qboolean R_DrawSurface (void) {
 
 	blocksize = 16 >> r_drawsurf.surfmip;
 	blockdivshift = 4 - r_drawsurf.surfmip;
-	blockdivmask = (1 << blockdivshift) - 1;
 
 	r_lightwidth = (r_drawsurf.surf->extents[0]>>4)+1;
 
