@@ -35,7 +35,7 @@ int				surfrowbytes;	// used by ASM files
 unsigned		*r_lightptr;
 int				r_stepback;
 int				r_lightwidth;
-int				r_numhblocks, r_numvblocks;
+int				r_numvblocks;
 unsigned char	*r_source, *r_sourcemax;
 static unsigned char flatpalcolour;
 
@@ -264,6 +264,7 @@ qboolean R_DrawSurface (void) {
 	void (*pblockdrawer)(void);
 	texture_t *mt;
 	extern cvar_t r_drawflat_enable;
+	int r_numhblocks;
 
 	// build a list of dlights that touch this surface
 	if (r_drawsurf.surf->dlightframe == r_framecount)
