@@ -26,9 +26,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 drawsurf_t	r_drawsurf;
 
-int				lightleft, sourcesstep, blocksize, sourcetstep;
+int				sourcesstep, blocksize, sourcetstep;
 int				lightdelta, lightdeltastep;
-int				lightright, lightleftstep, lightrightstep, blockdivshift;
+int				blockdivshift;
 unsigned		blockdivmask;
 void			*prowdestbase;
 unsigned char	*pbasesource;
@@ -355,6 +355,7 @@ qboolean R_DrawSurface (void) {
 void R_DrawSurfaceBlock8_mip0 (void) {
 	int v, i, b, lightstep, lighttemp, light;
 	unsigned char pix, *psource, *prowdest;
+	int lightleft, lightright, lightleftstep, lightrightstep;
 
 	psource = pbasesource;
 	prowdest = prowdestbase;
@@ -394,6 +395,7 @@ void R_DrawSurfaceBlock8_mip0 (void) {
 void R_DrawSurfaceBlock8_mip1 (void) {
 	int v, i, b, lightstep, lighttemp, light;
 	unsigned char pix, *psource, *prowdest;
+	int lightleft, lightright, lightleftstep, lightrightstep;
 
 	psource = pbasesource;
 	prowdest = prowdestbase;
@@ -433,6 +435,7 @@ void R_DrawSurfaceBlock8_mip1 (void) {
 void R_DrawSurfaceBlock8_mip2 (void) {
 	int v, i, b, lightstep, lighttemp, light;
 	unsigned char pix, *psource, *prowdest;
+	int lightleft, lightright, lightleftstep, lightrightstep;
 
 	psource = pbasesource;
 	prowdest = prowdestbase;
@@ -472,6 +475,7 @@ void R_DrawSurfaceBlock8_mip2 (void) {
 void R_DrawSurfaceBlock8_mip3 (void) {
 	int v, i, b, lightstep, lighttemp, light;
 	unsigned char pix, *psource, *prowdest;
+	int lightleft, lightright, lightleftstep, lightrightstep;
 
 	psource = pbasesource;
 	prowdest = prowdestbase;
@@ -514,6 +518,7 @@ static void R_DrawFlatSurfaceBlock8_mip0(void)
 {
 	int v, i, b, lightstep, lighttemp, light;
 	unsigned char pix, *prowdest;
+	int lightleft, lightright, lightleftstep, lightrightstep;
 
 	pix = flatpalcolour;
 	prowdest = prowdestbase;
@@ -552,6 +557,7 @@ static void R_DrawFlatSurfaceBlock8_mip1 (void)
 {
 	int v, i, b, lightstep, lighttemp, light;
 	unsigned char pix, *prowdest;
+	int lightleft, lightright, lightleftstep, lightrightstep;
 
 	pix = flatpalcolour;
 	prowdest = prowdestbase;
@@ -590,6 +596,7 @@ static void R_DrawFlatSurfaceBlock8_mip2 (void)
 {
 	int v, i, b, lightstep, lighttemp, light;
 	unsigned char pix, *prowdest;
+	int lightleft, lightright, lightleftstep, lightrightstep;
 
 	pix = flatpalcolour;
 	prowdest = prowdestbase;
@@ -628,6 +635,7 @@ static void R_DrawFlatSurfaceBlock8_mip3(void)
 {
 	int v, i, b, lightstep, lighttemp, light;
 	unsigned char pix, *prowdest;
+	int lightleft, lightright, lightleftstep, lightrightstep;
 
 	pix = flatpalcolour;
 	prowdest = prowdestbase;
