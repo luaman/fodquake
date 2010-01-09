@@ -333,27 +333,27 @@ void PR_ExecuteProgram (func_t fnum) {
 			c->_float = a->_float + b->_float;
 			break;
 		case OP_ADD_V:
-			VectorAdd(a->vector, b->vector, c->vector);
+			VectorAdd(a->_vector, b->_vector, c->_vector);
 			break;
 
 		case OP_SUB_F:
 			c->_float = a->_float - b->_float;
 			break;
 		case OP_SUB_V:
-			VectorSubtract(a->vector, b->vector, c->vector);
+			VectorSubtract(a->_vector, b->_vector, c->_vector);
 			break;
 
 		case OP_MUL_F:
 			c->_float = a->_float * b->_float;
 			break;
 		case OP_MUL_V:
-			c->_float = a->vector[0] * b->vector[0] + a->vector[1] * b->vector[1] + a->vector[2] * b->vector[2];
+			c->_float = a->_vector[0] * b->_vector[0] + a->_vector[1] * b->_vector[1] + a->_vector[2] * b->_vector[2];
 			break;
 		case OP_MUL_FV:
-			VectorScale(b->vector, a->_float, c->vector);
+			VectorScale(b->_vector, a->_float, c->_vector);
 			break;
 		case OP_MUL_VF:
-			VectorScale(a->vector, b->_float, c->vector);
+			VectorScale(a->_vector, b->_float, c->_vector);
 			break;
 
 		case OP_DIV_F:
@@ -391,7 +391,7 @@ void PR_ExecuteProgram (func_t fnum) {
 			c->_float = !a->_float;
 			break;
 		case OP_NOT_V:
-			c->_float = !a->vector[0] && !a->vector[1] && !a->vector[2];
+			c->_float = !a->_vector[0] && !a->_vector[1] && !a->_vector[2];
 			break;
 		case OP_NOT_S:
 			c->_float = !a->string || !*PR_GetString(a->string);
@@ -407,7 +407,7 @@ void PR_ExecuteProgram (func_t fnum) {
 			c->_float = a->_float == b->_float;
 			break;
 		case OP_EQ_V:
-			c->_float = VectorCompare(a->vector, b->vector);
+			c->_float = VectorCompare(a->_vector, b->_vector);
 			break;
 		case OP_EQ_S:
 			c->_float = !strcmp(PR_GetString(a->string), PR_GetString(b->string));
@@ -423,7 +423,7 @@ void PR_ExecuteProgram (func_t fnum) {
 			c->_float = a->_float != b->_float;
 			break;
 		case OP_NE_V:
-			c->_float = !VectorCompare(a->vector, b->vector);
+			c->_float = !VectorCompare(a->_vector, b->_vector);
 			break;
 		case OP_NE_S:
 			c->_float = strcmp(PR_GetString(a->string), PR_GetString(b->string));
@@ -444,7 +444,7 @@ void PR_ExecuteProgram (func_t fnum) {
 			b->_int = a->_int;
 			break;
 		case OP_STORE_V:
-			VectorCopy(a->vector, b->vector);
+			VectorCopy(a->_vector, b->_vector);
 			break;
 
 		case OP_STOREP_F:
@@ -457,7 +457,7 @@ void PR_ExecuteProgram (func_t fnum) {
 			break;
 		case OP_STOREP_V:
 			ptr = (eval_t *)((byte *)sv.edicts + b->_int);
-			VectorCopy(a->vector, ptr->vector);
+			VectorCopy(a->_vector, ptr->_vector);
 			break;
 
 		case OP_ADDRESS:
@@ -489,7 +489,7 @@ void PR_ExecuteProgram (func_t fnum) {
 			NUM_FOR_EDICT(ed);		// make sure it's in range
 	#endif
 			a = (eval_t *) ((int *) &ed->v + b->_int);
-			VectorCopy(a->vector, c->vector);
+			VectorCopy(a->_vector, c->_vector);
 			break;
 
 	//==================
