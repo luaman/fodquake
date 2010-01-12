@@ -29,7 +29,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifdef _WIN32
 #include <windows.h>
 
-#define usleep(x) Sleep(x/1000)
+#define usleep(x) Sleep(((x)+999)/1000)
 #endif
 
 static unsigned int sleep_granularity;
@@ -38,8 +38,8 @@ static unsigned int sleep_granularity;
 
 static int get_sleep_granularity()
 {
-	struct timeval basetv;
-	struct timeval tv[NUMSAMPLES];
+	unsigned long long basetime;
+	unsigned long long sleeptime[NUMSAMPLES];
 	int i;
 	unsigned long long accum;
 	unsigned int avg;
@@ -55,14 +55,9 @@ static int get_sleep_granularity()
 	for(i=0;i<NUMSAMPLES;i++)
 	{
 		usleep(1);
-		gettimeofday(&basetv, 0);
+		basetime = Sys_IntTime();
 		usleep(1);
-		gettimeofday(&tv[i], 0);
-
-		tv[i].tv_sec -= basetv.tv_sec;
-		tv[i].tv_usec -= basetv.tv_usec;
-
-		tv[i].tv_usec+= tv[i].tv_sec * 1000000;
+		sleeptime[i] = Sys_IntTime() - basetime;
 	}
 
 	do
@@ -72,13 +67,13 @@ static int get_sleep_granularity()
 		accum = 0;
 		for(i=0;i<samples;i++)
 		{
-			accum+= tv[i].tv_usec;
-			stddev+= ((double)tv[i].tv_usec)*((double)tv[i].tv_usec);
+			accum+= sleeptime[i];
+			stddev+= ((double)sleeptime[i])*((double)sleeptime[i]);
 		
-			if (tv[i].tv_usec < min)
-				min = tv[i].tv_usec;
-			if (tv[i].tv_usec > max)
-				max = tv[i].tv_usec;
+			if (sleeptime[i] < min)
+				min = sleeptime[i];
+			if (sleeptime[i] > max)
+				max = sleeptime[i];
 		}
 
 		avg = accum/samples;
@@ -86,7 +81,7 @@ static int get_sleep_granularity()
 		stddev = 0;
 		for(i=0;i<samples;i++)
 		{
-			tmpf = ((double)tv[i].tv_usec) - avg;
+			tmpf = ((double)sleeptime[i]) - avg;
 			tmpf*= tmpf;
 			stddev+= tmpf;
 		}
@@ -95,8 +90,8 @@ static int get_sleep_granularity()
 		maxdist = 0;
 		for(i=0;i<samples;i++)
 		{
-			if (abs(tv[i].tv_usec-avg) > maxdist)
-				maxdist = abs(tv[i].tv_usec-avg);
+			if (abs(sleeptime[i]-avg) > maxdist)
+				maxdist = abs(sleeptime[i]-avg);
 		}
 
 #if 0
@@ -105,9 +100,9 @@ static int get_sleep_granularity()
 
 		for(i=0;i<samples;i++)
 		{
-			if (abs(tv[i].tv_usec-avg) == maxdist)
+			if (abs(sleeptime[i]-avg) == maxdist)
 			{
-				memmove(&tv[i], &tv[i+1], samples-i-1);
+				memmove(&sleeptime[i], &sleeptime[i+1], (samples-i-1)*sizeof(*sleeptime));
 				samples--;
 				break;
 			}
