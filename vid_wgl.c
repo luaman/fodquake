@@ -1527,7 +1527,7 @@ unsigned int Sys_Video_GetNumBuffers(void *display)
 	return 3;
 }
 
-void Sys_Video_Update(void *display, vrect_t *rects)
+void Sys_Video_Update(void *display, struct vrect *rect)
 {
 	struct display *d = display;
 	SwapBuffers(d->dc);
@@ -1560,7 +1560,7 @@ void Sys_Video_CvarInit()
 	Cvar_ResetCurrentGroup();
 }
 
-void *Sys_Video_Open(unsigned int width, unsigned int height, unsigned int depth, int fullscreen, unsigned char *palette)
+void *Sys_Video_Open(const char *mode, unsigned int width, unsigned int height, int fullscreen, unsigned char *palette)
 {
 	RECT		rect;
 	int WindowStyle, ExWindowStyle;
@@ -1568,6 +1568,9 @@ void *Sys_Video_Open(unsigned int width, unsigned int height, unsigned int depth
 	HANDLE hdc;
 	WNDCLASS wc;
 	int displacement;
+	int depth;
+
+	depth = 24;
 
 #warning this function doesn't clean up yet
 
@@ -1747,7 +1750,32 @@ void Sys_Video_SetClipboardText(void *display, const char *text)
 {
 }
 
+unsigned int Sys_Video_GetWidth(void *display)
+{
+	struct display *d;
 
+	d = display;
+
+	return d->width;
+}
+
+unsigned int Sys_Video_GetHeight(void *display)
+{
+	struct display *d;
+
+	d = display;
+
+	return d->width;
+}
+
+qboolean Sys_Video_GetFullscreen(void *display)
+{
+	struct display *d;
+
+	d = display;
+
+	return d->isfullscreen;
+}
 
 //REMOVE THESE
 int window_center_x, window_center_y;
