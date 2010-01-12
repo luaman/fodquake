@@ -1,5 +1,7 @@
 #include <winsock2.h>
 
+#warning Fix this up.
+
 struct ip6_scope_id
 {
 	union
@@ -357,5 +359,18 @@ int Sys_Net_Receive(struct SysNetData *netdata, struct SysSocket *socket, void *
 	return r;
 }
 
+void Sys_Net_Wait(struct SysNetData *netdata, struct SysSocket *socket, unsigned int timeout_us)
+{
+	struct timeval tv;
+	fd_set rfds;
+
+	FD_ZERO(&rfds);
+	FD_SET(socket->s, &rfds);
+
+	tv.tv_sec = timeout_us / 1000000;
+	tv.tv_usec = timeout_us % 1000000;
+
+	select(socket->s + 1, &rfds, 0, 0, &tv);
+}
 
 
