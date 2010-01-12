@@ -353,7 +353,7 @@ struct InputData *Sys_Input_Init(HWND window)
 			{
 				if (id->di8mouse->lpVtbl->SetDataFormat(id->di8mouse, &c_dfDIMouse2) == DI_OK)
 				{
-					if (id->di8mouse->lpVtbl->SetCooperativeLevel(id->di8mouse, window, DISCL_FOREGROUND|DISCL_NONEXCLUSIVE) == DI_OK)
+					if (id->di8mouse->lpVtbl->SetCooperativeLevel(id->di8mouse, window, DISCL_FOREGROUND|DISCL_EXCLUSIVE) == DI_OK)
 					{
 						if (id->di8mouse->lpVtbl->SetProperty(id->di8mouse, DIPROP_BUFFERSIZE, &dipdw.diph) == DI_OK)
 						{
@@ -413,6 +413,13 @@ void Sys_Input_Shutdown(struct InputData *inputdata)
 	free(inputdata);
 }
 
+static void queuekey(struct InputData *inputdata, unsigned char key, unsigned char down)
+{
+	inputdata->buttonevents[inputdata->buttoneventhead].key = key;
+	inputdata->buttonevents[inputdata->buttoneventhead].down = down;
+	inputdata->buttoneventhead = (inputdata->buttoneventhead + 1) % NUMBUTTONEVENTS;
+}
+
 static void pollstuff(struct InputData *inputdata)
 {
 	DIDEVICEOBJECTDATA events[DINPUTNUMEVENTS];
@@ -439,6 +446,51 @@ static void pollstuff(struct InputData *inputdata)
 					break;
 				case DIMOFS_Y:
 					inputdata->mousey += events[i].dwData;
+					break;
+
+				case DIMOFS_Z:
+					if ((int)events[i].dwData > 0)
+					{
+						queuekey(inputdata, K_MWHEELUP, 1);
+						queuekey(inputdata, K_MWHEELUP, 0);
+					}
+					else
+					{
+						queuekey(inputdata, K_MWHEELDOWN, 1);
+						queuekey(inputdata, K_MWHEELDOWN, 0);
+					}
+					break;
+
+				case DIMOFS_BUTTON0:
+					queuekey(inputdata, K_MOUSE1, !!(events[i].dwData&0x80));
+					break;
+
+				case DIMOFS_BUTTON1:
+					queuekey(inputdata, K_MOUSE2, !!(events[i].dwData&0x80));
+					break;
+
+				case DIMOFS_BUTTON2:
+					queuekey(inputdata, K_MOUSE3, !!(events[i].dwData&0x80));
+					break;
+
+				case DIMOFS_BUTTON3:
+					queuekey(inputdata, K_MOUSE4, !!(events[i].dwData&0x80));
+					break;
+
+				case DIMOFS_BUTTON4:
+					queuekey(inputdata, K_MOUSE5, !!(events[i].dwData&0x80));
+					break;
+
+				case DIMOFS_BUTTON5:
+					queuekey(inputdata, K_MOUSE6, !!(events[i].dwData&0x80));
+					break;
+
+				case DIMOFS_BUTTON6:
+					queuekey(inputdata, K_MOUSE7, !!(events[i].dwData&0x80));
+					break;
+
+				case DIMOFS_BUTTON7:
+					queuekey(inputdata, K_MOUSE8, !!(events[i].dwData&0x80));
 					break;
 			}
 		}
