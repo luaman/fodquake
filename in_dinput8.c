@@ -312,7 +312,7 @@ static const unsigned char keytable[] =
 	0,
 	0,
 	K_UPARROW, /* 200 */
-	0,
+	K_PGUP,
 	0,
 	K_LEFTARROW,
 	0,
@@ -320,7 +320,7 @@ static const unsigned char keytable[] =
 	0,
 	0,
 	K_DOWNARROW,
-	0,
+	K_PGDN,
 	0, /* 210 */
 	0,
 	0,
@@ -508,8 +508,6 @@ static void pollstuff(struct InputData *inputdata)
 	{
 		for(i=0;i<elements;i++)
 		{
-			printf("Key %d\n", events[i].dwOfs);
-
 			if (events[i].dwOfs < sizeof(keytable) && keytable[events[i].dwOfs])
 			{
 				if (keytable[events[i].dwOfs] == K_LSHIFT)
@@ -533,6 +531,8 @@ static void pollstuff(struct InputData *inputdata)
 				inputdata->buttonevents[inputdata->buttoneventhead].down = !!(events[i].dwData&0x80);
 				inputdata->buttoneventhead = (inputdata->buttoneventhead + 1) % NUMBUTTONEVENTS;
 			}
+			else
+				printf("Key %d\n", events[i].dwOfs);
 		}
 	}
 }
@@ -555,9 +555,6 @@ int Sys_Input_GetKeyEvent(struct InputData *inputdata, keynum_t *keynum, qboolea
 void Sys_Input_GetMouseMovement(struct InputData *inputdata, int *mousex, int *mousey)
 {
 	pollstuff(inputdata);
-
-	if (inputdata->mousex || inputdata->mousey)
-		printf("%d %d\n", inputdata->mousex, inputdata->mousey);
 
 	*mousex = inputdata->mousex;
 	*mousey = inputdata->mousey;
