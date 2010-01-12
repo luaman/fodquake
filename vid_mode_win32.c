@@ -25,7 +25,7 @@ typedef struct vrect_s vrect_t;
 typedef enum keynum keynum_t;
 #include "sys_video.h"
 
-static int modeline_to_devmode(const char *modeline, DEVMODEA *devmode)
+int modeline_to_devmode(const char *modeline, DEVMODE *devmode)
 {
 	const char *p;
 	unsigned int commas;
@@ -57,7 +57,7 @@ static int modeline_to_devmode(const char *modeline, DEVMODEA *devmode)
 
 const char * const *Sys_Video_GetModeList(void)
 {
-	DEVMODEA devmode;
+	DEVMODE devmode;
 	char **ret;
 	char **t;
 	unsigned int i;
@@ -69,7 +69,7 @@ const char * const *Sys_Video_GetModeList(void)
 
 	nummodes = 0;
 
-	for(i=0;(enumret = EnumDisplaySettingsA(0, i, &devmode));i++)
+	for(i=0;(enumret = EnumDisplaySettings(0, i, &devmode));i++)
 	{
 #ifdef GLQUAKE
 		if (devmode.dmBitsPerPel <= 8)
@@ -118,7 +118,7 @@ void Sys_Video_FreeModeList(const char * const *displaymodes)
 
 const char *Sys_Video_GetModeDescription(const char *mode)
 {
-	DEVMODEA devmode;
+	DEVMODE devmode;
 	char buf[256];
 	char *ret;
 
