@@ -64,3 +64,7 @@ int Sys_Net_Receive(struct SysNetData *netdata, struct SysSocket *socket, void *
 	return -1;
 }
 
+void Sys_Net_Wait(struct SysNetData *netdata, struct SysSocket *socket, unsigned int timeout_us)
+{
+}
+
