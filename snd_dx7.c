@@ -121,7 +121,7 @@ static void ds7_restore(struct SoundCard *sc)
 	DWORD dwStatus;
 
 	if (p->pDSBuf->lpVtbl->GetStatus (p->pDSBuf, &dwStatus) != DS_OK)
-		Com_Printf ("Couldn't get sound buffer status\n");
+		Com_Printf("Couldn't get sound buffer status\n");
 	
 	if (dwStatus & DSBSTATUS_BUFFERLOST)
 		p->pDSBuf->lpVtbl->Restore (p->pDSBuf);
@@ -146,17 +146,21 @@ static void *ds7_lock(struct SoundCard *sc)
 	{
 		if (hresult != DSERR_BUFFERLOST)
 		{
-			Com_Printf ("dsound7: Lock Sound Buffer Failed\n");
+			Com_Printf("dsound7: Lock Sound Buffer Failed\n");
+#if 0
 			S_Shutdown ();
 			S_Startup ();
+#endif
 			return NULL;
 		}
 
 		if (++reps > 10000)
 		{
-			Com_Printf ("dsound7: couldn't restore buffer\n");
+			Com_Printf("dsound7: couldn't restore buffer\n");
+#if 0
 			S_Shutdown ();
 			S_Startup ();
+#endif
 			return NULL;
 		}
 	}
@@ -171,7 +175,7 @@ static void ds7_unlock(struct SoundCard *sc)
 }
 
 
-static qboolean ds7_init (struct SoundCard *sc, int rate, int channels, int bits)
+static qboolean ds7_init(struct SoundCard *sc, int rate, int channels, int bits)
 {
 	qboolean	primary_format_set;
 	HPSTR		lpData;
@@ -202,9 +206,9 @@ static qboolean ds7_init (struct SoundCard *sc, int rate, int channels, int bits
 			{
 				memset (&format, 0, sizeof(format));
 				format.wFormatTag = WAVE_FORMAT_PCM;
-				format.nChannels = sc->channels;
-				format.wBitsPerSample = sc->samplebits;
-				format.nSamplesPerSec = sc->speed;
+				format.nChannels = channels;
+				format.wBitsPerSample = bits;
+				format.nSamplesPerSec = rate;
 				format.nBlockAlign = format.nChannels * format.wBitsPerSample / 8;
 				format.cbSize = 0;
 				format.nAvgBytesPerSec = format.nSamplesPerSec * format.nBlockAlign; 
@@ -217,7 +221,7 @@ static qboolean ds7_init (struct SoundCard *sc, int rate, int channels, int bits
 					p->currentenum = 0;
 					if ((hresult = p->pDirectSoundEnumerate(DS_EnumDevices, p)) != DS_OK)
 					{
-						Com_Printf ("Couldn't open preferred sound device. Falling back to primary sound device.\n");
+						Com_Printf("Couldn't open preferred sound device. Falling back to primary sound device.\n");
 						p->dsdevice = NULL;
 					}
 				}
@@ -225,7 +229,7 @@ static qboolean ds7_init (struct SoundCard *sc, int rate, int channels, int bits
 				hresult = p->pDirectSoundCreate(p->dsdevice, &p->pDS, NULL);
 				if (hresult != DS_OK && p->dsdevice)
 				{
-					Com_Printf ("Couldn't open preferred sound device. Falling back to primary sound device.\n");
+					Com_Printf("Couldn't open preferred sound device. Falling back to primary sound device.\n");
 					p->dsdevice = NULL;
 					hresult = p->pDirectSoundCreate(p->dsdevice, &p->pDS, NULL);
 				}
@@ -234,29 +238,29 @@ static qboolean ds7_init (struct SoundCard *sc, int rate, int channels, int bits
 				{
 					if (hresult == DSERR_ALLOCATED)
 					{
-						Com_Printf ("DirectSoundCreate failed, hardware already in use\n");
+						Com_Printf("DirectSoundCreate failed, hardware already in use\n");
 					}
 					else
 					{
-						Com_Printf ("DirectSound create failed\n");
+						Com_Printf("DirectSound create failed\n");
 					}
 				}
 				else
 				{
 					dscaps.dwSize = sizeof(dscaps);
 
-					if (DS_OK != p->pDS->lpVtbl->GetCaps (p->pDS, &dscaps))
-						Com_Printf ("Couldn't get DS caps\n");
+					if (DS_OK != p->pDS->lpVtbl->GetCaps(p->pDS, &dscaps))
+						Com_Printf("Couldn't get DS caps\n");
 
 					if (dscaps.dwFlags & DSCAPS_EMULDRIVER)
 					{
-						Com_Printf ("No DirectSound driver installed\n");
+						Com_Printf("No DirectSound driver installed\n");
 					}
 					else
 					{
-						if (DS_OK != p->pDS->lpVtbl->SetCooperativeLevel (p->pDS, mainwindow, DSSCL_EXCLUSIVE))
+						if (DS_OK != p->pDS->lpVtbl->SetCooperativeLevel(p->pDS, mainwindow, DSSCL_EXCLUSIVE))
 						{
-							Com_Printf ("Set coop level failed\n");
+							Com_Printf("Set coop level failed\n");
 						}
 						else
 						{
@@ -277,7 +281,7 @@ static qboolean ds7_init (struct SoundCard *sc, int rate, int channels, int bits
 								{
 									pformat = format;
 
-									if (DS_OK == p->pDSPBuf->lpVtbl->SetFormat (p->pDSPBuf, &pformat))
+									if (DS_OK == p->pDSPBuf->lpVtbl->SetFormat(p->pDSPBuf, &pformat))
 									{
 										primary_format_set = true;
 									}
@@ -300,18 +304,18 @@ static qboolean ds7_init (struct SoundCard *sc, int rate, int channels, int bits
 
 								if (DS_OK != p->pDS->lpVtbl->CreateSoundBuffer(p->pDS, &dsbuf, &p->pDSBuf, NULL))
 								{
-									Com_Printf ("DS:CreateSoundBuffer Failed");
+									Com_Printf("DS:CreateSoundBuffer Failed");
 								}
 								else
 								{
 									sc->driverprivate = p;
-									sc->channels = format.nChannels;
-									sc->samplebits = format.wBitsPerSample;
-									sc->speed = format.nSamplesPerSec;
+									channels = format.nChannels;
+									bits = format.wBitsPerSample;
+									rate = format.nSamplesPerSec;
 
-									if (DS_OK != p->pDSBuf->lpVtbl->GetCaps (p->pDSBuf, &dsbcaps))
+									if (DS_OK != p->pDSBuf->lpVtbl->GetCaps(p->pDSBuf, &dsbcaps))
 									{
-										Com_Printf ("DS:GetCaps failed\n");
+										Com_Printf("DS:GetCaps failed\n");
 									}
 									else
 										tempresult = 1;
@@ -319,15 +323,15 @@ static qboolean ds7_init (struct SoundCard *sc, int rate, int channels, int bits
 							}
 							else
 							{
-								if (DS_OK != p->pDS->lpVtbl->SetCooperativeLevel (p->pDS, mainwindow, DSSCL_WRITEPRIMARY))
+								if (DS_OK != p->pDS->lpVtbl->SetCooperativeLevel(p->pDS, mainwindow, DSSCL_WRITEPRIMARY))
 								{
-									Com_Printf ("Set coop level failed\n");
+									Com_Printf("Set coop level failed\n");
 								}
 								else
 								{
-									if (DS_OK != p->pDSPBuf->lpVtbl->GetCaps (p->pDSPBuf, &dsbcaps))
+									if (DS_OK != p->pDSPBuf->lpVtbl->GetCaps(p->pDSPBuf, &dsbcaps))
 									{
-										Com_Printf ("DS:GetCaps failed\n");
+										Com_Printf("DS:GetCaps failed\n");
 									}
 									else
 									{
@@ -352,16 +356,16 @@ static qboolean ds7_init (struct SoundCard *sc, int rate, int channels, int bits
 								{
 									if (hresult != DSERR_BUFFERLOST)
 									{
-										Com_Printf ("SNDDMA_InitDirect: DS::Lock Sound Buffer Failed\n");
+										Com_Printf("SNDDMA_InitDirect: DS::Lock Sound Buffer Failed\n");
 										tempresult = 0;
 										break;
 									}
 
-									Com_Printf ("SNDDMA_InitDirect: relocking...\n");
+									Com_Printf("SNDDMA_InitDirect: relocking...\n");
 
 									if (++reps > 10000)
 									{
-										Com_Printf ("SNDDMA_InitDirect: DS: couldn't restore buffer\n");
+										Com_Printf("SNDDMA_InitDirect: DS: couldn't restore buffer\n");
 										tempresult = 0;
 										break;
 									}
@@ -380,6 +384,10 @@ static qboolean ds7_init (struct SoundCard *sc, int rate, int channels, int bits
 									p->pDSBuf->lpVtbl->Stop(p->pDSBuf);
 									p->pDSBuf->lpVtbl->GetCurrentPosition(p->pDSBuf, &p->mmstarttime.u.sample, &dwWrite);
 									p->pDSBuf->lpVtbl->Play(p->pDSBuf, 0, 0, DSBPLAY_LOOPING);
+
+									sc->speed = rate;
+									sc->samplebits = bits;
+									sc->channels = channels;
 
 									sc->samples = p->gSndBufSize/(sc->samplebits/8);
 									sc->samplepos = 0;
