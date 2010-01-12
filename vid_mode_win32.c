@@ -61,25 +61,38 @@ const char * const *Sys_Video_GetModeList(void)
 	char **ret;
 	char **t;
 	unsigned int i;
+	unsigned int nummodes;
 	char buf[256];
 	BOOL enumret;
 
 	ret = 0;
 
+	nummodes = 0;
+
 	for(i=0;(enumret = EnumDisplaySettingsA(0, i, &devmode));i++)
 	{
-		t = realloc(ret, (i+2)*sizeof(*ret));
+#ifdef GLQUAKE
+		if (devmode.dmBitsPerPel <= 8)
+			continue;
+#else
+		if (devmode.dmBitsPerPel != 8)
+			continue;
+#endif
+
+		t = realloc(ret, (nummodes+2)*sizeof(*ret));
 		if (t == 0)
 			break;
 
 		ret = t;
-		ret[i+1] = 0;
+		ret[nummodes+1] = 0;
 
 		snprintf(buf, sizeof(buf), "%d,%d,%d,%d,%d", devmode.dmPelsWidth, devmode.dmPelsHeight, devmode.dmBitsPerPel, devmode.dmDisplayFlags, devmode.dmDisplayFrequency);
 
-		ret[i] = strdup(buf);
-		if (ret[i] == 0)
+		ret[nummodes] = strdup(buf);
+		if (ret[nummodes] == 0)
 			break;
+
+		nummodes++;
 	}
 
 	if (enumret == 0)
