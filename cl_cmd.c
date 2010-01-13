@@ -23,7 +23,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <stdlib.h>
 
 #include "quakedef.h"
-#include "winquake.h"
 #include "menu.h"
 #include "teamplay.h"
 #include "version.h"
@@ -520,12 +519,6 @@ void CL_Quit_f (void) {
 	}
 }
 
-#ifdef _WINDOWS
-void CL_Windows_f (void) {
-	SendMessage(mainwindow, WM_SYSKEYUP, VK_TAB, 1 | (0x0F << 16) | (1<<29));
-}
-#endif
-
 void CL_Serverinfo_f (void) {
 #ifndef CLIENTONLY
 	if (cls.state < ca_connected || com_serveractive) {
@@ -615,11 +608,6 @@ void CL_InitCommands (void) {
 	Cmd_AddCommand ("give", NULL);
 	Cmd_AddCommand ("noclip", NULL);
 	Cmd_AddCommand ("fly", NULL);
-
-	//  Windows commands
-#ifdef _WINDOWS
-	Cmd_AddCommand ("windows", CL_Windows_f);
-#endif
 }
 
 /*
