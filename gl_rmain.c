@@ -96,7 +96,7 @@ cvar_t	gl_clear = {"gl_clear", "0"};
 static qboolean OnChange_gl_clearColor(cvar_t *v, char *s);
 cvar_t	gl_clearColor = {"gl_clearColor", "0 0 0", 0, OnChange_gl_clearColor};
 cvar_t	gl_cull = {"gl_cull", "1"};
-cvar_t	gl_ztrick = {"gl_ztrick", "1"};
+cvar_t	gl_ztrick = {"gl_ztrick", "0"};
 cvar_t	gl_smoothmodels = {"gl_smoothmodels", "1"};
 cvar_t	gl_affinemodels = {"gl_affinemodels", "0"};
 cvar_t	gl_polyblend = {"gl_polyblend", "1"};
