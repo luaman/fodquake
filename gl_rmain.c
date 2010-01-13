@@ -1357,9 +1357,6 @@ void R_InitGL(void)
 	if (!strcmp(gl_vendor, "METABYTE/WICKED3D")) 
 		Cvar_SetDefault(&gl_solidparticles, 1); 
 
-	if (!gl_allow_ztrick)
-		Cvar_SetDefault(&gl_ztrick, 0); 
-
 	Classic_LoadParticleTextures();
 
 	R_InitOtherTextures ();		

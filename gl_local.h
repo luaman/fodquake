@@ -277,7 +277,6 @@ extern byte color_white[4], color_black[4];
 extern qboolean gl_mtexable;
 extern int gl_textureunits;
 extern qboolean gl_combine, gl_add_ext;
-extern qboolean gl_allow_ztrick;
 
 qboolean CheckExtension (const char *extension);
 void Check_Gamma (unsigned char *pal);

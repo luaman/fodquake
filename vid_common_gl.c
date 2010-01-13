@@ -51,7 +51,6 @@ qboolean gl_combine = false;
 qboolean gl_add_ext = false;
 
 float gldepthmin, gldepthmax;
-qboolean gl_allow_ztrick = true;
 
 float vid_gamma = 1.0;
 byte vid_gamma_table[256];
