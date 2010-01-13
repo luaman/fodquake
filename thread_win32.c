@@ -52,6 +52,7 @@ struct SysThread *Sys_Thread_CreateThread(void (*entrypoint)(void *), void *argu
 
 void Sys_Thread_DeleteThread(struct SysThread *thread)
 {
+	WaitForSingleObject(thread->thread, INFINITE);
 	CloseHandle(thread->thread);
 	free(thread);
 }
