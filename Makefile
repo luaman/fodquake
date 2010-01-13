@@ -111,17 +111,20 @@ endif
 ifeq ($(OS), win32)
 	OSOBJS= \
 		sys_win.o \
-		snd_dx7.o \
-		cd_win.o \
-		in_win.o \
+		thread_win32.o \
+		net_win32.o \
+		cd_null.o \
+		in_dinput8.o \
 
-	OSSWOBJS=vid_win.o
+#		snd_dx7.o \
+
+	OSSWOBJS=vid_win.o vid_mode_win32.o
 	OSSWLDFLAGS=-lmgllt -lwsock32 -lgdi32 -ldxguid -lwinmm
 
-	OSGLOBJS=vid_wgl.o
-	OSGLLDFLAGS=-lopengl32 -lwinmm -lwsock32 -lgdi32 -ldxguid
+	OSGLOBJS=vid_wgl.o vid_mode_win32.o
+	OSGLLDFLAGS=-lopengl32 -lwinmm -lwsock32 -lgdi32 -ldxguid -ldinput8
 
-	OSCFLAGS = -I$(VPATH)directx -DBUILD_STRL
+	OSCFLAGS = -I`cd ~/directx && pwd` -DBUILD_STRL
 	ifneq ($(shell $(CC) -dumpmachine | grep cygwin),)
 		OSCFLAGS+= -mno-cygwin
 	endif
