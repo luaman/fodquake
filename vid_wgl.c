@@ -255,7 +255,7 @@ unsigned int Sys_Video_GetNumBuffers(void *display)
 	return 3;
 }
 
-void Sys_Video_Update(void *display, struct vrect *rect)
+void Sys_Video_Update(void *display, vrect_t *rects)
 {
 	struct display *d = display;
 	SwapBuffers(d->dc);
