@@ -18,15 +18,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */
 
+#include <windows.h>
 
 #include "quakedef.h"
-#include "cdaudio.h"
-#include "gl_local.h"
-#include "keys.h"
-#include "resource.h"
-#include "sbar.h"
-#include "sound.h"
-#include "winquake.h"
+#include "sys_win.h"
+#include "in_dinput8.h"
 
 struct display
 {
@@ -104,14 +100,13 @@ static BOOL bSetupPixelFormat(HDC hDC) {
 		return FALSE;
 	}
 
-	if (retpfd.cDepthBits < 24)
-		gl_allow_ztrick = false;
-
 	return TRUE;
 }
 
 
+#if 0
 LONG CDAudio_MessageHandler(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+#endif
 
 #include "mw_hook.h"
 void MW_Hook_Message (long buttons);
@@ -176,7 +171,7 @@ static LONG WINAPI MainWndProc (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 			break;
 
 		case WM_CLOSE:
-			if (MessageBox (mainwindow, "Are you sure you want to quit?", "FodQuake : Confirm Exit",
+			if (MessageBox (d->window, "Are you sure you want to quit?", "FodQuake : Confirm Exit",
 						MB_YESNO | MB_SETFOREGROUND | MB_ICONQUESTION) == IDYES)
 			{
 				Host_Quit ();
@@ -196,9 +191,11 @@ static LONG WINAPI MainWndProc (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 			DestroyWindow (hWnd);
 			break;
 
+#if 0
 		case MM_MCINOTIFY:
 			lRet = CDAudio_MessageHandler (hWnd, uMsg, wParam, lParam);
 			break;
+#endif
 
 		default:
 			/* pass all unhandled messages to DefWindowProc */
@@ -279,7 +276,7 @@ void *Sys_Video_Open(const char *mode, unsigned int width, unsigned int height, 
 	int displacement;
 	int error;
 
-#warning this function doesn't clean up yet
+#warning "this function doesn't clean up yet"
 
 	d = malloc(sizeof(*d));
 	if (d)
@@ -345,7 +342,11 @@ void *Sys_Video_Open(const char *mode, unsigned int width, unsigned int height, 
 			wc.cbClsExtra    = 0;
 			wc.cbWndExtra    = 0;
 			wc.hInstance     = global_hInstance;
+#if 0
 			wc.hIcon         = LoadIcon (global_hInstance, MAKEINTRESOURCE (IDI_APPICON));
+#else
+			wc.hIcon = 0;
+#endif
 			wc.hCursor       = LoadCursor (NULL,IDC_ARROW);
 			wc.hbrBackground = NULL;
 			wc.lpszMenuName  = 0;
@@ -430,11 +431,9 @@ void *Sys_Video_Open(const char *mode, unsigned int width, unsigned int height, 
 					return NULL;
 				}
 
+#if 0
 mainwindow = d->window;
-
-				window_rect = rect;
-				window_center_x = (window_rect.left + window_rect.right)/2;
-				window_center_y = (window_rect.top + window_rect.bottom)/2;
+#endif
 
 				d->inputdata = Sys_Input_Init(d->window);
 				if (d->inputdata)
