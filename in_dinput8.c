@@ -28,6 +28,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define DINPUTNUMEVENTS 32
 #define NUMBUTTONEVENTS 32
 
+#warning Make this get the repeat rate from the registry
+#define REPEATINITIALDELAY 200000
+#define REPEATDELAY 60000
+
 struct buttonevent
 {
 	unsigned char key;
@@ -48,6 +52,9 @@ struct InputData
 	unsigned int buttoneventtail;
 
 	unsigned char shiftdown;
+
+	unsigned char repeatkey;
+	unsigned long long nextrepeattime;
 };
 
 #warning Complete this.
@@ -420,12 +427,41 @@ static void queuekey(struct InputData *inputdata, unsigned char key, unsigned ch
 	inputdata->buttoneventhead = (inputdata->buttoneventhead + 1) % NUMBUTTONEVENTS;
 }
 
+static void keyevent(struct InputData *inputdata, unsigned char rawkey, unsigned char down)
+{
+	if (rawkey < sizeof(keytable) && keytable[rawkey])
+	{
+		if (keytable[rawkey] == K_LSHIFT)
+		{
+			if (down)
+				inputdata->shiftdown |= 1;
+			else
+				inputdata->shiftdown &= ~1;
+		}
+		else if (keytable[rawkey] == K_RSHIFT)
+		{
+			if (down)
+				inputdata->shiftdown |= 2;
+			else
+				inputdata->shiftdown &= ~2;
+		}
+
+		if (inputdata->shiftdown && rawkey < sizeof(shiftkeytable) && shiftkeytable[rawkey])
+			queuekey(inputdata, shiftkeytable[rawkey], down);
+		else
+			queuekey(inputdata, keytable[rawkey], down);
+	}
+	else
+		printf("Key %d\n", rawkey);
+}
+
 static void pollstuff(struct InputData *inputdata)
 {
 	DIDEVICEOBJECTDATA events[DINPUTNUMEVENTS];
 	DWORD elements;
 	HRESULT res;
 	unsigned int i;
+	unsigned long long curtime;
 
 	elements = DINPUTNUMEVENTS;
 	res = inputdata->di8mouse->lpVtbl->GetDeviceData(inputdata->di8mouse, sizeof(*events), events, &elements, 0);
@@ -506,33 +542,41 @@ static void pollstuff(struct InputData *inputdata)
 	}
 	else
 	{
+		if (inputdata->repeatkey)
+		{
+			curtime = Sys_IntTime();
+
+			while(inputdata->nextrepeattime <= curtime)
+			{
+				keyevent(inputdata, inputdata->repeatkey, 1);
+				inputdata->nextrepeattime += REPEATDELAY;
+			}
+		}
+
 		for(i=0;i<elements;i++)
 		{
-			if (events[i].dwOfs < sizeof(keytable) && keytable[events[i].dwOfs])
+			if (events[i].dwOfs != DIK_LSHIFT
+			 || events[i].dwOfs != DIK_RSHIFT
+			 || events[i].dwOfs != DIK_LCONTROL
+			 || events[i].dwOfs != DIK_RCONTROL
+			 || events[i].dwOfs != DIK_LWIN
+			 || events[i].dwOfs != DIK_RWIN
+			 || events[i].dwOfs != DIK_LMENU
+			 || events[i].dwOfs != DIK_RMENU)
 			{
-				if (keytable[events[i].dwOfs] == K_LSHIFT)
+				if ((events[i].dwData&0x80))
 				{
-					if ((events[i].dwData&0x80))
-						inputdata->shiftdown |= 1;
-					else
-						inputdata->shiftdown &= ~1;
+					inputdata->repeatkey = events[i].dwOfs;
+					inputdata->nextrepeattime = Sys_IntTime() + REPEATINITIALDELAY;
 				}
-				else if (keytable[events[i].dwOfs] == K_RSHIFT)
+				else if (inputdata->repeatkey == events[i].dwOfs)
 				{
-					if ((events[i].dwData&0x80))
-						inputdata->shiftdown |= 2;
-					else
-						inputdata->shiftdown &= ~2;
+					inputdata->repeatkey = 0;
+					inputdata->nextrepeattime = 0;
 				}
-				if (inputdata->shiftdown && events[i].dwOfs < sizeof(shiftkeytable) && shiftkeytable[events[i].dwOfs])
-					inputdata->buttonevents[inputdata->buttoneventhead].key = shiftkeytable[events[i].dwOfs];
-				else
-					inputdata->buttonevents[inputdata->buttoneventhead].key = keytable[events[i].dwOfs];
-				inputdata->buttonevents[inputdata->buttoneventhead].down = !!(events[i].dwData&0x80);
-				inputdata->buttoneventhead = (inputdata->buttoneventhead + 1) % NUMBUTTONEVENTS;
 			}
-			else
-				printf("Key %d\n", events[i].dwOfs);
+
+			keyevent(inputdata, events[i].dwOfs, !!(events[i].dwData&0x80));
 		}
 	}
 }
