@@ -25,7 +25,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "quakedef.h"
 #include "filesystem.h"
-#include "winquake.h"
 #include "cdaudio.h"
 #include "input.h"
 #include "keys.h"
@@ -1243,8 +1242,10 @@ void CL_ConnectionlessPacket(void)
 			return;
 		}
 #ifdef _WIN32
+#if 0
 		ShowWindow (mainwindow, SW_RESTORE);
 		SetForegroundWindow (mainwindow);
+#endif
 #endif
 		s = MSG_ReadString ();
 		Q_strncpyz (cmdtext, s, sizeof(cmdtext));

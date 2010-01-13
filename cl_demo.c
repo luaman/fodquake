@@ -24,7 +24,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "quakedef.h"
 #include "filesystem.h"
-#include "winquake.h"
 #include "pmove.h"
 
 #include "utils.h"
@@ -39,6 +38,7 @@ static float		td_starttime;		// realtime at second frame of timedemo
 
 //QIZMO
 #ifdef _WIN32
+#include <windows.h>
 static qboolean	qwz_unpacking = false;
 static qboolean	qwz_playback = false;
 static HANDLE hQizmoProcess = NULL;
