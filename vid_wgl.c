@@ -36,14 +36,13 @@ struct display
 	qboolean isfullscreen;
 	qboolean isfocused;
 
-	struct display *next;	//this is absurd.
-	
 	struct InputData *inputdata;
 
 	char mode[256];
-};
 
-static struct display *activedisplays;
+	int gammaworks;
+	unsigned short originalgammaramps[3][256];
+};
 
 static int bChosePixelFormat(HDC hDC, PIXELFORMATDESCRIPTOR *pfd, PIXELFORMATDESCRIPTOR *retpfd) {
 	int pixelformat;
@@ -121,16 +120,7 @@ static LONG WINAPI MainWndProc (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 
 	struct display *d;
 
-	for (d = activedisplays; d; d = d->next)
-	{
-		if (d->window == hWnd)
-			break;
-	}
-	if (!d)
-	{
-		//this shouldn't ever happen
-		return DefWindowProc (hWnd, uMsg, wParam, lParam);
-	}
+	d = (struct display *)GetWindowLong(hWnd, GWL_USERDATA);
 
 #if 0
 	if (uMsg == uiWheelMessage)
@@ -148,6 +138,11 @@ static LONG WINAPI MainWndProc (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 			break;
 
 		case WM_CREATE:
+			{
+				LPCREATESTRUCT cs;
+				cs = (LPCREATESTRUCT)lParam;
+				SetWindowLong(hWnd, GWL_USERDATA, (LONG)cs->lpCreateParams);
+			}
 			break;
 
 		case WM_MOVE:
@@ -235,9 +230,36 @@ void Sys_Video_GrabMouse(void *display, int dograb)
 	struct display *d = display;
 }
 
+qboolean Sys_Video_HWGammaSupported(void *display)
+{
+	struct display *d;
+
+	d = display;
+
+	return d->gammaworks;
+}
+
 void Sys_Video_SetGamma(void *display, unsigned short *ramps)
 {
-//noop, for now
+	struct display *d;
+	int i, j;
+
+	d = display;
+
+	for(i=0;i<128;i++)
+	{
+		for(j=0;j<3;j++)
+		{
+			ramps[j * 256 + i] = min(ramps[j * 256 + i], (i + 0x80) << 8);
+		}
+	}
+
+	for(j=0;j<3;j++)
+	{
+		ramps[j * 256 + 128] = min(ramps[j * 256 + 128], 0xFE00);
+	}
+
+	SetDeviceGammaRamp(d->dc, ramps);
 }
 
 void Sys_Video_BeginFrame(void *display, unsigned int *x, unsigned int *y, unsigned int *width, unsigned int *height)
@@ -331,9 +353,6 @@ void *Sys_Video_Open(const char *mode, unsigned int width, unsigned int height, 
 			d->width = width;
 			d->height = height;
 
-			d->next = activedisplays;
-			activedisplays = d;
-
 			d->isfullscreen = fullscreen;
 
 			/* Register the frame class */
@@ -393,7 +412,7 @@ void *Sys_Video_Open(const char *mode, unsigned int width, unsigned int height, 
 				 NULL,
 				 NULL,
 				 global_hInstance,
-				 NULL);
+				 d);
 
 			if (!d->window)
 			{
@@ -420,6 +439,12 @@ void *Sys_Video_Open(const char *mode, unsigned int width, unsigned int height, 
 					return NULL;
 				}
 
+				if (fullscreen)
+				{
+					d->gammaworks = GetDeviceGammaRamp(d->dc, d->originalgammaramps);
+				}
+
+#warning Fix this up.
 				if (!(d->glctx = wglCreateContext(d->dc)))
 				{
 					Com_Printf ("Could not initialize GL (wglCreateContext failed).\n\nMake sure you in are 65535 color mode, and try running -window.\n");
@@ -429,6 +454,17 @@ void *Sys_Video_Open(const char *mode, unsigned int width, unsigned int height, 
 				{
 					Com_Printf ("wglMakeCurrent failed\n");
 					return NULL;
+				}
+
+				{
+					BOOL (APIENTRY *swapinterval)(int);
+
+					swapinterval = wglGetProcAddress("wglSwapIntervalEXT");
+					if (swapinterval)
+					{
+						Com_Printf("Disabled vsync\n");
+						swapinterval(0);
+					}
 				}
 
 #if 0
@@ -468,13 +504,6 @@ void Sys_Video_Close(void *display)
 		ChangeDisplaySettings (NULL, 0);
 
 	free(d);
-
-	activedisplays = 0;
-}
-
-qboolean Sys_Video_HWGammaSupported(void *display)
-{
-	return false;	//for now
 }
 
 const char *Sys_Video_GetClipboardText(void *display)
