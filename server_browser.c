@@ -2018,6 +2018,8 @@ void SB_Frame(void)
 		{
 			SB_Set_Statusbar("Pinging servers. Press \"ctrl + h\" for help.");
 		}
+		else if (sss == SSS_ERROR)
+			SB_Set_Statusbar("Server scanner error. Press \"ctrl +h\" for help.\n");
 	}
 
 	if (serverscanner)
