@@ -22,7 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "quakedef.h"
 #include "input.h"
 #include "keys.h"
-#include "winquake2.h"
+#include "sys_win.h"
 #include "in_dinput8.h"
 
 #define DINPUTNUMEVENTS 32
