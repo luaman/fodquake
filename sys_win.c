@@ -19,8 +19,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 // sys_win.c
 
+#include <windows.h>
+
 #include "quakedef.h"
-#include "winquake.h"
 #include "resource.h"
 #include "keys.h"
 #include <errno.h>
@@ -29,6 +30,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <io.h>			// _open, etc
 #include <direct.h>		// _mkdir
 #include <conio.h>		// _putch
+
+#include "sys_win.h"
 
 #define MINIMUM_WIN_MEMORY	0x0c00000
 #define MAXIMUM_WIN_MEMORY	0x1000000
@@ -205,6 +208,12 @@ void Sys_Printf (char *fmt, ...) {
 	char text[1024];
 	DWORD dummy;
 
+#if 0
+	va_start(argptr,fmt);
+	vprintf(fmt, argptr);
+	va_end(argptr);
+#endif
+
 	if (!dedicated)
 		return;
 
@@ -245,6 +254,8 @@ void Sys_InitDoubleTime (void) {
 		// make sure the timer is high precision, otherwise NT gets 18ms resolution
 		timeBeginPeriod (1);
 	}
+
+	timeBeginPeriod(1);
 }
 
 double Sys_DoubleTime (void) {
@@ -280,6 +291,12 @@ double Sys_DoubleTime (void) {
 		return 0.0;
 
 	return (now - starttime) / 1000.0;
+}
+
+#warning Do this properly
+unsigned long long Sys_IntTime()
+{
+	return Sys_DoubleTime()*1000000;
 }
 
 char *Sys_ConsoleInput (void) {
@@ -325,6 +342,7 @@ char *Sys_ConsoleInput (void) {
 						if ((ch == ('V' & 31)) /* ctrl-v */ ||
 							((rec.Event.KeyEvent.dwControlKeyState & SHIFT_PRESSED) && (rec.Event.KeyEvent.wVirtualKeyCode == VK_INSERT))) {
 
+#if 0
 								if ((textCopied = Sys_GetClipboardData())) {
 									i = strlen(textCopied);
 									if (i + len >= sizeof(text))
@@ -337,6 +355,7 @@ char *Sys_ConsoleInput (void) {
 										len += dummy;
 									}
 								}
+#endif
 							} else if (ch >= ' ') {
 								WriteFile(houtput, &ch, 1, &dummy, NULL);	
 								text[len] = ch;
@@ -604,3 +623,9 @@ int WINAPI WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
 	}
     return TRUE;	/* return success of application */
 }
+
+void usleep(unsigned int usec)
+{
+	Sleep((usec+999)/1000);
+}
+
