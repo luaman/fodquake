@@ -127,6 +127,7 @@ ifeq ($(OS), win32)
 	ifneq ($(shell $(CC) -dumpmachine | grep cygwin),)
 		OSCFLAGS+= -mno-cygwin
 	endif
+	OSLDFLAGS = -mwindows
 endif
 
 ifeq ($(OS), gekko)
