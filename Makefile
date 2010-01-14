@@ -117,10 +117,10 @@ ifeq ($(OS), win32)
 		cd_null.o \
 		in_dinput8.o \
 
-	OSSWOBJS=vid_win.o vid_mode_win32.o
+	OSSWOBJS=vid_win.o vid_mode_win32.o fodquake-sw.windowsicon
 	OSSWLDFLAGS=-lmgllt -lwsock32 -lgdi32 -ldxguid -lwinmm
 
-	OSGLOBJS=vid_wgl.o vid_mode_win32.o
+	OSGLOBJS=vid_wgl.o vid_mode_win32.o fodquake-gl.windowsicon
 	OSGLLDFLAGS=-lopengl32 -lwinmm -lwsock32 -lgdi32 -ldxguid -ldinput8
 
 	OSCFLAGS = -I`cd ~/directx && pwd` -DBUILD_STRL
@@ -128,6 +128,9 @@ ifeq ($(OS), win32)
 		OSCFLAGS+= -mno-cygwin
 	endif
 	OSLDFLAGS = -mwindows
+
+%.windowsicon: %.rc icons/%.ico
+	i586-mingw32msvc-windres -O coff $< $@
 endif
 
 ifeq ($(OS), gekko)

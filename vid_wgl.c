@@ -23,6 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "quakedef.h"
 #include "sys_win.h"
+#include "resource.h"
 #include "in_dinput8.h"
 #include "strl.h"
 
@@ -346,11 +347,7 @@ void *Sys_Video_Open(const char *mode, unsigned int width, unsigned int height, 
 			wc.cbClsExtra    = 0;
 			wc.cbWndExtra    = 0;
 			wc.hInstance     = global_hInstance;
-#if 0
 			wc.hIcon         = LoadIcon (global_hInstance, MAKEINTRESOURCE (IDI_APPICON));
-#else
-			wc.hIcon = 0;
-#endif
 			wc.hCursor       = LoadCursor (NULL,IDC_ARROW);
 			wc.hbrBackground = NULL;
 			wc.lpszMenuName  = 0;
