@@ -33,8 +33,6 @@ struct display
 	HDC dc;
 	int width;
 	int height;
-	int left;
-	int right;
 	HGLRC glctx;
 	qboolean isfullscreen;
 	qboolean isfocused;
@@ -46,6 +44,17 @@ struct display
 	int gammaworks;
 	unsigned short originalgammaramps[3][256];
 };
+
+static void ProcessMessages()
+{
+	MSG msg;
+
+	while(PeekMessage(&msg, 0, 0, 0, PM_REMOVE))
+	{
+		TranslateMessage(&msg);
+		DispatchMessage(&msg);
+	}
+}
 
 static int bChosePixelFormat(HDC hDC, PIXELFORMATDESCRIPTOR *pfd, PIXELFORMATDESCRIPTOR *retpfd)
 {
@@ -141,9 +150,6 @@ static LONG WINAPI MainWndProc (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 			break;
 
 		case WM_MOVE:
-			d->left = (int) LOWORD(lParam);
-			d->right = (int) HIWORD(lParam);
-//			VID_UpdateWindowStatus ();
 			break;
 
 		case WM_SYSCHAR:
@@ -210,6 +216,8 @@ void Sys_Video_GetMouseMovement(void *display, int *mousex, int *mousey)
 {
 	struct display *d = display;
 
+	ProcessMessages();
+
 	Sys_Input_GetMouseMovement(d->inputdata, mousex, mousey);
 }
 
@@ -254,6 +262,8 @@ void Sys_Video_BeginFrame(void *display, unsigned int *x, unsigned int *y, unsig
 {
 	struct display *d = display;
 
+	ProcessMessages();
+
 	*x = 0;
 	*y = 0;
 	*width = d->width;
@@ -268,7 +278,9 @@ unsigned int Sys_Video_GetNumBuffers(void *display)
 void Sys_Video_Update(void *display, vrect_t *rects)
 {
 	struct display *d = display;
+	ProcessMessages();
 	SwapBuffers(d->dc);
+	ProcessMessages();
 }
 
 void Sys_Video_CvarInit()
@@ -406,11 +418,7 @@ void *Sys_Video_Open(const char *mode, unsigned int width, unsigned int height, 
 				UpdateWindow (d->window);
 
 				SetForegroundWindow(d->window);
-				while(PeekMessage(&msg, 0, 0, 0, PM_REMOVE))
-				{
-					TranslateMessage(&msg);
-					DispatchMessage(&msg);
-				}
+				ProcessMessages();
 				SetWindowPos(d->window, HWND_TOP, 0, 0, 0, 0, SWP_DRAWFRAME | SWP_NOMOVE | SWP_NOSIZE | SWP_SHOWWINDOW | SWP_NOCOPYBITS);
 				SetForegroundWindow(d->window);
 
@@ -544,6 +552,8 @@ int Sys_Video_GetKeyEvent(void *display, keynum_t *keynum, qboolean *down)
 	struct display *d;
 
 	d = display;
+
+	ProcessMessages();
 
 	return Sys_Input_GetKeyEvent(d->inputdata, keynum, down);
 }
