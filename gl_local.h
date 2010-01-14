@@ -21,10 +21,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 // disable data conversion warnings
 
-#ifdef _WIN32
-#include <windows.h>
-#endif
-
 #ifdef __MACOSX__
 #include <AGL/agl.h>
 #else
