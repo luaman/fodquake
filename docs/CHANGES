@@ -13,6 +13,9 @@ Version 0.3
 - Added support for client side lag via the net_lag and net_lag_ezcheat cvars.
 - Removed the uglier than ugly r_shadows in GL.
 - Changed the default volume from 0.7 to 0.5.
+- gl_ztrick now defaults to 0.
+- Brought the Win32 port up to date.
+- Added DirectInput 8 support.
 
 Version 0.2
 ===========
