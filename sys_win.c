@@ -629,3 +629,9 @@ void usleep(unsigned int usec)
 	Sleep((usec+999)/1000);
 }
 
+#warning fix this
+char *strcasestr(const char *haystack, const char *needle)
+{
+	return strstr(haystack, needle);
+}
+
