@@ -483,6 +483,9 @@ void Sys_Video_Close(void *display)
 
 	wglDeleteContext(d->glctx);
 
+	if (d->gammaworks)
+		SetDeviceGammaRamp(d->dc, d->originalgammaramps);
+
 	ReleaseDC(d->window, d->dc);
 
 	DestroyWindow(d->window);
