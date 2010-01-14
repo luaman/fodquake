@@ -285,8 +285,6 @@ void *Sys_Video_Open(const char *mode, unsigned int width, unsigned int height, 
 	int displacement;
 	int error;
 
-#warning "this function doesn't clean up yet"
-
 	d = malloc(sizeof(*d));
 	if (d)
 	{
@@ -431,36 +429,37 @@ void *Sys_Video_Open(const char *mode, unsigned int width, unsigned int height, 
 					d->gammaworks = GetDeviceGammaRamp(d->dc, d->originalgammaramps);
 				}
 
-#warning Fix this up.
 				if (!(d->glctx = wglCreateContext(d->dc)))
 				{
 					Com_Printf ("Could not initialize GL (wglCreateContext failed).\n\nMake sure you in are 65535 color mode, and try running -window.\n");
-					return NULL;
 				}
-				if (!wglMakeCurrent(d->dc, d->glctx))
+				else
 				{
-					Com_Printf ("wglMakeCurrent failed\n");
-					return NULL;
-				}
-
-				{
-					BOOL (APIENTRY *swapinterval)(int);
-
-					swapinterval = wglGetProcAddress("wglSwapIntervalEXT");
-					if (swapinterval)
+					if (!wglMakeCurrent(d->dc, d->glctx))
 					{
-						Com_Printf("Disabled vsync\n");
-						swapinterval(0);
+						Com_Printf ("wglMakeCurrent failed\n");
 					}
+					else
+					{
+						BOOL (APIENTRY *swapinterval)(int);
+
+						/* Vsync is broken on Windows, no point in ever enabling it. */
+						swapinterval = wglGetProcAddress("wglSwapIntervalEXT");
+						if (swapinterval)
+						{
+							Com_Printf("Disabled vsync\n");
+							swapinterval(0);
+						}
+
+						d->inputdata = Sys_Input_Init(d->window);
+						if (d->inputdata)
+							return d;
+
+						wglMakeCurrent(0, 0);
+					}
+
+					wglDeleteContext(d->glctx);
 				}
-
-#if 0
-mainwindow = d->window;
-#endif
-
-				d->inputdata = Sys_Input_Init(d->window);
-				if (d->inputdata)
-					return d;
 
 				DestroyWindow(d->window);
 			}
