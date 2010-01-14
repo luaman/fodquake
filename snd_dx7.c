@@ -19,8 +19,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 //if you get compile errors with this file, just take it out of the makefile
 
+#include <dsound.h>
+
 #include "quakedef.h"
-#include "winquake.h"
 #include "sound.h"
 
 #warning Command line arguments are not tolerated.
@@ -82,7 +83,7 @@ static void ds7_shutdown (struct SoundCard *sc)
 	if (p->pDSPBuf && p->pDSBuf != p->pDSPBuf)
 		p->pDSPBuf->lpVtbl->Release(p->pDSPBuf);
 
-	p->pDS->lpVtbl->SetCooperativeLevel (p->pDS, mainwindow, DSSCL_NORMAL);
+	p->pDS->lpVtbl->SetCooperativeLevel (p->pDS, GetDesktopWindow(), DSSCL_NORMAL);
 	p->pDS->lpVtbl->Release(p->pDS);
 
 	FreeLibrary(p->hInstDS);
@@ -258,7 +259,7 @@ static qboolean ds7_init(struct SoundCard *sc, int rate, int channels, int bits)
 					}
 					else
 					{
-						if (DS_OK != p->pDS->lpVtbl->SetCooperativeLevel(p->pDS, mainwindow, DSSCL_EXCLUSIVE))
+						if (DS_OK != p->pDS->lpVtbl->SetCooperativeLevel(p->pDS, GetDesktopWindow(), DSSCL_EXCLUSIVE))
 						{
 							Com_Printf("Set coop level failed\n");
 						}
@@ -323,7 +324,7 @@ static qboolean ds7_init(struct SoundCard *sc, int rate, int channels, int bits)
 							}
 							else
 							{
-								if (DS_OK != p->pDS->lpVtbl->SetCooperativeLevel(p->pDS, mainwindow, DSSCL_WRITEPRIMARY))
+								if (DS_OK != p->pDS->lpVtbl->SetCooperativeLevel(p->pDS, GetDesktopWindow(), DSSCL_WRITEPRIMARY))
 								{
 									Com_Printf("Set coop level failed\n");
 								}
