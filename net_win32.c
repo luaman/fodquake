@@ -308,6 +308,7 @@ int Sys_Net_Send(struct SysNetData *netdata, struct SysSocket *socket, const voi
 int Sys_Net_Receive(struct SysNetData *netdata, struct SysSocket *socket, void *data, int datalen, struct netaddr *address)
 {
 	int r;
+	int err;
 
 	if (address)
 	{
@@ -352,7 +353,11 @@ int Sys_Net_Receive(struct SysNetData *netdata, struct SysSocket *socket, void *
 
 	if (r == -1)
 	{
-		if (WSAGetLastError() == WSAEWOULDBLOCK)
+		err = WSAGetLastError();
+
+		if (err == WSAEWOULDBLOCK)
+			return 0;
+		else if (err == WSAEINVAL) /* Windows returns this if you try to read from a socket before you write to it */
 			return 0;
 	}
 
