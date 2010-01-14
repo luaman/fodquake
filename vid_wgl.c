@@ -1,5 +1,6 @@
 /*
 Copyright (C) 1996-1997 Id Software, Inc.
+Copyright (C) 2010 Mark Olsen
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -23,6 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "quakedef.h"
 #include "sys_win.h"
 #include "in_dinput8.h"
+#include "strl.h"
 
 struct display
 {
@@ -44,15 +46,18 @@ struct display
 	unsigned short originalgammaramps[3][256];
 };
 
-static int bChosePixelFormat(HDC hDC, PIXELFORMATDESCRIPTOR *pfd, PIXELFORMATDESCRIPTOR *retpfd) {
+static int bChosePixelFormat(HDC hDC, PIXELFORMATDESCRIPTOR *pfd, PIXELFORMATDESCRIPTOR *retpfd)
+{
 	int pixelformat;
 
-	if (!(pixelformat = ChoosePixelFormat(hDC, pfd))) {
+	if (!(pixelformat = ChoosePixelFormat(hDC, pfd)))
+	{
 		MessageBox(NULL, "ChoosePixelFormat failed", "Error", MB_OK);
 		return 0;
 	}
 
-	if (!(DescribePixelFormat(hDC, pixelformat, sizeof(PIXELFORMATDESCRIPTOR), retpfd))) {
+	if (!(DescribePixelFormat(hDC, pixelformat, sizeof(PIXELFORMATDESCRIPTOR), retpfd)))
+	{
 		MessageBox(NULL, "DescribePixelFormat failed", "Error", MB_OK);
 		return 0;
 	}
@@ -60,9 +65,11 @@ static int bChosePixelFormat(HDC hDC, PIXELFORMATDESCRIPTOR *pfd, PIXELFORMATDES
 	return pixelformat;
 }
 
-static BOOL bSetupPixelFormat(HDC hDC) {
+static BOOL bSetupPixelFormat(HDC hDC)
+{
 	int pixelformat;
-	PIXELFORMATDESCRIPTOR retpfd, pfd = {
+	PIXELFORMATDESCRIPTOR retpfd, pfd =
+	{
 		sizeof(PIXELFORMATDESCRIPTOR),	// size of this pfd
 		1,								// version number
 		PFD_DRAW_TO_WINDOW 				// support window
@@ -86,15 +93,15 @@ static BOOL bSetupPixelFormat(HDC hDC) {
 	if (!(pixelformat = bChosePixelFormat(hDC, &pfd, &retpfd)))
 		return FALSE;
 
-	if (retpfd.cDepthBits < 24) {
-
-
+	if (retpfd.cDepthBits < 24)
+	{
 		pfd.cDepthBits = 24;
 		if (!(pixelformat = bChosePixelFormat(hDC, &pfd, &retpfd)))
 			return FALSE;
 	}
 
-	if (!SetPixelFormat(hDC, pixelformat, &retpfd)) {
+	if (!SetPixelFormat(hDC, pixelformat, &retpfd))
+	{
 		MessageBox(NULL, "SetPixelFormat failed", "Error", MB_OK);
 		return FALSE;
 	}
@@ -107,28 +114,15 @@ static BOOL bSetupPixelFormat(HDC hDC) {
 LONG CDAudio_MessageHandler(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 #endif
 
-#include "mw_hook.h"
-void MW_Hook_Message (long buttons);
-
-
 /* main window procedure */
 static LONG WINAPI MainWndProc (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	LONG lRet = 1;
-	int fActive, fMinimized, temp;
-	extern unsigned int uiWheelMessage;
+	int fActive, fMinimized;
 
 	struct display *d;
 
 	d = (struct display *)GetWindowLong(hWnd, GWL_USERDATA);
-
-#if 0
-	if (uMsg == uiWheelMessage)
-	{
-		uMsg = WM_MOUSEWHEEL;
-		wParam <<= 16;
-	}
-#endif
 
 	switch (uMsg)
 	{
@@ -154,13 +148,6 @@ static LONG WINAPI MainWndProc (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 		case WM_SYSCHAR:
 			// keep Alt-Space from happening
 			break;
-
-		case WM_MWHOOK:
-		#if 0
-			MW_Hook_Message (lParam);
-		#endif
-			break;
-
 
 		case WM_SIZE:
 			break;
