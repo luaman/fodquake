@@ -112,11 +112,10 @@ ifeq ($(OS), win32)
 	OSOBJS= \
 		sys_win.o \
 		thread_win32.o \
+		snd_dx7.o \
 		net_win32.o \
 		cd_null.o \
 		in_dinput8.o \
-
-#		snd_dx7.o \
 
 	OSSWOBJS=vid_win.o vid_mode_win32.o
 	OSSWLDFLAGS=-lmgllt -lwsock32 -lgdi32 -ldxguid -lwinmm
