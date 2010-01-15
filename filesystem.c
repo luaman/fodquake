@@ -143,14 +143,21 @@ void FS_CreatePath(char *path)
 int file_from_pak;		// global indicating file came from pack file ZOID
 int file_from_gamedir;
 
+static int pakfile_compare(const void *a, const void *b)
+{
+	const struct packfile *paka, *pakb;
+
+	paka = a;
+	pakb = b;
+
+	return strcmp(paka->name, pakb->name);
+}
+
 int FS_FOpenFile(char *filename, FILE ** file)
 {
 	struct searchpath *search;
 	struct pack *pak;
-	int i;
-	int ret;
-
-	int searchbegin, searchend;
+	struct packfile *pakfile;
 
 	*file = NULL;
 	file_from_pak = 0;
@@ -170,35 +177,21 @@ int FS_FOpenFile(char *filename, FILE ** file)
 			// look through all the pak file elements
 			pak = search->pack;
 
-			searchbegin = 0;
-			searchend = pak->numfiles - 1;
-			for (i = pak->numfiles / 2;; i = searchbegin + ((searchend - searchbegin) / 2))
+			pakfile = bsearch(filename, pak->files, pak->numfiles, sizeof(*pak->files), pakfile_compare);
+
+			if (pakfile)
 			{
-				ret = strcmp(filename, pak->files[i].name);
-				if (ret == 0)
-				{
-					if (developer.value)
-						Sys_Printf("PackFile: %s : %s\n", pak->filename, filename);
-					// open a new file on the pakfile
-					if (!(*file = fopen(pak->filename, "rb")))
-						Sys_Error("Couldn't reopen %s", pak->filename);
-					fseek(*file, pak->files[i].filepos, SEEK_SET);
-					com_filesize = pak->files[i].filelen;
+				if (developer.value)
+					Sys_Printf("PackFile: %s : %s\n", pak->filename, filename);
+				// open a new file on the pakfile
+				if (!(*file = fopen(pak->filename, "rb")))
+					Sys_Error("Couldn't reopen %s", pak->filename);
+				fseek(*file, pakfile->filepos, SEEK_SET);
+				com_filesize = pakfile->filelen;
 
-					file_from_pak = 1;
-					Q_snprintfz(com_netpath, sizeof(com_netpath), "%s#%i", pak->filename, i);
-					return com_filesize;
-				}
-				else
-				{
-					if (searchbegin == searchend)
-						break;
-
-					if (ret < 0)
-						searchend = i;
-					else
-						searchbegin = i + 1;
-				}
+				file_from_pak = 1;
+				Q_snprintfz(com_netpath, sizeof(com_netpath), "%s#%i", pak->filename, pakfile - pak->files);
+				return com_filesize;
 			}
 		}
 		else
