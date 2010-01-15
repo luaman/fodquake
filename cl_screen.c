@@ -1054,12 +1054,14 @@ void SCR_UpdateScreen (void) {
 	}
 
 #ifdef _WIN32
+#if 0
 	{	// don't suck up any cpu if minimized
 		extern int Minimized;
 
 		if (Minimized)
 			return;
 	}
+#endif
 #endif
 
 	vid.numpages = 2 + gl_triplebuffer.value;
