@@ -42,16 +42,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 int do_stdin = 0;
 qboolean stdin_ready;
 
-qboolean		ActiveApp, Minimized;
 qboolean		WinNT, Win2K;
 
 
-qboolean OnChange_sys_highpriority (cvar_t *, char *);
-cvar_t	sys_highpriority = {"sys_highpriority", "0", 0, OnChange_sys_highpriority};
+static qboolean OnChange_sys_highpriority (cvar_t *, char *);
+static cvar_t	sys_highpriority = {"sys_highpriority", "0", 0, OnChange_sys_highpriority};
 
 
-cvar_t	sys_yieldcpu = {"sys_yieldcpu", "0"};
-cvar_t	sys_inactivesleep = {"sys_inactiveSleep", "1"};
+static cvar_t	sys_yieldcpu = {"sys_yieldcpu", "0"};
 
 static HANDLE	qwclsemaphore;
 static HANDLE	tevent;
@@ -60,54 +58,6 @@ static HANDLE	hinput, houtput;
 void MaskExceptions (void);
 void Sys_PopFPCW (void);
 void Sys_PushFPCW_SetHigh (void);
-
-#ifndef WITHOUT_WINKEYHOOK
-
-static HHOOK WinKeyHook;
-static qboolean WinKeyHook_isActive;
-
-LRESULT CALLBACK LLWinKeyHook(int Code, WPARAM wParam, LPARAM lParam);
-qboolean OnChange_sys_disableWinKeys(cvar_t *var, char *string);
-cvar_t	sys_disableWinKeys = {"sys_disableWinKeys", "0", 0, OnChange_sys_disableWinKeys};
-
-qboolean OnChange_sys_disableWinKeys(cvar_t *var, char *string) {
-	if (Q_atof(string)) {
-		if (!WinKeyHook_isActive) {
-			if ((WinKeyHook = SetWindowsHookEx(13, LLWinKeyHook, global_hInstance, 0))) {
-				WinKeyHook_isActive = true;
-			} else {
-				Com_Printf("Failed to install winkey hook.\n");
-				Com_Printf("Microsoft Windows NT 4.0, 2000 or XP is required.\n");
-				return true;
-			}
-		}
-	} else {
-		if (WinKeyHook_isActive) {
-			UnhookWindowsHookEx(WinKeyHook);
-			WinKeyHook_isActive = false;
-		}
-	}
-	return false;
-}
-
-LRESULT CALLBACK LLWinKeyHook(int Code, WPARAM wParam, LPARAM lParam) {
-	PKBDLLHOOKSTRUCT p;
-
-	p = (PKBDLLHOOKSTRUCT) lParam;
-
-	if (ActiveApp) {
-		switch(p->vkCode) {
-			case VK_LWIN: Key_Event (K_LWIN, !(p->flags & LLKHF_UP)); return 1;
-			case VK_RWIN: Key_Event (K_RWIN, !(p->flags & LLKHF_UP)); return 1;
-			case VK_APPS: Key_Event (K_MENU, !(p->flags & LLKHF_UP)); return 1;
-		}
-	}
-
-	return CallNextHookEx(NULL, Code, wParam, lParam);
-}
-
-#endif
-
 
 int Sys_SetPriority(int priority) {
     DWORD p;
@@ -123,7 +73,7 @@ int Sys_SetPriority(int priority) {
 	return SetPriorityClass(GetCurrentProcess(), p);
 }
 
-qboolean OnChange_sys_highpriority (cvar_t *var, char *s) {
+static qboolean OnChange_sys_highpriority (cvar_t *var, char *s) {
 	int ok, q_priority;
 	char *desc;
 	float priority;
@@ -233,10 +183,7 @@ void Sys_Quit (void) {
 
 	if (dedicated)
 		FreeConsole ();
-#ifndef WITHOUT_WINKEYHOOK
-	if (WinKeyHook_isActive)
-		UnhookWindowsHookEx(WinKeyHook);
-#endif
+
 	exit (0);
 }
 
@@ -389,11 +336,6 @@ void Sys_CvarInit (void) {
 	Cvar_SetCurrentGroup(CVAR_GROUP_SYSTEM_SETTINGS);
 	Cvar_Register(&sys_highpriority);
 	Cvar_Register(&sys_yieldcpu);
-	Cvar_Register(&sys_inactivesleep);
-#ifndef WITHOUT_WINKEYHOOK
-	if (WinNT)
-		Cvar_Register(&sys_disableWinKeys);	
-#endif
 	Cvar_ResetCurrentGroup();
 }
 
@@ -603,17 +545,8 @@ int WINAPI WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
 
     /* main window message loop */
 	while (1) {
-		if (dedicated) {
+		if (dedicated)
 			NET_Sleep(1);
-		} else if (sys_inactivesleep.value) {
-			// yield the CPU for a little while when paused, minimized, or not the focus
-			if ((cl.paused && (!ActiveApp)) || Minimized || block_drawing) {
-				SleepUntilInput (PAUSE_SLEEP);
-				scr_skipupdate = 1;		// no point in bothering to draw
-			} else if (!ActiveApp) {
-				SleepUntilInput (NOT_FOCUS_SLEEP);
-			}
-		}
 
 		newtime = Sys_DoubleTime ();
 		time = newtime - oldtime;
