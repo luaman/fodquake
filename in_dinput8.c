@@ -51,69 +51,8 @@ struct InputData
 	unsigned int buttoneventhead;
 	unsigned int buttoneventtail;
 
-	unsigned char shiftdown;
-
 	unsigned char repeatkey;
 	unsigned long long nextrepeattime;
-};
-
-#warning Complete this.
-static const unsigned char shiftkeytable[] =
-{
-	0, /* 0 */
-	0,
-	'!',
-	'@',
-	'#',
-	'$',
-	'%',
-	'^',
-	'&',
-	'*',
-	'(', /* 10 */
-	')',
-	'_',
-	'+',
-	0,
-	0,
-	'Q',
-	'W',
-	'E',
-	'R',
-	'T', /* 20 */
-	'Y',
-	'U',
-	'I',
-	'O',
-	'P',
-	'{',
-	'}',
-	0,
-	0,
-	'A', /* 30 */
-	'S',
-	'D',
-	'F',
-	'G',
-	'H',
-	'J',
-	'K',
-	'L',
-	':',
-	'"', /* 40 */
-	'~',
-	0,
-	'|',
-	'Z',
-	'X',
-	'C',
-	'V',
-	'B',
-	'N',
-	'M', /* 50 */
-	'<',
-	'>',
-	'?',
 };
 
 static const unsigned char keytable[] =
@@ -382,8 +321,6 @@ struct InputData *Sys_Input_Init(HWND window)
 											id->buttoneventhead = 0;
 											id->buttoneventtail = 0;
 
-											id->shiftdown = 0;
-
 											return id;
 										}
 									}
@@ -431,25 +368,7 @@ static void keyevent(struct InputData *inputdata, unsigned char rawkey, unsigned
 {
 	if (rawkey < sizeof(keytable) && keytable[rawkey])
 	{
-		if (keytable[rawkey] == K_LSHIFT)
-		{
-			if (down)
-				inputdata->shiftdown |= 1;
-			else
-				inputdata->shiftdown &= ~1;
-		}
-		else if (keytable[rawkey] == K_RSHIFT)
-		{
-			if (down)
-				inputdata->shiftdown |= 2;
-			else
-				inputdata->shiftdown &= ~2;
-		}
-
-		if (inputdata->shiftdown && rawkey < sizeof(shiftkeytable) && shiftkeytable[rawkey])
-			queuekey(inputdata, shiftkeytable[rawkey], down);
-		else
-			queuekey(inputdata, keytable[rawkey], down);
+		queuekey(inputdata, keytable[rawkey], down);
 	}
 	else
 		printf("Key %d\n", rawkey);
