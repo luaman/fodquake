@@ -454,7 +454,7 @@ void FS_SetGamedir(char *dir)
 
 	Q_snprintfz(com_gamedir, sizeof(com_gamedir), "%s/%s", com_basedir, dir);
 
-	if (!strcmp(dir, "id1") || !strcmp(dir, "qw") || !strcmp(dir, "fuhquake"))
+	if (!strcmp(dir, "id1") || !strcmp(dir, "qw") || !strcmp(dir, "fodquake"))
 		return;
 
 	// add the directory to the search path
