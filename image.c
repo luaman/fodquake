@@ -476,6 +476,53 @@ static void PNG_FreeLibrary(void)
 #define qpng_set_IHDR png_set_IHDR
 #define qpng_set_PLTE png_set_PLTE
 
+#elif defined(_WIN32)
+
+int png_handle;
+
+static qboolean PNG_LoadLibrary(void)
+{
+	png_handle = 1;
+	return true;
+}
+
+static void PNG_FreeLibrary(void)
+{
+}
+
+#define qpng_set_sig_bytes png_set_sig_bytes
+#define qpng_sig_cmp png_sig_cmp
+#define qpng_create_read_struct png_create_read_struct
+#define qpng_create_write_struct png_create_write_struct
+#define qpng_create_info_struct png_create_info_struct
+#define qpng_write_info png_write_info
+#define qpng_read_info png_read_info
+#define qpng_set_expand png_set_expand
+#define qpng_set_gray_1_2_4_to_8 png_set_gray_1_2_4_to_8
+#define qpng_set_palette_to_rgb png_set_palette_to_rgb
+#define qpng_set_tRNS_to_alpha png_set_tRNS_to_alpha
+#define qpng_set_gray_to_rgb png_set_gray_to_rgb
+#define qpng_set_filler png_set_filler
+#define qpng_set_strip_16 png_set_strip_16
+#define qpng_read_update_info png_read_update_info
+#define qpng_read_image png_read_image
+#define qpng_write_image png_write_image
+#define qpng_write_end png_write_end
+#define qpng_read_end png_read_end
+#define qpng_destroy_read_struct png_destroy_read_struct
+#define qpng_destroy_write_struct png_destroy_write_struct
+#define qpng_set_compression_level png_set_compression_level
+#define qpng_set_write_fn png_set_write_fn
+#define qpng_set_read_fn png_set_read_fn
+#define qpng_get_io_ptr png_get_io_ptr
+#define qpng_get_valid png_get_valid
+#define qpng_get_rowbytes png_get_rowbytes
+#define qpng_get_channels png_get_channels
+#define qpng_get_bit_depth png_get_bit_depth
+#define qpng_get_IHDR png_get_IHDR
+#define qpng_set_IHDR png_set_IHDR
+#define qpng_set_PLTE png_set_PLTE
+
 #else
 
 static QLIB_HANDLETYPE_T png_handle = NULL;

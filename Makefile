@@ -127,7 +127,7 @@ ifeq ($(OS), win32)
 	ifneq ($(shell $(CC) -dumpmachine | grep cygwin),)
 		OSCFLAGS+= -mno-cygwin
 	endif
-	OSLDFLAGS = -mwindows
+	OSLDFLAGS = -mwindows -lpng -lz
 
 %.windowsicon: %.rc icons/%.ico
 	i586-mingw32msvc-windres -O coff $< $@
