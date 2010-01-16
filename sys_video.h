@@ -24,7 +24,6 @@ void *Sys_Video_Open(const char *mode, unsigned int width, unsigned int height, 
 void Sys_Video_Close(void *display);
 unsigned int Sys_Video_GetNumBuffers(void *display);
 void Sys_Video_Update(void *display, vrect_t *rects);
-void Sys_Video_SetPalette(void *display, unsigned char *palette);
 int Sys_Video_GetKeyEvent(void *display, keynum_t *keynum, qboolean *down);
 void Sys_Video_GetMouseMovement(void *display, int *mousex, int *mousey);
 void Sys_Video_GrabMouse(void *display, int dograb);
@@ -33,19 +32,25 @@ unsigned int Sys_Video_GetWidth(void *display);
 unsigned int Sys_Video_GetHeight(void *display);
 qboolean Sys_Video_GetFullscreen(void *display);
 const char *Sys_Video_GetMode(void *display);
+
 #ifdef GLQUAKE
 void Sys_Video_BeginFrame(void *display, unsigned int *x, unsigned int *y, unsigned int *width, unsigned int *height);
 void Sys_Video_SetGamma(void *display, unsigned short *ramps);
 qboolean Sys_Video_HWGammaSupported(void *display);
 #else
+void Sys_Video_SetPalette(void *display, unsigned char *palette);
 unsigned int Sys_Video_GetBytesPerRow(void *display);
 void *Sys_Video_GetBuffer(void *display);
 #endif
+
+/* Video mode functions */
 
 const char * const *Sys_Video_GetModeList(void);
 void Sys_Video_FreeModeList(const char * const *displaymodes);
 const char *Sys_Video_GetModeDescription(const char *mode);
 void Sys_Video_FreeModeDescription(const char *modedescription);
+
+/* Clipboard functions */
 
 const char *Sys_Video_GetClipboardText(void *display);
 void Sys_Video_FreeClipboardText(void *display, const char *text);
