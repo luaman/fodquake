@@ -1089,20 +1089,21 @@ static int ismovementcommand(const char *s)
 }
 
 //Called by the system between frames for both key up and key down events Should NOT be called during an interrupt!
-void Key_Event (int key, qboolean down) {
+void Key_Event(int key, qboolean down)
+{
 	char *kb, cmd[1024];
 	extern int movementkey;
 
-	//	Com_Printf ("%i : %i\n", key, down); //@@@
+	//	Com_Printf("%i : %i\n", key, down); //@@@
 
 	if (key == K_LALT || key == K_RALT)
-		Key_Event (K_ALT, down);
+		Key_Event(K_ALT, down);
 	else if (key == K_LCTRL || key == K_RCTRL)
-		Key_Event (K_CTRL, down);
+		Key_Event(K_CTRL, down);
 	else if (key == K_LSHIFT || key == K_RSHIFT)
-		Key_Event (K_SHIFT, down);
+		Key_Event(K_SHIFT, down);
 	else if (key == K_LWIN || key == K_RWIN)
-		Key_Event (K_WIN, down);
+		Key_Event(K_WIN, down);
 
 	keydown[key] = down;
 
@@ -1112,94 +1113,120 @@ void Key_Event (int key, qboolean down) {
 	key_lastpress = key;
 
 	// update auto-repeat status
-	if (down) {
+	if (down)
+	{
 		key_repeats[key]++;
-		if (key_repeats[key] > 1) {
+		if (key_repeats[key] > 1)
+		{
 			if ((key != K_BACKSPACE && key != K_DEL
-				&& key != K_LEFTARROW && key != K_RIGHTARROW
-				&& key != K_UPARROW && key != K_DOWNARROW
-				&& key != K_PGUP && key != K_PGDN && (key < 32 || key > 126 || key == '`'))
-				|| (key_dest == key_game && cls.state == ca_active))
+			  && key != K_LEFTARROW && key != K_RIGHTARROW
+			  && key != K_UPARROW && key != K_DOWNARROW
+			  && key != K_PGUP && key != K_PGDN && (key < 32 || key > 126 || key == '`'))
+			 || (key_dest == key_game && cls.state == ca_active))
+			{
 				return;	// ignore most autorepeats
+			}
 		}
 	}
 
 	// handle escape specialy, so the user can never unbind it
-	if (key == K_ESCAPE) {
+	if (key == K_ESCAPE)
+	{
 		if (!down)
 			return;
-		switch (key_dest) {
-		case key_message:
-			Key_Message (key);
-			break;
-		case key_menu:
-			M_Keydown (key);
-			break;
-		case key_game:
-			M_ToggleMenu_f ();
-			break;
-		case key_console:
-			if (!SCR_NEED_CONSOLE_BACKGROUND)
-				Con_ToggleConsole_f ();
-			else
-				M_ToggleMenu_f ();
-			break;
-		case key_serverbrowser:
-			SB_Key(key);
-			break;
-		default:
-			assert(!"Bad key_dest");
+
+		switch(key_dest)
+		{
+			case key_message:
+				Key_Message(key);
+				break;
+
+			case key_menu:
+				M_Keydown(key);
+				break;
+
+			case key_game:
+				M_ToggleMenu_f();
+				break;
+
+			case key_console:
+				if (!SCR_NEED_CONSOLE_BACKGROUND)
+					Con_ToggleConsole_f();
+				else
+					M_ToggleMenu_f();
+				break;
+
+			case key_serverbrowser:
+				SB_Key(key);
+				break;
+
+			default:
+				assert(!"Bad key_dest");
 		}
+
 		return;
 	}
 
 	// key up events only generate commands if the game key binding is a button command (leading + sign).
 	// These will occur even in console mode, to keep the character from continuing an action started before a
 	// console switch.  Button commands include the kenum as a parameter, so multiple downs can be matched with ups
-	if (!down) {
+	if (!down)
+	{
 		kb = keybindings[key];
-		if (kb && kb[0] == '+' && keyactive[key]) {
+		if (kb && kb[0] == '+' && keyactive[key])
+		{
 			if (ismovementcommand(kb))
 				snprintf(cmd, sizeof(cmd), "-%s %i %d\n", kb+1, key, movementkey);
 			else
 				snprintf(cmd, sizeof(cmd), "-%s %i\n", kb+1, key);
-			Cbuf_AddText (cmd);
+
+			Cbuf_AddText(cmd);
 			keyactive[key] = false;
 		}
-		if (keyshift[key] != key) {
+		if (keyshift[key] != key)
+		{
 			kb = keybindings[keyshift[key]];
-			if (kb && kb[0] == '+' && keyactive[keyshift[key]]) {
+			if (kb && kb[0] == '+' && keyactive[keyshift[key]])
+			{
 				if (ismovementcommand(kb))
 					snprintf(cmd, sizeof(cmd), "-%s %i %d\n", kb+1, key, movementkey);
 				else
 					snprintf(cmd, sizeof(cmd), "-%s %i\n", kb+1, key);
-				Cbuf_AddText (cmd);
+
+				Cbuf_AddText(cmd);
 				keyactive[keyshift[key]] = false;
 			}
 		}
+
 		return;
 	}
 
 	// if not a consolekey, send to the interpreter no matter what mode is
-	if	( 
-			(key_dest == key_menu && menubound[key]) || 
-			((key_dest == key_console || key_dest == key_message) && !consolekeys[key]) || 
-			(key_dest == key_game && (cls.state == ca_active || !consolekeys[key]))
-		) {
+	if ((key_dest == key_menu && menubound[key])
+	 || ((key_dest == key_console || key_dest == key_message) && !consolekeys[key])
+	 || (key_dest == key_game && (cls.state == ca_active || !consolekeys[key])))
+	{
 		kb = keybindings[key];
-		if (kb) {
-			if (kb[0] == '+'){	// button commands add keynum as a parm
+		if (kb)
+		{
+			if (kb[0] == '+')
+			{
+				// button commands add keynum as a parm
 				if (ismovementcommand(kb))
 					snprintf(cmd, sizeof(cmd), "%s %i %d\n", kb, key, movementkey);
 				else
 					snprintf(cmd, sizeof(cmd), "%s %i\n", kb, key);
-				Cbuf_AddText (cmd);
+
+				Cbuf_AddText(cmd);
 				keyactive[key] = true;
-			} else {
-				Cbuf_AddText (kb);
-				Cbuf_AddText ("\n");
+			}
+			else
+			{
+				Cbuf_AddText(kb);
+				Cbuf_AddText("\n");
 			}
 		}
+
 		return;
 	}
 
@@ -1209,31 +1236,38 @@ void Key_Event (int key, qboolean down) {
 	if (keydown[K_SHIFT])
 		key = keyshift[key];
 
-	switch (key_dest) {
-	case key_message:
-		Key_Message (key);
-		break;
-	case key_menu:
-		M_Keydown (key);
-		break;
+	switch(key_dest)
+	{
+		case key_message:
+			Key_Message(key);
+			break;
 
-	case key_game:
-	case key_console:
-		Key_Console (key);
-		break;
-	case key_serverbrowser:
-		SB_Key(key);
-		break;
-	default:
-		assert(!"Bad key_dest");
+		case key_menu:
+			M_Keydown(key);
+			break;
+
+		case key_game:
+		case key_console:
+			Key_Console(key);
+			break;
+
+		case key_serverbrowser:
+			SB_Key(key);
+			break;
+
+		default:
+			assert(!"Bad key_dest");
 	}
 }
 
-void Key_ClearStates (void) {
-	int		i;
+void Key_ClearStates(void)
+{
+	int i;
 
-	for (i = 0; i < 256; i++) {
+	for (i = 0; i < 256; i++)
+	{
 		keydown[i] = false;
 		key_repeats[i] = false;
 	}
 }
+
