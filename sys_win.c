@@ -238,7 +238,6 @@ double Sys_DoubleTime (void) {
 	return (now - starttime) / 1000.0;
 }
 
-#warning Do this properly
 unsigned long long Sys_IntTime()
 {
 	unsigned long long ret;
