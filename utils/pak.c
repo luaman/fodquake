@@ -108,7 +108,6 @@ static int scanpakdir(FILE *f, long *offset, const char *ospath, const char *pak
 								}
 								else
 								{
-									printf("%s\n", pakdirentry->name);
 									WriteU32LE(&pakdirentry->offset, *offset);
 									WriteU32LE(&pakdirentry->length, st.st_size);
 									(*numfiles)++;
