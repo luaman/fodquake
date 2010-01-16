@@ -42,8 +42,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 int do_stdin = 0;
 qboolean stdin_ready;
 
-qboolean		WinNT, Win2K;
-
 
 static qboolean OnChange_sys_highpriority (cvar_t *, char *);
 static cvar_t	sys_highpriority = {"sys_highpriority", "0", 0, OnChange_sys_highpriority};
@@ -376,11 +374,8 @@ void Sys_Init_ (void) {
 	if (!GetVersionEx(&vinfo))
 		Sys_Error ("Couldn't get OS info");
 
-	if ((vinfo.dwMajorVersion < 4) || (vinfo.dwPlatformId == VER_PLATFORM_WIN32s))
-		Sys_Error ("FuhQuake requires at least Win95 or NT 4.0");
-
-	WinNT = (vinfo.dwPlatformId == VER_PLATFORM_WIN32_NT) ? true : false;
-	Win2K = WinNT && (vinfo.dwMajorVersion == 5);
+	if ((vinfo.dwMajorVersion < 5) || (vinfo.dwPlatformId == VER_PLATFORM_WIN32s))
+		Sys_Error ("FodQuake requires at least Windows 2000");
 }
 
 /********************************* CLIPBOARD *********************************/
