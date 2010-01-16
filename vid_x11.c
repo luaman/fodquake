@@ -827,5 +827,10 @@ void *Sys_Video_GetBuffer(void *display)
 	return d->x_framebuffer[d->current_framebuffer]->data;
 }
 
+int Sys_Video_FocusChanged(void *display)
+{
+	return 0;
+}
+
 #include "clipboard_x11.c"
 

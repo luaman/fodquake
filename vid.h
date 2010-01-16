@@ -99,3 +99,5 @@ unsigned int VID_GetHeight(void);
 qboolean VID_GetFullscreen(void);
 const char *VID_GetMode(void);
 
+int VID_FocusChanged(void);
+

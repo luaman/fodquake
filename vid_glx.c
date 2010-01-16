@@ -493,5 +493,10 @@ qboolean Sys_Video_HWGammaSupported(void *display)
 	return d->vid_gammaworks;
 }
 
+int Sys_Video_FocusChanged(void *display)
+{
+	return 0;
+}
+
 #include "clipboard_x11.c"
 

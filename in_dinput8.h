@@ -22,4 +22,5 @@ void Sys_Input_Shutdown(struct InputData *inputdata);
 int Sys_Input_GetKeyEvent(struct InputData *inputdata, keynum_t *keynum, qboolean *down);
 void Sys_Input_GetMouseMovement(struct InputData *inputdata, int *mousex, int *mousey);
 void Sys_Input_GrabMouse(struct InputData *inputdata, int dograb);
+void Sys_Input_ClearRepeat(struct InputData *inputdata);
 

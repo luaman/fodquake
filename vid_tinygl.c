@@ -382,3 +382,9 @@ void *tglGetProcAddress(char *s)
 
 	return 0;
 }
+
+int Sys_Video_FocusChanged(void *display)
+{
+	return 0;
+}
+

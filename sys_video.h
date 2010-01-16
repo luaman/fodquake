@@ -32,6 +32,7 @@ unsigned int Sys_Video_GetWidth(void *display);
 unsigned int Sys_Video_GetHeight(void *display);
 qboolean Sys_Video_GetFullscreen(void *display);
 const char *Sys_Video_GetMode(void *display);
+int Sys_Video_FocusChanged(void *display);
 
 #ifdef GLQUAKE
 void Sys_Video_BeginFrame(void *display, unsigned int *x, unsigned int *y, unsigned int *width, unsigned int *height);

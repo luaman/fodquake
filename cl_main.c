@@ -1771,6 +1771,7 @@ void CL_Frame (double time)
 {
 	keynum_t key;
 	qboolean down;
+	int focuschanged;
 
 	static double extratime = 0.001;
 	double minframetime;
@@ -1834,8 +1835,13 @@ void CL_Frame (double time)
 		cl.gametime += cls.frametime;
 	}
 
+	focuschanged = VID_FocusChanged();
+
 	while(VID_GetKeyEvent(&key, &down))
 		Key_Event(key, down);
+
+	if (focuschanged)
+		Key_ClearStates();
 
 	// process console commands
 	Cbuf_Execute();

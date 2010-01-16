@@ -530,3 +530,9 @@ void Sys_Input_GrabMouse(struct InputData *inputdata, int dograb)
 {
 }
 
+void Sys_Input_ClearRepeat(struct InputData *inputdata)
+{
+	inputdata->repeatkey = 0;
+	inputdata->nextrepeattime = 0;
+}
+

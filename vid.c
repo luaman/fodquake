@@ -498,3 +498,8 @@ const char *VID_GetMode()
 	return "";
 }
 
+int VID_FocusChanged()
+{
+	return Sys_Video_FocusChanged(display);
+}
+

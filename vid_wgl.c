@@ -35,7 +35,7 @@ struct display
 	int height;
 	HGLRC glctx;
 	qboolean isfullscreen;
-	qboolean isfocused;
+	qboolean focuschanged;
 
 	struct InputData *inputdata;
 
@@ -168,12 +168,7 @@ static LONG WINAPI MainWndProc (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 			break;
 
 		case WM_ACTIVATE:
-			fActive = LOWORD(wParam);
-			fMinimized = (BOOL) HIWORD(wParam);
-			d->isfocused = !(fActive == WA_INACTIVE);
-
-#warning Need to clear mouse/keyboard/whatever states here
-
+			d->focuschanged = 1;
 			break;
 
 		case WM_DESTROY:
@@ -556,5 +551,23 @@ int Sys_Video_GetKeyEvent(void *display, keynum_t *keynum, qboolean *down)
 	ProcessMessages();
 
 	return Sys_Input_GetKeyEvent(d->inputdata, keynum, down);
+}
+
+int Sys_Video_FocusChanged(void *display)
+{
+	struct display *d;
+
+	d = display;
+
+	ProcessMessages();
+
+	if (d->focuschanged)
+	{
+		d->focuschanged = 0;
+		Sys_Input_ClearRepeat(d->inputdata);
+		return 1;
+	}
+
+	return 0;
 }
 

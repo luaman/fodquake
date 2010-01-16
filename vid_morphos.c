@@ -376,3 +376,8 @@ void *Sys_Video_GetBuffer(void *display)
 	return d->buffer;
 }
 
+int Sys_Video_FocusChanged(void *display)
+{
+	return 0;
+}
+
