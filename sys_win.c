@@ -241,6 +241,16 @@ double Sys_DoubleTime (void) {
 #warning Do this properly
 unsigned long long Sys_IntTime()
 {
+	unsigned long long ret;
+
+	if (hwtimer)
+	{
+		QueryPerformanceCounter(&ret);
+		ret *= 1000000;
+		ret /= pfreq;
+		return ret;
+	}
+
 	return Sys_DoubleTime()*1000000;
 }
 
