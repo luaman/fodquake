@@ -188,52 +188,42 @@ void Sys_Quit (void) {
 static double pfreq;
 static qboolean hwtimer = false;
 
-void Sys_InitDoubleTime (void) {
+static __int64 startcount;
+static DWORD starttime;
+
+void Sys_InitDoubleTime(void)
+{
 	__int64 freq;
 
-	if (!COM_CheckParm("-nohwtimer") && QueryPerformanceFrequency((LARGE_INTEGER *)&freq) && freq > 0) {
+	timeBeginPeriod(1);
+
+	if (!COM_CheckParm("-nohwtimer") && QueryPerformanceFrequency((LARGE_INTEGER *)&freq) && freq > 0)
+	{
 		// hardware timer available
 		pfreq = (double)freq;
+		QueryPerformanceCounter((LARGE_INTEGER *)&startcount);
 		hwtimer = true;
-	} else {
-		// make sure the timer is high precision, otherwise NT gets 18ms resolution
-		timeBeginPeriod (1);
 	}
-
-	timeBeginPeriod(1);
+	else
+		starttime = timeGetTime();
 }
 
-double Sys_DoubleTime (void) {
+double Sys_DoubleTime(void)
+{
 	__int64 pcount;
-	static __int64 startcount;
-	static DWORD starttime;
-	static qboolean first = true;
 	DWORD now;
 
-	if (hwtimer) {
+	if (hwtimer)
+	{
 		QueryPerformanceCounter ((LARGE_INTEGER *)&pcount);
-		if (first) {
-			first = false;
-			startcount = pcount;
-			return 0.0;
-		}
 		// TODO: check for wrapping
 		return (pcount - startcount) / pfreq;
 	}
 
 	now = timeGetTime();
 
-	if (first) {
-		first = false;
-		starttime = now;
-		return 0.0;
-	}
-
 	if (now < starttime) // wrapped?
 		return (now / 1000.0) + (LONG_MAX - starttime / 1000.0);
-
-	if (now - starttime == 0)
-		return 0.0;
 
 	return (now - starttime) / 1000.0;
 }
@@ -245,6 +235,7 @@ unsigned long long Sys_IntTime()
 	if (hwtimer)
 	{
 		QueryPerformanceCounter(&ret);
+		ret -= startcount;
 		ret *= 1000000;
 		ret /= pfreq;
 		return ret;
@@ -466,22 +457,26 @@ int		argc;
 char	*argv[MAX_NUM_ARGVS];
 static char	*empty_string = "";
 
-void ParseCommandLine (char *lpCmdLine) {
+static void ParseCommandLine(char *lpCmdLine)
+{
 	argc = 1;
 	argv[0] = empty_string;
 
-	while (*lpCmdLine && (argc < MAX_NUM_ARGVS)) {
+	while (*lpCmdLine && (argc < MAX_NUM_ARGVS))
+	{
 		while (*lpCmdLine && ((*lpCmdLine <= 32) || (*lpCmdLine > 126)))
 			lpCmdLine++;
 
-		if (*lpCmdLine) {
+		if (*lpCmdLine)
+		{
 			argv[argc] = lpCmdLine;
 			argc++;
 
 			while (*lpCmdLine && ((*lpCmdLine > 32) && (*lpCmdLine <= 126)))
 				lpCmdLine++;
 
-			if (*lpCmdLine) {
+			if (*lpCmdLine)
+			{
 				*lpCmdLine = 0;
 				lpCmdLine++;
 			}
@@ -489,8 +484,9 @@ void ParseCommandLine (char *lpCmdLine) {
 	}
 }
 
-void SleepUntilInput (int time) {
-	MsgWaitForMultipleObjects (1, &tevent, FALSE, time, QS_ALLINPUT);
+static void SleepUntilInput(int time)
+{
+	MsgWaitForMultipleObjects(1, &tevent, FALSE, time, QS_ALLINPUT);
 }
 
 HINSTANCE	global_hInstance;
@@ -547,7 +543,7 @@ int WINAPI WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
 
 	oldtime = Sys_DoubleTime ();
 
-    /* main window message loop */
+	/* main window message loop */
 	while (1) {
 		if (dedicated)
 			NET_Sleep(1);
@@ -558,7 +554,8 @@ int WINAPI WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
 		oldtime = newtime;
 
 	}
-    return TRUE;	/* return success of application */
+
+	return TRUE;	/* return success of application */
 }
 
 void usleep(unsigned int usec)
