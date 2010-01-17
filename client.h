@@ -61,9 +61,9 @@ typedef struct {
 } player_state_t;
 
 #define	MAX_SCOREBOARDNAME	16
-typedef struct player_info_s {
+struct player_info_s
+{
 	int		userid;
-	char	userinfo[MAX_INFO_STRING];
 
 	// scoreboard information
 	char	name[MAX_SCOREBOARDNAME];
@@ -71,30 +71,32 @@ typedef struct player_info_s {
 	int		frags;
 	int		ping;
 	byte	pl;
+	unsigned char	spectator;
 
 	// skin information
-	int		topcolor;
-	int		bottomcolor;
+	unsigned char	topcolor;
+	unsigned char	bottomcolor;
 
-	int		_topcolor;
-	int		_bottomcolor;
+	unsigned char	_topcolor;
+	unsigned char	_bottomcolor;
 
-	int		real_topcolor;
-	int		real_bottomcolor;
-	char	team[MAX_INFO_STRING];
-	char	_team[MAX_INFO_STRING];
+	unsigned char	real_topcolor;
+	unsigned char	real_bottomcolor;
 
-	int		spectator;
-	byte	translations[VID_GRADES*256];
 	skin_t	*skin;
-
-	int		stats[MAX_CL_STATS];	
-
 
 	qboolean	skin_refresh;	
 	qboolean	ignored;		//for ignore
 
-} player_info_t;
+	int		stats[MAX_CL_STATS];	
+
+	byte	translations[VID_GRADES*256];
+	char	userinfo[MAX_INFO_STRING];
+	char	team[MAX_INFO_STRING];
+	char	_team[MAX_INFO_STRING];
+} __attribute__ ((aligned (64)));
+
+typedef struct player_info_s player_info_t;
 
 
 typedef struct {
