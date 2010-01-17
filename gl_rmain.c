@@ -601,12 +601,9 @@ static void R_DrawAliasModelList2TMU(entity_t *ent, unsigned int entcount)
 	anim = (int) (cl.time * 10) & 3;
 
 	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-	if (!(full_light || !gl_fb_models.value))
-	{
-		GL_SelectTexture(GL_TEXTURE1_ARB);
-		glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
-		GL_SelectTexture(GL_TEXTURE0_ARB);
-	}
+	GL_SelectTexture(GL_TEXTURE1_ARB);
+	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
+	GL_SelectTexture(GL_TEXTURE0_ARB);
 
 	/* Stuff that depends on the entity itself. */
 
