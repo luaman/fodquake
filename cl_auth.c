@@ -136,7 +136,6 @@ static void Auth_CheckFServerResponse (char *s, int flags, int offset) {
 		Auth_AuthenticateClient(slot);
 		if ((port = strchr(data, ':')))
 			*port = 0;
-		Q_strncpyz(cl.players[slot].f_server, data, sizeof(cl.players[slot].f_server));
 	}
 }
 
@@ -145,8 +144,6 @@ static void Auth_UnauthenticateClient(int slot) {
 	if (!strlen(Info_ValueForKey(cl.players[slot].userinfo, "*FuhQuake")) && auth_validateclients.value != 2)
 		return;
 
-	cl.players[slot].validated = false;
-	cl.players[slot].f_server[0] = 0;
 	if (auth_warninvalid.value)
 		Com_Printf("Warning Invalid Client: User %s  (userid: %d)\n", cl.players[slot].name, Player_SlottoId(slot));
 }
@@ -154,8 +151,6 @@ static void Auth_UnauthenticateClient(int slot) {
 static void Auth_AuthenticateClient(int slot) {
 	if (!strlen(Info_ValueForKey(cl.players[slot].userinfo, "*FuhQuake")) && auth_validateclients.value != 2)
 		return;
-
-	cl.players[slot].validated = true;
 }
 
 static void Auth_CheckAuthResponse (char *s, int flags, int offset) {

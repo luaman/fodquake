@@ -93,8 +93,6 @@ typedef struct player_info_s {
 
 	qboolean	skin_refresh;	
 	qboolean	ignored;		//for ignore
-	qboolean	validated;		//for authentication
-	char		f_server[16];	//for f_server responses
 
 } player_info_t;
 

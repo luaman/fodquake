@@ -1212,8 +1212,7 @@ void CL_ProcessUserInfo (int slot, player_info_t *player, char *key) {
 void CL_PlayerEnterSlot(player_info_t *player) {
 	extern player_state_t oldplayerstates[MAX_CLIENTS];
 
-	player->ignored = player->validated = false;
-	player->f_server[0] = 0;
+	player->ignored = false;
 	memset(&oldplayerstates[player - cl.players], 0, sizeof(player_state_t));
 	Stats_EnterSlot(player - cl.players);
 }
