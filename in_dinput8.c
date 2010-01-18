@@ -256,7 +256,7 @@ static const unsigned char keytable[] =
 	0,
 	0,
 	0,
-	0,
+	K_HOME,
 	K_UPARROW, /* 200 */
 	K_PGUP,
 	0,
@@ -264,11 +264,11 @@ static const unsigned char keytable[] =
 	0,
 	K_RIGHTARROW,
 	0,
-	0,
+	K_END,
 	K_DOWNARROW,
 	K_PGDN,
-	0, /* 210 */
-	0,
+	K_INS, /* 210 */
+	K_DEL,
 	0,
 	0,
 	0,
