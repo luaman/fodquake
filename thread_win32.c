@@ -59,6 +59,25 @@ void Sys_Thread_DeleteThread(struct SysThread *thread)
 
 int Sys_Thread_SetThreadPriority(struct SysThread *thread, enum SysThreadPriority priority)
 {
+	int pri;
+
+	switch(priority)
+	{
+		case SYSTHREAD_PRIORITY_LOW:
+			pri = THREAD_PRIORITY_LOWEST;
+			break;
+
+		case SYSTHREAD_PRIORITY_HIGH:
+			pri = THREAD_PRIORITY_HIGHEST;
+			break;
+
+		default:
+			pri = THREAD_PRIORITY_NORMAL;
+			break;
+	}
+
+	SetThreadPriority(thread->thread, priority);
+
 	return 0;
 }
 
