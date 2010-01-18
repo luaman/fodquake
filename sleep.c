@@ -137,6 +137,7 @@ void Sleep_Init()
 void Sleep_Sleep(unsigned int sleeptime)
 {
 	unsigned int real_sleep_time;
+	unsigned long long curtime;
 	unsigned long long endtime;
 
 	endtime = Sys_IntTime();
