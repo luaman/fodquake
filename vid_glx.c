@@ -37,6 +37,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "input.h"
 #include "gl_local.h"
 
+#define GLX_GLXEXT_PROTOTYPES 1
 #include <GL/glx.h>
 
 #include <X11/keysym.h>
@@ -72,6 +73,8 @@ struct display
 	qboolean vid_gammaworks;
 	unsigned short systemgammaramp[3][256];
 	unsigned short *currentgammaramp;
+
+	int utterly_fucktastically_broken_driver;
 };
 
 
@@ -249,7 +252,8 @@ void Sys_Video_Update(void *display, vrect_t *rects)
 	glFlush();
 	glXSwapBuffers(d->x_disp, d->x_win);
 
-	glXWaitGL();
+	if (!d->utterly_fucktastically_broken_driver)
+		glXWaitGL();
 }
 
 /************************************* VID SHUTDOWN *************************************/
@@ -463,6 +467,11 @@ void *Sys_Video_Open(const char *mode, unsigned int width, unsigned int height, 
 				d->ctx = glXCreateContext(d->x_disp, visinfo, NULL, True);
 
 				glXMakeCurrent(d->x_disp, d->x_win, d->ctx);
+
+				if (strcmp(glGetString(GL_VENDOR), "ATI Technologies Inc.") == 0)
+				{
+					d->utterly_fucktastically_broken_driver = 1;
+				}
 
 				InitSig(); // trap evil signals
 
