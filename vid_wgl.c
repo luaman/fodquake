@@ -36,12 +36,14 @@ struct display
 	HGLRC glctx;
 	qboolean isfullscreen;
 	qboolean focuschanged;
+	qboolean windowactive;
 
 	struct InputData *inputdata;
 
 	char mode[256];
 
 	int gammaworks;
+	unsigned short currentgammaramps[3][256];
 	unsigned short originalgammaramps[3][256];
 };
 
@@ -168,6 +170,24 @@ static LONG WINAPI MainWndProc (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 			break;
 
 		case WM_ACTIVATE:
+			if (d->isfullscreen)
+			{
+				if (wParam == WA_INACTIVE)
+				{
+					if (d->gammaworks)
+					{
+						SetDeviceGammaRamp(d->dc, d->originalgammaramps);
+					}
+				}
+				else
+				{
+					if (d->gammaworks)
+					{
+						SetDeviceGammaRamp(d->dc, d->currentgammaramps);
+					}
+				}
+			}
+			d->windowactive  = wParam != WA_INACTIVE;
 			d->focuschanged = 1;
 			break;
 
@@ -250,7 +270,10 @@ void Sys_Video_SetGamma(void *display, unsigned short *ramps)
 		ramps[j * 256 + 128] = min(ramps[j * 256 + 128], 0xFE00);
 	}
 
-	SetDeviceGammaRamp(d->dc, ramps);
+	memcpy(d->currentgammaramps, ramps, sizeof(d->currentgammaramps));
+
+	if (d->windowactive)
+		SetDeviceGammaRamp(d->dc, ramps);
 }
 
 void Sys_Video_BeginFrame(void *display, unsigned int *x, unsigned int *y, unsigned int *width, unsigned int *height)
@@ -276,6 +299,9 @@ void Sys_Video_Update(void *display, vrect_t *rects)
 	ProcessMessages();
 	SwapBuffers(d->dc);
 	ProcessMessages();
+
+	/* In a hope that it helps the networking thread on a uniprocessor system. */
+	Sleep(0);
 }
 
 void Sys_Video_CvarInit()
@@ -347,6 +373,7 @@ void *Sys_Video_Open(const char *mode, unsigned int width, unsigned int height, 
 			d->height = height;
 
 			d->isfullscreen = fullscreen;
+			d->windowactive = 1;
 
 			/* Register the frame class */
 			wc.style         = 0;
