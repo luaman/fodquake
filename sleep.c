@@ -137,18 +137,11 @@ void Sleep_Init()
 void Sleep_Sleep(unsigned int sleeptime)
 {
 	unsigned int real_sleep_time;
-	struct timeval endtime;
-	struct timeval curtime;
+	unsigned long long endtime;
 
-	gettimeofday(&endtime, 0);
+	endtime = Sys_IntTime();
 
-	endtime.tv_sec+= sleeptime/1000000;
-	endtime.tv_usec+= sleeptime%1000000;
-	if (endtime.tv_usec >= 1000000)
-	{
-		endtime.tv_sec++;
-		endtime.tv_usec-= 1000000;
-	}
+	endtime += sleeptime;
 
 	if (sleeptime >= sleep_granularity)
 	{
@@ -159,13 +152,8 @@ void Sleep_Sleep(unsigned int sleeptime)
 
 	do
 	{
-		gettimeofday(&curtime, 0);
-	} while(!(curtime.tv_sec > endtime.tv_sec || (curtime.tv_sec == endtime.tv_sec && curtime.tv_usec >= endtime.tv_usec)));
-
-	curtime.tv_sec-= endtime.tv_sec ;
-	curtime.tv_usec-= endtime.tv_usec ;
-	if (curtime.tv_sec)
-		curtime.tv_usec+= 1000000;
+		curtime = Sys_IntTime();
+	} while(curtime < endtime);
 
 #if 0
 	if (curtime.tv_usec > 100)
