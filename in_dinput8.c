@@ -144,8 +144,8 @@ static const unsigned char keytable[] =
 	0,
 	0,
 	0,
-	0,
-	0,
+	K_F11,
+	K_F12,
 	0,
 	0, /* 90 */
 	0,
