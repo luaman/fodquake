@@ -697,9 +697,6 @@ static void R_DrawAliasModelList2TMU(entity_t *ent, unsigned int entcount)
 		texture = paliashdr->gl_texturenum[skinnum][anim];
 		fb_texture = paliashdr->fb_texturenum[skinnum][anim];
 
-		if (full_light || !gl_fb_models.value)
-			fb_texture = 0;
-
 		r_modelalpha = ((ent->flags & RF_WEAPONMODEL) && gl_mtexable) ? bound(0, cl_drawgun.value, 1) : 1;
 
 		// we can't dynamically colormap textures, so they are cached separately for the players.  Heads are just uncolored.
@@ -714,6 +711,9 @@ static void R_DrawAliasModelList2TMU(entity_t *ent, unsigned int entcount)
 				fb_texture = playerfbtextures[i];
 			}
 		}
+
+		if (full_light || !gl_fb_models.value)
+			fb_texture = 0;
 
 		if (fb_texture)
 		{
