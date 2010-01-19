@@ -420,9 +420,11 @@ static void Con_DrawInput(void)
 //Draws the last few lines of output transparently over the game top
 void Con_DrawNotify (void)
 {
-	int x, v, skip, maxlines, i;
+	int v, skip, maxlines, i;
 	char *text, *s;
 	float time;
+
+	Draw_BeginTextRendering();
 
 	maxlines = _con_notifylines.value;
 	if (maxlines > NUM_CON_TIMES)
@@ -449,8 +451,7 @@ void Con_DrawNotify (void)
 		clearnotify = 0;
 		scr_copytop = 1;
 
-		for (x = 0 ; x < con_linewidth ; x++)
-			Draw_Character ( (x+1)<<3, v, text[x]);
+		Draw_String_Length(8, v, text, con_linewidth);
 
 		v += 8;
 	}
@@ -459,6 +460,7 @@ void Con_DrawNotify (void)
 	if (key_dest == key_message)
 	{
 		char temp[MAXCMDLINE + 1];
+		int len;
 
 		clearnotify = 0;
 		scr_copytop = 1;
@@ -490,17 +492,20 @@ void Con_DrawNotify (void)
 		if (chat_linepos + skip >= (vid.width >> 3))
 			s += 1 + chat_linepos + skip - (vid.width >> 3);
 
-		x = 0;
-		while (s[x] && x+skip < (vid.width>>3))
-		{
-			Draw_Character ( (x+skip)<<3, v, s[x]);
-			x++;
-		}
+		len = strlen(s);
+		if (len+skip > (vid.width>>3))
+			len = (vid.width>>3) - skip;
+
+		if (len > 0)
+			Draw_String_Length(skip<<3, v, s, len);
+
 		v += 8;
 	}
 
 	if (v > con_notifylines)
 		con_notifylines = v;
+	
+	Draw_EndTextRendering();
 }
 
 //Draws the console with the solid background
@@ -547,8 +552,7 @@ void Con_DrawConsole(int lines)
 
 		text = con.text + (row % con_totallines)*con_linewidth;
 
-		for (x = 0; x < con_linewidth; x++)
-			Draw_Character ((x + 1) << 3, y, text[x]);
+		Draw_String_Length(8, y, text, con_linewidth);
 	}
 
 	// draw the download bar

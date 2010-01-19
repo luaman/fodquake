@@ -131,6 +131,14 @@ void Draw_Init(void)
 	customCrosshair_Init();
 }
 
+void Draw_BeginTextRendering()
+{
+}
+
+void Draw_EndTextRendering()
+{
+}
+
 //Draws one 8*8 graphics character with 0 being transparent.
 //It can be clipped to the top of the screen to allow the console to be smoothly scrolled off.
 void Draw_Character (int x, int y, int num) {
@@ -146,6 +154,9 @@ void Draw_Character (int x, int y, int num) {
 		return;
 
 	if (num < 0 || num > 255)
+		return;
+	
+	if (num == 32)
 		return;
 
 	row = num >> 4;
@@ -188,6 +199,16 @@ void Draw_Character (int x, int y, int num) {
 void Draw_String (int x, int y, const char *str) {
 	while (*str) {
 		Draw_Character (x, y, *str);
+		str++;
+		x += 8;
+	}
+}
+
+void Draw_String_Length (int x, int y, const char *str, int len)
+{
+	while(len--)
+	{
+		Draw_Character(x, y, *str);
 		str++;
 		x += 8;
 	}

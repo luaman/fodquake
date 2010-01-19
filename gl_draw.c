@@ -655,6 +655,63 @@ __inline static void Draw_CharPoly(int x, int y, int num)
 	glVertex2f (x, y + 8);
 }
 
+static int textrenderingenabled;
+
+#define NUMBUFFEREDTEXTVERTICES 64
+#if (NUMBUFFEREDTEXTVERTICES%4) != 0
+#error Fail.
+#endif
+
+static float fontvertices[2*NUMBUFFEREDTEXTVERTICES] __attribute__((aligned(64)));
+static float fonttexcoords[2*NUMBUFFEREDTEXTVERTICES] __attribute__((aligned(64)));
+static int fontindex;
+
+static void Draw_CharPolyArray(int x, int y, int num)
+{
+	int index;
+
+	float frow, fcol;
+
+	frow = (num >> 4) * 0.0625;
+	fcol = (num & 15) * 0.0625;
+
+	index = fontindex;
+
+	fontvertices[index++] = x;
+	fontvertices[index++] = y;
+
+	fontvertices[index++] = x + 8;
+	fontvertices[index++] = y;
+
+	fontvertices[index++] = x + 8;
+	fontvertices[index++] = y + 8;
+
+	fontvertices[index++] = x;
+	fontvertices[index++] = y + 8;
+
+	index = fontindex;
+
+	fonttexcoords[index++] = fcol;
+	fonttexcoords[index++] = frow;
+
+	fonttexcoords[index++] = fcol + 0.0625;
+	fonttexcoords[index++] = frow;
+
+	fonttexcoords[index++] = fcol + 0.0625;
+	fonttexcoords[index++] = frow + 0.03125;
+
+	fonttexcoords[index++] = fcol;
+	fonttexcoords[index++] = frow + 0.03125;
+
+	fontindex += 8;
+
+	if (fontindex >= NUMBUFFEREDTEXTVERTICES*2)
+	{
+		glDrawArrays(GL_QUADS, 0, fontindex/2);
+		fontindex = 0;
+	}
+}
+
 //Draws one 8*8 graphics character with 0 being transparent.
 //It can be clipped to the top of the screen to allow the console to be smoothly scrolled off.
 void Draw_Character(int x, int y, int num)
@@ -676,6 +733,37 @@ void Draw_Character(int x, int y, int num)
 	glEnd();
 }
 
+void Draw_BeginTextRendering()
+{
+	if (!textrenderingenabled)
+	{
+		GL_Bind(char_texture);
+
+		glEnableClientState(GL_VERTEX_ARRAY);
+		glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+		glVertexPointer(2, GL_FLOAT, 0, fontvertices);
+		glTexCoordPointer(2, GL_FLOAT, 0, fonttexcoords);
+
+		fontindex = 0;
+	}
+
+	textrenderingenabled++;
+}
+
+void Draw_EndTextRendering()
+{
+	textrenderingenabled--;
+
+	if (!textrenderingenabled)
+	{
+		if (fontindex)
+			glDrawArrays(GL_QUADS, 0, fontindex/2);
+
+		glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+		glDisableClientState(GL_VERTEX_ARRAY);
+	}
+}
+
 void Draw_String(int x, int y, const char *str)
 {
 	int num;
@@ -686,18 +774,40 @@ void Draw_String(int x, int y, const char *str)
 	if (!*str)
 		return;
 
-	GL_Bind(char_texture);
-
-	glBegin(GL_QUADS);
+	Draw_BeginTextRendering();
 
 	while (*str) {	// stop rendering when out of characters		
-		if ((num = *str++) != 32)	// skip spaces
-			Draw_CharPoly(x, y, num);
+		if ((num = (unsigned char)(*str++)) != 32)	// skip spaces
+			Draw_CharPolyArray(x, y, num);
 
 		x += 8;
 	}
 
-	glEnd();
+	Draw_EndTextRendering();
+}
+
+void Draw_String_Length(int x, int y, const char *str, int len)
+{
+	int num;
+	int disabletextrendering;
+
+	if (y <= -8)
+		return;			// totally off screen
+
+	if (!*str)
+		return;
+
+	Draw_BeginTextRendering();
+
+	while(len--)
+	{
+		if ((num = (unsigned char)(*str++)) != 32)	// skip spaces
+			Draw_CharPolyArray(x, y, num);
+
+		x += 8;
+	}
+
+	Draw_EndTextRendering();
 }
 
 void Draw_Alt_String(int x, int y, const char *str)
