@@ -388,6 +388,7 @@ static void pollstuff(struct InputData *inputdata)
 	{
 #warning Should release all pressed buttons here.
 
+		inputdata->di8mouse->lpVtbl->Unacquire(inputdata->di8mouse);
 		inputdata->di8mouse->lpVtbl->Acquire(inputdata->di8mouse);
 	}
 	else
