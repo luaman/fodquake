@@ -186,6 +186,7 @@ void Sys_Quit (void) {
 }
 
 static double pfreq;
+static unsigned long long pfreq_int;
 static qboolean hwtimer = false;
 
 static __int64 startcount;
@@ -200,6 +201,7 @@ void Sys_InitDoubleTime(void)
 	if (!COM_CheckParm("-nohwtimer") && QueryPerformanceFrequency((LARGE_INTEGER *)&freq) && freq > 0)
 	{
 		// hardware timer available
+		pfreq_int = freq;
 		pfreq = (double)freq;
 		QueryPerformanceCounter((LARGE_INTEGER *)&startcount);
 		hwtimer = true;
@@ -237,7 +239,7 @@ unsigned long long Sys_IntTime()
 		QueryPerformanceCounter(&ret);
 		ret -= startcount;
 		ret *= 1000000;
-		ret /= pfreq;
+		ret /= pfreq_int;
 		return ret;
 	}
 
