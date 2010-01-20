@@ -2299,7 +2299,8 @@ void SB_Remove_Friend(char *name)
 		{
 			if (s == friends)
 			{
-				s->next->prev = NULL;
+				if (s->next)
+					s->next->prev = NULL;
 				friends = s->next;
 			}
 			else
