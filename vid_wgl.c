@@ -282,6 +282,8 @@ void Sys_Video_BeginFrame(void *display, unsigned int *x, unsigned int *y, unsig
 
 	ProcessMessages();
 
+	Sys_Input_MainThreadFrameStart(d->inputdata);
+
 	*x = 0;
 	*y = 0;
 	*width = d->width;
