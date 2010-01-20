@@ -19,6 +19,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 struct InputData *Sys_Input_Init();
 void Sys_Input_Shutdown(struct InputData *inputdata);
+void Sys_Input_MainThreadFrameStart(struct InputData *inputdata);
 int Sys_Input_GetKeyEvent(struct InputData *inputdata, keynum_t *keynum, qboolean *down);
 void Sys_Input_GetMouseMovement(struct InputData *inputdata, int *mousex, int *mousey);
 void Sys_Input_GrabMouse(struct InputData *inputdata, int dograb);

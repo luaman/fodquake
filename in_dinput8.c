@@ -40,9 +40,14 @@ struct buttonevent
 
 struct InputData
 {
+	CRITICAL_SECTION mutex;
+
 	LPDIRECTINPUT8 di8;
 	LPDIRECTINPUTDEVICE8 di8mouse;
 	LPDIRECTINPUTDEVICE8 di8keyboard;
+
+	int doreacquiremouse;
+	int doreacquirekeyboard;
 
 	int mousex;
 	int mousey;
@@ -311,9 +316,13 @@ struct InputData *Sys_Input_Init(HWND window)
 									{
 										if (id->di8keyboard->lpVtbl->SetProperty(id->di8keyboard, DIPROP_BUFFERSIZE, &dipdw.diph) == DI_OK)
 										{
-											id->di8keyboard->lpVtbl->Acquire(id->di8keyboard);
+											InitializeCriticalSection(&id->mutex);
 
 											id->di8mouse->lpVtbl->Acquire(id->di8mouse);
+											id->di8keyboard->lpVtbl->Acquire(id->di8keyboard);
+
+											id->doreacquiremouse = 0;
+											id->doreacquirekeyboard = 0;
 
 											id->mousex = 0;
 											id->mousey = 0;
@@ -357,6 +366,25 @@ void Sys_Input_Shutdown(struct InputData *inputdata)
 	free(inputdata);
 }
 
+void Sys_Input_MainThreadFrameStart(struct InputData *inputdata)
+{
+	EnterCriticalSection(&inputdata->mutex);
+
+	if (inputdata->doreacquiremouse)
+	{
+		inputdata->di8mouse->lpVtbl->Acquire(inputdata->di8mouse);
+		inputdata->doreacquiremouse = 0;
+	}
+
+	if (inputdata->doreacquirekeyboard)
+	{
+		inputdata->di8keyboard->lpVtbl->Acquire(inputdata->di8keyboard);
+		inputdata->doreacquirekeyboard = 0;
+	}
+
+	LeaveCriticalSection(&inputdata->mutex);
+}
+
 static void queuekey(struct InputData *inputdata, unsigned char key, unsigned char down)
 {
 	inputdata->buttonevents[inputdata->buttoneventhead].key = key;
@@ -382,14 +410,15 @@ static void pollstuff(struct InputData *inputdata)
 	unsigned int i;
 	unsigned long long curtime;
 
+	EnterCriticalSection(&inputdata->mutex);
+
 	elements = DINPUTNUMEVENTS;
 	res = inputdata->di8mouse->lpVtbl->GetDeviceData(inputdata->di8mouse, sizeof(*events), events, &elements, 0);
 	if (res != DI_OK)
 	{
 #warning Should release all pressed buttons here.
 
-		inputdata->di8mouse->lpVtbl->Unacquire(inputdata->di8mouse);
-		inputdata->di8mouse->lpVtbl->Acquire(inputdata->di8mouse);
+		inputdata->doreacquiremouse = 1;
 	}
 	else
 	{
@@ -458,7 +487,7 @@ static void pollstuff(struct InputData *inputdata)
 	{
 #warning Should release all pressed buttons here.
 
-		inputdata->di8keyboard->lpVtbl->Acquire(inputdata->di8keyboard);
+		inputdata->doreacquirekeyboard = 1;
 	}
 	else
 	{
@@ -499,10 +528,14 @@ static void pollstuff(struct InputData *inputdata)
 			keyevent(inputdata, events[i].dwOfs, !!(events[i].dwData&0x80));
 		}
 	}
+
+	LeaveCriticalSection(&inputdata->mutex);
 }
 
 int Sys_Input_GetKeyEvent(struct InputData *inputdata, keynum_t *keynum, qboolean *down)
 {
+	pollstuff(inputdata);
+
 	if (inputdata->buttoneventhead != inputdata->buttoneventtail)
 	{
 		*keynum = inputdata->buttonevents[inputdata->buttoneventtail].key;
