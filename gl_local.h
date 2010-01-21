@@ -70,7 +70,8 @@ texture_t *R_TextureAnimation (texture_t *base);
 //====================================================
 
 
-void QMB_InitParticles(void);
+int QMB_InitParticles(void);
+void QMB_ShutdownParticles();
 void QMB_ClearParticles(void);
 void QMB_DrawParticles(void);
 
