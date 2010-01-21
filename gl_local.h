@@ -269,11 +269,17 @@ typedef void (APIENTRY *lpSelTexFUNC) (GLenum);
 extern lpMTexFUNC qglMultiTexCoord2f;
 extern lpSelTexFUNC qglActiveTexture;
 
+typedef ptrdiff_t GLsizeiptrARB;
+extern void (*qglBindBufferARB)(GLenum, GLuint);
+extern void (*qglBufferDataARB)(GLenum, GLsizeiptrARB, const GLvoid *, GLenum);
+
 extern float gldepthmin, gldepthmax;
 extern byte color_white[4], color_black[4];
 extern qboolean gl_mtexable;
 extern int gl_textureunits;
-extern qboolean gl_combine, gl_add_ext;
+extern qboolean gl_combine, gl_add_ext, gl_vbo;
+
+extern int vbo_number;
 
 qboolean CheckExtension (const char *extension);
 void Check_Gamma (unsigned char *pal);

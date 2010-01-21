@@ -45,10 +45,14 @@ qboolean gl_mtexable = false;
 int gl_textureunits = 1;
 lpMTexFUNC qglMultiTexCoord2f = NULL;
 lpSelTexFUNC qglActiveTexture = NULL;
+void (*qglBindBufferARB)(GLenum, GLuint);
+void (*qglBufferDataARB)(GLenum, GLsizeiptrARB, const GLvoid *, GLenum);
 
 qboolean gl_combine = false;
 
 qboolean gl_add_ext = false;
+
+qboolean gl_vbo = false;
 
 float gldepthmin, gldepthmax;
 
@@ -130,7 +134,18 @@ void GL_CheckExtensions (void)
 	CheckMultiTextureExtensions ();
 
 	gl_combine = CheckExtension("GL_ARB_texture_env_combine");
-		gl_add_ext = CheckExtension("GL_ARB_texture_env_add");
+	gl_add_ext = CheckExtension("GL_ARB_texture_env_add");
+	gl_vbo = CheckExtension("GL_ARB_vertex_buffer_object");
+	if (gl_vbo)
+	{
+		qglBindBufferARB = (void *)qglGetProcAddress("glBindBufferARB");
+		qglBufferDataARB = (void *)qglGetProcAddress("glBufferDataARB");
+
+		printf("%p %p\n", qglBindBufferARB, qglBufferDataARB);
+
+		if (qglBindBufferARB == 0 || qglBufferDataARB == 0)
+			gl_vbo = false;
+	}
 
 	if (CheckExtension("GL_ARB_texture_compression"))
 	{
