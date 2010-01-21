@@ -931,7 +931,6 @@ void R_DrawBrushModel (entity_t *e) {
 	mplane_t *pplane;
 	model_t *clmodel;
 	qboolean rotated;
-	extern cvar_t r_drawflat_enable;
 
 	currententity = e;
 	currenttexture = -1;
