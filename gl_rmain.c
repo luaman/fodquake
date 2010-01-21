@@ -30,6 +30,8 @@ static char gl_initialised;
 
 extern int gl_max_size_default;
 
+int vbo_number;
+
 entity_t	r_worldentity;
 
 qboolean	r_cache_thrash;		// compatability
@@ -1327,6 +1329,9 @@ void R_CvarInit(void)
 int R_Init(void)
 {
 	texture_extension_number = 1;
+	vbo_number = 1;
+
+	GL_Init();
 
 	if (R_InitTextures())
 	{

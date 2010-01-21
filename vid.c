@@ -330,8 +330,6 @@ void VID_Open()
 
 			V_UpdatePalette(true);
 #ifdef GLQUAKE
-			GL_Init();
-
 			Check_Gamma(host_basepal);
 			VID_SetPalette(host_basepal);
 
