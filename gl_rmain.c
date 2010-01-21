@@ -1332,21 +1332,26 @@ int R_Init(void)
 	{
 		R_InitBubble();
 
-		R_InitParticles ();
+		if (R_InitParticles())
+		{
+			netgraphtexture = texture_extension_number;
+			texture_extension_number++;
 
-		netgraphtexture = texture_extension_number;
-		texture_extension_number++;
+			playertextures = texture_extension_number;
+			texture_extension_number += MAX_CLIENTS;
 
-		playertextures = texture_extension_number;
-		texture_extension_number += MAX_CLIENTS;
+			// fullbright skins
+			texture_extension_number += MAX_CLIENTS;
+			skyboxtextures = texture_extension_number;
+			texture_extension_number += 6;
 
-		// fullbright skins
-		texture_extension_number += MAX_CLIENTS;
-		skyboxtextures = texture_extension_number;
-		texture_extension_number += 6;
+			return 1;
+		}
 
-		return 1;
+		R_ShutdownTextures();
 	}
+
+	Sys_Error("R_Init() failed.");
 
 	return 0;
 }

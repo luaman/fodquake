@@ -207,7 +207,7 @@ void Classic_LoadParticleTextures (void) {
 }
 #endif
 
-void Classic_InitParticles (void) {
+int Classic_InitParticles (void) {
 	int i;
 
 	if ((i = COM_CheckParm ("-particles")) && i + 1 < com_argc)	{
@@ -217,7 +217,16 @@ void Classic_InitParticles (void) {
 		r_numparticles = DEFAULT_NUM_PARTICLES;
 	}
 
-	particles = (particle_t *) Hunk_AllocName (r_numparticles * sizeof(particle_t), "classic:particles");
+	particles = (particle_t *)malloc(r_numparticles * sizeof(particle_t));
+	if (particles)
+		return 1;
+
+	return 0;
+}
+
+void Classic_ShutdownParticles()
+{
+	free(particles);
 }
 
 void Classic_ClearParticles (void) {
@@ -705,12 +714,26 @@ void Classic_DrawParticles(void)
 
 
 
-void R_InitParticles(void)
+int R_InitParticles(void)
 {
-	Classic_InitParticles();
+	if (Classic_InitParticles())
+	{
 #ifdef GLQUAKE
-	QMB_InitParticles();
+		QMB_InitParticles();
 #endif
+
+		return 1;
+	}
+
+	return 0;
+}
+
+void R_ShutdownParticles()
+{
+#ifdef GLQUAKE
+	QMB_ShutdownParticles();
+#endif
+	Classic_ShutdownParticles();
 }
 
 void R_ClearParticles(void)

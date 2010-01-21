@@ -246,17 +246,22 @@ int R_Init(void)
 
 	if (R_InitTextures())
 	{
-		R_InitParticles ();
-
+		if (R_InitParticles())
+		{
 // TODO: collect 386-specific code in one place
 #if	id386
-		Sys_MakeCodeWriteable ((long) R_EdgeCodeStart, (long) R_EdgeCodeEnd - (long) R_EdgeCodeStart);
+			Sys_MakeCodeWriteable ((long) R_EdgeCodeStart, (long) R_EdgeCodeEnd - (long) R_EdgeCodeStart);
 #endif	// id386
 
-		D_Init ();
+			D_Init ();
 
-		return 1;
+			return 1;
+		}
+
+		R_ShutdownTextures();
 	}
+
+	Sys_Error("R_Init() failed.");
 
 	return 0;
 }

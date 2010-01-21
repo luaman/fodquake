@@ -291,7 +291,7 @@ int QMB_InitParticles(void)
 		r_numparticles = DEFAULT_NUM_PARTICLES;
 	}
 
-	particles = Hunk_AllocName(r_numparticles * sizeof(particle_t), "qmb:particles");
+	particles = malloc(r_numparticles * sizeof(particle_t));
 	if (particles)
 		return 1;
 
