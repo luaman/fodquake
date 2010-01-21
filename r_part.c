@@ -547,7 +547,8 @@ done:
 	VectorCopy(point, *trail_origin);
 }
 
-void Classic_DrawParticles (void) {
+void Classic_DrawParticles(void)
+{
 	particle_t *p, *kill;
 	int i;
 	float time2, time3, time1, dvel, frametime, grav;
@@ -588,9 +589,11 @@ void Classic_DrawParticles (void) {
 	grav = frametime * 800 * 0.05;
 	dvel = 4 * frametime;
 
-	while(1) {
+	while(1)
+	{
 		kill = active_particles;
-		if (kill && kill->die < cl.time) {
+		if (kill && kill->die < cl.time)
+		{
 			active_particles = kill->next;
 			kill->next = free_particles;
 			free_particles = kill;
@@ -599,10 +602,13 @@ void Classic_DrawParticles (void) {
 		break;
 	}
 
-	for (p = active_particles; p ; p = p->next) {
-		while (1) {
+	for (p = active_particles; p ; p = p->next)
+	{
+		while (1)
+		{
 			kill = p->next;
-			if (kill && kill->die < cl.time) {
+			if (kill && kill->die < cl.time)
+			{
 				p->next = kill->next;
 				kill->next = free_particles;
 				free_particles = kill;
@@ -633,51 +639,58 @@ void Classic_DrawParticles (void) {
 		p->org[1] += p->vel[1] * frametime;
 		p->org[2] += p->vel[2] * frametime;
 		
-		switch (p->type) {
-		case pt_static:
-			break;
-		case pt_fire:
-			p->ramp += time1;
-			if (p->ramp >= 6)
-				p->die = -1;
-			else
-				p->color = ramp3[(int) p->ramp];
-			p->vel[2] += grav;
-			break;
-		case pt_explode:
-			p->ramp += time2;
-			if (p->ramp >=8)
-				p->die = -1;
-			else
-				p->color = ramp1[(int) p->ramp];
-			for (i = 0; i < 3; i++)
-				p->vel[i] += p->vel[i] * dvel;
-			p->vel[2] -= grav * 30;
-			break;
-		case pt_explode2:
-			p->ramp += time3;
-			if (p->ramp >=8)
-				p->die = -1;
-			else
-				p->color = ramp2[(int) p->ramp];
-			for (i = 0; i < 3; i++)
-				p->vel[i] -= p->vel[i] * frametime;
-			p->vel[2] -= grav * 30;
-			break;
-		case pt_blob:
-			for (i = 0; i < 3; i++)
-				p->vel[i] += p->vel[i] * dvel;
-			p->vel[2] -= grav;
-			break;
-		case pt_blob2:
-			for (i = 0; i < 2; i++)
-				p->vel[i] -= p->vel[i] * dvel;
-			p->vel[2] -= grav;
-			break;
-		case pt_slowgrav:
-		case pt_grav:
-			p->vel[2] -= grav;
-			break;
+		switch(p->type)
+		{
+			case pt_static:
+				break;
+
+			case pt_fire:
+				p->ramp += time1;
+				if (p->ramp >= 6)
+					p->die = -1;
+				else
+					p->color = ramp3[(int) p->ramp];
+				p->vel[2] += grav;
+				break;
+
+			case pt_explode:
+				p->ramp += time2;
+				if (p->ramp >=8)
+					p->die = -1;
+				else
+					p->color = ramp1[(int) p->ramp];
+				for (i = 0; i < 3; i++)
+					p->vel[i] += p->vel[i] * dvel;
+				p->vel[2] -= grav * 30;
+				break;
+
+			case pt_explode2:
+				p->ramp += time3;
+				if (p->ramp >=8)
+					p->die = -1;
+				else
+					p->color = ramp2[(int) p->ramp];
+				for (i = 0; i < 3; i++)
+					p->vel[i] -= p->vel[i] * frametime;
+				p->vel[2] -= grav * 30;
+				break;
+
+			case pt_blob:
+				for (i = 0; i < 3; i++)
+					p->vel[i] += p->vel[i] * dvel;
+				p->vel[2] -= grav;
+				break;
+
+			case pt_blob2:
+				for (i = 0; i < 2; i++)
+					p->vel[i] -= p->vel[i] * dvel;
+				p->vel[2] -= grav;
+				break;
+
+			case pt_slowgrav:
+			case pt_grav:
+				p->vel[2] -= grav;
+				break;
 		}
 	}
 
@@ -692,21 +705,24 @@ void Classic_DrawParticles (void) {
 
 
 
-void R_InitParticles(void) {
+void R_InitParticles(void)
+{
 	Classic_InitParticles();
 #ifdef GLQUAKE
 	QMB_InitParticles();
 #endif
 }
 
-void R_ClearParticles(void) {
+void R_ClearParticles(void)
+{
 	Classic_ClearParticles();
 #ifdef GLQUAKE
 	QMB_ClearParticles();
 #endif
 }
 
-void R_DrawParticles(void) {
+void R_DrawParticles(void)
+{
 	Classic_DrawParticles();
 #ifdef GLQUAKE
 	QMB_DrawParticles();
@@ -772,3 +788,4 @@ ParticleFunction(explosions, ParticleExplosion);
 ParticleFunction(blobs, BlobExplosion);
 ParticleFunction(lavasplash, LavaSplash);
 ParticleFunction(telesplash, TeleportSplash);
+
