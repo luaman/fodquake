@@ -141,8 +141,6 @@ void GL_CheckExtensions (void)
 		qglBindBufferARB = (void *)qglGetProcAddress("glBindBufferARB");
 		qglBufferDataARB = (void *)qglGetProcAddress("glBufferDataARB");
 
-		printf("%p %p\n", qglBindBufferARB, qglBufferDataARB);
-
 		if (qglBindBufferARB == 0 || qglBufferDataARB == 0)
 			gl_vbo = false;
 	}
