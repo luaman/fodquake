@@ -129,31 +129,46 @@ extern cvar_t	scr_fov;
 void R_NetGraph (void);
 void R_ZGraph (void);
 
-void R_InitTextures (void) {
+int R_InitTextures(void)
+{
 	int x,y, m;
 	byte *dest;
 
 	// create a simple checkerboard texture for the default
-	r_notexture_mip = Hunk_AllocName (sizeof(texture_t) + 16 * 16 + 8 * 8 + 4 * 4 + 2 * 2, "notexture");
+	r_notexture_mip = malloc(sizeof(texture_t) + 16 * 16 + 8 * 8 + 4 * 4 + 2 * 2);
+	if (r_notexture_mip)
+	{
+		strcpy(r_notexture_mip->name, "notexture");
+		r_notexture_mip->width = r_notexture_mip->height = 16;
+		r_notexture_mip->offsets[0] = sizeof(texture_t);
+		r_notexture_mip->offsets[1] = r_notexture_mip->offsets[0] + 16 * 16;
+		r_notexture_mip->offsets[2] = r_notexture_mip->offsets[1] + 8 * 8;
+		r_notexture_mip->offsets[3] = r_notexture_mip->offsets[2] + 4 * 4;
 
-	strcpy(r_notexture_mip->name, "notexture");
-	r_notexture_mip->width = r_notexture_mip->height = 16;
-	r_notexture_mip->offsets[0] = sizeof(texture_t);
-	r_notexture_mip->offsets[1] = r_notexture_mip->offsets[0] + 16 * 16;
-	r_notexture_mip->offsets[2] = r_notexture_mip->offsets[1] + 8 * 8;
-	r_notexture_mip->offsets[3] = r_notexture_mip->offsets[2] + 4 * 4;
-
-	for (m = 0; m < 4; m++) {
-		dest = (byte *  )r_notexture_mip + r_notexture_mip->offsets[m];
-		for (y = 0; y < (16 >> m); y++) {
-			for (x = 0; x < (16 >> m); x++) {
-				if ((y < (8 >> m)) ^ (x < (8 >> m)))
-					*dest++ = 0;
-				else
-					*dest++ = 0x0e;
+		for (m = 0; m < 4; m++)
+		{
+			dest = (byte *  )r_notexture_mip + r_notexture_mip->offsets[m];
+			for (y = 0; y < (16 >> m); y++)
+			{
+				for (x = 0; x < (16 >> m); x++)
+				{
+					if ((y < (8 >> m)) ^ (x < (8 >> m)))
+						*dest++ = 0;
+					else
+						*dest++ = 0x0e;
+				}
 			}
 		}
+
+		return 1;
 	}
+
+	return 0;
+}
+
+void R_ShutdownTextures()
+{
+	free(r_notexture_mip);
 }
 
 void R_CvarInit(void)
@@ -212,7 +227,7 @@ void R_CvarInit(void)
 	Cvar_SetValue (&r_maxsurfs, (float) NUMSTACKSURFACES);
 }
 
-void R_Init(void)
+int R_Init(void)
 {
 	int dummy;
 
@@ -229,17 +244,27 @@ void R_Init(void)
 	r_refdef.xOrigin = XCENTERING;
 	r_refdef.yOrigin = YCENTERING;
 
-	R_InitTextures ();
-	R_InitParticles ();
+	if (R_InitTextures())
+	{
+		R_InitParticles ();
 
 // TODO: collect 386-specific code in one place
 #if	id386
-	Sys_MakeCodeWriteable ((long) R_EdgeCodeStart, (long) R_EdgeCodeEnd - (long) R_EdgeCodeStart);
+		Sys_MakeCodeWriteable ((long) R_EdgeCodeStart, (long) R_EdgeCodeEnd - (long) R_EdgeCodeStart);
 #endif	// id386
 
-	D_Init ();
+		D_Init ();
+
+		return 1;
+	}
+
+	return 0;
 }
 
+void R_Shutdown()
+{
+	R_ShutdownTextures();
+}
 
 void R_PreMapLoad(char *name) {
 	Cvar_ForceSet (&mapname, name);

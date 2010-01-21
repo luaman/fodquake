@@ -326,6 +326,8 @@ void VID_Open()
 
 			Sys_Video_GrabMouse(display, in_grab_windowed_mouse.value);
 
+			R_Init();
+
 			V_UpdatePalette(true);
 #ifdef GLQUAKE
 			GL_Init();
@@ -360,6 +362,7 @@ void VID_Open()
 void VID_Close()
 {
 	Sys_Thread_LockMutex(display_mutex);
+
 #ifdef GLQUAKE
 	Sbar_Shutdown();
 	Draw_ShutdownGL();
@@ -371,6 +374,8 @@ void VID_Close()
 		GL_Texture_Shutdown();
 		GL_FlushPics();
 #endif
+
+		R_Shutdown();
 		Sys_Video_Close(display);
 
 #ifndef GLQUAKE

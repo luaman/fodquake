@@ -1324,23 +1324,36 @@ void R_CvarInit(void)
 	GL_Particles_CvarInit();
 }
 
-void R_Init (void)
+int R_Init(void)
 {
-	R_InitTextures();
-	R_InitBubble();
+	texture_extension_number = 1;
 
-	R_InitParticles ();
+	if (R_InitTextures())
+	{
+		R_InitBubble();
 
-	netgraphtexture = texture_extension_number;
-	texture_extension_number++;
+		R_InitParticles ();
 
-	playertextures = texture_extension_number;
-	texture_extension_number += MAX_CLIENTS;
+		netgraphtexture = texture_extension_number;
+		texture_extension_number++;
 
-	// fullbright skins
-	texture_extension_number += MAX_CLIENTS;
-	skyboxtextures = texture_extension_number;
-	texture_extension_number += 6;
+		playertextures = texture_extension_number;
+		texture_extension_number += MAX_CLIENTS;
+
+		// fullbright skins
+		texture_extension_number += MAX_CLIENTS;
+		skyboxtextures = texture_extension_number;
+		texture_extension_number += 6;
+
+		return 1;
+	}
+
+	return 0;
+}
+
+void R_Shutdown()
+{
+	R_ShutdownTextures();
 }
 
 void R_InitGL(void)

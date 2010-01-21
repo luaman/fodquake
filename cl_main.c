@@ -1698,7 +1698,6 @@ void CL_Init (void)
 	Image_Init();
 	Draw_Init ();
 	SCR_Init ();
-	R_Init ();
 
 	S_Init ();
 
