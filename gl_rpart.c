@@ -277,7 +277,7 @@ void GL_Particles_TextureInit(void)
 	ADD_PARTICLE_TYPE(p_staticbubble, pd_billboard, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, ptex_bubble, 204, 0, 0, pm_static, 0);
 }
 
-void QMB_InitParticles(void)
+int QMB_InitParticles(void)
 {
 	int i;
 
@@ -290,7 +290,17 @@ void QMB_InitParticles(void)
 	{
 		r_numparticles = DEFAULT_NUM_PARTICLES;
 	}
+
 	particles = Hunk_AllocName(r_numparticles * sizeof(particle_t), "qmb:particles");
+	if (particles)
+		return 1;
+
+	return 0;
+}
+
+void QMB_ShutdownParticles()
+{
+	free(particles);
 }
 
 void QMB_ClearParticles (void) {
