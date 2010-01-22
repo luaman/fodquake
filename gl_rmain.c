@@ -1333,6 +1333,8 @@ int R_Init(void)
 
 	GL_Init();
 
+	GL_Texture_Init();
+
 	if (R_InitTextures())
 	{
 		R_InitBubble();
@@ -1366,6 +1368,7 @@ int R_Init(void)
 void R_Shutdown()
 {
 	R_ShutdownTextures();
+	GL_Texture_Shutdown();
 }
 
 void R_InitGL(void)

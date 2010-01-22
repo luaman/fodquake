@@ -602,8 +602,6 @@ void Draw_InitGL(void)
 {
 	int i;
 
-	GL_Texture_Init();
-
 	// load the console background and the charset by hand, because we need to write the version
 	// string into the background before turning it into a texture
 	Draw_InitCharset ();

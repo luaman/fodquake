@@ -369,7 +369,6 @@ void VID_Close()
 	if (display)
 	{
 #ifdef GLQUAKE
-		GL_Texture_Shutdown();
 		GL_FlushPics();
 #endif
 
