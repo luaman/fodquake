@@ -32,18 +32,10 @@ void CL_CvarInitInput (void);
 void CL_SendCmd (void);
 void CL_BaseMove (usercmd_t *cmd);
 
-
-extern cvar_t	cl_upspeed;
-extern cvar_t	cl_forwardspeed;
-extern cvar_t	cl_backspeed;
-extern cvar_t	cl_sidespeed;
-
 extern cvar_t	sensitivity;
 
 extern cvar_t	m_pitch;
 extern cvar_t	m_yaw;
-extern cvar_t	m_forward;
-extern cvar_t	m_side;
 extern cvar_t	m_accel;
 
 extern cvar_t	in_grab_windowed_mouse;
