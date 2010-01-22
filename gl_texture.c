@@ -740,6 +740,7 @@ void GL_Texture_CvarInit(void)
 
 void GL_Texture_Init(void)
 {
+	unsigned int i;
 	int oldflags;
 
 	/* Prevent setting the modified flag */
@@ -750,6 +751,11 @@ void GL_Texture_Init(void)
 
 	no24bit = COM_CheckParm("-no24bit") ? true : false;
 	forceTextureReload = COM_CheckParm("-forceTextureReload") ? true : false;
+
+	oldtarget = GL_TEXTURE0_ARB;
+	currenttexture = -1;
+	for(i=0;i<(sizeof(cnttextures)/sizeof(*cnttextures));i++)
+		cnttextures[i] = -1;
 }
 
 void GL_Texture_Shutdown()
