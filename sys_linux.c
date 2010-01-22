@@ -230,6 +230,28 @@ char *Sys_ConsoleInput(void)
 
 int skipframes;
 
+static void checkmousepoll()
+{
+	FILE *f;
+	char buf[64];
+	int mousepoll;
+
+	f = fopen("/sys/module/usbhid/parameters/mousepoll", "r");
+	if (f)
+	{
+		if (fgets(buf, sizeof(buf), f))
+		{
+			mousepoll = atoi(buf);
+			if (mousepoll > 2)
+			{
+				Com_Printf("Warning: USB mouse poll rate is set to %dHz\n", 1000/mousepoll);
+			}
+		}
+
+		fclose(f);
+	}
+}
+
 int main(int argc, char **argv)
 {
 	double time, oldtime, newtime;
@@ -256,6 +278,8 @@ int main(int argc, char **argv)
 	}
 
 	Host_Init(argc, argv, 16 * 1024 * 1024);
+
+	checkmousepoll();
 
 	oldtime = Sys_DoubleTime();
 	while (1)
