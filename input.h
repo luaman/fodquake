@@ -31,7 +31,6 @@ typedef struct
 void CL_CvarInitInput (void);
 void CL_SendCmd (void);
 void CL_BaseMove (usercmd_t *cmd);
-float CL_KeyState (kbutton_t *key);
 
 
 extern cvar_t	cl_upspeed;

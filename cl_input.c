@@ -80,7 +80,7 @@ static int checkmovementruleset()
 	return 1;
 }
 
-void KeyDown(kbutton_t *b)
+static void KeyDown(kbutton_t *b)
 {
 	int k;
 	char *c;
@@ -110,7 +110,7 @@ void KeyDown(kbutton_t *b)
 	b->state |= 1 + 2;	// down + impulse down
 }
 
-void KeyUp(kbutton_t *b)
+static void KeyUp(kbutton_t *b)
 {
 	int k;
 	char *c;
@@ -142,35 +142,35 @@ void KeyUp(kbutton_t *b)
 	b->state &= ~1;		// now up
 }
 
-void IN_UpDown(void) {KeyDown(&in_up);}
-void IN_UpUp(void) {KeyUp(&in_up);}
-void IN_DownDown(void) {KeyDown(&in_down);}
-void IN_DownUp(void) {KeyUp(&in_down);}
-void IN_LeftDown(void) {KeyDown(&in_left);}
-void IN_LeftUp(void) {KeyUp(&in_left);}
-void IN_RightDown(void) {KeyDown(&in_right);}
-void IN_RightUp(void) {KeyUp(&in_right);}
-void IN_ForwardDown(void) {if (checkmovementruleset()) KeyDown(&in_forward);}
-void IN_ForwardUp(void) {if (checkmovementruleset()) KeyUp(&in_forward);}
-void IN_BackDown(void) {if (checkmovementruleset()) KeyDown(&in_back);}
-void IN_BackUp(void) {if (checkmovementruleset()) KeyUp(&in_back);}
-void IN_LookupDown(void) {KeyDown(&in_lookup);}
-void IN_LookupUp(void) {KeyUp(&in_lookup);}
-void IN_LookdownDown(void) {KeyDown(&in_lookdown);}
-void IN_LookdownUp(void) {KeyUp(&in_lookdown);}
-void IN_MoveleftDown(void) {if (checkmovementruleset()) KeyDown(&in_moveleft);}
-void IN_MoveleftUp(void) {if (checkmovementruleset()) KeyUp(&in_moveleft);}
-void IN_MoverightDown(void) {if (checkmovementruleset()) KeyDown(&in_moveright);}
-void IN_MoverightUp(void) {if (checkmovementruleset()) KeyUp(&in_moveright);}
+static void IN_UpDown(void) {KeyDown(&in_up);}
+static void IN_UpUp(void) {KeyUp(&in_up);}
+static void IN_DownDown(void) {KeyDown(&in_down);}
+static void IN_DownUp(void) {KeyUp(&in_down);}
+static void IN_LeftDown(void) {KeyDown(&in_left);}
+static void IN_LeftUp(void) {KeyUp(&in_left);}
+static void IN_RightDown(void) {KeyDown(&in_right);}
+static void IN_RightUp(void) {KeyUp(&in_right);}
+static void IN_ForwardDown(void) {if (checkmovementruleset()) KeyDown(&in_forward);}
+static void IN_ForwardUp(void) {if (checkmovementruleset()) KeyUp(&in_forward);}
+static void IN_BackDown(void) {if (checkmovementruleset()) KeyDown(&in_back);}
+static void IN_BackUp(void) {if (checkmovementruleset()) KeyUp(&in_back);}
+static void IN_LookupDown(void) {KeyDown(&in_lookup);}
+static void IN_LookupUp(void) {KeyUp(&in_lookup);}
+static void IN_LookdownDown(void) {KeyDown(&in_lookdown);}
+static void IN_LookdownUp(void) {KeyUp(&in_lookdown);}
+static void IN_MoveleftDown(void) {if (checkmovementruleset()) KeyDown(&in_moveleft);}
+static void IN_MoveleftUp(void) {if (checkmovementruleset()) KeyUp(&in_moveleft);}
+static void IN_MoverightDown(void) {if (checkmovementruleset()) KeyDown(&in_moveright);}
+static void IN_MoverightUp(void) {if (checkmovementruleset()) KeyUp(&in_moveright);}
 
-void IN_AttackDown(void) {KeyDown(&in_attack);}
-void IN_AttackUp(void) {KeyUp(&in_attack);}
+static void IN_AttackDown(void) {KeyDown(&in_attack);}
+static void IN_AttackUp(void) {KeyUp(&in_attack);}
 
-void IN_UseDown (void) {KeyDown(&in_use);}
-void IN_UseUp (void) {KeyUp(&in_use);}
+static void IN_UseDown (void) {KeyDown(&in_use);}
+static void IN_UseUp (void) {KeyUp(&in_use);}
 
 
-void IN_JumpDown(void) {
+static void IN_JumpDown(void) {
 	qboolean condition;
 
 	condition = (cls.state == ca_active && cl_smartjump.value);
@@ -184,7 +184,7 @@ void IN_JumpDown(void) {
 		KeyDown(&in_jump);
 }
 
-void IN_JumpUp(void) {
+static void IN_JumpUp(void) {
 	if (cl_smartjump.value)
 		KeyUp(&in_up);
 	KeyUp(&in_jump);
@@ -195,7 +195,7 @@ void IN_JumpUp(void) {
 //Tonik void IN_Impulse (void) {in_impulse=Q_atoi(Cmd_Argv(1));}
 
 // Tonik -->
-void IN_Impulse (void) {
+static void IN_Impulse (void) {
 	int best, i, imp, items;
 
 	in_impulse = Q_atoi(Cmd_Argv(1));
@@ -261,7 +261,7 @@ Does not return 0.25 if a key was pressed and released during the frame,
 
 Returns 1 if a key is pressed, 0 otherwise.
 */
-float CL_KeyState (kbutton_t *key) {
+static float CL_KeyState (kbutton_t *key) {
 	float val;
 	
 	val = !!key->state;
@@ -273,15 +273,15 @@ float CL_KeyState (kbutton_t *key) {
 
 //==========================================================================
 
-cvar_t	cl_upspeed = {"cl_upspeed","400"};
-cvar_t	cl_forwardspeed = {"cl_forwardspeed","400",CVAR_ARCHIVE};
-cvar_t	cl_backspeed = {"cl_backspeed","400",CVAR_ARCHIVE};
-cvar_t	cl_sidespeed = {"cl_sidespeed","400",CVAR_ARCHIVE};
+static cvar_t	cl_upspeed = {"cl_upspeed","400"};
+static cvar_t	cl_forwardspeed = {"cl_forwardspeed","400",CVAR_ARCHIVE};
+static cvar_t	cl_backspeed = {"cl_backspeed","400",CVAR_ARCHIVE};
+static cvar_t	cl_sidespeed = {"cl_sidespeed","400",CVAR_ARCHIVE};
 
-cvar_t	cl_yawspeed = {"cl_yawspeed","140"};
-cvar_t	cl_pitchspeed = {"cl_pitchspeed","150"};
+static cvar_t	cl_yawspeed = {"cl_yawspeed","140"};
+static cvar_t	cl_pitchspeed = {"cl_pitchspeed","150"};
 
-void CL_Rotate_f (void)
+static void CL_Rotate_f (void)
 {
 	vec3_t angles;
 
@@ -299,7 +299,7 @@ void CL_Rotate_f (void)
 	Mouse_AddViewAngles(angles);
 }
 
-void CL_Force_CenterView_f (void)
+static void CL_Force_CenterView_f (void)
 {
 	cl.viewangles[PITCH] = 0;
 }
