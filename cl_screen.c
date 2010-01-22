@@ -1285,7 +1285,7 @@ static image_format_t SShot_FormatForName(char *name) {
 #endif
 	else
 #if USE_PNG
-		return IMAGE_PNG
+		return IMAGE_PNG;
 #else
 #ifdef GLQUAKE
 		return IMAGE_TGA;
