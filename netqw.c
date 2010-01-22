@@ -228,7 +228,6 @@ void NetQW_GenerateFrames(struct NetQW *netqw)
 {
 	usercmd_t hej;
 	unsigned int framenum;
-	vec3_t angles;
 	unsigned long long curtime;
 
 	curtime = Sys_IntTime();
@@ -243,15 +242,13 @@ void NetQW_GenerateFrames(struct NetQW *netqw)
 		netqw->lastmovesendtime += netqw->microsecondsperframe;
 		netqw->movetimecounter += netqw->microsecondsperframe;
 
-		Mouse_GetViewAngles(angles);
-
 		memset(&hej, 0, sizeof(hej));
 #warning "Because I'm bored"
 		CL_BaseMove(&hej);
 		CL_FinishMove(&hej);
 		hej.msec = netqw->movetimecounter/1000;
 		netqw->movetimecounter %= 1000;
-		VectorCopy(angles, hej.angles);
+		Mouse_GetViewAngles(hej.angles);
 
 		framenum = (netqw->lastsentframe + netqw->framestosend + 1) & UPDATE_MASK;
 
