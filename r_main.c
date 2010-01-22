@@ -255,6 +255,8 @@ int R_Init(void)
 
 			D_Init ();
 
+			Draw_Init();
+
 			return 1;
 		}
 
