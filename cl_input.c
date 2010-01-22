@@ -296,11 +296,6 @@ static void CL_Rotate_f (void)
 	Mouse_AddViewAngles(angles);
 }
 
-static void CL_Force_CenterView_f (void)
-{
-	cl.viewangles[PITCH] = 0;
-}
-
 //Send the intended movement message to the server
 void CL_BaseMove (usercmd_t *cmd) {	
 	memset (cmd, 0, sizeof(*cmd));
@@ -536,8 +531,6 @@ void CL_CvarInitInput(void)
 
 	
 	Cmd_AddCommand ("rotate",CL_Rotate_f);
-
-	Cmd_AddCommand ("force_centerview", CL_Force_CenterView_f);
 
 	Cvar_SetCurrentGroup(CVAR_GROUP_INPUT_KEYBOARD);
 
