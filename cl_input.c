@@ -304,42 +304,8 @@ void CL_Force_CenterView_f (void)
 	cl.viewangles[PITCH] = 0;
 }
 
-//Moves the local angle positions
-void CL_AdjustAngles (void) {
-	float speed, up, down, frametime;
-
-	if (Movie_IsCapturing() && movie_steadycam.value)
-		frametime = movie_fps.value > 0 ? 1.0 / movie_fps.value : 1 / 30.0;
-	else
-		frametime = cls.trueframetime;
-
-	speed = cl_yawspeed.value;
-	if ((cl.fpd & FPD_LIMIT_YAW) || !Ruleset_AllowRJScripts())
-		speed = bound(-900, speed, 900);
-	speed *= frametime;
-	cl.viewangles[YAW] -= speed * CL_KeyState(&in_right);
-	cl.viewangles[YAW] += speed * CL_KeyState(&in_left);
-	cl.viewangles[YAW] = anglemod(cl.viewangles[YAW]);
-	
-	speed = cl_pitchspeed.value;
-	if ((cl.fpd & FPD_LIMIT_PITCH) || !Ruleset_AllowRJScripts())
-		speed = bound(-700, speed, 700);
-	speed *= frametime;
-
-	
-	up = CL_KeyState(&in_lookup);
-	down = CL_KeyState(&in_lookdown);
-	cl.viewangles[PITCH] -= speed * up;
-	cl.viewangles[PITCH] += speed * down;
-
-	cl.viewangles[PITCH] = bound(-70, cl.viewangles[PITCH], 80);
-	cl.viewangles[ROLL] = bound(-50, cl.viewangles[ROLL], 50);		
-}
-
 //Send the intended movement message to the server
 void CL_BaseMove (usercmd_t *cmd) {	
-	CL_AdjustAngles ();
-	
 	memset (cmd, 0, sizeof(*cmd));
 	
 	VectorCopy (cl.viewangles, cmd->angles);
