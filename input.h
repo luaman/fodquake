@@ -37,8 +37,6 @@ extern cvar_t	cl_upspeed;
 extern cvar_t	cl_forwardspeed;
 extern cvar_t	cl_backspeed;
 extern cvar_t	cl_sidespeed;
-extern cvar_t	cl_yawspeed;
-extern cvar_t	cl_pitchspeed;
 
 extern cvar_t	sensitivity;
 

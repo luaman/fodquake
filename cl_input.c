@@ -278,9 +278,6 @@ static cvar_t	cl_forwardspeed = {"cl_forwardspeed","400",CVAR_ARCHIVE};
 static cvar_t	cl_backspeed = {"cl_backspeed","400",CVAR_ARCHIVE};
 static cvar_t	cl_sidespeed = {"cl_sidespeed","400",CVAR_ARCHIVE};
 
-static cvar_t	cl_yawspeed = {"cl_yawspeed","140"};
-static cvar_t	cl_pitchspeed = {"cl_pitchspeed","150"};
-
 static void CL_Rotate_f (void)
 {
 	vec3_t angles;
@@ -551,8 +548,6 @@ void CL_CvarInitInput(void)
 	Cvar_Register (&cl_forwardspeed);
 	Cvar_Register (&cl_backspeed);
 	Cvar_Register (&cl_sidespeed);
-	Cvar_Register (&cl_yawspeed);
-	Cvar_Register (&cl_pitchspeed);
 
 	Cvar_SetCurrentGroup(CVAR_GROUP_NETWORK);
 	Cvar_Register (&cl_nodelta);

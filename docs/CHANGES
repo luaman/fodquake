@@ -16,6 +16,7 @@ Version 0.3
 - gl_ztrick now defaults to 0.
 - Brought the Win32 port up to date.
 - Added DirectInput 8 support.
+- Removed the cl_yawspeed and cl_pitchspeed cvars.
 
 Version 0.2
 ===========
