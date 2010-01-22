@@ -1283,12 +1283,15 @@ static image_format_t SShot_FormatForName(char *name) {
 	else if (!Q_strcasecmp(scr_sshot_format.string, "jpg") || !Q_strcasecmp(scr_sshot_format.string, "jpeg"))
 		return IMAGE_JPEG;
 #endif
-
 	else
+#if USE_PNG
+		return IMAGE_PNG
+#else
 #ifdef GLQUAKE
 		return IMAGE_TGA;
 #else
 		return IMAGE_PCX;
+#endif
 #endif
 }
 

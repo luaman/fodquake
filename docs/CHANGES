@@ -20,6 +20,7 @@ Version 0.3
 - Removed the force_centerview command.
 - Linux USB mouse poll rate settings are checked and a warning is given if
   found to be lower than 500Hz.
+- Made PNG the default screenshot format.
 
 Version 0.2
 ===========
