@@ -1333,6 +1333,9 @@ int R_Init(void)
 
 	GL_Init();
 
+	glGetIntegerv(GL_MAX_TEXTURE_SIZE, &gl_max_size_default);
+	Cvar_SetDefault(&gl_max_size, gl_max_size_default);
+
 	GL_Texture_Init();
 
 	if (R_InitTextures())
@@ -1374,9 +1377,6 @@ void R_Shutdown()
 void R_InitGL(void)
 {
 	byte *clearColor;
-
-	glGetIntegerv(GL_MAX_TEXTURE_SIZE, &gl_max_size_default);
-	Cvar_SetDefault(&gl_max_size, gl_max_size_default);
 
 	// this minigl driver seems to slow us down if the particles are drawn WITHOUT Z buffer bits 
 	if (!strcmp(gl_vendor, "METABYTE/WICKED3D")) 
