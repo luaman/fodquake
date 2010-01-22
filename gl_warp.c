@@ -751,6 +751,9 @@ void EmitCausticsPolys (void) {
 	float s, t, *v;
 	extern glpoly_t *caustics_polys;
 
+	if (!underwatertexture || !caustics_polys)
+		return;
+
 	GL_Bind (underwatertexture);
 	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
 	glBlendFunc(GL_DST_COLOR, GL_SRC_COLOR);
