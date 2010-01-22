@@ -1334,11 +1334,6 @@ void GL_BuildLightmaps (void) {
 
 	r_framecount = 1;		// no dlightcache
 
-	if (!lightmap_textures) {
-		lightmap_textures = texture_extension_number;
-		texture_extension_number += MAX_LIGHTMAPS;
-	}
-
 	for (j = 1; j < MAX_MODELS; j++) {
 		if (!(m = cl.model_precache[j]))
 			break;
@@ -1378,3 +1373,14 @@ void GL_BuildLightmaps (void) {
 	if (gl_mtexable)
  		GL_DisableMultitexture();
 }
+
+void GL_RSurf_Init()
+{
+	lightmap_textures = texture_extension_number;
+	texture_extension_number += MAX_LIGHTMAPS;
+}
+
+void GL_RSurf_Shutdown()
+{
+}
+

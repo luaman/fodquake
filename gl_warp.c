@@ -379,8 +379,6 @@ void R_InitSky (miptex_t *mt) {
 	((byte *) &transpix)[2] = b / (128 * 128);
 	((byte *) &transpix)[3] = 0;
 
-	if (!solidskytexture)
-		solidskytexture = texture_extension_number++;
 	GL_Bind (solidskytexture);
 	glTexImage2D (GL_TEXTURE_2D, 0, gl_solid_format, 128, 128, 0, GL_RGBA, GL_UNSIGNED_BYTE, trans);
 	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -393,8 +391,6 @@ void R_InitSky (miptex_t *mt) {
 		}
 	}
 
-	if (!alphaskytexture)
-		alphaskytexture = texture_extension_number++;
 	GL_Bind(alphaskytexture);
 	glTexImage2D (GL_TEXTURE_2D, 0, gl_alpha_format, 128, 128, 0, GL_RGBA, GL_UNSIGNED_BYTE, trans);
 	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -776,3 +772,14 @@ void EmitCausticsPolys (void) {
 
 	caustics_polys = NULL;
 }
+
+void GL_Warp_Init()
+{
+	solidskytexture = texture_extension_number++;
+	alphaskytexture = texture_extension_number++;
+}
+
+void GL_Warp_Shutdown()
+{
+}
+

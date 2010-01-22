@@ -23,6 +23,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "quakedef.h"
 #include "gl_local.h"
+#include "gl_warp.h"
+#include "gl_rsurf.h"
 #include "sound.h"
 #include "utils.h"
 
@@ -1338,6 +1340,10 @@ int R_Init(void)
 
 	GL_Texture_Init();
 
+	GL_RSurf_Init();
+
+	GL_Warp_Init();
+
 	if (R_InitTextures())
 	{
 		R_InitBubble();
@@ -1371,6 +1377,8 @@ int R_Init(void)
 void R_Shutdown()
 {
 	R_ShutdownTextures();
+	GL_RSurf_Shutdown();
+	GL_Warp_Shutdown();
 	GL_Texture_Shutdown();
 }
 
