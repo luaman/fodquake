@@ -78,9 +78,20 @@ qboolean drawfullbrights = false, drawlumas = false;
 glpoly_t *caustics_polys = NULL;
 glpoly_t *detail_polys = NULL;
 
-void DrawGLPoly (glpoly_t *p);
+static void DrawGLPoly (glpoly_t *p) {
+	int i;
+	float *v;
 
-void R_RenderFullbrights (void) {
+	glBegin (GL_POLYGON);
+	v = p->verts[0];
+	for (i = 0; i < p->numverts; i++, v+= VERTEXSIZE) {
+		glTexCoord2f (v[3], v[4]);
+		glVertex3fv (v);
+	}
+	glEnd ();
+}
+
+static void R_RenderFullbrights (void) {
 	int i;
 	glpoly_t *p;
 
@@ -108,7 +119,7 @@ void R_RenderFullbrights (void) {
 	drawfullbrights = false;
 }
 
-void R_RenderLumas (void) {
+static void R_RenderLumas (void) {
 	int i;
 	glpoly_t *p;
 
@@ -137,7 +148,7 @@ void R_RenderLumas (void) {
 }
 
 
-void EmitDetailPolys (void) {
+static void EmitDetailPolys (void) {
 	glpoly_t *p;
 	int i;
 	float *v;
@@ -178,7 +189,7 @@ typedef struct dlightinfo_s {
 static dlightinfo_t dlightlist[MAX_DLIGHTS];
 static int numdlights;
 
-void R_BuildDlightList (msurface_t *surf) {
+static void R_BuildDlightList (msurface_t *surf) {
 	float dist;
 	vec3_t impact;
 	mtexinfo_t *tex;
@@ -244,7 +255,7 @@ void R_BuildDlightList (msurface_t *surf) {
 	}
 }
 
-int dlightcolor[NUM_DLIGHTTYPES][3] = {
+static const int dlightcolor[NUM_DLIGHTTYPES][3] = {
 	{ 100, 90, 80 },	// dimlight or brightlight
 	{ 100, 50, 10 },	// muzzleflash
 	{ 100, 50, 10 },	// explosion
@@ -258,7 +269,7 @@ int dlightcolor[NUM_DLIGHTTYPES][3] = {
 
 
 //R_BuildDlightList must be called first!
-void R_AddDynamicLights (msurface_t *surf) {
+static void R_AddDynamicLights (msurface_t *surf) {
 	int i, smax, tmax, s, t, sd, td, _sd, _td, irad, idist, iminlight, color[3], tmp;
 	dlightinfo_t *light;
 	unsigned *dest;
@@ -306,7 +317,7 @@ void R_AddDynamicLights (msurface_t *surf) {
 }
 
 //Combine and scale multiple lightmaps into the 8.8 format in blocklights
-void R_BuildLightMap (msurface_t *surf, byte *dest, int stride) {
+static void R_BuildLightMap (msurface_t *surf, byte *dest, int stride) {
 	int smax, tmax, t, i, j, size, blocksize, maps;
 	byte *lightmap;
 	unsigned scale, *bl;
@@ -403,7 +414,7 @@ store:
 	}
 }
 
-void R_UploadLightMap (int lightmapnum) {
+static void R_UploadLightMap (int lightmapnum) {
 	glRect_t	*theRect;
 
 	lightmap_modified[lightmapnum] = false;
@@ -417,7 +428,7 @@ void R_UploadLightMap (int lightmapnum) {
 }
 
 //Returns the proper texture for a given time and base texture
-texture_t *R_TextureAnimation (texture_t *base) {
+static texture_t *R_TextureAnimation (texture_t *base) {
 	int relative, count;
 
 	if (currententity->frame) {
@@ -443,20 +454,7 @@ texture_t *R_TextureAnimation (texture_t *base) {
 }
 
 
-void DrawGLPoly (glpoly_t *p) {
-	int i;
-	float *v;
-
-	glBegin (GL_POLYGON);
-	v = p->verts[0];
-	for (i = 0; i < p->numverts; i++, v+= VERTEXSIZE) {
-		glTexCoord2f (v[3], v[4]);
-		glVertex3fv (v);
-	}
-	glEnd ();
-}
-
-void R_BlendLightmaps (void) {
+static void R_BlendLightmaps (void) {
 	int i, j;
 	glpoly_t *p;
 	float *v;
@@ -492,7 +490,7 @@ void R_BlendLightmaps (void) {
 	glDepthMask (GL_TRUE);		// back to normal Z buffering
 }
 
-void R_RenderDynamicLightmaps (msurface_t *fa) {
+static void R_RenderDynamicLightmaps (msurface_t *fa) {
 	byte *base;
 	int maps, smax, tmax;
 	glRect_t *theRect;
@@ -578,7 +576,7 @@ void R_DrawWaterSurfaces (void) {
 }
 
 //draws transparent textures for HL world and nonworld models
-void R_DrawAlphaChain (void) {
+static void R_DrawAlphaChain (void) {
 	int k;
 	msurface_t *s;
 	texture_t *t;
@@ -665,7 +663,7 @@ static void R_ClearTextureChains(model_t *clmodel) {
 	CHAIN_RESET(alphachain);
 }
 
-void DrawTextureChains (model_t *model) {
+static void DrawTextureChains (model_t *model) {
 	int waterline, i, k, GL_LIGHTMAP_TEXTURE, GL_FB_TEXTURE;
 	msurface_t *s;
 	texture_t *t;
@@ -1018,7 +1016,7 @@ void R_DrawBrushModel (entity_t *e) {
 }
 
 
-void R_RecursiveWorldNode (mnode_t *node, int clipflags) {
+static void R_RecursiveWorldNode (mnode_t *node, int clipflags) {
 	int c, side, clipped, underwater;
 	mplane_t *plane, *clipplane;
 	msurface_t *surf, **mark;
@@ -1190,7 +1188,7 @@ void R_MarkLeaves (void) {
 
 
 // returns a texture number and the position inside it
-int AllocBlock (int w, int h, int *x, int *y) {
+static int AllocBlock (int w, int h, int *x, int *y) {
 	int i, j, best, best2, texnum;
 
 	if (w < 1 || w > BLOCK_WIDTH || h < 1 || h > BLOCK_HEIGHT)
@@ -1233,7 +1231,7 @@ int AllocBlock (int w, int h, int *x, int *y) {
 mvertex_t	*r_pcurrentvertbase;
 model_t		*currentmodel;
 
-void BuildSurfaceDisplayList (msurface_t *fa) {
+static void BuildSurfaceDisplayList (msurface_t *fa) {
 	int i, lindex, lnumverts, vertpage;
 	medge_t *pedges, *r_pedge;
 	float *vec, s, t;
@@ -1302,7 +1300,7 @@ void BuildSurfaceDisplayList (msurface_t *fa) {
 	poly->numverts = lnumverts;
 }
 
-void GL_CreateSurfaceLightmap (msurface_t *surf) {
+static void GL_CreateSurfaceLightmap (msurface_t *surf) {
 	int smax, tmax;
 	byte *base;
 

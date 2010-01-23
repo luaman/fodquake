@@ -65,7 +65,6 @@ extern	int glx, gly, glwidth, glheight;
 
 void R_InitGL(void);
 void R_TimeRefresh_f (void);
-texture_t *R_TextureAnimation (texture_t *base);
 
 //====================================================
 
@@ -223,11 +222,9 @@ void R_StoreEfrags (efrag_t **ppefrag);
 void GL_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr);
 
 // gl_rsurf.c
-void EmitDetailPolys (void);
 void R_DrawBrushModel (entity_t *e);
 void R_DrawWorld (void);
 void R_DrawWaterSurfaces (void);
-void R_DrawAlphaChain (void);
 void GL_BuildLightmaps (void);
 
 // gl_ngraph.c
