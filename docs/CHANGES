@@ -21,6 +21,7 @@ Version 0.3
 - Linux USB mouse poll rate settings are checked and a warning is given if
   found to be lower than 500Hz.
 - Made PNG the default screenshot format.
+- v_damagecshift and v_kicktime now default to 0.
 
 Version 0.2
 ===========

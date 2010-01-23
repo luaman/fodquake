@@ -45,7 +45,7 @@ cvar_t	cl_rollangle = {"cl_rollangle", "2.0"};
 cvar_t	cl_bob = {"cl_bob", "0.02"};
 cvar_t	cl_bobcycle = {"cl_bobcycle", "0.6"};
 cvar_t	cl_bobup = {"cl_bobup", "0.5"};
-cvar_t	v_kicktime = {"v_kicktime", "0.5"};
+cvar_t	v_kicktime = {"v_kicktime", "0"};
 cvar_t	v_kickroll = {"v_kickroll", "0.6"};
 cvar_t	v_kickpitch = {"v_kickpitch", "0.6"};
 cvar_t	v_gunkick = {"v_gunkick", "0"};
@@ -73,7 +73,7 @@ cvar_t  cl_crossx = {"cl_crossx", "0", CVAR_ARCHIVE};
 cvar_t  cl_crossy = {"cl_crossy", "0", CVAR_ARCHIVE};
 
 cvar_t  v_contentblend = {"v_contentblend", "1"};
-cvar_t	v_damagecshift = {"v_damagecshift", "1"};
+cvar_t	v_damagecshift = {"v_damagecshift", "0"};
 cvar_t	v_quadcshift = {"v_quadcshift", "1"};
 cvar_t	v_suitcshift = {"v_suitcshift", "1"};
 cvar_t	v_ringcshift = {"v_ringcshift", "1"};
