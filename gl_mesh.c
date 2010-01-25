@@ -80,7 +80,7 @@ int	StripLength (int starttri, int startv)
 
 	// look for a matching triangle
 nexttri:
-	for (j=starttri+1, check=&triangles[starttri+1] ; j<pheader->numtris ; j++, check++)
+	for (j=starttri+1, check=&triangles[starttri+1] ; j<pheader->numtris && stripcount + 2 + 2 < (sizeof(stripverts)/sizeof(*stripverts)) && stripcount + 2 < (sizeof(striptris)/sizeof(*striptris)) ; j++, check++)
 	{
 		if (check->facesfront != last->facesfront)
 			continue;
@@ -150,7 +150,7 @@ int	FanLength (int starttri, int startv)
 
 	// look for a matching triangle
 nexttri:
-	for (j=starttri+1, check=&triangles[starttri+1] ; j<pheader->numtris ; j++, check++)
+	for (j=starttri+1, check=&triangles[starttri+1] ; j<pheader->numtris && stripcount + 2 + 2 < (sizeof(stripverts)/sizeof(*stripverts)) && stripcount + 2 < (sizeof(striptris)/sizeof(*striptris)); j++, check++)
 	{
 		if (check->facesfront != last->facesfront)
 			continue;
@@ -207,6 +207,9 @@ void BuildTris (void)
 	int		besttris[1024];
 	int		type;
 
+	if (pheader->numtris > (sizeof(used)/sizeof(*used)))
+		Sys_Error("Sorry, a 'tard wrote this code.");
+
 	//
 	// build tristrips
 	//
@@ -229,8 +232,15 @@ void BuildTris (void)
 					len = StripLength (i, startv);
 				else
 					len = FanLength (i, startv);
+
 				if (len > bestlen)
 				{
+					if (len + 2 >= (sizeof(bestverts)/sizeof(*bestverts)))
+						Sys_Error("Sorry, a 'tard wrote this code.");
+
+					if (len >= (sizeof(besttris)/sizeof(*besttris)))
+						Sys_Error("Sorry, a 'tard wrote this code.");
+
 					besttype = type;
 					bestlen = len;
 					for (j=0 ; j<bestlen+2 ; j++)
@@ -244,6 +254,9 @@ void BuildTris (void)
 		// mark the tris on the best strip as used
 		for (j=0 ; j<bestlen ; j++)
 			used[besttris[j]] = 1;
+
+		if (numcommands + 2 >= (sizeof(commands)/sizeof(*commands)))
+			Sys_Error("Sorry, a 'tard wrote this code.");
 
 		if (besttype == 1)
 			commands[numcommands++] = (bestlen+2);
@@ -263,6 +276,9 @@ void BuildTris (void)
 				s += pheader->skinwidth / 2;	// on back side
 			s = (s + 0.5) / pheader->skinwidth;
 			t = (t + 0.5) / pheader->skinheight;
+
+			if (numcommands + 3 >= (sizeof(commands)/sizeof(*commands)))
+				Sys_Error("Sorry, a 'tard wrote this code.");
 
 			*(float *)&commands[numcommands++] = s;
 			*(float *)&commands[numcommands++] = t;
