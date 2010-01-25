@@ -32,7 +32,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define	MAX_LIGHTMAPS		64
 
 static int lightmap_textures;
-static unsigned blocklights[MAX_LIGHTMAP_SIZE * 3];
+static unsigned int blocklights[MAX_LIGHTMAP_SIZE * 3];
 
 typedef struct glRect_s {
 	unsigned char l, t, w, h;
@@ -195,16 +195,22 @@ static void R_BuildDlightList (msurface_t *surf) {
 	mtexinfo_t *tex;
 	int lnum, i, smax, tmax, irad, iminlight, local[2], tdmin, sdmin, distmin;
 	dlightinfo_t *light;
+	unsigned int dlightbits;
+	int lnumdlights;
 
-	numdlights = 0;
+	lnumdlights = 0;
 
 	smax = (surf->extents[0]>>4)+1;
 	tmax = (surf->extents[1]>>4)+1;
 	tex = surf->texinfo;
 
-	for (lnum = 0; lnum < MAX_DLIGHTS; lnum++) {
-		if ( !(surf->dlightbits & (1 << lnum) ) )
+	dlightbits = surf->dlightbits;
+
+	for (lnum = 0; lnum < MAX_DLIGHTS && dlightbits; lnum++) {
+		if ( !(dlightbits & (1 << lnum) ) )
 			continue;		// not lit by this light
+
+		dlightbits &= ~(1<<lnum);
 
 		dist = PlaneDiff(cl_dlights[lnum].origin, surf->plane);
 		irad = (cl_dlights[lnum].radius - fabs(dist)) * 256;
@@ -244,15 +250,17 @@ static void R_BuildDlightList (msurface_t *surf) {
 
 		if (distmin < iminlight) {
 			// save dlight info
-			light = &dlightlist[numdlights];
+			light = &dlightlist[lnumdlights];
 			light->minlight = iminlight;
 			light->rad = irad;
 			light->local[0] = local[0];
 			light->local[1] = local[1];
 			light->type = cl_dlights[lnum].type;
-			numdlights++;
+			lnumdlights++;
 		}
 	}
+
+	numdlights = lnumdlights;
 }
 
 static const int dlightcolor[NUM_DLIGHTTYPES][3] = {
@@ -272,7 +280,7 @@ static const int dlightcolor[NUM_DLIGHTTYPES][3] = {
 static void R_AddDynamicLights (msurface_t *surf) {
 	int i, smax, tmax, s, t, sd, td, _sd, _td, irad, idist, iminlight, color[3], tmp;
 	dlightinfo_t *light;
-	unsigned *dest;
+	unsigned int *dest;
 
 	smax = (surf->extents[0]>>4)+1;
 	tmax = (surf->extents[1]>>4)+1;
@@ -316,29 +324,12 @@ static void R_AddDynamicLights (msurface_t *surf) {
 	}
 }
 
-//Combine and scale multiple lightmaps into the 8.8 format in blocklights
-static void R_BuildLightMap (msurface_t *surf, byte *dest, int stride) {
-	int smax, tmax, t, i, j, size, blocksize, maps;
-	byte *lightmap;
-	unsigned scale, *bl;
-
-	surf->cached_dlight = !!numdlights;
-
-	smax = (surf->extents[0] >> 4) + 1;
-	tmax = (surf->extents[1] >> 4) + 1;
-	size = smax * tmax;
-	blocksize = size * 3;
-	lightmap = surf->samples;
-
-	// set to full bright if no light data
-	if (/* r_fullbright.value || */ !cl.worldmodel->lightdata)  {
-		for (i = 0; i < blocksize; i++)
-			blocklights[i] = 255 << 8;
-		goto store;
-	}
-
-	// clear to no light
-	memset (blocklights, 0, blocksize * sizeof(int));
+static void AddAllLightMaps(byte *lightmap, msurface_t *surf, int blocksize)
+{
+	int maps;
+	int i;
+	unsigned scale;
+	unsigned int *bl;
 
 	// add all the lightmaps
 	if (lightmap) {
@@ -351,6 +342,159 @@ static void R_BuildLightMap (msurface_t *surf, byte *dest, int stride) {
 			lightmap += blocksize;		// skip to next lightmap
 		}
 	}
+}
+
+static void lightmapstore_inv_mode2(int stride, int smax, int tmax, byte *dest)
+{
+	unsigned int *bl;
+	int i;
+	int j;
+	int t;
+
+	bl = blocklights;
+
+	for (i = 0; i < tmax; i++, dest += stride)
+	{
+		for (j = smax; j; j--)
+		{
+			t = bl[0]; t = (t >> 8) + (t >> 9); if (t > 255) t = 255;
+			dest[0] = 255 - t;
+			t = bl[1]; t = (t >> 8) + (t >> 9); if (t > 255) t = 255;
+			dest[1] = 255 - t;
+			t = bl[2]; t = (t >> 8) + (t >> 9); if (t > 255) t = 255;
+			dest[2] = 255 - t;
+			bl += 3;
+			dest += 3;
+		}
+	}
+}
+
+static void lightmapstore_inv_mode0(int stride, int smax, int tmax, byte *dest)
+{
+	unsigned int *bl;
+	int i;
+	int j;
+	int t;
+
+	bl = blocklights;
+
+	for (i = 0; i < tmax; i++, dest += stride)
+	{
+		for (j = smax; j; j--)
+		{
+			t = bl[0]; t = t >> 7; if (t > 255) t = 255;
+			dest[0] = 255 - t;
+			t = bl[1]; t = t >> 7; if (t > 255) t = 255;
+			dest[1] = 255 - t;
+			t = bl[2]; t = t >> 7; if (t > 255) t = 255;
+			dest[2] = 255 - t;
+			bl += 3;
+			dest += 3;
+		}
+	}
+}
+
+static void lightmapstore_ninv_mode2(int stride, int smax, int tmax, byte *dest)
+{
+	unsigned int *bl;
+	int i;
+	int j;
+	int t;
+
+	bl = blocklights;
+
+	for (i = 0; i < tmax; i++, dest += stride)
+	{
+		for (j = smax; j; j--)
+		{
+			t = bl[0]; t = (t >> 8) + (t >> 9); if (t > 255) t = 255;
+			dest[0] = t;
+			t = bl[1]; t = (t >> 8) + (t >> 9); if (t > 255) t = 255;
+			dest[1] = t;
+			t = bl[2]; t = (t >> 8) + (t >> 9); if (t > 255) t = 255;
+			dest[2] = t;
+			bl += 3;
+			dest += 3;
+		}
+	}
+}
+
+static void lightmapstore_ninv_mode0(int stride, int smax, int tmax, byte *dest)
+{
+	unsigned int *bl;
+	int i;
+	int j;
+	int t;
+
+	bl = blocklights;
+
+	for (i = 0; i < tmax; i++, dest += stride)
+	{
+		for (j = smax; j; j--)
+		{
+			t = bl[0]; t = t >> 7; if (t > 255) t = 255;
+			dest[0] = t;
+			t = bl[1]; t = t >> 7; if (t > 255) t = 255;
+			dest[1] = t;
+			t = bl[2]; t = t >> 7; if (t > 255) t = 255;
+			dest[2] = t;
+			bl += 3;
+			dest += 3;
+		}
+	}
+}
+
+static void StoreLightMap(int stride, int smax, int tmax, byte *dest)
+{
+	if (gl_invlightmaps)
+	{
+		if (lightmode == 2)
+		{
+			lightmapstore_inv_mode2(stride, smax, tmax, dest);
+		}
+		else
+		{
+			lightmapstore_inv_mode0(stride, smax, tmax, dest);
+		}
+	}
+	else
+	{
+		if (lightmode == 2)
+		{
+			lightmapstore_ninv_mode2(stride, smax, tmax, dest);
+		}
+		else
+		{
+			lightmapstore_ninv_mode0(stride, smax, tmax, dest);
+		}
+	}
+}
+
+//Combine and scale multiple lightmaps into the 8.8 format in blocklights
+static void R_BuildLightMap (msurface_t *surf, byte *dest, int stride) {
+	int smax, tmax, size, i, blocksize;
+	byte *lightmap;
+
+	surf->cached_dlight = !!numdlights;
+
+	smax = (surf->extents[0] >> 4) + 1;
+	tmax = (surf->extents[1] >> 4) + 1;
+	size = smax * tmax;
+	stride -= smax * 3;
+	blocksize = size * 3;
+	lightmap = surf->samples;
+
+	// set to full bright if no light data
+	if (/* r_fullbright.value || */ !cl.worldmodel->lightdata)  {
+		for (i = 0; i < blocksize; i++)
+			blocklights[i] = 255 << 8;
+		goto store;
+	}
+
+	// clear to no light
+	memset (blocklights, 0, blocksize * sizeof(*blocklights));
+
+	AddAllLightMaps(lightmap, surf, blocksize);
 
 	// add all the dynamic lights
 	if (numdlights)
@@ -358,60 +502,8 @@ static void R_BuildLightMap (msurface_t *surf, byte *dest, int stride) {
 
 	// bound, invert, and shift
 store:
-	bl = blocklights;
-	stride -= smax * 3;
-	for (i = 0; i < tmax; i++, dest += stride) {
+	StoreLightMap(stride, smax, tmax, dest);
 
-		if (gl_invlightmaps) {
-			if (lightmode == 2) {
-				for (j = smax; j; j--) {
-					t = bl[0]; t = (t >> 8) + (t >> 9); if (t > 255) t = 255;
-					dest[0] = 255 - t;
-					t = bl[1]; t = (t >> 8) + (t >> 9); if (t > 255) t = 255;
-					dest[1] = 255 - t;
-					t = bl[2]; t = (t >> 8) + (t >> 9); if (t > 255) t = 255;
-					dest[2] = 255 - t;
-					bl += 3;
-					dest += 3;
-				}
-			} else {
-				for (j = smax; j; j--) {
-					t = bl[0]; t = t >> 7; if (t > 255) t = 255;
-					dest[0] = 255 - t;
-					t = bl[1]; t = t >> 7; if (t > 255) t = 255;
-					dest[1] = 255 - t;
-					t = bl[2]; t = t >> 7; if (t > 255) t = 255;
-					dest[2] = 255 - t;
-					bl += 3;
-					dest += 3;
-				}
-			}
-		} else {
-			if (lightmode == 2) {
-				for (j = smax; j; j--) {
-					t = bl[0]; t = (t >> 8) + (t >> 9); if (t > 255) t = 255;
-					dest[0] = t;
-					t = bl[1]; t = (t >> 8) + (t >> 9); if (t > 255) t = 255;
-					dest[1] = t;
-					t = bl[2]; t = (t >> 8) + (t >> 9); if (t > 255) t = 255;
-					dest[2] = t;
-					bl += 3;
-					dest += 3;
-				}
-			} else {
-				for (j = smax; j; j--) {
-					t = bl[0]; t = t >> 7; if (t > 255) t = 255;
-					dest[0] = t;
-					t = bl[1]; t = t >> 7; if (t > 255) t = 255;
-					dest[1] = t;
-					t = bl[2]; t = t >> 7; if (t > 255) t = 255;
-					dest[2] = t;
-					bl += 3;
-					dest += 3;
-				}
-			}
-		}
-	}
 }
 
 static void R_UploadLightMap (int lightmapnum) {
