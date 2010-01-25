@@ -162,6 +162,7 @@ void R_MarkLights (dlight_t *light, int bit, mnode_t *node) {
 	float dist;
 	msurface_t *surf;
 	int i;
+	unsigned dlightframecount;
 	
 	if (node->contents < 0)
 		return;
@@ -177,13 +178,15 @@ void R_MarkLights (dlight_t *light, int bit, mnode_t *node) {
 		R_MarkLights (light, bit, node->children[1]);
 		return;
 	}
-		
+
+	dlightframecount = r_dlightframecount;
+
 	// mark the polygons
 	surf = cl.worldmodel->surfaces + node->firstsurface;
 	for (i = 0; i < node->numsurfaces; i++, surf++) {
-		if (surf->dlightframe != r_dlightframecount) {
+		if (surf->dlightframe != dlightframecount) {
 			surf->dlightbits = 0;
-			surf->dlightframe = r_dlightframecount;
+			surf->dlightframe = dlightframecount;
 		}
 		surf->dlightbits |= bit;
 	}
