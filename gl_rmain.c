@@ -128,8 +128,6 @@ cvar_t gl_part_inferno = {"gl_part_inferno", "0"};
 
 int		lightmode = 2;
 
-static int deathframes[] = { 49, 60, 69, 77, 84, 93, 102, 0 };
-
 void R_MarkLeaves (void);
 void R_InitBubble (void);
 
@@ -448,49 +446,6 @@ static void R_SetupAliasFrame (maliasframedesc_t *oldframe, maliasframedesc_t *f
 	}
 
 	GL_DrawAliasFrame (paliashdr, oldpose, pose, mtex);
-}
-
-extern vec3_t lightspot;
-
-static void GL_DrawAliasShadow (aliashdr_t *paliashdr, int posenum) {
-	int *order, count;
-	vec3_t point;
-	float lheight = currententity->origin[2] - lightspot[2], height = 1 - lheight;
-	trivertx_t *verts;
-
-	verts = (trivertx_t *) ((byte *) paliashdr + paliashdr->posedata);
-	verts += posenum * paliashdr->poseverts;
-	order = (int *) ((byte *) paliashdr + paliashdr->commands);
-
-	while ((count = *order++)) {
-		// get the vertex count and primitive type
-		if (count < 0) {
-			count = -count;
-			glBegin (GL_TRIANGLE_FAN);
-		} else {
-			glBegin (GL_TRIANGLE_STRIP);
-		}
-
-		do {
-			//no texture for shadows
-			order += 2;
-
-			// normals and vertexes come from the frame list
-			point[0] = verts->v[0] * paliashdr->scale[0] + paliashdr->scale_origin[0];
-			point[1] = verts->v[1] * paliashdr->scale[1] + paliashdr->scale_origin[1];
-			point[2] = verts->v[2] * paliashdr->scale[2] + paliashdr->scale_origin[2];
-
-			point[0] -= shadevector[0] * (point[2] +lheight);
-			point[1] -= shadevector[1] * (point[2] + lheight);
-			point[2] = height;
-			//height -= 0.001;
-			glVertex3fv (point);
-
-			verts++;
-		} while (--count);
-
-		glEnd ();
-	}	
 }
 
 static void R_AliasSetupFullLight(model_t *model)
