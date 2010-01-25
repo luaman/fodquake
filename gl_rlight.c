@@ -45,7 +45,7 @@ void R_AnimateLight (void) {
 }
 
 
-float bubble_sintable[17], bubble_costable[17];
+static float bubble_sintable[17], bubble_costable[17];
 
 void R_InitBubble(void) {
 	float a, *bub_sin, *bub_cos;
@@ -61,7 +61,7 @@ void R_InitBubble(void) {
 	}
 }
 
-float bubblecolor[NUM_DLIGHTTYPES][4] = {
+static float bubblecolor[NUM_DLIGHTTYPES][4] = {
 	{ 0.2, 0.1, 0.05 },		// dimlight or brightlight (lt_default)
 	{ 0.2, 0.1, 0.05 },		// muzzleflash
 	{ 0.2, 0.1, 0.05 },		// explosion
@@ -73,7 +73,7 @@ float bubblecolor[NUM_DLIGHTTYPES][4] = {
 	{ 0.5, 0.5, 0.5},		// white
 };
 
-void R_RenderDlight (dlight_t *light) {
+static void R_RenderDlight (dlight_t *light) {
 	int i, j;
 	vec3_t v, v_right, v_up;
 	float length, rad, *bub_sin, *bub_cos;
@@ -211,11 +211,11 @@ void R_PushDlights (void) {
 }
 
 
-mplane_t	*lightplane;
-vec3_t		lightspot;
-vec3_t		lightcolor;
+static mplane_t	*lightplane;
+static vec3_t		lightspot;
+static vec3_t		lightcolor;
 
-int RecursiveLightPoint (vec3_t color, mnode_t *node, vec3_t start, vec3_t end) {
+static int RecursiveLightPoint (vec3_t color, mnode_t *node, vec3_t start, vec3_t end) {
 	float front, back, frac;
 	vec3_t mid;
 
