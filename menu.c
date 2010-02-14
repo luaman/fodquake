@@ -1924,6 +1924,8 @@ void M_MultiPlayer_Key (int key) {
 		m_entersound = true;
 		switch (m_multiplayer_cursor) {
 		case 0:
+			key_dest = key_game;
+			m_state = m_none;
 			SB_Activate_f();
 			break;
 
