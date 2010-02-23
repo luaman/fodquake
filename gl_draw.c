@@ -571,7 +571,10 @@ void Draw_InitCharset(void)
 	Draw_LoadCharset(gl_consolefont.string);
 
 	if (!char_texture)
+	{
 		Cvar_Set(&gl_consolefont, "original");
+		Draw_LoadCharset(gl_consolefont.string);
+	}
 
 	if (!char_texture)	
 		Sys_Error("Draw_InitCharset: Couldn't load charset");
