@@ -1,6 +1,6 @@
 /*
 Copyright (C) 1996-1997 Id Software, Inc.
-Copyright (C) 2006-2007 Mark Olsen
+Copyright (C) 2006-2010 Mark Olsen
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -66,6 +66,7 @@ struct display
 	GLXContext ctx;
 	int scrnum;
 	int hasfocus;
+	int focuschanged;
 
 	int fullscreen;
 	char used_mode[256];
@@ -77,8 +78,6 @@ struct display
 	int utterly_fucktastically_broken_driver;
 };
 
-
-#define X_MASK (VisibilityChangeMask)
 
 static void RestoreHWGamma(struct display *d);
 
@@ -230,10 +229,12 @@ void Sys_Video_BeginFrame(void *display, unsigned int *x, unsigned int *y, unsig
 		{
 			case FocusIn:
 				d->hasfocus = 1;
+				d->focuschanged = 1;
 				V_UpdatePalette(true);
 				break;
 			case FocusOut:
 				d->hasfocus = 0;
+				d->focuschanged = 1;
 				RestoreHWGamma(display);
 				break;
 		}
@@ -431,7 +432,7 @@ void *Sys_Video_Open(const char *mode, unsigned int width, unsigned int height, 
 				attr.background_pixel = 0;
 				attr.border_pixel = 0;
 				attr.colormap = XCreateColormap(d->x_disp, root, visinfo->visual, AllocNone);
-				attr.event_mask = X_MASK;
+				attr.event_mask = VisibilityChangeMask | FocusChangeMask;
 				mask = CWBackPixel | CWBorderPixel | CWColormap | CWEventMask;
 	
 				if (fullscreen)
@@ -504,6 +505,17 @@ qboolean Sys_Video_HWGammaSupported(void *display)
 
 int Sys_Video_FocusChanged(void *display)
 {
+	struct display *d;
+
+	d = display;
+
+	if (d->focuschanged)
+	{
+		d->focuschanged = 0;
+
+		return 1;
+	}
+
 	return 0;
 }
 
