@@ -256,7 +256,7 @@ static char keyconv[] =
 	'=',
 	0,
 	0,
-	K_INS,
+	KP_INS,
 	'q',
 	'w',
 	'e',
@@ -341,8 +341,8 @@ static char keyconv[] =
 	K_RSHIFT,
 	K_CAPSLOCK,
 	K_RCTRL,
-	K_ALT,			/* 100 */
-	K_ALT,
+	K_LALT,			/* 100 */
+	K_RALT,
 	0,
 	0,
 	0,
