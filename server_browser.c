@@ -635,6 +635,8 @@ static int check_player(struct tab *tab, const struct QWServer *server)
 	return check_player_name(tab->player_filter, server);
 }
 
+static int hostname_compare(const void *a, const void *b);
+
 static int player_count_compare(const void *a, const void *b)
 {
 	struct QWServer *x, *y;
@@ -642,8 +644,12 @@ static int player_count_compare(const void *a, const void *b)
 	y = (struct QWServer *) sb_qw_server[*(int *)b];
 
 	if (y->numplayers == x->numplayers)
-		return y->numspectators - x->numspectators;
+	{
+		if (y->numspectators == x->numspectators)
+			return hostname_compare(a, b);
 
+		return y->numspectators - x->numspectators;
+	}
 
 	return (y->numplayers - x->numplayers);
 }
@@ -662,6 +668,9 @@ static int ping_compare(const void *a, const void *b)
 	else if (y->status == QWSS_FAILED)
 		return -1;
 
+	if (x->pingtime == y->pingtime)
+		return hostname_compare(a, b);
+
 	return (x->pingtime - y->pingtime);
 }
 
@@ -669,11 +678,14 @@ static int hostname_compare(const void *a, const void *b)
 {
 	struct QWServer *x, *y;
 	char buf[64];
+
 	x = (struct QWServer *) sb_qw_server[*(int *)a];
 	y = (struct QWServer *) sb_qw_server[*(int *)b];
 
 	if (x->hostname && y->hostname)
-		return (strcasecmp(x->hostname, y->hostname));
+	{
+		return strcasecmp(x->hostname, y->hostname);
+	}
 	else if (!x->hostname && !y->hostname)
 	{
 		strlcpy(buf, NET_AdrToString(&x->addr), sizeof(buf));
@@ -691,11 +703,20 @@ static int hostname_compare(const void *a, const void *b)
 static int map_compare(const void *a, const void *b)
 {
 	struct QWServer *x, *y;
+	int ret;
+
 	x = (struct QWServer *) sb_qw_server[*(int *)a];
 	y = (struct QWServer *) sb_qw_server[*(int *)b];
 
 	if (x->map && y->map)
-		return (strcasecmp(x->map, y->map));
+	{
+		ret = strcasecmp(x->map, y->map);
+
+		if (ret == 0)
+			return hostname_compare(a, b);
+
+		return ret;
+	}
 	else
 	{
 		if (x->map)
