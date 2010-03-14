@@ -312,7 +312,7 @@ void M_Main_Key (int key) {
 //=============================================================================
 /* OPTIONS MENU */
 
-#define	OPTIONS_ITEMS	15
+#define	OPTIONS_ITEMS	16
 
 #define	SLIDER_RANGE	10
 
@@ -328,7 +328,7 @@ void M_AdjustSliders (int dir) {
 	S_LocalSound ("misc/menu3.wav");
 
 	switch (options_cursor) {
-	case 3:	// screen size
+	case 4:	// screen size
 		scr_viewsize.value += dir * 10;
 		if (scr_viewsize.value < 30)
 			scr_viewsize.value = 30;
@@ -336,7 +336,7 @@ void M_AdjustSliders (int dir) {
 			scr_viewsize.value = 120;
 		Cvar_SetValue (&scr_viewsize, scr_viewsize.value);
 		break;
-	case 4:	// gamma
+	case 5:	// gamma
 		v_gamma.value -= dir * 0.05;
 		if (v_gamma.value < 0.5)
 			v_gamma.value = 0.5;
@@ -344,7 +344,7 @@ void M_AdjustSliders (int dir) {
 			v_gamma.value = 1;
 		Cvar_SetValue (&v_gamma, v_gamma.value);
 		break;
-	case 5:	// contrast
+	case 6:	// contrast
 		v_contrast.value += dir * 0.1;
 		if (v_contrast.value < 1)
 			v_contrast.value = 1;
@@ -352,7 +352,7 @@ void M_AdjustSliders (int dir) {
 			v_contrast.value = 2;
 		Cvar_SetValue (&v_contrast, v_contrast.value);
 		break;
-	case 6:	// mouse speed
+	case 7:	// mouse speed
 		sensitivity.value += dir * 0.5;
 		if (sensitivity.value < 1)
 			sensitivity.value = 1;
@@ -360,7 +360,7 @@ void M_AdjustSliders (int dir) {
 			sensitivity.value = 11;
 		Cvar_SetValue (&sensitivity, sensitivity.value);
 		break;
-	case 7:	// music volume
+	case 8:	// music volume
 #ifdef _WIN32
 		bgmvolume.value += dir * 1.0;
 #else
@@ -372,7 +372,7 @@ void M_AdjustSliders (int dir) {
 			bgmvolume.value = 1;
 		Cvar_SetValue (&bgmvolume, bgmvolume.value);
 		break;
-	case 8:	// sfx volume
+	case 9:	// sfx volume
 		s_volume.value += dir * 0.1;
 		if (s_volume.value < 0)
 			s_volume.value = 0;
@@ -381,19 +381,19 @@ void M_AdjustSliders (int dir) {
 		Cvar_SetValue (&s_volume, s_volume.value);
 		break;
 		
-	case 9:	// invert mouse
+	case 10:	// invert mouse
 		Cvar_SetValue (&m_pitch, -m_pitch.value);
 		break;
 	
-	case 10:
+	case 11:
 		Cvar_SetValue (&cl_sbar, !cl_sbar.value);
 		break;
 
-	case 11:
+	case 12:
 		Cvar_SetValue (&cl_hudswap, !cl_hudswap.value);
 		break;
 
-	case 14:	// _windowed_mouse
+	case 15:	// _windowed_mouse
 		Cvar_SetValue (&in_grab_windowed_mouse, !in_grab_windowed_mouse.value);
 		break;
 	}
@@ -421,56 +421,80 @@ void M_DrawCheckbox (int x, int y, int on) {
 void M_Options_Draw (void) {
 	float		r;
 	mpic_t	*p;
+	int y;
 
 	M_DrawTransPic (16, 4, Draw_CachePic ("gfx/qplaque.lmp") );
 	p = Draw_CachePic ("gfx/p_option.lmp");
 	M_DrawPic ( (320-p->width)/2, 4, p);
 
-	M_Print (16, 32, "    Customize controls");
-	M_Print (16, 40, "         Go to console");
-	M_Print (16, 48, "     Reset to defaults");
+	y = 32;
 
-	M_Print (16, 56, "           Screen size");
+	M_Print (16, y, "    Customize controls");
+	y += 8;
+
+	M_Print (16, y, "         Go to console");
+	y += 8;
+
+	M_Print (16, y, "     Reset to defaults");
+	y += 8;
+
+	M_Print (16, y, "    Save configuration");
+	y += 8;
+
+
+	M_Print (16, y, "           Screen size");
 	r = (scr_viewsize.value - 30) / (120 - 30);
-	M_DrawSlider (220, 56, r);
+	M_DrawSlider (220, y, r);
+	y += 8;
 
-	M_Print (16, 64, "                 Gamma");
+	M_Print (16, y, "                 Gamma");
 	r = (1.0 - v_gamma.value) / 0.5;
-	M_DrawSlider (220, 64, r);
+	M_DrawSlider (220, y, r);
+	y += 8;
 
-	M_Print (16, 72, "              Contrast");
+	M_Print (16, y, "              Contrast");
 	r = v_contrast.value - 1.0;
-	M_DrawSlider (220, 72, r);
+	M_DrawSlider (220, y, r);
+	y += 8;
 
-	M_Print (16, 80, "           Mouse speed");
+	M_Print (16, y, "           Mouse speed");
 	r = (sensitivity.value - 1)/10;
-	M_DrawSlider (220, 80, r);
+	M_DrawSlider (220, y, r);
+	y += 8;
 
-	M_Print (16, 88, "       CD music volume");
+	M_Print (16, y, "       CD music volume");
 	r = bgmvolume.value;
-	M_DrawSlider (220, 88, r);
+	M_DrawSlider (220, y, r);
+	y += 8;
 
-	M_Print (16, 96, "          Sound volume");
+	M_Print (16, y, "          Sound volume");
 	r = s_volume.value;
-	M_DrawSlider (220, 96, r);
+	M_DrawSlider (220, y, r);
+	y += 8;
 
-	M_Print (16, 104, "          Invert mouse");
-	M_DrawCheckbox (220, 104, m_pitch.value < 0);
+	M_Print (16, y, "          Invert mouse");
+	M_DrawCheckbox (220, y, m_pitch.value < 0);
+	y += 8;
 
-	M_Print (16, 112, "    Use old status bar");
-	M_DrawCheckbox (220, 112, cl_sbar.value);
+	M_Print (16, y, "    Use old status bar");
+	M_DrawCheckbox (220, y, cl_sbar.value);
+	y += 8;
 
-	M_Print (16, 120, "      HUD on left side");
-	M_DrawCheckbox (220, 120, cl_hudswap.value);
+	M_Print (16, y, "      HUD on left side");
+	M_DrawCheckbox (220, y, cl_hudswap.value);
+	y += 8;
 
-	M_Print (16, 128, "          FPS settings");
+	M_Print (16, y, "          FPS settings");
+	y += 8;
 
-	M_Print (16, 136, "           Video modes");
+	M_Print (16, y, "           Video modes");
+	y += 8;
 
 	if (!VID_GetFullscreen())
 	{
-		M_Print (16, 144, "             Use mouse");
-		M_DrawCheckbox (220, 144, in_grab_windowed_mouse.value);
+		M_Print (16, y, "             Use mouse");
+		M_DrawCheckbox (220, y, in_grab_windowed_mouse.value);
+		y += 8;
 	}
 
 	// cursor
@@ -500,10 +524,13 @@ void M_Options_Key (int k) {
 	case 2:
 		Cbuf_AddText ("exec default.cfg\n");
 		break;
-	case 12:
-		M_Menu_Fps_f ();
+	case 3:
+		Cbuf_AddText ("cfg_save config.cfg\n");
 		break;
 	case 13:
+		M_Menu_Fps_f ();
+		break;
+	case 14:
 		M_Menu_Video_f ();
 		break;
 	default:
@@ -548,10 +575,10 @@ void M_Options_Key (int k) {
 	}
 
 	if (k == K_UPARROW || k == K_END || k == K_PGDN) {
-		if (options_cursor == 14 && VID_GetFullscreen())
-			options_cursor = 13;
+		if (options_cursor == 15 && VID_GetFullscreen())
+			options_cursor = 14;
 	} else {
-		if (options_cursor == 14 && VID_GetFullscreen())
+		if (options_cursor == 15 && VID_GetFullscreen())
 			options_cursor = 0;
 	}
 }
