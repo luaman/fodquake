@@ -58,6 +58,12 @@ cvar_t sb_masterserver = {"sb_masterserver", "qwmaster.fodquake.net:27000 master
 cvar_t sb_player_drawing = {"sb_player_drawing", "1"};
 cvar_t sb_refresh_on_activate = {"sb_refresh_on_activate", "1"};
 
+cvar_t sb_color_bg = {"sb_color_bg", "1"};
+cvar_t sb_color_bg_free = {"sb_color_bg_free", "55"};
+cvar_t sb_color_bg_full = {"sb_color_bg_full", "70"};
+cvar_t sb_color_bg_empty = {"sb_color_bg_empty", "1"};
+cvar_t sb_color_bg_specable = {"sb_color_bg_specable", "88"};
+
 char sb_macro_buf[512];
 
 static int sb_open = 0;
@@ -284,7 +290,7 @@ void SB_Filter_Delete_Filter(void);
 static void SB_Filter_Insert_Handler(int key);
 static void SB_Server_Insert_Handler(int key);
 static void update_tab(struct tab *tab);
- 
+
 static char *Filter_Type_String(int type)
 {
 	if (type == 0)
@@ -1835,7 +1841,7 @@ static void SB_Draw_Server(void)
 	}
 
 	offset += z;
-	Draw_Fill(0,(offset+3) * 8, vid.conwidth , 9 , 13);
+	//Draw_Fill(0,(offset+3) * 8, vid.conwidth , 9 , 13);
 	y = x+1;
 
 	for (i=0;x<tab->server_count && i < line_space ;i++,x++)
@@ -1868,6 +1874,25 @@ static void SB_Draw_Server(void)
 			snprintf(string, sizeof(string),"%-*s: %2i/%2i %-*.*s %s",friend_name_max_len, friend_name, server->numplayers, server->maxclients, 8, 8, map, hostname);
 		}
 			
+
+		if (sb_color_bg.value == 1)
+		{
+			if (server->maxclients == server->numplayers)
+			{
+				if (server->maxspectators == server->numspectators)
+					Draw_Fill(0, 24 + i * 8, vid.conwidth, 8, sb_color_bg_full.value);
+				else
+					Draw_Fill(0, 24 + i * 8, vid.conwidth, 8, sb_color_bg_specable.value);
+			} 
+			else if (server->maxclients > server->numplayers && server->numplayers > 0)
+			{
+				Draw_Fill(0, 24 + i * 8, vid.conwidth, 8, sb_color_bg_free.value);
+			}
+			else if (server->numplayers == 0)
+				Draw_Fill(0, 24 + i * 8, vid.conwidth, 8, sb_color_bg_empty.value);
+		}
+		if (server == current_selected_server)
+			Draw_Fill(0, 24 + i * 8, vid.conwidth , 9 , 13);
 		Draw_String(8, 24 + i * 8, string);
 		y++;
 	}
@@ -2381,6 +2406,11 @@ void SB_CvarInit(void)
 	Cvar_Register(&sb_masterserver);
 	Cvar_Register(&sb_player_drawing);
 	Cvar_Register(&sb_refresh_on_activate);
+	Cvar_Register(&sb_color_bg);
+	Cvar_Register(&sb_color_bg_empty);
+	Cvar_Register(&sb_color_bg_free);
+	Cvar_Register(&sb_color_bg_specable);
+	Cvar_Register(&sb_color_bg_full);
 }
 
 void Dump_SB_Config(FILE *f)

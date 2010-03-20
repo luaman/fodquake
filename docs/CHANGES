@@ -22,6 +22,7 @@ Version 0.3
   found to be lower than 500Hz.
 - Made PNG the default screenshot format.
 - v_damagecshift and v_kicktime now default to 0.
+- Server browser entries can now be colour coded depending on their fullness.
 
 Version 0.2
 ===========
