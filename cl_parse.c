@@ -39,6 +39,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "netqw.h"
 #endif
 
+extern cvar_t net_maxfps;
+
 void R_TranslatePlayerSkin (int playernum);
 void R_PreMapLoad(char *mapname);
 
@@ -1272,6 +1274,7 @@ void CL_ProcessServerInfo (void) {
 	char *p, *fbskins, *truelightning, *minlight;		
 	int teamplay, fpd;
 	qboolean skin_refresh, standby, countdown;
+	float maxfps;
 
 	// game type (sbar code checks it) (GAME_DEATHMATCH default)
 	cl.gametype = *(p = Info_ValueForKey(cl.serverinfo, "deathmatch")) ? (atoi(p) ? GAME_DEATHMATCH : GAME_COOP) : GAME_DEATHMATCH;
@@ -1279,9 +1282,19 @@ void CL_ProcessServerInfo (void) {
 	// server side fps restriction
 	cl.maxfps = Q_atof(Info_ValueForKey(cl.serverinfo, "maxfps"));
 
+	maxfps = cl.maxfps;
+	if (maxfps == 0)
+		maxfps = 72;
+
+	if (net_maxfps.value && net_maxfps.value < maxfps)
+		maxfps = net_maxfps.value;
+
+	if (maxfps < 30)
+		maxfps = 30;
+
 #ifdef NETQW
 	if (cls.netqw)
-		NetQW_SetFPS(cls.netqw, cl.maxfps);
+		NetQW_SetFPS(cls.netqw, maxfps);
 #endif
 
 	if (cls.demoplayback) {

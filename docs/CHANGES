@@ -23,6 +23,8 @@ Version 0.3
 - Made PNG the default screenshot format.
 - v_damagecshift and v_kicktime now default to 0.
 - Server browser entries can now be colour coded depending on their fullness.
+- The maximum number of network frames per second can now be set via the
+  net_maxfps cvar.
 
 Version 0.2
 ===========

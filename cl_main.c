@@ -58,6 +58,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 int movementkey;
 
+static qboolean net_maxfps_callback(cvar_t *var, char *string);
 static qboolean net_lag_callback(cvar_t *var, char *string);
 static qboolean net_lag_ezcheat_callback(cvar_t *var, char *string);
 
@@ -108,6 +109,7 @@ cvar_t cl_fp_persecond		= {"cl_fp_persecond", "4"};
 cvar_t cl_cmdline			= {"cl_cmdline", "", CVAR_ROM};	
 cvar_t cl_useproxy			= {"cl_useproxy", "0"};			
 
+cvar_t net_maxfps = { "net_maxfps", "0", 0, net_maxfps_callback };
 static cvar_t net_lag = { "net_lag", "0", 0, net_lag_callback };
 static cvar_t net_lag_ezcheat = { "net_lag_ezcheat", "0", 0, net_lag_ezcheat_callback };
 
@@ -176,6 +178,31 @@ static int cl_vidinitialised;
 struct netaddr cl_net_from;
 sizebuf_t cl_net_message;
 static byte cl_net_message_buffer[MAX_MSGLEN*2];
+
+static qboolean net_maxfps_callback(cvar_t *var, char *string)
+{
+	float maxfps;
+	float value;
+
+#ifdef NETQW
+	value = Q_atof(string);
+
+	maxfps = cl.maxfps;
+	if (maxfps == 0)
+		maxfps = 72;
+
+	if (value && value < maxfps)
+		maxfps = value;
+
+	if (maxfps < 30)
+		maxfps = 30;
+
+	if (cls.netqw)
+		NetQW_SetFPS(cls.netqw, maxfps);
+#endif
+
+	return false;
+}
 
 static qboolean net_lag_callback(cvar_t *var, char *string)
 {
@@ -1574,6 +1601,7 @@ void CL_CvarInit(void)
 	Cvar_Register (&cl_timeout);
 	Cvar_Register (&cl_useproxy);
 
+	Cvar_Register(&net_maxfps);
 	Cvar_Register(&net_lag);
 	Cvar_Register(&net_lag_ezcheat);
 
