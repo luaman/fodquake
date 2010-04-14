@@ -60,7 +60,7 @@ char *QTVR_Get_Retval(struct qtvr *qtvr)
 	}
 	Sys_Thread_UnlockMutex(qtvr->mutex);
 
-	return NULL;
+	return ret;
 }
 
 int QTVR_Waiting(struct qtvr *qtvr)
