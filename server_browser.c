@@ -28,6 +28,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "linked_list.h"
 #include "serverscanner.h"
 #include "readablechars.h"
+#include "server_browser_qtv.h"
 
 void SB_AddMacros(void);
 
@@ -54,6 +55,9 @@ static struct ServerScanner *serverscanner;
 
 static struct sb_friend *friends;
 
+static int qtv_connect_pending;
+static double qtv_connect_time;
+
 cvar_t sb_masterserver = {"sb_masterserver", "qwmaster.fodquake.net:27000 master.quakeservers.net:27000 satan.idsoftware.com:27000"};
 cvar_t sb_player_drawing = {"sb_player_drawing", "1"};
 cvar_t sb_refresh_on_activate = {"sb_refresh_on_activate", "1"};
@@ -63,8 +67,13 @@ cvar_t sb_color_bg_free = {"sb_color_bg_free", "55"};
 cvar_t sb_color_bg_full = {"sb_color_bg_full", "70"};
 cvar_t sb_color_bg_empty = {"sb_color_bg_empty", "1"};
 cvar_t sb_color_bg_specable = {"sb_color_bg_specable", "88"};
+cvar_t sb_qtv_proxy = {"sb_qtv_proxy", "asgaard.morphos-team.net:27599"};
+cvar_t sb_qtv_lookup = {"sb_qtv_lookup", "192.168.222.1:12000"};
+cvar_t sb_qtv_connect_timeout = {"sb_qtv_connect_timeout", "2"};
 
 char sb_macro_buf[512];
+
+static struct qtvr *qtvr;
 
 static int sb_open = 0;
 static int sb_default_settings = 1;
@@ -291,6 +300,26 @@ static void SB_Filter_Insert_Handler(int key);
 static void SB_Server_Insert_Handler(int key);
 static void update_tab(struct tab *tab);
 
+static void SB_Proxy_Connect(struct QWServer *server)
+{
+	int count;
+	int i;
+
+	if (qtvr)
+		QTVR_Destroy(qtvr);
+
+	qtvr = QTVR_Create(sb_qtv_lookup.string, NET_AdrToString(&server->addr));
+	if (qtvr == NULL)
+	{
+		Com_Printf("QTV Retriever not running.\n");
+		return;
+	}
+
+	Com_Printf("Retrieving proxy for %s\n", NET_AdrToString(&server->addr));
+	qtv_connect_pending = 1;
+	qtv_connect_time = cls.realtime;
+}
+ 
 static char *Filter_Type_String(int type)
 {
 	if (type == 0)
@@ -1217,6 +1246,23 @@ void SB_Key(int key)
 				return;
 			}
 
+			if (keydown[K_SHIFT])
+			{
+				if (tab->server_index)
+				{
+					i = tab->server_index[tab->sb_position];
+					server = sb_qw_server[i];
+				}
+				else
+				{
+					server = sb_qw_server[tab->sb_position];
+				}
+
+				SB_Proxy_Connect(server);
+				SB_Close();
+				return;
+			}
+
 
 			if (tab->server_index)
 			{
@@ -2036,6 +2082,32 @@ void SB_Frame(void)
 	enum ServerScannerStatus sss;
 	int count,todo;
 	int x;
+	char *proxy_stream = NULL;
+
+	if (qtv_connect_pending)
+	{
+		if (!QTVR_Waiting(qtvr))
+		{
+			proxy_stream = QTVR_Get_Retval(qtvr);
+			qtv_connect_pending = 0;
+			if (proxy_stream)
+				Cbuf_AddText(va("alias f_qtv \"say .qtv %s\"; connect %s; echo qtv will buffer for 10 seconds please be patient", proxy_stream, sb_qtv_proxy.string));
+			else
+				Com_Printf("Sorry could not get a qtv reply.\n");
+
+			QTVR_Destroy(qtvr);
+			qtvr = 0;
+		}
+
+		if (sb_qtv_connect_timeout.value + qtv_connect_time < cls.realtime)
+		{
+			Com_Printf("Sorry qtv lookup timed out.\n");
+			qtv_connect_pending = 0;
+			QTVR_Destroy(qtvr);
+			qtvr = 0;
+		}
+
+	}
 
 	if (key_dest != key_serverbrowser)
 		sb_open = 0;
@@ -2101,6 +2173,12 @@ void SB_Quit(void)
 		return;
 	ServerScanner_FreeServers(serverscanner, sb_qw_server);
 	ServerScanner_Delete(serverscanner);
+
+	if (qtvr)
+	{
+		QTVR_Destroy(qtvr);
+		qtvr = 0;
+	}
 }
 
 static void SB_List_Tabs_f(void)
@@ -2411,6 +2489,9 @@ void SB_CvarInit(void)
 	Cvar_Register(&sb_color_bg_free);
 	Cvar_Register(&sb_color_bg_specable);
 	Cvar_Register(&sb_color_bg_full);
+	Cvar_Register(&sb_qtv_proxy);
+	Cvar_Register(&sb_qtv_lookup);
+	Cvar_Register(&sb_qtv_connect_timeout);
 }
 
 void Dump_SB_Config(FILE *f)

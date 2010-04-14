@@ -209,6 +209,7 @@ OBJS= \
 	readablechars.o \
 	ruleset.o \
 	server_browser.o \
+	server_browser_qtv.o \
 	serverscanner.o \
 	skin.o \
 	sleep.o \
