@@ -67,8 +67,8 @@ cvar_t sb_color_bg_free = {"sb_color_bg_free", "55"};
 cvar_t sb_color_bg_full = {"sb_color_bg_full", "70"};
 cvar_t sb_color_bg_empty = {"sb_color_bg_empty", "1"};
 cvar_t sb_color_bg_specable = {"sb_color_bg_specable", "88"};
-cvar_t sb_qtv_proxy = {"sb_qtv_proxy", "asgaard.morphos-team.net:27599"};
-cvar_t sb_qtv_lookup = {"sb_qtv_lookup", "192.168.222.1:12000"};
+cvar_t sb_qtv_proxy = {"sb_qtv_proxy", "qtv.fodquake.net:27599"};
+cvar_t sb_qtv_lookup = {"sb_qtv_lookup", "qtv.fodquake.net:12000"};
 cvar_t sb_qtv_connect_timeout = {"sb_qtv_connect_timeout", "2"};
 
 char sb_macro_buf[512];
