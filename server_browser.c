@@ -656,10 +656,15 @@ static int check_player_name(char *name, const struct QWServer *server)
 	{
 		if (server->spectators[i].name)
 		{
-			if (strstr(server->spectators[i].name, player))
+			player_uncolored = remove_colors(server->spectators[i].name , strlen(server->spectators[i].name));
+			if (player_uncolored == NULL)
+				continue;
+			if (strcasestr(player_uncolored, player))
 			{
+				free(player_uncolored);
 				return 1;
 			}
+			free(player_uncolored);
 		}
 	}
 	return 0;
