@@ -302,9 +302,6 @@ static void update_tab(struct tab *tab);
 
 static void SB_Proxy_Connect(const struct QWServer *server)
 {
-	int count;
-	int i;
-
 	if (qtvr)
 		QTVR_Destroy(qtvr);
 
