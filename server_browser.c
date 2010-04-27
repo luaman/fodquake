@@ -300,7 +300,7 @@ static void SB_Filter_Insert_Handler(int key);
 static void SB_Server_Insert_Handler(int key);
 static void update_tab(struct tab *tab);
 
-static void SB_Proxy_Connect(struct QWServer *server)
+static void SB_Proxy_Connect(const struct QWServer *server)
 {
 	int count;
 	int i;
