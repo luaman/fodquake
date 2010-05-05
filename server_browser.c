@@ -58,9 +58,29 @@ static struct sb_friend *friends;
 static int qtv_connect_pending;
 static double qtv_connect_time;
 
+//sb_search
+static void SB_Finish_Search(void);
+static int sb_search_running;
+static double sb_last_refresh;
+struct sb_search_info
+{
+	char *player;
+	char *map;
+	char *gametype;
+};
+
+static struct sb_search_info sb_search_info;
+
 cvar_t sb_masterserver = {"sb_masterserver", "qwmaster.fodquake.net:27000 master.quakeservers.net:27000 satan.idsoftware.com:27000"};
 cvar_t sb_player_drawing = {"sb_player_drawing", "1"};
 cvar_t sb_refresh_on_activate = {"sb_refresh_on_activate", "1"};
+
+cvar_t sb_refresh_on_search = {"sb_refresh_on_search", "1"};
+cvar_t sb_search_show_players = {"sb_search_show_players", "1"};
+cvar_t sb_search_display_string = {"sb_search_display_string", "pmhc"};
+cvar_t sb_search_show_spectators = {"sb_search_show_spectators", "1"};
+
+cvar_t sb_refresh_interval = {"sb_refresh_interval", "180"};
 
 cvar_t sb_color_bg = {"sb_color_bg", "1"};
 cvar_t sb_color_bg_free = {"sb_color_bg_free", "55"};
@@ -785,7 +805,6 @@ static int stubby (struct tab *tab, const struct QWServer *server)
 static void update_friends_tab(struct tab *tab)
 {
 	int count, i, x;
-	int (*cf)(struct tab *tab, const struct QWServer *server);
 	struct sb_friend *s;
 
 	tab->max_hostname_length = 0;
@@ -2114,17 +2133,23 @@ void SB_Frame(void)
 	if (key_dest != key_serverbrowser)
 		sb_open = 0;
 
-	if (!sb_open)
+	if (!sb_open && !sb_search_running)
 		return;
 
 	if (serverscanner)
 		ServerScanner_DoStuff(serverscanner);
 
-	if (serverscanner && sb_check_serverscanner)
+	if (serverscanner && (sb_check_serverscanner || sb_search_running))
 	{
 		sss = ServerScanner_GetStatus(serverscanner);
 		if (sss == SSS_IDLE)
 		{
+			if (sb_search_running)
+			{
+				sb_search_running = 0;
+				SB_Finish_Search();
+			}
+
 			SB_Set_Statusbar("All done. Press \"ctrl + h\" for help.");
 			sb_check_serverscanner = 0;
 		}
@@ -2155,6 +2180,9 @@ void SB_Frame(void)
 			SB_Update_Tabs();
 		}
 	}
+
+	if (!sb_open)
+		return;
 
 	SB_Draw_Background();
 	if (sb_active_window != SB_HELP)
@@ -2466,6 +2494,272 @@ void SB_Remove_Friend_f(void)
 	SB_Remove_Friend(Cmd_Argv(1));
 }
 
+
+static int SB_Parse_Searchstring(void)
+{
+	static char *available_types = "nmg";
+	char *arguments;
+	int arguments_count;
+	int i;
+
+	arguments = Cmd_Argv(1);
+	arguments_count = strlen(arguments);
+
+	if (arguments_count == 0 || arguments_count > strlen(available_types))
+		return 1;
+
+	if (arguments_count + 2 != Cmd_Argc())
+		return 1;
+
+	if (sb_search_info.player)
+	{
+		free(sb_search_info.player);
+		sb_search_info.player = NULL;
+	}
+
+	if (sb_search_info.map)
+	{
+		free(sb_search_info.map);
+		sb_search_info.map = NULL;
+	}
+
+	if (sb_search_info.gametype)
+	{
+		free(sb_search_info.gametype);
+		sb_search_info.gametype = NULL;
+	}
+
+
+	for (i = 0; i < arguments_count; i++)
+	{
+		if (arguments[i] == 'n')
+		{
+			sb_search_info.player = strdup(Cmd_Argv(2 + i));
+			if (sb_search_info.player == NULL)
+				return 1;
+		}
+		if (arguments[i] == 'm')
+		{
+			sb_search_info.map = strdup(Cmd_Argv(2 + i));
+			if (sb_search_info.map == NULL)
+				return 1;
+		}
+		if (arguments[i] == 'g')
+		{
+			sb_search_info.gametype = strdup(Cmd_Argv(2 + i));
+			if (sb_search_info.gametype == NULL)
+				return 1;
+		}
+	}
+
+	return 0;
+}
+
+static void SB_Search_f(void)
+{
+
+	if (sb_search_running == 1)
+	{
+		Com_Printf("search already in progress.\n");
+		return;
+	}
+
+	if (Cmd_Argc() < 3)
+	{
+		Com_Printf("Usage: %s nm player_name map\nYou can use one or both arguments.\n", Cmd_Argv(0));
+		return;
+	}
+
+	if (SB_Parse_Searchstring() == 1)
+	{
+		Com_Printf("Usage: %s nm player_name map\nYou can use one or both arguments.\n", Cmd_Argv(0));
+		return;
+	}
+
+	sb_search_running = 1;
+
+	if (sb_refresh_on_search.value == 1 || serverscanner == NULL || sb_last_refresh + sb_refresh_interval.value < cls.realtime)
+	{
+		sb_last_refresh = cls.realtime;
+		SB_Refresh();
+	}
+
+}
+
+static void SB_Search_Print_Result_String(const struct QWServer *server, int count)
+{
+	char *ptr;
+	int len, i;
+
+
+	Com_Printf("%3i: ", count);
+
+	ptr = sb_search_display_string.string;
+	len = strlen(ptr);
+
+	for (i = 0; i < len; i++)
+	{
+		switch (*ptr)
+		{
+			case 'h':
+				Com_Printf("%s ", server->hostname);
+				break;
+			case 'p':
+				Com_Printf("%i ", server->pingtime/1000);
+				break;
+			case 'c':
+				Com_Printf("%i/%i ", server->numplayers, server->maxclients);
+				break;
+			case 'm':
+				if (server->map)
+					Com_Printf("%s ", server->map);
+				break;
+		}
+		ptr++;
+	}
+	Com_Printf("\n");
+
+}
+
+static void SB_Finish_Search(void)
+{
+	int x, i;
+	int found = 0;
+	int found_count = 0;
+
+	sb_search_running = 0;
+
+	if (sb_search_info.map)
+	{
+		Com_Printf("map: %s\n", sb_search_info.map);
+	}
+
+	if (sb_search_info.player)
+	{
+		Com_Printf("player: %s\n", sb_search_info.player);
+	}
+
+	if (sb_search_info.gametype)
+	{
+		Com_Printf("gametype: %s\n", sb_search_info.gametype);
+	}
+
+
+	for (x=0; x < sb_qw_server_count; x++)
+	{
+		found = 0;
+
+		if (sb_qw_server[x]->numplayers == 0 && sb_qw_server[x]->numspectators == 0)
+			continue;
+
+#warning Broken logic here. It checks for multiple types of search results, but the last one overrules the results of the previous ones?
+
+		if (sb_search_info.map && sb_qw_server[x]->map)
+		{
+			if (char_check(sb_qw_server[x]->map, sb_search_info.map, 0))
+			{
+				found = 1;
+			}
+			else 
+			{
+				found = 0;
+			}
+		}
+
+		if (sb_search_info.player)
+		{
+			if (check_player_name(sb_search_info.player, sb_qw_server[x]))
+			{
+				found = 1;
+			}
+			else 
+			{
+				found = 0;
+			}
+		}
+
+		if (sb_search_info.gametype)
+		{
+			if (strcmp(sb_search_info.gametype, "1on1") == 0)
+			{
+				if(sb_qw_server[x]->numplayers <= 2 && sb_qw_server[x]->maxclients == 2)
+					found = 1;
+				else
+					found = 0;
+			}
+			else if (strcmp(sb_search_info.gametype, "2on2") == 0)
+			{
+				if(sb_qw_server[x]->numplayers <= 4 && sb_qw_server[x]->maxclients == 4)
+					found = 1;
+				else
+					found = 0;
+			}
+			else if (strcmp(sb_search_info.gametype, "4on4") == 0)
+			{
+				if(sb_qw_server[x]->numplayers <= 8 && sb_qw_server[x]->maxclients == 8)
+					found = 1;
+				else
+					found = 0;
+			}
+		}
+
+		if (found == 1)
+		{
+			Cbuf_AddText(va("set sb_sr_ip_%i %s\n", found_count + 1, NET_AdrToString(&sb_qw_server[x]->addr)));
+
+			if (found_count > 0)
+			{
+				Com_Printf("\x80");
+				for (i=0;i<20;i++)
+					Com_Printf("\x81");
+				Com_Printf("\x82");
+				Com_Printf("\n");
+			}
+
+			SB_Search_Print_Result_String(sb_qw_server[x], found_count + 1);
+
+			if (sb_search_show_players.value == 1 && sb_qw_server[x]->numplayers > 0)
+			{
+				Com_Printf("    players: ");
+				for (i = 0; i < sb_qw_server[x]->numplayers; i++)
+				{
+					if (i == 0)
+						Com_Printf("%s", sb_qw_server[x]->players[i].name);
+					else
+						Com_Printf(", %s", sb_qw_server[x]->players[i].name);
+
+				}
+				Com_Printf("\n");
+
+			}
+
+			if (sb_search_show_spectators.value == 1 && sb_qw_server[x]->numspectators > 0)
+			{
+				Com_Printf("    spectators: ");
+				for (i = 0; i < sb_qw_server[x]->numspectators; i++)
+				{
+					if (i == 0)
+						Com_Printf("%s", sb_qw_server[x]->spectators[i].name);
+					else
+						Com_Printf(", %s", sb_qw_server[x]->spectators[i].name);
+
+				}
+				Com_Printf("\n");
+
+			}
+
+
+
+			found_count++;
+		}
+	}
+
+	if (found_count == 0)
+	{
+		Com_Printf("The search yielded no results.\n");
+	}
+}
+
 void SB_Init(void)
 {
 	Cmd_AddCommand("sb_activate", &SB_Activate_f);
@@ -2477,6 +2771,7 @@ void SB_Init(void)
 	Cmd_AddCommand("sb_set_clipboard", &SB_Set_Clipboard_f);
 	Cmd_AddCommand("sb_add_friend", &SB_Add_Friend_f);
 	Cmd_AddCommand("sb_remove_friend", &SB_Remove_Friend_f);
+	Cmd_AddCommand("sb_search", &SB_Search_f);
 	SB_Set_Statusbar("just started!. press \"ctrl + h\" for help\n");
 	SB_AddMacros();
 }
@@ -2486,6 +2781,11 @@ void SB_CvarInit(void)
 	Cvar_Register(&sb_masterserver);
 	Cvar_Register(&sb_player_drawing);
 	Cvar_Register(&sb_refresh_on_activate);
+	Cvar_Register(&sb_refresh_on_search);
+	Cvar_Register(&sb_search_display_string);
+	Cvar_Register(&sb_search_show_players);
+	Cvar_Register(&sb_search_show_spectators);
+	Cvar_Register(&sb_refresh_interval);
 	Cvar_Register(&sb_color_bg);
 	Cvar_Register(&sb_color_bg_empty);
 	Cvar_Register(&sb_color_bg_free);
