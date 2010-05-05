@@ -257,7 +257,9 @@ void Host_Init (int argc, char **argv, int default_memsize)
 	Ruleset_CvarInit();
 
 	cvarsregged = 1;
-	
+
+	Con_Init ();
+
 	FS_InitFilesystem();
 	COM_CheckRegistered ();
 
@@ -288,7 +290,6 @@ void Host_Init (int argc, char **argv, int default_memsize)
 		Host_Error("Unable to initialise mouse input\n");
 	}
 
-	Con_Init ();
 	NET_Init ();
 	QLib_Init();
 	Sys_Init ();
