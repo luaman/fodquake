@@ -100,7 +100,6 @@ const static struct SoundDriver sounddrivers[] =
 	{ "OSS", &OSS_Init, &OSS_CvarInit },
 	{ "ALSA", &ALSA_Init, &ALSA_CvarInit },
 	{ "DS7", &DS7_Init, &DS7_CvarInit },
-	{ "ALSA", &ALSA_Init, &ALSA_CvarInit },
 	{ "WaveOut", &WaveOut_Init, &WaveOut_CvarInit },
 };
 
