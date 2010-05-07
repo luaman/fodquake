@@ -2625,6 +2625,7 @@ static void SB_Finish_Search(void)
 {
 	int x, i;
 	int found = 0;
+#warning The found variable is unused now.
 	int found_count = 0;
 
 	sb_search_running = 0;
@@ -2647,34 +2648,24 @@ static void SB_Finish_Search(void)
 
 	for (x=0; x < sb_qw_server_count; x++)
 	{
-		found = 0;
+		found = 1;
 
 		if (sb_qw_server[x]->numplayers == 0 && sb_qw_server[x]->numspectators == 0)
 			continue;
 
-#warning Broken logic here. It checks for multiple types of search results, but the last one overrules the results of the previous ones?
-
 		if (sb_search_info.map && sb_qw_server[x]->map)
 		{
-			if (char_check(sb_qw_server[x]->map, sb_search_info.map, 0))
+			if (!char_check(sb_qw_server[x]->map, sb_search_info.map, 0))
 			{
-				found = 1;
-			}
-			else 
-			{
-				found = 0;
+				continue;
 			}
 		}
 
 		if (sb_search_info.player)
 		{
-			if (check_player_name(sb_search_info.player, sb_qw_server[x]))
+			if (!check_player_name(sb_search_info.player, sb_qw_server[x]))
 			{
-				found = 1;
-			}
-			else 
-			{
-				found = 0;
+				continue;
 			}
 		}
 
@@ -2682,76 +2673,65 @@ static void SB_Finish_Search(void)
 		{
 			if (strcmp(sb_search_info.gametype, "1on1") == 0)
 			{
-				if(sb_qw_server[x]->numplayers <= 2 && sb_qw_server[x]->maxclients == 2)
-					found = 1;
-				else
-					found = 0;
+				if(!sb_qw_server[x]->numplayers <= 2 && sb_qw_server[x]->maxclients == 2)
+					continue;
 			}
 			else if (strcmp(sb_search_info.gametype, "2on2") == 0)
 			{
-				if(sb_qw_server[x]->numplayers <= 4 && sb_qw_server[x]->maxclients == 4)
-					found = 1;
-				else
-					found = 0;
+				if(!sb_qw_server[x]->numplayers <= 4 && sb_qw_server[x]->maxclients == 4)
+					continue;
 			}
 			else if (strcmp(sb_search_info.gametype, "4on4") == 0)
 			{
-				if(sb_qw_server[x]->numplayers <= 8 && sb_qw_server[x]->maxclients == 8)
-					found = 1;
-				else
-					found = 0;
+				if(!sb_qw_server[x]->numplayers <= 8 && sb_qw_server[x]->maxclients == 8)
+					continue;
 			}
 		}
 
-		if (found == 1)
+		Cbuf_AddText(va("set sb_sr_ip_%i %s\n", found_count + 1, NET_AdrToString(&sb_qw_server[x]->addr)));
+
+		if (found_count > 0)
 		{
-			Cbuf_AddText(va("set sb_sr_ip_%i %s\n", found_count + 1, NET_AdrToString(&sb_qw_server[x]->addr)));
-
-			if (found_count > 0)
-			{
-				Com_Printf("\x80");
-				for (i=0;i<20;i++)
-					Com_Printf("\x81");
-				Com_Printf("\x82");
-				Com_Printf("\n");
-			}
-
-			SB_Search_Print_Result_String(sb_qw_server[x], found_count + 1);
-
-			if (sb_search_show_players.value == 1 && sb_qw_server[x]->numplayers > 0)
-			{
-				Com_Printf("    players: ");
-				for (i = 0; i < sb_qw_server[x]->numplayers; i++)
-				{
-					if (i == 0)
-						Com_Printf("%s", sb_qw_server[x]->players[i].name);
-					else
-						Com_Printf(", %s", sb_qw_server[x]->players[i].name);
-
-				}
-				Com_Printf("\n");
-
-			}
-
-			if (sb_search_show_spectators.value == 1 && sb_qw_server[x]->numspectators > 0)
-			{
-				Com_Printf("    spectators: ");
-				for (i = 0; i < sb_qw_server[x]->numspectators; i++)
-				{
-					if (i == 0)
-						Com_Printf("%s", sb_qw_server[x]->spectators[i].name);
-					else
-						Com_Printf(", %s", sb_qw_server[x]->spectators[i].name);
-
-				}
-				Com_Printf("\n");
-
-			}
-
-
-
-			found_count++;
+			Com_Printf("\x80");
+			for (i=0;i<20;i++)
+				Com_Printf("\x81");
+			Com_Printf("\x82");
+			Com_Printf("\n");
 		}
+
+		SB_Search_Print_Result_String(sb_qw_server[x], found_count + 1);
+
+		if (sb_search_show_players.value == 1 && sb_qw_server[x]->numplayers > 0)
+		{
+			Com_Printf("    players: ");
+			for (i = 0; i < sb_qw_server[x]->numplayers; i++)
+			{
+				if (i == 0)
+					Com_Printf("%s", sb_qw_server[x]->players[i].name);
+				else
+					Com_Printf(", %s", sb_qw_server[x]->players[i].name);
+
+			}
+			Com_Printf("\n");
+
+		}
+
+		if (sb_search_show_spectators.value == 1 && sb_qw_server[x]->numspectators > 0)
+		{
+			Com_Printf("    spectators: ");
+			for (i = 0; i < sb_qw_server[x]->numspectators; i++)
+			{
+				if (i == 0)
+					Com_Printf("%s", sb_qw_server[x]->spectators[i].name);
+				else
+					Com_Printf(", %s", sb_qw_server[x]->spectators[i].name);
+
+			}
+			Com_Printf("\n");
+
+		}
+
+#warning found_count is no longer increased.
 	}
 
 	if (found_count == 0)
