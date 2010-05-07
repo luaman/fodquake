@@ -706,7 +706,7 @@ void Sys_Video_Update(void *display, vrect_t *rects)
 		else
 			ResetFrameBuffer(d);
 
-		Con_CheckResize();
+		Con_CheckResize(d->width);
 		return;
 	}
 
