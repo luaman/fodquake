@@ -731,7 +731,7 @@ void SCR_EndLoadingPlaque(void)
 
 void SCR_SetUpToDrawConsole(void)
 {
-	Con_CheckResize ();
+	Con_CheckResize(vid.width);
 
 	// decide on the height of the console
 	if (SCR_NEED_CONSOLE_BACKGROUND)

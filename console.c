@@ -134,12 +134,12 @@ static void Con_MessageMode2_f (void)
 }
 
 //If the line width has changed, reformat the buffer
-void Con_CheckResize (void)
+void Con_CheckResize(unsigned int pixelwidth)
 {
 	int i, j, width, oldwidth, oldtotallines, numlines, numchars;
 	char *tempbuf;
 
-	width = (vid.width >> 3) - 2;
+	width = (pixelwidth >> 3) - 2;
 
 	if (width == con_linewidth)
 		return;
@@ -232,7 +232,7 @@ void Con_Init(void)
 	Con_InitConsoleBuffer(&con, conbufsize);
 
 	con_linewidth = -1;
-	Con_CheckResize ();
+	Con_CheckResize(vid.width);
 
 	con_initialized = true;
 	Com_Printf ("Console initialized\n");

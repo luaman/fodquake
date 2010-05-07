@@ -27,7 +27,7 @@ extern int con_notifylines;		// scan lines to clear for notify lines
 void Con_Init(void);
 void Con_Shutdown(void);
 void Con_CvarInit(void);
-void Con_CheckResize(void);
+void Con_CheckResize(unsigned int pixelwidth);
 void Con_DrawConsole(int lines);
 void Con_DrawNotify(void);
 void Con_ClearNotify(void);
