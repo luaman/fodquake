@@ -49,6 +49,9 @@ static char *team_rl_count_vf(void *info)
 	return buf;
 }
 
+#if 1
+#warning Please check my suggestion for a replacement below this function :P
+
 static char *team_armor_count_vf(void *info)
 {
 	static char buf[512];
@@ -84,6 +87,34 @@ static char *team_armor_count_vf(void *info)
 
 	return buf;	
 }
+#else
+static char *team_armor_count_vf(void *info)
+{
+	static char buf[512];
+	int space = 0;
+	struct team *team;
+	team = (struct team *)info;
+
+	buf[0] = '\0';
+
+	if (team->ra_count > 0)
+		strlcat(buf, va("&cf00%i ", team->ra_count), sizeof(buf));
+
+	if (team->ya_count > 0)
+		strlcat(buf, va("&cff0%i ", team->ya_count), sizeof(buf));
+
+	if (team->ga_count > 0)
+		strlcat(buf, va("&c0f0%i ", team->ga_count), sizeof(buf));
+
+	if (buf[0])
+	{
+		buf[strlen(buf)-1] = 0;
+		strlcat(buf, "&cfff", sizeof(buf));
+	}
+
+	return buf;	
+}
+#endif
 
 static char *team_powerups_vf(void *info)
 {
@@ -275,10 +306,9 @@ static int set_variable(char *string, struct hud_info_string_entry *entry, int t
 	ptr = string;
 	ptr += 2;	
 	i=0;
-	max = Colored_String_Length(string);
+	max = strlen(string);
 
-#warning This logic looks broken... Using the parsed string length on the raw string input?
-
+#warning You read 2 bytes past the end of the input here, don't you? ptr = string; ptr += 2; max = strlen(string) and then you use max to indicate the end of ptr, which is +2.
 	while (*ptr != HIS_IDENTIFIER_CLOSING_BRACKET && i < sizeof(buf) && i < max)
 	{
 		buf[i] = *ptr;
@@ -288,15 +318,16 @@ static int set_variable(char *string, struct hud_info_string_entry *entry, int t
 
 	if (*ptr != HIS_IDENTIFIER_CLOSING_BRACKET)
 	{
-#warning printf? Ugly, ugly.
-		printf("malformed info string, could not find closing \"%c\"\n.", HIS_IDENTIFIER_CLOSING_BRACKET);
+		Com_Printf("malformed info string, could not find closing \"%c\"\n.", HIS_IDENTIFIER_CLOSING_BRACKET);
 		return 1;
 	}
 
+#warning Off-by-one bug here. The loop above will exit when i >= sizeof(buf).
 	buf[i] = '\0';
 	string_type = get_type(buf, type);
 	if (!string_type)
 	{
+#warning printf? Ugly, ugly. Yes, there are more than one. Please fix them all :)
 		printf("type \"%s\" not found.\n", buf);
 		return 1;
 	}
@@ -314,6 +345,7 @@ static int set_string(char *string, struct hud_info_string_entry *entry)
 	ptr = string;
 	i=0;
 	max = Colored_String_Length(string);
+#warning This logic looks broken... Using the parsed string length on the raw string input? Same as from above basically.
 
 	while (*ptr != HIS_IDENTIFIER && i < sizeof(buf) && i < max)
 	{
@@ -322,6 +354,7 @@ static int set_string(char *string, struct hud_info_string_entry *entry)
 		i++;
 	}
 
+#warning Off-by-one bug here. The loop above will exit when i >= sizeof(buf).
 	buf[i] = '\0';
 	entry->string = strdup(buf);
 	if (entry->string == NULL)
@@ -341,6 +374,7 @@ static int Parse_Info_String(char *string, struct hud_info_string *info_string, 
 		return 1;
 
 	length = Colored_String_Length(string);
+#warning This logic looks broken... Using the parsed string length on the raw string input? Same as from above basically.
 	entry = calloc(1, sizeof(*entry));
 	if (entry == NULL)
 		return 1;
