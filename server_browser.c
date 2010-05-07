@@ -2624,8 +2624,6 @@ static void SB_Search_Print_Result_String(const struct QWServer *server, int cou
 static void SB_Finish_Search(void)
 {
 	int x, i;
-	int found = 0;
-#warning The found variable is unused now.
 	int found_count = 0;
 
 	sb_search_running = 0;
@@ -2648,8 +2646,6 @@ static void SB_Finish_Search(void)
 
 	for (x=0; x < sb_qw_server_count; x++)
 	{
-		found = 1;
-
 		if (sb_qw_server[x]->numplayers == 0 && sb_qw_server[x]->numspectators == 0)
 			continue;
 
@@ -2688,9 +2684,11 @@ static void SB_Finish_Search(void)
 			}
 		}
 
-		Cbuf_AddText(va("set sb_sr_ip_%i %s\n", found_count + 1, NET_AdrToString(&sb_qw_server[x]->addr)));
+		found_count++;
 
-		if (found_count > 0)
+		Cbuf_AddText(va("set sb_sr_ip_%i %s\n", found_count, NET_AdrToString(&sb_qw_server[x]->addr)));
+
+		if (found_count > 1)
 		{
 			Com_Printf("\x80");
 			for (i=0;i<20;i++)
@@ -2699,7 +2697,7 @@ static void SB_Finish_Search(void)
 			Com_Printf("\n");
 		}
 
-		SB_Search_Print_Result_String(sb_qw_server[x], found_count + 1);
+		SB_Search_Print_Result_String(sb_qw_server[x], found_count);
 
 		if (sb_search_show_players.value == 1 && sb_qw_server[x]->numplayers > 0)
 		{
@@ -2731,7 +2729,6 @@ static void SB_Finish_Search(void)
 
 		}
 
-#warning found_count is no longer increased.
 	}
 
 	if (found_count == 0)
