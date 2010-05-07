@@ -219,7 +219,7 @@ static const unsigned char keytable[] =
 	0,
 	0,
 	0,
-	0,
+	K_RCTRL,
 	0,
 	0,
 	0, /* 160 */
