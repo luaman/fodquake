@@ -53,7 +53,6 @@ static float con_cursorspeed = 4;
 static cvar_t _con_notifylines = {"con_notifylines","4"};
 static cvar_t con_notifytime = {"con_notifytime","3"};         //seconds
 static cvar_t con_wordwrap = {"con_wordwrap","1"};
-static cvar_t con_clearnotify = {"con_clearnotify","1"};
 
 #define	NUM_CON_TIMES 16
 static float con_times[NUM_CON_TIMES];  // cls.realtime time the line was generated
@@ -71,30 +70,6 @@ static qboolean con_initialized = false;
 static qboolean con_suppress = false;
 
 static FILE		*qconsole_log;
-
-static void Key_ClearTyping(void)
-{
-	key_lines[edit_line][1] = 0;	// clear any typing
-	key_linepos = 1;
-}
-
-void Con_ToggleConsole_f(void)
-{
-	Key_ClearTyping();
-
-	if (key_dest == key_console)
-	{
-		if (!SCR_NEED_CONSOLE_BACKGROUND)
-			key_dest = key_game;
-	}
-	else
-	{
-		key_dest = key_console;
-	}
-
-	if (con_clearnotify.value)
-		Con_ClearNotify();
-}
 
 static void Con_Clear_f(void)
 {
@@ -200,10 +175,8 @@ void Con_CvarInit(void)
 	Cvar_Register (&_con_notifylines);
 	Cvar_Register (&con_notifytime);
 	Cvar_Register (&con_wordwrap);
-	Cvar_Register (&con_clearnotify);
 	Cvar_ResetCurrentGroup();
 
-	Cmd_AddCommand ("toggleconsole", Con_ToggleConsole_f);
 	Cmd_AddCommand ("messagemode", Con_MessageMode_f);
 	Cmd_AddCommand ("messagemode2", Con_MessageMode2_f);
 	Cmd_AddCommand ("clear", Con_Clear_f);

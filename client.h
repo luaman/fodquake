@@ -610,3 +610,6 @@ void Stats_GetFlagStats(int num, int *stats);
 
 
 dlighttype_t dlightColor(float f, dlighttype_t def, qboolean random);
+
+void ToggleConsole_f(void);
+

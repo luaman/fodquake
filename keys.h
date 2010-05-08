@@ -189,6 +189,7 @@ void Key_SetBinding (int keynum, char *binding);
 void Key_Unbind (int keynum);
 void Key_ClearStates (void);
 char *Key_KeynumToString (int keynum);
+void Key_ClearTyping(void);
 
 #endif /* KEYS_H */
 

@@ -72,6 +72,8 @@ static qboolean r_drawflat_enable_callback(cvar_t *var, char *string);
 cvar_t	rcon_password = {"rcon_password", ""};
 cvar_t	rcon_address = {"rcon_address", ""};
 
+static cvar_t con_clearnotify = {"con_clearnotify","1"};
+
 cvar_t	cl_timeout = {"cl_timeout", "60"};
 
 cvar_t	cl_shownet = {"cl_shownet", "0"};	// can be 0, 1, or 2
@@ -1472,6 +1474,29 @@ void CL_SendToServer (void) {
 }
 #endif
 
+#define MAXCMDLINE 256
+extern char key_lines[32][MAXCMDLINE];
+
+void ToggleConsole_f(void)
+{
+	extern int edit_line;
+
+	Key_ClearTyping();
+
+	if (key_dest == key_console)
+	{
+		if (!SCR_NEED_CONSOLE_BACKGROUND)
+			key_dest = key_game;
+	}
+	else
+	{
+		key_dest = key_console;
+	}
+
+	if (con_clearnotify.value)
+		Con_ClearNotify();
+}
+
 //=============================================================================
 
 void CL_SaveArgv(int argc, char **argv) {
@@ -1605,6 +1630,9 @@ void CL_CvarInit(void)
 	Cvar_Register(&net_lag);
 	Cvar_Register(&net_lag_ezcheat);
 
+	Cvar_SetCurrentGroup(CVAR_GROUP_CONSOLE);
+	Cvar_Register (&con_clearnotify);
+
 	Cvar_SetCurrentGroup(CVAR_GROUP_NO_GROUP);
 	Cvar_Register (&password);
 	Cvar_Register (&rcon_password);
@@ -1655,6 +1683,8 @@ void CL_CvarInit(void)
 	Cmd_AddMacro("connectiontype", CL_Macro_ConnectionType);
 	Cmd_AddMacro("demoplayback", CL_Macro_Demoplayback);
 	Cmd_AddMacro("matchstatus", CL_Macro_Serverstatus);
+
+	Cmd_AddCommand ("toggleconsole", ToggleConsole_f);
 
 	SB_Init();
 }

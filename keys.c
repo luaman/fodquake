@@ -1151,7 +1151,7 @@ void Key_Event(int key, qboolean down)
 
 			case key_console:
 				if (!SCR_NEED_CONSOLE_BACKGROUND)
-					Con_ToggleConsole_f();
+					ToggleConsole_f();
 				else
 					M_ToggleMenu_f();
 				break;
@@ -1271,5 +1271,11 @@ void Key_ClearStates(void)
 
 		key_repeats[i] = false;
 	}
+}
+
+void Key_ClearTyping(void)
+{
+	key_lines[edit_line][1] = 0;	// clear any typing
+	key_linepos = 1;
 }
 

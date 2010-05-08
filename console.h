@@ -31,7 +31,6 @@ void Con_CheckResize(unsigned int pixelwidth);
 void Con_DrawConsole(int lines);
 void Con_DrawNotify(void);
 void Con_ClearNotify(void);
-void Con_ToggleConsole_f(void);
 void Con_Suppress(void);
 void Con_Unsuppress(void);
 
