@@ -17,7 +17,7 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 
-struct InputData *Sys_Input_Init();
+struct InputData *Sys_Input_Init(HWND window);
 void Sys_Input_Shutdown(struct InputData *inputdata);
 void Sys_Input_MainThreadFrameStart(struct InputData *inputdata);
 int Sys_Input_GetKeyEvent(struct InputData *inputdata, keynum_t *keynum, qboolean *down);
