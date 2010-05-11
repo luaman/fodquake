@@ -263,6 +263,8 @@ void Host_Init (int argc, char **argv, int default_memsize)
 	FS_InitFilesystem();
 	COM_CheckRegistered ();
 
+	Con_Suppress();
+
 	if (dedicated) {
 		Cbuf_AddText ("exec server.cfg\n");
 		Cmd_StuffCmds_f ();		// process command line arguments
@@ -284,6 +286,8 @@ void Host_Init (int argc, char **argv, int default_memsize)
 
 	Cmd_ParseLegacyCmdLineCmds();
 	Cbuf_Execute ();
+
+	Con_Unsuppress();
 
 	if (!Mouse_Init())
 	{
