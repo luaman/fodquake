@@ -267,6 +267,7 @@ void Sys_Video_Close(void *display)
 
 	RestoreHWGamma(d);
 
+	glXMakeCurrent(d->x_disp, None, 0);
 	glXDestroyContext(d->x_disp, d->ctx);
 	XDestroyWindow(d->x_disp, d->x_win);
 
