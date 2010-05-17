@@ -155,10 +155,12 @@ void Sbar_CvarInit(void)
 	Cmd_AddCommand ("-showteamscores", Sbar_DontShowTeamScores);
 }
 
-void Sbar_Init (void) {
+void Sbar_Init (void)
+{
 	int i;
 
-	for (i = 0; i < 10; i++) {
+	for (i = 0; i < 10; i++)
+	{
 		sb_nums[0][i] = Draw_CacheWadPic (va("num_%i",i));
 		sb_nums[1][i] = Draw_CacheWadPic (va("anum_%i",i));
 	}
@@ -185,7 +187,8 @@ void Sbar_Init (void) {
 	sb_weapons[1][5] = Draw_CacheWadPic ("inv2_srlaunch");
 	sb_weapons[1][6] = Draw_CacheWadPic ("inv2_lightng");
 	
-	for (i = 0; i < 5; i++) {
+	for (i = 0; i < 5; i++)
+	{
 		sb_weapons[2 + i][0] = Draw_CacheWadPic (va("inva%i_shotgun", i + 1));
 		sb_weapons[2 + i][1] = Draw_CacheWadPic (va("inva%i_sshotgun", i + 1));
 		sb_weapons[2 + i][2] = Draw_CacheWadPic (va("inva%i_nailgun", i + 1));
@@ -277,7 +280,6 @@ void Sbar_Shutdown(void)
 	{
 		Draw_FreeWadPic(sb_sigil[i]);
 	}
-
 
 	for (i=0;i<5;i++)
 	{
