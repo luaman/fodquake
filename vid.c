@@ -273,7 +273,6 @@ static void VID_SW_FreeBuffers()
 
 void VID_Open()
 {
-	void *newdisplay;
 	int width, height, fullscreen;
 
 	fullscreen = vid_fullscreen.value;
@@ -302,28 +301,30 @@ void VID_Open()
 	vid.maxwarpheight = WARP_HEIGHT;
 #endif
 
-	newdisplay = Sys_Video_Open(vid_mode.string, width, height, fullscreen, host_basepal);
+	Sys_Thread_LockMutex(display_mutex);
+	display = Sys_Video_Open(vid_mode.string, width, height, fullscreen, host_basepal);
+	Sys_Thread_UnlockMutex(display_mutex);
 	if (display)
 	{
-		width = Sys_Video_GetWidth(newdisplay);
-		height = Sys_Video_GetHeight(newdisplay);
+		width = Sys_Video_GetWidth(display);
+		height = Sys_Video_GetHeight(display);
 #ifndef GLQUAKE
 		if (VID_SW_AllocBuffers(width, height))
 #endif
 		{
-			vid.numpages = Sys_Video_GetNumBuffers(newdisplay);
+			vid.numpages = Sys_Video_GetNumBuffers(display);
 
 			set_up_conwidth_conheight();
 
 #ifndef GLQUAKE
-			vid.rowbytes = Sys_Video_GetBytesPerRow(newdisplay);
-			vid.buffer = Sys_Video_GetBuffer(newdisplay);
+			vid.rowbytes = Sys_Video_GetBytesPerRow(display);
+			vid.buffer = Sys_Video_GetBuffer(display);
 #endif
 
 			if (windowtitle)
-				Sys_Video_SetWindowTitle(newdisplay, windowtitle);
+				Sys_Video_SetWindowTitle(display, windowtitle);
 
-			Sys_Video_GrabMouse(newdisplay, in_grab_windowed_mouse.value);
+			Sys_Video_GrabMouse(display, in_grab_windowed_mouse.value);
 
 			R_Init();
 
@@ -340,10 +341,6 @@ void VID_Open()
 			Sbar_Init();
 #endif
 			SCR_LoadTextures();
-
-			Sys_Thread_LockMutex(display_mutex);
-			display = newdisplay;
-			Sys_Thread_UnlockMutex(display_mutex);
 
 			return;
 		}
@@ -364,11 +361,14 @@ void VID_Close()
 {
 	Sys_Thread_LockMutex(display_mutex);
 
+#ifdef GLQUAKE
+	Sbar_Shutdown();
+	Draw_ShutdownGL();
+#endif
+
 	if (display)
 	{
 #ifdef GLQUAKE
-		Sbar_Shutdown();
-		Draw_ShutdownGL();
 		GL_FlushPics();
 #endif
 
