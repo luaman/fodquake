@@ -35,6 +35,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "strl.h"
 
+static int sb_inited;
+
 int sb_updates;		// if >= vid.numpages, no update needed
 
 #define STAT_MINUS		10	// num frame for '-' stats digit
@@ -238,12 +240,17 @@ void Sbar_Init (void)
 	sb_sbar = Draw_CacheWadPic ("sbar");
 	sb_ibar = Draw_CacheWadPic ("ibar");
 	sb_scorebar = Draw_CacheWadPic ("scorebar");
+
+	sb_inited = 1;
 }
 
 #ifdef GLQUAKE
 void Sbar_Shutdown(void)
 {
 	int i, j;
+
+	if (!sb_inited)
+		return;
 
 	for (i=0;i<11;i++)
 	{
