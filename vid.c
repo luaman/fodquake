@@ -361,14 +361,11 @@ void VID_Close()
 {
 	Sys_Thread_LockMutex(display_mutex);
 
-#ifdef GLQUAKE
-	Sbar_Shutdown();
-	Draw_ShutdownGL();
-#endif
-
 	if (display)
 	{
 #ifdef GLQUAKE
+		Sbar_Shutdown();
+		Draw_ShutdownGL();
 		GL_FlushPics();
 #endif
 
