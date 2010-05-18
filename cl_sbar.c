@@ -252,6 +252,8 @@ void Sbar_Shutdown(void)
 	if (!sb_inited)
 		return;
 
+	sb_inited = 0;
+
 	for (i=0;i<11;i++)
 	{
 		Draw_FreeWadPic(sb_nums[0][i]);
