@@ -1331,6 +1331,7 @@ int R_Init(void)
 
 void R_Shutdown()
 {
+	R_ShutdownParticles();
 	R_ShutdownTextures();
 	GL_RSurf_Shutdown();
 	GL_Warp_Shutdown();
