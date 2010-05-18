@@ -487,6 +487,7 @@ static void GL_FlushTextures()
 	for(glt=gltextures,i=0;i<numgltextures;glt++,i++)
 	{
 		textures[i] = glt->texnum;
+		Z_Free(glt->pathname);
 	}
 
 	glDeleteTextures(numgltextures, textures);
