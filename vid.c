@@ -308,6 +308,12 @@ void VID_Open()
 	{
 		width = Sys_Video_GetWidth(display);
 		height = Sys_Video_GetHeight(display);
+
+#ifndef GLQUAKE
+		if (width > MAXWIDTH || height > MAXHEIGHT)
+			Sys_Error("Fullscreen display size (%dx%d) exceeds the maximum allowed display size (%dx%d)\n", width, height, MAXWIDTH, MAXHEIGHT);
+#endif
+
 #ifndef GLQUAKE
 		if (VID_SW_AllocBuffers(width, height))
 #endif
