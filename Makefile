@@ -9,7 +9,7 @@ STRIPFLAGS=--strip-unneeded --remove-section=.comment
 
 TARGETSYSTEM:=$(shell $(CC) -dumpmachine)
 
-OS=$(shell echo $(TARGETSYSTEM) | sed "s/-gnu//" | sed "s/.*-//" | tr [A-Z] [a-z] | sed s/^mingw.*/win32/)
+OS=$(shell echo $(TARGETSYSTEM) | sed "s/-gnu//" | sed "s/.*-//" | tr [A-Z] [a-z] | sed s/^mingw.*/win32/ | sed s/^openbsd.*/openbsd/)
 CPU=$(shell echo $(TARGETSYSTEM) | cut -d '-' -f 1 | tr [A-Z] [a-z] | sed "s/powerpc/ppc/")
 
 TARGETS=sw gl
@@ -85,16 +85,19 @@ endif
 ifeq ($(OS), openbsd)
 	OSOBJS= \
 		sys_linux.o \
+		sys_error_gtk.o \
+		net_posix.o \
+		thread_posix.o \
 		cd_null.o \
 #		snd_oss.o
 
-	OSCFLAGS=-I/usr/X11R6/include
-	OSLDFLAGS=-lossaudio
+	OSCFLAGS=-I/usr/X11R6/include -I/usr/local/include -I/usr/local/include/libpng -I/usr/local/include/gtk-2.0
+	OSLDFLAGS=-lpthread -lossaudio
 
-	OSSWOBJS=vid_x11.o in_x11.o
+	OSSWOBJS=vid_x11.o vid_mode_x11.o in_x11.o
 	OSSWLDFLAGS=-L/usr/X11R6/lib -lX11 -lXext -lXxf86vm -lXxf86dga
 
-	OSGLOBJS=vid_glx.o in_x11.o
+	OSGLOBJS=vid_glx.o vid_mode_x11.o in_x11.o
 	OSGLLDFLAGS=-L/usr/X11R6/lib -lX11 -lXext -lXxf86vm -lXxf86dga -lGL
 endif
 
