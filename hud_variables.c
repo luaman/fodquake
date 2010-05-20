@@ -7,7 +7,36 @@
 #include "utils.h"
 #include "time.h"
 
-cvar_t hud_speed_update = {"hud_speed_update", "0.2"};
+static cvar_t hud_speed_update = {"hud_speed_update", "0.2"};
+
+static double *hud_item_get_dvalue(struct hud_item *self, int color_table_setup)
+{
+	double *var;
+
+	if (color_table_setup == 0)
+		var = &self->dvalue;
+	else if (color_table_setup == 1)
+		var = &self->dvalue_color_table;
+	else
+		var = &self->dvalue;
+
+	return var;
+}
+
+static int *hud_item_get_ivalue(struct hud_item *self, int color_table_setup)
+{
+	int *var;
+
+	if (color_table_setup == 0)
+		var = &self->ivalue;
+	else if (color_table_setup == 1)
+		var = &self->ivalue_color_table;
+	else
+		var = &self->ivalue;
+
+	return var;
+}
+
 static void setup_speed_value(struct hud_item *self, int setup_only, int option, int color_table_setup)
 {
 	static float speed;
@@ -23,12 +52,7 @@ static void setup_speed_value(struct hud_item *self, int setup_only, int option,
 
 	t = cls.realtime; 
 
-	if (color_table_setup == 0)
-		var = &self->dvalue;
-	else if (color_table_setup == 1)
-		var = &self->dvalue_color_table;
-	else
-		var = &self->dvalue;
+	var = hud_item_get_dvalue(self, color_table_setup);
 
 	oldval = *var;
 
@@ -92,41 +116,15 @@ static void setup_speed_value(struct hud_item *self, int setup_only, int option,
 		self->set_flags |= SF_CHANGED;
 }
 
-static void setup_health_value(struct hud_item *self, int setup_only, int option, int color_table_setup)
+static void setup_cl_stats_value(struct hud_item *self, int setup_only, int option, int color_table_setup)
 {
 	int *var;
 	int oldval;
 
-	if (color_table_setup == 0)
-		var = &self->ivalue;
-	else if (color_table_setup == 1)
-		var = &self->ivalue_color_table;
-	else
-		var = &self->ivalue;
+	var = hud_item_get_ivalue(self, color_table_setup);
 
 	oldval = *var;
-	*var = cl.stats[STAT_HEALTH];
-
-	if (oldval == *var)
-		self->set_flags &= ~SF_CHANGED;
-	else
-		self->set_flags |= SF_CHANGED;
-}
-
-static void setup_armor_value(struct hud_item *self, int setup_only, int option, int color_table_setup)
-{
-	int *var;
-	int oldval;
-
-	if (color_table_setup == 0)
-		var = &self->ivalue;
-	else if (color_table_setup == 1)
-		var = &self->ivalue_color_table;
-	else
-		var = &self->ivalue;
-
-	oldval = *var;
-	*var = cl.stats[STAT_ARMOR];
+	*var = cl.stats[option];
 
 	if (oldval == *var)
 		self->set_flags &= ~SF_CHANGED;
@@ -138,12 +136,8 @@ static void setup_ping_value(struct hud_item *self, int setup_only, int option, 
 {
 	double *var;
 	double oldval;
-	if (color_table_setup == 0)
-		var = &self->dvalue;
-	else if (color_table_setup == 1)
-		var = &self->dvalue_color_table;
-	else
-		var = &self->dvalue;
+
+	var = hud_item_get_dvalue(self, color_table_setup);
 
 	oldval = *var;
 	*var = cl.players[cl.playernum].ping;
@@ -164,12 +158,7 @@ static void setup_fps_value(struct hud_item *self, int setup_only, int option, i
 	double *var;
 	double oldval;
 
-	if (color_table_setup == 0)
-		var = &self->dvalue;
-	else if (color_table_setup == 1)
-		var = &self->dvalue_color_table;
-	else
-		var = &self->dvalue;
+	var = hud_item_get_dvalue(self, color_table_setup);
 
 	oldval = *var;
 
@@ -204,12 +193,7 @@ static void setup_armor_type_value(struct hud_item *self, int setup_only, int op
 	int *var;
 	int oldval;
 
-	if (color_table_setup == 0)
-		var = &self->ivalue;
-	else if (color_table_setup == 1)
-		var = &self->ivalue_color_table;
-	else
-		var = &self->ivalue;
+	var = hud_item_get_ivalue(self, color_table_setup);
 
 	oldval = *var;
 
@@ -235,12 +219,7 @@ static void setup_active_weapon_value(struct hud_item *self, int setup_only, int
 	int *var;
 	int oldval;
 
-	if (color_table_setup == 0)
-		var = &self->ivalue;
-	else if (color_table_setup == 1)
-		var = &self->ivalue_color_table;
-	else
-		var = &self->ivalue;
+	var = hud_item_get_ivalue(self, color_table_setup);
 
 	oldval = *var;
 	switch(cl.stats[STAT_ACTIVEWEAPON])
@@ -288,39 +267,12 @@ static void setup_mapname_value(struct hud_item *self, int setup_only, int optio
 	self->set_flags |= SF_CHANGED;
 }
 
-static void setup_active_ammo_value(struct hud_item *self, int setup_only, int option, int color_table_setup)
-{
-	int *var;
-	int oldval;
-
-	if (color_table_setup == 0)
-		var = &self->ivalue;
-	else if (color_table_setup == 1)
-		var = &self->ivalue_color_table;
-	else
-		var = &self->ivalue;
-
-	oldval = *var;
-	*var = cl.stats[STAT_AMMO];
-
-	if (oldval == *var)
-		self->set_flags &= ~SF_CHANGED;
-	else
-		self->set_flags |= SF_CHANGED;
-
-}
-
 static void setup_active_ammo_type_value(struct hud_item *self, int setup_only, int option, int color_table_setup)
 {
 	int *var;
 	int oldval;
 
-	if (color_table_setup == 0)
-		var = &self->ivalue;
-	else if (color_table_setup == 1)
-		var = &self->ivalue_color_table;
-	else
-		var = &self->ivalue;
+	var = hud_item_get_ivalue(self, color_table_setup);
 
 	oldval = *var;
 
@@ -343,38 +295,12 @@ static void setup_active_ammo_type_value(struct hud_item *self, int setup_only, 
 		self->set_flags |= SF_CHANGED;
 }
 
-static void setup_type_ammo_count_value(struct hud_item *self, int setup_only, int option, int color_table_setup)
-{
-	int *var;
-	int oldval;
-
-	if (color_table_setup == 0)
-		var = &self->ivalue;
-	else if (color_table_setup == 1)
-		var = &self->ivalue_color_table;
-	else
-		var = &self->ivalue;
-
-	oldval = *var;
-	*var = cl.stats[STAT_SHELLS+option];	
-
-	if (oldval == *var)
-		self->set_flags &= ~SF_CHANGED;
-	else
-		self->set_flags |= SF_CHANGED;
-}
-
 static void setup_packet_loss_value(struct hud_item *self, int setup_only, int option, int color_table_setup)
 {
 	int *var;
 	int oldval;
 
-	if (color_table_setup == 0)
-		var = &self->ivalue;
-	else if (color_table_setup == 1)
-		var = &self->ivalue_color_table;
-	else
-		var = &self->ivalue;
+	var = hud_item_get_ivalue(self, color_table_setup);
 
 	oldval = *var;
 	*var = cl.players[cl.playernum].pl;
@@ -398,12 +324,7 @@ static void setup_variable_value(struct hud_item *self, int setup_only, int opti
 
 	if (option == 0)
 	{
-		if (color_table_setup == 0)
-			var = &self->ivalue;
-		else if (color_table_setup == 1)
-			var = &self->ivalue_color_table;
-		else
-			var = &self->ivalue;
+		var = hud_item_get_ivalue(self, color_table_setup);
 
 		oldival = *var;
 		*var = (int)self->displayed_variable->value;
@@ -417,12 +338,7 @@ static void setup_variable_value(struct hud_item *self, int setup_only, int opti
 	}
 	else if (option == 1)
 	{
-		if (color_table_setup == 0)
-			dvar = &self->dvalue;
-		else if (color_table_setup == 1)
-			dvar = &self->dvalue_color_table;
-		else
-			dvar = &self->dvalue;
+		dvar = hud_item_get_dvalue(self, color_table_setup);
 
 		olddval = *dvar;
 		*dvar = self->displayed_variable->value;
@@ -457,16 +373,10 @@ static void setup_variable_value(struct hud_item *self, int setup_only, int opti
 
 static void setup_powerup_value(struct hud_item *self, int setup_only, int option, int color_table_setup)
 {
-
 	int *var;
 	int oldval;
 
-	if (color_table_setup == 0)
-		var = &self->ivalue;
-	else if (color_table_setup == 1)
-		var = &self->ivalue_color_table;
-	else
-		var = &self->ivalue;
+	var = hud_item_get_ivalue(self, color_table_setup);
 
 	oldval = *var;
 	*var = 0;
@@ -491,12 +401,7 @@ static void setup_individual_powerup_value(struct hud_item *self, int setup_only
 	int *var;
 	int oldval;
 
-	if (color_table_setup == 0)
-		var = &self->ivalue;
-	else if (color_table_setup == 1)
-		var = &self->ivalue_color_table;
-	else
-		var = &self->ivalue;
+	var = hud_item_get_ivalue(self, color_table_setup);
 
 	oldval = *var;
 	*var = 0;
@@ -528,12 +433,7 @@ static void setup_individual_weapon_value(struct hud_item *self, int setup_only,
 	int *var;
 	int oldval;
 
-	if (color_table_setup == 0)
-		var = &self->ivalue;
-	else if (color_table_setup == 1)
-		var = &self->ivalue_color_table;
-	else
-		var = &self->ivalue;
+	var = hud_item_get_ivalue(self, color_table_setup);
 
 	oldval = *var;
 	*var = 0;
@@ -577,15 +477,10 @@ static void setup_individual_weapon_value(struct hud_item *self, int setup_only,
 
 static void setup_weapons_value(struct hud_item *self, int setup_only, int option, int color_table_setup)
 {
-
 	int *var;
 	int oldval;
-	if (color_table_setup == 0)
-		var = &self->ivalue;
-	else if (color_table_setup == 1)
-		var = &self->ivalue_color_table;
-	else
-		var = &self->ivalue;
+
+	var = hud_item_get_ivalue(self, color_table_setup);
 
 	oldval = *var;
 
@@ -669,6 +564,7 @@ static void setup_gametime_value(struct hud_item *self, int setup_only, int opti
 	static char date[80];
 	float timelimit;
 
+#warning Does this mean that the time might update almost a second late?
 	if (update_time + 1 < cls.realtime)
 	{
 		timelimit = 60 * Q_atof(Info_ValueForKey(cl.serverinfo, "timelimit"));
@@ -722,20 +618,20 @@ static void setup_gametype_int_value(struct hud_item *self, int setup_only, int 
 
 static struct vartype_string vartype_string[] = 
 {
-	{"health", 0, &setup_health_value, -1.0f, 0},
-	{"armor", 0, &setup_armor_value, -1.0f, 0},
+	{"health", 0, &setup_cl_stats_value, -1.0f, STAT_HEALTH},
+	{"armor", 0, &setup_cl_stats_value, -1.0f, STAT_ARMOR},
 	{"ping", 1, &setup_ping_value, -1.0f, 0},
 	{"speed", 1, &setup_speed_value, -1.0f, 0},
 	{"max_speed", 1, &setup_speed_value, -1.0f, 1},
 	{"fps", 1, &setup_fps_value, -1.0f, 0},
 	{"armor_type", 0, &setup_armor_type_value, -1.0f, 0},
 	{"active_weapon", 0, &setup_active_weapon_value, -1.0f, 0},
-	{"active_ammo", 0, &setup_active_ammo_value, -1.0f, 0},
+	{"active_ammo", 0, &setup_cl_stats_value, -1.0f, STAT_AMMO},
 	{"active_ammo_type", 0, &setup_active_ammo_type_value, -1.0f, 0},
-	{"shell_count", 0, &setup_type_ammo_count_value, -1.0f, 0},
-	{"nails_count", 0, &setup_type_ammo_count_value, -1.0f, 1},
-	{"rocket_count", 0, &setup_type_ammo_count_value, -1.0f, 2},
-	{"cell_count", 0, &setup_type_ammo_count_value, -1.0f, 3},
+	{"shell_count", 0, &setup_cl_stats_value, -1.0f, STAT_SHELLS},
+	{"nails_count", 0, &setup_cl_stats_value, -1.0f, STAT_NAILS},
+	{"rocket_count", 0, &setup_cl_stats_value, -1.0f, STAT_ROCKETS},
+	{"cell_count", 0, &setup_cl_stats_value, -1.0f, STAT_CELLS},
 	{"packet_loss", 0, &setup_packet_loss_value, -1.0f, 0},
 	{"variable_int", 0, &setup_variable_value, -1.0f, 0},
 	{"variable_float", 1, &setup_variable_value, -1.0f, 1},
