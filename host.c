@@ -300,6 +300,7 @@ void Host_Init (int argc, char **argv, int default_memsize)
 	PM_Init ();
 	Mod_Init ();
 
+	SB_Init();
 	SV_Init ();
 	CL_Init ();
 

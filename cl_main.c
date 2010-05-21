@@ -54,8 +54,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "strl.h"
 #include "ruleset.h"
 
-#include "server_browser.h"
-
 int movementkey;
 
 static qboolean net_maxfps_callback(cvar_t *var, char *string);
@@ -1685,8 +1683,6 @@ void CL_CvarInit(void)
 	Cmd_AddMacro("matchstatus", CL_Macro_Serverstatus);
 
 	Cmd_AddCommand ("toggleconsole", ToggleConsole_f);
-
-	SB_Init();
 }
 
 void CL_InitClientVersionInfo()
