@@ -30,7 +30,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "readablechars.h"
 #include "server_browser_qtv.h"
 
-void SB_AddMacros(void);
+static void SB_AddMacros(void);
 
 static int Color_For_Map (int m)
 {
@@ -2739,6 +2739,11 @@ static void SB_Finish_Search(void)
 
 void SB_Init(void)
 {
+	SB_Set_Statusbar("just started!. press \"ctrl + h\" for help\n");
+}
+
+void SB_CvarInit(void)
+{
 	Cmd_AddCommand("sb_activate", &SB_Activate_f);
 	Cmd_AddCommand("sb_list", &SB_List_Tabs_f);
 	Cmd_AddCommand("sb_add_tab", &SB_Add_Tab_f);
@@ -2749,12 +2754,9 @@ void SB_Init(void)
 	Cmd_AddCommand("sb_add_friend", &SB_Add_Friend_f);
 	Cmd_AddCommand("sb_remove_friend", &SB_Remove_Friend_f);
 	Cmd_AddCommand("sb_search", &SB_Search_f);
-	SB_Set_Statusbar("just started!. press \"ctrl + h\" for help\n");
-	SB_AddMacros();
-}
 
-void SB_CvarInit(void)
-{
+	SB_AddMacros();
+
 	Cvar_Register(&sb_masterserver);
 	Cvar_Register(&sb_player_drawing);
 	Cvar_Register(&sb_refresh_on_activate);
@@ -2900,7 +2902,7 @@ char *SB_Macro_Player_Names(void)
 		return "none";
 }
 
-void SB_AddMacros(void)
+static void SB_AddMacros(void)
 {
 	Cmd_AddMacro("sb_player_names", SB_Macro_Player_Names);
 	Cmd_AddMacro("sb_max_player", SB_Macro_Max_Player);
