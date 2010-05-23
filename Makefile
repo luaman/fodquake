@@ -9,7 +9,7 @@ STRIPFLAGS=--strip-unneeded --remove-section=.comment
 
 TARGETSYSTEM:=$(shell $(CC) -dumpmachine)
 
-OS=$(shell echo $(TARGETSYSTEM) | sed "s/-gnu//" | sed "s/.*-//" | tr [A-Z] [a-z] | sed s/^mingw.*/win32/ | sed s/^openbsd.*/openbsd/)
+OS=$(shell echo $(TARGETSYSTEM) | sed "s/-gnu//" | sed "s/.*-//" | tr [A-Z] [a-z] | sed s/^mingw.*/win32/ | sed s/^openbsd.*/openbsd/ | sed s/^freebsd.*/freebsd/)
 CPU=$(shell echo $(TARGETSYSTEM) | cut -d '-' -f 1 | tr [A-Z] [a-z] | sed "s/powerpc/ppc/")
 
 TARGETS=sw gl
