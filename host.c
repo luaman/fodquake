@@ -364,6 +364,8 @@ void Host_Shutdown (void) {
 #endif
 	COM_Shutdown ();
 
+	Cvar_Shutdown();
+
 	Host_ShutdownMemory();
 }
 

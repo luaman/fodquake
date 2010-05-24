@@ -640,3 +640,14 @@ void Cvar_Init(void)
 	Cvar_ResetCurrentGroup();
 }
 
+void Cvar_Shutdown()
+{
+	cvar_group_t *group;
+
+	while((group = cvar_groups))
+	{
+		cvar_groups = cvar_groups->next;
+		free(group);
+	}
+}
+

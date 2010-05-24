@@ -106,6 +106,7 @@ cvar_t *Cvar_FindVar (char *name);
 qboolean Cvar_Delete (char *name);
 
 void Cvar_Init (void);
+void Cvar_Shutdown(void);
 
 
 void Cvar_SetCurrentGroup(char *name);
