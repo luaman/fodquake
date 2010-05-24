@@ -271,6 +271,7 @@ int R_Init(void)
 
 void R_Shutdown()
 {
+	R_ShutdownParticles();
 	R_ShutdownTextures();
 }
 
