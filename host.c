@@ -119,7 +119,7 @@ void Host_Error (char *error, ...) {
 }
 
 //memsize is the recommended amount of memory to use for hunk
-void Host_InitMemory (int memsize) {
+static void Host_InitMemory (int memsize) {
 	int t;
 
 	if (COM_CheckParm ("-minmemory"))
@@ -137,6 +137,11 @@ void Host_InitMemory (int memsize) {
 	host_memsize = memsize;
 	host_membase = Q_Malloc (host_memsize);
 	Memory_Init (host_membase, host_memsize);
+}
+
+static void Host_ShutdownMemory()
+{
+	free(host_membase);
 }
 
 //Free hunk memory up to host_hunklevel
@@ -358,6 +363,8 @@ void Host_Shutdown (void) {
 	Con_Shutdown();
 #endif
 	COM_Shutdown ();
+
+	Host_ShutdownMemory();
 }
 
 void Host_Quit (void) {
