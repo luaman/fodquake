@@ -18,8 +18,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */
 
-#ifndef	_CONSOLE_H_
-
+#ifndef _CONSOLE_H_
 #define _CONSOLE_H_
 
 extern int con_notifylines;		// scan lines to clear for notify lines
