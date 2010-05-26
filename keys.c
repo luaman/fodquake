@@ -26,6 +26,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "keys.h"
 #include "menu.h"
 #include "readablechars.h"
+#include "tableprint.h"
+
 #ifdef _WINDOWS
 #include <windows.h>
 #endif
@@ -286,45 +288,59 @@ void CompleteCommand (void) {
 	v = Cvar_CompleteCountPossible (s);
 
 	if (c + a + v > 1) {
+		struct TablePrint *tp;
 		cmd_function_t	*cmd;
 		cmd_alias_t *alias;
 		cvar_t	*var;
 
 		Com_Printf ("\n");
 
-		if (c) {
-			Com_Printf ("\x02" "Commands:\n");
-			for (cmd=cmd_functions ; cmd ; cmd=cmd->next) {
-				if (!Q_strncasecmp (s, cmd->name, compl_len)) {
-					Con_PaddedPrint (cmd->name);
-					FindCommonSubString (cmd->name);
+		if (c)
+		{
+			Com_Printf("\x02" "Commands:\n");
+			tp = TablePrint_Begin(1);
+			for (cmd=cmd_functions ; cmd ; cmd=cmd->next)
+			{
+				if (!Q_strncasecmp(s, cmd->name, compl_len))
+				{
+					TablePrint_AddItem(tp, cmd->name);
+					FindCommonSubString(cmd->name);
 				}
 			}
 
-			Con_PaddedPrintTerminate();
+			TablePrint_End(tp);
 		}
 
-		if (v) {
-			Com_Printf ("\x02" "Variables:\n");
-			for (var=cvar_vars ; var ; var=var->next) {
-				if (!Q_strncasecmp (s, var->name, compl_len)) {
-					Con_PaddedPrint (var->name);
-					FindCommonSubString (var->name);
+		if (v)
+		{
+			Com_Printf("\x02" "Variables:\n");
+			tp = TablePrint_Begin(1);
+			for (var=cvar_vars ; var ; var=var->next)
+			{
+				if (!Q_strncasecmp(s, var->name, compl_len))
+				{
+					TablePrint_AddItem(tp, var->name);
+					FindCommonSubString(var->name);
 				}
 			}
 
-			Con_PaddedPrintTerminate();
+			TablePrint_End(tp);
 		}
 
-		if (a) {
-			Com_Printf ("\x02" "Aliases:\n");
+		if (a)
+		{
+			Com_Printf("\x02" "Aliases:\n");
+			tp = TablePrint_Begin(1);
 			for (alias=cmd_alias ; alias ; alias=alias->next)
-				if (!Q_strncasecmp (s, alias->name, compl_len)) {
-					Con_PaddedPrint (alias->name);
-					FindCommonSubString (alias->name);
+			{
+				if (!Q_strncasecmp(s, alias->name, compl_len))
+				{
+					TablePrint_AddItem(tp, alias->name);
+					FindCommonSubString(alias->name);
 				}
+			}
 
-			Con_PaddedPrintTerminate();
+			TablePrint_End(tp);
 		}
 
 	}

@@ -33,10 +33,9 @@ void Con_DrawNotify(void);
 void Con_ClearNotify(void);
 void Con_Suppress(void);
 void Con_Unsuppress(void);
+unsigned int Con_GetColumns(void);
 
 void Con_Print(const char *txt);
-void Con_PaddedPrint(const char *txt);
-void Con_PaddedPrintTerminate(void);
 
 void Con_LineUp(void);
 void Con_LineDown(void);

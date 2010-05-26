@@ -236,6 +236,7 @@ OBJS= \
 	sv_send.o \
 	sv_user.o \
 	sv_world.o \
+	tableprint.o \
 	teamplay.o \
 	utils.o \
 	version.o \

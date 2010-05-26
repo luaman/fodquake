@@ -24,6 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "quakedef.h"
 #include "utils.h"
 #include "ignore.h"
+#include "tableprint.h"
 
 #define MAX_TEAMIGNORELIST	4
 #define	FLOODLIST_SIZE		10
@@ -48,19 +49,23 @@ static qboolean IsIgnored(int slot) {
 	return cl.players[slot].ignored;
 }
 
-static void Display_Ignorelist(void) {
+static void Display_Ignorelist(void)
+{
+	struct TablePrint *tp;
 	int i;
 
 	Com_Printf ("\x02" "User Ignore List:\n");
+	tp = TablePrint_Begin(1);
 	for (i = 0; i < MAX_CLIENTS; i++)
 		if (cl.players[i].name[0] && cl.players[i].ignored)
-			Con_PaddedPrint(cl.players[i].name);
-	Con_PaddedPrintTerminate();
-	
+			TablePrint_AddItem(tp, cl.players[i].name);
+	TablePrint_End(tp);
+
 	Com_Printf ("\x02" "Team Ignore List:\n");
+	tp = TablePrint_Begin(1);
 	for (i = 0; i < MAX_TEAMIGNORELIST && ignoreteamlist[i][0]; i++)
-		Con_PaddedPrint(ignoreteamlist[i]);
-	Con_PaddedPrintTerminate();
+		TablePrint_AddItem(tp, ignoreteamlist[i]);
+	TablePrint_End(tp);
 
 	if (ignore_opponents.value)
 		Com_Printf("\x02" "Opponents are Ignored\n");
