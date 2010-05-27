@@ -48,10 +48,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 int				glx, gly, glwidth, glheight;
 #endif
 
+#if USE_PNG
+#define			DEFAULT_SSHOT_FORMAT		"png"
+#else
 #ifdef GLQUAKE
 #define			DEFAULT_SSHOT_FORMAT		"tga"
 #else
 #define			DEFAULT_SSHOT_FORMAT		"pcx"
+#endif
 #endif
 
 char *COM_FileExtension (char *in);
