@@ -1504,7 +1504,6 @@ void SB_Activate_f(void)
 		sb_default_tabs();
 		tab_active = tab_first;
 	}
-	
 
 	if (sb_refresh_on_activate.value == 1 || serverscanner == NULL)
 	{
@@ -1512,8 +1511,6 @@ void SB_Activate_f(void)
 	}
 	SB_Update_Tabs();
 }
-
-
 
 static int check_selected_type(int type)
 {
@@ -1674,9 +1671,6 @@ static void SB_Draw_Tabs(void)
 		i++;
 		tab = tab->next;
 	}
-
-	
-
 }
 
 static void SB_Draw_Background(void)
@@ -1760,7 +1754,6 @@ static void SB_Draw_Server_Insert(void)
 		Draw_String(8 + 8* (sb_server_insert_port_position + 6), 32, "_");
 }
 
-//static int sort_playrers(const coi
 static int sort_players_team(const void *a, const void *b)
 {
 	struct QWPlayer *x, *y;
@@ -2557,7 +2550,6 @@ static int SB_Parse_Searchstring(void)
 
 static void SB_Search_f(void)
 {
-
 	if (sb_search_running == 1)
 	{
 		Com_Printf("search already in progress.\n");
@@ -2583,7 +2575,6 @@ static void SB_Search_f(void)
 		sb_last_refresh = cls.realtime;
 		SB_Refresh();
 	}
-
 }
 
 static void SB_Search_Print_Result_String(const struct QWServer *server, int count)
@@ -2618,7 +2609,6 @@ static void SB_Search_Print_Result_String(const struct QWServer *server, int cou
 		ptr++;
 	}
 	Com_Printf("\n");
-
 }
 
 static void SB_Finish_Search(void)
