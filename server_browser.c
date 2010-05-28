@@ -353,7 +353,6 @@ static char *Filter_Type_String(int type)
 		return NULL;
 }
 
-
 static struct tab *sb_add_tab(char *name)
 {
 	struct tab *tab;
@@ -515,7 +514,6 @@ static void SB_Refresh(void)
 		tab->changed = 0;
 		tab = tab->next;
 	}
-
 }
 
 static void handle_textbox(int key, char *string, int *position, int size)
