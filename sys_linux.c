@@ -195,11 +195,6 @@ unsigned long long Sys_IntTime()
 }
 #endif
 
-void floating_point_exception_handler(int whatever)
-{
-	signal(SIGFPE, floating_point_exception_handler);
-}
-
 char *Sys_ConsoleInput(void)
 {
 	static char text[256];
@@ -261,7 +256,7 @@ int main(int argc, char **argv)
 		signal(SIGFPE, SIG_IGN);
 
 		// we need to check for -noconinput and -nostdout before Host_Init is called
-		if (!(noconinput = COM_CheckParm("-noconinput")))
+		if (!COM_CheckParm("-noconinput"))
 			fcntl(0, F_SETFL, fcntl(0, F_GETFL, 0) | FNDELAY);
 
 		if (COM_CheckParm("-nostdout"))
