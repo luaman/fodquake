@@ -30,6 +30,7 @@ Version 0.3
 - New table layout code with optimal layout and entry sorting. Tab completion
   of commands and variables and other things presenting the output in a grid
   will use the new table layout code.
+- The server browser now highlights the column used for sorting.
 
 Version 0.2
 ===========

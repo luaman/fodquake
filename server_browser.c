@@ -91,6 +91,10 @@ cvar_t sb_qtv_proxy = {"sb_qtv_proxy", "qtv.fodquake.net:27599"};
 cvar_t sb_qtv_lookup = {"sb_qtv_lookup", "qtv.fodquake.net:12000"};
 cvar_t sb_qtv_connect_timeout = {"sb_qtv_connect_timeout", "2"};
 
+cvar_t sb_highlight_sort_column = {"sb_highlight_sort_column", "1"};
+cvar_t sb_highlight_sort_column_color = {"sb_highlight_sort_column_color", "70"};
+cvar_t sb_highlight_sort_column_alpha = {"sb_highlight_sort_column_alpha", "0.5"};
+
 char sb_macro_buf[512];
 
 static struct qtvr *qtvr;
@@ -144,15 +148,25 @@ static int sb_server_insert_port_position;
 #define SB_FILTER 1
 #define SB_HELP 2
 
-#define SB_SORT_PLAYERS 0
-#define SB_SORT_MAP 1
-#define SB_SORT_HOSTNAME 2
-#define SB_SORT_PING 3
-#define SB_SORT_MAX 4
-
 const struct QWServer *current_selected_server;
 
 static int friend_name_max_len = 0;
+
+enum column_type
+{
+	SBCT_PLAYERS,
+	SBCT_MAP,
+	SBCT_HOSTNAME,
+	SBCT_PING
+};
+#define SB_SORT_MAX 4
+
+struct tab_column_type
+{
+	int length;
+	enum column_type type;
+};
+
 struct tab
 {
 
@@ -174,26 +188,38 @@ struct tab
 	struct linked_list *filters;
 	int friends;
 	struct sb_friend **friend_links;
+
+	int columns;
+	struct tab_column_type *column_types;
 };
 
 static struct tab *tab_first;
 static struct tab *tab_last;
 static struct tab *tab_active;
 
-
-static char *get_sort_name(struct tab *tab)
+/*
+static char *get_column_name (enum column_type type)
 {
-	if (tab->sort == SB_SORT_PLAYERS)
+	if (type == SBCT_PLAYERS)
 		return "players";
-	else if (tab->sort == SB_SORT_PING)
+	else if (type == SBCT_PING)
 		return "ping";
-	else if (tab->sort == SB_SORT_MAP)
+	else if (type == SBCT_MAP)
 		return "map";
-	else if (tab->sort == SB_SORT_HOSTNAME)
+	else if (type == SBCT_HOSTNAME)
 		return "hostname";
 	else
 		return "weird!";
 }
+*/
+
+char *column_names[] =
+{
+	"players",
+	"map",
+	"hostname",
+	"ping"
+};
 
 struct filter
 {
@@ -365,10 +391,18 @@ static struct tab *sb_add_tab(char *name)
 	if (tab == NULL)
 		return NULL;
 
+	tab->column_types = calloc(4, sizeof(struct tab_column_type));
+	
+	if (tab->column_types == NULL)
+	{
+		free(tab);
+		return NULL;
+	}
 
 	tab->filters = List_Add(0, NULL, NULL);
 	if (tab->filters == NULL)
 	{
+		free(tab->column_types);
 		free(tab);
 		return NULL;
 	}
@@ -376,6 +410,7 @@ static struct tab *sb_add_tab(char *name)
 	tab->name = strdup(name);
 	if (tab->name == NULL)
 	{
+		free(tab->column_types);
 		free(tab->filters);
 		free(tab);
 		return NULL;
@@ -401,10 +436,18 @@ static struct tab *sb_add_tab(char *name)
 	if (strcmp(name, "friends") == 0)
 		tab->friends = 1;
 
+	tab->column_types[0].type = SBCT_PING;
+	tab->column_types[1].type = SBCT_PLAYERS;
+	tab->column_types[2].type = SBCT_MAP;
+	tab->column_types[3].type = SBCT_HOSTNAME;
+
+	tab->columns = 4;
+
+	tab->sort = 1;
+	
 
 	return tab;
 }
-
 
 static void sb_del_tab(struct tab *tab)
 {
@@ -791,7 +834,7 @@ int (* compare_functions[])(const void *a, const void *b) =
 
 static void sort_tab(struct tab *tab)
 {
-	qsort(tab->server_index, tab->server_count, sizeof(int), compare_functions[tab->sort]);
+	qsort(tab->server_index, tab->server_count, sizeof(int), compare_functions[tab->column_types[tab->sort].type]);
 }
 
 static int stubby (struct tab *tab, const struct QWServer *server)
@@ -881,7 +924,7 @@ static void update_friends_tab(struct tab *tab)
 
 static void update_tab(struct tab *tab)
 {
-	int count, i, x;
+	int count, i, x, temp;
 	int (*cf)(struct tab *tab, const struct QWServer *server);
 
 	tab->max_hostname_length = 0;
@@ -942,6 +985,53 @@ static void update_tab(struct tab *tab)
 		tab->sb_position = 0;
 
 	sort_tab(tab);
+
+	for (x=0; x<tab->columns; x++)
+	{
+		tab->column_types[x].length = 0;
+	}
+
+	for (i=0; i<tab->server_count; i++)
+	{
+		for (x=0; x<tab->columns; x++)
+		{
+			if (tab->column_types[x].type == SBCT_PING)
+			{
+				temp = snprintf(0, 0, "%d", sb_qw_server[i]->pingtime/1000);
+				if (temp < 4)
+					temp = 4;
+				if (temp > tab->column_types[x].length)
+					tab->column_types[x].length  = temp;
+			}
+			else if (tab->column_types[x].type == SBCT_PLAYERS)
+			{
+			/*
+				temp = snprintf(0, 0, "%d", sb_qw_server[i]->numplayers) + snprintf(0, 0, "%d", sb_qw_server[i]->maxclients) + 1;
+				if (temp > tab->column_types[x].length)
+					tab->column_types[x].length  = temp;
+			*/
+					tab->column_types[x].length  = 7;
+			}
+			else if (tab->column_types[x].type == SBCT_MAP)
+			{
+				if (sb_qw_server[i]->map)
+				{
+					temp = strlen(sb_qw_server[i]->map);
+					if (temp > tab->column_types[x].length)
+						tab->column_types[x].length  = temp;
+				}
+			}
+			else if (tab->column_types[x].type == SBCT_HOSTNAME)
+			{
+				if (sb_qw_server[i]->hostname)
+				{
+					temp = strlen(sb_qw_server[i]->hostname);
+					if (temp > tab->column_types[x].length)
+						tab->column_types[x].length  = temp;
+				}
+			}
+		}
+	}
 
 	if (tab->changed == 0)
 		return;
@@ -1071,11 +1161,19 @@ void SB_Key(int key)
 		if (sb_active_window == SB_SERVER)
 		{
 			tab = tab_active;
-			tab->sort++;
-			if (tab->sort >= SB_SORT_MAX)
+
+			if (keydown[K_SHIFT])
+				tab->sort--;
+			else
+				tab->sort++;
+
+			if (tab->sort >= tab->columns)
 				tab->sort = 0;
+			if (tab->sort < 0)
+				tab->sort = tab->columns - 1;
 			sort_tab(tab);
-			SB_Set_Statusbar("Sorted by %s\n", get_sort_name(tab));
+
+			SB_Set_Statusbar("Sorted by %s\n", column_names[tab->column_types[tab->sort].type]);
 			return;
 		}
 	}
@@ -1781,9 +1879,11 @@ static int sort_players(const void *a, const void *b)
 	return (y->frags - x->frags);
 }
 
+void Draw_AlphaFill (int x, int y, int w, int h, int c, float alpha);
 static void SB_Draw_Server(void)
 {
-	int i, x, y, z;
+	int k, i, x, y, z, header_distance, header_x;
+	int tab_type;
 	int line_space, player_space;
 	int offset;
 	struct tab *tab;
@@ -1795,6 +1895,7 @@ static void SB_Draw_Server(void)
 	const struct QWServer *server;
 	const struct QWPlayer *player;
 	const struct QWSpectator *spectator;
+	enum column_type sorted_enum;
 
 	if (sb_server_insert)
 	{
@@ -1810,11 +1911,27 @@ static void SB_Draw_Server(void)
 		return;
 	player_space = 0;
 
+	// Header
+	string[0] = 0;
+	sorted_enum = tab->column_types[tab->sort].type;
+	k = 0;
+	for (x=0; x<tab->columns; x++)
+	{
+		if (sorted_enum == tab->column_types[x].type)
+			k += snprintf(string + k, sizeof(string) - k, "&cf00%-*.*s&cfff ", tab->column_types[x].length, tab->column_types[x].length, column_names[tab->column_types[x].type]);
+		else
+			k += snprintf(string + k, sizeof(string) - k, "%-*.*s ", tab->column_types[x].length, tab->column_types[x].length, column_names[tab->column_types[x].type]);
+
+		if (k >= sizeof(string))
+			break;
+	}
+	Draw_ColoredString(8, 16, string, 0);
+
 	if (sb_player_filter == 1 || tab->player_filter)
 	{
 		snprintf(string, 512, "Server: %*i/%*i - player_filter: ", sb_server_count_width, tab->sb_position + 1, sb_server_count_width, tab->server_count);
 		i = strlen(string);
-		Draw_String(8, 16,string);
+		Draw_String(8, 8,string);
 		x = 1;
 		if (tab->player_filter)
 		{
@@ -1825,26 +1942,28 @@ static void SB_Draw_Server(void)
 				x += 1;
 
 			if (sb_player_filter == 1)
-				Draw_Fill(8 + i *8, 16, x * 8, 8, 55);
-			Draw_String(8 + i *8, 16, tab->player_filter);
+				Draw_Fill(8 + i *8, 8, x * 8, 8, 55);
+			Draw_String(8 + i *8, 8, tab->player_filter);
 		}
 		else
 		{
 			if (sb_player_filter == 1)
-			Draw_Fill(8 + i *8, 16, x * 8, 8, 55);
+			Draw_Fill(8 + i *8, 8, x * 8, 8, 55);
 		}
 
 		if (sb_player_filter == 1)
 		{
 			if (sb_player_filter_blink_time < cls.realtime)
-				Draw_Character(8 + i *8 + sb_player_filter_entry_position *8, 16, 11);
+				Draw_Character(8 + i *8 + sb_player_filter_entry_position *8, 8, 11);
 
 			if (sb_player_filter_blink_time + 0.2f < cls.realtime)
 				sb_player_filter_blink_time = cls.realtime + 0.2f;
 		}
 	}
 	else
-		Draw_String(8, 16,va("Server: %*i/%*i", sb_server_count_width, tab->sb_position + 1, sb_server_count_width, tab->server_count));
+		Draw_String(8, 8,va("Server: %*i/%*i ", sb_server_count_width, tab->sb_position + 1, sb_server_count_width, tab->server_count));
+
+	
 
 	if (tab->server_count == 0)
 		return;
@@ -1925,11 +2044,11 @@ static void SB_Draw_Server(void)
 			map = server->map;
 
 		if (tab->friends == 0)
-			snprintf(string, sizeof(string),"%*i: %3i %2i/%2i %-*.*s %s", sb_server_count_width, y, server->pingtime/1000, server->numplayers, server->maxclients, 8, 8, map, hostname);
+			snprintf(string, sizeof(string),"%*i: %3i %2i/%3i %-*.*s %s", sb_server_count_width, y, server->pingtime/1000, server->numplayers, server->maxclients, 8, 8, map, hostname);
 		else
 		{
 			friend_name = tab->friend_links[x]->name;
-			snprintf(string, sizeof(string),"%-*s: %2i/%2i %-*.*s %s",friend_name_max_len, friend_name, server->numplayers, server->maxclients, 8, 8, map, hostname);
+			snprintf(string, sizeof(string),"%-*s: %2i/%3i %-*.*s %s",friend_name_max_len, friend_name, server->numplayers, server->maxclients, 8, 8, map, hostname);
 		}
 			
 
@@ -1949,9 +2068,48 @@ static void SB_Draw_Server(void)
 			else if (server->numplayers == 0)
 				Draw_Fill(0, 24 + i * 8, vid.conwidth, 8, sb_color_bg_empty.value);
 		}
+
 		if (server == current_selected_server)
 			Draw_Fill(0, 24 + i * 8, vid.conwidth , 9 , 13);
+
+		
+
+		#ifdef GLQUAKE
+		if (sb_highlight_sort_column.value)
+		{
+			for (header_x=0, header_distance=0; header_x<tab->columns; header_x++)
+			{
+				if (sorted_enum == tab->column_types[header_x].type)
+				{
+					Draw_AlphaFill((header_distance + 1)*8, 24 + i *8, 8 * tab->column_types[header_x].length, 8, sb_highlight_sort_column_color.value, sb_highlight_sort_column_alpha.value);
+					break;
+				}
+				else
+					header_distance += tab->column_types[header_x].length + 1;
+			}
+		}
+		#endif
+
+		string[0] = 0;
+		
+		k = 0;		
+		for (tab_type=0; tab_type<tab->columns; tab_type++)
+		{
+			if (tab->column_types[tab_type].type == SBCT_PING)
+				k += snprintf(string + k, sizeof(string) - k, "%*i ", tab->column_types[tab_type].length, server->pingtime/1000);
+			else if (tab->column_types[tab_type].type == SBCT_PLAYERS)
+				k += snprintf(string + k, sizeof(string) - k, "%*i/%*i ", 3, server->numplayers, 3, server->maxclients);
+			else if (tab->column_types[tab_type].type == SBCT_MAP)
+				k += snprintf(string + k, sizeof(string) - k, "%-*.*s ", tab->column_types[tab_type].length, tab->column_types[tab_type].length, map);
+			else if (tab->column_types[tab_type].type == SBCT_HOSTNAME)
+				k += snprintf(string + k, sizeof(string) - k, "%-*.*s ", tab->column_types[tab_type].length, tab->column_types[tab_type].length, hostname);
+			
+			if (k >= sizeof(string))
+				break;
+		}
+
 		Draw_String(8, 24 + i * 8, string);
+
 		y++;
 	}
 	Draw_String(0,24 + offset * 8,">");
@@ -2061,7 +2219,7 @@ static void SB_Draw_Help(void)
 	{
 		Draw_String(8, 8 + 8 * i++, "general controls:");
 		Draw_String(8, 8 + 8 * i++, " 1->0, arrow left/right -  to switch tabs");
-		Draw_String(8, 8 + 8 * i++, " pgup/pgdown, arrow up/down - to scroll");
+		Draw_String(8, 8 + 8 * i++, " arrow up/down - to scroll, use shift/ctrl to modify jump length");
 		Draw_String(8, 8 + 8 * i++, " esc - will quit submenus, browser");
 		
 	}
@@ -2072,7 +2230,7 @@ static void SB_Draw_Help(void)
 		Draw_String(8, 8 + 8 * i++, " r - rescan selected server");
 		Draw_String(8, 8 + 8 * i++, " enter - to join as player");
 		Draw_String(8, 8 + 8 * i++, " ctrl + enter - to join as spectator");
-		Draw_String(8, 8 + 8 * i++, " enter - to join as player");
+		Draw_String(8, 8 + 8 * i++, " shift + enter - to join via qtv");
 		Draw_String(8, 8 + 8 * i++, " ctrl + f - start player search");
 		Draw_String(8, 8 + 8 * i++, " tab - to switch through sort mode");
 	}
@@ -2384,6 +2542,16 @@ void SB_Update_Friend_Name_Length(void)
 int SB_Add_Friend(char *name)
 {
 	struct sb_friend *s;
+	char *sname;
+
+	sname = strdup(name);
+	if (sname == NULL)
+	{
+		Com_Printf("Could not strdup name.\n");
+		return 1;
+	}
+	
+
 	if (friends != NULL)
 	{
 		s = friends;
@@ -2392,6 +2560,7 @@ int SB_Add_Friend(char *name)
 			if (strcmp(s->name, name) == 0)
 			{
 				Com_Printf("A friend with the name \"%s\" already exists.\n", name);
+				free(sname);
 				return 1;
 			}
 			if (s->next)
@@ -2404,6 +2573,7 @@ int SB_Add_Friend(char *name)
 		if (s->next == NULL)
 		{
 			Com_Printf("Error calloc sb_friend\n");
+			free(sname);
 			return 1;
 		}
 
@@ -2416,13 +2586,14 @@ int SB_Add_Friend(char *name)
 		s = calloc(1, sizeof(struct sb_friend));
 		if (s == NULL)
 		{
+			free(sname);
 			Com_Printf("Error calloc sb_friend\n");
 			return 1;
 		}
 		friends = s;
 	}
 
-	s->name = strdup(name);
+	s->name = sname;
 	SB_Update_Friend_Name_Length();
 	return 0;
 }
@@ -2730,10 +2901,90 @@ void SB_Init(void)
 	SB_Set_Statusbar("just started!. press \"ctrl + h\" for help\n");
 }
 
+static struct tab *Get_Tab_By_Name(char *name)
+{
+	struct tab *tab;
+	tab = tab_first;
+	while (tab)
+	{
+		if (strcmp(tab->name, name)==0)
+			return tab;
+		tab = tab->next;
+	}
+	return NULL;
+}
+
+void SB_Tab_Layout_f(void)
+{
+	struct tab *tab;
+	int i, c;
+
+	if (Cmd_Argc() < 3)
+	{
+		Com_Printf("Usage: %s tab_name [ping players map hostname]\n", Cmd_Argv(0));
+		return;
+	}
+
+	tab = Get_Tab_By_Name(Cmd_Argv(1));
+	if (tab == NULL)
+	{
+		Com_Printf("could not find a tab with the name \"%s\"\n", Cmd_Argv(1));
+		return;
+	}
+
+	for (i=2; i<Cmd_Argc(); i++)
+	{
+		if (	strcmp("ping", Cmd_Argv(i)) != 0 &&
+			strcmp("players", Cmd_Argv(i)) != 0 &&
+			strcmp("map", Cmd_Argv(i)) != 0 &&
+			strcmp("hostname", Cmd_Argv(i)) != 0)
+		{
+			Com_Printf("%s is not a valid column type, valid types: ping players map hostname\n", Cmd_Argv(i));
+			return;
+		}
+	}
+	
+	c = Cmd_Argc() - 2;
+	tab->columns = c;
+
+	free(tab->column_types);
+
+	tab->column_types = calloc(c, sizeof(struct tab_column_type));
+	if (tab->column_types == NULL)
+	{
+		Com_Printf("Error allocating the tab types\n");
+		return;
+	}
+
+	for (i=0; i<c; i++)
+	{
+		if (strcmp("ping", Cmd_Argv(2+i)) == 0)
+		{
+			tab->column_types[i].type = SBCT_PING;
+		}
+		else if (strcmp("players", Cmd_Argv(2+i)) == 0)
+		{
+			tab->column_types[i].type = SBCT_PLAYERS;
+		}
+		else if (strcmp("map", Cmd_Argv(2+i)) == 0)
+		{
+			tab->column_types[i].type = SBCT_MAP;
+		}
+		else if (strcmp("hostname", Cmd_Argv(2+i)) == 0)
+		{
+			tab->column_types[i].type = SBCT_HOSTNAME;
+		}
+	}
+	update_tab(tab);
+}
+
+
+
 void SB_CvarInit(void)
 {
 	Cmd_AddCommand("sb_activate", &SB_Activate_f);
 	Cmd_AddCommand("sb_list", &SB_List_Tabs_f);
+	Cmd_AddCommand("sb_tablayout", &SB_Tab_Layout_f);
 	Cmd_AddCommand("sb_add_tab", &SB_Add_Tab_f);
 	Cmd_AddCommand("sb_del_tab", &SB_Del_Tab_f);
 	Cmd_AddCommand("sb_add_filter", &SB_Add_Filter_f);
@@ -2761,12 +3012,16 @@ void SB_CvarInit(void)
 	Cvar_Register(&sb_qtv_proxy);
 	Cvar_Register(&sb_qtv_lookup);
 	Cvar_Register(&sb_qtv_connect_timeout);
+	Cvar_Register(&sb_highlight_sort_column);
+	Cvar_Register(&sb_highlight_sort_column_color);
+	Cvar_Register(&sb_highlight_sort_column_alpha);
 }
 
 void Dump_SB_Config(FILE *f)
 {
 	struct tab *tab;
 	struct filter *filter;
+	int i;
 
 	if (f == NULL)
 		return;
@@ -2796,6 +3051,14 @@ void Dump_SB_Config(FILE *f)
 				filter = (struct filter *)filter->node.next;
 			}
 		}
+
+		fprintf(f, "sb_tablayout %s", tab->name);
+		for (i=0; i<tab->columns; i++)
+		{
+			fprintf(f, " %s", column_names[tab->column_types[i].type]);
+		}
+		fprintf(f, "\n");
+
 		tab = tab->next;
 	}
 }
