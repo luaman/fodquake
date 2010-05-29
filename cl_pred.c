@@ -206,12 +206,11 @@ void CL_PredictMove (void) {
 
 		if (cl.validsequence >= 0)
 		{
-			for(i=cl.validsequence;i<cls.netchan.outgoing_sequence;i++)
+			for(i=cl.validsequence;i<cls.netchan.outgoing_sequence-1;i++)
 			{
 				from = &cl.frames[i & UPDATE_MASK];
 				to = &cl.frames[(i + 1) & UPDATE_MASK];
 				CL_PredictUsercmd(&from->playerstate[cl.playernum], &to->playerstate[cl.playernum], &to->cmd);
-				cl.onground = pmove.onground;
 			}
 		}
 	
@@ -257,6 +256,9 @@ void CL_PredictMove (void) {
 	VectorInterpolate(from->playerstate[cl.playernum].velocity, lerpfrac, to->playerstate[cl.playernum].velocity, cl.simvel);
 
 out:
+	if (INTERPOLATEDPHYSICS)
+		CL_CategorizePosition ();
+
 	CL_CalcCrouch ();
 	cl.waterlevel = pmove.waterlevel;
 }
