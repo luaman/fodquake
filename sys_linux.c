@@ -40,9 +40,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "quakedef.h"
 #include "sys_error_gtk.h"
 
-int noconinput = 0;
-
-
 qboolean stdin_ready;
 int do_stdin = 1;
 
@@ -227,8 +224,6 @@ char *Sys_ConsoleInput(void)
 
 	return text;
 }
-
-int skipframes;
 
 static void checkmousepoll()
 {
