@@ -516,8 +516,10 @@ static void R_UploadLightMap (int lightmapnum) {
 
 	lightmap_modified[lightmapnum] = false;
 	theRect = &lightmap_rectchange[lightmapnum];
-	glTexSubImage2D (GL_TEXTURE_2D, 0, 0, theRect->t, BLOCK_WIDTH, theRect->h, GL_RGB, GL_UNSIGNED_BYTE,
-		lightmaps + (lightmapnum * BLOCK_HEIGHT + theRect->t) * BLOCK_WIDTH * 3);
+	glPixelStorei(GL_UNPACK_ROW_LENGTH, BLOCK_WIDTH);
+	glTexSubImage2D (GL_TEXTURE_2D, 0, theRect->l, theRect->t, theRect->w, theRect->h, GL_RGB, GL_UNSIGNED_BYTE,
+		lightmaps + (((lightmapnum * BLOCK_HEIGHT + theRect->t) * BLOCK_WIDTH) + theRect->l) * 3);
+	glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
 	theRect->l = BLOCK_WIDTH;
 	theRect->t = BLOCK_HEIGHT;
 	theRect->h = 0;
