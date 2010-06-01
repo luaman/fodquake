@@ -639,6 +639,44 @@ static void R_RenderDynamicLightmaps (msurface_t *fa) {
 	R_BuildLightMap (fa, base, BLOCK_WIDTH * 3);
 }
 
+static void R_RenderAllDynamicLightmaps(model_t *model)
+{
+	msurface_t *s;
+	unsigned int waterline;
+	unsigned int i;
+	unsigned int k;
+
+	for (i = 0; i < model->numtextures; i++)
+	{
+		if (!model->textures[i] || (!model->textures[i]->texturechain[0] && !model->textures[i]->texturechain[1]))
+			continue;	
+
+		for (waterline = 0; waterline < 2; waterline++)
+		{
+			if (!(s = model->textures[i]->texturechain[waterline]))
+				continue;	
+
+			for ( ; s; s = s->texturechain)
+			{
+				GL_Bind(lightmap_textures + s->lightmaptexturenum);
+				R_RenderDynamicLightmaps(s);
+				k = s->lightmaptexturenum;
+				if (lightmap_modified[k])
+					R_UploadLightMap(k);
+			}
+		}
+	}
+
+	for (s = drawflatchain; s; s = s->texturechain)
+	{
+		GL_Bind(lightmap_textures + s->lightmaptexturenum);
+		R_RenderDynamicLightmaps(s);
+		k = s->lightmaptexturenum;
+		if (lightmap_modified[k])
+			R_UploadLightMap(k);
+	}
+}
+
 void R_DrawWaterSurfaces (void) {
 	msurface_t *s;
 	float wateralpha;
@@ -869,17 +907,9 @@ static void DrawTextureChains (model_t *model) {
 					//bind the lightmap texture
 					GL_SelectTexture(GL_LIGHTMAP_TEXTURE);
 					GL_Bind (lightmap_textures + s->lightmaptexturenum);
-					//update lightmap if its modified by dynamic lights
-					R_RenderDynamicLightmaps (s);
-					k = s->lightmaptexturenum;
-					if (lightmap_modified[k])
-						R_UploadLightMap(k);
 				} else {
-
 					s->polys->chain = lightmap_polys[s->lightmaptexturenum];
 					lightmap_polys[s->lightmaptexturenum] = s->polys;
-
-					R_RenderDynamicLightmaps (s);
 				}
 
 				glBegin(GL_POLYGON);
@@ -972,12 +1002,6 @@ static void R_DrawFlat (model_t *model) {
 	
 	for (s = drawflatchain; s; s = s->texturechain) {
 		GL_Bind (lightmap_textures + s->lightmaptexturenum);
-
-		R_RenderDynamicLightmaps (s);
-				
-		k = s->lightmaptexturenum;
-		if (lightmap_modified[k])
-			R_UploadLightMap(k);
 
 		v = s->polys->verts[0];
 		glColor3f(s->color[0], s->color[1], s->color[2]);
@@ -1087,6 +1111,7 @@ void R_DrawBrushModel (entity_t *e) {
 	}
 
 	//draw the textures chains for the model
+	R_RenderAllDynamicLightmaps(clmodel);
 	DrawTextureChains(clmodel);
 	R_DrawFlat(clmodel);
 	R_DrawSkyChain();
@@ -1216,7 +1241,8 @@ void R_DrawWorld (void) {
 	R_DrawEntitiesOnList (&cl_firstpassents);
 
 	//draw the world
-	DrawTextureChains (cl.worldmodel);
+	R_RenderAllDynamicLightmaps(cl.worldmodel);
+	DrawTextureChains(cl.worldmodel);
 	R_DrawFlat(cl.worldmodel);
 
 	//draw the world alpha textures
