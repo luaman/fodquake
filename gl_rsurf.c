@@ -31,6 +31,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define MAX_LIGHTMAP_SIZE	(32 * 32)
 #define	MAX_LIGHTMAPS		64
 
+extern cvar_t r_drawflat_enable;
+
 static int lightmap_textures;
 static unsigned int blocklights[MAX_LIGHTMAP_SIZE * 3];
 
@@ -58,6 +60,9 @@ msurface_t	**waterchain_tail = &waterchain;
 
 msurface_t	*alphachain = NULL;
 msurface_t	**alphachain_tail = &alphachain;
+
+msurface_t	*drawflatchain = NULL;
+msurface_t	**drawflatchain_tail = &drawflatchain;
 
 #define CHAIN_SURF_F2B(surf, chain_tail)		\
 	{											\
@@ -753,6 +758,7 @@ static void R_ClearTextureChains(model_t *clmodel) {
 	if (clmodel == cl.worldmodel)
 		CHAIN_RESET(waterchain);
 	CHAIN_RESET(alphachain);
+	CHAIN_RESET(drawflatchain);
 }
 
 static void DrawTextureChains (model_t *model) {
@@ -760,7 +766,6 @@ static void DrawTextureChains (model_t *model) {
 	msurface_t *s;
 	texture_t *t;
 	float *v;
-	extern cvar_t r_drawflat_enable;
 
 	qboolean render_lightmaps = false, render_caustics = false, render_details = false;
 	qboolean drawLumasGlowing, doMtex1, doMtex2;
@@ -858,8 +863,6 @@ static void DrawTextureChains (model_t *model) {
 				continue;	
 
 			for ( ; s; s = s->texturechain) {
-				if (s->is_drawflat && r_drawflat_enable.value == 1)
-					continue;
 				if (mtex_lightmaps) {
 					//bind the lightmap texture
 					GL_SelectTexture(GL_LIGHTMAP_TEXTURE);
@@ -951,11 +954,8 @@ static void DrawTextureChains (model_t *model) {
 
 static void R_DrawFlat (model_t *model) {
 	msurface_t *s;
-	int waterline, i, k;
+	int k;
 	float *v;
-	vec3_t n;
-	int draw_caustics = underwatertexture && gl_caustics.value;
-	extern cvar_t r_drawflat_enable;
 
 	if (r_drawflat_enable.value == 0)
 		return;
@@ -968,47 +968,28 @@ static void R_DrawFlat (model_t *model) {
 	
 	GL_SelectTexture(GL_TEXTURE0_ARB);
 	
-	for (i = 0; i < model->numtextures; i++) {
-		if (!model->textures[i] || (!model->textures[i]->texturechain[0] && !model->textures[i]->texturechain[1]))
-			continue;
+	for (s = drawflatchain; s; s = s->texturechain) {
+		GL_Bind (lightmap_textures + s->lightmaptexturenum);
+
+		R_RenderDynamicLightmaps (s);
 				
-		for (waterline = 0; waterline < 2; waterline++) {
-			if (!(s = model->textures[i]->texturechain[waterline]))
-				continue;
-			
-			for ( ; s; s = s->texturechain) {
-				if (!s->is_drawflat)
-					continue;
-				GL_Bind (lightmap_textures + s->lightmaptexturenum);
+		k = s->lightmaptexturenum;
+		if (lightmap_modified[k])
+			R_UploadLightMap(k);
 
-				R_RenderDynamicLightmaps (s);
-				
-				k = s->lightmaptexturenum;
-				if (lightmap_modified[k])
-					R_UploadLightMap(k);
-
-				v = s->polys->verts[0];
-				glColor3f(s->color[0], s->color[1], s->color[2]);
-												
-				glBegin(GL_POLYGON);
-				for (k = 0; k < s->polys->numverts; k++, v += VERTEXSIZE) {
-					glTexCoord2f(v[5], v[6]);
-					glVertex3fv (v);
-				}
-				glEnd ();
-
-				if (waterline && draw_caustics) {
-					s->polys->caustics_chain = caustics_polys;
-					caustics_polys = s->polys;
-				}
-			}
-		}		
+		v = s->polys->verts[0];
+		glColor3f(s->color[0], s->color[1], s->color[2]);
+										
+		glBegin(GL_POLYGON);
+		for (k = 0; k < s->polys->numverts; k++, v += VERTEXSIZE) {
+			glTexCoord2f(v[5], v[6]);
+			glVertex3fv (v);
+		}
+		glEnd ();
 	}
-
 
 	glColor3f(1.0f, 1.0f, 1.0f);
 	glPopAttrib();
-	EmitCausticsPolys();
 }
 
 
@@ -1090,7 +1071,12 @@ void R_DrawBrushModel (entity_t *e) {
 			} else if (psurf->flags & SURF_DRAWALPHA) {
 				
 				CHAIN_SURF_B2F(psurf, alphachain);
-			} else {
+			}
+			else if (psurf->is_drawflat && r_drawflat_enable.value == 1)
+			{
+				CHAIN_SURF_B2F(psurf, drawflatchain);
+			}
+			else {
 				
 				underwater = (psurf->flags & SURF_UNDERWATER) ? 1 : 0;
 				CHAIN_SURF_B2F(psurf, psurf->texinfo->texture->texturechain[underwater]);
@@ -1188,7 +1174,12 @@ static void R_RecursiveWorldNode (mnode_t *node, int clipflags) {
 			} else if (surf->flags & SURF_DRAWALPHA) {
 				
 				CHAIN_SURF_B2F(surf, alphachain);
-			} else {
+			}
+			else if (surf->is_drawflat && r_drawflat_enable.value == 1)
+			{
+				CHAIN_SURF_F2B(surf, drawflatchain_tail);
+			}
+			else {
 				underwater = (surf->flags & SURF_UNDERWATER) ? 1 : 0;
 				CHAIN_SURF_F2B(surf, surf->texinfo->texture->texturechain_tail[underwater]);
 			}
