@@ -240,35 +240,38 @@ void WAD3_LoadTextureWadFile (char *filename) {
 		return;
 	}
 
-	lowmark = Hunk_LowMark();
-	if (!(lumps = Hunk_Alloc(sizeof(lumpinfo_t) * numlumps))) {
+	if (!(lumps = malloc(sizeof(lumpinfo_t) * numlumps)))
+	{
 		Com_Printf ("WAD3_LoadTextureWadFile: unable to allocate temporary memory for lump table");
-		return;
 	}
-
-	if (fread(lumps, 1, sizeof(lumpinfo_t) * numlumps, file) != sizeof(lumpinfo_t) * numlumps) {
-		Com_Printf ("WAD3_LoadTextureWadFile: unable to read lump table");
-		Hunk_FreeToLowMark(lowmark);
-		return;
-	}
-
-	for (i = 0, lump_p = lumps; i < numlumps; i++,lump_p++) {
-		W_CleanupName (lump_p->name, lump_p->name);
-		for (j = 0; j < TEXWAD_MAXIMAGES; j++) {
-			if (!texwadlump[j].name[0] || !strcmp(lump_p->name, texwadlump[j].name))
-				break;
+	else
+	{
+		if (fread(lumps, 1, sizeof(lumpinfo_t) * numlumps, file) != sizeof(lumpinfo_t) * numlumps)
+		{
+			Com_Printf ("WAD3_LoadTextureWadFile: unable to read lump table");
 		}
-		if (j == TEXWAD_MAXIMAGES)
-			break; // we are full, don't load any more
-		if (!texwadlump[j].name[0])
-			Q_strncpyz (texwadlump[j].name, lump_p->name, sizeof(texwadlump[j].name));
-		texwadlump[j].file = file;
-		texwadlump[j].position = LittleLong(lump_p->filepos);
-		texwadlump[j].size = LittleLong(lump_p->disksize);
-	}
+		else
+		{
+			for (i = 0, lump_p = lumps; i < numlumps; i++,lump_p++)
+			{
+				W_CleanupName (lump_p->name, lump_p->name);
+				for (j = 0; j < TEXWAD_MAXIMAGES; j++)
+				{
+					if (!texwadlump[j].name[0] || !strcmp(lump_p->name, texwadlump[j].name))
+						break;
+				}
+				if (j == TEXWAD_MAXIMAGES)
+					break; // we are full, don't load any more
+				if (!texwadlump[j].name[0])
+					Q_strncpyz (texwadlump[j].name, lump_p->name, sizeof(texwadlump[j].name));
+				texwadlump[j].file = file;
+				texwadlump[j].position = LittleLong(lump_p->filepos);
+				texwadlump[j].size = LittleLong(lump_p->disksize);
+			}
+		}
 
-	Hunk_FreeToLowMark(lowmark);
-	//leaves the file open
+		free(lumps);
+	}
 }
 
 //converts paletted to rgba
