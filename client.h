@@ -526,7 +526,8 @@ typedef enum cl_modelindex_s {
 extern cl_modelindex_t cl_modelindices[cl_num_modelindices];
 extern char *cl_modelnames[cl_num_modelindices];
 
-void CL_InitEnts(void);
+int CL_InitEnts(void);
+void CL_ShutdownEnts(void);
 void CL_AddEntity (entity_t *ent);
 void CL_ClearScene (void) ;
 

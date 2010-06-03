@@ -1759,7 +1759,10 @@ void CL_Init (void)
 	Info_SetValueForStarKey (cls.userinfo, "*z_ext", va("%i", SUPPORTED_EXTENSIONS), MAX_SERVERINFO_STRING);
 
 	CL_InitClientVersionInfo();
-	CL_InitEnts ();
+
+	if (!CL_InitEnts())
+		Sys_Error("CL_InitEnts() failed\n");
+
 	CL_InitTEnts ();
 #ifndef GLQUAKE
 	Sbar_Init ();
@@ -1996,6 +1999,7 @@ void CL_Shutdown (void)
 
 	CL_WriteConfiguration();
 
+	CL_ShutdownEnts();
 	CDAudio_Shutdown();
 	S_Shutdown();
 	MP3_Shutdown();

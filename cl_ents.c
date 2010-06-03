@@ -61,9 +61,9 @@ char *cl_modelnames[cl_num_modelindices];
 cl_modelindex_t cl_modelindices[cl_num_modelindices];
 
 
-void CL_InitEnts(void) {
+int CL_InitEnts(void)
+{
 	int i;
-	byte *memalloc;
 
 	memset(cl_modelnames, 0, sizeof(cl_modelnames));
 
@@ -89,7 +89,8 @@ void CL_InitEnts(void) {
 	cl_modelnames[mi_vmedi] = "progs/v_medi.mdl";
 	cl_modelnames[mi_vspan] = "progs/v_span.mdl";
 	
-	for (i = 0; i < cl_num_modelindices; i++) {
+	for (i = 0; i < cl_num_modelindices; i++)
+	{
 		if (!cl_modelnames[i])
 			Sys_Error("cl_modelnames[%d] not initialized", i);
 	}
@@ -104,10 +105,18 @@ void CL_InitEnts(void) {
 	cl_alphaents.max = 64;
 	cl_alphaents.alpha = 1;
 
-	memalloc = Hunk_AllocName((cl_firstpassents.max + cl_visents.max + cl_alphaents.max) * sizeof(entity_t), "visents");
-	cl_firstpassents.list = (entity_t *) memalloc;
-	cl_visents.list = (entity_t *) memalloc + cl_firstpassents.max;
-	cl_alphaents.list = (entity_t *) memalloc + cl_firstpassents.max + cl_visents.max;
+	cl_firstpassents.list = malloc(cl_firstpassents.max * sizeof(entity_t));
+	cl_visents.list = malloc(cl_visents.max * sizeof(entity_t));
+	cl_alphaents.list = malloc(cl_alphaents.max * sizeof(entity_t));
+
+	if (cl_firstpassents.list == 0 || cl_visents.list == 0 || cl_alphaents.list == 0)
+	{
+		free(cl_firstpassents.list);
+		free(cl_visents.list);
+		free(cl_alphaents.list);
+
+		return 0;
+	}
 #else
 	cl_visents.max = 256;
 	cl_visents.alpha = 0;
@@ -115,12 +124,40 @@ void CL_InitEnts(void) {
 	cl_visbents.max = 256;
 	cl_visbents.alpha = 0;
 
-	memalloc = Hunk_AllocName((cl_visents.max + cl_visbents.max) * sizeof(entity_t), "visents");
-	cl_visents.list = (entity_t *) memalloc;
-	cl_visbents.list = (entity_t *) memalloc + cl_visents.max;
+	cl_visents.list = malloc(cl_visents.max * sizeof(entity_t));
+	cl_visbents.list = malloc(cl_visbents.max * sizeof(entity_t));
+
+	if (cl_visents.list == 0 || cl_visbents.list == 0)
+	{
+		free(cl_visents.list);
+		free(cl_visbents.list);
+
+		return 0;
+	}
 #endif
 
 	CL_ClearScene();
+
+	return 1;
+}
+
+void CL_ShutdownEnts()
+{
+#ifdef GLQUAKE
+	free(cl_firstpassents.list);
+	free(cl_visents.list);
+	free(cl_alphaents.list);
+
+	cl_firstpassents.list = 0;
+	cl_visents.list = 0;
+	cl_alphaents.list = 0;
+#else
+	free(cl_visents.list);
+	free(cl_visbents.list);
+
+	cl_visents.list = 0;
+	cl_visbents.list = 0;
+#endif
 }
 
 void CL_ClearScene (void) {
