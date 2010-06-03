@@ -47,10 +47,6 @@ byte	mod_novis[MAX_MAP_LEAFS/8];
 model_t	mod_known[MAX_MOD_KNOWN];
 int		mod_numknown;
 
-void Mod_Init (void) {
-	memset (mod_novis, 0xff, sizeof(mod_novis));
-}
-
 //Caches the data if needed
 void *Mod_Extradata(model_t *mod)
 {
@@ -1566,3 +1562,14 @@ void Mod_LoadSpriteModel (model_t *mod, void *buffer) {
 
 	mod->type = mod_sprite;
 }
+
+void Mod_Init (void)
+{
+	memset (mod_novis, 0xff, sizeof(mod_novis));
+}
+
+void Mod_Shutdown(void)
+{
+	Mod_ClearAll();
+}
+

@@ -356,6 +356,7 @@ void Host_Shutdown (void) {
 	SV_Shutdown ("Server quit\n");
 	QLib_Shutdown();
 	CL_Shutdown ();
+	Mod_Shutdown();
 	FS_ShutdownFilesystem();
 	NET_Shutdown ();
 	Mouse_Shutdown();
