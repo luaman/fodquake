@@ -481,6 +481,8 @@ void *Sys_Video_Open(const char *mode, unsigned int width, unsigned int height, 
 
 				Com_Printf ("Video mode %dx%d initialized.\n", width, height);
 
+				XFree(visinfo);
+
 				d->inputdata = X11_Input_Init(d->x_win, width, height, fullscreen);
 				if (d->inputdata)
 					return d;
