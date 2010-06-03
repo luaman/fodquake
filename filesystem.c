@@ -387,13 +387,30 @@ static void FS_FreePackFile(struct pack *pack)
 	free(pack);
 }
 
+static void FS_FreeSearchPaths(struct searchpath *searchpaths)
+{
+	struct searchpath *t;
+
+	while((t = searchpaths))
+	{
+		searchpaths = searchpaths->next;
+
+		if (t->pack)
+			FS_FreePackFile(t->pack);
+
+		free(t);
+	}
+}
+
 //Sets com_gamedir, adds the directory to the head of the path, then loads and adds pak1.pak pak2.pak ... 
-void FS_AddGameDirectory(char *dir)
+static void FS_AddGameDirectory(char *dir)
 {
 	int i;
+	struct searchpath *firstsearch;
 	struct searchpath *search;
 	struct pack *pak;
 	char pakfile[MAX_OSPATH], *p;
+	int error;
 
 	if ((p = strrchr(dir, '/')) != NULL)
 		strcpy(com_gamedirfile, ++p);
@@ -402,29 +419,52 @@ void FS_AddGameDirectory(char *dir)
 	strcpy(com_gamedir, dir);
 
 	// add the directory to the search path
-	search = Hunk_Alloc(sizeof(*search));
-	strcpy(search->filename, dir);
-	search->pack = NULL;
-	search->next = com_searchpaths;
-	com_searchpaths = search;
-
-	// add any pak files in the format pak0.pak pak1.pak, ...
-	for (i = 0;; i++)
+	search = malloc(sizeof(*search));
+	if (search)
 	{
-		Q_snprintfz(pakfile, sizeof(pakfile), "%s/pak%i.pak", dir, i);
-		if (!(pak = FS_LoadPackFile(pakfile)))
-			break;
-		search = Hunk_Alloc(sizeof(*search));
-		search->pack = pak;
+		strcpy(search->filename, dir);
+		search->pack = NULL;
 		search->next = com_searchpaths;
-		com_searchpaths = search;
+		firstsearch = search;
+
+		error = 0;
+		// add any pak files in the format pak0.pak pak1.pak, ...
+		for (i = 0;; i++)
+		{
+			search = malloc(sizeof(*search));
+			if (search == 0)
+			{
+				error = 1;
+				break;
+			}
+
+			Q_snprintfz(pakfile, sizeof(pakfile), "%s/pak%i.pak", dir, i);
+			if (!(pak = FS_LoadPackFile(pakfile)))
+			{
+				free(search);
+				break;
+			}
+			search->pack = pak;
+			search->next = firstsearch;
+			firstsearch = search;
+		}
+
+		if (!error)
+		{
+			com_searchpaths = firstsearch;
+			return;
+		}
+
+		FS_FreeSearchPaths(firstsearch);
 	}
+
+	Sys_Error("FS_AddGameDirectory: Failed to add \"%s\"\n", dir);
 }
 
 //Sets the gamedir and path to a different directory.
 void FS_SetGamedir(char *dir)
 {
-	struct searchpath *search, *next;
+	struct searchpath *search;
 	int i;
 	struct pack *pak;
 	char pakfile[MAX_OSPATH];
@@ -440,17 +480,16 @@ void FS_SetGamedir(char *dir)
 	Q_strncpyz(com_gamedirfile, dir, sizeof(com_gamedirfile));
 
 	// free up any current game dir info
-	while (com_searchpaths != com_base_searchpaths)
+	if (com_searchpaths != com_base_searchpaths)
 	{
-		if (com_searchpaths->pack)
-		{
-			fclose(com_searchpaths->pack->handle);
-			free(com_searchpaths->pack->files);
-			free(com_searchpaths->pack);
-		}
-		next = com_searchpaths->next;
-		free(com_searchpaths);
-		com_searchpaths = next;
+		search = com_searchpaths;
+
+		while(search->next != com_base_searchpaths)
+			search = search->next;
+
+		search->next = 0;
+		FS_FreeSearchPaths(com_searchpaths);
+		com_searchpaths = com_base_searchpaths;
 	}
 
 	Q_snprintfz(com_gamedir, sizeof(com_gamedir), "%s/%s", com_basedir, dir);
@@ -471,7 +510,7 @@ void FS_SetGamedir(char *dir)
 		Q_snprintfz(pakfile, sizeof(pakfile), "%s/pak%i.pak", com_gamedir, i);
 		if (!(pak = FS_LoadPackFile(pakfile)))
 			break;
-		search = Q_Malloc(sizeof(*search));
+		search = malloc(sizeof(*search));
 		search->pack = pak;
 		search->next = com_searchpaths;
 		com_searchpaths = search;
@@ -514,26 +553,8 @@ void FS_InitFilesystem(void)
 
 void FS_ShutdownFilesystem(void)
 {
-	struct searchpath *s;
-	struct searchpath *next;
-
-	s = com_searchpaths;
-	while(s)
-	{
-		next = s->next;
-
-		if (s->pack)
-		{
-			FS_FreePackFile(s->pack);
-		}
-
-#warning "We can't free the structures because this file uses a mix of allocation routines :/"
-#if 0
-		free(s);
-#endif
-
-		s = next;
-	}
+	FS_FreeSearchPaths(com_searchpaths);
+	com_searchpaths = 0;
 }
 
 static void FS_Path_f(void)
