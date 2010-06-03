@@ -55,7 +55,7 @@ static int	soundtime;		// sample PAIRS
 int   		paintedtime; 	// sample PAIRS
 
 #define	MAX_SFX	512
-static sfx_t	*known_sfx;		// hunk allocated [MAX_SFX]
+static sfx_t	*known_sfx;		// malloc allocated [MAX_SFX]
 static int		num_sfx;
 
 static sfx_t	*ambient_sfx[NUM_AMBIENTS];
@@ -276,7 +276,12 @@ void S_Init(void)
 
 	SND_InitScaletable();
 
-	known_sfx = Hunk_AllocName(MAX_SFX*sizeof(sfx_t), "sfx_t");
+	known_sfx = malloc(MAX_SFX*sizeof(sfx_t));
+	if (known_sfx == 0)
+		Sys_Error("S_Init: Out of memory for sound table\n");
+
+	memset(known_sfx, 0, MAX_SFX*sizeof(sfx_t));
+
 	num_sfx = 0;
 
 	ambient_sfx[AMBIENT_WATER] = S_PrecacheSound("ambience/water1.wav");
@@ -292,6 +297,7 @@ void S_Init(void)
 void S_Shutdown(void)
 {
 	S_ShutdownDriver();
+	free(known_sfx);
 }
 
 // =======================================================================
