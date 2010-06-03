@@ -40,8 +40,6 @@ extern cvar_t r_fastturb;
 static int solidskytexture, alphaskytexture;
 static float speedscale, speedscale2;		// for top sky and bottom sky
 
-static msurface_t *warpface;
-
 qboolean r_skyboxloaded;
 
 void BoundPoly (int numverts, float *verts, vec3_t mins, vec3_t maxs) {
@@ -61,7 +59,8 @@ void BoundPoly (int numverts, float *verts, vec3_t mins, vec3_t maxs) {
 	}
 }
 
-void SubdividePolygon (int numverts, float *verts) {
+void SubdividePolygon(msurface_t *warpface, int numverts, float *verts)
+{
 	int i, j, k, f, b;
 	vec3_t mins, maxs, front[64], back[64];
 	float m, *v, dist[64], frac, s, t;
@@ -114,8 +113,8 @@ void SubdividePolygon (int numverts, float *verts) {
 				b++;
 			}
 		}
-		SubdividePolygon (f, front[0]);
-		SubdividePolygon (b, back[0]);
+		SubdividePolygon(warpface, f, front[0]);
+		SubdividePolygon(warpface, b, back[0]);
 		return;
 	}
 
@@ -138,8 +137,6 @@ void GL_SubdivideSurface (msurface_t *fa) {
 	int numverts, i, lindex;
 	float *vec;
 
-	warpface = fa;
-
 	// convert edges back to a normal polygon
 	numverts = 0;
 	for (i = 0; i < fa->numedges; i++) {
@@ -153,7 +150,7 @@ void GL_SubdivideSurface (msurface_t *fa) {
 		numverts++;
 	}
 
-	SubdividePolygon (numverts, verts[0]);
+	SubdividePolygon(fa, numverts, verts[0]);
 }
 
 
