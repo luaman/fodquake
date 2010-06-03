@@ -45,7 +45,7 @@ static char *PR_GetTempString(void){
 	return s;
 }
 
-char *PF_VarString (int first) {
+static char *PF_VarString (int first) {
 	int i;
 	char *s, *out, *outend;
 	static char pr_varstring_temp[MAX_VARSTRING];
@@ -171,7 +171,7 @@ static client_t *Write_GetClient(void)
 
 //void(string e) error = #10
 //This is a TERMINAL error, which will kill off the entire server. Dumps self.
-void PF_error (void) {
+static void PF_error (void) {
 	char *s;
 	edict_t	*ed;
 
@@ -185,7 +185,7 @@ void PF_error (void) {
 
 //void(string e) objerror = #11
 //Dumps out self, then an error message.  The program is aborted and self is removed, but the level can continue.
-void PF_objerror (void) {
+static void PF_objerror (void) {
 	char *s;
 	edict_t	*ed;
 
@@ -199,22 +199,22 @@ void PF_objerror (void) {
 }
 
 //void() coredump = #28
-void PF_coredump (void) {
+static void PF_coredump (void) {
 	ED_PrintEdicts ();
 }
 
 //void() traceon = #29
-void PF_traceon (void) {
+static void PF_traceon (void) {
 	pr_trace = true;
 }
 
 //void() traceoff = #30
-void PF_traceoff (void) {
+static void PF_traceoff (void) {
 	pr_trace = false;
 }
 
 //void(entity e) debug print an entire entity = #31
-void PF_eprint (void) {
+static void PF_eprint (void) {
 	ED_PrintNum (G_EDICTNUM(OFS_PARM0));
 }
 
@@ -222,7 +222,7 @@ void PF_eprint (void) {
 //This is the only valid way to move an object without using the physics of the world (setting velocity and waiting).
 //Directly changing origin will not set internal links correctly, so clipping would be messed up.
 //This should be called when an object is spawned, and then only if it is teleported.
-void PF_setorigin (void) {
+static void PF_setorigin (void) {
 	edict_t	*e;
 	float *org;
 
@@ -234,7 +234,7 @@ void PF_setorigin (void) {
 
 //void(entity e, string m) setmodel = #3
 //Also sets size, mins, and maxs for inline bmodels
-void PF_setmodel (void) {
+static void PF_setmodel (void) {
 	edict_t	*e;
 	char *m, **check;
 	int i;
@@ -267,7 +267,7 @@ void PF_setmodel (void) {
 
 //void(entity e, vector min, vector max) setsize = #4
 //the size box is rotated by the current angle
-void PF_setsize (void) {
+static void PF_setsize (void) {
 	edict_t	*e;
 	float *min, *max;
 
@@ -282,7 +282,7 @@ void PF_setsize (void) {
 
 //void(string s) bprint3 = #23
 //broadcast print to everyone on server
-void PF_bprint (void) {
+static void PF_bprint (void) {
 	char *s;
 	int level;
 
@@ -294,7 +294,7 @@ void PF_bprint (void) {
 
 //void(entity client, string s) sprint = #24
 //single print to a specific client
-void PF_sprint (void) {
+static void PF_sprint (void) {
 	client_t *cl;
 	int entnum, level, buflen, len, i;
 	char *buf, *str;
@@ -353,13 +353,13 @@ void PF_sprint (void) {
 }
 
 //void(string s) dprint = #25
-void PF_dprint (void) {
+static void PF_dprint (void) {
 	Com_Printf ("%s",PF_VarString(0));
 }
 
 //void(entity client, strings) centerprint = #73
 //single print to a specific client
-void PF_centerprint (void) {
+static void PF_centerprint (void) {
 	char *s;
 	int entnum;
 	client_t *cl;
@@ -383,12 +383,12 @@ void PF_centerprint (void) {
 
 //void(entity e) makevectors = #1
 //Writes new values for v_forward, v_up, and v_right based on angles
-void PF_makevectors (void) {
+static void PF_makevectors (void) {
 	AngleVectors (G_VECTOR(OFS_PARM0), pr_global_struct->v_forward, pr_global_struct->v_right, pr_global_struct->v_up);
 }
 
 //vector(vector v) normalize = #9
-void PF_normalize (void) {
+static void PF_normalize (void) {
 	float *value1, length2;
 	vec3_t newvalue;
 
@@ -405,7 +405,7 @@ void PF_normalize (void) {
 }
 
 //float(vector v) vlen = #12
-void PF_vlen (void) {
+static void PF_vlen (void) {
 	float *value1, length2;
 
 	value1 = G_VECTOR(OFS_PARM0);
@@ -414,7 +414,7 @@ void PF_vlen (void) {
 }
 
 //float(vector v) vectoyaw = #13
-void PF_vectoyaw (void) {
+static void PF_vectoyaw (void) {
 	float *value1, yaw;
 
 	value1 = G_VECTOR(OFS_PARM0);
@@ -431,7 +431,7 @@ void PF_vectoyaw (void) {
 }
 
 //vector(vector v) vectoangles = #51
-void PF_vectoangles (void) {
+static void PF_vectoangles (void) {
 	float *value1, forward, yaw, pitch;
 
 	value1 = G_VECTOR(OFS_PARM0);
@@ -457,7 +457,7 @@ void PF_vectoangles (void) {
 
 //float() random = #7
 //Returns a number from 0 <= num < 1
-void PF_random (void) {
+static void PF_random (void) {
 	float num;
 		
 	num = (rand () & 0x7fff) / ((float) 0x7fff);
@@ -466,7 +466,7 @@ void PF_random (void) {
 }
 
 //float(float v) rint = #36
-void PF_rint (void) {
+static void PF_rint (void) {
 	float f;
 
 	f = G_FLOAT(OFS_PARM0);
@@ -477,12 +477,12 @@ void PF_rint (void) {
 }
 
 //float(float v) floor = #37
-void PF_floor (void) {
+static void PF_floor (void) {
 	G_FLOAT(OFS_RETURN) = floor(G_FLOAT(OFS_PARM0));
 }
 
 //float(float v) ceil = #38
-void PF_ceil (void) {
+static void PF_ceil (void) {
 	G_FLOAT(OFS_RETURN) = ceil(G_FLOAT(OFS_PARM0));
 }
 
@@ -517,7 +517,7 @@ void PF_changeyaw (void) {
 }
   
 //void(vector pos, string samp, float vol, float atten) ambientsound = #74
-void PF_ambientsound (void) {
+static void PF_ambientsound (void) {
 	char **check, *samp;
 	float *pos, vol, attenuation;
 	int i, soundnum;
@@ -562,7 +562,7 @@ already running on that entity/channel pair.
 An attenuation of 0 will play full volume everywhere in the level.
 Larger attenuations will drop off.
 */
-void PF_sound (void) {
+static void PF_sound (void) {
 	char *sample;
 	int channel, volume;
 	edict_t *entity;
@@ -578,7 +578,7 @@ void PF_sound (void) {
 }
 
 //void() break = #6
-void PF_break (void) {
+static void PF_break (void) {
 	Com_Printf ("break statement\n");
 	*((int *) -4) = 0;	// dump to debugger
 	//PR_RunError ("break statement");
@@ -591,7 +591,7 @@ Returns a client (or object that has a client enemy) that would be a valid targe
 If there are more than one valid options, they are cycled each frame
 If (self.origin + self.viewofs) is not in the PVS of the current target, it is not returned at all.
 */
-void PF_checkclient (void) {
+static void PF_checkclient (void) {
 	edict_t	*ent, *self;
 	mleaf_t	*leaf;
 	int l;
@@ -626,7 +626,7 @@ void PF_checkclient (void) {
 
 //void(entity client, string s)stuffcmd = #21
 //Sends text over to the client's execution buffer
-void PF_stuffcmd (void) {
+static void PF_stuffcmd (void) {
 	int entnum, buflen, newlen, i;
 	client_t *cl;
 	char *buf, *str;
@@ -685,7 +685,7 @@ void PF_stuffcmd (void) {
 
 //void(string s) localcmd = #46
 //Sends text over to the client's execution buffer
-void PF_localcmd (void) {
+static void PF_localcmd (void) {
 	char *str;
 	
 	str = G_STRING(OFS_PARM0);	
@@ -693,7 +693,7 @@ void PF_localcmd (void) {
 }
 
 //float(string s) cvar = #45
-void PF_cvar (void) {
+static void PF_cvar (void) {
 	char *str;
 
 	str = G_STRING(OFS_PARM0);
@@ -708,7 +708,7 @@ void PF_cvar (void) {
 }
 
 //float cvar (string) = #72
-void PF_cvar_set (void) {
+static void PF_cvar_set (void) {
 	char *var_name, *val;
 	cvar_t *var;
 
@@ -725,7 +725,7 @@ void PF_cvar_set (void) {
 
 //entity(vector org, float rad) findradius = #22
 //Returns a chain of entities that have origins within a spherical area
-void PF_findradius (void) {
+static void PF_findradius (void) {
 	int i, j;
 	float rad, *org;
 	vec3_t eorg;
@@ -754,7 +754,7 @@ void PF_findradius (void) {
 }
 
 //void(string s) ftos = #26
-void PF_ftos (void) {
+static void PF_ftos (void) {
 	char *tempstring;
 	float v;
 	int	i;
@@ -777,14 +777,14 @@ void PF_ftos (void) {
 }
 
 //float(float f) fabs = #43
-void PF_fabs (void) {
+static void PF_fabs (void) {
 	float	v;
 	v = G_FLOAT(OFS_PARM0);
 	G_FLOAT(OFS_RETURN) = fabs(v);
 }
 
 //void(string s) vtos = #27
-void PF_vtos (void) {
+static void PF_vtos (void) {
 	char *s;
 
 	s = PR_GetTempString();
@@ -793,7 +793,7 @@ void PF_vtos (void) {
 }
 
 //entity() spawn = #14
-void PF_Spawn (void) {
+static void PF_Spawn (void) {
 	edict_t *ed;
 
 	ed = ED_Alloc();
@@ -801,7 +801,7 @@ void PF_Spawn (void) {
 }
 
 //void(entity e) remove = #15
-void PF_Remove (void) {
+static void PF_Remove (void) {
 	edict_t	*ed;
 
 	ed = G_EDICT(OFS_PARM0);
@@ -809,7 +809,7 @@ void PF_Remove (void) {
 }
 
 //entity(entity start, .string fld, string match) find = #18;
-void PF_Find (void) {
+static void PF_Find (void) {
 	int e, f;
 	char *s, *t;
 	edict_t	*ed;
@@ -835,13 +835,13 @@ void PF_Find (void) {
 }
 
 //string(string s) precache_file = #68
-void PF_precache_file (void) {
+static void PF_precache_file (void) {
 	// precache_file is only used to copy files with qcc, it does nothing
 	G_INT(OFS_RETURN) = G_INT(OFS_PARM0);
 }
 
 //void(string s) precache_sound = #19
-void PF_precache_sound (void) {
+static void PF_precache_sound (void) {
 	char *s;
 	int i;
 
@@ -864,7 +864,7 @@ void PF_precache_sound (void) {
 }
 
 //void(string s) precache_model = #20
-void PF_precache_model (void) {
+static void PF_precache_model (void) {
 	char *s;
 	int i;
 
@@ -887,7 +887,7 @@ void PF_precache_model (void) {
 }
 
 //float(float yaw, float dist) walkmove = #32
-void PF_walkmove (void) {
+static void PF_walkmove (void) {
 	edict_t	*ent;
 	float yaw, dist;
 	vec3_t move;
@@ -921,7 +921,7 @@ void PF_walkmove (void) {
 }
 
 //float() droptofloor = #34
-void PF_droptofloor (void) {
+static void PF_droptofloor (void) {
 	edict_t *ent;
 	vec3_t end;
 	trace_t trace;
@@ -945,7 +945,7 @@ void PF_droptofloor (void) {
 }
 
 //void(float style, string value) lightstyle = #35
-void PF_lightstyle (void) {
+static void PF_lightstyle (void) {
 	int style, j;
 	char *val;
 	client_t *client;
@@ -978,7 +978,7 @@ Used for use tracing and shot targeting
 Traces are blocked by bbox and exact bsp entityes, and also slide box entities
 if the tryents flag is set.
 */
-void PF_traceline (void) {
+static void PF_traceline (void) {
 	float *v1, *v2;
 	trace_t trace;
 	int nomonsters;
@@ -1006,7 +1006,7 @@ void PF_traceline (void) {
 }
 
 //float(entity e) checkbottom = #40
-void PF_checkbottom (void) {
+static void PF_checkbottom (void) {
 	edict_t	*ent;
 
 	ent = G_EDICT(OFS_PARM0);
@@ -1015,7 +1015,7 @@ void PF_checkbottom (void) {
 }
 
 //float(vector v) pointcontents = #41
-void PF_pointcontents (void) {
+static void PF_pointcontents (void) {
 	float *v;
 
 	v = G_VECTOR(OFS_PARM0);
@@ -1024,7 +1024,7 @@ void PF_pointcontents (void) {
 }
 
 //entity(entity e) nextent = #47
-void PF_nextent (void) {
+static void PF_nextent (void) {
 	int i;
 	edict_t	*ent;
 
@@ -1045,7 +1045,7 @@ void PF_nextent (void) {
 
 //vector(entity e, float speed) aim = #44
 //Pick a vector for the player to shoot along
-void PF_aim (void) {
+static void PF_aim (void) {
 	edict_t *ent, *check, *bestent;
 	vec3_t start, dir, end, bestdir;
 	int i, j;
@@ -1123,7 +1123,7 @@ void PF_aim (void) {
 }
 
 //void(float to, float f) WriteByte = #52
-void PF_WriteByte (void) {
+static void PF_WriteByte (void) {
 	if (G_FLOAT(OFS_PARM0) == MSG_ONE)
 	{
 		client_t *cl = Write_GetClient();
@@ -1140,7 +1140,7 @@ void PF_WriteByte (void) {
 }
 
 //void(float to, float f) WriteChar = #53
-void PF_WriteChar (void) {
+static void PF_WriteChar (void) {
 	if (G_FLOAT(OFS_PARM0) == MSG_ONE)
 	{
 		client_t *cl = Write_GetClient();
@@ -1157,7 +1157,7 @@ void PF_WriteChar (void) {
 }
 
 //void(float to, float f) WriteShort = #54
-void PF_WriteShort (void) {
+static void PF_WriteShort (void) {
 	if (G_FLOAT(OFS_PARM0) == MSG_ONE)
 	{
 		client_t *cl = Write_GetClient();
@@ -1174,7 +1174,7 @@ void PF_WriteShort (void) {
 }
 
 //void(float to, float f) WriteLong = #55
-void PF_WriteLong (void) {
+static void PF_WriteLong (void) {
 	if (G_FLOAT(OFS_PARM0) == MSG_ONE)
 	{
 		client_t *cl = Write_GetClient();
@@ -1191,7 +1191,7 @@ void PF_WriteLong (void) {
 }
 
 //void(float to, float f) WriteCoord = #56
-void PF_WriteCoord (void) {
+static void PF_WriteCoord (void) {
 	if (G_FLOAT(OFS_PARM0) == MSG_ONE)
 	{
 		client_t *cl = Write_GetClient();
@@ -1208,7 +1208,7 @@ void PF_WriteCoord (void) {
 }
 
 //void(float to, float f) WriteAngle = #57
-void PF_WriteAngle (void) {
+static void PF_WriteAngle (void) {
 	if (G_FLOAT(OFS_PARM0) == MSG_ONE)
 	{
 		client_t *cl = Write_GetClient();
@@ -1225,7 +1225,7 @@ void PF_WriteAngle (void) {
 }
 
 //void(float to, string s) WriteString = #58
-void PF_WriteString (void) {
+static void PF_WriteString (void) {
 	if (G_FLOAT(OFS_PARM0) == MSG_ONE)
 	{
 		client_t *cl = Write_GetClient();
@@ -1242,7 +1242,7 @@ void PF_WriteString (void) {
 }
 
 //void(float to, entity e) WriteEntity = #59
-void PF_WriteEntity (void) {
+static void PF_WriteEntity (void) {
 	if (G_FLOAT(OFS_PARM0) == MSG_ONE)
 	{
 		client_t *cl = Write_GetClient();
@@ -1259,7 +1259,7 @@ void PF_WriteEntity (void) {
 }
 
 //void(entity e) makestatic = #69
-void PF_makestatic (void) {
+static void PF_makestatic (void) {
 	edict_t	*ent;
 	int i;
 
@@ -1282,7 +1282,7 @@ void PF_makestatic (void) {
 }
 
 //void(entity e) setspawnparms = #78
-void PF_setspawnparms (void) {
+static void PF_setspawnparms (void) {
 	edict_t	*ent;
 	int i;
 	client_t *client;
@@ -1303,7 +1303,7 @@ void PF_setspawnparms (void) {
 }
 
 //void(string s) changelevel = #70
-void PF_changelevel (void) {
+static void PF_changelevel (void) {
 	char *s;
 	static int last_spawncount;
 
@@ -1317,7 +1317,7 @@ void PF_changelevel (void) {
 }
 
 //logfrag (string killer, string killee) = #79
-void PF_logfrag (void) {
+static void PF_logfrag (void) {
 	edict_t	*ent1, *ent2;
 	int e1, e2;
 	char *s;
@@ -1344,7 +1344,7 @@ void PF_logfrag (void) {
 }
 
 //string(entity e, string key) infokey = #80
-void PF_infokey (void) {
+static void PF_infokey (void) {
 	edict_t *e;
 	int e1, ping;
 	char *value, *key;
@@ -1380,7 +1380,7 @@ void PF_infokey (void) {
 }
 
 //float(string s) stof = #81
-void PF_stof (void) {
+static void PF_stof (void) {
 	char *s;
 
 	s = G_STRING(OFS_PARM0);
@@ -1388,7 +1388,7 @@ void PF_stof (void) {
 }
 
 //void(vector where, float set) multicast = #82
-void PF_multicast (void) {
+static void PF_multicast (void) {
 	float *o;
 	int to;
 
@@ -1403,7 +1403,7 @@ void PF_multicast (void) {
 
 //void(entity from, entity to) copyentity = #400
 //copies data from one entity to another
-void PF_copyentity (void) {
+static void PF_copyentity (void) {
 	edict_t *in, *out;
 
 	in = G_EDICT(OFS_PARM0);
@@ -1415,7 +1415,7 @@ void PF_copyentity (void) {
 //EXTENSION: DP_QC_ETOS
 
 //string(entity ent) etos = #65
-void PF_etos (void) {
+static void PF_etos (void) {
 	char *s;
 
 	s = PR_GetTempString();
@@ -1427,7 +1427,7 @@ void PF_etos (void) {
 
 //entity(string field, string match) findchain = #402
 //chained search for strings in entity fields
-void PF_findchain (void) {
+static void PF_findchain (void) {
 	int i, f;
 	char *s, *t;
 	edict_t *ent, *chain;
@@ -1458,7 +1458,7 @@ void PF_findchain (void) {
 
 //entity(string field, float match) findchainfloat = #403
 //chained search for float, int, and entity reference fields
-void PF_findchainfloat (void) {
+static void PF_findchainfloat (void) {
 	int i, f;
 	float s;
 	edict_t	*ent, *chain;
@@ -1485,7 +1485,7 @@ void PF_findchainfloat (void) {
 //EXTENSION: DP_QC_FINDFLOAT
 
 //entity(entity start, float fld, float match) findfloat = #98
-void PF_FindFloat (void) {
+static void PF_FindFloat (void) {
 	int e, f;
 	float s;
 	edict_t *ed;
@@ -1510,7 +1510,7 @@ void PF_FindFloat (void) {
 //EXTENSION: DP_QC_MINMAXBOUND
 
 //float(float a, floats) min = #94
-void PF_min (void) {
+static void PF_min (void) {
 	int i;
 	float f;
 
@@ -1529,7 +1529,7 @@ void PF_min (void) {
 }
 
 //float(float a, floats) max = #95
-void PF_max (void) {
+static void PF_max (void) {
 	int i;
 	float f;
 
@@ -1548,14 +1548,14 @@ void PF_max (void) {
 }
 
 //float(float minimum, float val, float maximum) bound = #96
-void PF_bound (void) {
+static void PF_bound (void) {
 	G_FLOAT(OFS_RETURN) = bound(G_FLOAT(OFS_PARM0), G_FLOAT(OFS_PARM1), G_FLOAT(OFS_PARM2));
 }
 
 //EXTENSION: DP_QC_RANDOMVEC
 
 //vector() randomvec = #91
-void PF_randomvec (void) {
+static void PF_randomvec (void) {
 	vec3_t temp;
 	do {
 		temp[0] = (rand() & 32767) * (2.0 / 32767.0) - 1.0;
@@ -1568,22 +1568,22 @@ void PF_randomvec (void) {
 //EXTENSION: DP_QC_SINCOSSQRTPOW
 
 //float(float f) sin = #60
-void PF_sin (void) {
+static void PF_sin (void) {
 	G_FLOAT(OFS_RETURN) = sin(G_FLOAT(OFS_PARM0));
 }
 
 //float(float f) cos = #61
-void PF_cos (void) {
+static void PF_cos (void) {
 	G_FLOAT(OFS_RETURN) = cos(G_FLOAT(OFS_PARM0));
 }
 
 //float(float f) sqrt = #62
-void PF_sqrt (void) {
+static void PF_sqrt (void) {
 	G_FLOAT(OFS_RETURN) = sqrt(G_FLOAT(OFS_PARM0));
 }
 
 //float(float f, float f) pow = #97
-void PF_pow (void) {
+static void PF_pow (void) {
 	G_FLOAT(OFS_RETURN) = pow(G_FLOAT(OFS_PARM0), G_FLOAT(OFS_PARM1));
 }
 
@@ -1591,7 +1591,7 @@ void PF_pow (void) {
 
 //void(vector dir) vectorvectors = #432
 //Writes new values for v_forward, v_up, and v_right based on the given forward vector
-void PF_vectorvectors (void) {
+static void PF_vectorvectors (void) {
 	VectorCopy(G_VECTOR(OFS_PARM0), pr_global_struct->v_forward);
 	VectorNormalize(pr_global_struct->v_forward);
 	VectorVectors(pr_global_struct->v_forward, pr_global_struct->v_right, pr_global_struct->v_up);
@@ -1607,7 +1607,7 @@ void PF_vectorvectors (void) {
 //void(string s) strunzone = #119
 
 //float(string s) strlen = #114
-void PF_strlen(void) {
+static void PF_strlen(void) {
 	char *s;
 
 	s = G_STRING(OFS_PARM0);
@@ -1615,7 +1615,7 @@ void PF_strlen(void) {
 }
 
 //string(string s1, string s2) strcat = #115
-void PF_strcat(void) {
+static void PF_strcat(void) {
 	char *s;
 
 	s = PF_VarString(0);
@@ -1623,7 +1623,7 @@ void PF_strcat(void) {
 }
 
 //returns a section of a string as a tempstring
-void PF_substring(void) {
+static void PF_substring(void) {
 	int i, start, length;
 	char *s;
 	static char string[MAX_VARSTRING];
@@ -1645,7 +1645,7 @@ void PF_substring(void) {
 
 //vector(string s) stov = #117
 //returns vector value from a string
-void PF_stov(void) {
+static void PF_stov(void) {
 	int i;
 	char *s;
 	float *out;
@@ -1674,7 +1674,7 @@ void PF_stov(void) {
 
 //void(entity e, string s) clientcommand = #440
 //executes a command string as if it came from the specified client
-void PF_clientcommand (void) {
+static void PF_clientcommand (void) {
 	client_t *temp_client;
 	int i;
 
@@ -1695,7 +1695,7 @@ static int max_tokens, num_tokens = 0;
 
 //float(string s) tokenize = #441
 //takes apart a string into individal words (access them with argv), returns number of tokens
-void PF_tokenize (void) {
+static void PF_tokenize (void) {
 	int i;
 	char *data, *str;
 
@@ -1719,7 +1719,7 @@ void PF_tokenize (void) {
 
 //string(float n) argv = #442
 //returns a word from the tokenized string (returns nothing for an invalid index)
-void PF_argv (void) {
+static void PF_argv (void) {
 	int token_num;
 
 	token_num = G_FLOAT(OFS_PARM0);
@@ -1751,7 +1751,7 @@ static char *ENGINE_EXTENSIONS[] = {
 
 //float(string extension) checkextension = #99
 //returns true if the extension is supported by the server
-void PF_checkextension (void) {
+static void PF_checkextension (void) {
 	char **s, *extension;
 	qboolean supported = false;
 
@@ -1919,3 +1919,4 @@ PF_argv,			// #442 string(float n) argv (KRIMZON_SV_PARSECLIENTCOMMAND
 };
 
 int pr_numbuiltins = sizeof(pr_builtins) / sizeof(pr_builtins[0]);
+
