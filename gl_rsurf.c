@@ -992,8 +992,6 @@ static void R_DrawFlat (model_t *model) {
 	if (r_drawflat_enable.value == 0)
 		return;
 	
-	glPushAttrib(GL_ENABLE_BIT | GL_TEXTURE_BIT);
-	
 	GL_DisableMultitexture();
 
 	glTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_BLEND);
@@ -1015,7 +1013,6 @@ static void R_DrawFlat (model_t *model) {
 	}
 
 	glColor3f(1.0f, 1.0f, 1.0f);
-	glPopAttrib();
 }
 
 
