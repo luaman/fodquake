@@ -451,6 +451,8 @@ static struct tab *sb_add_tab(char *name)
 
 static void sb_del_tab(struct tab *tab)
 {
+	struct filter *filter;
+
 	if (tab->next == NULL && tab->prev == NULL)
 	{
 		tab_first = tab_last = tab_active = NULL;
@@ -476,8 +478,19 @@ static void sb_del_tab(struct tab *tab)
 		if (tab == tab_active)
 			tab_active = tab->next;
 	}
-	
+
+	filter = (struct filter *) List_Get_Node(tab->filters, 0);
+	while(filter)
+	{
+		free(filter->keyword);
+		free(filter->value);
+
+		filter = (struct filter *)filter->node.next;
+	}
+	List_Remove(tab->filters);
+
 	free(tab->name);
+	free(tab->column_types);
 	free(tab->player_filter);
 	free(tab->server_index);
 	free(tab);
@@ -2348,16 +2361,32 @@ void SB_Frame(void)
 
 void SB_Quit(void)
 {
-	if (serverscanner == NULL)
-		return;
-	ServerScanner_FreeServers(serverscanner, sb_qw_server);
-	ServerScanner_Delete(serverscanner);
+	struct sb_friend *friend;
+	struct tab *tab;
+
+	if (serverscanner)
+	{
+		ServerScanner_FreeServers(serverscanner, sb_qw_server);
+		ServerScanner_Delete(serverscanner);
+		serverscanner = 0;
+	}
 
 	if (qtvr)
 	{
 		QTVR_Destroy(qtvr);
 		qtvr = 0;
 	}
+
+	while((friend = friends))
+	{
+		friends = friend->next;
+
+		free(friend->name);
+		free(friend);
+	}
+
+	while((tab = tab_first))
+		sb_del_tab(tab);
 }
 
 static void SB_List_Tabs_f(void)
