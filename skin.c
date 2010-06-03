@@ -173,6 +173,19 @@ byte *Skin_Cache (skin_t *skin)
 	return out;
 }
 
+static void Skin_UncacheAll()
+{
+	int i;
+
+	for (i = 0; i < numskins; i++)
+	{
+		if (skins[i].data)
+			free(skins[i].data);
+	}
+	numskins = 0;
+
+}
+
 void Skin_NextDownload(void)
 {
 	char buf[128];
@@ -230,14 +243,7 @@ void Skin_NextDownload(void)
 
 //Refind all skins, downloading if needed.
 void Skin_Skins_f (void) {
-	int i;
-
-	for (i = 0; i < numskins; i++)
-	{
-		if (skins[i].data)
-			free(skins[i].data);
-	}
-	numskins = 0;
+	Skin_UncacheAll();
 
 	cls.downloadnumber = 0;
 	cls.downloadtype = dl_skin;
@@ -281,5 +287,10 @@ void Skin_Reload()
 			sc->skin = 0;
 		}
 	}
+}
+
+void Skin_Shutdown()
+{
+	Skin_UncacheAll();
 }
 

@@ -2000,6 +2000,7 @@ void CL_Shutdown (void)
 	CL_WriteConfiguration();
 
 	CL_ShutdownEnts();
+	Skin_Shutdown();
 	CDAudio_Shutdown();
 	S_Shutdown();
 	MP3_Shutdown();

@@ -582,6 +582,7 @@ void	Skin_Skins_f (void);
 void	Skin_AllSkins_f (void);
 void	Skin_NextDownload (void);
 void Skin_Reload(void);
+void Skin_Shutdown(void);
 
 
 // match_tools.c
