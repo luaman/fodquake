@@ -19,6 +19,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 // wad.c
 
+#include <stdlib.h>
 #include <string.h>
 
 #include "quakedef.h"
@@ -209,12 +210,12 @@ static texwadlump_t texwadlump[TEXWAD_MAXIMAGES];
 void WAD3_LoadTextureWadFile (char *filename) {
 	lumpinfo_t *lumps, *lump_p;
 	wadinfo_t header;
-	int i, j, infotableofs, numlumps, lowmark;
+	int i, j, infotableofs, numlumps;
 	FILE *file;
 
-	if (FS_FOpenFile (va("textures/wad3/%s", filename), &file) == -1)
-	 && FS_FOpenFile (va("textures/halflife/%s", filename), &file) == -1)
-	 && FS_FOpenFile (va("textures/%s", filename), &file) == -1)
+	if (FS_FOpenFile (va("textures/wad3/%s", filename), &file) == -1
+	 && FS_FOpenFile (va("textures/halflife/%s", filename), &file) == -1
+	 && FS_FOpenFile (va("textures/%s", filename), &file) == -1
 	 && FS_FOpenFile (filename, &file) == -1)
 		Host_Error ("Couldn't load halflife wad \"%s\"\n", filename);
 
