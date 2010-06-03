@@ -383,6 +383,7 @@ static struct pack *FS_LoadPackFile(char *packfile)
 static void FS_FreePackFile(struct pack *pack)
 {
 	fclose(pack->handle);
+	free(pack->files);
 	free(pack);
 }
 
