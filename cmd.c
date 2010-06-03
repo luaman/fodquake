@@ -816,7 +816,10 @@ void Cmd_AddCommand (char *cmd_name, xcommand_t function) {
 		}
 	}
 
-	cmd = Hunk_Alloc (sizeof(cmd_function_t));
+	cmd = malloc(sizeof(*cmd));
+	if (cmd == 0)
+		Sys_Error("Cmd_AddCommand: Unable to allocate memory for command\n");
+
 	cmd->name = cmd_name;
 	cmd->function = function;
 	cmd->next = cmd_functions;
