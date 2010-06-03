@@ -212,18 +212,12 @@ void WAD3_LoadTextureWadFile (char *filename) {
 	int i, j, infotableofs, numlumps, lowmark;
 	FILE *file;
 
-	if (FS_FOpenFile (va("textures/wad3/%s", filename), &file) != -1)
-		goto loaded;
-	if (FS_FOpenFile (va("textures/halflife/%s", filename), &file) != -1)
-		goto loaded;
-	if (FS_FOpenFile (va("textures/%s", filename), &file) != -1)
-		goto loaded;
-	if (FS_FOpenFile (filename, &file) != -1)
-		goto loaded;
+	if (FS_FOpenFile (va("textures/wad3/%s", filename), &file) == -1)
+	 && FS_FOpenFile (va("textures/halflife/%s", filename), &file) == -1)
+	 && FS_FOpenFile (va("textures/%s", filename), &file) == -1)
+	 && FS_FOpenFile (filename, &file) == -1)
+		Host_Error ("Couldn't load halflife wad \"%s\"\n", filename);
 
-	Host_Error ("Couldn't load halflife wad \"%s\"\n", filename);
-
-loaded:
 	if (fread(&header, 1, sizeof(wadinfo_t), file) != sizeof(wadinfo_t)) {
 		Com_Printf ("WAD3_LoadTextureWadFile: unable to read wad header");
 		return;
