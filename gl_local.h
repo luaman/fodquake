@@ -188,13 +188,9 @@ extern	const char *gl_extensions;
 void GL_SubdivideSurface (msurface_t *fa);
 void EmitBothSkyLayers (msurface_t *fa);
 void EmitWaterPolys (msurface_t *fa);
-void EmitSkyPolys (msurface_t *fa, qboolean mtex);
-void CalcCausticTexCoords(float *v, float *s, float *t);
 void EmitCausticsPolys (void);
 void R_DrawSkyChain (void);
 void R_LoadSky_f(void);
-void R_AddSkyBoxSurface (msurface_t *fa);
-void R_ClearSkyBox (void);
 void R_DrawSkyBox (void);
 extern qboolean	r_skyboxloaded;
 
