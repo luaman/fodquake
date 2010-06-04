@@ -29,7 +29,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "utils.h"
 #include "movie.h"
 
-float olddemotime, nextdemotime;		
+float olddemotime, nextdemotime;
 
 
 static float		td_lastframe;		// to meter out one message a frame
@@ -53,7 +53,7 @@ cvar_t demo_dir = {"demo_dir", "", 0, OnChange_demo_dir};
 //=============================================================================
 
 static FILE *recordfile = NULL;
-static float playback_recordtime;		
+static float playback_recordtime;
 
 
 #define DEMORECORDTIME	((float) (cls.demoplayback ? playback_recordtime : cls.realtime))
@@ -65,51 +65,64 @@ static float playback_recordtime;
 static sizebuf_t democache;
 static qboolean democache_available = false;
 
-static qboolean CL_Demo_Open(char *name) {
+static qboolean CL_Demo_Open(char *name)
+{
 	if (democache_available)
 		SZ_Clear(&democache);
 	recordfile = fopen (name, "wb");
 	return recordfile ? true : false;
 }
 
-static void CL_Demo_Close(void) {
+static void CL_Demo_Close(void)
+{
 	if (democache_available)
 		fwrite(democache.data, democache.cursize, 1, recordfile);
 	fclose(recordfile);
 	recordfile = NULL;
 }
 
-static void CL_Demo_Write(void *data, int size) {
-	if (democache_available) {
-		if (size > democache.maxsize) {		
+static void CL_Demo_Write(void *data, int size)
+{
+	if (democache_available)
+	{
+		if (size > democache.maxsize)
+		{
 			Sys_Error("CL_Demo_Write: size > democache.maxsize");
-		} else if (size > democache.maxsize - democache.cursize) {
+		}
+		else if (size > democache.maxsize - democache.cursize)
+		{
 			int overflow;
 
 			Com_Printf("Warning: democache overflow...flushing\n");
 			overflow = size - (democache.maxsize - democache.cursize);
-			
+
 			if (overflow <= DEMOCACHE_FLUSHSIZE)
-				overflow = min(DEMOCACHE_FLUSHSIZE, democache.cursize);	
-			
+				overflow = min(DEMOCACHE_FLUSHSIZE, democache.cursize);
+
 			fwrite(democache.data, overflow, 1, recordfile);
-			memmove(democache.data, democache.data + overflow, democache.cursize - overflow);	
+			memmove(democache.data, democache.data + overflow, democache.cursize - overflow);
 			democache.cursize -= overflow;
 			SZ_Write(&democache, data, size);
-		} else {
+		}
+		else
+		{
 			SZ_Write(&democache, data, size);
 		}
-	} else {
+	}
+	else
+	{
 		fwrite (data, size, 1, recordfile);
 	}
 }
 
-static void CL_Demo_Flush(void) {
+static void CL_Demo_Flush(void)
+{
 	fflush(recordfile);
 }
 
 //Writes the current user cmd
-void CL_WriteDemoCmd (usercmd_t *pcmd) {
+void CL_WriteDemoCmd (usercmd_t *pcmd)
+{
 	int i;
 	float fl, t[3];
 	byte c;
@@ -141,7 +154,8 @@ void CL_WriteDemoCmd (usercmd_t *pcmd) {
 }
 
 //Dumps the current net message, prefixed by the length and view angles
-void CL_WriteDemoMessage (sizebuf_t *msg) {
+void CL_WriteDemoMessage (sizebuf_t *msg)
+{
 	int len;
 	float fl;
 	byte c;
@@ -161,7 +175,8 @@ void CL_WriteDemoMessage (sizebuf_t *msg) {
 
 
 
-void CL_WriteDemoEntities (void) {
+void CL_WriteDemoEntities (void)
+{
 	int ent_index, ent_total;
 	entity_state_t *ent;
 
@@ -177,7 +192,8 @@ void CL_WriteDemoEntities (void) {
 }
 
 
-static void CL_WriteStartupDemoMessage (sizebuf_t *msg, int seq) {
+static void CL_WriteStartupDemoMessage (sizebuf_t *msg, int seq)
+{
 	int len, i;
 	float fl;
 	byte c;
@@ -203,7 +219,8 @@ static void CL_WriteStartupDemoMessage (sizebuf_t *msg, int seq) {
 	CL_Demo_Flush();
 }
 
-static void CL_WriteSetDemoMessage (void) {
+static void CL_WriteSetDemoMessage (void)
+{
 	int len;
 	float fl;
 	byte c;
@@ -226,7 +243,8 @@ static void CL_WriteSetDemoMessage (void) {
 }
 
 //write startup data to demo (called when demo started and cls.state == ca_active)
-static void CL_WriteStartupData (void) {
+static void CL_WriteStartupData (void)
+{
 	sizebuf_t buf;
 	char buf_data[MAX_MSGLEN * 2], *s;
 	int n, i, j, seq = 1;
@@ -274,7 +292,7 @@ static void CL_WriteStartupData (void) {
 
 	// flush packet
 	CL_WriteStartupDemoMessage (&buf, seq++);
-	SZ_Clear (&buf); 
+	SZ_Clear (&buf);
 
 	// soundlist
 	MSG_WriteByte (&buf, svc_soundlist);
@@ -282,24 +300,27 @@ static void CL_WriteStartupData (void) {
 
 	n = 0;
 	s = cl.sound_name[n + 1];
-	while (*s) {
+	while (*s)
+	{
 		MSG_WriteString (&buf, s);
-		if (buf.cursize > MAX_MSGLEN/2) {
+		if (buf.cursize > MAX_MSGLEN/2)
+		{
 			MSG_WriteByte (&buf, 0);
 			MSG_WriteByte (&buf, n);
 			CL_WriteStartupDemoMessage (&buf, seq++);
-			SZ_Clear (&buf); 
+			SZ_Clear (&buf);
 			MSG_WriteByte (&buf, svc_soundlist);
 			MSG_WriteByte (&buf, n + 1);
 		}
 		n++;
 		s = cl.sound_name[n+1];
 	}
-	if (buf.cursize) {
+	if (buf.cursize)
+	{
 		MSG_WriteByte (&buf, 0);
 		MSG_WriteByte (&buf, 0);
 		CL_WriteStartupDemoMessage (&buf, seq++);
-		SZ_Clear (&buf); 
+		SZ_Clear (&buf);
 	}
 
 	// modellist
@@ -308,28 +329,32 @@ static void CL_WriteStartupData (void) {
 
 	n = 0;
 	s = cl.model_name[n + 1];
-	while (*s) {
+	while (*s)
+	{
 		MSG_WriteString (&buf, s);
-		if (buf.cursize > MAX_MSGLEN / 2) {
+		if (buf.cursize > MAX_MSGLEN / 2)
+		{
 			MSG_WriteByte (&buf, 0);
 			MSG_WriteByte (&buf, n);
 			CL_WriteStartupDemoMessage (&buf, seq++);
-			SZ_Clear (&buf); 
+			SZ_Clear (&buf);
 			MSG_WriteByte (&buf, svc_modellist);
 			MSG_WriteByte (&buf, n + 1);
 		}
 		n++;
 		s = cl.model_name[n + 1];
 	}
-	if (buf.cursize) {
+	if (buf.cursize)
+	{
 		MSG_WriteByte (&buf, 0);
 		MSG_WriteByte (&buf, 0);
 		CL_WriteStartupDemoMessage (&buf, seq++);
-		SZ_Clear (&buf); 
+		SZ_Clear (&buf);
 	}
 
 	// spawnstatic
-	for (i = 0; i < cl.num_statics; i++) {
+	for (i = 0; i < cl.num_statics; i++)
+	{
 		ent = cl_static_entities + i;
 
 		MSG_WriteByte (&buf, svc_spawnstatic);
@@ -345,14 +370,16 @@ static void CL_WriteStartupData (void) {
 		MSG_WriteByte (&buf, ent->frame);
 		MSG_WriteByte (&buf, 0);
 		MSG_WriteByte (&buf, ent->skinnum);
-		for (j = 0; j < 3; j++) {
+		for (j = 0; j < 3; j++)
+		{
 			MSG_WriteCoord (&buf, ent->origin[j]);
 			MSG_WriteAngle (&buf, ent->angles[j]);
 		}
 
-		if (buf.cursize > MAX_MSGLEN / 2) {
+		if (buf.cursize > MAX_MSGLEN / 2)
+		{
 			CL_WriteStartupDemoMessage (&buf, seq++);
-			SZ_Clear (&buf); 
+			SZ_Clear (&buf);
 		}
 	}
 
@@ -360,25 +387,29 @@ static void CL_WriteStartupData (void) {
 
 	// baselines
 	memset(&blankes, 0, sizeof(blankes));
-	for (i = 0; i < CL_MAX_EDICTS; i++) {
+	for (i = 0; i < CL_MAX_EDICTS; i++)
+	{
 		es = &cl_entities[i].baseline;
 
-		if (memcmp(es, &blankes, sizeof(blankes))) {
-			MSG_WriteByte (&buf,svc_spawnbaseline);		
+		if (memcmp(es, &blankes, sizeof(blankes)))
+		{
+			MSG_WriteByte (&buf,svc_spawnbaseline);
 			MSG_WriteShort (&buf, i);
 
 			MSG_WriteByte (&buf, es->modelindex);
 			MSG_WriteByte (&buf, es->frame);
 			MSG_WriteByte (&buf, es->colormap);
 			MSG_WriteByte (&buf, es->skinnum);
-			for (j = 0; j < 3; j++) {
+			for (j = 0; j < 3; j++)
+			{
 				MSG_WriteCoord(&buf, es->origin[j]);
 				MSG_WriteAngle(&buf, es->angles[j]);
 			}
 
-			if (buf.cursize > MAX_MSGLEN / 2) {
+			if (buf.cursize > MAX_MSGLEN / 2)
+			{
 				CL_WriteStartupDemoMessage (&buf, seq++);
-				SZ_Clear (&buf); 
+				SZ_Clear (&buf);
 			}
 		}
 	}
@@ -386,13 +417,15 @@ static void CL_WriteStartupData (void) {
 	MSG_WriteByte (&buf, svc_stufftext);
 	MSG_WriteString (&buf, va("cmd spawn %i 0\n", cl.servercount));
 
-	if (buf.cursize) {
+	if (buf.cursize)
+	{
 		CL_WriteStartupDemoMessage (&buf, seq++);
-		SZ_Clear (&buf); 
+		SZ_Clear (&buf);
 	}
 
 	// send current status of all other players
-	for (i = 0; i < MAX_CLIENTS; i++) {
+	for (i = 0; i < MAX_CLIENTS; i++)
+	{
 		player = cl.players + i;
 
 		MSG_WriteByte (&buf, svc_updatefrags);
@@ -416,14 +449,16 @@ static void CL_WriteStartupData (void) {
 		MSG_WriteLong (&buf, player->userid);
 		MSG_WriteString (&buf, player->userinfo);
 
-		if (buf.cursize > MAX_MSGLEN / 2) {
+		if (buf.cursize > MAX_MSGLEN / 2)
+		{
 			CL_WriteStartupDemoMessage (&buf, seq++);
-			SZ_Clear (&buf); 
+			SZ_Clear (&buf);
 		}
 	}
 
 	// send all current light styles
-	for (i = 0; i < MAX_LIGHTSTYLES; i++) {
+	for (i = 0; i < MAX_LIGHTSTYLES; i++)
+	{
 		if (!cl_lightstyle[i].length)
 			continue;		// don't send empty lightstyle strings
 		MSG_WriteByte (&buf, svc_lightstyle);
@@ -431,21 +466,26 @@ static void CL_WriteStartupData (void) {
 		MSG_WriteString (&buf, cl_lightstyle[i].map);
 	}
 
-	for (i = 0; i < MAX_CL_STATS; i++) {
+	for (i = 0; i < MAX_CL_STATS; i++)
+	{
 		if (!cl.stats[i])
 			continue;		// no need to send zero values
-		if (cl.stats[i] >= 0 && cl.stats[i] <= 255) {
+		if (cl.stats[i] >= 0 && cl.stats[i] <= 255)
+		{
 			MSG_WriteByte (&buf, svc_updatestat);
 			MSG_WriteByte (&buf, i);
 			MSG_WriteByte (&buf, cl.stats[i]);
-		} else {
+		}
+		else
+		{
 			MSG_WriteByte (&buf, svc_updatestatlong);
 			MSG_WriteByte (&buf, i);
 			MSG_WriteLong (&buf, cl.stats[i]);
 		}
-		if (buf.cursize > MAX_MSGLEN / 2) {
+		if (buf.cursize > MAX_MSGLEN / 2)
+		{
 			CL_WriteStartupDemoMessage (&buf, seq++);
-			SZ_Clear (&buf); 
+			SZ_Clear (&buf);
 		}
 	}
 
@@ -466,7 +506,8 @@ static void CL_WriteStartupData (void) {
 static FILE *playbackfile = NULL;
 
 
-static int CL_Demo_Read(void *buf, int size) {
+static int CL_Demo_Read(void *buf, int size)
+{
 	if (fread(buf, size, 1, playbackfile) != 1)
 		Host_Error("Unexpected end of demo");
 	return 1;
@@ -475,7 +516,8 @@ static int CL_Demo_Read(void *buf, int size) {
 //When a demo is playing back, all NET_SendMessages are skipped, and NET_GetMessages are read from the demo file.
 //Whenever cl.time gets past the last received message, another message is read from the demo file.
 
-qboolean CL_GetDemoMessage (void) {
+qboolean CL_GetDemoMessage (void)
+{
 	int i, j, tracknum;
 	float demotime;
 	byte c, newtime;
@@ -492,7 +534,8 @@ qboolean CL_GetDemoMessage (void) {
 	if (cl.paused & PAUSED_DEMO)
 		return false;
 
-	if (cls.mvdplayback) {
+	if (cls.mvdplayback)
+	{
 		if (prevtime < nextdemotime)
 			prevtime = nextdemotime;
 
@@ -502,10 +545,12 @@ qboolean CL_GetDemoMessage (void) {
 
 readnext:
 	// read the time from the packet
-	if (cls.mvdplayback) {
+	if (cls.mvdplayback)
+	{
 		CL_Demo_Read(&newtime, sizeof(newtime));
 		demotime =  prevtime + newtime * 0.001;
-		if (cls.demotime - nextdemotime > 0.0001 && nextdemotime != demotime) {
+		if (cls.demotime - nextdemotime > 0.0001 && nextdemotime != demotime)
+		{
 			olddemotime = nextdemotime;
 			cls.netchan.incoming_sequence++;
 			cls.netchan.incoming_acknowledged++;
@@ -513,42 +558,57 @@ readnext:
 			cls.netchan.last_received = cls.demotime; // just to happy timeout check
 			nextdemotime = demotime;
 		}
-	} else {
+	}
+	else
+	{
 		CL_Demo_Read(&demotime, sizeof(demotime));
 		demotime = LittleFloat(demotime);
 	}
 
 	playback_recordtime = demotime;
 
-	// decide if it is time to grab the next message		
-	if (cls.timedemo) {
-		if (td_lastframe < 0) {
+	// decide if it is time to grab the next message
+	if (cls.timedemo)
+	{
+		if (td_lastframe < 0)
+		{
 			td_lastframe = demotime;
-		} else if (demotime > td_lastframe) {
+		}
+		else if (demotime > td_lastframe)
+		{
 			td_lastframe = demotime;
 			fseek(playbackfile, ftell(playbackfile) - SIZEOF_DEMOTIME, SEEK_SET);	// rewind back to time
 			return false;		// already read this frame's message
 		}
-		if (!td_starttime && cls.state == ca_active) {
+		if (!td_starttime && cls.state == ca_active)
+		{
 			td_starttime = Sys_DoubleTime();
 			td_startframe = cls.framecount;
 		}
 		cls.demotime = demotime; // warp
-	} else if (!(cl.paused & PAUSED_SERVER) && cls.state == ca_active) {	// always grab until fully connected
-		if (cls.mvdplayback) {
-			if (nextdemotime < demotime) {
+	}
+	else if (!(cl.paused & PAUSED_SERVER) && cls.state == ca_active) {	// always grab until fully connected
+		if (cls.mvdplayback)
+		{
+			if (nextdemotime < demotime)
+			{
 				fseek(playbackfile, ftell(playbackfile) - SIZEOF_DEMOTIME, SEEK_SET);	// rewind back to time
 				return false;		// don't need another message yet
 			}
-		} else {
-			if (cls.demotime < demotime) {
+		}
+		else
+		{
+			if (cls.demotime < demotime)
+			{
 				if (cls.demotime + 1.0 < demotime)
 					cls.demotime = demotime - 1.0;	// too far back
 				fseek(playbackfile, ftell(playbackfile) - SIZEOF_DEMOTIME, SEEK_SET);	// rewind back to time
 				return false;		// don't need another message yet
 			}
 		}
-	} else {
+	}
+	else
+	{
 		cls.demotime = demotime; // we're warping
 	}
 
@@ -557,7 +617,8 @@ readnext:
 
 	CL_Demo_Read(&c, sizeof(c));	// get the msg type
 
-	switch ((c & 7)) {
+	switch ((c & 7))
+	{
 	case dem_cmd :
 		// user sent input
 		i = cls.netchan.outgoing_sequence & UPDATE_MASK;
@@ -591,7 +652,8 @@ readit:
 		// get the next message
 		CL_Demo_Read(&cl_net_message.cursize, 4);
 		cl_net_message.cursize = LittleLong (cl_net_message.cursize);
-		if (cl_net_message.cursize > cl_net_message.maxsize) {
+		if (cl_net_message.cursize > cl_net_message.maxsize)
+		{
 			Com_DPrintf("CL_GetDemoMessage: cl_net_message.cursize > cl_net_message.maxsize");
 			Host_EndGame();
 			Host_Abort();
@@ -601,13 +663,15 @@ readit:
 			goto readnext;
 
 		CL_Demo_Read(cl_net_message.data, cl_net_message.cursize);
-		
-		if (cls.mvdplayback) {
-			switch(cls.lasttype) {
+
+		if (cls.mvdplayback)
+		{
+			switch(cls.lasttype)
+			{
 			case dem_multiple:
 				tracknum = Cam_TrackNum();
 				if (tracknum == -1 || !(cls.lastto & (1 << tracknum)))
-					goto readnext;	
+					goto readnext;
 				break;
 			case dem_single:
 				tracknum = Cam_TrackNum();
@@ -665,12 +729,14 @@ static qboolean autorecording = false;
 void CL_AutoRecord_StopMatch(void);
 void CL_AutoRecord_CancelMatch(void);
 
-static qboolean OnChange_demo_dir(cvar_t *var, char *string) {
+static qboolean OnChange_demo_dir(cvar_t *var, char *string)
+{
 	if (!string[0])
 		return false;
 
 	Util_Process_Filename(string);
-	if (!Util_Is_Valid_Filename(string)) {
+	if (!Util_Is_Valid_Filename(string))
+	{
 		Com_Printf(Util_Invalid_Filename_Msg(var->name));
 		return true;
 	}
@@ -678,7 +744,8 @@ static qboolean OnChange_demo_dir(cvar_t *var, char *string) {
 }
 
 //stop recording a demo
-static void CL_StopRecording (void) {
+static void CL_StopRecording (void)
+{
 	if (!cls.demorecording)
 		return;
 
@@ -694,30 +761,38 @@ static void CL_StopRecording (void) {
 	cls.demorecording = false;
 }
 
-void CL_Stop_f (void) {
-	if (!cls.demorecording) {
+void CL_Stop_f (void)
+{
+	if (!cls.demorecording)
+	{
 		Com_Printf ("Not recording a demo\n");
 		return;
 	}
-	if (autorecording) {
+	if (autorecording)
+	{
 		CL_AutoRecord_StopMatch();
-	} else {
+	}
+	else
+	{
 		CL_StopRecording();
 		Com_Printf ("Completed demo\n");
 	}
 }
 
-static char *CL_DemoDirectory(void) {
+static char *CL_DemoDirectory(void)
+{
 	static char dir[MAX_OSPATH * 2];
 
 	Q_strncpyz(dir, demo_dir.string[0] ? va("%s/%s", com_basedir, demo_dir.string) : cls.gamedir, sizeof(dir));
 	return dir;
 }
 
-void CL_Record_f (void) {
+void CL_Record_f (void)
+{
 	char nameext[MAX_OSPATH * 2], name[MAX_OSPATH * 2];
 
-	switch(Cmd_Argc()) {
+	switch(Cmd_Argc())
+	{
 	case 1:
 		if (autorecording)
 			Com_Printf("Auto demo recording is in progress\n");
@@ -728,17 +803,20 @@ void CL_Record_f (void) {
 
 		break;
 	case 2:
-		if (cls.mvdplayback) {
+		if (cls.mvdplayback)
+		{
 			Com_Printf ("Cannot record during mvd playback\n");
 			return;
 		}
 
-		if (cls.state != ca_active && cls.state != ca_disconnected) {
+		if (cls.state != ca_active && cls.state != ca_disconnected)
+		{
 			Com_Printf ("Cannot record whilst connecting\n");
 			return;
 		}
 
-		if (autorecording) {
+		if (autorecording)
+		{
 			Com_Printf("Auto demo recording must be stopped first!\n");
 			return;
 		}
@@ -746,51 +824,57 @@ void CL_Record_f (void) {
 		if (cls.demorecording)
 			CL_Stop_f();
 
-		if (!Util_Is_Valid_Filename(Cmd_Argv(1))) {
+		if (!Util_Is_Valid_Filename(Cmd_Argv(1)))
+		{
 			Com_Printf(Util_Invalid_Filename_Msg(Cmd_Argv(1)));
 			return;
 		}
 
 		// open the demo file
 		Q_strncpyz(nameext, Cmd_Argv(1), sizeof(nameext));
-		COM_ForceExtension (nameext, ".qwd");	
+		COM_ForceExtension (nameext, ".qwd");
 
 		Q_snprintfz (name, sizeof(name), "%s/%s", cls.gamedir, nameext);
-		if (!CL_Demo_Open(name)) {
+		if (!CL_Demo_Open(name))
+		{
 			Com_Printf ("Error: Couldn't record to %s. Make sure path exists.\n", name);
 			return;
 		}
 
 		cls.demorecording = true;
 		if (cls.state == ca_active)
-			CL_WriteStartupData();	
+			CL_WriteStartupData();
 
-		Q_strncpyz(demoname, nameext, sizeof(demoname));	
+		Q_strncpyz(demoname, nameext, sizeof(demoname));
 
 		Com_Printf ("Recording to %s\n", nameext);
 
 		break;
-	default:		
+	default:
 		Com_Printf("Usage: %s [demoname]\n", Cmd_Argv(0));
 		break;
 	}
 }
 
-static qboolean CL_RecordDemo(char *dir, char *name, qboolean autorecord) {
+static qboolean CL_RecordDemo(char *dir, char *name, qboolean autorecord)
+{
 	char extendedname[MAX_OSPATH * 2], strippedname[MAX_OSPATH * 2], *fullname, *exts[] = {"qwd", "qwz", NULL};
 	int num;
 
-	if (cls.state != ca_active) {
+	if (cls.state != ca_active)
+	{
 		Com_Printf ("You must be connected before using easyrecord\n");
 		return false;
 	}
 
-	if (cls.mvdplayback) {
+	if (cls.mvdplayback)
+	{
 			Com_Printf ("Cannot record during mvd playback\n");
 		return false;
 	}
 
-	if (autorecording) {	
+	if (autorecording)
+	{
 		Com_Printf("Auto demo recording must be stopped first!\n");
 		return false;
 	}
@@ -798,18 +882,23 @@ static qboolean CL_RecordDemo(char *dir, char *name, qboolean autorecord) {
 	if (cls.demorecording)
 		CL_Stop_f();
 
-	if (!Util_Is_Valid_Filename(name)) {
+	if (!Util_Is_Valid_Filename(name))
+	{
 		Com_Printf(Util_Invalid_Filename_Msg(name));
 		return false;
 	}
 
 	COM_ForceExtension(name, ".qwd");
-	if (autorecord) {
+	if (autorecord)
+	{
 		Q_strncpyz (extendedname, name, sizeof(extendedname));
-	} else {
+	}
+	else
+	{
 		COM_StripExtension(name, strippedname);
 		fullname = va("%s/%s", dir, strippedname);
-		if ((num = Util_Extend_Filename(fullname, exts)) == -1) {
+		if ((num = Util_Extend_Filename(fullname, exts)) == -1)
+		{
 			Com_Printf("Error: no available filenames\n");
 			return false;
 		}
@@ -819,9 +908,11 @@ static qboolean CL_RecordDemo(char *dir, char *name, qboolean autorecord) {
 	fullname = va("%s/%s", dir, extendedname);
 
 	// open the demo file
-	if (!CL_Demo_Open(fullname)) {
+	if (!CL_Demo_Open(fullname))
+	{
 		FS_CreatePath(fullname);
-		if (!CL_Demo_Open(fullname)) {
+		if (!CL_Demo_Open(fullname))
+		{
 			Com_Printf("Error: Couldn't open %s\n", fullname);
 			return false;
 		}
@@ -830,19 +921,22 @@ static qboolean CL_RecordDemo(char *dir, char *name, qboolean autorecord) {
 	cls.demorecording = true;
 	CL_WriteStartupData ();
 
-	if (!autorecord) {
+	if (!autorecord)
+	{
 		Com_Printf ("Recording to %s\n", extendedname);
-		Q_strncpyz(demoname, extendedname, sizeof(demoname));	
+		Q_strncpyz(demoname, extendedname, sizeof(demoname));
 	}
 
 	return true;
 }
 
-void CL_EasyRecord_f (void) {
+void CL_EasyRecord_f (void)
+{
 	int c;
 	char *name;
 
-	switch((c = Cmd_Argc())) {
+	switch((c = Cmd_Argc()))
+	{
 		case 1:
 			name = MT_MatchName(); break;
 		case 2:
@@ -872,7 +966,8 @@ extern cvar_t match_auto_record, match_auto_minlength;
 #define TEMP_DEMO_NAME "_!_temp_!_.qwd"
 
 
-void CL_AutoRecord_StopMatch(void) {
+void CL_AutoRecord_StopMatch(void)
+{
 	if (!autorecording)
 		return;
 
@@ -886,7 +981,8 @@ void CL_AutoRecord_StopMatch(void) {
 }
 
 
-void CL_AutoRecord_CancelMatch(void) {
+void CL_AutoRecord_CancelMatch(void)
+{
 	if (!autorecording)
 		return;
 
@@ -894,29 +990,37 @@ void CL_AutoRecord_CancelMatch(void) {
 	CL_StopRecording();
 	temp_demo_ready = true;
 
-	if (match_auto_record.value == 2) {
+	if (match_auto_record.value == 2)
+	{
 		if (cls.realtime - auto_starttime > match_auto_minlength.value)
 			CL_AutoRecord_SaveMatch();
 		else
 			Com_Printf("Auto demo recording cancelled\n");
-	} else {
+	}
+	else
+	{
 		Com_Printf ("Auto demo recording completed\n");
 	}
 }
 
 
-void CL_AutoRecord_StartMatch(char *demoname) {
+void CL_AutoRecord_StartMatch(char *demoname)
+{
 	temp_demo_ready = false;
 
 	if (!match_auto_record.value)
 		return;
 
-	if (cls.demorecording) {
-		if (autorecording) {			
-			
+	if (cls.demorecording)
+	{
+		if (autorecording)
+		{
+
 			autorecording = false;
 			CL_StopRecording();
-		} else {
+		}
+		else
+		{
 			Com_Printf("Auto demo recording skipped (already recording)\n");
 			return;
 		}
@@ -924,8 +1028,9 @@ void CL_AutoRecord_StartMatch(char *demoname) {
 
 	Q_strncpyz(auto_matchname, demoname, sizeof(auto_matchname));
 
-	
-	if (!CL_RecordDemo(MT_TempDirectory(), TEMP_DEMO_NAME, true)) {
+
+	if (!CL_RecordDemo(MT_TempDirectory(), TEMP_DEMO_NAME, true))
+	{
 		Com_Printf ("Auto demo recording failed to start!\n");
 		return;
 	}
@@ -935,11 +1040,13 @@ void CL_AutoRecord_StartMatch(char *demoname) {
 	Com_Printf ("Auto demo recording commenced\n");
 }
 
-qboolean CL_AutoRecord_Status(void) {
+qboolean CL_AutoRecord_Status(void)
+{
 	return temp_demo_ready ? 2 : autorecording ? 1 : 0;
 }
 
-void CL_AutoRecord_SaveMatch(void) {
+void CL_AutoRecord_SaveMatch(void)
+{
 	int error, num;
 	FILE *f;
 	char *dir, *tempname, savedname[2 * MAX_OSPATH], *fullsavedname, *exts[] = {"qwd", "qwz", NULL};
@@ -953,7 +1060,8 @@ void CL_AutoRecord_SaveMatch(void) {
 	tempname = va("%s/%s", MT_TempDirectory(), TEMP_DEMO_NAME);
 
 	fullsavedname = va("%s/%s", dir, auto_matchname);
-	if ((num = Util_Extend_Filename(fullsavedname, exts)) == -1) {
+	if ((num = Util_Extend_Filename(fullsavedname, exts)) == -1)
+	{
 		Com_Printf("Error: no available filenames\n");
 		return;
 	}
@@ -961,12 +1069,13 @@ void CL_AutoRecord_SaveMatch(void) {
 
 	fullsavedname = va("%s/%s", dir, savedname);
 
-	
+
 	if (!(f = fopen(tempname, "rb")))
 		return;
 	fclose(f);
 
-	if ((error = rename(tempname, fullsavedname))) {
+	if ((error = rename(tempname, fullsavedname)))
+	{
 		FS_CreatePath(fullsavedname);
 		error = rename(tempname, fullsavedname);
 	}
@@ -981,23 +1090,27 @@ void CL_AutoRecord_SaveMatch(void) {
 
 #ifdef _WIN32
 
-static void StopQWZPlayback (void) {
-	if (!hQizmoProcess && tempqwd_name[0]) {
+static void StopQWZPlayback (void)
+{
+	if (!hQizmoProcess && tempqwd_name[0])
+	{
 		if (remove (tempqwd_name) != 0)
 			Com_Printf ("Error: Couldn't delete %s\n", tempqwd_name);
 		tempqwd_name[0] = 0;
 	}
 	qwz_playback = false;
-	qwz_unpacking = false;	
+	qwz_unpacking = false;
 }
 
-void CL_CheckQizmoCompletion (void) {
+void CL_CheckQizmoCompletion (void)
+{
 	DWORD ExitCode;
 
 	if (!hQizmoProcess)
 		return;
 
-	if (!GetExitCodeProcess (hQizmoProcess, &ExitCode)) {
+	if (!GetExitCodeProcess (hQizmoProcess, &ExitCode))
+	{
 		Com_Printf ("WARINING: CL_CheckQizmoCompletion: GetExitCodeProcess failed\n");
 		hQizmoProcess = NULL;
 		qwz_unpacking = false;
@@ -1012,14 +1125,16 @@ void CL_CheckQizmoCompletion (void) {
 
 	hQizmoProcess = NULL;
 
-	if (!qwz_unpacking || !cls.demoplayback) {
+	if (!qwz_unpacking || !cls.demoplayback)
+	{
 		StopQWZPlayback ();
 		return;
 	}
 
 	qwz_unpacking = false;
 
-	if (!(playbackfile = fopen (tempqwd_name, "rb"))) {
+	if (!(playbackfile = fopen (tempqwd_name, "rb")))
+	{
 		Com_Printf ("Error: Couldn't open %s\n", tempqwd_name);
 		qwz_playback = false;
 		cls.demoplayback = cls.timedemo = false;
@@ -1031,22 +1146,27 @@ void CL_CheckQizmoCompletion (void) {
 }
 
 
-static void PlayQWZDemo (void) {
+static void PlayQWZDemo (void)
+{
 	extern cvar_t qizmo_dir;
 	STARTUPINFO si;
 	PROCESS_INFORMATION	pi;
 	char *name, qwz_name[2 * MAX_OSPATH], cmdline[512], *p;
 
-	if (hQizmoProcess) {
+	if (hQizmoProcess)
+	{
 		Com_Printf ("Cannot unpack -- Qizmo still running!\n");
 		return;
 	}
 
 	name = Cmd_Argv(1);
 
-	if (!strncmp(name, "../", 3) || !strncmp(name, "..\\", 3)) {
+	if (!strncmp(name, "../", 3) || !strncmp(name, "..\\", 3))
+	{
 		Q_strncpyz (qwz_name, va("%s/%s", com_basedir, name + 3), sizeof(qwz_name));
-	} else {
+	}
+	else
+	{
 		if (name[0] == '/' || name[0] == '\\')
 			Q_strncpyz (qwz_name, va("%s/%s", cls.gamedir, name + 1), sizeof(qwz_name));
 		else
@@ -1058,7 +1178,8 @@ static void PlayQWZDemo (void) {
 	qwz_name[sizeof(qwz_name) - 1] = 0;
 
 	// check if the file exists
-	if (!(playbackfile = fopen (qwz_name, "rb"))) {
+	if (!(playbackfile = fopen (qwz_name, "rb")))
+	{
 		Com_Printf ("Error: Couldn't open %s\n", name);
 		return;
 	}
@@ -1106,20 +1227,21 @@ static void PlayQWZDemo (void) {
 //							DEMO PLAYBACK
 //=============================================================================
 
-double		demostarttime;		
+double		demostarttime;
 
-void CL_StopPlayback (void) {
+void CL_StopPlayback (void)
+{
 	if (!cls.demoplayback)
 		return;
 
-	if (Movie_IsCapturing())	
+	if (Movie_IsCapturing())
 		Movie_Stop();
 
 	if (playbackfile)
 		fclose (playbackfile);
 
 	playbackfile = NULL;
-	cls.mvdplayback = cls.demoplayback = false;		
+	cls.mvdplayback = cls.demoplayback = false;
 	cl.paused &= ~PAUSED_DEMO;
 
 #ifdef _WIN32
@@ -1127,7 +1249,8 @@ void CL_StopPlayback (void) {
 		StopQWZPlayback ();
 #endif
 
-	if (cls.timedemo) {	
+	if (cls.timedemo)
+	{
 		int frames;
 		float time;
 
@@ -1152,7 +1275,7 @@ void CL_Play_f (void)
 		return;
 	}
 
-	Host_EndGame();	
+	Host_EndGame();
 
 #ifdef _WIN32
 	Q_strncpyz (name, Cmd_Argv(1), sizeof(name) - 4);
@@ -1160,7 +1283,7 @@ void CL_Play_f (void)
 	{
 		PlayQWZDemo();
 		if (!playbackfile && !qwz_playback)
-			return;	
+			return;
 	}
 	else
 #endif
@@ -1186,13 +1309,13 @@ void CL_Play_f (void)
 	}
 
 	cls.demoplayback = true;
-	cls.mvdplayback = !Q_strcasecmp(name + strlen(name) - 3, "mvd") ? true : false;	
+	cls.mvdplayback = !Q_strcasecmp(name + strlen(name) - 3, "mvd") ? true : false;
 	cls.state = ca_demostart;
 	Netchan_Setup (NS_CLIENT, &cls.netchan, cl_net_from, 0);
 	cls.demotime = 0;
-	demostarttime = -1.0;		
+	demostarttime = -1.0;
 
-	olddemotime = nextdemotime = 0;	
+	olddemotime = nextdemotime = 0;
 	cls.findtrack = true;
 	cls.lastto = cls.lasttype = 0;
 	CL_ClearPredict();
@@ -1201,8 +1324,10 @@ void CL_Play_f (void)
 		CL_Stop_f();
 }
 
-void CL_TimeDemo_f (void) {
-	if (Cmd_Argc() != 2) {
+void CL_TimeDemo_f (void)
+{
+	if (Cmd_Argc() != 2)
+	{
 		Com_Printf ("timedemo <demoname> : gets demo speeds\n");
 		return;
 	}
@@ -1224,10 +1349,12 @@ void CL_TimeDemo_f (void) {
 //								DEMO TOOLS
 //=============================================================================
 
-void CL_Demo_SetSpeed_f (void) {
+void CL_Demo_SetSpeed_f (void)
+{
 	extern cvar_t cl_demospeed;
 
-	if (Cmd_Argc() != 2) {
+	if (Cmd_Argc() != 2)
+	{
 		Com_Printf("Usage: %s [speed %%]\n", Cmd_Argv(0));
 		return;
 	}
@@ -1235,53 +1362,67 @@ void CL_Demo_SetSpeed_f (void) {
 	Cvar_SetValue(&cl_demospeed, atof(Cmd_Argv(1)) / 100.0);
 }
 
-void CL_Demo_Jump_f (void) {
+void CL_Demo_Jump_f (void)
+{
     int seconds = 0, seen_col, relative = 0;
 	double newdemotime;
     char *text, *s;
 	static char *usage_message = "Usage: %s [+|-][m:]<s> (seconds)\n";
 
-	if (!cls.demoplayback) {
+	if (!cls.demoplayback)
+	{
 		Com_Printf("Error: not playing a demo\n");
         return;
 	}
 
-	if (cls.state < ca_active) {	
+	if (cls.state < ca_active)
+	{
 		Com_Printf("Error: demo must be active first\n");
 		return;
 	}
 
-    if (Cmd_Argc() != 2) {
+    if (Cmd_Argc() != 2)
+    {
         Com_Printf(usage_message, Cmd_Argv(0));
         return;
     }
 
     text = Cmd_Argv(1);
-	if (text[0] == '-') {
+	if (text[0] == '-')
+	{
 		text++;
 		relative = -1;
-	} else if (text[0] == '+') {
+	}
+	else if (text[0] == '+')
+	{
 		text++;
 		relative = 1;
-	} else if (!isdigit(text[0])){
+	}
+	else if (!isdigit(text[0])){
         Com_Printf(usage_message, Cmd_Argv(0));
         return;
 	}
 
-	for (seen_col = 0, s = text; *s; s++) {
-		if (*s == ':') {
+	for (seen_col = 0, s = text; *s; s++)
+	{
+		if (*s == ':')
+		{
 			seen_col++;
-		} else if (!isdigit(*s)) {
-			Com_Printf(usage_message, Cmd_Argv(0));
-			return;			
 		}
-		if (seen_col >= 2) {
+		else if (!isdigit(*s))
+		{
 			Com_Printf(usage_message, Cmd_Argv(0));
-			return;			
+			return;
+		}
+		if (seen_col >= 2)
+		{
+			Com_Printf(usage_message, Cmd_Argv(0));
+			return;
 		}
 	}
 
-    if (strchr(text, ':')) {
+    if (strchr(text, ':'))
+    {
         seconds += 60 * atoi(text);
         text = strchr(text, ':') + 1;
     }
@@ -1289,7 +1430,8 @@ void CL_Demo_Jump_f (void) {
 
 	newdemotime = relative ? cls.demotime + relative * seconds : demostarttime + seconds;
 
-	if (newdemotime < cls.demotime) {
+	if (newdemotime < cls.demotime)
+	{
 		Com_Printf ("Error: cannot demo_jump backwards\n");
 		return;
 	}
@@ -1317,16 +1459,20 @@ void CL_Demo_Init(void)
 	int parm, democache_size;
 	byte *democache_buffer;
 
-	
+
 	democache_available = false;
-	if ((parm = COM_CheckParm("-democache")) && parm + 1 < com_argc) {
+	if ((parm = COM_CheckParm("-democache")) && parm + 1 < com_argc)
+	{
 		democache_size = Q_atoi(com_argv[parm + 1]) * 1024;
 		democache_size = max(democache_size, DEMOCACHE_MINSIZE);
-		if ((democache_buffer = malloc(democache_size))) {
+		if ((democache_buffer = malloc(democache_size)))
+		{
 			Com_Printf("Democache initialized (%.1fMB)\n", (float) (democache_size) / (1024 * 1024));
 			SZ_Init(&democache, democache_buffer, democache_size);
 			democache_available = true;
-		} else {
+		}
+		else
+		{
 			Com_Printf("\x02" "Democache allocation failed\n");
 		}
 	}

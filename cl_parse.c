@@ -44,7 +44,8 @@ extern cvar_t net_maxfps;
 void R_TranslatePlayerSkin (int playernum);
 void R_PreMapLoad(char *mapname);
 
-char *svc_strings[] = {
+char *svc_strings[] =
+{
 	"svc_bad",
 	"svc_nop",
 	"svc_disconnect",
@@ -101,7 +102,7 @@ char *svc_strings[] = {
 	"svc_modellist",
 	"svc_soundlist",
 	"svc_packetentities",
- 	"svc_deltapacketentities",
+	"svc_deltapacketentities",
 	"svc_maxspeed",
 	"svc_entgravity",
 
@@ -131,12 +132,14 @@ double	parsecounttime;
 
 int packet_latency[NET_TIMINGS];
 
-int CL_CalcNet (void) {
+int CL_CalcNet (void)
+{
 	extern cvar_t cl_oldPL;
 	int a, i, lost, packetcount;
 	frame_t	*frame;
 
-	for (i = cls.netchan.outgoing_sequence-UPDATE_BACKUP + 1; i <= cls.netchan.outgoing_sequence; i++) {
+	for (i = cls.netchan.outgoing_sequence-UPDATE_BACKUP + 1; i <= cls.netchan.outgoing_sequence; i++)
+	{
 		frame = &cl.frames[i & UPDATE_MASK];
 		if (frame->receivedtime == -1)
 			packet_latency[i & NET_TIMINGSMASK] = 9999;	// dropped
@@ -340,8 +343,10 @@ void Sound_NextDownload (void)
 #endif
 }
 
-void CL_RequestNextDownload (void) {
-	switch (cls.downloadtype) {
+void CL_RequestNextDownload (void)
+{
+	switch (cls.downloadtype)
+	{
 	case dl_single:
 		break;
 	case dl_skin:
@@ -608,7 +613,8 @@ static void CL_ParseQWDownload (void)
 
 	if (size == -1)	{
 		Com_Printf ("File not found.\n");
-		if (cls.download) {
+		if (cls.download)
+		{
 			Com_Printf ("cls.download shouldn't have been set\n");
 			fclose (cls.download);
 			cls.download = NULL;
@@ -664,7 +670,8 @@ static void CL_ParseDownload()
 static byte *upload_data;
 static int upload_pos;
 static int upload_size;
-void CL_NextUpload(void) {
+void CL_NextUpload(void)
+{
 	static byte buffer[768];
 	int r, percent, size;
 
@@ -694,18 +701,22 @@ void CL_NextUpload(void) {
 	upload_pos = upload_size = 0;
 }
 
-qboolean CL_IsUploading(void) {
+qboolean CL_IsUploading(void)
+{
 	return !!upload_data;
 }
 
-void CL_StopUpload(void) {
-	if (upload_data) {
+void CL_StopUpload(void)
+{
+	if (upload_data)
+	{
 		free(upload_data);
 		upload_data = NULL;
 	}
 }
 
-void CL_StartUpload (char *filename) {
+void CL_StartUpload (char *filename)
+{
 	FILE *f;
 	int size;
 
@@ -721,7 +732,8 @@ void CL_StartUpload (char *filename) {
 	Com_DPrintf ("Upload starting of %d...\n", size);
 
 	upload_data = Q_Malloc (size);
-	if (fread(upload_data, 1, size, f) != size) {
+	if (fread(upload_data, 1, size, f) != size)
+	{
 		fclose(f);
 		CL_StopUpload();
 		return;
@@ -732,7 +744,7 @@ void CL_StartUpload (char *filename) {
 	upload_pos = 0;
 
 	CL_NextUpload();
-} 
+}
 /*
 =====================================================================
   SERVER CONNECTING MESSAGES
@@ -756,7 +768,7 @@ void CL_ParseServerData (void)
 
 	// parse protocol version number
 	// allow 2.2 and 2.29 demos to play
-	
+
 	while(1)
 	{
 		protover = MSG_ReadLong();
@@ -781,7 +793,8 @@ void CL_ParseServerData (void)
 	str = MSG_ReadString ();
 
 	cl.teamfortress = !Q_strcasecmp(str, "fortress");
-	if (cl.teamfortress) {
+	if (cl.teamfortress)
+	{
 		extern cvar_t	v_iyaw_cycle, v_iroll_cycle, v_ipitch_cycle,
 			v_iyaw_level, v_iroll_level, v_ipitch_level, v_idlescale;
 		cbuf_current = &cbuf_svc;	// hack
@@ -794,7 +807,8 @@ void CL_ParseServerData (void)
 		Cvar_SetValue (&v_idlescale, 0);
 	}
 
-	if (Q_strcasecmp(cls.gamedirfile, str)) {
+	if (Q_strcasecmp(cls.gamedirfile, str))
+	{
 		// save current config
 		CL_WriteConfiguration ();
 		Q_strncpyz (cls.gamedirfile, str, sizeof(cls.gamedirfile));
@@ -807,38 +821,45 @@ void CL_ParseServerData (void)
 		FS_SetGamedir (str);
 
 	// run config.cfg and frontend.cfg in the gamedir if they exist
-	
-	
-	
-	
-	if (cfg_legacy_exec.value && (cflag || cfg_legacy_exec.value >= 2)) {
-		Q_snprintfz (fn, sizeof(fn), "%s/%s", cls.gamedir, "config.cfg");		
+
+
+
+
+	if (cfg_legacy_exec.value && (cflag || cfg_legacy_exec.value >= 2))
+	{
+		Q_snprintfz (fn, sizeof(fn), "%s/%s", cls.gamedir, "config.cfg");
 		Cbuf_AddText ("cl_warncmd 0\n");
-		if ((f = fopen(fn, "r")) != NULL) {
+		if ((f = fopen(fn, "r")) != NULL)
+		{
 			fclose(f);
 			if (!strcmp(cls.gamedirfile, com_gamedirfile))
 				Cbuf_AddText ("exec config.cfg\n");
 			else
 				Cbuf_AddText (va("exec ../%s/config.cfg\n", cls.gamedirfile));
-		} else if (cfg_legacy_exec.value == 3 && strcmp(cls.gamedir, "qw")){
-			
+		}
+		else if (cfg_legacy_exec.value == 3 && strcmp(cls.gamedir, "qw")){
+
 			Q_snprintfz (fn, sizeof(fn), "qw/%s", "config.cfg");
-			if ((f = fopen(fn, "r")) != NULL) {
+			if ((f = fopen(fn, "r")) != NULL)
+			{
 				fclose(f);
 				Cbuf_AddText ("exec config.cfg\n");
 			}
 		}
 		Q_snprintfz (fn, sizeof(fn), "%s/%s", cls.gamedir, "frontend.cfg");
-		if ((f = fopen(fn, "r")) != NULL) {
+		if ((f = fopen(fn, "r")) != NULL)
+		{
 			fclose(f);
 			if (!strcmp(cls.gamedirfile, com_gamedirfile))
 				Cbuf_AddText ("exec frontend.cfg\n");
 			else
 				Cbuf_AddText (va("exec ../%s/frontend.cfg\n", cls.gamedirfile));
-		} else if (cfg_legacy_exec.value == 3 && strcmp(cls.gamedir, "qw")){
-			
+		}
+		else if (cfg_legacy_exec.value == 3 && strcmp(cls.gamedir, "qw")){
+
 			Q_snprintfz (fn, sizeof(fn), "qw/%s", "frontend.cfg");
-			if ((f = fopen(fn, "r")) != NULL) {
+			if ((f = fopen(fn, "r")) != NULL)
+			{
 				fclose(f);
 				Cbuf_AddText ("exec frontend.cfg\n");
 			}
@@ -847,15 +868,19 @@ void CL_ParseServerData (void)
 	}
 
 	// parse player slot, high bit means spectator
-	if (cls.mvdplayback) {	
+	if (cls.mvdplayback)
+	{
 		cls.netchan.last_received = nextdemotime = olddemotime = MSG_ReadFloat();
 		cl.playernum = MAX_CLIENTS - 1;
 		cl.spectator = true;
 		for (i = 0; i < UPDATE_BACKUP; i++)
 			cl.frames[i].playerstate[cl.playernum].pm_type = PM_SPECTATOR;
-	} else {
+	}
+	else
+	{
 		cl.playernum = MSG_ReadByte ();
-		if (cl.playernum & 128) {
+		if (cl.playernum & 128)
+		{
 			cl.spectator = true;
 			cl.playernum &= ~128;
 		}
@@ -901,7 +926,8 @@ void CL_ParseServerData (void)
 	cls.state = ca_onserver;
 }
 
-void CL_ParseSoundlist (void) {
+void CL_ParseSoundlist (void)
+{
 	char buf[128];
 	int	numsounds, n;
 	int i;
@@ -912,7 +938,8 @@ void CL_ParseSoundlist (void) {
 
 	numsounds = MSG_ReadByte();
 
-	while (1) {
+	while (1)
+	{
 		str = MSG_ReadString ();
 		if (!str[0])
 			break;
@@ -997,22 +1024,25 @@ void CL_ParseModellist(void)
 	Model_NextDownload ();
 }
 
-void CL_ParseBaseline (entity_state_t *es) {
+void CL_ParseBaseline (entity_state_t *es)
+{
 	int	i;
-	
+
 	es->modelindex = MSG_ReadByte ();
 	es->frame = MSG_ReadByte ();
 	es->colormap = MSG_ReadByte();
 	es->skinnum = MSG_ReadByte();
 
-	for (i = 0; i < 3; i++) {
+	for (i = 0; i < 3; i++)
+	{
 		es->origin[i] = MSG_ReadCoord ();
 		es->angles[i] = MSG_ReadAngle ();
 	}
 }
 
 //Static entities are non-interactive world objects like torches
-void CL_ParseStatic (void) {
+void CL_ParseStatic (void)
+{
 	entity_t *ent;
 	entity_state_t es;
 
@@ -1024,23 +1054,24 @@ void CL_ParseStatic (void) {
 	cl.num_statics++;
 
 	// copy it to the current state
-	
-	ent->model = cl.model_precache[es.modelindex];	
+
+	ent->model = cl.model_precache[es.modelindex];
 	ent->frame = es.frame;
 	ent->colormap = vid.colormap;
 	ent->skinnum = es.skinnum;
 
 	VectorCopy (es.origin, ent->origin);
 	VectorCopy (es.angles, ent->angles);
-	
+
 	R_AddEfrags (ent);
 }
 
-void CL_ParseStaticSound (void) {
+void CL_ParseStaticSound (void)
+{
 	extern cvar_t cl_staticsounds;
 	vec3_t org;
 	int sound_num, vol, atten, i;
-	
+
 	for (i = 0; i < 3; i++)
 		org[i] = MSG_ReadCoord ();
 	sound_num = MSG_ReadByte ();
@@ -1057,23 +1088,24 @@ ACTION MESSAGES
 =====================================================================
 */
 
-void CL_ParseStartSoundPacket(void) {
-    vec3_t pos;
-    int channel, ent, sound_num, volume, i;
-	int tracknum;	
-    float attenuation;  
-	           
-    channel = MSG_ReadShort(); 
+void CL_ParseStartSoundPacket(void)
+{
+	vec3_t pos;
+	int channel, ent, sound_num, volume, i;
+	int tracknum;
+	float attenuation;
+
+	channel = MSG_ReadShort();
 
 	volume = (channel & SND_VOLUME) ? MSG_ReadByte () : DEFAULT_SOUND_PACKET_VOLUME;
-	
+
 	attenuation = (channel & SND_ATTENUATION) ? MSG_ReadByte () / 64.0 : DEFAULT_SOUND_PACKET_ATTENUATION;
-	
+
 	sound_num = MSG_ReadByte ();
 
 	for (i = 0; i < 3; i++)
 		pos[i] = MSG_ReadCoord ();
- 
+
 	ent = (channel >> 3) & 1023;
 	channel &= 7;
 
@@ -1081,20 +1113,22 @@ void CL_ParseStartSoundPacket(void) {
 		Host_Error ("CL_ParseStartSoundPacket: ent = %i", ent);
 
 
-    if (cls.mvdplayback) {
-	    tracknum = Cam_TrackNum();
-	    if (cl.spectator && tracknum != -1 && ent == tracknum + 1)
-		    ent = cl.playernum + 1;
-    }
+	if (cls.mvdplayback)
+	{
+		tracknum = Cam_TrackNum();
+		if (cl.spectator && tracknum != -1 && ent == tracknum + 1)
+			ent = cl.playernum + 1;
+	}
 
-	
-    S_StartSound (ent, channel, cl.sound_precache[sound_num], pos, volume/255.0, attenuation);
+
+	S_StartSound (ent, channel, cl.sound_precache[sound_num], pos, volume/255.0, attenuation);
 	if (ent == cl.playernum+1)
 		TP_CheckPickupSound (cl.sound_name[sound_num], pos);
-}       
+}
 
 //Server information pertaining to this client only, sent every frame
-void CL_ParseClientdata (void) {
+void CL_ParseClientdata (void)
+{
 	int newparsecount;
 	float latency;
 	frame_t *frame;
@@ -1104,12 +1138,12 @@ void CL_ParseClientdata (void) {
 
 	newparsecount = cls.netchan.incoming_acknowledged;
 
-	cl.oldparsecount = (cls.mvdplayback) ? newparsecount - 1 : cl.parsecount;	
+	cl.oldparsecount = (cls.mvdplayback) ? newparsecount - 1 : cl.parsecount;
 	cl.parsecount = newparsecount;
 	parsecountmod = (cl.parsecount & UPDATE_MASK);
 	frame = &cl.frames[parsecountmod];
 
-	if (cls.mvdplayback) 
+	if (cls.mvdplayback)
 		frame->senttime = cls.realtime - cls.frametime;
 
 	parsecounttime = cl.frames[parsecountmod].senttime;
@@ -1119,7 +1153,8 @@ void CL_ParseClientdata (void) {
 	// calculate latency
 	latency = frame->receivedtime - frame->senttime;
 
-	if (latency >= 0 && latency <= 1) {
+	if (latency >= 0 && latency <= 1)
+	{
 		// drift the average latency towards the observed latency
 		if (latency < cls.latency)
 			cls.latency = latency;
@@ -1128,7 +1163,8 @@ void CL_ParseClientdata (void) {
 	}
 }
 
-void CL_NewTranslation (int slot) {
+void CL_NewTranslation (int slot)
+{
 	player_info_t *player;
 	int tracknum;
 
@@ -1152,14 +1188,17 @@ void CL_NewTranslation (int slot) {
 		skinforcing_team = cl.players[cl.playernum].team;
 
 
-	if (!cl.teamfortress && !(cl.fpd & FPD_NO_FORCE_COLOR)) {
+	if (!cl.teamfortress && !(cl.fpd & FPD_NO_FORCE_COLOR))
+	{
 		qboolean teammate;
 
 		teammate = (cl.teamplay && !strcmp(player->team, skinforcing_team)) ? true : false;
-		if (cl_teamtopcolor >= 0 && teammate) {
+		if (cl_teamtopcolor >= 0 && teammate)
+		{
 			player->topcolor = cl_teamtopcolor;
 			player->bottomcolor = cl_teambottomcolor;
-		} else if (cl_enemytopcolor >= 0 && slot != cl.playernum && !teammate)	{
+		}
+		else if (cl_enemytopcolor >= 0 && slot != cl.playernum && !teammate)	{
 			player->topcolor = cl_enemytopcolor;
 			player->bottomcolor = cl_enemybottomcolor;
 		}
@@ -1168,12 +1207,14 @@ void CL_NewTranslation (int slot) {
 	R_TranslatePlayerSkin(slot);
 }
 
-void CL_ProcessUserInfo (int slot, player_info_t *player, char *key) {
+void CL_ProcessUserInfo (int slot, player_info_t *player, char *key)
+{
 	qboolean update_skin;
 	int mynum;
 
 	Q_strncpyz (player->name, Info_ValueForKey (player->userinfo, "name"), sizeof(player->name));
-	if (!player->name[0] && player->userid && strlen(player->userinfo) >= MAX_INFO_STRING - 17) {
+	if (!player->name[0] && player->userid && strlen(player->userinfo) >= MAX_INFO_STRING - 17)
+	{
 		// somebody's trying to hide himself by overloading userinfo
 		strcpy (player->name, " ");
 	}
@@ -1198,7 +1239,7 @@ void CL_ProcessUserInfo (int slot, player_info_t *player, char *key) {
 	if (!cl.spectator || (mynum = Cam_TrackNum()) == -1)
 		mynum = cl.playernum;
 
-	update_skin = !key ||	(!player->spectator && ( !strcmp(key, "skin") || !strcmp(key, "topcolor") || 
+	update_skin = !key ||	(!player->spectator && ( !strcmp(key, "skin") || !strcmp(key, "topcolor") ||
 													 !strcmp(key, "bottomcolor") || !strcmp(key, "team")
 													)
 							);
@@ -1211,7 +1252,8 @@ void CL_ProcessUserInfo (int slot, player_info_t *player, char *key) {
 	strcpy (player->_team, player->team);
 }
 
-void CL_PlayerEnterSlot(player_info_t *player) {
+void CL_PlayerEnterSlot(player_info_t *player)
+{
 	extern player_state_t oldplayerstates[MAX_CLIENTS];
 
 	player->ignored = false;
@@ -1219,11 +1261,13 @@ void CL_PlayerEnterSlot(player_info_t *player) {
 	Stats_EnterSlot(player - cl.players);
 }
 
-void CL_PlayerLeaveSlot(player_info_t *player) {
+void CL_PlayerLeaveSlot(player_info_t *player)
+{
 	return;
 }
 
-void CL_UpdateUserinfo (void) {
+void CL_UpdateUserinfo (void)
+{
 	qboolean was_empty_slot;
 	int slot;
 	player_info_t *player;
@@ -1239,7 +1283,7 @@ void CL_UpdateUserinfo (void) {
 	player->userid = MSG_ReadLong ();
 	Q_strncpyz (player->userinfo, MSG_ReadString(), sizeof(player->userinfo));
 
-	CL_ProcessUserInfo (slot, player, NULL);	
+	CL_ProcessUserInfo (slot, player, NULL);
 
 	if (player->name[0] && was_empty_slot)
 		CL_PlayerEnterSlot(player);
@@ -1247,7 +1291,8 @@ void CL_UpdateUserinfo (void) {
 		CL_PlayerLeaveSlot(player);
 }
 
-void CL_SetInfo (void) {
+void CL_SetInfo (void)
+{
 	int	slot;
 	player_info_t *player;
 	char key[MAX_INFO_STRING], value[MAX_INFO_STRING];
@@ -1270,8 +1315,9 @@ void CL_SetInfo (void) {
 }
 
 //Called by CL_FullServerinfo_f and CL_ParseServerInfoChange
-void CL_ProcessServerInfo (void) {
-	char *p, *fbskins, *truelightning, *minlight;		
+void CL_ProcessServerInfo (void)
+{
+	char *p, *fbskins, *truelightning, *minlight;
 	int teamplay, fpd;
 	qboolean skin_refresh, standby, countdown;
 	float maxfps;
@@ -1297,16 +1343,21 @@ void CL_ProcessServerInfo (void) {
 		NetQW_SetFPS(cls.netqw, maxfps);
 #endif
 
-	if (cls.demoplayback) {
+	if (cls.demoplayback)
+	{
 		cl.watervis = cl.allow_lumas = true;
 		cl.fbskins = cl.truelightning = 1;
 		fpd = 0;
-	} else if (cl.spectator) {
+	}
+	else if (cl.spectator)
+	{
 		cl.watervis = !atoi(Info_ValueForKey(cl.serverinfo, "watervis")) ? 0 : 1;
 		cl.allow_lumas = true;
 		cl.fbskins = cl.truelightning = 1;
-		fpd = atoi(Info_ValueForKey(cl.serverinfo, "fpd"));	
-	} else {
+		fpd = atoi(Info_ValueForKey(cl.serverinfo, "fpd"));
+	}
+	else
+	{
 		cl.watervis = !atoi(Info_ValueForKey(cl.serverinfo, "watervis")) ? 0 : 1;
 		cl.allow_lumas = !strcmp(Info_ValueForKey(cl.serverinfo, "24bit_fbs"), "1") ? true : false;
 		cl.fbskins = *(fbskins = Info_ValueForKey(cl.serverinfo, "fbskins")) ? bound(0, Q_atof(fbskins), 1) :
@@ -1349,7 +1400,8 @@ void CL_ProcessServerInfo (void) {
 		TP_RefreshSkins();
 }
 
-void CL_ParseServerInfoChange (void) {
+void CL_ParseServerInfoChange (void)
+{
 	char key[MAX_INFO_STRING], value[MAX_INFO_STRING];
 
 	Q_strncpyz (key, MSG_ReadString(), sizeof(key));
@@ -1363,11 +1415,12 @@ void CL_ParseServerInfoChange (void) {
 }
 
 //for CL_ParsePrint
-static void FlushString (char *s, int level, qboolean team, int offset) {
+static void FlushString (char *s, int level, qboolean team, int offset)
+{
 	if (level == PRINT_CHAT)
-		
+
 		Com_Printf ("%s", TP_ParseWhiteText(s, team, offset));
-		
+
 	else
 		Com_Printf ("%s", s);
 
@@ -1381,11 +1434,12 @@ static void FlushString (char *s, int level, qboolean team, int offset) {
 	Stats_ParsePrint(s, level);
 }
 
-void CL_ParsePrint (void) {
-	qboolean suppress_talksound;	
-	char *s, str[2048], *p, check_flood;		
+void CL_ParsePrint (void)
+{
+	qboolean suppress_talksound;
+	char *s, str[2048], *p, check_flood;
 	int len, level, flags = 0, offset = 0;
-	extern cvar_t cl_chatsound;							
+	extern cvar_t cl_chatsound;
 
 	extern qboolean TP_SuppressMessage(char *);
 
@@ -1393,26 +1447,27 @@ void CL_ParsePrint (void) {
 	level = MSG_ReadByte ();
 	s = MSG_ReadString ();
 
-	if (level == PRINT_CHAT) {
-	
+	if (level == PRINT_CHAT)
+	{
+
 		if (TP_SuppressMessage(s))
 			return;
-	
+
 
 		flags = TP_CategorizeMessage (s, &offset);
 		FChecks_CheckRequest(s);
-		Auth_CheckResponse (s, flags, offset);						
+		Auth_CheckResponse (s, flags, offset);
 
-		if (Ignore_Message(s, flags, offset))						
+		if (Ignore_Message(s, flags, offset))
 			return;
 
 		if (flags == 2 && !TP_FilterMessage(s + offset))
 			return;
 
-		check_flood = Ignore_Check_Flood(s, flags, offset);			
-		if (check_flood == IGNORE_NO_ADD)							
+		check_flood = Ignore_Check_Flood(s, flags, offset);
+		if (check_flood == IGNORE_NO_ADD)
 			return;
-		else if (check_flood == NO_IGNORE_ADD)					
+		else if (check_flood == NO_IGNORE_ADD)
 			Ignore_Flood_Add(s);
 
 		suppress_talksound = false;
@@ -1427,19 +1482,22 @@ void CL_ParsePrint (void) {
 		if (!suppress_talksound)
 			S_LocalSound ("misc/talk.wav");
 
-		if (cl_nofake.value == 1 || (cl_nofake.value == 2 && flags != 2)) {
+		if (cl_nofake.value == 1 || (cl_nofake.value == 2 && flags != 2))
+		{
 			for (p = s; *p; p++)
 				if (*p == 0x0D || (*p == 0x0A && p[1]))
 					*p = ' ';
 		}
 	}
 
-	if (cl.sprint_buf[0] && (level != cl.sprint_level || s[0] == 1 || s[0] == 2)) {
+	if (cl.sprint_buf[0] && (level != cl.sprint_level || s[0] == 1 || s[0] == 2))
+	{
 		FlushString (cl.sprint_buf, cl.sprint_level, false, 0);
 		cl.sprint_buf[0] = 0;
 	}
 
-	if (s[0] == 1 || s[0] == 2) {
+	if (s[0] == 1 || s[0] == 2)
+	{
 		FlushString (s, level, (flags == 2), offset);
 		return;
 	}
@@ -1448,7 +1506,8 @@ void CL_ParsePrint (void) {
 	cl.sprint_buf[sizeof(cl.sprint_buf) - 1] = 0;
 	cl.sprint_level = level;
 
-	if ((p = strrchr(cl.sprint_buf, '\n'))) {
+	if ((p = strrchr(cl.sprint_buf, '\n')))
+	{
 		len = p - cl.sprint_buf + 1;
 		memcpy(str, cl.sprint_buf, len);
 		str[len] = '\0';
@@ -1457,19 +1516,20 @@ void CL_ParsePrint (void) {
 	}
 }
 
-void CL_ParseStufftext (void) {
+void CL_ParseStufftext (void)
+{
 	char *s;
 
 	s = MSG_ReadString ();
 
 	Com_DPrintf ("stufftext: %s\n", s);
 
-	
+
 	if (!strncmp(s, "alias _cs", 9))
 		Cbuf_AddTextEx (&cbuf_svc, "alias _cs \"wait;+attack;wait;wait;-attack;wait\"\n");
 	else if (!strncmp(s, "alias _y", 8))
 		Cbuf_AddTextEx (&cbuf_svc, "alias _y \"wait;-attack;wait;wait;+attack;wait;wait;-attack;wait\"\n");
-	
+
 	else if (!strcmp (s, "cmd snap") || (!strncmp (s, "r_skyname ", 10) && !strchr (s, '\n')))
 		Cbuf_AddTextEx (&cbuf_svc, va("%s\n", s));
 	else
@@ -1480,14 +1540,16 @@ void CL_ParseStufftext (void) {
 		Cbuf_ExecuteEx (&cbuf_svc); // FIXME: execute cbuf_main too?
 }
 
-void CL_SetStat (int stat, int value) {
+void CL_SetStat (int stat, int value)
+{
 	int	j;
 
 	if (stat < 0 || stat >= MAX_CL_STATS)
 		Host_Error ("CL_SetStat: %i is invalid", stat);
 
 
-	if (cls.mvdplayback) {
+	if (cls.mvdplayback)
+	{
 		cl.players[cls.lastto].stats[stat]=value;
 		if ( Cam_TrackNum() != cls.lastto )
 			return;
@@ -1495,7 +1557,8 @@ void CL_SetStat (int stat, int value) {
 
 	Sbar_Changed ();
 
-	if (stat == STAT_ITEMS) {
+	if (stat == STAT_ITEMS)
+	{
 	// set flash times
 		Sbar_Changed ();
 		for (j = 0; j < 32; j++)
@@ -1505,7 +1568,8 @@ void CL_SetStat (int stat, int value) {
 
 	cl.stats[stat] = value;
 
-	if (stat == STAT_TIME && (cl.z_ext & Z_EXT_SERVERTIME)) {
+	if (stat == STAT_TIME && (cl.z_ext & Z_EXT_SERVERTIME))
+	{
 		cl.servertime_works = true;
 		cl.servertime = cl.stats[STAT_TIME] * 0.001;
 	}
@@ -1513,7 +1577,8 @@ void CL_SetStat (int stat, int value) {
 	TP_StatChanged(stat, value);
 }
 
-void CL_MuzzleFlash (void) {
+void CL_MuzzleFlash (void)
+{
 	vec3_t forward;
 	dlight_t *dl;
 	int i, j, num_ent;
@@ -1528,12 +1593,15 @@ void CL_MuzzleFlash (void) {
 	if (!cl.validsequence)
 		return;
 
-	if ((unsigned) (i - 1) >= MAX_CLIENTS) {
+	if ((unsigned) (i - 1) >= MAX_CLIENTS)
+	{
 		// a monster firing
 		num_ent = cl.frames[cl.validsequence & UPDATE_MASK].packet_entities.num_entities;
-		for (j = 0; j < num_ent; j++) {
+		for (j = 0; j < num_ent; j++)
+		{
 			ent = &cl.frames[cl.validsequence & UPDATE_MASK].packet_entities.entities[j];
-			if (ent->number == i) {
+			if (ent->number == i)
+			{
 				dl = CL_AllocDlight (-i);
 				AngleVectors (ent->angles, forward, NULL, NULL);
 				VectorMA (ent->origin, 18, forward, dl->origin);
@@ -1550,7 +1618,7 @@ void CL_MuzzleFlash (void) {
 		return;
 
 	dl = CL_AllocDlight (-i);
-	state = &cl.frames[cls.mvdplayback ? oldparsecountmod : parsecountmod].playerstate[i - 1];	
+	state = &cl.frames[cls.mvdplayback ? oldparsecountmod : parsecountmod].playerstate[i - 1];
 	AngleVectors (state->viewangles, forward, NULL, NULL);
 	VectorMA (state->origin, 18, forward, dl->origin);
 	dl->radius = 200 + (rand()&31);
@@ -1559,7 +1627,8 @@ void CL_MuzzleFlash (void) {
 	dl->type = lt_muzzleflash;
 }
 
-void CL_ParseQizmoVoice (void) {
+void CL_ParseQizmoVoice (void)
+{
 	int i, seq, bits, num, unknown;
 
 	// read the two-byte header
@@ -1577,9 +1646,10 @@ void CL_ParseQizmoVoice (void) {
 
 #define SHOWNET(x) do {if (cl_shownet.value == 2) Com_Printf ("%3i:%s\n", msg_readcount - 1, x);} while(0)
 
-void CL_ParseServerMessage (void) {
+void CL_ParseServerMessage (void)
+{
 	int cmd, i, j;
-	extern int mvd_fixangle;		
+	extern int mvd_fixangle;
 	int msg_svc_start;
 
 	if (cl_shownet.value == 1)
@@ -1587,14 +1657,16 @@ void CL_ParseServerMessage (void) {
 	else if (cl_shownet.value == 2)
 		Com_Printf ("------------------\n");
 
-	cls.demomessage.cursize = 0;	
+	cls.demomessage.cursize = 0;
 
 	CL_ParseClientdata ();
-	CL_ClearProjectiles ();	
+	CL_ClearProjectiles ();
 
 	// parse the message
-	while (1) {
-		if (msg_badread) {
+	while (1)
+	{
+		if (msg_badread)
+		{
 			Host_Error ("CL_ParseServerMessage: Bad server message");
 			break;
 		}
@@ -1602,7 +1674,8 @@ void CL_ParseServerMessage (void) {
 		msg_svc_start = msg_readcount;
 		cmd = MSG_ReadByte ();
 
-		if (cmd == -1) {
+		if (cmd == -1)
+		{
 			msg_readcount++;	// so the EOM showner has the right value
 			SHOWNET("END OF MESSAGE");
 			break;
@@ -1614,7 +1687,8 @@ void CL_ParseServerMessage (void) {
 			SHOWNET(svc_strings[cmd]);
 
 		// other commands
-		switch (cmd) {
+		switch (cmd)
+		{
 		default:
 			Host_Error ("CL_ParseServerMessage: Illegible server message\n");
 			break;
@@ -1623,10 +1697,13 @@ void CL_ParseServerMessage (void) {
 			break;
 
 		case svc_disconnect:
-			if (cls.state == ca_connected) {
+			if (cls.state == ca_connected)
+			{
 				Host_Error(	"Server disconnected\n"
 							"Server version may not be compatible");
-			} else {
+			}
+			else
+			{
 				Com_DPrintf("Server disconnected\n");
 				Host_EndGame();		// the server will be killed if it tries to kick the local player
 				Host_Abort();
@@ -1774,7 +1851,7 @@ void CL_ParseServerMessage (void) {
 			cl.solo_completed_time = cl.servertime;
 			vid.recalc_refdef = true;	// go to full screen
 			for (i = 0; i < 3; i++)
-				cl.simorg[i] = MSG_ReadCoord ();			
+				cl.simorg[i] = MSG_ReadCoord ();
 			for (i = 0; i < 3; i++)
 				cl.simangles[i] = MSG_ReadAngle ();
 			VectorClear (cl.simvel);
@@ -1786,7 +1863,7 @@ void CL_ParseServerMessage (void) {
 			cl.completed_time = cls.demoplayback ? cls.demotime : cls.realtime;
 			cl.solo_completed_time = cl.servertime;
 			vid.recalc_refdef = true;	// go to full screen
-			SCR_CenterPrint (MSG_ReadString ());			
+			SCR_CenterPrint (MSG_ReadString ());
 			break;
 
 		case svc_sellscreen:
@@ -1825,7 +1902,7 @@ void CL_ParseServerMessage (void) {
 			CL_ParsePlayerinfo ();
 			break;
 
-		
+
 		case svc_nails:
 			CL_ParseProjectiles(false);
 			break;
@@ -1837,8 +1914,10 @@ void CL_ParseServerMessage (void) {
 
 		case svc_chokecount:		// some preceding packets were choked
 			i = MSG_ReadByte ();
-			for (j = cls.netchan.incoming_acknowledged - 1; i > 0 && j > cls.netchan.outgoing_sequence - UPDATE_BACKUP; j--) {
-				if (cl.frames[j & UPDATE_MASK].receivedtime != -3) {
+			for (j = cls.netchan.incoming_acknowledged - 1; i > 0 && j > cls.netchan.outgoing_sequence - UPDATE_BACKUP; j--)
+			{
+				if (cl.frames[j & UPDATE_MASK].receivedtime != -3)
+				{
 					cl.frames[j & UPDATE_MASK].receivedtime = -2;
 					i--;
 				}
@@ -1886,8 +1965,10 @@ void CL_ParseServerMessage (void) {
 			break;
 		}
 
-		if (cls.demorecording) {
-			if (!cls.demomessage.cursize) {
+		if (cls.demorecording)
+		{
+			if (!cls.demomessage.cursize)
+			{
 				SZ_Init(&cls.demomessage, cls.demomessage_data, sizeof(cls.demomessage_data));
 				SZ_Write (&cls.demomessage, cl_net_message.data, 8);
 			}
@@ -1898,8 +1979,9 @@ void CL_ParseServerMessage (void) {
 		}
 	}
 
-	if (cls.demorecording) {
-		
+	if (cls.demorecording)
+	{
+
 		if (cls.demomessage.cursize)
 			CL_WriteDemoMessage (&cls.demomessage);
 	}
