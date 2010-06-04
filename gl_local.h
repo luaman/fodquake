@@ -35,14 +35,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 void GL_BeginRendering (int *x, int *y, int *width, int *height);
 void GL_EndRendering (void);
 
-typedef struct {
-	float	x, y, z;
-	float	s, t;
-	float	r, g, b;
-} glvert_t;
-
-extern glvert_t glv;
-
 extern	int glx, gly, glwidth, glheight;
 
 #define ALIAS_BASE_SIZE_RATIO		(1.0 / 11.0)
@@ -122,16 +114,13 @@ extern	int	netgraphtexture;
 extern	int	playertextures;
 extern	int	playerfbtextures[MAX_CLIENTS];
 extern	int	skyboxtextures;
-extern	int	skytexturenum;		// index in cl.loadmodel, not gl texture object
 extern	int underwatertexture, detailtexture;
 
 extern	cvar_t	r_drawentities;
-extern	cvar_t	r_drawworld;
 extern	cvar_t	r_drawflame;
 extern	cvar_t	r_speeds;
 extern	cvar_t	r_fullbright;
 extern	cvar_t	r_lightmap;
-extern	cvar_t	r_mirroralpha;
 extern	cvar_t	r_wateralpha;
 extern	cvar_t	r_dynamic;
 extern	cvar_t	r_novis;
@@ -142,8 +131,8 @@ extern	cvar_t	r_skycolor;
 extern	cvar_t	r_farclip;
 
 extern	cvar_t	r_skyname;
-extern  cvar_t  gl_caustics;		
-extern  cvar_t  gl_detail;			
+extern  cvar_t  gl_caustics;
+extern  cvar_t  gl_detail;
 
 extern	cvar_t	gl_subdivide_size;
 extern	cvar_t	gl_clear;
@@ -227,7 +216,7 @@ void GL_BuildLightmaps (void);
 void R_NetGraph (void);
 
 // gl_rmisc.c
-void R_InitOtherTextures(void);		
+void R_InitOtherTextures(void);
 
 //vid_common_gl.c
 
