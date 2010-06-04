@@ -235,7 +235,7 @@ byte *FS_LoadFile(char *path, int usehunk)
 		return NULL;
 
 	// extract the filename base name for hunk tag
-	COM_FileBase(path, base);
+	COM_FileBase(path, base, sizeof(base));
 
 	if (usehunk == 1)
 	{

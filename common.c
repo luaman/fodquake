@@ -401,7 +401,7 @@ char *COM_FileExtension (char *in)
 
 
 
-void COM_FileBase (char *in, char *out)
+void COM_FileBase (char *in, char *out, unsigned int outlen)
 {
 	char *start, *end;
 	int	length;
@@ -416,13 +416,16 @@ void COM_FileBase (char *in, char *out)
 
 	length = end - start;
 	if (length < 0)	
-		strcpy (out, "?empty filename?");	
+		strcpy (out, "?empty filename?");
 	else if (length == 0)
-		out[0] = 0;
+	{
+		if (outlen)
+			out[0] = 0;
+	}
 	else
 	{
-		if (length > 31)
-			length = 31;
+		if (length >= outlen)
+			length = outlen - 1;
 
 		memcpy (out, start, length);
 		out[length] = 0;
