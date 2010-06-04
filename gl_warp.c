@@ -30,8 +30,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 static char sky_initialised;
 
-extern model_t *loadmodel;
-
 extern msurface_t *skychain;
 extern msurface_t **skychain_tail;
 
@@ -141,7 +139,7 @@ static void SubdividePolygon(msurface_t *warpface, int numverts, float *verts)
 }
 
 // Breaks a polygon up along axial 64 unit boundaries so that turbulent and sky warps can be done reasonably.
-void GL_SubdivideSurface(msurface_t *fa)
+void GL_SubdivideSurface(model_t *model, msurface_t *fa)
 {
 	vec3_t verts[64];
 	int numverts, i, lindex;
@@ -151,12 +149,12 @@ void GL_SubdivideSurface(msurface_t *fa)
 	numverts = 0;
 	for (i = 0; i < fa->numedges; i++)
 	{
-		lindex = loadmodel->surfedges[fa->firstedge + i];
+		lindex = model->surfedges[fa->firstedge + i];
 
 		if (lindex > 0)
-			vec = loadmodel->vertexes[loadmodel->edges[lindex].v[0]].position;
+			vec = model->vertexes[model->edges[lindex].v[0]].position;
 		else
-			vec = loadmodel->vertexes[loadmodel->edges[-lindex].v[1]].position;
+			vec = model->vertexes[model->edges[-lindex].v[1]].position;
 		VectorCopy (vec, verts[numverts]);
 		numverts++;
 	}
