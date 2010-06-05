@@ -80,7 +80,7 @@ mleaf_t *Mod_PointInLeaf (vec3_t p, model_t *model)
 	return NULL;	// never reached
 }
 
-byte *Mod_DecompressVis (byte *in, model_t *model)
+static byte *Mod_DecompressVis(byte *in, model_t *model)
 {
 	static byte	decompressed[MAX_MAP_LEAFS / 8];
 	int c, row;
@@ -89,7 +89,8 @@ byte *Mod_DecompressVis (byte *in, model_t *model)
 	row = (model->numleafs + 7) >> 3;
 	out = decompressed;
 
-	if (!in) {	// no vis info, so make all visible
+	if (!in)
+	{	// no vis info, so make all visible
 		while (row)
 		{
 			*out++ = 0xff;
