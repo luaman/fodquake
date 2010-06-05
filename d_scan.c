@@ -34,7 +34,8 @@ void D_DrawTurbulent8Span (void);
 
 // this performs a slight compression of the screen at the same time as
 // the sine warp, to keep the edges from wrapping
-void D_WarpScreen (void) {
+void D_WarpScreen (void)
+{
 	int w, h, u,v, *turb, *col, column[MAXWIDTH + 2 * AMP2];
 	byte *dest, **row, *rowptr[MAXHEIGHT + 2 * AMP2];
 	float wratio, hratio;
@@ -45,21 +46,25 @@ void D_WarpScreen (void) {
 	wratio = w / (float) scr_vrect.width;
 	hratio = h / (float) scr_vrect.height;
 
-	for (v = 0; v < scr_vrect.height + AMP2 * 2; v++) {
+	for (v = 0; v < scr_vrect.height + AMP2 * 2; v++)
+	{
 		rowptr[v] = d_viewbuffer + (r_refdef.vrect.y * screenwidth) + (screenwidth * (int)((float) v * hratio * h / (h + AMP2 * 2)));
 	}
 
-	for (u = 0; u < scr_vrect.width + AMP2 * 2; u++) {
+	for (u = 0; u < scr_vrect.width + AMP2 * 2; u++)
+	{
 		column[u] = r_refdef.vrect.x + (int) ((float) u * wratio * w / (w + AMP2 * 2));
 	}
 
 	turb = intsintable + ((int) (cl.time * SPEED) & (CYCLE - 1));
 	dest = vid.buffer + scr_vrect.y * vid.rowbytes + scr_vrect.x;
 
-	for (v = 0; v < scr_vrect.height; v++, dest += vid.rowbytes) {
+	for (v = 0; v < scr_vrect.height; v++, dest += vid.rowbytes)
+	{
 		col = &column[turb[v]];
 		row = &rowptr[v];
-		for (u = 0; u < scr_vrect.width; u += 4) {
+		for (u = 0; u < scr_vrect.width; u += 4)
+		{
 			dest[u + 0] = row[turb[u + 0]][col[u + 0]];
 			dest[u + 1] = row[turb[u + 1]][col[u + 1]];
 			dest[u + 2] = row[turb[u + 2]][col[u + 2]];
@@ -70,10 +75,12 @@ void D_WarpScreen (void) {
 
 #if	!id386
 
-void D_DrawTurbulent8Span (void) {
+void D_DrawTurbulent8Span (void)
+{
 	int sturb, tturb;
 
-	do {
+	do
+	{
 		sturb = ((r_turb_s + r_turb_turb[(r_turb_t >> 16) & (CYCLE - 1)]) >> 16) & 63;
 		tturb = ((r_turb_t + r_turb_turb[(r_turb_s >> 16) & (CYCLE - 1)]) >> 16) & 63;
 		*r_turb_pdest++ = *(r_turb_pbase + (tturb << 6) + sturb);
@@ -84,11 +91,12 @@ void D_DrawTurbulent8Span (void) {
 
 #endif	// !id386
 
-void Turbulent8 (espan_t *pspan) {
+void Turbulent8 (espan_t *pspan)
+{
 	int count;
 	fixed16_t snext, tnext;
 	float sdivz, tdivz, zi, z, du, dv, spancountminus1, sdivz16stepu, tdivz16stepu, zi16stepu;
-	
+
 	r_turb_turb = sintable + ((int) (cl.time * SPEED) & (CYCLE - 1));
 
 	r_turb_sstep = 0;	// keep compiler happy
@@ -100,7 +108,8 @@ void Turbulent8 (espan_t *pspan) {
 	tdivz16stepu = d_tdivzstepu * 16;
 	zi16stepu = d_zistepu * 16;
 
-	do {
+	do
+	{
 		r_turb_pdest = (unsigned char *) ((byte *) d_viewbuffer + (screenwidth * pspan->v) + pspan->u);
 
 		count = pspan->count;
@@ -120,13 +129,15 @@ void Turbulent8 (espan_t *pspan) {
 		r_turb_t = (int) (tdivz * z) + tadjust;
 		r_turb_t = bound(0, r_turb_t, bbextentt);
 
-		do {
+		do
+		{
 			// calculate s and t at the far end of the span
 			r_turb_spancount = min(count, 16);
 
 			count -= r_turb_spancount;
 
-			if (count) {
+			if (count)
+			{
 				// calculate s/z, t/z, zi->fixed s and t at far end of span,
 				// calculate s and t steps across span by shifting
 				sdivz += sdivz16stepu;
@@ -143,7 +154,9 @@ void Turbulent8 (espan_t *pspan) {
 
 				r_turb_sstep = (snext - r_turb_s) >> 4;
 				r_turb_tstep = (tnext - r_turb_t) >> 4;
-			} else {
+			}
+			else
+			{
 				// calculate s/z, t/z, zi->fixed s and t at last pixel in span (so
 				// can't step off polygon), clamp, calculate s and t steps across
 				// span by division, biasing steps low so we don't run off the texture
@@ -159,7 +172,8 @@ void Turbulent8 (espan_t *pspan) {
 				tnext = (int)(tdivz * z) + tadjust;
 				tnext = bound(16, tnext, bbextentt); // guard against round-off error on < 0 steps
 
-				if (r_turb_spancount > 1) {
+				if (r_turb_spancount > 1)
+				{
 					r_turb_sstep = (snext - r_turb_s) / (r_turb_spancount - 1);
 					r_turb_tstep = (tnext - r_turb_t) / (r_turb_spancount - 1);
 				}
@@ -180,7 +194,8 @@ void Turbulent8 (espan_t *pspan) {
 
 #if	!id386
 
-void D_DrawSpans8 (espan_t *pspan) {
+void D_DrawSpans8 (espan_t *pspan)
+{
 	int count, spancount;
 	unsigned char *pbase, *pdest;
 	fixed16_t s, t, snext, tnext, sstep, tstep;
@@ -195,7 +210,8 @@ void D_DrawSpans8 (espan_t *pspan) {
 	tdivz8stepu = d_tdivzstepu * 8;
 	zi8stepu = d_zistepu * 8;
 
-	do {
+	do
+	{
 		pdest = (unsigned char *)((byte *)d_viewbuffer + (screenwidth * pspan->v) + pspan->u);
 
 		count = pspan->count;
@@ -215,13 +231,15 @@ void D_DrawSpans8 (espan_t *pspan) {
 		t = (int) (tdivz * z) + tadjust;
 		t = bound(0, t, bbextentt);
 
-		do {
+		do
+		{
 			// calculate s and t at the far end of the span
 			spancount = min(count, 8);
 
 			count -= spancount;
 
-			if (count) {
+			if (count)
+			{
 				// calculate s/z, t/z, zi->fixed s and t at far end of span,
 				// calculate s and t steps across span by shifting
 				sdivz += sdivz8stepu;
@@ -238,7 +256,9 @@ void D_DrawSpans8 (espan_t *pspan) {
 
 				sstep = (snext - s) >> 3;
 				tstep = (tnext - t) >> 3;
-			} else {
+			}
+			else
+			{
 				// calculate s/z, t/z, zi->fixed s and t at last pixel in span (so
 				// can't step off polygon), clamp, calculate s and t steps across
 				// span by division, biasing steps low so we don't run off the texture
@@ -254,13 +274,15 @@ void D_DrawSpans8 (espan_t *pspan) {
 				tnext = (int)(tdivz * z) + tadjust;
 				tnext = bound(8, tnext, bbextentt);
 
-				if (spancount > 1) {
+				if (spancount > 1)
+				{
 					sstep = (snext - s) / (spancount - 1);
 					tstep = (tnext - t) / (spancount - 1);
 				}
 			}
 
-			do {
+			do
+			{
 				*pdest++ = *(pbase + (s >> 16) + (t >> 16) * cachewidth);
 				s += sstep;
 				t += tstep;
@@ -279,7 +301,8 @@ void D_DrawSpans8 (espan_t *pspan) {
 
 #if	!id386
 
-void D_DrawZSpans (espan_t *pspan) {
+void D_DrawZSpans (espan_t *pspan)
+{
 	int count, doublecount, izistep, izi;
 	short *pdest;
 	unsigned ltemp;
@@ -296,7 +319,8 @@ void D_DrawZSpans (espan_t *pspan) {
 	// we count on FP exceptions being turned off to avoid range problems
 	izistep = (int)(l_zistepu * 0x8000 * 0x10000);
 
-	do {
+	do
+	{
 		pdest = l_pzbuffer + (l_zwidth * pspan->v) + pspan->u;
 
 		count = pspan->count;
@@ -309,14 +333,17 @@ void D_DrawZSpans (espan_t *pspan) {
 		// we count on FP exceptions being turned off to avoid range problems
 		izi = (int) (zi * 0x8000 * 0x10000);
 
-		if ((long) pdest & 0x02) {
+		if ((long) pdest & 0x02)
+		{
 			*pdest++ = (short) (izi >> 16);
 			izi += izistep;
 			count--;
 		}
 
-		if ((doublecount = count >> 1) > 0) {
-			do {
+		if ((doublecount = count >> 1) > 0)
+		{
+			do
+			{
 				ltemp = izi >> 16;
 				izi += izistep;
 				ltemp |= izi & 0xFFFF0000;

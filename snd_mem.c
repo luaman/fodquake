@@ -43,7 +43,7 @@ void ResampleSfx (sfx_t *sfx, int inrate, int inwidth, byte *data)
 	int		i;
 	int		sample, samplefrac, fracstep;
 	sfxcache_t	*sc;
-	
+
 	sc = sfx->sfxcache;
 	if (!sc)
 		return;
@@ -128,7 +128,7 @@ sfxcache_t *S_LoadSound(sfx_t *s)
 		return NULL;
 	}
 
-	FMod_CheckModel(namebuffer, data, com_filesize);	
+	FMod_CheckModel(namebuffer, data, com_filesize);
 
 	info = GetWavinfo (s->name, data, com_filesize);
 	if (info.channels != 1)
@@ -137,7 +137,7 @@ sfxcache_t *S_LoadSound(sfx_t *s)
 		return NULL;
 	}
 
-	stepscale = (float)info.rate / soundcard->speed;	
+	stepscale = (float)info.rate / soundcard->speed;
 	len = info.samples / stepscale;
 
 	len = len * info.width * info.channels;
@@ -212,7 +212,7 @@ void FindNextChunk(char *name)
 			data_p = NULL;
 			return;
 		}
-		
+
 		data_p += 4;
 		iff_chunk_len = GetLittleLong();
 		dataleft-= 8;
@@ -330,7 +330,7 @@ wavinfo_t GetWavinfo (char *name, byte *wav, int wavlength)
 		info.samples = samples;
 
 	info.dataofs = data_p - wav;
-	
+
 	return info;
 }
 

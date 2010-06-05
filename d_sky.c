@@ -26,7 +26,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define SKY_SPAN_MAX	(1 << SKY_SPAN_SHIFT)
 
 
-void D_Sky_uv_To_st (int u, int v, fixed16_t *s, fixed16_t *t) {
+void D_Sky_uv_To_st (int u, int v, fixed16_t *s, fixed16_t *t)
+{
 	float wu, wv;
 	vec3_t end;
 
@@ -43,7 +44,8 @@ void D_Sky_uv_To_st (int u, int v, fixed16_t *s, fixed16_t *t) {
 	 *t = (int) ((skyshift + 6 * (SKYSIZE / 2-1) * end[1])  *  0x10000);
 }
 
-void D_DrawSkyScans8 (espan_t *pspan) {
+void D_DrawSkyScans8 (espan_t *pspan)
+{
 	int count, spancount, u, v, spancountminus1;
 	unsigned char *pdest;
 	fixed16_t s, t, snext, tnext, sstep, tstep;
@@ -51,7 +53,8 @@ void D_DrawSkyScans8 (espan_t *pspan) {
 	snext = sstep = 0;	// keep compiler happy
 	tnext = tstep = 0;	// ditto
 
-	do {
+	do
+	{
 		pdest = (unsigned char *)((byte *)d_viewbuffer + (screenwidth * pspan->v) + pspan->u);
 
 		count = pspan->count;
@@ -61,11 +64,13 @@ void D_DrawSkyScans8 (espan_t *pspan) {
 		v = pspan->v;
 		D_Sky_uv_To_st (u, v, &s, &t);
 
-		do {
+		do
+		{
 			spancount = min(count, SKY_SPAN_MAX);
 			count -= spancount;
 
-			if (count) {
+			if (count)
+			{
 				u += spancount;
 
 				// calculate s and t at far end of span,
@@ -74,12 +79,15 @@ void D_DrawSkyScans8 (espan_t *pspan) {
 
 				sstep = (snext - s) >> SKY_SPAN_SHIFT;
 				tstep = (tnext - t) >> SKY_SPAN_SHIFT;
-			} else {
+			}
+			else
+			{
 				// calculate s and t at last pixel in span,
 				// calculate s and t steps across span by division
 				spancountminus1 = (float)(spancount - 1);
 
-				if (spancountminus1 > 0) {
+				if (spancountminus1 > 0)
+				{
 					u += spancountminus1;
 					D_Sky_uv_To_st (u, v, &snext, &tnext);
 
@@ -88,7 +96,8 @@ void D_DrawSkyScans8 (espan_t *pspan) {
 				}
 			}
 
-			do {
+			do
+			{
 				*pdest++ = r_skysource[((t & R_SKY_TMASK) >> 8) +
 						((s & R_SKY_SMASK) >> 16)];
 				s += sstep;
@@ -102,3 +111,4 @@ void D_DrawSkyScans8 (espan_t *pspan) {
 
 	} while ((pspan = pspan->pnext) != NULL);
 }
+

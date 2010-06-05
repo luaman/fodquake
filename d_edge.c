@@ -34,7 +34,8 @@ vec3_t		transformed_modelorg;
 extern void		R_RotateBmodel (void);
 extern void		R_TransformFrustum (void);
 
-int D_MipLevelForScale (float scale) {
+int D_MipLevelForScale (float scale)
+{
 	int lmiplevel;
 
 	if (scale >= d_scalemip[0] )
@@ -53,22 +54,27 @@ int D_MipLevelForScale (float scale) {
 }
 
 // FIXME: clean this up
-void D_DrawSolidSurface (surf_t *surf, int color) {
+void D_DrawSolidSurface (surf_t *surf, int color)
+{
 	espan_t *span;
 	byte *pdest;
 	int u, u2, pix;
-	
+
 	pix = (color << 24) | (color << 16) | (color << 8) | color;
-	for (span = surf->spans; span; span=span->pnext) {
+	for (span = surf->spans; span; span=span->pnext)
+	{
 		pdest = (byte *)d_viewbuffer + screenwidth*span->v;
 		u = span->u;
 		u2 = span->u + span->count - 1;
 		((byte *)pdest)[u] = pix;
 
-		if (u2 - u < 8) {
+		if (u2 - u < 8)
+		{
 			for (u++; u <= u2; u++)
 				((byte *)pdest)[u] = pix;
-		} else {
+		}
+		else
+		{
 			for (u++ ; u & 3; u++)
 				((byte *)pdest)[u] = pix;
 
@@ -82,7 +88,8 @@ void D_DrawSolidSurface (surf_t *surf, int color) {
 	}
 }
 
-void D_CalcGradients (msurface_t *pface) {
+void D_CalcGradients (msurface_t *pface)
+{
 	float mipscale, t;
 	vec3_t p_temp1, p_saxis, p_taxis;
 
@@ -119,7 +126,8 @@ void D_CalcGradients (msurface_t *pface) {
 	bbextentt = ((pface->extents[1] << 16) >> miplevel) - 1;
 }
 
-void D_DrawSurfaces (void) {
+void D_DrawSurfaces (void)
+{
 	surf_t *s;
 	msurface_t *pface;
 	surfcache_t *pcurrentcache;
@@ -130,7 +138,8 @@ void D_DrawSurfaces (void) {
 	VectorCopy (transformed_modelorg, world_transformed_modelorg);
 
 	// TODO: could preset a lot of this at mode set time
-	for (s = &surfaces[1]; s<surface_p; s++) {
+	for (s = &surfaces[1]; s<surface_p; s++)
+	{
 		if (!s->spans)
 			continue;
 
@@ -140,19 +149,23 @@ void D_DrawSurfaces (void) {
 		d_zistepv = s->d_zistepv;
 		d_ziorigin = s->d_ziorigin;
 
-		if (s->flags & SURF_DRAWSKY) {
+		if (s->flags & SURF_DRAWSKY)
+		{
 			extern cvar_t r_fastsky;
 			extern cvar_t r_skycolor;
-			
+
 			if (r_fastsky.value || cl.worldmodel->bspversion == HL_BSPVERSION)
 				D_DrawSolidSurface (s, (int)r_skycolor.value & 0xFF);
-			else {
+			else
+			{
 				if (!r_skymade)
 					R_MakeSky ();
 				D_DrawSkyScans8 (s->spans);
 			}
 			D_DrawZSpans (s->spans);
-		} else if (s->flags & SURF_DRAWBACKGROUND) {
+		}
+		else if (s->flags & SURF_DRAWBACKGROUND)
+		{
 			// set up a gradient for the background surface that places it
 			// effectively at infinity distance from the viewpoint
 			d_zistepu = 0;
@@ -161,9 +174,12 @@ void D_DrawSurfaces (void) {
 
 			D_DrawSolidSurface (s, (int)r_clearcolor.value & 0xFF);
 			D_DrawZSpans (s->spans);
-		} else if (s->flags & SURF_DRAWTURB) {
+		}
+		else if (s->flags & SURF_DRAWTURB)
+		{
 			extern cvar_t r_fastturb;
-			if (r_fastturb.value) {
+			if (r_fastturb.value)
+			{
 				texture_t *tx;
 
 				pface = s->data;
@@ -177,7 +193,8 @@ void D_DrawSurfaces (void) {
 			cacheblock = (pixel_t *) ((byte *) pface->texinfo->texture + pface->texinfo->texture->offsets[0]);
 			cachewidth = 64;
 
-			if (s->insubmodel) {
+			if (s->insubmodel)
+			{
 				// FIXME: we don't want to do all this for every polygon!
 				// TODO: store once at start of frame
 				currententity = s->entity;	//FIXME: make this passed in to
@@ -193,7 +210,8 @@ void D_DrawSurfaces (void) {
 			Turbulent8 (s->spans);
 			D_DrawZSpans (s->spans);
 
-			if (s->insubmodel) {
+			if (s->insubmodel)
+			{
 				// restore the old drawing state
 				// FIXME: we don't want to do this every time!
 				// TODO: speed up
@@ -205,15 +223,18 @@ void D_DrawSurfaces (void) {
 				VectorCopy (base_modelorg, modelorg);
 				R_TransformFrustum ();
 			}
-		} else {
-			if (s->insubmodel) {
+		}
+		else
+		{
+			if (s->insubmodel)
+			{
 				// FIXME: we don't want to do all this for every polygon!
 				// TODO: store once at start of frame
 				currententity = s->entity;	//FIXME: make this passed in to
 				// R_RotateBmodel ()
 				VectorSubtract (r_origin, currententity->origin, local_modelorg);
 				TransformVector (local_modelorg, transformed_modelorg);
-				
+
 				R_RotateBmodel ();	// FIXME: don't mess with the frustum,
 				// make entity passed in
 			}
@@ -233,7 +254,8 @@ void D_DrawSurfaces (void) {
 
 			D_DrawZSpans (s->spans);
 
-			if (s->insubmodel) {
+			if (s->insubmodel)
+			{
 				// restore the old drawing state
 				// FIXME: we don't want to do this every time!
 				// TODO: speed up
@@ -248,3 +270,4 @@ void D_DrawSurfaces (void) {
 		}
 	}
 }
+

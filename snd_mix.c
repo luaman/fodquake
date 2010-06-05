@@ -71,7 +71,7 @@ void S_TransferStereo16 (int endtime)
 	int		lpos;
 	int		lpaintedtime;
 	DWORD	*pbuf;
-	
+
 	snd_vol = s_volume.value*256;
 
 	snd_p = (int *) paintbuffer;
@@ -133,10 +133,10 @@ void S_TransferPaintBuffer(int endtime)
 		S_TransferStereo16 (endtime);
 		return;
 	}
-	
+
 	p = (int *) paintbuffer;
 	count = (endtime - paintedtime) * soundcard->channels;
-	out_mask = soundcard->samples - 1; 
+	out_mask = soundcard->samples - 1;
 	out_idx = paintedtime * soundcard->channels & out_mask;
 	step = 3 - soundcard->channels;
 	snd_vol = s_volume.value*256;
@@ -235,12 +235,12 @@ void S_PaintChannels(int endtime)
 					count = end - ltime;
 
 				if (count > 0)
-				{	
+				{
 					if (sc->width == 1)
 						SND_PaintChannelFrom8(ch, sc, count);
 					else
 						SND_PaintChannelFrom16(ch, sc, count);
-	
+
 					ltime += count;
 				}
 
@@ -252,14 +252,13 @@ void S_PaintChannels(int endtime)
 						ch->pos = sc->loopstart;
 						ch->end = ltime + sc->length - ch->pos;
 					}
-					else				
+					else
 					{	// channel just stopped
 						ch->sfx = NULL;
 						break;
 					}
 				}
 			}
-															  
 		}
 
 	// transfer out according to DMA format
@@ -271,7 +270,7 @@ void S_PaintChannels(int endtime)
 void SND_InitScaletable (void)
 {
 	int		i, j;
-	
+
 	for (i=0 ; i<32 ; i++)
 		for (j=0 ; j<256 ; j++)
 			snd_scaletable[i][j] = ((signed char)j) * i * 8;
@@ -291,7 +290,7 @@ void SND_PaintChannelFrom8 (channel_t *ch, sfxcache_t *sc, int count)
 		ch->leftvol = 255;
 	if (ch->rightvol > 255)
 		ch->rightvol = 255;
-		
+
 	lscale = snd_scaletable[ch->leftvol >> 3];
 	rscale = snd_scaletable[ch->rightvol >> 3];
 	sfx = (signed char *)sc->data + ch->pos;
@@ -302,7 +301,7 @@ void SND_PaintChannelFrom8 (channel_t *ch, sfxcache_t *sc, int count)
 		paintbuffer[i].left += lscale[data];
 		paintbuffer[i].right += rscale[data];
 	}
-	
+
 	ch->pos += count;
 }
 

@@ -109,18 +109,20 @@ const static struct SoundDriver sounddrivers[] =
 // User-setable variables
 // ====================================================================
 
-void S_SoundInfo_f (void) {
-	if (!sound_started || !soundcard) {
+void S_SoundInfo_f (void)
+{
+	if (!sound_started || !soundcard)
+	{
 		Com_Printf ("sound system not started\n");
 		return;
 	}
 
-    Com_Printf ("%5d stereo\n", soundcard->channels - 1);
-    Com_Printf ("%5d samples\n", soundcard->samples);
-    Com_Printf ("%5d samplepos\n", soundcard->samplepos);
-    Com_Printf ("%5d samplebits\n", soundcard->samplebits);
-    Com_Printf ("%5d speed\n", soundcard->speed);
-    Com_Printf ("0x%x dma buffer\n", soundcard->buffer);
+	Com_Printf ("%5d stereo\n", soundcard->channels - 1);
+	Com_Printf ("%5d samples\n", soundcard->samples);
+	Com_Printf ("%5d samplepos\n", soundcard->samplepos);
+	Com_Printf ("%5d samplebits\n", soundcard->samplebits);
+	Com_Printf ("%5d speed\n", soundcard->speed);
+	Com_Printf ("0x%x dma buffer\n", soundcard->buffer);
 	Com_Printf ("%5d total_channels\n", total_channels);
 }
 
@@ -253,7 +255,8 @@ void S_CvarInit(void)
 	Cmd_AddCommand("soundlist", S_SoundList_f);
 	Cmd_AddCommand("soundinfo", S_SoundInfo_f);
 
-	if (host_memsize < 0x800000) {
+	if (host_memsize < 0x800000)
+	{
 		Cvar_Set (&s_loadas8bit, "1");
 		Com_Printf ("loading all sounds as 8bit\n");
 	}
@@ -304,7 +307,8 @@ void S_Shutdown(void)
 // Load a sound
 // =======================================================================
 
-static sfx_t *S_FindName (char *name) {
+static sfx_t *S_FindName (char *name)
+{
 	int i;
 	sfx_t *sfx;
 
@@ -315,7 +319,8 @@ static sfx_t *S_FindName (char *name) {
 		Sys_Error ("Sound name too long: %s", name);
 
 	// see if already loaded
-	for (i = 0; i < num_sfx; i++) {
+	for (i = 0; i < num_sfx; i++)
+	{
 		if (!strcmp(known_sfx[i].name, name))
 			return &known_sfx[i];
 	}
@@ -331,7 +336,8 @@ static sfx_t *S_FindName (char *name) {
 	return sfx;
 }
 
-sfx_t *S_PrecacheSound (char *name) {
+sfx_t *S_PrecacheSound (char *name)
+{
 	sfx_t *sfx;
 
 	sfx = S_FindName (name);
@@ -345,13 +351,15 @@ sfx_t *S_PrecacheSound (char *name) {
 
 //=============================================================================
 
-channel_t *SND_PickChannel (int entnum, int entchannel) {
-    int ch_idx, first_to_die, life_left;
+channel_t *SND_PickChannel (int entnum, int entchannel)
+{
+	int ch_idx, first_to_die, life_left;
 
 	// Check for replacement sound, or find the best one to replace
-    first_to_die = -1;
-    life_left = 0x7fffffff;
-    for (ch_idx = NUM_AMBIENTS; ch_idx < NUM_AMBIENTS + MAX_DYNAMIC_CHANNELS; ch_idx++) {
+	first_to_die = -1;
+	life_left = 0x7fffffff;
+	for (ch_idx = NUM_AMBIENTS; ch_idx < NUM_AMBIENTS + MAX_DYNAMIC_CHANNELS; ch_idx++)
+	{
 		if (entchannel != 0		// channel 0 never overrides
 			&& channels[ch_idx].entnum == entnum
 			&& (channels[ch_idx].entchannel == entchannel || entchannel == -1) )
@@ -364,11 +372,12 @@ channel_t *SND_PickChannel (int entnum, int entchannel) {
 		if (channels[ch_idx].entnum == cl.playernum+1 && entnum != cl.playernum+1 && channels[ch_idx].sfx)
 			continue;
 
-		if (channels[ch_idx].end - paintedtime < life_left) {
+		if (channels[ch_idx].end - paintedtime < life_left)
+		{
 			life_left = channels[ch_idx].end - paintedtime;
 			first_to_die = ch_idx;
 		}
-   }
+	}
 
 	if (first_to_die == -1)
 		return NULL;
@@ -376,16 +385,18 @@ channel_t *SND_PickChannel (int entnum, int entchannel) {
 	if (channels[first_to_die].sfx)
 		channels[first_to_die].sfx = NULL;
 
-    return &channels[first_to_die];    
-}       
+	return &channels[first_to_die];
+}
 
-void SND_Spatialize (channel_t *ch) {
-    vec_t dot, dist, lscale, rscale, scale;
+void SND_Spatialize (channel_t *ch)
+{
+	vec_t dot, dist, lscale, rscale, scale;
 	vec3_t source_vec;
 	sfx_t *snd;
 
 	// anything coming from the view entity will always be full volume
-	if (ch->entnum == cl.playernum + 1) {
+	if (ch->entnum == cl.playernum + 1)
+	{
 		ch->leftvol = ch->master_vol;
 		ch->rightvol = ch->master_vol;
 		return;
@@ -399,10 +410,13 @@ void SND_Spatialize (channel_t *ch) {
 	dist = VectorNormalize(source_vec) * ch->dist_mult;
 	dot = DotProduct(listener_right, source_vec);
 
-	if (soundcard->channels == 1) {
+	if (soundcard->channels == 1)
+	{
 		rscale = 1.0;
 		lscale = 1.0;
-	} else {
+	}
+	else
+	{
 		rscale = 1.0 + dot;
 		lscale = 1.0 - dot;
 	}
@@ -417,13 +431,14 @@ void SND_Spatialize (channel_t *ch) {
 	ch->leftvol = (int) (ch->master_vol * scale);
 	if (ch->leftvol < 0)
 		ch->leftvol = 0;
-}           
+}
 
 // =======================================================================
 // Start a sound effect
 // =======================================================================
 
-void S_StartSound (int entnum, int entchannel, sfx_t *sfx, vec3_t origin, float fvol, float attenuation) {
+void S_StartSound (int entnum, int entchannel, sfx_t *sfx, vec3_t origin, float fvol, float attenuation)
+{
 	channel_t *target_chan, *check;
 	sfxcache_t *sc;
 	int vol, ch_idx, skip;
@@ -443,7 +458,7 @@ void S_StartSound (int entnum, int entchannel, sfx_t *sfx, vec3_t origin, float 
 	target_chan = SND_PickChannel(entnum, entchannel);
 	if (!target_chan)
 		return;
-	
+
 	// spatialize
 	memset (target_chan, 0, sizeof(*target_chan));
 	VectorCopy(origin, target_chan->origin);
@@ -458,22 +473,25 @@ void S_StartSound (int entnum, int entchannel, sfx_t *sfx, vec3_t origin, float 
 
 	// new channel
 	sc = S_LoadSound (sfx);
-	if (!sc) {
+	if (!sc)
+	{
 		target_chan->sfx = NULL;
 		return;		// couldn't load the sound's data
 	}
 
 	target_chan->sfx = sfx;
 	target_chan->pos = 0.0;
-    target_chan->end = paintedtime + sc->length;	
+	target_chan->end = paintedtime + sc->length;
 
 	// if an identical sound has also been started this frame, offset the pos
 	// a bit to keep it from just making the first one louder
 	check = &channels[NUM_AMBIENTS];
-    for (ch_idx=NUM_AMBIENTS; ch_idx < NUM_AMBIENTS + MAX_DYNAMIC_CHANNELS; ch_idx++, check++) {
+	for (ch_idx=NUM_AMBIENTS; ch_idx < NUM_AMBIENTS + MAX_DYNAMIC_CHANNELS; ch_idx++, check++)
+	{
 		if (check == target_chan)
 			continue;
-		if (check->sfx == sfx && !check->pos) {
+		if (check->sfx == sfx && !check->pos)
+		{
 			skip = rand () % (int)(0.1 * soundcard->speed);
 			if (skip >= target_chan->end)
 				skip = target_chan->end - 1;
@@ -484,11 +502,14 @@ void S_StartSound (int entnum, int entchannel, sfx_t *sfx, vec3_t origin, float 
 	}
 }
 
-void S_StopSound (int entnum, int entchannel) {
+void S_StopSound (int entnum, int entchannel)
+{
 	int i;
 
-	for (i = 0; i < MAX_DYNAMIC_CHANNELS; i++) {
-		if (channels[i].entnum == entnum && channels[i].entchannel == entchannel) {
+	for (i = 0; i < MAX_DYNAMIC_CHANNELS; i++)
+	{
+		if (channels[i].entnum == entnum && channels[i].entchannel == entchannel)
+		{
 			channels[i].end = 0;
 			channels[i].sfx = NULL;
 			return;
@@ -496,12 +517,14 @@ void S_StopSound (int entnum, int entchannel) {
 	}
 }
 
-void S_StopAllSounds (qboolean clear) {
+void S_StopAllSounds (qboolean clear)
+{
 	int i;
 
 	total_channels = MAX_DYNAMIC_CHANNELS + NUM_AMBIENTS;	// no statics
 
-	for (i = 0; i < MAX_CHANNELS; i++) {
+	for (i = 0; i < MAX_CHANNELS; i++)
+	{
 		if (channels[i].sfx)
 			channels[i].sfx = NULL;
 	}
@@ -520,10 +543,11 @@ static void S_StopAllSounds_f(void)
 	S_StopAllSounds (true);
 }
 
-void S_ClearBuffer (void) {
+void S_ClearBuffer (void)
+{
 	unsigned char *buffer;
 	int clear;
-		
+
 	if (!sound_started || !soundcard || !soundcard->buffer)
 		return;
 
@@ -540,14 +564,16 @@ void S_ClearBuffer (void) {
 		soundcard->Unlock(soundcard);
 }
 
-void S_StaticSound (sfx_t *sfx, vec3_t origin, float vol, float attenuation) {
+void S_StaticSound (sfx_t *sfx, vec3_t origin, float vol, float attenuation)
+{
 	channel_t *ss;
 	sfxcache_t *sc;
 
 	if (!sfx)
 		return;
 
-	if (total_channels == MAX_CHANNELS) {
+	if (total_channels == MAX_CHANNELS)
+	{
 		Com_Printf ("total_channels == MAX_CHANNELS\n");
 		return;
 	}
@@ -559,23 +585,25 @@ void S_StaticSound (sfx_t *sfx, vec3_t origin, float vol, float attenuation) {
 	if (!sc)
 		return;
 
-	if (sc->loopstart == -1) {
+	if (sc->loopstart == -1)
+	{
 		Com_Printf ("Sound %s not looped\n", sfx->name);
 		return;
 	}
-	
+
 	ss->sfx = sfx;
 	VectorCopy (origin, ss->origin);
 	ss->master_vol = vol;
 	ss->dist_mult = (attenuation/64) / sound_nominal_clip_dist;
-    ss->end = paintedtime + sc->length;	
-	
+	ss->end = paintedtime + sc->length;
+
 	SND_Spatialize (ss);
 }
 
 //=============================================================================
 
-static void S_UpdateAmbientSounds (void) {
+static void S_UpdateAmbientSounds (void)
+{
 	mleaf_t *l;
 	float vol;
 	int ambient_channel;
@@ -589,26 +617,31 @@ static void S_UpdateAmbientSounds (void) {
 		return;
 
 	l = Mod_PointInLeaf (listener_origin, cl.worldmodel);
-	if (!l || !s_ambientlevel.value) {
+	if (!l || !s_ambientlevel.value)
+	{
 		for (ambient_channel = 0 ; ambient_channel< NUM_AMBIENTS ; ambient_channel++)
 			channels[ambient_channel].sfx = NULL;
 		return;
 	}
 
-	for (ambient_channel = 0 ; ambient_channel< NUM_AMBIENTS ; ambient_channel++) {
-		chan = &channels[ambient_channel];	
+	for (ambient_channel = 0 ; ambient_channel< NUM_AMBIENTS ; ambient_channel++)
+	{
+		chan = &channels[ambient_channel];
 		chan->sfx = ambient_sfx[ambient_channel];
-	
+
 		vol = s_ambientlevel.value * l->ambient_sound_level[ambient_channel];
 		if (vol < 8)
 			vol = 0;
 
 		// don't adjust volume too fast
-		if (chan->master_vol < vol) {
+		if (chan->master_vol < vol)
+		{
 			chan->master_vol += cls.frametime * s_ambientfade.value;
 			if (chan->master_vol > vol)
 				chan->master_vol = vol;
-		} else if (chan->master_vol > vol) {
+		}
+		else if (chan->master_vol > vol)
+		{
 			chan->master_vol -= cls.frametime * s_ambientfade.value;
 			if (chan->master_vol < vol)
 				chan->master_vol = vol;
@@ -619,7 +652,8 @@ static void S_UpdateAmbientSounds (void) {
 }
 
 //Called once each time through the main loop
-void S_Update (vec3_t origin, vec3_t forward, vec3_t right, vec3_t up) {
+void S_Update (vec3_t origin, vec3_t forward, vec3_t right, vec3_t up)
+{
 	int i, j, total;
 	channel_t *ch, *combine;
 
@@ -636,9 +670,10 @@ void S_Update (vec3_t origin, vec3_t forward, vec3_t right, vec3_t up) {
 
 	combine = NULL;
 
-	// update spatialization for static and dynamic sounds	
+	// update spatialization for static and dynamic sounds
 	ch = channels+NUM_AMBIENTS;
-	for (i = NUM_AMBIENTS; i < total_channels; i++, ch++) {
+	for (i = NUM_AMBIENTS; i < total_channels; i++, ch++)
+	{
 		if (!ch->sfx)
 			continue;
 		SND_Spatialize(ch);         // respatialize channel
@@ -648,9 +683,11 @@ void S_Update (vec3_t origin, vec3_t forward, vec3_t right, vec3_t up) {
 		// try to combine static sounds with a previous channel of the same
 		// sound effect so we don't mix five torches every frame
 
-		if (i >= MAX_DYNAMIC_CHANNELS + NUM_AMBIENTS) {
+		if (i >= MAX_DYNAMIC_CHANNELS + NUM_AMBIENTS)
+		{
 			// see if it can just use the last one
-			if (combine && combine->sfx == ch->sfx) {
+			if (combine && combine->sfx == ch->sfx)
+			{
 				combine->leftvol += ch->leftvol;
 				combine->rightvol += ch->rightvol;
 				ch->leftvol = ch->rightvol = 0;
@@ -662,10 +699,14 @@ void S_Update (vec3_t origin, vec3_t forward, vec3_t right, vec3_t up) {
 				if (combine->sfx == ch->sfx)
 					break;
 
-			if (j == total_channels) {
+			if (j == total_channels)
+			{
 				combine = NULL;
-			} else {
-				if (combine != ch) {
+			}
+			else
+			{
+				if (combine != ch)
+				{
 					combine->leftvol += ch->leftvol;
 					combine->rightvol += ch->rightvol;
 					ch->leftvol = ch->rightvol = 0;
@@ -676,11 +717,13 @@ void S_Update (vec3_t origin, vec3_t forward, vec3_t right, vec3_t up) {
 	}
 
 	// debugging output
-	if (s_show.value) {
+	if (s_show.value)
+	{
 		total = 0;
 		ch = channels;
 		for (i = 0; i < total_channels; i++, ch++)
-			if (ch->sfx && (ch->leftvol || ch->rightvol)) {
+			if (ch->sfx && (ch->leftvol || ch->rightvol))
+			{
 				//Com_Printf ("%3i %3i %s\n", ch->leftvol, ch->rightvol, ch->sfx->name);
 				total++;
 			}
@@ -692,7 +735,8 @@ void S_Update (vec3_t origin, vec3_t forward, vec3_t right, vec3_t up) {
 	S_Update_();
 }
 
-void GetSoundtime (void) {
+void GetSoundtime (void)
+{
 	int samplepos, fullsamples;
 	static int buffers, oldsamplepos;
 
@@ -701,10 +745,12 @@ void GetSoundtime (void) {
 	// it is possible to miscount buffers if it has wrapped twice between calls to S_Update.  Oh well.
 	samplepos = soundcard->GetDMAPos(soundcard);
 
-	if (samplepos < oldsamplepos) {
+	if (samplepos < oldsamplepos)
+	{
 		buffers++;					// buffer wrapped
 
-		if (paintedtime > 0x40000000) {	
+		if (paintedtime > 0x40000000)
+		{
 			// time to chop things off to avoid 32 bit limits
 			buffers = 0;
 			paintedtime = fullsamples;
@@ -727,7 +773,7 @@ static void S_Update_(void)
 {
 	unsigned endtime;
 	int samps;
-	
+
 	if (!sound_started || (snd_blocked > 0))
 		return;
 
@@ -818,7 +864,8 @@ static void S_SoundList_f(void)
 	Com_Printf("Total resident: %i\n", total);
 }
 
-void S_LocalSound (char *sound) {
+void S_LocalSound (char *sound)
+{
 	sfx_t *sfx;
 
 	if (s_nosound.value)
@@ -827,7 +874,8 @@ void S_LocalSound (char *sound) {
 		return;
 
 	sfx = S_PrecacheSound (sound);
-	if (!sfx) {
+	if (!sfx)
+	{
 		Com_Printf ("S_LocalSound: can't cache %s\n", sound);
 		return;
 	}

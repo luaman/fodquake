@@ -53,15 +53,18 @@ void D_Init(void)
 	r_aliasuvscale = 1.0;
 }
 
-void D_EnableBackBufferAccess (void) {
+void D_EnableBackBufferAccess (void)
+{
 	VID_LockBuffer ();
 }
 
-void D_DisableBackBufferAccess (void) {
+void D_DisableBackBufferAccess (void)
+{
 	VID_UnlockBuffer ();
 }
 
-void D_SetupFrame (void) {
+void D_SetupFrame (void)
+{
 	int i;
 
 	d_viewbuffer = r_dowarp ? r_warpbuffer : (void *) vid.buffer;
@@ -85,3 +88,4 @@ void D_SetupFrame (void) {
 
 	d_aflatcolor = 0;
 }
+

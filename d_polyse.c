@@ -28,11 +28,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 // TODO: put in span spilling to shrink list size
 // !!! if this is changed, it must be changed in d_polysa.s too !!!
-#define DPS_MAXSPANS			MAXHEIGHT+1	
+#define DPS_MAXSPANS			MAXHEIGHT+1
 									// 1 extra for spanpackage that marks end
 
 // !!! if this is changed, it must be changed in asm_draw.h too !!!
-typedef struct {
+typedef struct
+{
 	void			*pdest;
 	short			*pz;
 	int				count;
@@ -40,7 +41,8 @@ typedef struct {
 	int				sfrac, tfrac, light, zi;
 } spanpackage_t;
 
-typedef struct {
+typedef struct
+{
 	int		isflattop;
 	int		numleftedges;
 	int		*pleftedgevert0;
@@ -61,7 +63,8 @@ int			d_xdenom;
 
 edgetable	*pedgetable;
 
-edgetable	edgetables[12] = {
+edgetable	edgetables[12] =
+{
 	{0, 1, r_p0, r_p2, NULL, 2, r_p0, r_p1, r_p2 },
 	{0, 2, r_p1, r_p0, r_p2,   1, r_p1, r_p2, NULL},
 	{1, 1, r_p0, r_p2, NULL, 1, r_p1, r_p2, NULL},
@@ -95,12 +98,14 @@ int						d_sfracbasestep, d_tfracbasestep;
 int						d_ziextrastep, d_zibasestep;
 int						d_pzextrastep, d_pzbasestep;
 
-typedef struct {
+typedef struct
+{
 	int		quotient;
 	int		remainder;
 } adivtab_t;
 
-static adivtab_t	adivtab[32*32] = {
+static adivtab_t	adivtab[32*32] =
+{
 #include "adivtab.h"
 };
 
@@ -166,7 +171,7 @@ void D_PolysetDrawFinalVerts (finalvert_t *fv, int numverts)
 			if (z >= *zbuf)
 			{
 				int		pix;
-				
+
 				*zbuf = z;
 				pix = skintable[fv->v[3]>>16][fv->v[2]>>16];
 				pix = ((byte *)acolormap)[pix + (fv->v[4] & 0xFF00) ];
@@ -201,7 +206,7 @@ void D_DrawSubdiv (void)
 
 		if (((index0->v[1]-index1->v[1]) *
 			 (index0->v[0]-index2->v[0]) -
-			 (index0->v[0]-index1->v[0]) * 
+			 (index0->v[0]-index1->v[0]) *
 			 (index0->v[1]-index2->v[1])) >= 0)
 		{
 			continue;
@@ -376,7 +381,7 @@ split:
 	if (z >= *zbuf)
 	{
 		int		pix;
-		
+
 		*zbuf = z;
 		pix = d_pcolormap[skintable[new[3]>>16][new[2]>>16]];
 		d_viewbuffer[d_scantable[new[1]] + new[0]] = pix;
@@ -400,7 +405,7 @@ void D_PolysetUpdateTables (void)
 {
 	int		i;
 	byte	*s;
-	
+
 	if (r_affinetridesc.skinwidth != skinwidth ||
 		r_affinetridesc.pskin != skinstart)
 	{
