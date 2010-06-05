@@ -31,7 +31,8 @@ char *COM_FileExtension (char *in);
 
 /************************************** General Utils **************************************/
 
-char *SecondsToMinutesString(int print_time) {
+char *SecondsToMinutesString(int print_time)
+{
 	static char time[128];
 	int tens_minutes, minutes, tens_seconds, seconds;
 
@@ -43,7 +44,8 @@ char *SecondsToMinutesString(int print_time) {
 	return time;
 }
 
-char *SecondsToHourString(int print_time) {
+char *SecondsToHourString(int print_time)
+{
 	static char time[128];
 	int tens_hours, hours,tens_minutes, minutes, tens_seconds, seconds;
 
@@ -58,16 +60,20 @@ char *SecondsToHourString(int print_time) {
 }
 
 #ifdef GLQUAKE
-byte *StringToRGB(char *s) {
+byte *StringToRGB(char *s)
+{
 	byte *col;
 	static byte rgb[4];
 
 	Cmd_TokenizeString(s);
-	if (Cmd_Argc() == 3) {
+	if (Cmd_Argc() == 3)
+	{
 		rgb[0] = (byte) Q_atoi(Cmd_Argv(0));
 		rgb[1] = (byte) Q_atoi(Cmd_Argv(1));
 		rgb[2] = (byte) Q_atoi(Cmd_Argv(2));
-	} else {
+	}
+	else
+	{
 		col = (byte *) &d_8to24table[(byte) Q_atoi(s)];
 		rgb[0] = col[0];
 		rgb[1] = col[1];
@@ -80,7 +86,8 @@ byte *StringToRGB(char *s) {
 
 /************************************** File Utils **************************************/
 
-int Util_Extend_Filename(char *filename, char **ext) {
+int Util_Extend_Filename(char *filename, char **ext)
+{
 	char extendedname[1024], **s;
 	int i, offset;
 	FILE *f;
@@ -89,12 +96,15 @@ int Util_Extend_Filename(char *filename, char **ext) {
 	offset = strlen(extendedname);
 
 	i = -1;
-	while(1) {
+	while(1)
+	{
 		if (++i == 1000)
 			break;
-		for (s = ext; *s; s++) { 
+		for (s = ext; *s; s++)
+		{
 			Q_snprintfz (extendedname + offset, sizeof(extendedname) - offset, "_%03i.%s", i, *s);
-			if ((f = fopen(extendedname, "rb"))) {
+			if ((f = fopen(extendedname, "rb")))
+			{
 				fclose(f);
 				break;
 			}
@@ -105,7 +115,8 @@ int Util_Extend_Filename(char *filename, char **ext) {
 	return -1;
 }
 
-void Util_Process_Filename(char *string) {
+void Util_Process_Filename(char *string)
+{
 	int i;
 
 	if (!string)
@@ -119,7 +130,8 @@ void Util_Process_Filename(char *string) {
 			string[i - 1] = string[i];
 }
 
-qboolean Util_Is_Valid_Filename(char *s) {
+qboolean Util_Is_Valid_Filename(char *s)
+{
 	static const char badchars[] = { '?', '*', ':', '<', '>', '"', 0 };
 
 	if (!s || !*s)
@@ -128,7 +140,8 @@ qboolean Util_Is_Valid_Filename(char *s) {
 	if (strstr(s, "../") || strstr(s, "..\\") )
 		return false;
 
-	while (*s) {
+	while (*s)
+	{
 		if (*s < 32 || *s >= 127 || strchr(badchars, *s))
 			return false;
 		s++;
@@ -136,7 +149,8 @@ qboolean Util_Is_Valid_Filename(char *s) {
 	return true;
 }
 
-char *Util_Invalid_Filename_Msg(char *s) {
+char *Util_Invalid_Filename_Msg(char *s)
+{
 	static char err[192];
 
 	if (!s)
@@ -148,7 +162,8 @@ char *Util_Invalid_Filename_Msg(char *s) {
 
 /************************************* Player Utils *************************************/
 
-static int Player_Compare (const void *p1, const void *p2) {
+static int Player_Compare (const void *p1, const void *p2)
+{
 	player_info_t *player1, *player2;
 	int team_comp;
 
@@ -166,14 +181,15 @@ static int Player_Compare (const void *p1, const void *p2) {
 	return (player1 - player2);
 }
 
-int Player_NumtoSlot (int num) {
+int Player_NumtoSlot (int num)
+{
 	int count, i;
 	player_info_t *players[MAX_CLIENTS];
 
 	for (count = i = 0; i < MAX_CLIENTS; i++)
 		if (cl.players[i].name[0])
 			players[count++] = &cl.players[i];
-	
+
 	qsort(players, count, sizeof(player_info_t *), Player_Compare);
 
 	if (num < 1 || num > count)
@@ -186,20 +202,24 @@ int Player_NumtoSlot (int num) {
 	return PLAYER_NUM_NOMATCH;
 }
 
-int Player_IdtoSlot (int id) {
+int Player_IdtoSlot (int id)
+{
 	int j;
 
-	for (j = 0; j < MAX_CLIENTS; j++) {
+	for (j = 0; j < MAX_CLIENTS; j++)
+	{
 		if (cl.players[j].name[0] && cl.players[j].userid == id)
 			return j;
 	}
 	return -1;
 }
 
-int Player_StringtoSlot(char *arg) {
+int Player_StringtoSlot(char *arg)
+{
 	int i, slot;
 
-	for (i = 0; i < MAX_CLIENTS; i++) {
+	for (i = 0; i < MAX_CLIENTS; i++)
+	{
 		if (cl.players[i].name[0] && !strncmp(arg, cl.players[i].name, MAX_SCOREBOARDNAME - 1))
 			return i;
 	}
@@ -207,32 +227,38 @@ int Player_StringtoSlot(char *arg) {
 	if (!arg[0])
 		return PLAYER_NAME_NOMATCH;
 
-	for (i = 0; arg[i]; i++) {
+	for (i = 0; arg[i]; i++)
+	{
 		if (!isdigit(arg[i]))
 			return PLAYER_NAME_NOMATCH;
 	}
 	return ((slot = Player_IdtoSlot(Q_atoi(arg))) >= 0) ? slot : PLAYER_ID_NOMATCH;
 }
 
-int Player_NametoSlot(char *name) {
+int Player_NametoSlot(char *name)
+{
 	int i;
 
-	for (i = 0; i < MAX_CLIENTS; i++) {
+	for (i = 0; i < MAX_CLIENTS; i++)
+	{
 		if (cl.players[i].name[0] && !strncmp(Info_ValueForKey(cl.players[i].userinfo, "name"), name, 31))
 			return i;
 	}
 	return PLAYER_NAME_NOMATCH;
 }
 
-int Player_SlottoId (int slot) {	
+int Player_SlottoId (int slot)
+{
 	return (slot >= 0 && slot < MAX_CLIENTS && cl.players[slot].name[0]) ? cl.players[slot].userid : -1;
 }
 
-char *Player_MyName (void) {
+char *Player_MyName (void)
+{
 	return Info_ValueForKey(cls.demoplayback ? cls.userinfo : cl.players[cl.playernum].userinfo, "name");
 }
 
-int Player_GetSlot(char *arg) {
+int Player_GetSlot(char *arg)
+{
 	int response, i;
 
 	if ( (response = Player_StringtoSlot(arg)) >= 0  || response == PLAYER_ID_NOMATCH )
@@ -241,11 +267,12 @@ int Player_GetSlot(char *arg) {
 	if (arg[0] != '#')
 		return response;
 
-	for (i = 1; arg[i]; i++) {
+	for (i = 1; arg[i]; i++)
+	{
 		if (!isdigit(arg[i]))
 			return PLAYER_NAME_NOMATCH;
 	}
-	
+
 	if ((response = Player_NumtoSlot(Q_atoi(arg + 1))) >= 0)
 		return response;
 
@@ -254,7 +281,8 @@ int Player_GetSlot(char *arg) {
 
 /********************************** String Utils ****************************************/
 
-qboolean Util_F_Match(char *_msg, char *f_request) {
+qboolean Util_F_Match(char *_msg, char *f_request)
+{
 	int offset, i, status, flags;
 	char *s, *msg;
 
@@ -265,20 +293,27 @@ qboolean Util_F_Match(char *_msg, char *f_request) {
 		return false;
 
 	for (i = 0, s = msg + offset; i < strlen(s); i++)
-		s[i] = s[i] & ~128;		
+		s[i] = s[i] & ~128;
 
-	if (strstr(s, f_request) != s) {
+	if (strstr(s, f_request) != s)
+	{
 		free(msg);
 		return false;
 	}
 	status = 0;
-	for (s += strlen(f_request); *s; s++) {
-		if (isdigit(*s) && status <= 1) {
+	for (s += strlen(f_request); *s; s++)
+	{
+		if (isdigit(*s) && status <= 1)
+		{
 			status = 1;
-		} else if (isspace(*s)) {
+		}
+		else if (isspace(*s))
+		{
 			status = (status == 1) ? 2 : status;
-		} else {
-			free(msg);			
+		}
+		else
+		{
+			free(msg);
 			return false;
 		}
 	}
@@ -288,41 +323,50 @@ qboolean Util_F_Match(char *_msg, char *f_request) {
 
 /********************************** TF Utils ****************************************/
 
-static char *Utils_TF_ColorToTeam_Failsafe(int color) {
+static char *Utils_TF_ColorToTeam_Failsafe(int color)
+{
 	int i, j, teamcounts[8], numteamsseen = 0, best = -1;
 	char *teams[MAX_CLIENTS];
 
 	memset(teams, 0, sizeof(teams));
 	memset(teamcounts, 0, sizeof(teamcounts));
 
-	for (i = 0; i < MAX_CLIENTS; i++) {
+	for (i = 0; i < MAX_CLIENTS; i++)
+	{
 		if (!cl.players[i].name[0] || cl.players[i].spectator)
 			continue;
 		if (cl.players[i].real_bottomcolor != color)
 			continue;
-		for (j = 0; j < numteamsseen; j++) {
+		for (j = 0; j < numteamsseen; j++)
+		{
 			if (!strcmp(cl.players[i].team, teams[j]))
 				break;
 		}
-		if (j == numteamsseen) {
+		if (j == numteamsseen)
+		{
 			teams[numteamsseen] = cl.players[i].team;
 			teamcounts[numteamsseen] = 1;
 			numteamsseen++;
-		} else {
+		}
+		else
+		{
 			teamcounts[j]++;
 		}
 	}
-	for (i = 0; i < numteamsseen; i++) {
+	for (i = 0; i < numteamsseen; i++)
+	{
 		if (best == -1 || teamcounts[i] > teamcounts[best])
 			best = i;
 	}
 	return (best == -1) ? "" : teams[best];
 }
 
-char *Utils_TF_ColorToTeam(int color) {
+char *Utils_TF_ColorToTeam(int color)
+{
 	char *s;
 
-	switch (color) {
+	switch (color)
+	{
 		case 13:
 			if (*(s = Info_ValueForKey(cl.serverinfo, "team1")) || *(s = Info_ValueForKey(cl.serverinfo, "t1")))
 				return s;
@@ -345,7 +389,8 @@ char *Utils_TF_ColorToTeam(int color) {
 	return Utils_TF_ColorToTeam_Failsafe(color);
 }
 
-int Utils_TF_TeamToColor(char *team) {
+int Utils_TF_TeamToColor(char *team)
+{
 	if (!Q_strcasecmp(team, Utils_TF_ColorToTeam(13)))
 		return 13;
 	if (!Q_strcasecmp(team, Utils_TF_ColorToTeam(4)))
