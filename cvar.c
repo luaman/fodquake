@@ -37,13 +37,16 @@ cvar_t *cvar_vars;
 
 cvar_t	cvar_viewdefault = {"cvar_viewdefault", "1"};
 
-cvar_t *Cvar_FindVar (char *var_name) {
+cvar_t *Cvar_FindVar (char *var_name)
+{
 	cvar_t *var;
 	int key;
 
 	key = Com_HashKey (var_name);
-	for (var = cvar_hash[key]; var; var = var->hash_next) {
-		if (!Q_strcasecmp (var_name, var->name)) {
+	for (var = cvar_hash[key]; var; var = var->hash_next)
+	{
+		if (!Q_strcasecmp (var_name, var->name))
+		{
 			return var;
 		}
 	}
@@ -53,19 +56,22 @@ cvar_t *Cvar_FindVar (char *var_name) {
 
 
 
-void Cvar_ResetVar (cvar_t *var) {
+void Cvar_ResetVar (cvar_t *var)
+{
 	if (var && strcmp(var->string, var->defaultvalue))
 		Cvar_Set(var, var->defaultvalue);
 
 	var->flags&= ~CVAR_CHANGED;
 }
 
-void Cvar_Reset_f (void) {
+void Cvar_Reset_f (void)
+{
 	int c;
 	cvar_t *var;
 	char *s;
 
-	if ((c = Cmd_Argc()) != 2) {
+	if ((c = Cmd_Argc()) != 2)
+	{
 		Com_Printf("Usage: %s <variable>\n", Cmd_Argv(0));
 		return;
 	}
@@ -82,10 +88,11 @@ void Cvar_Reset_f (void) {
 
 
 
-void Cvar_SetDefault(cvar_t *var, float value) {
+void Cvar_SetDefault(cvar_t *var, float value)
+{
 	char	val[128];
 	int i;
-	
+
 	Q_snprintfz (val, sizeof(val), "%f", value);
 	for (i = strlen(val) - 1; i > 0 && val[i] == '0'; i--)
 		val[i] = 0;
@@ -102,25 +109,28 @@ void Cvar_SetDefault(cvar_t *var, float value) {
 
 
 
-float Cvar_VariableValue (char *var_name) {
+float Cvar_VariableValue (char *var_name)
+{
 	cvar_t *var;
-	
+
 	var = Cvar_FindVar (var_name);
 	if (!var)
 		return 0;
 	return Q_atof (var->string);
 }
 
-char *Cvar_VariableString (char *var_name) {
+char *Cvar_VariableString (char *var_name)
+{
 	cvar_t *var;
-	
+
 	var = Cvar_FindVar (var_name);
 	if (!var)
 		return "";
 	return var->string;
 }
 
-char *Cvar_CompleteVariable (char *partial) {
+char *Cvar_CompleteVariable (char *partial)
+{
 	cvar_t *cvar;
 	int len;
 
@@ -142,7 +152,8 @@ char *Cvar_CompleteVariable (char *partial) {
 	return NULL;
 }
 
-int Cvar_CompleteCountPossible (char *partial) {
+int Cvar_CompleteCountPossible (char *partial)
+{
 	cvar_t *cvar;
 	int len, c = 0;
 
@@ -157,9 +168,10 @@ int Cvar_CompleteCountPossible (char *partial) {
 	return c;
 }
 
-void Cvar_Set (cvar_t *var, char *value) {
+void Cvar_Set (cvar_t *var, char *value)
+{
 #ifndef SERVERONLY
-	extern cvar_t cl_warncmd;	
+	extern cvar_t cl_warncmd;
 #endif
 	static qboolean	changing = false;
 	float floatvalue;
@@ -174,7 +186,8 @@ void Cvar_Set (cvar_t *var, char *value) {
 		return;
 	}
 
-	if ((var->flags & CVAR_INIT) && host_initialized) {
+	if ((var->flags & CVAR_INIT) && host_initialized)
+	{
 #ifndef SERVERONLY
 		if (cl_warncmd.value || developer.value)
 			Com_Printf ("\"%s\" can only be changed with \"+set %s %s\" on the command line.\n", var->name, var->name, value);
@@ -192,9 +205,11 @@ void Cvar_Set (cvar_t *var, char *value) {
 
 	var->flags|= CVAR_CHANGED;
 
-	if (var->OnChange && !changing) {
+	if (var->OnChange && !changing)
+	{
 		changing = true;
-		if (var->OnChange(var, value)) {
+		if (var->OnChange(var, value))
+		{
 			changing = false;
 			return;
 		}
@@ -217,7 +232,8 @@ void Cvar_Set (cvar_t *var, char *value) {
 #endif
 }
 
-void Cvar_ForceSet (cvar_t *var, char *value) {
+void Cvar_ForceSet (cvar_t *var, char *value)
+{
 	int saved_flags;
 
 	if (!var)
@@ -229,10 +245,11 @@ void Cvar_ForceSet (cvar_t *var, char *value) {
 	var->flags = saved_flags;
 }
 
-void Cvar_SetValue (cvar_t *var, float value) {
+void Cvar_SetValue (cvar_t *var, float value)
+{
 	char val[128];
 	int	i;
-	
+
 	Q_snprintfz (val, sizeof(val), "%f", value);
 
 	for (i = strlen(val) - 1; i > 0 && val[i] == '0'; i--)
@@ -245,11 +262,13 @@ void Cvar_SetValue (cvar_t *var, float value) {
 
 
 
-int Cvar_GetFlags (cvar_t *var) {
+int Cvar_GetFlags (cvar_t *var)
+{
 	return var->flags;
 }
 
-void Cvar_SetFlags (cvar_t *var, int flags) {
+void Cvar_SetFlags (cvar_t *var, int flags)
+{
 	var->flags = flags;
 }
 
@@ -264,12 +283,14 @@ cvar_group_t	*cvar_groups = NULL;
 #include "cvar_groups.h"
 #undef CVAR_GROUPS_DEFINE_VARIABLES
 
-static cvar_group_t *Cvar_AddGroup(char *name) {
+static cvar_group_t *Cvar_AddGroup(char *name)
+{
 	static qboolean initialised = false;
 	cvar_group_t *newgroup;
 	char **s;
 
-	if (!initialised) {
+	if (!initialised)
+	{
 		initialised = true;
 		for (s = cvar_groups_list; *s; s++)
 			Cvar_AddGroup(*s);
@@ -289,11 +310,14 @@ static cvar_group_t *Cvar_AddGroup(char *name) {
 	return newgroup;
 }
 
-void Cvar_SetCurrentGroup(char *name) {
+void Cvar_SetCurrentGroup(char *name)
+{
 	cvar_group_t *group;
 
-	for (group = cvar_groups; group; group = group->next) {
-		if (!strcmp(group->name, name)) {
+	for (group = cvar_groups; group; group = group->next)
+	{
+		if (!strcmp(group->name, name))
+		{
 			current = group;
 			return;
 		}
@@ -301,16 +325,21 @@ void Cvar_SetCurrentGroup(char *name) {
 	current = Cvar_AddGroup(name);
 }
 
-void Cvar_ResetCurrentGroup(void) {
+void Cvar_ResetCurrentGroup(void)
+{
 	current = NULL;
 }
 
-static void Cvar_AddCvarToGroup(cvar_t *var) {
-	if ((var->group = current)) {
+static void Cvar_AddCvarToGroup(cvar_t *var)
+{
+	if ((var->group = current))
+	{
 		var->next_in_group = current->head;
 		current->head = var;
 		current->count++;
-	} else {
+	}
+	else
+	{
 		var->next_in_group = NULL;
 	}
 }
@@ -353,7 +382,7 @@ void Cvar_Register(cvar_t *var)
 		return;
 	}
 
-	var->defaultvalue = CopyString(var->string);	
+	var->defaultvalue = CopyString(var->string);
 	if (old)
 	{
 		var->flags |= old->flags & ~CVAR_USER_CREATED;
@@ -379,7 +408,7 @@ void Cvar_Register(cvar_t *var)
 	var->next = cvar_vars;
 	cvar_vars = var;
 
-	Cvar_AddCvarToGroup(var);	
+	Cvar_AddCvarToGroup(var);
 
 #ifndef CLIENTONLY
 	if (var->flags & CVAR_SERVERINFO)
@@ -392,21 +421,28 @@ void Cvar_Register(cvar_t *var)
 #endif
 }
 
-qboolean Cvar_Command (void) {
+qboolean Cvar_Command (void)
+{
 	cvar_t *v;
 
 	// check variables
 	if (!(v = Cvar_FindVar (Cmd_Argv(0))))
 		return false;
 
-	if (Cmd_Argc() == 1) {
-		if (cvar_viewdefault.value) {
+	if (Cmd_Argc() == 1)
+	{
+		if (cvar_viewdefault.value)
+		{
 			Com_Printf ("%s : default value is \"%s\"\n", v->name, v->defaultvalue);
 			Com_Printf ("%*s current value is \"%s\"\n", strlen(v->name)+2, "", v->string);
-		} else {
+		}
+		else
+		{
 			Com_Printf ("\"%s\" is \"%s\"\n", v->name, v->string);
 		}
-	} else {
+	}
+	else
+	{
 		Cvar_Set (v, Cmd_MakeArgs(1));
 	}
 
@@ -414,7 +450,8 @@ qboolean Cvar_Command (void) {
 }
 
 //Writes lines containing "set variable value" for all variables with the archive flag set to true.
-void Cvar_WriteVariables (FILE *f) {
+void Cvar_WriteVariables (FILE *f)
+{
 	cvar_t *var;
 
 	// write builtin cvars in a QW compatible way
@@ -428,36 +465,42 @@ void Cvar_WriteVariables (FILE *f) {
 			fprintf (f, "seta %s \"%s\"\n", var->name, var->string);
 }
 
-void Cvar_Toggle_f (void) {
+void Cvar_Toggle_f (void)
+{
 	cvar_t *var;
 
-	if (Cmd_Argc() != 2) {
+	if (Cmd_Argc() != 2)
+	{
 		Com_Printf ("toggle <cvar> : toggle a cvar on/off\n");
 		return;
 	}
 
 	var = Cvar_FindVar (Cmd_Argv(1));
-	if (!var) {
+	if (!var)
+	{
 		Com_Printf ("Unknown variable \"%s\"\n", Cmd_Argv(1));
 		return;
 	}
 	Cvar_Set (var, var->value ? "0" : "1");
 }
 
-int Cvar_CvarCompare (const void *p1, const void *p2) {
-    return strcmp((*((cvar_t **) p1))->name, (*((cvar_t **) p2))->name);
+int Cvar_CvarCompare (const void *p1, const void *p2)
+{
+	return strcmp((*((cvar_t **) p1))->name, (*((cvar_t **) p2))->name);
 }
 
-void Cvar_CvarList_f (void) {
+void Cvar_CvarList_f (void)
+{
 	cvar_t *var;
 	int i;
 	static int count;
 	static qboolean sorted = false;
-	static cvar_t *sorted_cvars[512];	
+	static cvar_t *sorted_cvars[512];
 
 #define MAX_SORTED_CVARS (sizeof(sorted_cvars) / sizeof(sorted_cvars[0]))
 
-	if (!sorted) {
+	if (!sorted)
+	{
 		for (var = cvar_vars, count = 0; var && count < MAX_SORTED_CVARS; var = var->next, count++)
 			sorted_cvars[count] = var;
 		qsort(sorted_cvars, count, sizeof (cvar_t *), Cvar_CvarCompare);
@@ -467,7 +510,8 @@ void Cvar_CvarList_f (void) {
 	if (count == MAX_SORTED_CVARS)
 		assert(!"count == MAX_SORTED_CVARS");
 
-	for (i = 0; i < count; i++) {
+	for (i = 0; i < count; i++)
+	{
 		var = sorted_cvars[i];
 		Com_Printf ("%c%c%c %s\n",
 			var->flags & (CVAR_ARCHIVE|CVAR_USER_ARCHIVE) ? '*' : ' ',
@@ -498,7 +542,7 @@ cvar_t *Cvar_Create(char *name, char *string, int cvarflags)
 
 	v->name = CopyString(name);
 	v->string = CopyString(string);
-	v->defaultvalue = CopyString(string);	
+	v->defaultvalue = CopyString(string);
 	v->flags = cvarflags;
 	v->value = Q_atof(v->string);
 
@@ -543,7 +587,7 @@ qboolean Cvar_Delete(char *name)
 				cvar_vars = var->next;
 
 			// free
-			Z_Free(var->defaultvalue);  
+			Z_Free(var->defaultvalue);
 			Z_Free(var->string);
 			Z_Free(var->name);
 			Z_Free(var);
@@ -635,7 +679,7 @@ void Cvar_Init(void)
 
 
 	Cvar_SetCurrentGroup(CVAR_GROUP_CONSOLE);
-	Cvar_Register(&cvar_viewdefault);		
+	Cvar_Register(&cvar_viewdefault);
 
 	Cvar_ResetCurrentGroup();
 }

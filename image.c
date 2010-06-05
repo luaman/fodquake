@@ -51,24 +51,30 @@ cvar_t	image_jpeg_quality_level = {"image_jpeg_quality_level", "75"};
 
 #ifdef GLQUAKE
 
-static void Image_Resample32LerpLine (byte *in, byte *out, int inwidth, int outwidth) {
+static void Image_Resample32LerpLine (byte *in, byte *out, int inwidth, int outwidth)
+{
 	int j, xi, oldx = 0, f, fstep, endx, lerp;
 
 	fstep = (int) (inwidth * 65536.0f / outwidth);
 	endx = (inwidth - 1);
-	for (j = 0, f = 0; j < outwidth; j++, f += fstep) {
+	for (j = 0, f = 0; j < outwidth; j++, f += fstep)
+	{
 		xi = (int) f >> 16;
-		if (xi != oldx) {
+		if (xi != oldx)
+		{
 			in += (xi - oldx) * 4;
 			oldx = xi;
 		}
-		if (xi < endx) {
+		if (xi < endx)
+		{
 			lerp = f & 0xFFFF;
 			*out++ = (byte) ((((in[4] - in[0]) * lerp) >> 16) + in[0]);
 			*out++ = (byte) ((((in[5] - in[1]) * lerp) >> 16) + in[1]);
 			*out++ = (byte) ((((in[6] - in[2]) * lerp) >> 16) + in[2]);
 			*out++ = (byte) ((((in[7] - in[3]) * lerp) >> 16) + in[3]);
-		} else  {
+		}
+		else 
+		{
 			*out++ = in[0];
 			*out++ = in[1];
 			*out++ = in[2];
@@ -77,23 +83,29 @@ static void Image_Resample32LerpLine (byte *in, byte *out, int inwidth, int outw
 	}
 }
 
-static void Image_Resample24LerpLine (byte *in, byte *out, int inwidth, int outwidth) {
+static void Image_Resample24LerpLine (byte *in, byte *out, int inwidth, int outwidth)
+{
 	int j, xi, oldx = 0, f, fstep, endx, lerp;
 
 	fstep = (int) (inwidth * 65536.0f / outwidth);
 	endx = (inwidth - 1);
-	for (j = 0, f = 0; j < outwidth; j++, f += fstep) {
+	for (j = 0, f = 0; j < outwidth; j++, f += fstep)
+	{
 		xi = (int) f >> 16;
-		if (xi != oldx) {
+		if (xi != oldx)
+		{
 			in += (xi - oldx) * 3;
 			oldx = xi;
 		}
-		if (xi < endx) {
+		if (xi < endx)
+		{
 			lerp = f & 0xFFFF;
 			*out++ = (byte) ((((in[3] - in[0]) * lerp) >> 16) + in[0]);
 			*out++ = (byte) ((((in[4] - in[1]) * lerp) >> 16) + in[1]);
 			*out++ = (byte) ((((in[5] - in[2]) * lerp) >> 16) + in[2]);
-		} else  {
+		}
+		else 
+		{
 			*out++ = in[0];
 			*out++ = in[1];
 			*out++ = in[2];
@@ -105,8 +117,10 @@ static void Image_Resample24LerpLine (byte *in, byte *out, int inwidth, int outw
 #define NOLERPBYTE(i) *out++ = inrow[f + i]
 
 static void Image_Resample32 (void *indata, int inwidth, int inheight,
-								void *outdata, int outwidth, int outheight, int quality) {
-	if (quality) {
+								void *outdata, int outwidth, int outheight, int quality)
+								{
+	if (quality)
+	{
 		int i, j, r, yi, oldy, f, fstep, endy = (inheight - 1), lerp;
 		int inwidth4 = inwidth * 4, outwidth4 = outwidth * 4;
 		byte *inrow, *out, *row1, *row2, *memalloc;
@@ -123,9 +137,11 @@ static void Image_Resample32 (void *indata, int inwidth, int inheight,
 		Image_Resample32LerpLine (inrow + inwidth4, row2, inwidth, outwidth);
 		for (i = 0, f = 0; i < outheight; i++, f += fstep)	{
 			yi = f >> 16;
-			if (yi < endy) {
+			if (yi < endy)
+			{
 				lerp = f & 0xFFFF;
-				if (yi != oldy) {
+				if (yi != oldy)
+				{
 					inrow = (byte *) indata + inwidth4 * yi;
 					if (yi == oldy + 1)
 						memcpy(row1, row2, outwidth4);
@@ -135,7 +151,8 @@ static void Image_Resample32 (void *indata, int inwidth, int inheight,
 					oldy = yi;
 				}
 				j = outwidth - 4;
-				while(j >= 0) {
+				while(j >= 0)
+				{
 					LERPBYTE(0); LERPBYTE(1); LERPBYTE(2); LERPBYTE(3);
 					LERPBYTE(4); LERPBYTE(5); LERPBYTE(6); LERPBYTE(7);
 					LERPBYTE(8); LERPBYTE(9); LERPBYTE(10); LERPBYTE(11);
@@ -145,14 +162,16 @@ static void Image_Resample32 (void *indata, int inwidth, int inheight,
 					row2 += 16;
 					j -= 4;
 				}
-				if (j & 2) {
+				if (j & 2)
+				{
 					LERPBYTE(0); LERPBYTE(1); LERPBYTE(2); LERPBYTE(3);
 					LERPBYTE(4); LERPBYTE(5); LERPBYTE(6); LERPBYTE(7);
 					out += 8;
 					row1 += 8;
 					row2 += 8;
 				}
-				if (j & 1) {
+				if (j & 1)
+				{
 					LERPBYTE(0); LERPBYTE(1); LERPBYTE(2); LERPBYTE(3);
 					out += 4;
 					row1 += 4;
@@ -160,8 +179,11 @@ static void Image_Resample32 (void *indata, int inwidth, int inheight,
 				}
 				row1 -= outwidth4;
 				row2 -= outwidth4;
-			} else {
-				if (yi != oldy) {
+			}
+			else
+			{
+				if (yi != oldy)
+				{
 					inrow = (byte *) indata + inwidth4 * yi;
 					if (yi == oldy+1)
 						memcpy(row1, row2, outwidth4);
@@ -173,18 +195,22 @@ static void Image_Resample32 (void *indata, int inwidth, int inheight,
 			}
 		}
 		free(memalloc);
-	} else {
+	}
+	else
+	{
 		int i, j;
 		unsigned int frac, fracstep, *inrow, *out;
 
 		out = outdata;
 
 		fracstep = inwidth * 0x10000 / outwidth;
-		for (i = 0; i < outheight; i++) {
+		for (i = 0; i < outheight; i++)
+		{
 			inrow = (int *) indata + inwidth * (i * inheight / outheight);
 			frac = fracstep >> 1;
 			j = outwidth - 4;
-			while (j >= 0) {
+			while (j >= 0)
+			{
 				out[0] = inrow[frac >> 16]; frac += fracstep;
 				out[1] = inrow[frac >> 16]; frac += fracstep;
 				out[2] = inrow[frac >> 16]; frac += fracstep;
@@ -192,12 +218,14 @@ static void Image_Resample32 (void *indata, int inwidth, int inheight,
 				out += 4;
 				j -= 4;
 			}
-			if (j & 2) {
+			if (j & 2)
+			{
 				out[0] = inrow[frac >> 16]; frac += fracstep;
 				out[1] = inrow[frac >> 16]; frac += fracstep;
 				out += 2;
 			}
-			if (j & 1) {
+			if (j & 1)
+			{
 				out[0] = inrow[frac >> 16]; frac += fracstep;
 				out += 1;
 			}
@@ -206,8 +234,10 @@ static void Image_Resample32 (void *indata, int inwidth, int inheight,
 }
 
 static void Image_Resample24 (void *indata, int inwidth, int inheight,
-					 void *outdata, int outwidth, int outheight, int quality) {
-	if (quality) {
+					 void *outdata, int outwidth, int outheight, int quality)
+					 {
+	if (quality)
+	{
 		int i, j, r, yi, oldy, f, fstep, endy = (inheight - 1), lerp;
 		int inwidth3 = inwidth * 3, outwidth3 = outwidth * 3;
 		byte *inrow, *out, *row1, *row2, *memalloc;
@@ -215,7 +245,7 @@ static void Image_Resample24 (void *indata, int inwidth, int inheight,
 		out = outdata;
 		fstep = (int) (inheight * 65536.0f / outheight);
 
-		memalloc = Q_Malloc(2 * outwidth3);	
+		memalloc = Q_Malloc(2 * outwidth3);
 		row1 = memalloc;
 		row2 = memalloc + outwidth3;
 		inrow = (byte *) indata;
@@ -224,9 +254,11 @@ static void Image_Resample24 (void *indata, int inwidth, int inheight,
 		Image_Resample24LerpLine (inrow + inwidth3, row2, inwidth, outwidth);
 		for (i = 0, f = 0; i < outheight; i++, f += fstep)	{
 			yi = f >> 16;
-			if (yi < endy) {
+			if (yi < endy)
+			{
 				lerp = f & 0xFFFF;
-				if (yi != oldy) {
+				if (yi != oldy)
+				{
 					inrow = (byte *) indata + inwidth3 * yi;
 					if (yi == oldy + 1)
 						memcpy(row1, row2, outwidth3);
@@ -236,7 +268,8 @@ static void Image_Resample24 (void *indata, int inwidth, int inheight,
 					oldy = yi;
 				}
 				j = outwidth - 4;
-				while(j >= 0) {
+				while(j >= 0)
+				{
 					LERPBYTE(0); LERPBYTE(1); LERPBYTE(2);
 					LERPBYTE(3); LERPBYTE(4); LERPBYTE(5);
 					LERPBYTE(6); LERPBYTE(7); LERPBYTE(8);
@@ -246,14 +279,16 @@ static void Image_Resample24 (void *indata, int inwidth, int inheight,
 					row2 += 12;
 					j -= 4;
 				}
-				if (j & 2) {
+				if (j & 2)
+				{
 					LERPBYTE(0); LERPBYTE(1); LERPBYTE(2);
 					LERPBYTE(3); LERPBYTE(4); LERPBYTE(5);
 					out += 6;
 					row1 += 6;
 					row2 += 6;
 				}
-				if (j & 1) {
+				if (j & 1)
+				{
 					LERPBYTE(0); LERPBYTE(1); LERPBYTE(2);
 					out += 3;
 					row1 += 3;
@@ -261,8 +296,11 @@ static void Image_Resample24 (void *indata, int inwidth, int inheight,
 				}
 				row1 -= outwidth3;
 				row2 -= outwidth3;
-			} else {
-				if (yi != oldy) {
+			}
+			else
+			{
+				if (yi != oldy)
+				{
 					inrow = (byte *) indata + inwidth3 * yi;
 					if (yi == oldy+1)
 						memcpy(row1, row2, outwidth3);
@@ -274,7 +312,9 @@ static void Image_Resample24 (void *indata, int inwidth, int inheight,
 			}
 		}
 		free(memalloc);
-	} else {
+	}
+	else
+	{
 		int i, j, f;
 		unsigned int frac, fracstep, inwidth3 = inwidth * 3;
 		byte *inrow, *out;
@@ -282,23 +322,27 @@ static void Image_Resample24 (void *indata, int inwidth, int inheight,
 		out = outdata;
 
 		fracstep = inwidth * 0x10000 / outwidth;
-		for (i = 0; i < outheight; i++) {
+		for (i = 0; i < outheight; i++)
+		{
 			inrow = (byte *) indata + inwidth3 * (i * inheight / outheight);
 			frac = fracstep >> 1;
 			j = outwidth - 4;
-			while (j >= 0) {
+			while (j >= 0)
+			{
 				f = (frac >> 16) * 3; NOLERPBYTE(0); NOLERPBYTE(1); NOLERPBYTE(2); frac += fracstep;
 				f = (frac >> 16) * 3; NOLERPBYTE(0); NOLERPBYTE(1); NOLERPBYTE(2); frac += fracstep;
 				f = (frac >> 16) * 3; NOLERPBYTE(0); NOLERPBYTE(1); NOLERPBYTE(2); frac += fracstep;
 				f = (frac >> 16) * 3; NOLERPBYTE(0); NOLERPBYTE(1); NOLERPBYTE(2); frac += fracstep;
 				j -= 4;
 			}
-			if (j & 2) {
+			if (j & 2)
+			{
 				f = (frac >> 16) * 3; NOLERPBYTE(0); NOLERPBYTE(1); NOLERPBYTE(2); frac += fracstep;
 				f = (frac >> 16) * 3; NOLERPBYTE(0); NOLERPBYTE(1); NOLERPBYTE(2); frac += fracstep;
 				out += 2;
 			}
-			if (j & 1) {
+			if (j & 1)
+			{
 				f = (frac >> 16) * 3; NOLERPBYTE(0); NOLERPBYTE(1); NOLERPBYTE(2); frac += fracstep;
 				out += 1;
 
@@ -308,7 +352,8 @@ static void Image_Resample24 (void *indata, int inwidth, int inheight,
 }
 
 void Image_Resample (void *indata, int inwidth, int inheight,
-					 void *outdata, int outwidth, int outheight, int bpp, int quality) {
+					 void *outdata, int outwidth, int outheight, int bpp, int quality)
+					 {
 	if (bpp == 4)
 		Image_Resample32(indata, inwidth, inheight, outdata, outwidth, outheight, quality);
 	else if (bpp == 3)
@@ -317,19 +362,25 @@ void Image_Resample (void *indata, int inwidth, int inheight,
 		Sys_Error("Image_Resample: unsupported bpp (%d)", bpp);
 }
 
-void Image_MipReduce (byte *in, byte *out, int *width, int *height, int bpp) {
+void Image_MipReduce (byte *in, byte *out, int *width, int *height, int bpp)
+{
 	int x, y, nextrow;
 
 	nextrow = *width * bpp;
 
-	if (*width > 1) {
+	if (*width > 1)
+	{
 		*width >>= 1;
-		if (*height > 1) {
+		if (*height > 1)
+		{
 
 			*height >>= 1;
-			if (bpp == 4) {
-				for (y = 0; y < *height; y++) {
-					for (x = 0; x < *width; x++) {
+			if (bpp == 4)
+			{
+				for (y = 0; y < *height; y++)
+				{
+					for (x = 0; x < *width; x++)
+					{
 						out[0] = (byte) ((in[0] + in[4] + in[nextrow] + in[nextrow + 4]) >> 2);
 						out[1] = (byte) ((in[1] + in[5] + in[nextrow + 1] + in[nextrow + 5]) >> 2);
 						out[2] = (byte) ((in[2] + in[6] + in[nextrow + 2] + in[nextrow + 6]) >> 2);
@@ -339,9 +390,13 @@ void Image_MipReduce (byte *in, byte *out, int *width, int *height, int bpp) {
 					}
 					in += nextrow;
 				}
-			} else if (bpp == 3) {
-				for (y = 0; y < *height; y++) {
-					for (x = 0; x < *width; x++) {
+			}
+			else if (bpp == 3)
+			{
+				for (y = 0; y < *height; y++)
+				{
+					for (x = 0; x < *width; x++)
+					{
 						out[0] = (byte) ((in[0] + in[3] + in[nextrow] + in[nextrow + 3]) >> 2);
 						out[1] = (byte) ((in[1] + in[4] + in[nextrow + 1] + in[nextrow + 4]) >> 2);
 						out[2] = (byte) ((in[2] + in[5] + in[nextrow + 2] + in[nextrow + 5]) >> 2);
@@ -350,14 +405,21 @@ void Image_MipReduce (byte *in, byte *out, int *width, int *height, int bpp) {
 					}
 					in += nextrow;
 				}
-			} else {
+			}
+			else
+			{
 				Sys_Error("Image_MipReduce: unsupported bpp (%d)", bpp);
 			}
-		} else {
+		}
+		else
+		{
 
-			if (bpp == 4) {
-				for (y = 0; y < *height; y++) {
-					for (x = 0; x < *width; x++) {
+			if (bpp == 4)
+			{
+				for (y = 0; y < *height; y++)
+				{
+					for (x = 0; x < *width; x++)
+					{
 						out[0] = (byte) ((in[0] + in[4]) >> 1);
 						out[1] = (byte) ((in[1] + in[5]) >> 1);
 						out[2] = (byte) ((in[2] + in[6]) >> 1);
@@ -366,9 +428,13 @@ void Image_MipReduce (byte *in, byte *out, int *width, int *height, int bpp) {
 						in += 8;
 					}
 				}
-			} else if (bpp == 3) {
-				for (y = 0; y < *height; y++) {
-					for (x = 0; x < *width; x++) {
+			}
+			else if (bpp == 3)
+			{
+				for (y = 0; y < *height; y++)
+				{
+					for (x = 0; x < *width; x++)
+					{
 						out[0] = (byte) ((in[0] + in[3]) >> 1);
 						out[1] = (byte) ((in[1] + in[4]) >> 1);
 						out[2] = (byte) ((in[2] + in[5]) >> 1);
@@ -376,16 +442,23 @@ void Image_MipReduce (byte *in, byte *out, int *width, int *height, int bpp) {
 						in += 6;
 					}
 				}
-			} else {
+			}
+			else
+			{
 				Sys_Error("Image_MipReduce: unsupported bpp (%d)", bpp);
 			}
 		}
-	} else if (*height > 1) {
+	}
+	else if (*height > 1)
+	{
 
 		*height >>= 1;
-		if (bpp == 4) {
-			for (y = 0; y < *height; y++) {
-				for (x = 0; x < *width; x++) {
+		if (bpp == 4)
+		{
+			for (y = 0; y < *height; y++)
+			{
+				for (x = 0; x < *width; x++)
+				{
 					out[0] = (byte) ((in[0] + in[nextrow]) >> 1);
 					out[1] = (byte) ((in[1] + in[nextrow + 1]) >> 1);
 					out[2] = (byte) ((in[2] + in[nextrow + 2]) >> 1);
@@ -395,9 +468,13 @@ void Image_MipReduce (byte *in, byte *out, int *width, int *height, int bpp) {
 				}
 				in += nextrow;
 			}
-		} else if (bpp == 3) {
-			for (y = 0; y < *height; y++) {
-				for (x = 0; x < *width; x++) {
+		}
+		else if (bpp == 3)
+		{
+			for (y = 0; y < *height; y++)
+			{
+				for (x = 0; x < *width; x++)
+				{
 					out[0] = (byte) ((in[0] + in[nextrow]) >> 1);
 					out[1] = (byte) ((in[1] + in[nextrow + 1]) >> 1);
 					out[2] = (byte) ((in[2] + in[nextrow + 2]) >> 1);
@@ -406,10 +483,14 @@ void Image_MipReduce (byte *in, byte *out, int *width, int *height, int bpp) {
 				}
 				in += nextrow;
 			}
-		} else {
+		}
+		else
+		{
 			Sys_Error("Image_MipReduce: unsupported bpp (%d)", bpp);
 		}
-	} else {
+	}
+	else
+	{
 		Sys_Error("Image_MipReduce: Input texture has dimensions %dx%d", width, height);
 	}
 }
@@ -563,7 +644,8 @@ static void (*qpng_set_PLTE)(png_structp, png_infop, png_colorp, int);
 
 #define NUM_PNGPROCS	(sizeof(pngprocs)/sizeof(pngprocs[0]))
 
-qlib_dllfunction_t pngprocs[] = {
+qlib_dllfunction_t pngprocs[] =
+{
 	{"png_set_sig_bytes", (void **) &qpng_set_sig_bytes},
 	{"png_sig_cmp", (void **) &qpng_sig_cmp},
 	{"png_create_read_struct", (void **) &qpng_create_read_struct},
@@ -598,22 +680,27 @@ qlib_dllfunction_t pngprocs[] = {
 	{"png_set_PLTE", (void **) &qpng_set_PLTE},
 };
 
-static void PNG_FreeLibrary(void) {
+static void PNG_FreeLibrary(void)
+{
 	if (png_handle)
 		QLIB_FREELIBRARY(png_handle);
 	if (zlib_handle)
 		QLIB_FREELIBRARY(zlib_handle);
 }
 
-static qboolean PNG_LoadLibrary(void) {
+static qboolean PNG_LoadLibrary(void)
+{
 	if (COM_CheckParm("-nolibpng"))
 		return false;
 
 #ifdef _WIN32
-	if (!(png_handle = LoadLibrary("libpng.dll"))) {
-#else 
-	if (!(png_handle = dlopen("libpng12.so.0", RTLD_NOW)) && !(png_handle = dlopen("libpng.so", RTLD_NOW))) {
-		if (!(zlib_handle = dlopen("libz.so", RTLD_NOW | RTLD_GLOBAL))) {
+	if (!(png_handle = LoadLibrary("libpng.dll")))
+	{
+#else
+	if (!(png_handle = dlopen("libpng12.so.0", RTLD_NOW)) && !(png_handle = dlopen("libpng.so", RTLD_NOW)))
+	{
+		if (!(zlib_handle = dlopen("libz.so", RTLD_NOW | RTLD_GLOBAL)))
+		{
 			QLib_MissingModuleError(QLIB_ERROR_MODULE_NOT_FOUND, "libz", "-nolibpng", "png image features");
 			return false;
 		}
@@ -626,7 +713,8 @@ static qboolean PNG_LoadLibrary(void) {
 		}
 	}
 
-	if (!QLib_ProcessProcdef(png_handle, pngprocs, NUM_PNGPROCS)) {
+	if (!QLib_ProcessProcdef(png_handle, pngprocs, NUM_PNGPROCS))
+	{
 		PNG_FreeLibrary();
 		QLib_MissingModuleError(QLIB_ERROR_MODULE_MISSING_PROC, "libpng", "-nolibpng", "png image features");
 		return false;
@@ -636,23 +724,27 @@ static qboolean PNG_LoadLibrary(void) {
 }
 #endif
 
-static void PNG_IO_user_read_data(png_structp png_ptr, png_bytep data, png_size_t length) {
+static void PNG_IO_user_read_data(png_structp png_ptr, png_bytep data, png_size_t length)
+{
 	FILE *f = (FILE *) qpng_get_io_ptr(png_ptr);
 	fread(data, 1, length, f);
 }
 
-static void PNG_IO_user_write_data(png_structp png_ptr, png_bytep data, png_size_t length) {
+static void PNG_IO_user_write_data(png_structp png_ptr, png_bytep data, png_size_t length)
+{
 	FILE *f = (FILE *) qpng_get_io_ptr(png_ptr);
 	fwrite(data, 1, length, f);
 }
 
-static void PNG_IO_user_flush_data(png_structp png_ptr) {
+static void PNG_IO_user_flush_data(png_structp png_ptr)
+{
 	FILE *f = (FILE *) qpng_get_io_ptr(png_ptr);
 	fflush(f);
 }
 
 
-byte *Image_LoadPNG (FILE *fin, char *filename, int matchwidth, int matchheight) {
+byte *Image_LoadPNG (FILE *fin, char *filename, int matchwidth, int matchheight)
+{
 	byte header[8], **rowpointers, *data;
 	png_structp png_ptr;
 	png_infop pnginfo;
@@ -668,24 +760,28 @@ byte *Image_LoadPNG (FILE *fin, char *filename, int matchwidth, int matchheight)
 
 	fread(header, 1, 8, fin);
 
-	if (qpng_sig_cmp(header, 0, 8)) {
+	if (qpng_sig_cmp(header, 0, 8))
+	{
 		Com_DPrintf ("Invalid PNG image %s\n", COM_SkipPath(filename));
 		fclose(fin);
 		return NULL;
 	}
 
-	if (!(png_ptr = qpng_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL))) {
+	if (!(png_ptr = qpng_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL)))
+	{
 		fclose(fin);
 		return NULL;
 	}
 
-	if (!(pnginfo = qpng_create_info_struct(png_ptr))) {
+	if (!(pnginfo = qpng_create_info_struct(png_ptr)))
+	{
 		qpng_destroy_read_struct(&png_ptr, &pnginfo, NULL);
 		fclose(fin);
 		return NULL;
 	}
 
-	if (setjmp(png_ptr->jmpbuf)) {
+	if (setjmp(png_ptr->jmpbuf))
+	{
 		qpng_destroy_read_struct(&png_ptr, &pnginfo, NULL);
 		fclose(fin);
 		return NULL;
@@ -697,34 +793,37 @@ byte *Image_LoadPNG (FILE *fin, char *filename, int matchwidth, int matchheight)
 	qpng_get_IHDR(png_ptr, pnginfo, &width, &height, &bitdepth,
 		&colortype, &interlace, &compression, &filter);
 
-	if (width > IMAGE_MAX_DIMENSIONS || height > IMAGE_MAX_DIMENSIONS) {
+	if (width > IMAGE_MAX_DIMENSIONS || height > IMAGE_MAX_DIMENSIONS)
+	{
 		Com_DPrintf ("PNG image %s exceeds maximum supported dimensions\n", COM_SkipPath(filename));
 		qpng_destroy_read_struct(&png_ptr, &pnginfo, NULL);
 		fclose(fin);
 		return NULL;
 	}
 
-	if ((matchwidth && width != matchwidth) || (matchheight && height != matchheight)) {
+	if ((matchwidth && width != matchwidth) || (matchheight && height != matchheight))
+	{
 		qpng_destroy_read_struct(&png_ptr, &pnginfo, NULL);
 		fclose(fin);
 		return NULL;
 	}
 
-	if (colortype == PNG_COLOR_TYPE_PALETTE) {
+	if (colortype == PNG_COLOR_TYPE_PALETTE)
+	{
 		qpng_set_palette_to_rgb(png_ptr);
-		qpng_set_filler(png_ptr, 255, PNG_FILLER_AFTER);		
+		qpng_set_filler(png_ptr, 255, PNG_FILLER_AFTER);
 	}
 
-	if (colortype == PNG_COLOR_TYPE_GRAY && bitdepth < 8) 
+	if (colortype == PNG_COLOR_TYPE_GRAY && bitdepth < 8)
 		qpng_set_gray_1_2_4_to_8(png_ptr);
-	
-	if (qpng_get_valid(png_ptr, pnginfo, PNG_INFO_tRNS))	
+
+	if (qpng_get_valid(png_ptr, pnginfo, PNG_INFO_tRNS))
 		qpng_set_tRNS_to_alpha(png_ptr);
 
 	if (colortype == PNG_COLOR_TYPE_GRAY || colortype == PNG_COLOR_TYPE_GRAY_ALPHA)
 		qpng_set_gray_to_rgb(png_ptr);
 
-	if (colortype != PNG_COLOR_TYPE_RGBA)				
+	if (colortype != PNG_COLOR_TYPE_RGBA)
 		qpng_set_filler(png_ptr, 255, PNG_FILLER_AFTER);
 
 	if (bitdepth < 8)
@@ -738,7 +837,8 @@ byte *Image_LoadPNG (FILE *fin, char *filename, int matchwidth, int matchheight)
 	bytesperpixel = qpng_get_channels(png_ptr, pnginfo);
 	bitdepth = qpng_get_bit_depth(png_ptr, pnginfo);
 
-	if (bitdepth != 8 || bytesperpixel != 4) {
+	if (bitdepth != 8 || bytesperpixel != 4)
+	{
 		Com_DPrintf ("Unsupported PNG image %s: Bad color depth and/or bpp\n", COM_SkipPath(filename));
 		qpng_destroy_read_struct(&png_ptr, &pnginfo, NULL);
 		fclose(fin);
@@ -763,7 +863,8 @@ byte *Image_LoadPNG (FILE *fin, char *filename, int matchwidth, int matchheight)
 	return data;
 }
 
-int Image_WritePNG (char *filename, int compression, byte *pixels, int width, int height) {
+int Image_WritePNG (char *filename, int compression, byte *pixels, int width, int height)
+{
 	char name[MAX_OSPATH];
 	int i, bpp = 3, pngformat, width_sign;
 	FILE *fp;
@@ -778,24 +879,28 @@ int Image_WritePNG (char *filename, int compression, byte *pixels, int width, in
 	width_sign = (width < 0) ? -1 : 1;
 	width = abs(width);
 
-	if (!(fp = fopen (name, "wb"))) {
+	if (!(fp = fopen (name, "wb")))
+	{
 		FS_CreatePath (name);
 		if (!(fp = fopen (name, "wb")))
 			return false;
 	}
 
-	if (!(png_ptr = qpng_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL))) {
+	if (!(png_ptr = qpng_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL)))
+	{
 		fclose(fp);
 		return false;
 	}
 
-	if (!(info_ptr = qpng_create_info_struct(png_ptr))) {
+	if (!(info_ptr = qpng_create_info_struct(png_ptr)))
+	{
 		qpng_destroy_write_struct(&png_ptr, (png_infopp) NULL);
 		fclose(fp);
 		return false;
 	}
 
-	if (setjmp(png_ptr->jmpbuf)) {
+	if (setjmp(png_ptr->jmpbuf))
+	{
 		qpng_destroy_write_struct(&png_ptr, &info_ptr);
 		fclose(fp);
 		return false;
@@ -842,25 +947,29 @@ int Image_WritePNGPLTE (char *filename, int compression,
 		return false;
 
 	Q_snprintfz (name, sizeof(name), "%s/%s", com_basedir, filename);
-	
-	if (!(fp = fopen (name, "wb"))) {
+
+	if (!(fp = fopen (name, "wb")))
+	{
 		FS_CreatePath (name);
 		if (!(fp = fopen (name, "wb")))
 			return false;
 	}
 
-	if (!(png_ptr = qpng_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL))) {
+	if (!(png_ptr = qpng_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL)))
+	{
 		fclose(fp);
 		return false;
 	}
 
-	if (!(info_ptr = qpng_create_info_struct(png_ptr))) {
+	if (!(info_ptr = qpng_create_info_struct(png_ptr)))
+	{
 		qpng_destroy_write_struct(&png_ptr, (png_infopp) NULL);
 		fclose(fp);
 		return false;
 	}
 
-	if (setjmp(png_ptr->jmpbuf)) {
+	if (setjmp(png_ptr->jmpbuf))
+	{
 		qpng_destroy_write_struct(&png_ptr, &info_ptr);
 		fclose(fp);
 		return false;
@@ -906,7 +1015,8 @@ int Image_WritePNGPLTE (char *filename, int compression,
 #define MYTGA_MONO8		84
 #define MYTGA_MONO16	85
 
-typedef struct TGAHeader_s {
+typedef struct TGAHeader_s
+{
 	byte			idLength, colormapType, imageType;
 	unsigned short	colormapIndex, colormapLength;
 	byte			colormapSize;
@@ -915,21 +1025,24 @@ typedef struct TGAHeader_s {
 } TGAHeader_t;
 
 
-static void TGA_upsample15(byte *dest, byte *src, qboolean alpha) {
+static void TGA_upsample15(byte *dest, byte *src, qboolean alpha)
+{
 	dest[2] = (byte) ((src[0] & 0x1F) << 3);
 	dest[1] = (byte) ((((src[1] & 0x03) << 3) + ((src[0] & 0xE0) >> 5)) << 3);
 	dest[0] = (byte) (((src[1] & 0x7C) >> 2) << 3);
 	dest[3] = (alpha && !(src[1] & 0x80)) ? 0 : 255;
 }
 
-static void TGA_upsample24(byte *dest, byte *src) {
+static void TGA_upsample24(byte *dest, byte *src)
+{
 	dest[2] = src[0];
 	dest[1] = src[1];
 	dest[0] = src[2];
 	dest[3] = 255;
 }
 
-static void TGA_upsample32(byte *dest, byte *src) {
+static void TGA_upsample32(byte *dest, byte *src)
+{
 	dest[2] = src[0];
 	dest[1] = src[1];
 	dest[0] = src[2];
@@ -939,11 +1052,13 @@ static void TGA_upsample32(byte *dest, byte *src) {
 
 #define TGA_ERROR(msg)	{if (msg) {Com_DPrintf((msg), COM_SkipPath(filename));} free(fileBuffer); return NULL;}
 
-static unsigned short BuffLittleShort(const byte *buffer) {
+static unsigned short BuffLittleShort(const byte *buffer)
+{
 	return (buffer[1] << 8) | buffer[0];
 }
 
-byte *Image_LoadTGA(FILE *fin, char *filename, int matchwidth, int matchheight) {
+byte *Image_LoadTGA(FILE *fin, char *filename, int matchwidth, int matchheight)
+{
 	TGAHeader_t header;
 	int i, x, y, bpp, alphabits, compressed, mytype, row_inc, runlen, readpixelcount;
 	byte *fileBuffer, *in, *out, *data, *enddata, rgba[4], palette[256 * 4];
@@ -984,11 +1099,14 @@ byte *Image_LoadTGA(FILE *fin, char *filename, int matchwidth, int matchheight) 
 	enddata = fileBuffer + com_filesize;
 
 	// error check the image type's pixel size
-	if (header.imageType == TGA_RGB || header.imageType == TGA_RGB_RLE) {
+	if (header.imageType == TGA_RGB || header.imageType == TGA_RGB_RLE)
+	{
 		if (!(header.pixelSize == 15 || header.pixelSize == 16 || header.pixelSize == 24 || header.pixelSize == 32))
 			TGA_ERROR("Unsupported TGA image %s: Bad pixel size for RGB image\n");
 		mytype = (header.pixelSize == 24) ? MYTGA_RGB24 : (header.pixelSize == 32) ? MYTGA_RGB32 : MYTGA_RGB15;
-	} else if (header.imageType == TGA_MAPPED || header.imageType == TGA_MAPPED_RLE) {
+	}
+	else if (header.imageType == TGA_MAPPED || header.imageType == TGA_MAPPED_RLE)
+	{
 		if (header.pixelSize != 8)
 			TGA_ERROR("Unsupported TGA image %s: Bad pixel size for color-mapped image.\n");
 		if (!(header.colormapSize == 15 || header.colormapSize == 16 || header.colormapSize == 24 || header.colormapSize == 32))
@@ -997,22 +1115,31 @@ byte *Image_LoadTGA(FILE *fin, char *filename, int matchwidth, int matchheight) 
 			TGA_ERROR("Unsupported TGA image %s: Bad colormap type and/or length for color-mapped image.\n");
 
 		// read in the palette
-		if (header.colormapSize == 15 || header.colormapSize == 16) {
+		if (header.colormapSize == 15 || header.colormapSize == 16)
+		{
 			for (i = 0, out = palette; i < header.colormapLength; i++, in += 2, out += 4)
 				TGA_upsample15(out, in, alphabits == 1);
-		} else if (header.colormapSize == 24) {
+		}
+		else if (header.colormapSize == 24)
+		{
 			for (i = 0, out = palette; i < header.colormapLength; i++, in += 3, out += 4)
 				TGA_upsample24(out, in);
-		} else if (header.colormapSize == 32) {
+		}
+		else if (header.colormapSize == 32)
+		{
 			for (i = 0, out = palette; i < header.colormapLength; i++, in += 4, out += 4)
 				TGA_upsample32(out, in);
 		}
 		mytype = MYTGA_MAPPED;
-	} else if (header.imageType == TGA_MONO || header.imageType == TGA_MONO_RLE) {
+	}
+	else if (header.imageType == TGA_MONO || header.imageType == TGA_MONO_RLE)
+	{
 		if (!(header.pixelSize == 8 || (header.pixelSize == 16 && alphabits == 8)))
 			TGA_ERROR("Unsupported TGA image %s: Bad pixel size for grayscale image.\n");
 		mytype = (header.pixelSize == 8) ? MYTGA_MONO8 : MYTGA_MONO16;
-	} else {
+	}
+	else
+	{
 		TGA_ERROR("Unsupported TGA image %s: Bad image type.\n");
 	}
 
@@ -1022,10 +1149,13 @@ byte *Image_LoadTGA(FILE *fin, char *filename, int matchwidth, int matchheight) 
 	data = Q_Malloc(image_width * image_height * 4);
 
 	// if bit 5 of attributes isn't set, the image has been stored from bottom to top
-	if ((header.attributes & 0x20)) {
+	if ((header.attributes & 0x20))
+	{
 		out = data;
 		row_inc = 0;
-	} else {
+	}
+	else
+	{
 		out = data + (image_height - 1) * image_width * 4;
 		row_inc = -image_width * 4 * 2;
 	}
@@ -1033,10 +1163,12 @@ byte *Image_LoadTGA(FILE *fin, char *filename, int matchwidth, int matchheight) 
 	x = y = 0;
 	rgba[0] = rgba[1] = rgba[2] = rgba[3] = 255;
 
-	while (y < image_height) {
+	while (y < image_height)
+	{
 		// decoder is mostly the same whether it's compressed or not
 		readpixelcount = runlen = 0x7FFFFFFF;
-		if (compressed && in < enddata) {
+		if (compressed && in < enddata)
+		{
 			runlen = *in++;
 			// high bit indicates this is an RLE compressed run
 			if (runlen & 0x80)
@@ -1044,13 +1176,17 @@ byte *Image_LoadTGA(FILE *fin, char *filename, int matchwidth, int matchheight) 
 			runlen = 1 + (runlen & 0x7F);
 		}
 
-		while (runlen-- && y < image_height) {
-			if (readpixelcount > 0) {
+		while (runlen-- && y < image_height)
+		{
+			if (readpixelcount > 0)
+			{
 				readpixelcount--;
 				rgba[0] = rgba[1] = rgba[2] = rgba[3] = 255;
 
-				if (in + bpp <= enddata) {
-					switch(mytype) {
+				if (in + bpp <= enddata)
+				{
+					switch(mytype)
+					{
 					case MYTGA_MAPPED:
 						for (i = 0; i < 4; i++)
 							rgba[i] = palette[in[0] * 4 + i];
@@ -1077,7 +1213,8 @@ byte *Image_LoadTGA(FILE *fin, char *filename, int matchwidth, int matchheight) 
 			}
 			for (i = 0; i < 4; i++)
 				*out++ = rgba[i];
-			if (++x == image_width) {
+			if (++x == image_width)
+			{
 				// end of line, advance to next
 				x = 0;
 				y++;
@@ -1090,7 +1227,8 @@ byte *Image_LoadTGA(FILE *fin, char *filename, int matchwidth, int matchheight) 
 	return data;
 }
 
-int Image_WriteTGA (char *filename, byte *pixels, int width, int height) {
+int Image_WriteTGA (char *filename, byte *pixels, int width, int height)
+{
 	byte *buffer;
 	int size;
 	qboolean retval = true;
@@ -1168,7 +1306,8 @@ static void (*qjpeg_CreateCompress)(j_compress_ptr, int, size_t);
 
 #define NUM_JPEGPROCS	(sizeof(jpegprocs)/sizeof(jpegprocs[0]))
 
-qlib_dllfunction_t jpegprocs[] = {
+qlib_dllfunction_t jpegprocs[] =
+{
 	{"jpeg_std_error", (void **) &qjpeg_std_error},
 	{"jpeg_destroy_compress", (void **) &qjpeg_destroy_compress},
 	{"jpeg_set_defaults", (void **) &qjpeg_set_defaults},
@@ -1179,25 +1318,30 @@ qlib_dllfunction_t jpegprocs[] = {
 	{"jpeg_CreateCompress", (void **) &qjpeg_CreateCompress},
 };
 
-static void JPEG_FreeLibrary(void) {
+static void JPEG_FreeLibrary(void)
+{
 	if (jpeg_handle)
 		QLIB_FREELIBRARY(jpeg_handle);
 }
 
-static qboolean JPEG_LoadLibrary(void) {
+static qboolean JPEG_LoadLibrary(void)
+{
 	if (COM_CheckParm("-nolibjpeg"))
 		return false;
 
 #ifdef _WIN32
-	if (!(jpeg_handle = LoadLibrary("libjpeg.dll"))) {
+	if (!(jpeg_handle = LoadLibrary("libjpeg.dll")))
+	{
 #else
-	if (!(jpeg_handle = dlopen("libjpeg.so.62", RTLD_NOW)) && !(jpeg_handle = dlopen("libjpeg.so", RTLD_NOW))) {
+	if (!(jpeg_handle = dlopen("libjpeg.so.62", RTLD_NOW)) && !(jpeg_handle = dlopen("libjpeg.so", RTLD_NOW)))
+	{
 #endif
 		QLib_MissingModuleError(QLIB_ERROR_MODULE_NOT_FOUND, "libjpeg", "-nolibjpeg", "jpeg image features");
 		return false;
 	}
 
-	if (!QLib_ProcessProcdef(jpeg_handle, jpegprocs, NUM_JPEGPROCS)) {
+	if (!QLib_ProcessProcdef(jpeg_handle, jpegprocs, NUM_JPEGPROCS))
+	{
 		JPEG_FreeLibrary();
 		QLib_MissingModuleError(QLIB_ERROR_MODULE_MISSING_PROC, "libjpeg", "-nolibjpeg", "jpeg image features");
 		return false;
@@ -1208,8 +1352,9 @@ static qboolean JPEG_LoadLibrary(void) {
 
 #endif
 
-typedef struct {
-  struct jpeg_destination_mgr pub; 
+typedef struct
+{
+  struct jpeg_destination_mgr pub;
   FILE *outfile;
   JOCTET *buffer;
 } my_destination_mgr;
@@ -1220,7 +1365,8 @@ typedef my_destination_mgr *my_dest_ptr;
 
 static qboolean jpeg_in_error = false;
 
-static void JPEG_IO_init_destination(j_compress_ptr cinfo) {
+static void JPEG_IO_init_destination(j_compress_ptr cinfo)
+{
 	my_dest_ptr dest = (my_dest_ptr) cinfo->dest;
 	dest->buffer = (JOCTET *) (cinfo->mem->alloc_small)
 		((j_common_ptr) cinfo, JPOOL_IMAGE, JPEG_OUTPUT_BUF_SIZE * sizeof(JOCTET));
@@ -1228,10 +1374,12 @@ static void JPEG_IO_init_destination(j_compress_ptr cinfo) {
 	dest->pub.free_in_buffer = JPEG_OUTPUT_BUF_SIZE;
 }
 
-static boolean JPEG_IO_empty_output_buffer (j_compress_ptr cinfo) {
+static boolean JPEG_IO_empty_output_buffer (j_compress_ptr cinfo)
+{
 	my_dest_ptr dest = (my_dest_ptr) cinfo->dest;
 
-	if (fwrite(dest->buffer, 1, JPEG_OUTPUT_BUF_SIZE, dest->outfile) != JPEG_OUTPUT_BUF_SIZE) {
+	if (fwrite(dest->buffer, 1, JPEG_OUTPUT_BUF_SIZE, dest->outfile) != JPEG_OUTPUT_BUF_SIZE)
+	{
 		jpeg_in_error = true;
 		return false;
 	}
@@ -1240,12 +1388,15 @@ static boolean JPEG_IO_empty_output_buffer (j_compress_ptr cinfo) {
 	return true;
 }
 
-static void JPEG_IO_term_destination (j_compress_ptr cinfo) {
+static void JPEG_IO_term_destination (j_compress_ptr cinfo)
+{
 	my_dest_ptr dest = (my_dest_ptr) cinfo->dest;
 	size_t datacount = JPEG_OUTPUT_BUF_SIZE - dest->pub.free_in_buffer;
 
-	if (datacount > 0) {
-		if (fwrite(dest->buffer, 1, datacount, dest->outfile) != datacount) {
+	if (datacount > 0)
+	{
+		if (fwrite(dest->buffer, 1, datacount, dest->outfile) != datacount)
+		{
 			jpeg_in_error = true;
 			return;
 		}
@@ -1253,10 +1404,12 @@ static void JPEG_IO_term_destination (j_compress_ptr cinfo) {
 	fflush(dest->outfile);
 }
 
-static void JPEG_IO_set_dest (j_compress_ptr cinfo, FILE *outfile) {
+static void JPEG_IO_set_dest (j_compress_ptr cinfo, FILE *outfile)
+{
 	my_dest_ptr dest;
 
-	if (!cinfo->dest) {
+	if (!cinfo->dest)
+	{
 		cinfo->dest = (struct jpeg_destination_mgr *) (cinfo->mem->alloc_small)(
 							(j_common_ptr) cinfo,JPOOL_PERMANENT, sizeof(my_destination_mgr));
 	}
@@ -1268,17 +1421,20 @@ static void JPEG_IO_set_dest (j_compress_ptr cinfo, FILE *outfile) {
 	dest->outfile = outfile;
 }
 
-typedef struct my_error_mgr {
-  struct jpeg_error_mgr pub;
-  jmp_buf setjmp_buffer;
+typedef struct my_error_mgr
+{
+	struct jpeg_error_mgr pub;
+	jmp_buf setjmp_buffer;
 } jpeg_error_mgr_wrapper;
 
-void jpeg_error_exit (j_common_ptr cinfo) {	
-  longjmp(((jpeg_error_mgr_wrapper *) cinfo->err)->setjmp_buffer, 1);
+void jpeg_error_exit (j_common_ptr cinfo)
+{
+	longjmp(((jpeg_error_mgr_wrapper *) cinfo->err)->setjmp_buffer, 1);
 }
 
 
-int Image_WriteJPEG(char *filename, int quality, byte *pixels, int width, int height) {
+int Image_WriteJPEG(char *filename, int quality, byte *pixels, int width, int height)
+{
 	char name[MAX_OSPATH];
 	FILE *outfile;
 	jpeg_error_mgr_wrapper jerr;
@@ -1288,8 +1444,9 @@ int Image_WriteJPEG(char *filename, int quality, byte *pixels, int width, int he
 	if (!jpeg_handle)
 		return false;
 
-	Q_snprintfz (name, sizeof(name), "%s/%s", com_basedir, filename);	
-	if (!(outfile = fopen (name, "wb"))) {
+	Q_snprintfz (name, sizeof(name), "%s/%s", com_basedir, filename);
+	if (!(outfile = fopen (name, "wb")))
+	{
 		FS_CreatePath (name);
 		if (!(outfile = fopen (name, "wb")))
 			return false;
@@ -1297,7 +1454,8 @@ int Image_WriteJPEG(char *filename, int quality, byte *pixels, int width, int he
 
 	cinfo.err = qjpeg_std_error(&jerr.pub);
 	jerr.pub.error_exit = jpeg_error_exit;
-	if (setjmp(jerr.setjmp_buffer)) {
+	if (setjmp(jerr.setjmp_buffer))
+	{
 		fclose(outfile);
 		return false;
 	}
@@ -1306,7 +1464,7 @@ int Image_WriteJPEG(char *filename, int quality, byte *pixels, int width, int he
 	jpeg_in_error = false;
 	JPEG_IO_set_dest(&cinfo, outfile);
 
-	cinfo.image_width = abs(width); 	
+	cinfo.image_width = abs(width);
 	cinfo.image_height = height;
 	cinfo.input_components = 3;
 	cinfo.in_color_space = JCS_RGB;
@@ -1314,7 +1472,8 @@ int Image_WriteJPEG(char *filename, int quality, byte *pixels, int width, int he
 	qjpeg_set_quality (&cinfo, bound(0, quality, 100), true);
 	qjpeg_start_compress(&cinfo, true);
 
-	while (cinfo.next_scanline < height) {
+	while (cinfo.next_scanline < height)
+	{
 	    *row_pointer = &pixels[cinfo.next_scanline * width * 3];
 	    qjpeg_write_scanlines(&cinfo, row_pointer, 1);
 		if (jpeg_in_error)
@@ -1331,7 +1490,8 @@ int Image_WriteJPEG(char *filename, int quality, byte *pixels, int width, int he
 
 /************************************ PCX ************************************/
 
-typedef struct pcx_s {
+typedef struct pcx_s
+{
     char			manufacturer;
     char			version;
     char			encoding;
@@ -1344,10 +1504,11 @@ typedef struct pcx_s {
     unsigned short	bytes_per_line;
     unsigned short	palette_type;
     char			filler[58];
-    byte			data;		
+    byte			data;
 } pcx_t;
 
-byte *Image_LoadPCX (FILE *fin, char *filename, int matchwidth, int matchheight) {
+byte *Image_LoadPCX (FILE *fin, char *filename, int matchwidth, int matchheight)
+{
 	pcx_t *pcx;
 	byte *pcxbuf, *data, *out, *pix;
 	int x, y, dataByte, runLength, width, height;
@@ -1356,7 +1517,8 @@ byte *Image_LoadPCX (FILE *fin, char *filename, int matchwidth, int matchheight)
 		return NULL;
 
 	pcxbuf = Q_Malloc(com_filesize);
-	if (fread (pcxbuf, 1, com_filesize, fin) != com_filesize) {
+	if (fread (pcxbuf, 1, com_filesize, fin) != com_filesize)
+	{
 		Com_DPrintf ("Image_LoadPCX: fread() failed on %s\n", COM_SkipPath(filename));
 		fclose(fin);
 		free(pcxbuf);
@@ -1377,7 +1539,8 @@ byte *Image_LoadPCX (FILE *fin, char *filename, int matchwidth, int matchheight)
 
 	pix = &pcx->data;
 
-	if (pcx->manufacturer != 0x0a || pcx->version != 5 || pcx->encoding != 1 || pcx->bits_per_pixel != 8) {
+	if (pcx->manufacturer != 0x0a || pcx->version != 5 || pcx->encoding != 1 || pcx->bits_per_pixel != 8)
+	{
 		Com_DPrintf ("Invalid PCX image %s\n", COM_SkipPath(filename));
 		free(pcxbuf);
 		return NULL;
@@ -1386,22 +1549,27 @@ byte *Image_LoadPCX (FILE *fin, char *filename, int matchwidth, int matchheight)
 	width = pcx->xmax + 1;
 	height = pcx->ymax + 1;
 
-	if (width > IMAGE_MAX_DIMENSIONS || height > IMAGE_MAX_DIMENSIONS) {
+	if (width > IMAGE_MAX_DIMENSIONS || height > IMAGE_MAX_DIMENSIONS)
+	{
 		Com_DPrintf ("PCX image %s exceeds maximum supported dimensions\n", COM_SkipPath(filename));
 		free(pcxbuf);
 		return NULL;
 	}
 
-	if ((matchwidth && width != matchwidth) || (matchheight && height != matchheight)) {
+	if ((matchwidth && width != matchwidth) || (matchheight && height != matchheight))
+	{
 		free(pcxbuf);
 		return NULL;
 	}
- 
+
 	data = out = Q_Malloc (width * height);
 
-	for (y = 0; y < height; y++, out += width) {
-		for (x = 0; x < width; ) {
-			if (pix - (byte *) pcx > com_filesize) {
+	for (y = 0; y < height; y++, out += width)
+	{
+		for (x = 0; x < width; )
+		{
+			if (pix - (byte *) pcx > com_filesize)
+			{
 				Com_DPrintf ("Malformed PCX image %s\n", COM_SkipPath(filename));
 				free(pcxbuf);
 				free(data);
@@ -1410,21 +1578,26 @@ byte *Image_LoadPCX (FILE *fin, char *filename, int matchwidth, int matchheight)
 
 			dataByte = *pix++;
 
-			if ((dataByte & 0xC0) == 0xC0) {
+			if ((dataByte & 0xC0) == 0xC0)
+			{
 				runLength = dataByte & 0x3F;
-				if (pix - (byte *) pcx > com_filesize) {
+				if (pix - (byte *) pcx > com_filesize)
+				{
 					Com_DPrintf ("Malformed PCX image %s\n", COM_SkipPath(filename));
 					free(pcxbuf);
 					free(data);
 					return NULL;
 				}
 				dataByte = *pix++;
-			} else {
+			}
+			else
+			{
 				runLength = 1;
 			}
 
 
-			if (runLength + x > width + 1) {
+			if (runLength + x > width + 1)
+			{
 				Com_DPrintf ("Malformed PCX image %s\n", COM_SkipPath(filename));
 				free(pcxbuf);
 				free(data);
@@ -1436,7 +1609,8 @@ byte *Image_LoadPCX (FILE *fin, char *filename, int matchwidth, int matchheight)
 		}
 	}
 
-	if (pix - (byte *) pcx > com_filesize) {
+	if (pix - (byte *) pcx > com_filesize)
+	{
 		Com_DPrintf ("Malformed PCX image %s\n", COM_SkipPath(filename));
 		free(pcxbuf);
 		free(data);
@@ -1466,8 +1640,8 @@ int Image_WritePCX (char *filename, byte *data, int width, int height, int rowby
 		return false;
 
 	pcx->manufacturer = 0x0a;
-	pcx->version = 5;		
- 	pcx->encoding = 1;		
+	pcx->version = 5;
+ 	pcx->encoding = 1;
 	pcx->bits_per_pixel = 8;
 	pcx->xmin = 0;
 	pcx->ymin = 0;
@@ -1476,19 +1650,22 @@ int Image_WritePCX (char *filename, byte *data, int width, int height, int rowby
 	pcx->hres = LittleShort((short) width);
 	pcx->vres = LittleShort((short) height);
 	memset (pcx->palette, 0, sizeof(pcx->palette));
-	pcx->color_planes = 1;		
+	pcx->color_planes = 1;
 	pcx->bytes_per_line = LittleShort((short) width);
-	pcx->palette_type = LittleShort(1);		
+	pcx->palette_type = LittleShort(1);
 	memset (pcx->filler, 0, sizeof(pcx->filler));
 
 
 	pack = &pcx->data;
 
-	for (i = 0; i < height; i++) {
-		for (j = 0; j < width; j++) {
+	for (i = 0; i < height; i++)
+	{
+		for (j = 0; j < width; j++)
+		{
 			if ((*data & 0xc0) != 0xc0)
 				*pack++ = *data++;
-			else {
+			else
+			{
 				*pack++ = 0xc1;
 				*pack++ = *data++;
 			}
@@ -1497,12 +1674,13 @@ int Image_WritePCX (char *filename, byte *data, int width, int height, int rowby
 	}
 
 
-	*pack++ = 0x0c;	
+	*pack++ = 0x0c;
 	for (i = 0; i < 768; i++)
 		*pack++ = *palette++;
 
 	length = pack - (byte *) pcx;
-	if (!(FS_WriteFile (filename, pcx, length))) {
+	if (!(FS_WriteFile (filename, pcx, length)))
+	{
 		free(pcx);
 		return false;
 	}
