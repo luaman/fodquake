@@ -1294,6 +1294,7 @@ static void Mod_LoadBrushModel (model_t *mod, void *buffer)
 	dheader_t *header;
 	dmodel_t *bm;
 	model_t *nextmodel;
+	unsigned int checksumvalue;
 
 	mod->type = mod_brush;
 
@@ -1328,13 +1329,15 @@ static void Mod_LoadBrushModel (model_t *mod, void *buffer)
 	{
 		if (i == LUMP_ENTITIES)
 			continue;
-		mod->checksum ^= Com_BlockChecksum(mod_base + header->lumps[i].fileofs,
-			header->lumps[i].filelen);
+
+		checksumvalue = Com_BlockChecksum(mod_base + header->lumps[i].fileofs, header->lumps[i].filelen);
+
+		mod->checksum ^= checksumvalue;
 
 		if (i == LUMP_VISIBILITY || i == LUMP_LEAFS || i == LUMP_NODES)
 			continue;
-		mod->checksum2 ^= Com_BlockChecksum(mod_base + header->lumps[i].fileofs,
-			header->lumps[i].filelen);
+
+		mod->checksum2 ^= checksumvalue;
 	}
 
 	// load into heap
