@@ -238,7 +238,7 @@ void Model_NextDownload (void)
 	int	i;
 
 	if (cls.downloadnumber == 0)
-{
+	{
 		Com_Printf ("Checking models...\n");
 		cls.downloadnumber = 1;
 	}
@@ -246,7 +246,7 @@ void Model_NextDownload (void)
 	cls.downloadtype = dl_model;
 	for ( ; cl.model_name[cls.downloadnumber][0]; cls.downloadnumber++)
 	{
-		if (cl.model_name[cls.downloadnumber][0] == '*')
+		if (strchr(cl.model_name[cls.downloadnumber], '*'))
 			continue;	// inline brush model
 		if (!CL_CheckOrDownloadFile(cl.model_name[cls.downloadnumber]))
 			return;		// started a download
@@ -987,17 +987,27 @@ void CL_ParseModellist(void)
 		str = MSG_ReadString ();
 		if (!str[0])
 			break;
-		if (++nummodels==MAX_MODELS)
+		if (++nummodels>=MAX_MODELS)
 			Host_Error ("Server sent too many model_precache");
 
-		Q_strncpyz (cl.model_name[nummodels], str, sizeof(cl.model_name[nummodels]));
-
-		for (i = 0; i < cl_num_modelindices; i++)
+		if (*str == '*')
 		{
-			if (!strcmp(cl_modelnames[i], cl.model_name[nummodels]))
+			if (nummodels == 1)
+				Host_Error("Server sent submodel too soon");
+
+			snprintf(cl.model_name[nummodels], sizeof(cl.model_name[nummodels]), "%s%s", cl.model_name[1], str);
+		}
+		else
+		{
+			Q_strncpyz (cl.model_name[nummodels], str, sizeof(cl.model_name[nummodels]));
+
+			for (i = 0; i < cl_num_modelindices; i++)
 			{
-				cl_modelindices[i] = nummodels;
-				break;
+				if (strcmp(cl_modelnames[i], cl.model_name[nummodels]) == 0)
+				{
+					cl_modelindices[i] = nummodels;
+					break;
+				}
 			}
 		}
 	}

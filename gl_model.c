@@ -1294,6 +1294,7 @@ static void Mod_LoadBrushModel (model_t *mod, void *buffer)
 	dheader_t *header;
 	dmodel_t *bm;
 	model_t *nextmodel;
+	model_t *mainmodel;
 	unsigned int checksumvalue;
 
 	mod->type = mod_brush;
@@ -1368,6 +1369,8 @@ static void Mod_LoadBrushModel (model_t *mod, void *buffer)
 
 	mod->numframes = 2;		// regular and alternate animation
 
+	mainmodel = mod;
+
 	// set up the submodels (FIXME: this is confusing)
 	for (i = 0; i < mod->numsubmodels; i++)
 	{
@@ -1395,7 +1398,7 @@ static void Mod_LoadBrushModel (model_t *mod, void *buffer)
 			// duplicate the basic information
 			char name[12];
 
-			sprintf(name, "*%i", i+1);
+			sprintf(name, "%s*%i", mainmodel->name, i+1);
 			nextmodel = Mod_FindName(name);
 			*nextmodel = *mod;
 			strcpy(nextmodel->name, name);

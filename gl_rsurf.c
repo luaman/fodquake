@@ -1443,7 +1443,7 @@ void GL_BuildLightmaps (void) {
 	for (j = 1; j < MAX_MODELS; j++) {
 		if (!(m = cl.model_precache[j]))
 			break;
-		if (m->name[0] == '*')
+		if (strchr(m->name, '*'))
 			continue;
 		r_pcurrentvertbase = m->vertexes;
 		currentmodel = m;
