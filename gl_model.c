@@ -776,9 +776,10 @@ static void Mod_LoadVertexes(model_t *model, lump_t *l)
 	}
 }
 
-static void Mod_LoadSubmodels(model_t *model, lump_t *l)
+static dmodel_t *Mod_LoadSubmodels(model_t *model, lump_t *l)
 {
 	dmodel_t *in, *out;
+	dmodel_t *ret;
 	int i, j, count;
 
 	in = (void *)(mod_base + l->fileofs);
@@ -787,25 +788,36 @@ static void Mod_LoadSubmodels(model_t *model, lump_t *l)
 	count = l->filelen / sizeof(*in);
 	if (count > MAX_MODELS)
 		Host_Error("Mod_LoadSubmodels : count > MAX_MODELS");
-	out = Hunk_AllocName ( count*sizeof(*out), loadname);
 
-	model->submodels = out;
 	model->numsubmodels = count;
 
-	for (i = 0; i < count; i++, in++, out++)
+	if (count)
 	{
-		for (j = 0; j < 3; j++)
-		{	// spread the mins / maxs by a pixel
-			out->mins[j] = LittleFloat (in->mins[j]) - 1;
-			out->maxs[j] = LittleFloat (in->maxs[j]) + 1;
-			out->origin[j] = LittleFloat (in->origin[j]);
+		out = malloc(count*sizeof(*out));
+		if (out == 0)
+			Sys_Error("Mod_LoadSubmodels: Out of memory\n");
+
+		ret = out;
+
+		for (i = 0; i < count; i++, in++, out++)
+		{
+			for (j = 0; j < 3; j++)
+			{	// spread the mins / maxs by a pixel
+				out->mins[j] = LittleFloat (in->mins[j]) - 1;
+				out->maxs[j] = LittleFloat (in->maxs[j]) + 1;
+				out->origin[j] = LittleFloat (in->origin[j]);
+			}
+			for (j = 0; j < MAX_MAP_HULLS; j++)
+				out->headnode[j] = LittleLong (in->headnode[j]);
+			out->visleafs = LittleLong (in->visleafs);
+			out->firstface = LittleLong (in->firstface);
+			out->numfaces = LittleLong (in->numfaces);
 		}
-		for (j = 0; j < MAX_MAP_HULLS; j++)
-			out->headnode[j] = LittleLong (in->headnode[j]);
-		out->visleafs = LittleLong (in->visleafs);
-		out->firstface = LittleLong (in->firstface);
-		out->numfaces = LittleLong (in->numfaces);
 	}
+	else
+		ret = 0;
+
+	return ret;
 }
 
 static void Mod_LoadEdges(model_t *model, lump_t *l)
@@ -1293,6 +1305,7 @@ static void Mod_LoadBrushModel (model_t *mod, void *buffer)
 	int i, j;
 	dheader_t *header;
 	dmodel_t *bm;
+	dmodel_t *subdmodels;
 	model_t *nextmodel;
 	model_t *mainmodel;
 	unsigned int checksumvalue;
@@ -1363,7 +1376,7 @@ static void Mod_LoadBrushModel (model_t *mod, void *buffer)
 	Mod_LoadLeafs(mod, &header->lumps[LUMP_LEAFS]);
 	Mod_LoadNodes(mod, &header->lumps[LUMP_NODES]);
 	Mod_LoadClipnodes(mod, &header->lumps[LUMP_CLIPNODES]);
-	Mod_LoadSubmodels(mod, &header->lumps[LUMP_MODELS]);
+	subdmodels = Mod_LoadSubmodels(mod, &header->lumps[LUMP_MODELS]);
 
 	Mod_MakeHull0(mod);
 
@@ -1374,7 +1387,7 @@ static void Mod_LoadBrushModel (model_t *mod, void *buffer)
 	// set up the submodels (FIXME: this is confusing)
 	for (i = 0; i < mod->numsubmodels; i++)
 	{
-		bm = &mod->submodels[i];
+		bm = &subdmodels[i];
 
 		mod->hulls[0].firstclipnode = bm->headnode[0];
 		for (j = 1; j < MAX_MAP_HULLS; j++)
