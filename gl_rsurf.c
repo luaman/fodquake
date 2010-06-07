@@ -1474,18 +1474,19 @@ static int AllocBlock (int w, int h, int *x, int *y)
 	return 0;
 }
 
-mvertex_t	*r_pcurrentvertbase;
-model_t		*currentmodel;
 
-static void BuildSurfaceDisplayList (msurface_t *fa)
+static void BuildSurfaceDisplayList(model_t *model, msurface_t *fa)
 {
 	int i, lindex, lnumverts, vertpage;
 	medge_t *pedges, *r_pedge;
 	float *vec, s, t;
 	glpoly_t *poly;
+	mvertex_t *vertbase;
+
+	vertbase = model->vertexes;
 
 	// reconstruct the polygon
-	pedges = currentmodel->edges;
+	pedges = model->edges;
 	lnumverts = fa->numedges;
 	vertpage = 0;
 
@@ -1497,17 +1498,17 @@ static void BuildSurfaceDisplayList (msurface_t *fa)
 
 	for (i = 0; i < lnumverts; i++)
 	{
-		lindex = currentmodel->surfedges[fa->firstedge + i];
+		lindex = model->surfedges[fa->firstedge + i];
 
 		if (lindex > 0)
 		{
 			r_pedge = &pedges[lindex];
-			vec = r_pcurrentvertbase[r_pedge->v[0]].position;
+			vec = vertbase[r_pedge->v[0]].position;
 		}
 		else
 		{
 			r_pedge = &pedges[-lindex];
-			vec = r_pcurrentvertbase[r_pedge->v[1]].position;
+			vec = vertbase[r_pedge->v[1]].position;
 		}
 		s = DotProduct (vec, fa->texinfo->vecs[0]) + fa->texinfo->vecs[0][3];
 		s /= fa->texinfo->texture->width;
@@ -1589,16 +1590,14 @@ void GL_BuildLightmaps (void)
 			break;
 		if (strchr(m->name, '*'))
 			continue;
-		r_pcurrentvertbase = m->vertexes;
-		currentmodel = m;
 		for (i = 0; i < m->numsurfaces; i++)
 		{
 			if (m->surfaces[i].flags & (SURF_DRAWTURB | SURF_DRAWSKY))
 				continue;
 			if (m->surfaces[i].texinfo->flags & TEX_SPECIAL)
 				continue;
-			GL_CreateSurfaceLightmap (m->surfaces + i);
-			BuildSurfaceDisplayList (m->surfaces + i);
+			GL_CreateSurfaceLightmap(m->surfaces + i);
+			BuildSurfaceDisplayList(m, m->surfaces + i);
 		}
 	}
 
