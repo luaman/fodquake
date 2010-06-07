@@ -102,8 +102,17 @@ typedef struct {
 	int			flags;
 } mtexinfo_t;
 
+#define WARPVERTEXSIZE 5 /* xyz s1t1 */
+
 #define	VERTEXSIZE	9	//xyz s1t1 s2t2 s3t3 where xyz = vert coords; s1t1 = normal tex coords; 
 						//s2t2 = lightmap tex coords; s3t2 = detail tex coords
+
+struct glwarppoly
+{
+	struct glwarppoly *next;
+	int numverts;
+	float verts[4][WARPVERTEXSIZE];
+};
 
 typedef struct glpoly_s {
 	struct	glpoly_s	*next;
@@ -133,6 +142,7 @@ typedef struct msurface_s {
 
 	int			light_s, light_t;	// gl lightmap coordinates
 
+	struct glwarppoly *warppolys;
 	glpoly_t	*polys;				// multiple if warped
 	struct	msurface_s	*texturechain;
 

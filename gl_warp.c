@@ -65,7 +65,7 @@ static void SubdividePolygon(msurface_t *warpface, int numverts, float *verts)
 	int i, j, k, f, b;
 	vec3_t mins, maxs, front[64], back[64];
 	float m, *v, dist[64], frac, s, t;
-	glpoly_t *poly;
+	struct glwarppoly *poly;
 	float subdivide_size;	
 
 	if (numverts > 60)
@@ -124,9 +124,9 @@ static void SubdividePolygon(msurface_t *warpface, int numverts, float *verts)
 		return;
 	}
 
-	poly = Hunk_Alloc (sizeof(glpoly_t) + (numverts - 4) * VERTEXSIZE * sizeof(float));
-	poly->next = warpface->polys;
-	warpface->polys = poly;
+	poly = Hunk_Alloc (sizeof(struct glwarppoly) + (numverts - 4) * WARPVERTEXSIZE * sizeof(float));
+	poly->next = warpface->warppolys;
+	warpface->warppolys = poly;
 	poly->numverts = numverts;
 	for (i = 0; i < numverts; i++, verts += 3)
 	{
@@ -196,23 +196,23 @@ __inline static float SINTABLE_APPROX(float time)
 
 static void EmitFlatPoly(msurface_t *fa)
 {
-	glpoly_t *p;
+	struct glwarppoly *p;
 	float *v;
 	int i;
 
-	for (p = fa->polys; p; p = p->next)
+	for (p = fa->warppolys; p; p = p->next)
 	{
 		glBegin (GL_POLYGON);
-		for (i = 0, v = p->verts[0]; i < p->numverts; i++, v += VERTEXSIZE)
+		for (i = 0, v = p->verts[0]; i < p->numverts; i++, v += WARPVERTEXSIZE)
 			glVertex3fv (v);
 		glEnd ();
 	}
 }
 
-//Does a water warp on the pre-fragmented glpoly_t chain
+//Does a water warp on the pre-fragmented struct glwarppoly chain
 void EmitWaterPolys(msurface_t *fa)
 {
-	glpoly_t *p;
+	struct glwarppoly *p;
 	float *v, s, t, os, ot;
 	int i;
 
@@ -234,10 +234,10 @@ void EmitWaterPolys(msurface_t *fa)
 		glDisable(GL_BLEND);
 		glTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 		GL_Bind (fa->texinfo->texture->gl_texturenum);
-		for (p = fa->polys; p; p = p->next)
+		for (p = fa->warppolys; p; p = p->next)
 		{
 			glBegin(GL_POLYGON);
-			for (i = 0, v = p->verts[0]; i < p->numverts; i++, v += VERTEXSIZE)
+			for (i = 0, v = p->verts[0]; i < p->numverts; i++, v += WARPVERTEXSIZE)
 			{
 				os = v[3];
 				ot = v[4];
@@ -258,15 +258,15 @@ void EmitWaterPolys(msurface_t *fa)
 
 static void EmitSkyPolys(msurface_t *fa, qboolean mtex)
 {
-	glpoly_t *p;
+	struct glwarppoly *p;
 	float *v, s, t, ss, tt, length;
 	int i;
 	vec3_t dir;
 
-	for (p = fa->polys; p; p = p->next)
+	for (p = fa->warppolys; p; p = p->next)
 	{
 		glBegin (GL_POLYGON);
-		for (i = 0, v = p->verts[0]; i < p->numverts; i++, v += VERTEXSIZE)
+		for (i = 0, v = p->verts[0]; i < p->numverts; i++, v += WARPVERTEXSIZE)
 		{
 			VectorSubtract (v, r_origin, dir);
 			dir[2] *= 3;	// flatten the sphere
@@ -691,10 +691,10 @@ static void R_AddSkyBoxSurface(msurface_t *fa)
 {
 	int i;
 	vec3_t verts[MAX_CLIP_VERTS];
-	glpoly_t *p;
+	struct glwarppoly *p;
 
 	// calculate vertex values for sky box
-	for (p = fa->polys; p; p = p->next)
+	for (p = fa->warppolys; p; p = p->next)
 	{
 		for (i = 0; i < p->numverts; i++)
 			VectorSubtract (p->verts[i], r_origin, verts[i]);
