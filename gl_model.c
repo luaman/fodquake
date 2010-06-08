@@ -1418,6 +1418,8 @@ static void Mod_LoadBrushModel (model_t *mod, void *buffer)
 			mod = nextmodel;
 		}
 	}
+
+	free(subdmodels);
 }
 
 /*
