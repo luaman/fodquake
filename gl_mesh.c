@@ -31,26 +31,22 @@ ALIAS MODEL DISPLAY LIST GENERATION
 =================================================================
 */
 
-model_t		*aliasmodel;
-aliashdr_t	*paliashdr;
-
-qboolean	used[8192];
+static qboolean	used[8192];
 
 // the command list holds counts and s/t values that are valid for
 // every frame
-int		commands[8192];
-int		numcommands;
+static int		commands[8192];
+static int		numcommands;
 
 // all frames will have their vertexes rearranged and expanded
 // so they are in the order expected by the command list
-int		vertexorder[8192];
-int		numorder;
+static int		vertexorder[8192];
+static int		numorder;
 
-int		allverts, alltris;
+static int		allverts, alltris;
 
-int		stripverts[128];
-int		striptris[128];
-int		stripcount;
+static int		stripverts[128];
+static int		striptris[128];
 
 /*
 ================
@@ -63,6 +59,7 @@ int	StripLength (int starttri, int startv)
 	int			j;
 	mtriangle_t	*last, *check;
 	int			k;
+	int stripcount;
 
 	used[starttri] = 2;
 
@@ -132,6 +129,7 @@ int	FanLength (int starttri, int startv)
 	int		j;
 	mtriangle_t	*last, *check;
 	int		k;
+	int fancount;
 
 	used[starttri] = 2;
 
@@ -142,7 +140,7 @@ int	FanLength (int starttri, int startv)
 	stripverts[2] = last->vertindex[(startv+2)%3];
 
 	striptris[0] = starttri;
-	stripcount = 1;
+	fancount = 1;
 
 	m1 = last->vertindex[(startv+0)%3];
 	m2 = last->vertindex[(startv+2)%3];
@@ -150,7 +148,7 @@ int	FanLength (int starttri, int startv)
 
 	// look for a matching triangle
 nexttri:
-	for (j=starttri+1, check=&triangles[starttri+1] ; j<pheader->numtris && stripcount + 2 + 2 < (sizeof(stripverts)/sizeof(*stripverts)) && stripcount + 2 < (sizeof(striptris)/sizeof(*striptris)); j++, check++)
+	for (j=starttri+1, check=&triangles[starttri+1] ; j<pheader->numtris && fancount + 2 + 2 < (sizeof(stripverts)/sizeof(*stripverts)) && fancount + 2 < (sizeof(striptris)/sizeof(*striptris)); j++, check++)
 	{
 		if (check->facesfront != last->facesfront)
 			continue;
@@ -170,9 +168,9 @@ nexttri:
 			// the new edge
 			m2 = check->vertindex[ (k+2)%3 ];
 
-			stripverts[stripcount+2] = m2;
-			striptris[stripcount] = j;
-			stripcount++;
+			stripverts[fancount+2] = m2;
+			striptris[fancount] = j;
+			fancount++;
 
 			used[j] = 2;
 			goto nexttri;
@@ -185,7 +183,7 @@ done:
 		if (used[j] == 2)
 			used[j] = 0;
 
-	return stripcount;
+	return fancount;
 }
 
 
@@ -301,13 +299,12 @@ GL_MakeAliasModelDisplayLists
 */
 void GL_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr)
 {
+	aliashdr_t *paliashdr;
 	int		i, j;
 	int			*cmds;
 	trivertx_t	*verts;
 
-	aliasmodel = m;
 	paliashdr = hdr;	// (aliashdr_t *)Mod_Extradata (m);
-
 
 	// Tonik: don't cache anything, because it seems just as fast
 	// (if not faster) to rebuild the tris instead of loading them from disk
