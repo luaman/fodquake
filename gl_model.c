@@ -173,6 +173,18 @@ static void Mod_FreeBrushData(model_t *model)
 
 	free(model->marksurfaces);
 	model->marksurfaces = 0;
+
+	free(model->textures);
+	model->textures = 0;
+
+	free(model->texinfo);
+	model->texinfo = 0;
+
+	free(model->nodes);
+	model->nodes = 0;
+
+	free(model->leafs);
+	model->leafs = 0;
 }
 
 void Mod_ClearBrushesSprites(void)
@@ -438,9 +450,17 @@ static void Mod_LoadTextures(model_t *model, lump_t *l)
 	m = (dmiptexlump_t *) (mod_base + l->fileofs);
 	m->nummiptex = LittleLong (m->nummiptex);
 	model->numtextures = m->nummiptex;
-	model->textures = Hunk_AllocName (m->nummiptex * sizeof(*model->textures), loadname);
 
-	txblock = Hunk_AllocName (m->nummiptex * sizeof(**model->textures), loadname);
+	if (m->nummiptex)
+	{
+		model->textures = malloc(m->nummiptex * sizeof(*model->textures) + m->nummiptex * sizeof(**model->textures));
+		txblock = (texture_t *)(model->textures + m->nummiptex);
+
+		if (model->textures == 0)
+			Sys_Error("Mod_LoadTextures: Out of memory\n");
+
+		memset(model->textures, 0, m->nummiptex * sizeof(*model->textures) + m->nummiptex * sizeof(**model->textures));
+	}
 
 	brighten_flag = (lightmode == 2) ? TEX_BRIGHTEN : 0;
 
@@ -983,7 +1003,9 @@ static void Mod_LoadTexinfo(model_t *model, lump_t *l)
 	if (l->filelen % sizeof(*in))
 		Host_Error ("Mod_LoadTexinfo: funny lump size in %s", model->name);
 	count = l->filelen / sizeof(*in);
-	out = Hunk_AllocName (count*sizeof(*out), loadname);
+	out = malloc(count*sizeof(*out));
+	if (out == 0)
+		Sys_Error("Mod_LoadTexinfo: Out of memory\n");
 
 	model->texinfo = out;
 	model->numtexinfo = count;
@@ -1155,7 +1177,11 @@ static void Mod_LoadNodes(model_t *model, lump_t *l)
 	if (l->filelen % sizeof(*in))
 		Host_Error ("Mod_LoadNodes: funny lump size in %s", model->name);
 	count = l->filelen / sizeof(*in);
-	out = Hunk_AllocName (count * sizeof(*out), loadname);
+	out = malloc(count * sizeof(*out));
+	if (out == 0)
+		Sys_Error("Mod_LoadNodes: Out of memory\n");
+
+	memset(out, 0, count * sizeof(*out));
 
 	model->nodes = out;
 	model->numnodes = count;
@@ -1197,7 +1223,11 @@ static void Mod_LoadLeafs(model_t *model, lump_t *l)
 	if (l->filelen % sizeof(*in))
 		Host_Error ("Mod_LoadLeafs: funny lump size in %s", model->name);
 	count = l->filelen / sizeof(*in);
-	out = Hunk_AllocName ( count*sizeof(*out), loadname);
+	out = malloc(count*sizeof(*out));
+	if (out == 0)
+		Sys_Error("Mod_LoadLeafs: Out of memory\n");
+
+	memset(out, 0, count*sizeof(*out));
 
 	model->leafs = out;
 	model->numleafs = count;
