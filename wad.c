@@ -25,9 +25,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "quakedef.h"
 #include "crc.h"
 
-int			wad_numlumps;
-lumpinfo_t	*wad_lumps;
-byte		*wad_base;
+static int			wad_numlumps;
+static lumpinfo_t	*wad_lumps;
+static byte		*wad_base;
 
 static void W_InsertOcranaLeds (byte *data);
 
@@ -42,7 +42,7 @@ Lowercases name and pads with spaces and a terminating 0 to the length of lumpin
 Used so lumpname lookups can proceed rapidly by comparing 4 chars at a time
 Space padding is so names can be printed nicely in tables. Can safely be performed in place.
 */
-void W_CleanupName (char *in, char *out)
+void W_CleanupName(char *in, char *out)
 {
 	int i, c;
 
@@ -61,7 +61,7 @@ void W_CleanupName (char *in, char *out)
 		out[i] = 0;
 }
 
-void W_LoadWadFile (char *filename)
+void W_LoadWadFile(char *filename)
 {
 	lumpinfo_t *lump_p;
 	wadinfo_t *header;
@@ -91,7 +91,7 @@ void W_LoadWadFile (char *filename)
 	}
 }
 
-lumpinfo_t *W_GetLumpinfo (char *name)
+static lumpinfo_t *W_GetLumpinfo(char *name)
 {
 	int i;
 	lumpinfo_t	*lump_p;
@@ -108,7 +108,7 @@ lumpinfo_t *W_GetLumpinfo (char *name)
 	return NULL;
 }
 
-void *W_GetLumpName (char *name)
+void *W_GetLumpName(char *name)
 {
 	lumpinfo_t *lump;
 
@@ -123,7 +123,7 @@ void *W_GetLumpName (char *name)
 	return (void *) (wad_base + lump->filepos);
 }
 
-void *W_GetLumpNum (int num)
+static void *W_GetLumpNum(int num)
 {
 	lumpinfo_t *lump;
 
@@ -135,7 +135,7 @@ void *W_GetLumpNum (int num)
 	return (void *) (wad_base + lump->filepos);
 }
 
-static byte ocrana_leds[4][8][8] =
+static const byte ocrana_leds[4][8][8] =
 {
 	/* green */
 	{
