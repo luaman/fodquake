@@ -86,7 +86,7 @@ all big things are allocated on the hunk.
 
 memzone_t	*mainzone;
 
-void Z_ClearZone (memzone_t *zone, int size)
+static void Z_ClearZone(memzone_t *zone, int size)
 {
 	memblock_t *block;
 
@@ -204,7 +204,7 @@ void *Z_TagMalloc (int size, int tag)
 	return (void *) ((byte *)base + sizeof(memblock_t));
 }
 
-void Z_Print (memzone_t *zone)
+static void Z_Print(memzone_t *zone)
 {
 	memblock_t	*block;
 
@@ -225,7 +225,7 @@ void Z_Print (memzone_t *zone)
 	}
 }
 
-void Z_CheckHeap (void)
+static void Z_CheckHeap(void)
 {
 	memblock_t *block;
 
@@ -264,7 +264,7 @@ int			hunk_tempmark;
 
 //Run consistancy and sentinal trahing checks
 
-void Hunk_Check (void)
+void Hunk_Check(void)
 {
 	hunk_t	*h;
 
@@ -280,7 +280,7 @@ void Hunk_Check (void)
 
 //If "all" is specified, every single allocation is printed.
 //Otherwise, allocations with the same name will be totaled up before printing.
-void Hunk_Print (qboolean all)
+static void Hunk_Print (qboolean all)
 {
 	hunk_t *h, *next, *endlow, *starthigh, *endhigh;
 	int count, sum, totalblocks;
