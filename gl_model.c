@@ -696,9 +696,8 @@ static void Mod_LoadLighting(model_t *model, lump_t *l)
 	}
 	//no .lit found, expand the white lighting data to color
 	model->lightdata = Hunk_AllocName (l->filelen * 3, va("%s_@lightdata", model->name));
-	in = model->lightdata + l->filelen * 2; // place the file at the end, so it will not be overwritten until the very last write
+	in = mod_base + l->fileofs;
 	out = model->lightdata;
-	memcpy (in, mod_base + l->fileofs, l->filelen);
 	for (i = 0; i < l->filelen; i++, out += 3)
 	{
 		d = *in++;
