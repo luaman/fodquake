@@ -130,6 +130,9 @@ static void Mod_FreeBrushData(model_t *model)
 {
 	free(model->submodels);
 	model->submodels = 0;
+
+	free(model->lightdata);
+	model->lightdata = 0;
 }
 
 void Mod_ClearBrushesSprites(void)
@@ -584,8 +587,13 @@ static void Mod_LoadTextures(model_t *model, lump_t *l)
 }
 
 
-static byte *LoadColoredLighting(char *name, char **litfilename)
+static byte *LoadColoredLighting(char *name, char **litfilename, int *litlength)
 {
+	char buf[8];
+	FILE *f;
+	int flen;
+	int lit_ver;
+	int r;
 	qboolean system;
 	byte *data;
 	char *groupname, *mapname;
@@ -594,6 +602,8 @@ static byte *LoadColoredLighting(char *name, char **litfilename)
 	if (!gl_loadlitfiles.value)
 		return NULL;
 
+	data = 0;
+
 	mapname = TP_MapName();
 	groupname = TP_GetMapGroupName(mapname, &system);
 
@@ -601,30 +611,59 @@ static byte *LoadColoredLighting(char *name, char **litfilename)
 		return NULL;
 
 	*litfilename = va("maps/lits/%s.lit", mapname);
-	data = FS_LoadHunkFile (*litfilename);
+	flen = FS_FOpenFile(*litfilename, &f);
 
-	if (!data)
+	if (flen == -1)
 	{
 		*litfilename = va("maps/%s.lit", mapname);
-		data = FS_LoadHunkFile (*litfilename);
+		flen = FS_FOpenFile(*litfilename, &f);
 	}
 
-	if (!data)
+	if (flen == -1)
 	{
 		*litfilename = va("lits/%s.lit", mapname);
-		data = FS_LoadHunkFile (*litfilename);
+		flen = FS_FOpenFile(*litfilename, &f);
 	}
 
-	if (!data && groupname && !system)
+	if (flen == -1 && groupname && !system)
 	{
 		*litfilename = va("maps/%s.lit", groupname);
-		data = FS_LoadHunkFile (*litfilename);
+		flen = FS_FOpenFile(*litfilename, &f);
 	}
 
-	if (!data && groupname && !system)
+	if (flen == -1 && groupname && !system)
 	{
 		*litfilename = va("lits/%s.lit", groupname);
-		data = FS_LoadHunkFile (*litfilename);
+		flen = FS_FOpenFile(*litfilename, &f);
+	}
+
+	if (flen != -1)
+	{
+		if (flen <= 8 || fread(buf, 8, 1, f) != 1 || strncmp(buf, "QLIT", 4))
+		{
+			Com_Printf("Corrupt .lit file (%s)...ignoring\n", COM_SkipPath(*litfilename));
+		}
+		else if ((lit_ver = LittleLong(((int *)buf)[1])) != 1)
+		{
+			Com_Printf("Unknown .lit file version (v%d)\n", lit_ver);
+		}
+		else
+		{
+			*litlength = flen - 8;
+
+			data = malloc(flen - 8);
+			if (data == 0)
+				Sys_Error("LoadColoredLighting: Out of memory\n");
+
+			r = fread(data, flen - 8, 1, f);
+			if (r != 1)
+			{
+				free(data);
+				data = 0;
+			}
+		}
+
+		fclose(f);
 	}
 
 	return data;
@@ -632,9 +671,10 @@ static byte *LoadColoredLighting(char *name, char **litfilename)
 
 static void Mod_LoadLighting(model_t *model, lump_t *l)
 {
-	int i, lit_ver, b, mark;
+	int i, b;
 	byte *in, *out, *data, d;
 	char *litfilename;
+	int litlength;
 
 	model->lightdata = NULL;
 	if (!l->filelen)
@@ -642,33 +682,29 @@ static void Mod_LoadLighting(model_t *model, lump_t *l)
 
 	if (model->bspversion == HL_BSPVERSION)
 	{
-		model->lightdata = Hunk_AllocName(l->filelen, loadname);
-		memcpy (model->lightdata, mod_base + l->fileofs, l->filelen);
+		model->lightdata = malloc(l->filelen);
+		if (model->lightdata == 0)
+			Sys_Error("Mod_LoadLighting: Out of memory\n");
+
+		memcpy(model->lightdata, mod_base + l->fileofs, l->filelen);
+
 		return;
 	}
 
 	//check for a .lit file
-	mark = Hunk_LowMark();
-	data = LoadColoredLighting(model->name, &litfilename);
+	data = LoadColoredLighting(model->name, &litfilename, &litlength);
 	if (data)
 	{
-		if (com_filesize < 8 || strncmp(data, "QLIT", 4))
-		{
-			Com_Printf("Corrupt .lit file (%s)...ignoring\n", COM_SkipPath(litfilename));
-		}
-		else if (l->filelen * 3 + 8 != com_filesize)
+		if (l->filelen * 3 != litlength)
 		{
 			Com_Printf("Warning: .lit file (%s) has incorrect size\n", COM_SkipPath(litfilename));
-		}
-		else if ((lit_ver = LittleLong(((int *)data)[1])) != 1)
-		{
-			Com_Printf("Unknown .lit file version (v%d)\n", lit_ver);
 		}
 		else
 		{
 			if (developer.value || cl_warncmd.value)
 				Com_Printf("Static coloured lighting loaded\n");
-			model->lightdata = data + 8;
+
+			model->lightdata = data;
 
 			in = mod_base + l->fileofs;
 			out = model->lightdata;
@@ -692,10 +728,13 @@ static void Mod_LoadLighting(model_t *model, lump_t *l)
 			return;
 		}
 
-		Hunk_FreeToLowMark (mark);
+		free(data);
 	}
 	//no .lit found, expand the white lighting data to color
-	model->lightdata = Hunk_AllocName (l->filelen * 3, va("%s_@lightdata", model->name));
+	model->lightdata = malloc(l->filelen * 3);
+	if (model->lightdata == 0)
+		Sys_Error("Mod_LoadLighting: Out of memory\n");
+
 	in = mod_base + l->fileofs;
 	out = model->lightdata;
 	for (i = 0; i < l->filelen; i++, out += 3)
