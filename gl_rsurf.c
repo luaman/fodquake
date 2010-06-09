@@ -193,7 +193,6 @@ static void EmitDetailPolys (void)
 	detail_polys = NULL;
 }
 
-
 typedef struct dlightinfo_s
 {
 	int local[2];
@@ -1491,8 +1490,9 @@ static void BuildSurfaceDisplayList(model_t *model, msurface_t *fa)
 	vertpage = 0;
 
 	// draw texture
-	poly = Hunk_Alloc (sizeof(glpoly_t) + (lnumverts - 4) * VERTEXSIZE*sizeof(float));
-	poly->next = fa->polys;
+	poly = malloc(sizeof(glpoly_t) + (lnumverts - 4) * VERTEXSIZE*sizeof(float));
+	if (poly == 0)
+		Sys_Error("BuildSurfaceDisplayList: Out of memory\n");
 	fa->polys = poly;
 	poly->numverts = lnumverts;
 

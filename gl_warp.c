@@ -124,7 +124,9 @@ static void SubdividePolygon(msurface_t *warpface, int numverts, float *verts)
 		return;
 	}
 
-	poly = Hunk_Alloc (sizeof(struct glwarppoly) + (numverts - 4) * WARPVERTEXSIZE * sizeof(float));
+	poly = malloc(sizeof(struct glwarppoly) + (numverts - 4) * WARPVERTEXSIZE * sizeof(float));
+	if (poly == 0)
+		Sys_Error("SubdividePolygon: Out of memory\n");
 	poly->next = warpface->warppolys;
 	warpface->warppolys = poly;
 	poly->numverts = numverts;

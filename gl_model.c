@@ -128,11 +128,27 @@ byte *Mod_LeafPVS (mleaf_t *leaf, model_t *model)
 
 static void Mod_FreeBrushData(model_t *model)
 {
+	struct glwarppoly *warppoly, *nextwarppoly;
+	unsigned int i;
+
 	free(model->submodels);
 	model->submodels = 0;
 
 	free(model->lightdata);
 	model->lightdata = 0;
+
+	for(i=0;i<model->numsurfaces;i++)
+	{
+		nextwarppoly = model->surfaces[i].warppolys;
+
+		while((warppoly = nextwarppoly))
+		{
+			nextwarppoly = warppoly->next;
+			free(warppoly);
+		}
+
+		free(model->surfaces[i].polys);
+	}
 
 	free(model->surfaces);
 	model->surfaces = 0;

@@ -114,8 +114,8 @@ struct glwarppoly
 	float verts[4][WARPVERTEXSIZE];
 };
 
-typedef struct glpoly_s {
-	struct	glpoly_s	*next;
+typedef struct glpoly_s
+{
 	struct	glpoly_s	*chain;				//next lightmap poly in chain
 	struct	glpoly_s	*fb_chain;			//next fb poly in chain
 	struct	glpoly_s	*luma_chain;			//next luma poly in chain
