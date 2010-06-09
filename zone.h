@@ -83,7 +83,8 @@ Zone block
 
 */
 
-void Memory_Init (void *buf, int size);
+void Memory_Init(void *buf, int size);
+void Memory_Shutdown(void);
 
 void *Q_Malloc (size_t size);
 void *Q_Calloc (size_t n, size_t size);

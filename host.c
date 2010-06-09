@@ -141,6 +141,7 @@ static void Host_InitMemory (int memsize) {
 
 static void Host_ShutdownMemory()
 {
+	Memory_Shutdown();
 	free(host_membase);
 }
 

@@ -474,7 +474,7 @@ void *Hunk_TempAlloc (int size)
 
 //============================================================================
 
-void Memory_Init (void *buf, int size)
+void Memory_Init(void *buf, int size)
 {
 	int p, zonesize = ZONE_DEFAULT_SIZE;
 
@@ -486,6 +486,15 @@ void Memory_Init (void *buf, int size)
 	if ((p = COM_CheckParm ("-zone")) && p + 1 < com_argc)
 		zonesize = Q_atoi (com_argv[p + 1]) * 1024;
 
-	mainzone = Hunk_AllocName (zonesize, "zone");
+	mainzone = malloc(zonesize);
+	if (mainzone == 0)
+		Sys_Error("Unable to allocate zone memory\n");
+
 	Z_ClearZone (mainzone, zonesize);
 }
+
+void Memory_Shutdown()
+{
+	free(mainzone);
+}
+
