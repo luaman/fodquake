@@ -219,10 +219,12 @@ typedef struct
 	int size;
 } texwadlump_t;
 
-static texwadlump_t texwadlump[TEXWAD_MAXIMAGES];
+static texwadlump_t *texwadlump;
+static unsigned int texwadlumpcount;
 
 void WAD3_LoadTextureWadFile (char *filename)
 {
+	texwadlump_t *newtexwadlump;
 	lumpinfo_t *lumps, *lump_p;
 	wadinfo_t header;
 	int i, j, infotableofs, numlumps;
@@ -253,6 +255,12 @@ void WAD3_LoadTextureWadFile (char *filename)
 		return;
 	}
 
+	if (texwadlumpcount + numlumps > TEXWAD_MAXIMAGES)
+	{
+		Com_Printf("WAD3_LoadTextureWadFile: Too many lumps loaded\n");
+		return;
+	}
+
 	infotableofs = LittleLong(header.infotableofs);
 	if (fseek(file, infotableofs, SEEK_SET))
 	{
@@ -266,6 +274,12 @@ void WAD3_LoadTextureWadFile (char *filename)
 	}
 	else
 	{
+		newtexwadlump = realloc(texwadlump, (texwadlumpcount + numlumps) * sizeof(*texwadlump));
+		if (newtexwadlump == 0)
+			Sys_Error("WAD3_LoadTextureWadFile: Out of memory\n");
+
+		texwadlump = newtexwadlump;
+
 		if (fread(lumps, 1, sizeof(lumpinfo_t) * numlumps, file) != sizeof(lumpinfo_t) * numlumps)
 		{
 			Com_Printf ("WAD3_LoadTextureWadFile: unable to read lump table");
@@ -274,19 +288,22 @@ void WAD3_LoadTextureWadFile (char *filename)
 		{
 			for (i = 0, lump_p = lumps; i < numlumps; i++,lump_p++)
 			{
-				W_CleanupName (lump_p->name, lump_p->name);
-				for (j = 0; j < TEXWAD_MAXIMAGES; j++)
+				W_CleanupName(lump_p->name, lump_p->name);
+				for (j = 0; j < texwadlumpcount; j++)
 				{
-					if (!texwadlump[j].name[0] || !strcmp(lump_p->name, texwadlump[j].name))
+					if (strcmp(lump_p->name, texwadlump[j].name) == 0)
 						break;
 				}
-				if (j == TEXWAD_MAXIMAGES)
-					break; // we are full, don't load any more
-				if (!texwadlump[j].name[0])
-					Q_strncpyz (texwadlump[j].name, lump_p->name, sizeof(texwadlump[j].name));
+
+				if (j != texwadlumpcount)
+					Q_strncpyz(texwadlump[j].name, lump_p->name, sizeof(texwadlump[j].name));
+
 				texwadlump[j].file = file;
 				texwadlump[j].position = LittleLong(lump_p->filepos);
 				texwadlump[j].size = LittleLong(lump_p->disksize);
+
+				if (j == texwadlumpcount)
+					texwadlumpcount++;
 			}
 		}
 
@@ -340,10 +357,8 @@ byte *WAD3_LoadTexture(miptex_t *mt)
 
 	texname[sizeof(texname) - 1] = 0;
 	W_CleanupName (mt->name, texname);
-	for (i = 0; i < TEXWAD_MAXIMAGES; i++)
+	for (i = 0; i < texwadlumpcount; i++)
 	{
-		if (!texwadlump[i].name[0])
-			break;
 		if (strcmp(texname, texwadlump[i].name))
 			continue;
 
