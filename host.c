@@ -72,71 +72,77 @@ int			host_memsize;
 
 static jmp_buf 	host_abort;
 
-void Host_Abort (void) {
-	longjmp (host_abort, 1);
+void Host_Abort(void)
+{
+	longjmp(host_abort, 1);
 }
 
-void Host_EndGame (void) {
+void Host_EndGame(void)
+{
 	SV_Shutdown ("Server was killed");
-	CL_Disconnect ();
+	CL_Disconnect();
 	// clear disconnect messages from loopback
-	NET_ClearLoopback ();
+	NET_ClearLoopback();
 }
 
 //This shuts down both the client and server
-void Host_Error (char *error, ...) {
+void Host_Error(char *error, ...)
+{
 	va_list argptr;
 	char string[1024];
 	static qboolean inerror = false;
 
 	if (inerror)
-		Sys_Error ("Host_Error: recursively entered");
+		Sys_Error("Host_Error: recursively entered");
+
 	inerror = true;
 
-	va_start (argptr,error);
-	vsnprintf (string, sizeof(string), error, argptr);
-	va_end (argptr);
+	va_start(argptr,error);
+	vsnprintf(string, sizeof(string), error, argptr);
+	va_end(argptr);
 
-	Com_Printf ("\n===========================\n");
-	Com_Printf ("Host_Error: %s\n",string);
-	Com_Printf ("===========================\n\n");
+	Com_Printf("\n===========================\n");
+	Com_Printf("Host_Error: %s\n",string);
+	Com_Printf("===========================\n\n");
 
-	SV_Shutdown (va("server crashed: %s\n", string));
-	CL_Disconnect ();
+	SV_Shutdown(va("server crashed: %s\n", string));
+	CL_Disconnect();
 
-	if (dedicated) {
-		NET_Shutdown ();
-		COM_Shutdown ();
-		Sys_Error ("%s", string);
+	if (dedicated)
+	{
+		NET_Shutdown();
+		COM_Shutdown();
+		Sys_Error("%s", string);
 	}
 
 	if (!host_initialized)
-		Sys_Error ("Host_Error: %s", string);
+		Sys_Error("Host_Error: %s", string);
 
 	inerror = false;
 
-	Host_Abort ();
+	Host_Abort();
 }
 
 //memsize is the recommended amount of memory to use for hunk
-static void Host_InitMemory (int memsize) {
+static void Host_InitMemory(int memsize)
+{
 	int t;
 
-	if (COM_CheckParm ("-minmemory"))
+	if (COM_CheckParm("-minmemory"))
 		memsize = MINIMUM_MEMORY;
 
-	if ((t = COM_CheckParm ("-heapsize")) != 0 && t + 1 < com_argc)
+	if ((t = COM_CheckParm("-heapsize")) != 0 && t + 1 < com_argc)
 		memsize = Q_atoi (com_argv[t + 1]) * 1024;
 
-	if ((t = COM_CheckParm ("-mem")) != 0 && t + 1 < com_argc)
+	if ((t = COM_CheckParm("-mem")) != 0 && t + 1 < com_argc)
 		memsize = Q_atoi (com_argv[t + 1]) * 1024 * 1024;
 
 	if (memsize < MINIMUM_MEMORY)
-		Sys_Error ("Only %4.1f megs of memory reported, can't execute game", memsize / (float)0x100000);
+		Sys_Error("Only %4.1f megs of memory reported, can't execute game", memsize / (float)0x100000);
 
 	host_memsize = memsize;
 	host_membase = Q_Malloc (host_memsize);
-	Memory_Init (host_membase, host_memsize);
+	Memory_Init(host_membase, host_memsize);
 }
 
 static void Host_ShutdownMemory()
@@ -147,22 +153,24 @@ static void Host_ShutdownMemory()
 
 //Free hunk memory up to host_hunklevel
 //Can only be called when changing levels!
-void Host_ClearMemory (void) {
+void Host_ClearMemory(void)
+{
 #ifndef GLQUAKE
-	D_FlushCaches ();
+	D_FlushCaches();
 #endif
-	Mod_ClearBrushesSprites ();
+	Mod_ClearBrushesSprites();
 
 	// any data previously allocated on hunk is no longer valid
-	Hunk_FreeToLowMark (host_hunklevel);
+	Hunk_FreeToLowMark(host_hunklevel);
 
 #ifndef CLIENTONLY
 	server_hunklevel = host_hunklevel;
 #endif
 }
 
-void Host_Frame (double time) {
-	if (setjmp (host_abort))
+void Host_Frame(double time)
+{
+	if (setjmp(host_abort))
 		return;			// something bad happened, or the server disconnected
 
 	rand();
@@ -170,13 +178,14 @@ void Host_Frame (double time) {
 	curtime += time;
 
 	if (dedicated)
-		SV_Frame (time);
+		SV_Frame(time);
 	else
-		CL_Frame (time);	// will also call SV_Frame
+		CL_Frame(time);	// will also call SV_Frame
 }
 
-char *Host_PrintBars(char *s, int len) {
-	static char temp[512];									
+static char *Host_PrintBars(char *s, int len)
+{
+	static char temp[512];
 	int i, count;
 
 	temp[0] = 0;
@@ -203,21 +212,21 @@ void CL_SaveArgv(int, char **);
 
 int cvarsregged;
 
-void Host_Init (int argc, char **argv, int default_memsize)
+void Host_Init(int argc, char **argv, int default_memsize)
 {
 	FILE *f;
 
 	srand(time(0));
 
-	COM_InitArgv (argc, argv);
+	COM_InitArgv(argc, argv);
 
-	Host_InitMemory (default_memsize);
+	Host_InitMemory(default_memsize);
 
 	ReadableChars_Init();
-	Cbuf_Init ();
-	Cmd_Init ();
-	Cvar_Init ();
-	COM_Init ();
+	Cbuf_Init();
+	Cmd_Init();
+	Cvar_Init();
+	COM_Init();
 	FS_Init();
 
 	VID_CvarInit();
@@ -267,31 +276,36 @@ void Host_Init (int argc, char **argv, int default_memsize)
 	Con_Init ();
 
 	FS_InitFilesystem();
-	COM_CheckRegistered ();
+	COM_CheckRegistered();
 
 	Con_Suppress();
 
-	if (dedicated) {
-		Cbuf_AddText ("exec server.cfg\n");
-		Cmd_StuffCmds_f ();		// process command line arguments
-		Cbuf_Execute ();
-	} else {
-		Cbuf_AddText ("exec default.cfg\n");
-		if (FS_FOpenFile("config.cfg", &f) != -1) {
-			Cbuf_AddText ("exec config.cfg\n");
+	if (dedicated)
+	{
+		Cbuf_AddText("exec server.cfg\n");
+		Cmd_StuffCmds_f();		// process command line arguments
+		Cbuf_Execute();
+	}
+	else
+	{
+		Cbuf_AddText("exec default.cfg\n");
+		if (FS_FOpenFile("config.cfg", &f) != -1)
+		{
+			Cbuf_AddText("exec config.cfg\n");
 			fclose(f);
 		}
-		if (FS_FOpenFile("autoexec.cfg", &f) != -1) {
+		if (FS_FOpenFile("autoexec.cfg", &f) != -1)
+		{
 			Cbuf_AddText ("exec autoexec.cfg\n");
 			fclose(f);
 		}
 		Cbuf_Execute();
-		Cmd_StuffCmds_f ();		// process command line arguments
-		Cbuf_AddText ("cl_warncmd 1\n");
+		Cmd_StuffCmds_f();		// process command line arguments
+		Cbuf_AddText("cl_warncmd 1\n");
 	}
 
 	Cmd_ParseLegacyCmdLineCmds();
-	Cbuf_Execute ();
+	Cbuf_Execute();
 
 	Con_Unsuppress();
 
@@ -300,23 +314,23 @@ void Host_Init (int argc, char **argv, int default_memsize)
 		Host_Error("Unable to initialise mouse input\n");
 	}
 
-	NET_Init ();
+	NET_Init();
 	QLib_Init();
-	Sys_Init ();
-	PM_Init ();
-	Mod_Init ();
+	Sys_Init();
+	PM_Init();
+	Mod_Init();
 
 	SB_Init();
-	SV_Init ();
-	CL_Init ();
+	SV_Init();
+	CL_Init();
 
 #ifndef SERVERONLY
 	if (!dedicated)
 		CL_SaveArgv(argc, argv);
 #endif
 
-	Hunk_AllocName (0, "-HOST_HUNKLEVEL-");
-	host_hunklevel = Hunk_LowMark ();
+	Hunk_AllocName(0, "-HOST_HUNKLEVEL-");
+	host_hunklevel = Hunk_LowMark();
 #ifndef CLIENTONLY
 	server_hunklevel = host_hunklevel;
 #endif
@@ -324,19 +338,19 @@ void Host_Init (int argc, char **argv, int default_memsize)
 	host_initialized = true;
 
 	Cmd_EnableFunctionExecution();
-	
-	Com_Printf ("Exe: "__TIME__" "__DATE__"\n");
-	Com_Printf ("Hunk allocation: %4.1f MB.\n", (float) host_memsize / (1024 * 1024));
 
-	Com_Printf ("\nFodQuake version %s\n\n", VersionString());
+	Com_Printf("Exe: "__TIME__" "__DATE__"\n");
+	Com_Printf("Hunk allocation: %4.1f MB.\n", (float) host_memsize / (1024 * 1024));
+
+	Com_Printf("\nFodQuake version %s\n\n", VersionString());
 
 	if (dedicated)
 	{
 		// if a map wasn't specified on the command line, spawn start map
 		if (!com_serveractive)
-			Cmd_ExecuteString ("map start");
+			Cmd_ExecuteString("map start");
 		if (!com_serveractive)
-			Host_Error ("Couldn't spawn a server");
+			Host_Error("Couldn't spawn a server");
 	}
 	else
 		VID_Open();
@@ -344,34 +358,38 @@ void Host_Init (int argc, char **argv, int default_memsize)
 
 //FIXME: this is a callback from Sys_Quit and Sys_Error.  It would be better
 //to run quit through here before the final handoff to the sys code.
-void Host_Shutdown (void) {
+void Host_Shutdown(void)
+{
 	static qboolean isdown = false;
 
-	if (isdown) {
-		printf ("recursive shutdown\n");
+	if (isdown)
+	{
+		printf("recursive shutdown\n");
 		return;
 	}
 	isdown = true;
 
 	SB_Quit();
-	SV_Shutdown ("Server quit\n");
+	SV_Shutdown("Server quit\n");
 	QLib_Shutdown();
-	CL_Shutdown ();
+	CL_Shutdown();
 	Mod_Shutdown();
 	FS_ShutdownFilesystem();
-	NET_Shutdown ();
+	NET_Shutdown();
 	Mouse_Shutdown();
 #ifndef SERVERONLY
 	Con_Shutdown();
 #endif
-	COM_Shutdown ();
+	COM_Shutdown();
 
 	Cvar_Shutdown();
 
 	Host_ShutdownMemory();
 }
 
-void Host_Quit (void) {
+void Host_Quit(void)
+{
 	Host_Shutdown ();
-	Sys_Quit ();
+	Sys_Quit();
 }
+
