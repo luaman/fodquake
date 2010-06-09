@@ -428,7 +428,7 @@ mpic_t *Draw_CachePic(char *path)
 	Q_strncpyz(pic->name, path, sizeof(pic->name));
 
 	// load the pic from disk
-	if (!(dat = (qpic_t *)FS_LoadTempFile(path)))
+	if (!(dat = (qpic_t *)FS_LoadMallocFile(path)))
 		Sys_Error("Draw_CachePic: failed to load %s", path);
 	SwapPic(dat);
 
@@ -446,6 +446,8 @@ mpic_t *Draw_CachePic(char *path)
 		memcpy(&pic->pic.texnum, &pic_24bit->texnum, sizeof(mpic_t) - 8);
 	else
 		GL_LoadPicTexture(path, &pic->pic, dat->data);
+
+	free(dat);
 
 	return &pic->pic;
 }
