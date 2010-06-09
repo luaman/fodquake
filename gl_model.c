@@ -1013,7 +1013,7 @@ static void CalcSurfaceExtents(model_t *model, msurface_t *s)
 	}
 }
 
-void Mod_LoadFaces(model_t *model, lump_t *l)
+static void Mod_LoadFaces(model_t *model, lump_t *l)
 {
 	dface_t *in;
 	msurface_t *out;
