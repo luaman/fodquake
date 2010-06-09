@@ -126,14 +126,27 @@ byte *Mod_LeafPVS (mleaf_t *leaf, model_t *model)
 	return Mod_DecompressVis (leaf->compressed_vis, model);
 }
 
+static void Mod_FreeBrushData(model_t *model)
+{
+	free(model->submodels);
+	model->submodels = 0;
+}
+
 void Mod_ClearBrushesSprites(void)
 {
 	int i;
 	model_t	*mod;
 
 	for (i = 0, mod = mod_known; i < mod_numknown; i++, mod++)
+	{
 		if (mod->type != mod_alias)
+		{
+			if (mod->type == mod_brush)
+				Mod_FreeBrushData(mod);
+
 			mod->needload = true;
+		}
+	}
 }
 
 void Mod_ClearAll(void)
@@ -148,23 +161,52 @@ void Mod_ClearAll(void)
 			free(mod->extradata);
 			mod->extradata = 0;
 		}
+		else if (mod->type == mod_brush)
+		{
+			Mod_FreeBrushData(mod);
+		}
 
 		mod->needload = true;
 	}
 }
 
-model_t *Mod_FindName (char *name)
+static model_t *Mod_FindName(const char *name)
 {
 	int i;
 	model_t	*mod;
+	char namebuf[MAX_QPATH];
+	const char *p;
+	const char *searchname;
+	int submodel;
 
-	if (!name[0])
+	if ((p = strchr(name, '*')))
+	{
+		memcpy(namebuf, name, p-name);
+		namebuf[p-name] = 0;
+		searchname = namebuf;
+	}
+	else
+		searchname = name;
+
+	if (!searchname[0])
 		Sys_Error ("Mod_ForName: NULL name");
 
 	// search the currently loaded models
 	for (i = 0, mod = mod_known; i < mod_numknown; i++, mod++)
-		if (!strcmp (mod->name, name) )
+		if (strcmp(mod->name, searchname) == 0)
 			break;
+
+	if (p)
+	{
+		if (i == mod_numknown)
+			Sys_Error("Mod_FindName: Submodel for non-existant model %s requested\n", searchname);
+
+		submodel = atoi(p + 1);
+		if (!(submodel > 0 && submodel < mod->numsubmodels))
+			Sys_Error("Mod_FindName: Requested submodel out of range\n", submodel);
+
+		mod = &mod->submodels[submodel-1];
+	}
 
 	if (i == mod_numknown)
 	{
@@ -1382,40 +1424,48 @@ static void Mod_LoadBrushModel (model_t *mod, void *buffer)
 
 	mod->numframes = 2;		// regular and alternate animation
 
-	mainmodel = mod;
-
-	// set up the submodels (FIXME: this is confusing)
-	for (i = 0; i < mod->numsubmodels; i++)
+	if (mod->numsubmodels)
 	{
-		bm = &subdmodels[i];
-
-		mod->hulls[0].firstclipnode = bm->headnode[0];
-		for (j = 1; j < MAX_MAP_HULLS; j++)
+		if (mod->numsubmodels > 1)
 		{
-			mod->hulls[j].firstclipnode = bm->headnode[j];
-			mod->hulls[j].lastclipnode = mod->numclipnodes - 1;
+			mod->submodels = malloc(sizeof(*mod->submodels)*(mod->numsubmodels-1));
+			if (mod->submodels == 0)
+				Sys_Error("Mod_LoadBrushModel: Out of memory\n");
 		}
 
-		mod->firstmodelsurface = bm->firstface;
-		mod->nummodelsurfaces = bm->numfaces;
+		mainmodel = mod;
 
-		VectorCopy (bm->maxs, mod->maxs);
-		VectorCopy (bm->mins, mod->mins);
-
-		mod->radius = RadiusFromBounds (mod->mins, mod->maxs);
-
-		mod->numleafs = bm->visleafs;
-
-		if (i < mod->numsubmodels - 1)
+		// set up the submodels (FIXME: this is confusing)
+		for (i = 0; i < mod->numsubmodels; i++)
 		{
-			// duplicate the basic information
-			char name[12];
+			bm = &subdmodels[i];
 
-			sprintf(name, "%s*%i", mainmodel->name, i+1);
-			nextmodel = Mod_FindName(name);
-			*nextmodel = *mod;
-			strcpy(nextmodel->name, name);
-			mod = nextmodel;
+			mod->hulls[0].firstclipnode = bm->headnode[0];
+			for (j = 1; j < MAX_MAP_HULLS; j++)
+			{
+				mod->hulls[j].firstclipnode = bm->headnode[j];
+				mod->hulls[j].lastclipnode = mod->numclipnodes - 1;
+			}
+
+			mod->firstmodelsurface = bm->firstface;
+			mod->nummodelsurfaces = bm->numfaces;
+
+			VectorCopy (bm->maxs, mod->maxs);
+			VectorCopy (bm->mins, mod->mins);
+
+			mod->radius = RadiusFromBounds (mod->mins, mod->maxs);
+
+			mod->numleafs = bm->visleafs;
+
+			if (i < mod->numsubmodels - 1)
+			{
+				// duplicate the basic information
+
+				nextmodel = &mod->submodels[i];
+				*nextmodel = *mod;
+				sprintf(nextmodel->name, "%s*%i", mainmodel->name, i+1);
+				mod = nextmodel;
+			}
 		}
 	}
 
