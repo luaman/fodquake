@@ -219,7 +219,7 @@ int FS_FOpenFile(char *filename, FILE ** file)
 //Always appends a 0 byte to the loaded data.
 static byte *loadbuf;
 static int loadsize;
-byte *FS_LoadFile(char *path, int usehunk)
+static byte *FS_LoadFile(char *path, int usehunk)
 {
 	FILE *h;
 	byte *buf;
@@ -241,10 +241,6 @@ byte *FS_LoadFile(char *path, int usehunk)
 	{
 		buf = Hunk_AllocName(len + 1, base);
 	}
-	else if (usehunk == 2)
-	{
-		buf = Hunk_TempAlloc(len + 1);
-	}
 	else if (usehunk == 0)
 	{
 		buf = Z_Malloc(len + 1);
@@ -255,6 +251,10 @@ byte *FS_LoadFile(char *path, int usehunk)
 			buf = Hunk_TempAlloc(len + 1);
 		else
 			buf = loadbuf;
+	}
+	else if (usehunk == 5)
+	{
+		buf = malloc(len + 1);
 	}
 	else
 	{
@@ -292,11 +292,6 @@ void *FS_LoadHunkFile(char *path)
 	return FS_LoadFile(path, 1);
 }
 
-void *FS_LoadTempFile(char *path)
-{
-	return FS_LoadFile(path, 2);
-}
-
 // uses temp hunk if larger than bufsize
 void *FS_LoadStackFile(char *path, void *buffer, int bufsize)
 {
@@ -307,6 +302,11 @@ void *FS_LoadStackFile(char *path, void *buffer, int bufsize)
 	buf = FS_LoadFile(path, 4);
 
 	return buf;
+}
+
+void *FS_LoadMallocFile(char *path)
+{
+	return FS_LoadFile(path, 5);
 }
 
 static int packfile_name_compare(const void *pack1, const void *pack2)

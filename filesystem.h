@@ -10,8 +10,8 @@ void FS_SetGamedir(char *dir);
 int FS_FOpenFile(char *filename, FILE **file);
 void *FS_LoadZFile(char *path);
 void *FS_LoadHunkFile(char *path);
-void *FS_LoadTempFile(char *path);
 void *FS_LoadStackFile(char *path, void *buffer, int bufsize);
+void *FS_LoadMallocFile(char *path);
 
 void FS_Init(void);
 
