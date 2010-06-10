@@ -357,50 +357,50 @@ void Cmd_StuffCmds_f(void)
 	Z_Free (token);
 }
 
-void Cmd_Exec_f (void)
+void Cmd_Exec_f(void)
 {
 	char *f, name[MAX_OSPATH];
-	int mark;
 
-	if (Cmd_Argc () != 2)
+	if (Cmd_Argc() != 2)
 	{
-		Com_Printf ("exec <filename> : execute a script file\n");
+		Com_Printf("exec <filename> : execute a script file\n");
 		return;
 	}
 
-	Q_strncpyz (name, Cmd_Argv(1), sizeof(name) - 4);
-	mark = Hunk_LowMark();
-	if (!(f = (char *) FS_LoadHunkFile (name)))	{
+	Q_strncpyz(name, Cmd_Argv(1), sizeof(name) - 4);
+	if (!(f = (char *)FS_LoadMallocFile(name)))
+	{
 		char *p;
-		p = COM_SkipPath (name);
+		p = COM_SkipPath(name);
 		if (!strchr (p, '.'))
 		{
 			// no extension, so try the default (.cfg)
 			strcat (name, ".cfg");
-			f = (char *) FS_LoadHunkFile (name);
+			f = (char *) FS_LoadMallocFile(name);
 		}
 		if (!f)
 		{
-			Com_Printf ("couldn't exec %s\n", Cmd_Argv(1));
+			Com_Printf("couldn't exec %s\n", Cmd_Argv(1));
 			return;
 		}
 	}
 	if (cl_warncmd.value || developer.value)
-		Com_Printf ("execing %s\n", name);
+		Com_Printf("execing %s\n", name);
 
 #ifndef SERVERONLY
 	if (cbuf_current == &cbuf_svc)
 	{
-		Cbuf_AddText (f);
-		Cbuf_AddText ("\n");
+		Cbuf_AddText(f);
+		Cbuf_AddText("\n");
 	}
 	else
 #endif
 	{
-		Cbuf_InsertText ("\n");
-		Cbuf_InsertText (f);
+		Cbuf_InsertText("\n");
+		Cbuf_InsertText(f);
 	}
-	Hunk_FreeToLowMark (mark);
+
+	free(f);
 }
 
 //Just prints the rest of the line to the console
