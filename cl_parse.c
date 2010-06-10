@@ -263,7 +263,7 @@ void Model_NextDownload (void)
 		if (!cl.model_name[i][0])
 			break;
 
-		cl.model_precache[i] = Mod_ForName (cl.model_name[i], false);
+		cl.model_precache[i] = Mod_ForName(cl.model_name[i], false);
 
 		if (!cl.model_precache[i])
 		{
@@ -1011,6 +1011,9 @@ void CL_ParseModellist(void)
 			}
 		}
 	}
+
+	if (nummodels+1 < MAX_MODELS)
+		cl.model_name[nummodels+1][0] = 0;
 
 	if ((n = MSG_ReadByte()))
 	{
