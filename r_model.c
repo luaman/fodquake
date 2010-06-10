@@ -537,7 +537,7 @@ static void Mod_LoadLighting(model_t *model, lump_t *l)
 		if (l->filelen % 3)
 			Host_Error("Mod_LoadLighting: l->filelen % 3");
 
-		model->lightdata = Hunk_AllocName (l->filelen / 3, loadname);
+		model->lightdata = malloc(l->filelen / 3);
 		if (model->lightdata == 0)
 			Sys_Error("Mod_LoadLighting: Out of memory\n");
 
@@ -547,7 +547,7 @@ static void Mod_LoadLighting(model_t *model, lump_t *l)
 	}
 	else
 	{
-		model->lightdata = Hunk_AllocName(l->filelen, loadname);
+		model->lightdata = malloc(l->filelen);
 		if (model->lightdata == 0)
 			Sys_Error("Mod_LoadLighting: Out of memory\n");
 
