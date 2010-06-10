@@ -347,7 +347,7 @@ static byte *ConvertWad3ToRGBA(miptex_t *tex)
 byte *WAD3_LoadTexture(miptex_t *mt)
 {
 	char texname[MAX_QPATH];
-	int i, j, lowmark = 0;
+	int i, j;
 	FILE *file;
 	miptex_t *tex;
 	byte *data;
@@ -368,25 +368,37 @@ byte *WAD3_LoadTexture(miptex_t *mt)
 			Com_Printf("WAD3_LoadTexture: corrupt WAD3 file");
 			return NULL;
 		}
-		lowmark = Hunk_LowMark();
-		tex = Hunk_Alloc(texwadlump[i].size);
-		if (fread(tex, 1, texwadlump[i].size, file) < texwadlump[i].size)
+
+		data = 0;
+
+		tex = malloc(texwadlump[i].size);
+		if (tex == 0)
 		{
-			Com_Printf("WAD3_LoadTexture: corrupt WAD3 file");
-			Hunk_FreeToLowMark(lowmark);
-			return NULL;
+			Com_Printf("WAD3_LoadTexture: Out of memory\n");
 		}
-		tex->width = LittleLong(tex->width);
-		tex->height = LittleLong(tex->height);
-		if (tex->width != mt->width || tex->height != mt->height)
+		else
 		{
-			Hunk_FreeToLowMark(lowmark);
-			return NULL;
+			if (fread(tex, 1, texwadlump[i].size, file) < texwadlump[i].size)
+			{
+				Com_Printf("WAD3_LoadTexture: corrupt WAD3 file");
+			}
+			else
+			{
+				tex->width = LittleLong(tex->width);
+				tex->height = LittleLong(tex->height);
+
+				if (tex->width == mt->width && tex->height == mt->height)
+				{
+					for (j = 0;j < MIPLEVELS;j++)
+						tex->offsets[j] = LittleLong(tex->offsets[j]);
+
+					data = ConvertWad3ToRGBA(tex);
+				}
+			}
+
+			free(tex);
 		}
-		for (j = 0;j < MIPLEVELS;j++)
-			tex->offsets[j] = LittleLong(tex->offsets[j]);
-		data = ConvertWad3ToRGBA(tex);
-		Hunk_FreeToLowMark(lowmark);
+
 		return data;
 	}
 	return NULL;
