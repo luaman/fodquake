@@ -194,17 +194,16 @@ static void InitFragDefs(void)
 
 static void LoadFragFile(char *filename, qboolean quiet)
 {
-	int lowmark, c, line, i;
+	int c, line, i;
 	msgtype_t msgtype;
 	char save, *buffer, *start, *end, *token, fragfilename[MAX_OSPATH];
 	qboolean gotversion = false, warned_flagmsg_overflow = false;
 
 	InitFragDefs();
 
-	lowmark = Hunk_LowMark();
 	Q_strncpyz(fragfilename, filename, sizeof(fragfilename));
 	COM_ForceExtension(fragfilename, ".dat");
-	if (!(buffer = FS_LoadHunkFile(fragfilename)))
+	if (!(buffer = FS_LoadMallocFile(fragfilename)))
 	{
 		if (!quiet)
 			Com_Printf("Couldn't load fragfile \"%s\"\n", fragfilename);
@@ -501,17 +500,15 @@ nextline:
 		fragdefs.active = true;
 		if (!quiet)
 			Com_Printf("Loaded fragfile \"%s\" (%d frag defs)\n", fragfilename, fragdefs.num_fragmsgs);
-		goto end;
 	}
 	else
 	{
 		if (!quiet)
 			Com_Printf("Fragfile \"%s\" was empty\n", fragfilename);
-		goto end;
 	}
 
 end:
-	Hunk_FreeToLowMark(lowmark);
+	free(buffer);
 }
 
 void Load_FragFile_f(void)

@@ -18,6 +18,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */
 
+#include <stdlib.h>
 #include <string.h>
 
 #include "qwsvdef.h"
@@ -237,10 +238,12 @@ void SV_LoadEntFile (void)
 	COM_StripExtension (sv.worldmodel->name, name);
 	strcat (name, ".ent");
 
-	data = (char *) FS_LoadHunkFile (name);
+	data = (char *) FS_LoadMallocFile(name);
 	if (!data)
 		return;
 
+#warning Ugly as sin.
+	free(sv.worldmodel->entities);
 	sv.worldmodel->entities = data;
 
 	Com_DPrintf ("Loaded entfile %s\n", name);
