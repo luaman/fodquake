@@ -1730,12 +1730,12 @@ void CL_Init (void)
 #endif
 	FChecks_Init();				
 
-	host_basepal = (byte *) FS_LoadHunkFile ("gfx/palette.lmp");
+	host_basepal = (byte *) FS_LoadMallocFile("gfx/palette.lmp");
 	if (!host_basepal)
 		Sys_Error ("Couldn't load gfx/palette.lmp");		
 	FMod_CheckModel("gfx/palette.lmp", host_basepal, com_filesize);
 
-	host_colormap = (byte *) FS_LoadHunkFile ("gfx/colormap.lmp");
+	host_colormap = (byte *) FS_LoadMallocFile ("gfx/colormap.lmp");
 	if (!host_colormap)
 		Sys_Error ("Couldn't load gfx/colormap.lmp");
 	FMod_CheckModel("gfx/colormap.lmp", host_colormap, com_filesize); 
@@ -2010,5 +2010,8 @@ void CL_Shutdown (void)
 	Log_Shutdown();
 	if (cl_vidinitialised)
 		VID_Shutdown();
+
+	free(host_basepal);
+	free(host_colormap);
 }
 
