@@ -148,6 +148,27 @@ static void Mod_FreeBrushData(model_t *model)
 
 	free(model->texinfo);
 	model->texinfo = 0;
+
+	free(model->surfaces);
+	model->surfaces = 0;
+
+	free(model->nodes);
+	model->nodes = 0;
+
+	free(model->leafs);
+	model->leafs = 0;
+
+	free(model->clipnodes);
+	model->clipnodes = 0;
+
+	free(model->marksurfaces);
+	model->marksurfaces = 0;
+
+	free(model->surfedges);
+	model->surfedges = 0;
+
+	free(model->planes);
+	model->planes = 0;
 }
 
 void Mod_ClearBrushesSprites(void)
@@ -801,7 +822,11 @@ static void Mod_LoadFaces(model_t *model, lump_t *l)
 		Host_Error("Mod_LoadFaces: funny lump size in %s", model->name);
 
 	count = l->filelen / sizeof(*in);
-	out = Hunk_AllocName(count*sizeof(*out), loadname);
+	out = malloc(count*sizeof(*out));
+	if (out == 0)
+		Sys_Error("Mod_LoadFaces: Out of memory\n");
+
+	memset(out, 0, count*sizeof(*out));
 
 	model->surfaces = out;
 	model->numsurfaces = count;
@@ -874,7 +899,11 @@ static void Mod_LoadNodes(model_t *model, lump_t *l)
 		Host_Error("Mod_LoadNodes: funny lump size in %s", model->name);
 
 	count = l->filelen / sizeof(*in);
-	out = Hunk_AllocName ( count*sizeof(*out), loadname);
+	out = malloc(count*sizeof(*out));
+	if (out == 0)
+		Sys_Error("Mod_LoadNodes: Out of memory\n");
+
+	memset(out, 0, count*sizeof(*out));
 
 	model->nodes = out;
 	model->numnodes = count;
@@ -916,7 +945,11 @@ static void Mod_LoadLeafs(model_t *model, lump_t *l)
 	if (l->filelen % sizeof(*in))
 		Host_Error("Mod_LoadLeafs: funny lump size in %s", model->name);
 	count = l->filelen / sizeof(*in);
-	out = Hunk_AllocName ( count*sizeof(*out), loadname);
+	out = malloc(count*sizeof(*out));
+	if (out == 0)
+		Sys_Error("Mod_LoadLeafs: Out of memory\n");
+
+	memset(out, 0, count*sizeof(*out));
 
 	model->leafs = out;
 	model->numleafs = count;
@@ -954,7 +987,9 @@ static void Mod_LoadClipnodes(model_t *model, lump_t *l)
 	if (l->filelen % sizeof(*in))
 		Host_Error("Mod_LoadClipnodes: funny lump size in %s", model->name);
 	count = l->filelen / sizeof(*in);
-	out = Hunk_AllocName ( count*sizeof(*out), loadname);
+	out = malloc(count*sizeof(*out));
+	if (out == 0)
+		Sys_Error("Mod_LoadClipnodes: Out of memory\n");
 
 	model->clipnodes = out;
 	model->numclipnodes = count;
@@ -1075,7 +1110,9 @@ static void Mod_LoadMarksurfaces(model_t *model, lump_t *l)
 	if (l->filelen % sizeof(*in))
 		Host_Error("Mod_LoadMarksurfaces: funny lump size in %s", model->name);
 	count = l->filelen / sizeof(*in);
-	out = Hunk_AllocName ( count*sizeof(*out), loadname);
+	out = malloc(count*sizeof(*out));
+	if (out == 0)
+		Sys_Error("Mod_LoadMarksurfaces: Out of memory\n");
 
 	model->marksurfaces = out;
 	model->nummarksurfaces = count;
@@ -1097,7 +1134,9 @@ static void Mod_LoadSurfedges(model_t *model, lump_t *l)
 	if (l->filelen % sizeof(*in))
 		Host_Error("Mod_LoadSurfedges: funny lump size in %s", model->name);
 	count = l->filelen / sizeof(*in);
-	out = Hunk_AllocName ( count*sizeof(*out), loadname);
+	out = malloc(count*sizeof(*out));
+	if (out == 0)
+		Sys_Error("Mod_LoadSurfedges: Out of memory\n");
 
 	model->surfedges = out;
 	model->numsurfedges = count;
@@ -1116,7 +1155,9 @@ static void Mod_LoadPlanes(model_t *model, lump_t *l)
 	if (l->filelen % sizeof(*in))
 		Host_Error("Mod_LoadPlanes: funny lump size in %s", model->name);
 	count = l->filelen / sizeof(*in);
-	out = Hunk_AllocName ( count*2*sizeof(*out), loadname);
+	out = malloc(count*2*sizeof(*out));
+	if (out == 0)
+		Sys_Error("Mod_LoadPlanes: Out of memory\n");
 
 	model->planes = out;
 	model->numplanes = count;
