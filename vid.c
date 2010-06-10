@@ -205,8 +205,16 @@ void VID_Restart(void)
 	
 	for(i=1;i < MAX_MODELS;i++)
 	{
-		if (cl.model_precache[i])
-			Mod_LoadModel(cl.model_precache[i], true);
+		if (cl.model_name[i][0] == 0)
+			break;
+
+		cl.model_precache[i] = Mod_ForName (cl.model_name[i], false);
+		if (!cl.model_precache[i])
+		{
+			Com_Printf("Unable to reload model '%s'.\n", cl.model_precache[i]);
+			Host_EndGame();
+			return;
+		}
 	}
 
 	if (cl.model_precache[1])
