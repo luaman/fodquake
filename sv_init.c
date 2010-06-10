@@ -33,9 +33,10 @@ char localmodels[MAX_MODELS][5];			// inline model names for precache
 
 char localinfo[MAX_LOCALINFO_STRING + 1];	// local game info
 
-int SV_ModelIndex (char *name) {
+int SV_ModelIndex (char *name)
+{
 	int i;
-	
+
 	if (!name || !name[0])
 		return 0;
 
@@ -48,7 +49,8 @@ int SV_ModelIndex (char *name) {
 }
 
 //Moves to the next signon buffer if needed
-void SV_FlushSignon (void) {
+void SV_FlushSignon (void)
+{
 	if (sv.signon.cursize < sv.signon.maxsize - 512)
 		return;
 
@@ -63,8 +65,9 @@ void SV_FlushSignon (void) {
 
 //Entity baselines are used to compress the update messages to the clients --
 //only the fields that differ from the baseline will be transmitted
-void SV_CreateBaseline (void) {
-	int i, entnum;	
+void SV_CreateBaseline (void)
+{
+	int i, entnum;
 	edict_t *svent;
 
 	for (entnum = 0; entnum < sv.num_edicts; entnum++)	{
@@ -80,10 +83,13 @@ void SV_CreateBaseline (void) {
 		VectorCopy (svent->v.angles, svent->baseline.angles);
 		svent->baseline.frame = svent->v.frame;
 		svent->baseline.skinnum = svent->v.skin;
-		if (entnum > 0 && entnum <= MAX_CLIENTS) {
+		if (entnum > 0 && entnum <= MAX_CLIENTS)
+		{
 			svent->baseline.colormap = entnum;
 			svent->baseline.modelindex = SV_ModelIndex("progs/player.mdl");
-		} else {
+		}
+		else
+		{
 			svent->baseline.colormap = 0;
 			svent->baseline.modelindex = SV_ModelIndex(PR_GetString(svent->v.model));
 		}
@@ -93,14 +99,15 @@ void SV_CreateBaseline (void) {
 		SV_FlushSignon ();
 
 		// add to the message
-		MSG_WriteByte (&sv.signon,svc_spawnbaseline);		
+		MSG_WriteByte (&sv.signon,svc_spawnbaseline);
 		MSG_WriteShort (&sv.signon,entnum);
 
 		MSG_WriteByte (&sv.signon, svent->baseline.modelindex);
 		MSG_WriteByte (&sv.signon, svent->baseline.frame);
 		MSG_WriteByte (&sv.signon, svent->baseline.colormap);
 		MSG_WriteByte (&sv.signon, svent->baseline.skinnum);
-		for (i = 0; i < 3; i++) {
+		for (i = 0; i < 3; i++)
+		{
 			MSG_WriteCoord(&sv.signon, svent->baseline.origin[i]);
 			MSG_WriteAngle(&sv.signon, svent->baseline.angles[i]);
 		}
@@ -109,7 +116,8 @@ void SV_CreateBaseline (void) {
 
 //Grabs the current state of the progs serverinfo flags and each
 //client for saving across the transition to another level
-void SV_SaveSpawnparms (void) {
+void SV_SaveSpawnparms (void)
+{
 	int i, j;
 
 	if (!sv.state)
@@ -138,7 +146,8 @@ void SV_SaveSpawnparms (void) {
 
 //Expands the PVS and calculates the PHS
 //(Potentially Hearable Set)
-void SV_CalcPHS (void) {
+void SV_CalcPHS (void)
+{
 	int rowbytes, rowwords, i, j, k, l, index, num, bitbyte, count, vcount;
 	unsigned *dest, *src;
 	byte *scan;
@@ -156,8 +165,10 @@ void SV_CalcPHS (void) {
 		memcpy (scan, Mod_LeafPVS(sv.worldmodel->leafs + i, sv.worldmodel), rowbytes);
 		if (i == 0)
 			continue;
-		for (j = 0; j < num; j++) {
-			if ( scan[j >> 3] & (1 << (j & 7)) ) {
+		for (j = 0; j < num; j++)
+		{
+			if ( scan[j >> 3] & (1 << (j & 7)) )
+			{
 				vcount++;
 			}
 		}
@@ -167,13 +178,16 @@ void SV_CalcPHS (void) {
 	count = 0;
 	scan = sv.pvs;
 	dest = (unsigned *)sv.phs;
-	for (i = 0; i < num; i++, dest += rowwords, scan += rowbytes) {
+	for (i = 0; i < num; i++, dest += rowwords, scan += rowbytes)
+	{
 		memcpy (dest, scan, rowbytes);
-		for (j = 0; j < rowbytes; j++) {
+		for (j = 0; j < rowbytes; j++)
+		{
 			bitbyte = scan[j];
 			if (!bitbyte)
 				continue;
-			for (k = 0; k < 8; k++) {
+			for (k = 0; k < 8; k++)
+			{
 				if (! (bitbyte & (1 << k)) )
 					continue;
 				// or this pvs row into the phs
@@ -196,7 +210,8 @@ void SV_CalcPHS (void) {
 	Com_DPrintf ("Average leafs visible / hearable / total: %i / %i / %i\n", vcount/num, count/num, num);
 }
 
-unsigned SV_CheckModel(char *mdl) {
+unsigned SV_CheckModel(char *mdl)
+{
 	byte stackbuf[1024];		// avoid dirtying the cache heap
 	byte *buf;
 	unsigned short crc;
@@ -210,7 +225,8 @@ unsigned SV_CheckModel(char *mdl) {
 }
 
 cvar_t	sv_loadentfiles = {"sv_loadentfiles", "0"};
-void SV_LoadEntFile (void) {
+void SV_LoadEntFile (void)
+{
 	char name[MAX_OSPATH], *data, crc[32];
 
 	Info_SetValueForStarKey (svs.info,  "*entfile", "", MAX_SERVERINFO_STRING);
@@ -235,7 +251,8 @@ void SV_LoadEntFile (void) {
 
 //Change the server to a new map, taking all connected clients along with it.
 //This is only called from the SV_Map_f() function.
-void SV_SpawnServer (char *server, qboolean devmap) {
+void SV_SpawnServer (char *server, qboolean devmap)
+{
 	edict_t *ent;
 	int i;
 	extern qboolean	sv_allow_cheats;
@@ -262,10 +279,13 @@ void SV_SpawnServer (char *server, qboolean devmap) {
 		current_skill = 3;
 	Cvar_Set (&skill, va("%d", (int)current_skill));
 
-	if ((sv_cheats.value || devmap) && !sv_allow_cheats) {
+	if ((sv_cheats.value || devmap) && !sv_allow_cheats)
+	{
 		sv_allow_cheats = true;
 		Info_SetValueForStarKey (svs.info, "*cheats", "ON", MAX_SERVERINFO_STRING);
-	} else if ((!sv_cheats.value && !devmap) && sv_allow_cheats) {
+	}
+	else if ((!sv_cheats.value && !devmap) && sv_allow_cheats)
+	{
 		sv_allow_cheats = false;
 		Info_SetValueForStarKey (svs.info, "*cheats", "", MAX_SERVERINFO_STRING);
 	}
@@ -281,7 +301,7 @@ void SV_SpawnServer (char *server, qboolean devmap) {
 	SZ_Init (&sv.multicast, sv.multicast_buf, sizeof(sv.multicast_buf));
 
 	SZ_Init (&sv.master, sv.master_buf, sizeof(sv.master_buf));
-	
+
 	SZ_Init (&sv.signon, sv.signon_buffers[0], sizeof(sv.signon_buffers[0]));
 	sv.num_signon_buffers = 1;
 
@@ -318,7 +338,8 @@ void SV_SpawnServer (char *server, qboolean devmap) {
 	sv.model_precache[0] = pr_strings;
 	sv.model_precache[1] = sv.modelname;
 	sv.models[1] = sv.worldmodel;
-	for (i = 1; i < sv.worldmodel->numsubmodels; i++) {
+	for (i = 1; i < sv.worldmodel->numsubmodels; i++)
+	{
 		sv.model_precache[1+i] = localmodels[i];
 		sv.models[i + 1] = Mod_ForName (localmodels[i], false);
 	}
