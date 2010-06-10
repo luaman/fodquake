@@ -123,30 +123,36 @@ int		menuheight = 240;
 cvar_t	scr_centerMenu = {"scr_centerMenu","1"};
 int		m_yofs = 0;
 
-void M_DrawCharacter (int cx, int line, int num) {
+void M_DrawCharacter (int cx, int line, int num)
+{
 	Draw_Character (cx + ((menuwidth - 320)>>1), line + m_yofs, num);
 }
 
-void M_Print (int cx, int cy, const char *str) {
+void M_Print (int cx, int cy, const char *str)
+{
 	Draw_Alt_String (cx + ((menuwidth - 320)>>1), cy + m_yofs, str);
 }
 
-void M_PrintWhite (int cx, int cy, const char *str) {
+void M_PrintWhite (int cx, int cy, const char *str)
+{
 	Draw_String (cx + ((menuwidth - 320)>>1), cy + m_yofs, str);
 }
 
-void M_DrawTransPic (int x, int y, mpic_t *pic) {
+void M_DrawTransPic (int x, int y, mpic_t *pic)
+{
 	Draw_TransPic (x + ((menuwidth - 320)>>1), y + m_yofs, pic);
 }
 
-void M_DrawPic (int x, int y, mpic_t *pic) {
+void M_DrawPic (int x, int y, mpic_t *pic)
+{
 	Draw_Pic (x + ((menuwidth - 320)>>1), y + m_yofs, pic);
 }
 
 byte identityTable[256];
 byte translationTable[256];
 
-void M_BuildTranslationTable(int top, int bottom) {
+void M_BuildTranslationTable(int top, int bottom)
+{
 	int		j;
 	byte	*dest, *source;
 
@@ -166,45 +172,56 @@ void M_BuildTranslationTable(int top, int bottom) {
 		memcpy (dest + BOTTOM_RANGE, source + bottom, 16);
 	else
 		for (j = 0; j < 16; j++)
-			dest[BOTTOM_RANGE + j] = source[bottom + 15 - j];		
+			dest[BOTTOM_RANGE + j] = source[bottom + 15 - j];
 }
 
 
-void M_DrawTransPicTranslate (int x, int y, mpic_t *pic) {
+void M_DrawTransPicTranslate (int x, int y, mpic_t *pic)
+{
 	Draw_TransPicTranslate (x + ((menuwidth - 320) >> 1), y + m_yofs, pic, translationTable);
 }
 
 
-void M_DrawTextBox (int x, int y, int width, int lines) {
+void M_DrawTextBox (int x, int y, int width, int lines)
+{
 	Draw_TextBox (x + ((menuwidth - 320) >> 1), y + m_yofs, width, lines);
 }
 
 //=============================================================================
-		
-void M_ToggleMenu_f (void) {
+
+void M_ToggleMenu_f (void)
+{
 	m_entersound = true;
 
-	if (key_dest == key_menu) {
-		if (m_state != m_main) {
+	if (key_dest == key_menu)
+	{
+		if (m_state != m_main)
+		{
 			M_Menu_Main_f ();
 			return;
 		}
 		key_dest = key_game;
 		m_state = m_none;
 		return;
-	} else {
+	}
+	else
+	{
 		M_Menu_Main_f ();
 	}
 }
 
-void M_EnterMenu (int state) {
-	if (key_dest != key_menu) {
+void M_EnterMenu (int state)
+{
+	if (key_dest != key_menu)
+	{
 		m_topmenu = state;
 		Con_ClearNotify ();
 		// hide the console
 		scr_conlines = 0;
 		scr_con_current = 0;
-	} else {
+	}
+	else
+	{
 		m_topmenu = m_none;
 	}
 
@@ -213,16 +230,20 @@ void M_EnterMenu (int state) {
 	m_entersound = true;
 }
 
-void M_LeaveMenu (int parent) {
-	if (m_topmenu == m_state) {
+void M_LeaveMenu (int parent)
+{
+	if (m_topmenu == m_state)
+	{
 		m_state = m_none;
 		key_dest = key_game;
-	} else {
+	}
+	else
+	{
 		m_state = parent;
 		m_entersound = true;
 	}
 }
-		
+
 //=============================================================================
 /* MAIN MENU */
 
@@ -230,11 +251,13 @@ int	m_main_cursor;
 #define	MAIN_ITEMS	5
 
 
-void M_Menu_Main_f (void) {
+void M_Menu_Main_f (void)
+{
 	M_EnterMenu (m_main);
-}	
+}
 
-void M_Main_Draw (void) {
+void M_Main_Draw (void)
+{
 	int f;
 	mpic_t *p;
 
@@ -244,17 +267,19 @@ void M_Main_Draw (void) {
 	M_DrawTransPic (72, 32, Draw_CachePic ("gfx/mainmenu.lmp") );
 
 	f = (int)(curtime * 10)%6;
-	
+
 	M_DrawTransPic (54, 32 + m_main_cursor * 20,Draw_CachePic( va("gfx/menudot%i.lmp", f+1 ) ) );
 }
 
-void M_Main_Key (int key) {
-	switch (key) {
+void M_Main_Key (int key)
+{
+	switch (key)
+	{
 	case K_ESCAPE:
 		key_dest = key_game;
 		m_state = m_none;
 		break;
-		
+
 	case K_UPARROW:
 		S_LocalSound ("misc/menu1.wav");
 		if (--m_main_cursor < 0)
@@ -278,11 +303,12 @@ void M_Main_Key (int key) {
 		S_LocalSound ("misc/menu1.wav");
 		m_main_cursor = MAIN_ITEMS - 1;
 		break;
-	
+
 	case K_ENTER:
 		m_entersound = true;
 
-		switch (m_main_cursor) {
+		switch (m_main_cursor)
+		{
 		case 0:
 			M_Menu_SinglePlayer_f ();
 			break;
@@ -319,15 +345,18 @@ void M_Main_Key (int key) {
 int		options_cursor;
 
 
-void M_Menu_Options_f (void) {
+void M_Menu_Options_f (void)
+{
 	M_EnterMenu (m_options);
 }
 
 
-void M_AdjustSliders (int dir) {
+void M_AdjustSliders (int dir)
+{
 	S_LocalSound ("misc/menu3.wav");
 
-	switch (options_cursor) {
+	switch (options_cursor)
+	{
 	case 4:	// screen size
 		scr_viewsize.value += dir * 10;
 		if (scr_viewsize.value < 30)
@@ -380,11 +409,11 @@ void M_AdjustSliders (int dir) {
 			s_volume.value = 1;
 		Cvar_SetValue (&s_volume, s_volume.value);
 		break;
-		
+
 	case 10:	// invert mouse
 		Cvar_SetValue (&m_pitch, -m_pitch.value);
 		break;
-	
+
 	case 11:
 		Cvar_SetValue (&cl_sbar, !cl_sbar.value);
 		break;
@@ -400,7 +429,8 @@ void M_AdjustSliders (int dir) {
 }
 
 
-void M_DrawSlider (int x, int y, float range) {
+void M_DrawSlider (int x, int y, float range)
+{
 	int	i;
 
 	range = bound(0, range, 1);
@@ -411,14 +441,16 @@ void M_DrawSlider (int x, int y, float range) {
 	M_DrawCharacter (x + (SLIDER_RANGE-1)*8 * range, y, 131);
 }
 
-void M_DrawCheckbox (int x, int y, int on) {
+void M_DrawCheckbox (int x, int y, int on)
+{
 	if (on)
 		M_Print (x, y, "on");
 	else
 		M_Print (x, y, "off");
 }
 
-void M_Options_Draw (void) {
+void M_Options_Draw (void)
+{
 	float		r;
 	mpic_t	*p;
 	int y;
@@ -502,8 +534,10 @@ void M_Options_Draw (void) {
 }
 
 
-void M_Options_Key (int k) {
-	switch (k) {
+void M_Options_Key (int k)
+{
+	switch (k)
+	{
 	case K_BACKSPACE:
 		m_topmenu = m_none;	// intentional fallthrough
 	case K_ESCAPE:
@@ -512,7 +546,8 @@ void M_Options_Key (int k) {
 
 	case K_ENTER:
 		m_entersound = true;
-		switch (options_cursor) {
+		switch (options_cursor)
+		{
 	case 0:
 		M_Menu_Keys_f ();
 		break;
@@ -551,7 +586,7 @@ void M_Options_Key (int k) {
 		options_cursor++;
 		if (options_cursor >= OPTIONS_ITEMS)
 			options_cursor = 0;
-		break;	
+		break;
 
 	case K_HOME:
 	case K_PGUP:
@@ -574,10 +609,13 @@ void M_Options_Key (int k) {
 		break;
 	}
 
-	if (k == K_UPARROW || k == K_END || k == K_PGDN) {
+	if (k == K_UPARROW || k == K_END || k == K_PGDN)
+	{
 		if (options_cursor == 15 && VID_GetFullscreen())
 			options_cursor = 14;
-	} else {
+	}
+	else
+	{
 		if (options_cursor == 15 && VID_GetFullscreen())
 			options_cursor = 0;
 	}
@@ -611,13 +649,15 @@ char *bindnames[][2] =
 int		keys_cursor;
 int		bind_grab;
 
-void M_Menu_Keys_f (void) {
+void M_Menu_Keys_f (void)
+{
 	M_EnterMenu (m_keys);
 }
 
 qboolean Key_IsLeftRightSameBind(int b);
 
-void M_FindKeysForCommand (char *command, int *twokeys) {
+void M_FindKeysForCommand (char *command, int *twokeys)
+{
 	int count, j, l;
 	char *b;
 
@@ -625,13 +665,17 @@ void M_FindKeysForCommand (char *command, int *twokeys) {
 	l = strlen(command);
 	count = 0;
 
-	for (j = 0 ; j < 256; j++) {
+	for (j = 0 ; j < 256; j++)
+	{
 		b = keybindings[j];
 		if (!b)
 			continue;
-		if (!strncmp (b, command, l) ) {
-			if (count) {
-				if (j == twokeys[0] + 1 && (twokeys[0] == K_LCTRL || twokeys[0] == K_LSHIFT || twokeys[0] == K_LALT)) {
+		if (!strncmp (b, command, l) )
+		{
+			if (count)
+			{
+				if (j == twokeys[0] + 1 && (twokeys[0] == K_LCTRL || twokeys[0] == K_LSHIFT || twokeys[0] == K_LALT))
+				{
 
 					twokeys[0]--;
 					continue;
@@ -639,7 +683,8 @@ void M_FindKeysForCommand (char *command, int *twokeys) {
 			}
 			twokeys[count] = j;
 			count++;
-			if (count == 2) {
+			if (count == 2)
+			{
 
 				if (Key_IsLeftRightSameBind(twokeys[1]))
 					twokeys[1]++;
@@ -649,13 +694,15 @@ void M_FindKeysForCommand (char *command, int *twokeys) {
 	}
 }
 
-void M_UnbindCommand (char *command) {
+void M_UnbindCommand (char *command)
+{
 	int j, l;
 	char *b;
 
 	l = strlen(command);
 
-	for (j = 0; j < 256; j++) {
+	for (j = 0; j < 256; j++)
+	{
 		b = keybindings[j];
 		if (!b)
 			continue;
@@ -665,7 +712,8 @@ void M_UnbindCommand (char *command) {
 }
 
 
-void M_Keys_Draw (void) {
+void M_Keys_Draw (void)
+{
 	int x, y, i, l, keys[2];
 	char *name;
 	mpic_t *p;
@@ -677,30 +725,35 @@ void M_Keys_Draw (void) {
 		M_Print (12, 32, "Press a key or button for this action");
 	else
 		M_Print (18, 32, "Enter to change, del to clear");
-		
+
 // search for known bindings
-	for (i = 0; i < NUMCOMMANDS; i++) {
+	for (i = 0; i < NUMCOMMANDS; i++)
+	{
 		y = 48 + 8*i;
 
 		M_Print (16, y, bindnames[i][1]);
 
 		l = strlen (bindnames[i][0]);
-		
+
 		M_FindKeysForCommand (bindnames[i][0], keys);
-		
-		if (keys[0] == -1) {
+
+		if (keys[0] == -1)
+		{
 			M_Print (156, y, "???");
-		} else {
+		}
+		else
+		{
 			name = Key_KeynumToString (keys[0]);
 			M_Print (156, y, name);
 			x = strlen(name) * 8;
-			if (keys[1] != -1) {
+			if (keys[1] != -1)
+			{
 				M_Print (156 + x + 8, y, "or");
 				M_Print (156 + x + 32, y, Key_KeynumToString (keys[1]));
 			}
 		}
 	}
-	
+
 	if (bind_grab)
 		M_DrawCharacter (142, 48 + keys_cursor*8, '=');
 	else
@@ -708,22 +761,25 @@ void M_Keys_Draw (void) {
 }
 
 
-void M_Keys_Key (int k) {
+void M_Keys_Key (int k)
+{
 	int keys[2];
-	
-	if (bind_grab) {
+
+	if (bind_grab)
+	{
 		// defining a key
 		S_LocalSound ("misc/menu1.wav");
 		if (k == K_ESCAPE)
 			bind_grab = false;
 		else if (k != '`')
 			Key_SetBinding (k, bindnames[keys_cursor][0]);
-		
+
 		bind_grab = false;
 		return;
 	}
-	
-	switch (k) {
+
+	switch (k)
+	{
 	case K_BACKSPACE:
 		m_topmenu = m_none;	// intentional fallthrough
 	case K_ESCAPE:
@@ -788,13 +844,15 @@ extern cvar_t r_fastsky;
 extern cvar_t r_drawflame;
 extern cvar_t gl_part_inferno;
 
-void M_Menu_Fps_f (void) {
+void M_Menu_Fps_f (void)
+{
 	M_EnterMenu (m_fps);
 }
 
 #define ALIGN_FPS_OPTIONS	208
 
-void M_Fps_Draw (void) {
+void M_Fps_Draw (void)
+{
 	mpic_t	*p;
 	char temp[32];
 
@@ -803,7 +861,8 @@ void M_Fps_Draw (void) {
 	M_DrawPic ((320-p->width)/ 2, 4, p);
 
 	M_Print (16, 32, "            Explosions");
-	switch ((int) r_explosiontype.value) {
+	switch ((int) r_explosiontype.value)
+	{
 		case 0	: strcpy(temp, "fire + sparks"); break;
 		case 1	: strcpy(temp, "fire only"); break;
 		case 2	: strcpy(temp, "teleport"); break;
@@ -828,7 +887,8 @@ void M_Fps_Draw (void) {
 	M_Print (16, 64, "          Rocket model");
 	M_Print (ALIGN_FPS_OPTIONS, 64, cl_rocket2grenade.value ? "grenade" : "normal");
 
-	switch ((int) r_rockettrail.value) {
+	switch ((int) r_rockettrail.value)
+	{
 		case 0	: strcpy(temp, "off"); break;
 		case 1	: strcpy(temp, "normal"); break;
 		case 2	: strcpy(temp, "grenade"); break;
@@ -875,10 +935,12 @@ void M_Fps_Draw (void) {
 	M_DrawCharacter (196, 32 + fps_cursor * 8, 12 + ((int) (curtime * 4) & 1));
 }
 
-void M_Fps_Key (int k) {
+void M_Fps_Key (int k)
+{
 	int i;
 
-	switch (k) {
+	switch (k)
+	{
 	case K_BACKSPACE:
 		m_topmenu = m_none;	// intentional fallthrough
 	case K_ESCAPE:
@@ -922,7 +984,8 @@ void M_Fps_Key (int k) {
 	case K_RIGHTARROW:
 	case K_ENTER:
 		S_LocalSound ("misc/menu2.wav");
-		switch (fps_cursor) {
+		switch (fps_cursor)
+		{
 		case 0:
 			i = r_explosiontype.value + 1;
 			if (i > 7 || i < 0)
@@ -1462,23 +1525,27 @@ void M_Video_Key (int key)
 int		help_page;
 #define	NUM_HELP_PAGES	6
 
-void M_Menu_Help_f (void) {
+void M_Menu_Help_f (void)
+{
 	M_EnterMenu (m_help);
 	help_page = 0;
 }
 
-void M_Help_Draw (void) {
+void M_Help_Draw (void)
+{
 	M_DrawPic (0, 0, Draw_CachePic ( va("gfx/help%i.lmp", help_page)) );
 }
 
-void M_Help_Key (int key) {
-	switch (key) {
+void M_Help_Key (int key)
+{
+	switch (key)
+	{
 	case K_BACKSPACE:
 		m_topmenu = m_none;	// intentional fallthrough
 	case K_ESCAPE:
 		M_LeaveMenu (m_main);
 		break;
-		
+
 	case K_UPARROW:
 	case K_RIGHTARROW:
 		m_entersound = true;
@@ -1503,7 +1570,8 @@ int		msgNumber;
 int		m_quit_prevstate;
 qboolean	wasInMenus;
 
-void M_Menu_Quit_f (void) {
+void M_Menu_Quit_f (void)
+{
 	if (m_state == m_quit)
 		return;
 	wasInMenus = (key_dest == key_menu);
@@ -1512,15 +1580,20 @@ void M_Menu_Quit_f (void) {
 	M_EnterMenu (m_quit);
 }
 
-void M_Quit_Key (int key) {
-	switch (key) {
+void M_Quit_Key (int key)
+{
+	switch (key)
+	{
 	case K_ESCAPE:
 	case 'n':
 	case 'N':
-		if (wasInMenus) {
+		if (wasInMenus)
+		{
 			m_state = m_quit_prevstate;
 			m_entersound = true;
-		} else {
+		}
+		else
+		{
 			key_dest = key_game;
 			m_state = m_none;
 		}
@@ -1550,26 +1623,30 @@ qboolean m_singleplayer_notavail;
 
 extern	cvar_t	maxclients;
 
-void M_Menu_SinglePlayer_f (void) {
+void M_Menu_SinglePlayer_f (void)
+{
 	M_EnterMenu (m_singleplayer);
 	m_singleplayer_confirm = false;
 	m_singleplayer_notavail = false;
 }
 
-void M_SinglePlayer_Draw (void) {
+void M_SinglePlayer_Draw (void)
+{
 	int f;
 	mpic_t *p;
 
-	if (m_singleplayer_notavail) {
+	if (m_singleplayer_notavail)
+	{
 		p = Draw_CachePic ("gfx/ttl_sgl.lmp");
 		M_DrawPic ( (320-p->width)/2, 4, p);
-		M_DrawTextBox (60, 10*8, 24, 4);	
+		M_DrawTextBox (60, 10*8, 24, 4);
 		M_PrintWhite (80, 12*8, " Cannot start a game");
 		M_PrintWhite (80, 13*8, "spprogs.dat not found");
 		return;
 	}
 
-	if (m_singleplayer_confirm) {
+	if (m_singleplayer_confirm)
+	{
 		M_PrintWhite (64, 11*8, "Are you sure you want to");
 		M_PrintWhite (64, 12*8, "    start a new game?");
 		return;
@@ -1584,21 +1661,26 @@ void M_SinglePlayer_Draw (void) {
 	M_DrawTransPic (54, 32 + m_singleplayer_cursor * 20,Draw_CachePic( va("gfx/menudot%i.lmp", f+1 ) ) );
 }
 
-static void CheckSPGame (void) {
+static void CheckSPGame (void)
+{
 	FILE *f;
 
 	FS_FOpenFile ("spprogs.dat", &f);
-	if (f) {
+	if (f)
+	{
 		fclose (f);
 		m_singleplayer_notavail = false;
-	} else {
+	}
+	else
+	{
 		m_singleplayer_notavail = true;
 	}
 }
 
 extern int file_from_gamedir;
 
-static void StartNewGame (void) {
+static void StartNewGame (void)
+{
 	key_dest = key_game;
 	Cvar_Set (&maxclients, "1");
 	Cvar_Set (&teamplay, "0");
@@ -1608,16 +1690,19 @@ static void StartNewGame (void) {
 	if (com_serveractive)
 		Cbuf_AddText ("disconnect\n");
 
-	
+
 	progs = (dprograms_t *) FS_LoadHunkFile ("spprogs.dat");
-	if (progs && !file_from_gamedir)	
+	if (progs && !file_from_gamedir)
 		Cbuf_AddText ("gamedir qw\n");
 	Cbuf_AddText ("map start\n");
 }
 
-void M_SinglePlayer_Key (int key) {
-	if (m_singleplayer_notavail) {
-		switch (key) {
+void M_SinglePlayer_Key (int key)
+{
+	if (m_singleplayer_notavail)
+	{
+		switch (key)
+		{
 		case K_BACKSPACE:
 		case K_ESCAPE:
 		case K_ENTER:
@@ -1627,17 +1712,22 @@ void M_SinglePlayer_Key (int key) {
 		return;
 	}
 
-	if (m_singleplayer_confirm) {
-		if (key == K_ESCAPE || key == 'n') {
+	if (m_singleplayer_confirm)
+	{
+		if (key == K_ESCAPE || key == 'n')
+		{
 			m_singleplayer_confirm = false;
 			m_entersound = true;
-		} else if (key == 'y' || key == K_ENTER) {
+		}
+		else if (key == 'y' || key == K_ENTER)
+		{
 			StartNewGame ();
 		}
 		return;
 	}
 
-	switch (key) {
+	switch (key)
+	{
 	case K_BACKSPACE:
 		m_topmenu = m_none;	// intentional fallthrough
 	case K_ESCAPE:
@@ -1669,18 +1759,23 @@ void M_SinglePlayer_Key (int key) {
 		break;
 
 	case K_ENTER:
-		switch (m_singleplayer_cursor) {
+		switch (m_singleplayer_cursor)
+		{
 		case 0:
 			CheckSPGame ();
-			if (m_singleplayer_notavail) {
+			if (m_singleplayer_notavail)
+			{
 				m_entersound = true;
 				return;
 			}
-			if (com_serveractive) {
+			if (com_serveractive)
+			{
 				// bring up confirmation dialog
 				m_singleplayer_confirm = true;
 				m_entersound = true;
-			} else {
+			}
+			else
+			{
 				StartNewGame ();
 			}
 			break;
@@ -1698,11 +1793,13 @@ void M_SinglePlayer_Key (int key) {
 
 #else	// !CLIENTONLY
 
-void M_Menu_SinglePlayer_f (void) {
+void M_Menu_SinglePlayer_f (void)
+{
 	M_EnterMenu (m_singleplayer);
 }
 
-void M_SinglePlayer_Draw (void) {
+void M_SinglePlayer_Draw (void)
+{
 	mpic_t *p;
 
 	M_DrawTransPic (16, 4, Draw_CachePic ("gfx/qplaque.lmp") );
@@ -1710,13 +1807,15 @@ void M_SinglePlayer_Draw (void) {
 	M_DrawPic ( (320-p->width)/2, 4, p);
 //	M_DrawTransPic (72, 32, Draw_CachePic ("gfx/sp_menu.lmp") );
 
-	M_DrawTextBox (60, 10*8, 23, 4);	
+	M_DrawTextBox (60, 10*8, 23, 4);
 	M_PrintWhite (88, 12*8, "This client is for");
 	M_PrintWhite (88, 13*8, "Internet play only");
 }
 
-void M_SinglePlayer_Key (key) {
-	switch (key) {
+void M_SinglePlayer_Key (key)
+{
+	switch (key)
+	{
 	case K_BACKSPACE:
 		m_topmenu = m_none;	// intentional fallthrough
 	case K_ESCAPE:
@@ -1739,12 +1838,14 @@ int		load_cursor;		// 0 < load_cursor < MAX_SAVEGAMES
 char	m_filenames[MAX_SAVEGAMES][SAVEGAME_COMMENT_LENGTH + 1];
 int		loadable[MAX_SAVEGAMES];
 
-void M_ScanSaves (char *sp_gamedir) {
+void M_ScanSaves (char *sp_gamedir)
+{
 	int i, j, version;
 	char name[MAX_OSPATH];
 	FILE *f;
 
-	for (i = 0; i < MAX_SAVEGAMES; i++) {
+	for (i = 0; i < MAX_SAVEGAMES; i++)
+	{
 		strcpy (m_filenames[i], "--- UNUSED SLOT ---");
 		loadable[i] = false;
 		Q_snprintfz (name, sizeof(name), "%s/save/s%i.sav", sp_gamedir, i);
@@ -1763,7 +1864,8 @@ void M_ScanSaves (char *sp_gamedir) {
 	}
 }
 
-void M_Menu_Load_f (void) {
+void M_Menu_Load_f (void)
+{
 	FILE *f;
 
 	if (FS_FOpenFile ("spprogs.dat", &f) == -1)
@@ -1773,7 +1875,8 @@ void M_Menu_Load_f (void) {
 	M_ScanSaves (!file_from_gamedir ? "qw" : com_gamedir);
 }
 
-void M_Menu_Save_f (void) {
+void M_Menu_Save_f (void)
+{
 	if (sv.state != ss_active)
 		return;
 	if (cl.intermission)
@@ -1783,7 +1886,8 @@ void M_Menu_Save_f (void) {
 	M_ScanSaves (com_gamedir);
 }
 
-void M_Load_Draw (void) {
+void M_Load_Draw (void)
+{
 	int i;
 	mpic_t *p;
 
@@ -1797,7 +1901,8 @@ void M_Load_Draw (void) {
 	M_DrawCharacter (8, 32 + load_cursor * 8, 12 + ((int)(curtime * 4) & 1));
 }
 
-void M_Save_Draw (void) {
+void M_Save_Draw (void)
+{
 	int i;
 	mpic_t *p;
 
@@ -1811,8 +1916,10 @@ void M_Save_Draw (void) {
 	M_DrawCharacter (8, 32 + load_cursor * 8, 12 + ((int)(curtime * 4) & 1));
 }
 
-void M_Load_Key (int key) {
-	switch (key) {
+void M_Load_Key (int key)
+{
+	switch (key)
+	{
 	case K_BACKSPACE:
 		m_topmenu = m_none;	// intentional fallthrough
 	case K_ESCAPE:
@@ -1850,8 +1957,10 @@ void M_Load_Key (int key) {
 	}
 }
 
-void M_Save_Key (int key) {
-	switch (key) {
+void M_Save_Key (int key)
+{
+	switch (key)
+	{
 	case K_BACKSPACE:
 		m_topmenu = m_none;	// intentional fallthrough
 	case K_ESCAPE:
@@ -1894,11 +2003,13 @@ int	m_multiplayer_cursor;
 #define	MULTIPLAYER_ITEMS	4
 #endif
 
-void M_Menu_MultiPlayer_f (void) {
+void M_Menu_MultiPlayer_f (void)
+{
 	M_EnterMenu (m_multiplayer);
 }
 
-void M_MultiPlayer_Draw (void) {
+void M_MultiPlayer_Draw (void)
+{
 	mpic_t	*p;
 
 	M_DrawTransPic (16, 4, Draw_CachePic ("gfx/qplaque.lmp") );
@@ -1915,8 +2026,10 @@ void M_MultiPlayer_Draw (void) {
 	M_DrawCharacter (64, 40 + m_multiplayer_cursor * 8, 12 + ((int) (curtime * 4) & 1));
 }
 
-void M_MultiPlayer_Key (int key) {
-	switch (key) {
+void M_MultiPlayer_Key (int key)
+{
+	switch (key)
+	{
 	case K_BACKSPACE:
 		m_topmenu = m_none;	// intentional fallthrough
 	case K_ESCAPE:
@@ -1949,7 +2062,8 @@ void M_MultiPlayer_Key (int key) {
 
 	case K_ENTER:
 		m_entersound = true;
-		switch (m_multiplayer_cursor) {
+		switch (m_multiplayer_cursor)
+		{
 		case 0:
 			key_dest = key_game;
 			m_state = m_none;
@@ -1989,7 +2103,8 @@ static int last_status;
 void MP3_Menu_DrawInfo(void);
 void M_Menu_MP3_Playlist_f(void);
 
-void M_MP3_Control_Draw (void) {
+void M_MP3_Control_Draw (void)
+{
 	char songinfo_scroll[38 + 1], *s = NULL;
 	int i, scroll_index, print_time;
 	float frac, elapsed, realtime;
@@ -2004,7 +2119,8 @@ void M_MP3_Control_Draw (void) {
 	M_Print (8, M_MP3_CONTROL_HEADINGROW + 16, "\x1d\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1f");
 
 
-	if (!MP3_IsActive()) {
+	if (!MP3_IsActive())
+	{
 		M_PrintWhite((320 - 24 * 8) >> 1, M_MP3_CONTROL_HEADINGROW + 40, "XMMS LIBRARIES NOT FOUND");
 		return;
 	}
@@ -2019,10 +2135,11 @@ void M_MP3_Control_Draw (void) {
 		M_PrintWhite(312 - 6 * 8, M_MP3_CONTROL_HEADINGROW + 8, "Paused");
 	else if (last_status == MP3_STOPPED)
 		M_PrintWhite(312 - 7 * 8, M_MP3_CONTROL_HEADINGROW + 8, "Stopped");
-	else		
+	else
 		M_PrintWhite(312 - 11 * 8, M_MP3_CONTROL_HEADINGROW + 8, "Not Running");
 
-	if (last_status == MP3_NOTRUNNING) {
+	if (last_status == MP3_NOTRUNNING)
+	{
 		M_Print ((320 - 8 * strlen(MP3_PLAYERNAME_ALLCAPS " is not running")) >> 1, 40, MP3_PLAYERNAME_LEADINGCAP " is not running");
 		M_PrintWhite (56, 72, "Press");
 		M_Print (56 + 48, 72, "ENTER");
@@ -2038,12 +2155,15 @@ void M_MP3_Control_Draw (void) {
 	}
 
 	s = MP3_Menu_SongtTitle();
-	if (!strcmp(last_title, s = MP3_Menu_SongtTitle())) {
+	if (!strcmp(last_title, s = MP3_Menu_SongtTitle()))
+	{
 		elapsed = 3.5 * max(realtime - initial_time - 0.75, 0);
 		scroll_index = (int) elapsed;
 		frac = bound(0, elapsed - scroll_index, 1);
 		scroll_index = scroll_index % last_length;
-	} else {
+	}
+	else
+	{
 		Q_snprintfz(lastsonginfo, sizeof(lastsonginfo), "%s  ***  ", s);
 		Q_strncpyz(last_title, s, sizeof(last_title));
 		last_length = strlen(lastsonginfo);
@@ -2051,19 +2171,23 @@ void M_MP3_Control_Draw (void) {
 		frac = scroll_index = 0;
 	}
 
-	if ((!mp3_scrolltitle.value || last_length <= 38 + 7) && mp3_scrolltitle.value != 2) {
+	if ((!mp3_scrolltitle.value || last_length <= 38 + 7) && mp3_scrolltitle.value != 2)
+	{
 		char name[38 + 1];
 		Q_strncpyz(name, last_title, sizeof(name));
 		M_PrintWhite(max(8, (320 - (last_length - 7) * 8) >> 1), M_MP3_CONTROL_HEADINGROW + 32, name);
 		initial_time = realtime;
-	} else {
+	}
+	else
+	{
 		for (i = 0; i < sizeof(songinfo_scroll) - 1; i++)
 			songinfo_scroll[i] = lastsonginfo[(scroll_index + i) % last_length];
 		songinfo_scroll[sizeof(songinfo_scroll) - 1] = 0;
 		M_PrintWhite(12 -  (int) (8 * frac), M_MP3_CONTROL_HEADINGROW + 32, songinfo_scroll);
 	}
 
-	if (mp3_showtime.value) {
+	if (mp3_showtime.value)
+	{
 		MP3_GetOutputtime(&last_elapsed, &last_total);
 		if (last_total == -1)
 			goto menu_items;
@@ -2105,17 +2229,20 @@ menu_items:
 	M_DrawCharacter (17 + 286 * ((float) last_elapsed / last_total), M_MP3_CONTROL_BARHEIGHT, 131);
 }
 
-void M_Menu_MP3_Control_Key(int key) {
+void M_Menu_MP3_Control_Key(int key)
+{
 	float volume;
 
-	if (!MP3_IsActive() || last_status == MP3_NOTRUNNING) {
-		switch(key) {
+	if (!MP3_IsActive() || last_status == MP3_NOTRUNNING)
+	{
+		switch(key)
+		{
 			case K_BACKSPACE:
 				m_topmenu = m_none;
 			case K_ESCAPE:
 				M_LeaveMenu (m_main);
 				break;
-			case K_ENTER:				
+			case K_ENTER:
 				if (MP3_IsActive())
 					MP3_Execute_f();
 				break;
@@ -2125,7 +2252,8 @@ void M_Menu_MP3_Control_Key(int key) {
 
 	Con_Suppress();
 
-	switch (key) {
+	switch (key)
+	{
 		case K_BACKSPACE:
 			m_topmenu = m_none;
 		case K_ESCAPE:
@@ -2152,7 +2280,8 @@ void M_Menu_MP3_Control_Key(int key) {
 				mp3_cursor--;
 			break;
 		case K_ENTER:
-			switch (mp3_cursor) {
+			switch (mp3_cursor)
+			{
 				case 0:	MP3_Play_f(); break;
 				case 1:	MP3_Pause_f(); break;
 				case 2:	MP3_Stop_f(); break;
@@ -2168,10 +2297,11 @@ void M_Menu_MP3_Control_Key(int key) {
 			}
 			break;
 		case K_RIGHTARROW:
-			switch(mp3_cursor) {
+			switch(mp3_cursor)
+			{
 				case 7:
 					volume = bound(0, mp3_volume.value, 1);
-					Cvar_SetValue(&mp3_volume, bound(0, volume + 0.02, 1));					
+					Cvar_SetValue(&mp3_volume, bound(0, volume + 0.02, 1));
 					break;
 				default:
 					MP3_FastForward_f();
@@ -2179,10 +2309,11 @@ void M_Menu_MP3_Control_Key(int key) {
 			}
 			break;
 		case K_LEFTARROW:
-			switch(mp3_cursor) {
+			switch(mp3_cursor)
+			{
 				case 7:
 					volume = bound(0, mp3_volume.value, 1);
-					Cvar_SetValue(&mp3_volume, bound(0, volume - 0.02, 1));		
+					Cvar_SetValue(&mp3_volume, bound(0, volume - 0.02, 1));
 					break;
 				default:
 					MP3_Rewind_f();
@@ -2208,7 +2339,7 @@ void M_Menu_MP3_Control_f (void){
 	M_EnterMenu (m_mp3_control);
 }
 
-#define PLAYLIST_MAXENTRIES		2048	
+#define PLAYLIST_MAXENTRIES		2048
 #define PLAYLIST_MAXLINES		17
 #define PLAYLIST_HEADING_ROW	8
 
@@ -2217,15 +2348,20 @@ void M_Menu_MP3_Control_f (void){
 static int playlist_size = 0;
 static int playlist_cursor = 0, playlist_base = 0;
 
-static void Center_Playlist(void) {
+static void Center_Playlist(void)
+{
 	int current;
 
 	MP3_GetPlaylistInfo(&current, NULL);
-	if (current >= 0 && current < playlist_size) {
-		if (playlist_size - current - 1 < (PLAYLIST_MAXLINES >> 1)) {
+	if (current >= 0 && current < playlist_size)
+	{
+		if (playlist_size - current - 1 < (PLAYLIST_MAXLINES >> 1))
+		{
 			playlist_base = max(0, playlist_size - PLAYLIST_MAXLINES);
 			playlist_cursor = current - playlist_base;
-		} else {
+		}
+		else
+		{
 			playlist_base = max(0, current - (PLAYLIST_MAXLINES >> 1));
 			playlist_cursor = current - playlist_base;
 		}
@@ -2236,13 +2372,16 @@ static char *playlist_entries[PLAYLIST_MAXENTRIES];
 
 #ifdef _WIN32
 
-void M_Menu_MP3_Playlist_Read(void) {
+void M_Menu_MP3_Playlist_Read(void)
+{
 	int i, count = 0, skip = 0;
-	long length;	
+	long length;
 	char *playlist_buf = NULL;
 
-	for (i = 0; i < playlist_size; i++) {
-		if (playlist_entries[i]) {
+	for (i = 0; i < playlist_size; i++)
+	{
+		if (playlist_entries[i])
+		{
 			free(playlist_entries[i]);
 			playlist_entries[i] = NULL;
 		}
@@ -2259,12 +2398,15 @@ void M_Menu_MP3_Playlist_Read(void) {
 
 #else
 
-void M_Menu_MP3_Playlist_Read(void) {
+void M_Menu_MP3_Playlist_Read(void)
+{
 	int i;
 	char *title;
 
-	for (i = 0; i < playlist_size; i++) {
-		if (playlist_entries[i]) {
+	for (i = 0; i < playlist_size; i++)
+	{
+		if (playlist_entries[i])
+		{
 			free(playlist_entries[i]);
 			playlist_entries[i] = NULL;
 		}
@@ -2277,7 +2419,8 @@ void M_Menu_MP3_Playlist_Read(void) {
 
 	playlist_size = qxmms_remote_get_playlist_length(XMMS_SESSION);
 
-	for (i = 0; i < PLAYLIST_MAXENTRIES && i < playlist_size; i++) {
+	for (i = 0; i < PLAYLIST_MAXENTRIES && i < playlist_size; i++)
+	{
 		title = qxmms_remote_get_playlist_title(XMMS_SESSION, i);
 		if (strlen(title) > PLAYLIST_MAXTITLE)
 			title[PLAYLIST_MAXTITLE] = 0;
@@ -2288,7 +2431,8 @@ void M_Menu_MP3_Playlist_Read(void) {
 
 #endif
 
-void M_Menu_MP3_Playlist_Draw(void) {
+void M_Menu_MP3_Playlist_Draw(void)
+{
 	int	index, print_time, i;
 	char name[PLAYLIST_MAXTITLE];
 	float realtime;
@@ -2299,7 +2443,8 @@ void M_Menu_MP3_Playlist_Draw(void) {
 
 	last_status = MP3_GetStatus();
 
-	if (last_status == MP3_NOTRUNNING) {
+	if (last_status == MP3_NOTRUNNING)
+	{
 		M_Menu_MP3_Control_f();
 		return;
 	}
@@ -2314,7 +2459,8 @@ void M_Menu_MP3_Playlist_Draw(void) {
 	else if (last_status == MP3_STOPPED)
 		M_PrintWhite(312 - 7 * 8, PLAYLIST_HEADING_ROW + 8, "Stopped");
 
-	if (mp3_showtime.value) {
+	if (mp3_showtime.value)
+	{
 		MP3_GetOutputtime(&last_elapsed, &last_total);
 		if (last_total == -1)
 			goto menu_items;
@@ -2326,14 +2472,16 @@ void M_Menu_MP3_Playlist_Draw(void) {
 			M_PrintWhite(48, M_MP3_CONTROL_HEADINGROW + 8, va("/%s", SecondsToMinutesString(last_total)));
 	}
 menu_items:
-	if (!playlist_size) {
+	if (!playlist_size)
+	{
 		M_Print (92, 32, "Playlist is empty");
 		return;
 	}
 
-	MP3_GetPlaylistInfo(&last_current, NULL);	
+	MP3_GetPlaylistInfo(&last_current, NULL);
 
-	for (index = playlist_base; index < playlist_size && index < playlist_base + PLAYLIST_MAXLINES; index++) {
+	for (index = playlist_base; index < playlist_size && index < playlist_base + PLAYLIST_MAXLINES; index++)
+	{
 		char *spaces;
 
 		if (index + 1 < 10)
@@ -2347,7 +2495,7 @@ menu_items:
 			M_Print (16, PLAYLIST_HEADING_ROW + 24 + (index - playlist_base) * 8, va("%s%d %s", spaces, index + 1, name));
 		else
 			M_PrintWhite (16, PLAYLIST_HEADING_ROW + 24 + (index - playlist_base) * 8, va("%s%d %s", spaces, index + 1, name));
-	}	
+	}
 	M_DrawCharacter (8, PLAYLIST_HEADING_ROW + 24 + playlist_cursor * 8, 12 + ((int)(curtime * 4) & 1));
 
 	M_DrawCharacter (16, M_MP3_CONTROL_BARHEIGHT, 128);
@@ -2361,7 +2509,8 @@ void M_Menu_MP3_Playlist_Key (int k)
 {
 	Con_Suppress();
 
-	switch (k) {
+	switch (k)
+	{
          case K_BACKSPACE:
 			m_topmenu = m_none;
          case K_ESCAPE:
@@ -2376,7 +2525,8 @@ void M_Menu_MP3_Playlist_Key (int k)
 			break;
 
 		case K_DOWNARROW:
-			if (playlist_cursor + playlist_base < playlist_size - 1) {
+			if (playlist_cursor + playlist_base < playlist_size - 1)
+			{
 				if (playlist_cursor < PLAYLIST_MAXLINES - 1)
 					playlist_cursor++;
 				else
@@ -2390,10 +2540,13 @@ void M_Menu_MP3_Playlist_Key (int k)
 			break;
 
 		case K_END:
-			if (playlist_size > PLAYLIST_MAXLINES) {
+			if (playlist_size > PLAYLIST_MAXLINES)
+			{
 				playlist_cursor = PLAYLIST_MAXLINES - 1;
 				playlist_base = playlist_size - playlist_cursor - 1;
-			} else {
+			}
+			else
+			{
 				playlist_base = 0;
 				playlist_cursor = playlist_size - 1;
 			}
@@ -2401,7 +2554,8 @@ void M_Menu_MP3_Playlist_Key (int k)
 
 		case K_PGUP:
 			playlist_cursor -= PLAYLIST_MAXLINES - 1;
-			if (playlist_cursor < 0) {
+			if (playlist_cursor < 0)
+			{
 				playlist_base += playlist_cursor;
 				if (playlist_base < 0)
 					playlist_base = 0;
@@ -2413,7 +2567,8 @@ void M_Menu_MP3_Playlist_Key (int k)
 			playlist_cursor += PLAYLIST_MAXLINES - 1;
 			if (playlist_base + playlist_cursor >= playlist_size)
 				playlist_cursor = playlist_size - playlist_base - 1;
-			if (playlist_cursor >= PLAYLIST_MAXLINES) {
+			if (playlist_cursor >= PLAYLIST_MAXLINES)
+			{
 				playlist_base += playlist_cursor - (PLAYLIST_MAXLINES - 1);
 				playlist_cursor = PLAYLIST_MAXLINES - 1;
 				if (playlist_base + playlist_cursor >= playlist_size)
@@ -2443,7 +2598,8 @@ void M_Menu_MP3_Playlist_Key (int k)
 }
 
 void M_Menu_MP3_Playlist_f (void){
-	if (!MP3_IsActive()) {
+	if (!MP3_IsActive())
+	{
 		M_Menu_MP3_Control_f();
 		return;
 	}
@@ -2473,7 +2629,8 @@ extern cvar_t demo_dir;
 typedef enum direntry_type_s {dt_file = 0, dt_dir, dt_up, dt_msg} direntry_type_t;
 typedef enum demosort_type_s {ds_name = 0, ds_size, ds_time} demo_sort_t;
 
-typedef struct direntry_s {
+typedef struct direntry_s
+{
 	direntry_type_t	type;
 	char			*name;
 	int				size;
@@ -2486,7 +2643,7 @@ static int			demolist_count;
 static char			demo_currentdir[MAX_OSPATH] = {0};
 static char			demo_prevdemo[MAX_DEMO_NAME] = {0};
 
-static float		last_demo_time = 0;	
+static float		last_demo_time = 0;
 
 static int			demo_cursor = 0;
 static int			demo_base = 0;
@@ -2494,7 +2651,8 @@ static int			demo_base = 0;
 static demo_sort_t	demo_sorttype = ds_name;
 static qboolean		demo_reversesort = false;
 
-int Demo_SortCompare(const void *p1, const void *p2) {
+int Demo_SortCompare(const void *p1, const void *p2)
+{
 	int retval;
 	int sign;
 	direntry_t *d1, *d2;
@@ -2505,18 +2663,19 @@ int Demo_SortCompare(const void *p1, const void *p2) {
 	if ((retval = d2->type - d1->type) || d1->type > dt_dir)
 		return retval;
 
-	
+
 	if (d1->type == dt_dir)
 		return Q_strcasecmp(d1->name, d2->name);
 
-	
+
 	sign = demo_reversesort ? -1 : 1;
 
-	switch (demo_sorttype) {
+	switch (demo_sorttype)
+	{
 	case ds_name:
 		return sign * Q_strcasecmp(d1->name, d2->name);
 	case ds_size:
-		return sign * (d1->size - d2->size);		
+		return sign * (d1->size - d2->size);
 	case ds_time:
 #ifdef _WIN32
 		return -sign * CompareFileTime(&d1->time, &d2->time);
@@ -2529,10 +2688,11 @@ int Demo_SortCompare(const void *p1, const void *p2) {
 	}
 }
 
-static void Demo_SortDemos(void) {
+static void Demo_SortDemos(void)
+{
 	int i;
 
-	last_demo_time = 0;		
+	last_demo_time = 0;
 
 	for (i = 0; i < demolist_count; i++)
 		demolist[i] = &demolist_data[i];
@@ -2540,17 +2700,22 @@ static void Demo_SortDemos(void) {
 	qsort(demolist, demolist_count, sizeof(direntry_t *), Demo_SortCompare);
 }
 
-static void Demo_PositionCursor(void) {
+static void Demo_PositionCursor(void)
+{
 	int i;
 
-	last_demo_time = 0;		
-	demo_base = demo_cursor = 0;	
+	last_demo_time = 0;
+	demo_base = demo_cursor = 0;
 
-	if (demo_prevdemo[0]) {
-		for (i = 0; i < demolist_count; i++) {
-			if (!strcmp (demolist[i]->name, demo_prevdemo)) {
+	if (demo_prevdemo[0])
+	{
+		for (i = 0; i < demolist_count; i++)
+		{
+			if (!strcmp (demolist[i]->name, demo_prevdemo))
+			{
 				demo_cursor = i;
-				if (demo_cursor >= DEMO_MAXLINES) {
+				if (demo_cursor >= DEMO_MAXLINES)
+				{
 					demo_base += demo_cursor - (DEMO_MAXLINES - 1);
 					demo_cursor = DEMO_MAXLINES - 1;
 				}
@@ -2562,7 +2727,8 @@ static void Demo_PositionCursor(void) {
 }
 
 
-static void Demo_ReadDirectory(void) {
+static void Demo_ReadDirectory(void)
+{
 	int i, size;
 	direntry_type_t type;
 	DEMO_TIME time;
@@ -2570,7 +2736,7 @@ static void Demo_ReadDirectory(void) {
 #ifdef _WIN32
 	HANDLE h;
 	WIN32_FIND_DATA fd;
-#else	
+#else
 	DIR *d;
 	struct dirent *dstruct;
 	struct stat fileinfo;
@@ -2578,14 +2744,17 @@ static void Demo_ReadDirectory(void) {
 
 	demolist_count = demo_base = demo_cursor = 0;
 
-	for (i = 0; i < MAX_DEMO_FILES; i++) {
-		if (demolist_data[i].name) {
+	for (i = 0; i < MAX_DEMO_FILES; i++)
+	{
+		if (demolist_data[i].name)
+		{
 			free(demolist_data[i].name);
 			demolist_data[i].name = NULL;
 		}
 	}
 
-	if (demo_currentdir[0]) {	
+	if (demo_currentdir[0])
+	{
 		demolist_data[0].name = strdup ("..");
 		demolist_data[0].type = dt_up;
 		demolist_count = 1;
@@ -2593,7 +2762,8 @@ static void Demo_ReadDirectory(void) {
 
 #ifdef _WIN32
 	h = FindFirstFile (va("%s%s/*.*", com_basedir, demo_currentdir), &fd);
-	if (h == INVALID_HANDLE_VALUE) {
+	if (h == INVALID_HANDLE_VALUE)
+	{
 		demolist_data[demolist_count].name = strdup ("Error reading directory");
 		demolist_data[demolist_count].type = dt_msg;
 		demolist_count++;
@@ -2601,7 +2771,8 @@ static void Demo_ReadDirectory(void) {
 		return;
 	}
 #else
-	if (!(d = opendir(va("%s%s", com_basedir, demo_currentdir)))) {
+	if (!(d = opendir(va("%s%s", com_basedir, demo_currentdir))))
+	{
 		demolist_data[demolist_count].name = strdup ("Error reading directory");
 		demolist_data[demolist_count].type = dt_msg;
 		demolist_count++;
@@ -2611,21 +2782,25 @@ static void Demo_ReadDirectory(void) {
 	dstruct = readdir (d);
 #endif
 
-	do {
+	do
+	{
 	#ifdef _WIN32
-		if (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
+		if (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+		{
 			if (!strcmp(fd.cFileName, ".") || !strcmp(fd.cFileName, ".."))
 				continue;
 			type = dt_dir;
 			size = 0;
 			memset(&time, 0, sizeof(time));
-		} else {
+		}
+		else
+		{
 			i = strlen(fd.cFileName);
 			if (i < 5 ||
 				(
-					Q_strcasecmp(fd.cFileName + i - 4, ".qwd") && 
-					Q_strcasecmp(fd.cFileName +i - 4, ".qwz") && 
-					Q_strcasecmp(fd.cFileName + i - 4, ".mvd")	
+					Q_strcasecmp(fd.cFileName + i - 4, ".qwd") &&
+					Q_strcasecmp(fd.cFileName +i - 4, ".qwz") &&
+					Q_strcasecmp(fd.cFileName + i - 4, ".mvd")
 				)
 			)
 				continue;
@@ -2638,17 +2813,20 @@ static void Demo_ReadDirectory(void) {
 	#else
 		stat (va("%s%s/%s", com_basedir, demo_currentdir, dstruct->d_name), &fileinfo);
 
-		if (S_ISDIR(fileinfo.st_mode)) {
+		if (S_ISDIR(fileinfo.st_mode))
+		{
 			if (!strcmp(dstruct->d_name, ".") || !strcmp(dstruct->d_name, ".."))
 				continue;
 			type = dt_dir;
 			time = size = 0;
-		} else {
+		}
+		else
+		{
 			i = strlen(dstruct->d_name);
 			if (i < 5 ||
 				(
 					Q_strcasecmp(dstruct->d_name + i - 4, ".qwd")
-					&& Q_strcasecmp(dstruct->d_name + i - 4, ".mvd")	
+					&& Q_strcasecmp(dstruct->d_name + i - 4, ".mvd")
 				)
 			)
 				continue;
@@ -2677,7 +2855,8 @@ static void Demo_ReadDirectory(void) {
 	closedir (d);
 #endif
 
-	if (!demolist_count) {
+	if (!demolist_count)
+	{
 		demolist_data[0].name = strdup("[ no files ]");
 		demolist_data[0].type = dt_msg;
 		demolist_count = 1;
@@ -2687,37 +2866,45 @@ static void Demo_ReadDirectory(void) {
 	Demo_PositionCursor();
 }
 
-void M_Menu_Demos_f (void) {
+void M_Menu_Demos_f (void)
+{
 	static qboolean demo_currentdir_init = false;
 	char *s;
 
 	M_EnterMenu(m_demos);
 
-	
-	if (!demo_currentdir_init) {
+
+	if (!demo_currentdir_init)
+	{
 		demo_currentdir_init = true;
-		if (demo_dir.string[0]) {
+		if (demo_dir.string[0])
+		{
 			for (s = demo_dir.string; *s == '/' || *s == '\\'; s++)
 				;
-			if (*s) {	
+			if (*s)
+			{
 				strcpy(demo_currentdir, "/");
 				strlcat(demo_currentdir, s, sizeof(demo_currentdir));
-				
+
 				for (s = demo_currentdir + strlen(demo_currentdir) - 1; *s == '/' || *s == '\\'; s--)
 					*s = 0;
 			}
-		} else {
-			strcpy(demo_currentdir, "/qw");	
+		}
+		else
+		{
+			strcpy(demo_currentdir, "/qw");
 		}
 	}
-	
+
 	Demo_ReadDirectory();
 }
 
-static void Demo_FormatSize (char *t) {
+static void Demo_FormatSize (char *t)
+{
 	char *s;
 
-	for (s = t; *s; s++) {
+	for (s = t; *s; s++)
+	{
 		if (*s >= '0' && *s <= '9')
 			*s = *s - '0' + 18;
 		else
@@ -2725,15 +2912,16 @@ static void Demo_FormatSize (char *t) {
 	}
 }
 
-#define DEMOLIST_NAME_WIDTH	29		
+#define DEMOLIST_NAME_WIDTH	29
 
-void M_Demos_Draw (void) {
+void M_Demos_Draw (void)
+{
 	int i, y;
 	direntry_t *d;
 	char demoname[DEMOLIST_NAME_WIDTH], demosize[36 - DEMOLIST_NAME_WIDTH];
 
-	static char last_demo_name[MAX_DEMO_NAME + 7];	
-	static int last_demo_index = 0, last_demo_length = 0;	
+	static char last_demo_name[MAX_DEMO_NAME + 7];
+	static int last_demo_index = 0, last_demo_length = 0;
 	char demoname_scroll[38 + 1];
 	int demoindex, scroll_index;
 	float frac, time, elapsed;
@@ -2744,12 +2932,14 @@ void M_Demos_Draw (void) {
 	M_PrintWhite (16, 16, demoname_scroll);
 	M_Print (8, 24, "\x1d\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1e\x1f \x1d\x1e\x1e\x1e\x1e\x1e\x1f");
 
-	for (i = 0; i < demolist_count - demo_base && i < DEMO_MAXLINES; i++) {
+	for (i = 0; i < demolist_count - demo_base && i < DEMO_MAXLINES; i++)
+	{
 		d = demolist[demo_base + i];
 		y = 32 + 8 * i;
 		Q_strncpyz (demoname, d->name, sizeof(demoname));
 
-		switch (d->type) {
+		switch (d->type)
+		{
 		case dt_file:
 			M_Print (24, y, demoname);
 			if (d->size > 99999 * 1024)
@@ -2779,16 +2969,20 @@ void M_Demos_Draw (void) {
 
 
 	demoindex = demo_base + demo_cursor;
-	if (demolist[demoindex]->type == dt_file) {
+	if (demolist[demoindex]->type == dt_file)
+	{
 		time = (float) Sys_DoubleTime();
-		if (!last_demo_time || last_demo_index != demoindex) {
+		if (!last_demo_time || last_demo_index != demoindex)
+		{
 			last_demo_index = demoindex;
 			last_demo_time = time;
 			frac = scroll_index = 0;
 			Q_snprintfz(last_demo_name, sizeof(last_demo_name), "%s  ***  ", demolist[demoindex]->name);
 			last_demo_length = strlen(last_demo_name);
-		} else {
-			
+		}
+		else
+		{
+
 			elapsed = 3.5 * max(time - last_demo_time - 0.75, 0);
 			scroll_index = (int) elapsed;
 			frac = bound(0, elapsed - scroll_index, 1);
@@ -2796,26 +2990,33 @@ void M_Demos_Draw (void) {
 		}
 
 
-		if (last_demo_length <= 38 + 7) {
+		if (last_demo_length <= 38 + 7)
+		{
 			Q_strncpyz(demoname_scroll, demolist[demoindex]->name, sizeof(demoname_scroll));
 			M_PrintWhite (160 - strlen(demoname_scroll) * 4, 40 + 8 * DEMO_MAXLINES, demoname_scroll);
-		} else {
+		}
+		else
+		{
 			for (i = 0; i < sizeof(demoname_scroll) - 1; i++)
 				demoname_scroll[i] = last_demo_name[(scroll_index + i) % last_demo_length];
 			demoname_scroll[sizeof(demoname_scroll) - 1] = 0;
 			M_PrintWhite (12 -  (int) (8 * frac), 40 + 8 * DEMO_MAXLINES, demoname_scroll);
 		}
-	} else {
+	}
+	else
+	{
 		last_demo_time = 0;
 	}
 
 }
 
-void M_Demos_Key (int key) {
+void M_Demos_Key (int key)
+{
 	char *p;
 	demo_sort_t sort_target;
 
-	switch (key) {
+	switch (key)
+	{
 	case K_BACKSPACE:
 		m_topmenu = m_none;	// intentional fallthrough
 	case K_ESCAPE:
@@ -2833,7 +3034,8 @@ void M_Demos_Key (int key) {
 
 	case K_DOWNARROW:
 		S_LocalSound ("misc/menu1.wav");
-		if (demo_cursor + demo_base < demolist_count - 1) {
+		if (demo_cursor + demo_base < demolist_count - 1)
+		{
 			if (demo_cursor < DEMO_MAXLINES - 1)
 				demo_cursor++;
 			else
@@ -2849,10 +3051,13 @@ void M_Demos_Key (int key) {
 
 	case K_END:
 		S_LocalSound ("misc/menu1.wav");
-		if (demolist_count > DEMO_MAXLINES) {
+		if (demolist_count > DEMO_MAXLINES)
+		{
 			demo_cursor = DEMO_MAXLINES - 1;
 			demo_base = demolist_count - demo_cursor - 1;
-		} else {
+		}
+		else
+		{
 			demo_base = 0;
 			demo_cursor = demolist_count - 1;
 		}
@@ -2861,7 +3066,8 @@ void M_Demos_Key (int key) {
 	case K_PGUP:
 		S_LocalSound ("misc/menu1.wav");
 		demo_cursor -= DEMO_MAXLINES - 1;
-		if (demo_cursor < 0) {
+		if (demo_cursor < 0)
+		{
 			demo_base += demo_cursor;
 			if (demo_base < 0)
 				demo_base = 0;
@@ -2874,7 +3080,8 @@ void M_Demos_Key (int key) {
 		demo_cursor += DEMO_MAXLINES - 1;
 		if (demo_base + demo_cursor >= demolist_count)
 			demo_cursor = demolist_count - demo_base - 1;
-		if (demo_cursor >= DEMO_MAXLINES) {
+		if (demo_cursor >= DEMO_MAXLINES)
+		{
 			demo_base += demo_cursor - (DEMO_MAXLINES - 1);
 			demo_cursor = DEMO_MAXLINES - 1;
 			if (demo_base + demo_cursor >= demolist_count)
@@ -2886,19 +3093,26 @@ void M_Demos_Key (int key) {
 		if (!demolist_count || demolist[demo_base + demo_cursor]->type == dt_msg)
 			break;
 
-		if (demolist[demo_base + demo_cursor]->type != dt_file) {		
-			if (demolist[demo_base + demo_cursor]->type == dt_up) {
-				if ((p = strrchr(demo_currentdir, '/')) != NULL) {
+		if (demolist[demo_base + demo_cursor]->type != dt_file)
+		{
+			if (demolist[demo_base + demo_cursor]->type == dt_up)
+			{
+				if ((p = strrchr(demo_currentdir, '/')) != NULL)
+				{
 					Q_strncpyz(demo_prevdemo, p + 1, sizeof(demo_prevdemo));
 					*p = 0;
 				}
-			} else {	
+			}
+			else
+			{
 				strncat(demo_currentdir, "/", sizeof(demo_currentdir) - strlen(demo_currentdir) - 1);
 				strncat(demo_currentdir, demolist[demo_base + demo_cursor]->name, sizeof(demo_currentdir) - strlen(demo_currentdir) - 1);
 			}
 			demo_cursor = 0;
 			Demo_ReadDirectory();
-		} else {
+		}
+		else
+		{
 			key_dest = key_game;
 			m_state = m_none;
 			if (keydown[K_CTRL])
@@ -2909,22 +3123,25 @@ void M_Demos_Key (int key) {
 		}
 		break;
 
-	case 'n':	
-	case 's':	
-	case 't':	
+	case 'n':
+	case 's':
+	case 't':
 		if (!keydown[K_CTRL])
 			break;
 
 		sort_target = (key == 'n') ? ds_name : (key == 's') ? ds_size : ds_time;
-		if (demo_sorttype == sort_target) {
+		if (demo_sorttype == sort_target)
+		{
 			demo_reversesort = !demo_reversesort;
-		} else {
+		}
+		else
+		{
 			demo_sorttype = sort_target;
 			demo_reversesort = false;
 		}
 		Q_strncpyz(demo_prevdemo, demolist[demo_cursor + demo_base]->name, sizeof(demo_prevdemo));
 		Demo_SortDemos();
-		Demo_PositionCursor();	
+		Demo_PositionCursor();
 		break;
 
 	case K_SPACE:
@@ -2939,12 +3156,14 @@ void M_Demos_Key (int key) {
 
 #ifndef CLIENTONLY
 
-typedef struct {
+typedef struct
+{
 	char	*name;
 	char	*description;
 } level_t;
 
-level_t		levels[] = {
+level_t		levels[] =
+{
 	{"start", "Entrance"},	// 0
 
 	{"e1m1", "Slipgate Complex"},				// 1
@@ -2991,13 +3210,15 @@ level_t		levels[] = {
 	{"dm6", "The Dark Zone"}
 };
 
-typedef struct {
+typedef struct
+{
 	char	*description;
 	int		firstLevel;
 	int		levels;
 } episode_t;
 
-episode_t	episodes[] = {
+episode_t	episodes[] =
+{
 	{"Welcome to Quake", 0, 1},
 	{"Doomed Dimension", 1, 8},
 	{"Realm of Black Magic", 9, 7},
@@ -3015,7 +3236,8 @@ int _maxclients, _maxspectators;
 int _deathmatch, _teamplay, _skill, _coop;
 int _fraglimit, _timelimit;
 
-void M_Menu_GameOptions_f (void) {
+void M_Menu_GameOptions_f (void)
+{
 	M_EnterMenu (m_gameoptions);
 
 	// 16 and 8 are not really limits --- just sane values
@@ -3035,7 +3257,8 @@ int gameoptions_cursor_table[] = {40, 56, 64, 72, 80, 96, 104, 120, 128};
 #define	NUM_GAMEOPTIONS	9
 int		gameoptions_cursor;
 
-void M_GameOptions_Draw (void) {
+void M_GameOptions_Draw (void)
+{
 	mpic_t *p;
 	char *msg;
 
@@ -3054,28 +3277,33 @@ void M_GameOptions_Draw (void) {
 
 	M_Print (0, 64, "         teamplay");
 
-	switch(_teamplay) {
+	switch(_teamplay)
+	{
 		default: msg = "Off"; break;
 		case 1: msg = "No Friendly Fire"; break;
 		case 2: msg = "Friendly Fire"; break;
 	}
 	M_Print (160, 64, msg);
 
-	if (_deathmatch == 0) {
+	if (_deathmatch == 0)
+	{
 		M_Print (0, 72, "            skill");
-		switch (_skill) {
+		switch (_skill)
+		{
 		case 0:  M_Print (160, 72, "Easy"); break;
 		case 1:  M_Print (160, 72, "Normal"); break;
 		case 2:  M_Print (160, 72, "Hard"); break;
 		default: M_Print (160, 72, "Nightmare");
 		}
-	} else {
+	}
+	else
+	{
 		M_Print (0, 72, "        fraglimit");
 		if (_fraglimit == 0)
 			M_Print (160, 72, "none");
 		else
 			M_Print (160, 72, va("%i frags", _fraglimit));
-		
+
 		M_Print (0, 80, "        timelimit");
 		if (_timelimit == 0)
 			M_Print (160, 80, "none");
@@ -3099,11 +3327,13 @@ void M_GameOptions_Draw (void) {
 	M_DrawCharacter (144, gameoptions_cursor_table[gameoptions_cursor], 12+((int)(curtime*4)&1));
 }
 
-void M_NetStart_Change (int dir) {
+void M_NetStart_Change (int dir)
+{
 	int count;
 	extern cvar_t	registered;
 
-	switch (gameoptions_cursor) {
+	switch (gameoptions_cursor)
+	{
 	case 1:
 		_deathmatch += dir;
 		if (_deathmatch < 0) _deathmatch = 5;
@@ -3117,11 +3347,14 @@ void M_NetStart_Change (int dir) {
 		break;
 
 	case 3:
-		if (_deathmatch == 0) {
+		if (_deathmatch == 0)
+		{
 			_skill += dir;
 			if (_skill < 0) _skill = 3;
 			else if (_skill > 3) _skill = 0;
-		} else {
+		}
+		else
+		{
 			_fraglimit += dir * 10;
 			if (_fraglimit < 0) _fraglimit = 100;
 			else if (_fraglimit > 100) _fraglimit = 0;
@@ -3179,8 +3412,10 @@ void M_NetStart_Change (int dir) {
 	}
 }
 
-void M_GameOptions_Key (int key) {
-	switch (key) {
+void M_GameOptions_Key (int key)
+{
+	switch (key)
+	{
 	case K_BACKSPACE:
 		m_topmenu = m_none;	// intentional fallthrough
 	case K_ESCAPE:
@@ -3235,16 +3470,19 @@ void M_GameOptions_Key (int key) {
 		{
 			key_dest = key_game;
 
-			// Kill the server, unless we continue playing 
+			// Kill the server, unless we continue playing
 			// deathmatch on another level
 			if (!_deathmatch || !deathmatch.value)
 				Cbuf_AddText ("disconnect\n");
 
-			if (_deathmatch == 0) {
+			if (_deathmatch == 0)
+			{
 				_coop = 1;
 				_timelimit = 0;
 				_fraglimit = 0;
-			} else {
+			}
+			else
+			{
 				_coop = 0;
 			}
 
@@ -3286,7 +3524,8 @@ extern cvar_t	topcolor, bottomcolor;
 
 #define	NUM_SETUP_CMDS	5
 
-void M_Menu_Setup_f (void) {
+void M_Menu_Setup_f (void)
+{
 	M_EnterMenu (m_setup);
 	Q_strncpyz (setup_name, name.string, sizeof(setup_name));
 	Q_strncpyz (setup_team, team.string, sizeof(setup_team));
@@ -3294,7 +3533,8 @@ void M_Menu_Setup_f (void) {
 	setup_bottom = setup_oldbottom = (int)bottomcolor.value;
 }
 
-void M_Setup_Draw (void) {
+void M_Setup_Draw (void)
+{
 	mpic_t	*p;
 
 	M_DrawTransPic (16, 4, Draw_CachePic ("gfx/qplaque.lmp") );
@@ -3330,10 +3570,12 @@ void M_Setup_Draw (void) {
 		M_DrawCharacter (168 + 8*strlen(setup_team), setup_cursor_table [setup_cursor], 10+((int)(curtime*4)&1));
 }
 
-void M_Setup_Key (int k) {
+void M_Setup_Key (int k)
+{
 	int l;
 
-	switch (k) {
+	switch (k)
+	{
 	case K_ESCAPE:
 		M_LeaveMenu (m_multiplayer);
 		break;
@@ -3399,13 +3641,18 @@ void M_Setup_Key (int k) {
 		break;
 
 	case K_BACKSPACE:
-		if (setup_cursor == 0) {
+		if (setup_cursor == 0)
+		{
 			if (strlen(setup_name))
 				setup_name[strlen(setup_name)-1] = 0;
-		} else if (setup_cursor == 1) {
+		}
+		else if (setup_cursor == 1)
+		{
 			if (strlen(setup_team))
 				setup_team[strlen(setup_team)-1] = 0;
-		} else {
+		}
+		else
+		{
 			m_topmenu = m_none;
 			M_LeaveMenu (m_multiplayer);
 		}
@@ -3414,16 +3661,20 @@ void M_Setup_Key (int k) {
 	default:
 		if (k < 32 || k > 127)
 			break;
-		if (setup_cursor == 0) {
+		if (setup_cursor == 0)
+		{
 			l = strlen(setup_name);
-			if (l < 15) {
+			if (l < 15)
+			{
 				setup_name[l+1] = 0;
 				setup_name[l] = k;
 			}
 		}
-		if (setup_cursor == 1) {
+		if (setup_cursor == 1)
+		{
 			l = strlen(setup_team);
-			if (l < 15) {
+			if (l < 15)
+			{
 				setup_team[l + 1] = 0;
 				setup_team[l] = k;
 			}
@@ -3466,7 +3717,8 @@ void M_Quit_Draw (void)
 
 	M_DrawTextBox (0, 12, 38, 19);
 	y = 24;
-	for (p = quitmsg; *p; p++, y += 8) {
+	for (p = quitmsg; *p; p++, y += 8)
+	{
 		x = 18 + (36 - (strlen(*p + 1))) * 4;
 		if (**p == '0')
 			M_PrintWhite (x, y, *p + 1);
@@ -3512,14 +3764,17 @@ void M_CvarInit (void)
 	Cmd_AddCommand ("menu_quit", M_Menu_Quit_f);
 }
 
-void M_Draw (void) {
+void M_Draw (void)
+{
 	if (m_state == m_none || key_dest != key_menu)
 		return;
 
-	if (!m_recursiveDraw) {
+	if (!m_recursiveDraw)
+	{
 		scr_copyeverything = 1;
 
-		if (SCR_NEED_CONSOLE_BACKGROUND) {
+		if (SCR_NEED_CONSOLE_BACKGROUND)
+		{
 			Draw_ConsoleBackground (scr_con_current);
 #ifndef GLQUAKE
 			VID_UnlockBuffer ();
@@ -3528,12 +3783,16 @@ void M_Draw (void) {
 #ifndef GLQUAKE
 			VID_LockBuffer ();
 #endif
-		} else {
+		}
+		else
+		{
 			Draw_FadeScreen ();
 		}
 
 		scr_fullupdate = 0;
-	} else {
+	}
+	else
+	{
 		m_recursiveDraw = false;
 	}
 
@@ -3567,7 +3826,8 @@ void M_Draw (void) {
 	else
 		m_yofs = 0;
 
-	switch (m_state) {
+	switch (m_state)
+	{
 	case m_none:
 		break;
 
@@ -3647,14 +3907,16 @@ void M_Draw (void) {
 	}
 
 #ifdef GLQUAKE
-	if (scr_scaleMenu.value) {
+	if (scr_scaleMenu.value)
+	{
 		glMatrixMode (GL_PROJECTION);
 		glLoadIdentity ();
 		glOrtho  (0, vid.width, vid.height, 0, -99999, 99999);
 	}
 #endif
 
-	if (m_entersound) {
+	if (m_entersound)
+	{
 		S_LocalSound ("misc/menu2.wav");
 		m_entersound = false;
 	}
@@ -3668,8 +3930,10 @@ void M_Draw (void) {
 #endif
 }
 
-void M_Keydown (int key) {
-	switch (m_state) {
+void M_Keydown (int key)
+{
+	switch (m_state)
+	{
 	case m_none:
 		return;
 
