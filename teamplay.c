@@ -1625,25 +1625,25 @@ qboolean TP_LoadLocFile (char *path, qboolean quiet)
 
 	// Parse the whole file now
 	p = buf;
-	line = 1;
+	line = 0;
 
-	while (1)
+	while(line++, 1)
 	{
 		SKIPBLANKS(p);
 
 		if (!*p)
 		{
-			goto _endoffile;
+			break;
 		}
 		else if (*p == '\n')
 		{
 			p++;
-			goto _endofline;
+			continue;
 		}
 		else if (*p == '/' && p[1] == '/')
 		{
 			SKIPTOEOL(p);
-			goto _endofline;
+			continue;
 		}
 
 		// parse three ints
@@ -1661,7 +1661,7 @@ qboolean TP_LoadLocFile (char *path, qboolean quiet)
 					{
 						Com_Printf ("Locfile error (line %d): unexpected '-'\n", line);
 						SKIPTOEOL(p);
-						goto _endofline;
+						continue;
 					}
 					sign = -1;
 					break;
@@ -1672,7 +1672,7 @@ qboolean TP_LoadLocFile (char *path, qboolean quiet)
 				default:	// including eol or eof
 					Com_Printf ("Locfile error (line %d): couldn't parse coords\n", line);
 					SKIPTOEOL(p);
-					goto _endofline;
+					continue;
 				}
 			}
 _next:
@@ -1684,9 +1684,11 @@ _next:
 
 		// parse location name
 		overflow = nameindex = 0;
-		while (1)
+		i = 1;
+		while(i)
 		{
-			switch (*p)	{
+			switch (*p)
+			{
 			case '\r':
 				p++;
 				break;
@@ -1697,7 +1699,9 @@ _next:
 				loc_numentries++;
 				if (*p == '\n')
 					p++;
-				goto _endofline;
+
+				i = 0;
+				break;
 			default:
 				if (nameindex < MAX_LOC_NAME - 1)
 				{
@@ -1709,12 +1713,10 @@ _next:
 					Com_Printf ("Locfile warning (line %d): truncating loc name to %d chars\n", line, MAX_LOC_NAME - 1);
 				}
 				p++;
+				break;
 			}
 		}
-_endofline:
-		line++;
 	}
-_endoffile:
 
 	Hunk_FreeToLowMark (mark);
 
