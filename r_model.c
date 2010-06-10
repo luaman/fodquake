@@ -130,6 +130,24 @@ static void Mod_FreeBrushData(model_t *model)
 {
 	free(model->submodels);
 	model->submodels = 0;
+
+	free(model->lightdata);
+	model->lightdata = 0;
+
+	free(model->visdata);
+	model->visdata = 0;
+
+	free(model->entities);
+	model->entities = 0;
+
+	free(model->vertexes);
+	model->vertexes = 0;
+
+	free(model->edges);
+	model->edges = 0;
+
+	free(model->texinfo);
+	model->texinfo = 0;
 }
 
 void Mod_ClearBrushesSprites(void)
@@ -518,7 +536,11 @@ static void Mod_LoadLighting(model_t *model, lump_t *l)
 	{
 		if (l->filelen % 3)
 			Host_Error("Mod_LoadLighting: l->filelen % 3");
+
 		model->lightdata = Hunk_AllocName (l->filelen / 3, loadname);
+		if (model->lightdata == 0)
+			Sys_Error("Mod_LoadLighting: Out of memory\n");
+
 		in = mod_base + l->fileofs;
 		for (i = j = 0; i < l->filelen; i += 3, j++)
 			model->lightdata[j] = (in[i + 0] + in[i + 1] + in[i + 2]) / 3.0;
@@ -526,6 +548,9 @@ static void Mod_LoadLighting(model_t *model, lump_t *l)
 	else
 	{
 		model->lightdata = Hunk_AllocName(l->filelen, loadname);
+		if (model->lightdata == 0)
+			Sys_Error("Mod_LoadLighting: Out of memory\n");
+
 		memcpy(model->lightdata, mod_base + l->fileofs, l->filelen);
 	}
 }
@@ -537,7 +562,10 @@ static void Mod_LoadVisibility(model_t *model, lump_t *l)
 		model->visdata = NULL;
 		return;
 	}
-	model->visdata = Hunk_AllocName(l->filelen, loadname);
+	model->visdata = malloc(l->filelen);
+	if (model->visdata == 0)
+		Sys_Error("Mod_LoadVisibility: Out of memory\n");
+
 	memcpy(model->visdata, mod_base + l->fileofs, l->filelen);
 }
 
@@ -548,7 +576,10 @@ static void Mod_LoadEntities(model_t *model, lump_t *l)
 		model->entities = NULL;
 		return;
 	}
-	model->entities = Hunk_AllocName(l->filelen, loadname);
+	model->entities = malloc(l->filelen);
+	if (model->entities == 0)
+		Sys_Error("Mod_LoadEntities: Out of memory\n");
+
 	memcpy(model->entities, mod_base + l->fileofs, l->filelen);
 }
 
@@ -561,8 +592,11 @@ static void Mod_LoadVertexes(model_t *model, lump_t *l)
 	in = (void *) (mod_base + l->fileofs);
 	if (l->filelen % sizeof(*in))
 		Host_Error("Mod_LoadVertexes: funny lump size in %s", model->name);
+
 	count = l->filelen / sizeof(*in);
-	out = Hunk_AllocName(count*sizeof(*out), loadname);
+	out = malloc(count*sizeof(*out));
+	if (out == 0)
+		Sys_Error("Mod_LoadVertexes: Out of memory\n");
 
 	model->vertexes = out;
 	model->numvertexes = count;
@@ -634,7 +668,9 @@ static void Mod_LoadEdges(model_t *model, lump_t *l)
 		Host_Error("Mod_LoadEdges: funny lump size in %s", model->name);
 
 	count = l->filelen / sizeof(*in);
-	out = Hunk_AllocName((count + 1) * sizeof(*out), loadname);
+	out = malloc((count + 1) * sizeof(*out));
+	if (out == 0)
+		Sys_Error("Mod_LoadEdges: Out of memory\n");
 
 	model->edges = out;
 	model->numedges = count;
@@ -643,6 +679,7 @@ static void Mod_LoadEdges(model_t *model, lump_t *l)
 	{
 		out->v[0] = (unsigned short)LittleShort(in->v[0]);
 		out->v[1] = (unsigned short)LittleShort(in->v[1]);
+		out->cachededgeoffset = 0;
 	}
 }
 
@@ -658,7 +695,9 @@ static void Mod_LoadTexinfo(model_t *model, lump_t *l)
 		Host_Error("Mod_LoadTexinfo: funny lump size in %s", model->name);
 
 	count = l->filelen / sizeof(*in);
-	out = Hunk_AllocName(count*sizeof(*out), loadname);
+	out = malloc(count*sizeof(*out));
+	if (out == 0)
+		Sys_Error("Mod_LoadTexinfo: Out of memory\n");
 
 	model->texinfo = out;
 	model->numtexinfo = count;
