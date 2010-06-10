@@ -848,9 +848,24 @@ void ED_LoadFromFile (char *data)
 	Com_DPrintf ("%i entities inhibited\n", inhibit);
 }
 
+static void *LoadMallocFileFromGamedir(const char *path)
+{
+	extern int file_from_gamedir;
+	void *p;
+
+	p = FS_LoadMallocFile(path);
+	if (p && !file_from_gamedir)
+	{
+		free(p);
+		p = 0;
+	}
+
+	return p;
+}
+
 void PR_LoadProgs (void)
 {
-	int i, lowmark;
+	int i;
 	char num[32];
 	dfunction_t *f;
 
@@ -858,40 +873,23 @@ void PR_LoadProgs (void)
 	for (i = 0; i < GEFV_CACHESIZE; i++)
 		gefvCache[i].field[0] = 0;
 
+#warning This is currently leaking memory. Fix it once the server works again.
 	if (!deathmatch.value)
 	{
-		extern int file_from_gamedir;
+		progs = LoadMallocFileFromGamedir("spprogs.dat");
+		if (!progs)
+			progs = LoadMallocFileFromGamedir("qwprogs.dat");
 
-		lowmark = Hunk_LowMark();
+		if (!progs)
+			progs = FS_LoadMallocFile("spprogs.dat");
 
-		if ((progs = (dprograms_t *) FS_LoadHunkFile ("spprogs.dat")))
-		{
-			if (file_from_gamedir)
-				goto progs_loaded;
-			else
-				Hunk_FreeToLowMark(lowmark);
-		}
-
-		if ((progs = (dprograms_t *) FS_LoadHunkFile ("qwprogs.dat")))
-		{
-			if (file_from_gamedir)
-				goto progs_loaded;
-			else
-				Hunk_FreeToLowMark(lowmark);
-		}
-
-		if ((progs = (dprograms_t *) FS_LoadHunkFile ("spprogs.dat")))
-			goto progs_loaded;
-
-
-		progs = (dprograms_t *) FS_LoadHunkFile ("qwprogs.dat");
+		if (!progs)
+			progs = FS_LoadMallocFile("qwprogs.dat");
 	}
 	else
 	{
-		progs = (dprograms_t *) FS_LoadHunkFile ("qwprogs.dat");
+		progs = FS_LoadMallocFile("qwprogs.dat");
 	}
-
-progs_loaded:
 
 	if (!progs)
 		Host_Error ("PR_LoadProgs: couldn't load qwprogs.dat");
