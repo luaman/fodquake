@@ -188,6 +188,12 @@ static void Mod_FreeBrushData(model_t *model)
 
 	free(model->leafs);
 	model->leafs = 0;
+
+	free(model->clipnodes);
+	model->clipnodes = 0;
+
+	free(model->hulls[0].clipnodes);
+	model->hulls[0].clipnodes = 0;
 }
 
 void Mod_ClearBrushesSprites(void)
@@ -1274,7 +1280,9 @@ static void Mod_LoadClipnodes(model_t *model, lump_t *l)
 	if (l->filelen % sizeof(*in))
 		Host_Error ("Mod_LoadClipnodes: funny lump size in %s", model->name);
 	count = l->filelen / sizeof(*in);
-	out = Hunk_AllocName ( count*sizeof(*out), loadname);
+	out = malloc(count*sizeof(*out));
+	if (out == 0)
+		Sys_Error("Mod_LoadClipnodes: Out of memory\n");
 
 	model->clipnodes = out;
 	model->numclipnodes = count;
@@ -1364,7 +1372,9 @@ static void Mod_MakeHull0(model_t *model)
 
 	in = model->nodes;
 	count = model->numnodes;
-	out = Hunk_AllocName ( count*sizeof(*out), loadname);
+	out = malloc(count*sizeof(*out));
+	if (out == 0)
+		Sys_Error("Mod_MakeHull0: Out of memory\n");
 
 	hull->clipnodes = out;
 	hull->firstclipnode = 0;
