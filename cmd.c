@@ -1511,17 +1511,29 @@ void Cmd_EnableFunctionExecution()
 void Cmd_Init (void)
 {
 	// register our commands
-	Cmd_AddCommand ("exec", Cmd_Exec_f);
-	Cmd_AddCommand ("echo", Cmd_Echo_f);
-	Cmd_AddCommand ("aliaslist", Cmd_AliasList_f);
-	//Cmd_AddCommand ("aliasa", Cmd_Alias_f);
-	Cmd_AddCommand ("alias", Cmd_Alias_f);
-	Cmd_AddCommand ("tempalias", Cmd_Alias_f);
-	Cmd_AddCommand ("viewalias", Cmd_Viewalias_f);
-	Cmd_AddCommand ("unaliasall", Cmd_UnAliasAll_f);
-	Cmd_AddCommand ("unalias", Cmd_UnAlias_f);
-	Cmd_AddCommand ("wait", Cmd_Wait_f);
-	Cmd_AddCommand ("cmdlist", Cmd_CmdList_f);
-	Cmd_AddCommand ("if", Cmd_If_f);
-	Cmd_AddCommand ("macrolist", Cmd_MacroList_f);
+	Cmd_AddCommand("exec", Cmd_Exec_f);
+	Cmd_AddCommand("echo", Cmd_Echo_f);
+	Cmd_AddCommand("aliaslist", Cmd_AliasList_f);
+	//Cmd_AddCommand("aliasa", Cmd_Alias_f);
+	Cmd_AddCommand("alias", Cmd_Alias_f);
+	Cmd_AddCommand("tempalias", Cmd_Alias_f);
+	Cmd_AddCommand("viewalias", Cmd_Viewalias_f);
+	Cmd_AddCommand("unaliasall", Cmd_UnAliasAll_f);
+	Cmd_AddCommand("unalias", Cmd_UnAlias_f);
+	Cmd_AddCommand("wait", Cmd_Wait_f);
+	Cmd_AddCommand("cmdlist", Cmd_CmdList_f);
+	Cmd_AddCommand("if", Cmd_If_f);
+	Cmd_AddCommand("macrolist", Cmd_MacroList_f);
 }
+
+void Cmd_Shutdown()
+{
+	cmd_function_t *func;
+
+	while((func = cmd_functions))
+	{
+		cmd_functions = func->next;
+		free(func);
+	}
+}
+

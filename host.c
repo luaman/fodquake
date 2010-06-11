@@ -383,6 +383,7 @@ void Host_Shutdown(void)
 	COM_Shutdown();
 
 	Cvar_Shutdown();
+	Cmd_Shutdown();
 
 	Host_ShutdownMemory();
 }
