@@ -42,7 +42,7 @@ Lowercases name and pads with spaces and a terminating 0 to the length of lumpin
 Used so lumpname lookups can proceed rapidly by comparing 4 chars at a time
 Space padding is so names can be printed nicely in tables. Can safely be performed in place.
 */
-void W_CleanupName(char *in, char *out)
+static void W_CleanupName(char *in, char *out)
 {
 	int i, c;
 
@@ -68,7 +68,7 @@ void W_LoadWadFile(char *filename)
 	unsigned i;
 	int infotableofs;
 
-	wad_base = FS_LoadHunkFile (filename);
+	wad_base = FS_LoadMallocFile(filename);
 	if (!wad_base)
 		Sys_Error ("W_LoadWadFile: couldn't load %s", filename);
 
@@ -89,6 +89,11 @@ void W_LoadWadFile(char *filename)
 		if (lump_p->type == TYP_QPIC)
 			SwapPic ( (qpic_t *)(wad_base + lump_p->filepos));
 	}
+}
+
+void W_UnloadWadFile()
+{
+	free(wad_base);
 }
 
 static lumpinfo_t *W_GetLumpinfo(char *name)

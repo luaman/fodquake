@@ -2013,5 +2013,7 @@ void CL_Shutdown (void)
 
 	free(host_basepal);
 	free(host_colormap);
+
+	W_UnloadWadFile();
 }
 
