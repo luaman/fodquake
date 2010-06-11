@@ -3388,3 +3388,8 @@ void TP_CvarInit(void)
 	Cmd_AddCommand ("tp_point", TP_Point_f);
 }
 
+void TP_Shutdown()
+{
+	TP_ClearLocs();
+}
+

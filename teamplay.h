@@ -84,6 +84,7 @@ extern char *skinforcing_team;
 
 
 void TP_CvarInit(void);
+void TP_Shutdown(void);
 
 //#define FPD_NO_TEAM_MACROS	1
 #define FPD_NO_FORCE_SKIN	256

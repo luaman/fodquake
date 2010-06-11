@@ -2007,6 +2007,7 @@ void CL_Shutdown (void)
 #ifdef SECURITY_NONSENSE
 	Modules_Shutdown();
 #endif
+	TP_Shutdown();
 	Log_Shutdown();
 	if (cl_vidinitialised)
 		VID_Shutdown();
