@@ -137,17 +137,20 @@ static void Mod_FreeBrushData(model_t *model)
 	free(model->lightdata);
 	model->lightdata = 0;
 
-	for(i=0;i<model->numsurfaces;i++)
+	if (model->surfaces)
 	{
-		nextwarppoly = model->surfaces[i].warppolys;
-
-		while((warppoly = nextwarppoly))
+		for(i=0;i<model->numsurfaces;i++)
 		{
-			nextwarppoly = warppoly->next;
-			free(warppoly);
-		}
+			nextwarppoly = model->surfaces[i].warppolys;
 
-		free(model->surfaces[i].polys);
+			while((warppoly = nextwarppoly))
+			{
+				nextwarppoly = warppoly->next;
+				free(warppoly);
+			}
+
+			free(model->surfaces[i].polys);
+		}
 	}
 
 	free(model->surfaces);
