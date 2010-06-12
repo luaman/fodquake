@@ -35,7 +35,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #else
 #include "d_iface.h"
 #endif
-#include "auth.h"
 #include "fchecks.h"
 #include "fmod.h"
 #include "ignore.h"
@@ -256,7 +255,6 @@ void Host_Init(int argc, char **argv, int default_memsize)
 	Sbar_CvarInit();
 	TP_CvarInit();
 	Ignore_CvarInit();
-	Auth_CvarInit();
 	V_CvarInit();
 	Log_CvarInit();
 	Netchan_CvarInit();

@@ -164,7 +164,6 @@ ifeq ($(CPU), ppc)
 endif
 
 OBJS= \
-	cl_auth.o \
 	cl_sbar.o \
 	cl_screen.o \
 	cl_cam.o \

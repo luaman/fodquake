@@ -32,6 +32,9 @@ Version 0.3
   will use the new table layout code.
 - The server browser now highlights the column used for sorting.
 - Optimised dynamic lightmap rendering.
+- Removed the last remnants of the obscurity module nonsense. As a result the
+  'auth_validate', 'auth_viewcrc' and 'auth_warninvalid' cvars and the
+  'validate_clients' command have been removed.
 
 Version 0.2
 ===========

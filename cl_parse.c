@@ -31,7 +31,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "mouse.h"
 
 #include "ignore.h"
-#include "auth.h"
 #include "fchecks.h"
 #include "config_manager.h"
 #include "utils.h"
@@ -1469,7 +1468,6 @@ void CL_ParsePrint (void)
 
 		flags = TP_CategorizeMessage (s, &offset);
 		FChecks_CheckRequest(s);
-		Auth_CheckResponse (s, flags, offset);
 
 		if (Ignore_Message(s, flags, offset))
 			return;

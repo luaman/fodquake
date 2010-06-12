@@ -21,7 +21,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "quakedef.h"
 #include "version.h"
 
-#include "auth.h"
 #include "utils.h"
 #include "fmod.h"
 #include "modules.h"
@@ -37,12 +36,7 @@ extern char *fversion_clientnames[];
 extern char *fversion_osnames[];
 
 void FChecks_VersionResponse(void) {
-#ifdef SECURITY_NONSENSE
-	if (Modules_SecurityLoaded())
-		Cbuf_AddText (va("say %s %s:" QW_RENDERER "  crc: %s\n", fversion_clientnames[imitatedclientnum], fversion_osnames[imitatedosnum], Auth_Generate_Crc()));
-	else
-#endif
-		Cbuf_AddText (va("say %s %s:" QW_RENDERER "\n", fversion_clientnames[imitatedclientnum], fversion_osnames[imitatedosnum]));
+	Cbuf_AddText (va("say %s %s:" QW_RENDERER "\n", fversion_clientnames[imitatedclientnum], fversion_osnames[imitatedosnum]));
 }
 
 void FChecks_FServerResponse (void) {
@@ -55,12 +49,7 @@ void FChecks_FServerResponse (void) {
 	if (adr.addr.ipv4.port == 0)
 		adr.addr.ipv4.port = BigShort (PORT_SERVER);
 
-#ifdef SECURITY_NONSENSE
-	if (Modules_SecurityLoaded())
-		Cbuf_AddText(va("say FodQuake f_server response: %s  crc: %s\n", NET_AdrToString(&adr), Auth_Generate_Crc()));
-	else
-#endif
-		Cbuf_AddText(va("say FodQuake f_server response: %s\n", NET_AdrToString(&adr)));
+	Cbuf_AddText(va("say FodQuake f_server response: %s\n", NET_AdrToString(&adr)));
 }
 
 void FChecks_SkinsResponse(float fbskins) {
