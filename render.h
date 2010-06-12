@@ -121,9 +121,10 @@ typedef enum trail_type_s {
 	TRACER1_TRAIL, TRACER2_TRAIL, VOOR_TRAIL,
 } trail_type_t;
 
-int R_InitParticles (void);
-void R_ClearParticles (void);
-void R_DrawParticles (void);
+int R_InitParticles(void);
+void R_ShutdownParticles(void);
+void R_ClearParticles(void);
+void R_DrawParticles(void);
 
 void R_ReadPointFile_f (void);
 
