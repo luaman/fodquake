@@ -73,7 +73,7 @@ static struct gltexture	gltextures[MAX_GLTEXTURES];
 static int	numgltextures;
 
 #define Q_ROUND_POWER2(in, out) {						\
-	_mathlib_temp_int1 = in;							\
+	int _mathlib_temp_int1 = in;							\
 	for (out = 1; out < _mathlib_temp_int1; out <<= 1)	\
 	;												\
 }
