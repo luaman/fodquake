@@ -21,8 +21,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifndef __MATHLIB_H_
 #define __MATHLIB_H_
 
-#warning The macros in this file use globals(!)
-
 typedef	int	fixed4_t;
 typedef	int	fixed8_t;
 typedef	int	fixed16_t;
@@ -59,17 +57,14 @@ struct mplane_s;
 	(x)[2] = (v1)[0] * (v2)[1] - (v1)[1] * (v2)[0])
 
 #define VectorSupCompare(v, w, m)						\
-	(_mathlib_temp_float1 = m,							\
-	(v)[0] - (w)[0] > -_mathlib_temp_float1 && (v)[0] - (w)[0] < _mathlib_temp_float1 &&	\
-	(v)[1] - (w)[1] > -_mathlib_temp_float1 && (v)[1] - (w)[1] < _mathlib_temp_float1 &&	\
-	(v)[2] - (w)[2] > -_mathlib_temp_float1 && (v)[2] - (w)[2] < _mathlib_temp_float1)
+	((v)[0] - (w)[0] > -(m) && (v)[0] - (w)[0] < (m) &&	\
+	(v)[1] - (w)[1] > -(m) && (v)[1] - (w)[1] < (m) &&	\
+	(v)[2] - (w)[2] > -(m) && (v)[2] - (w)[2] < (m))
 
 #define VectorL2Compare(v, w, m)						\
-	(_mathlib_temp_float1 = (m) * (m),						\
-	_mathlib_temp_vec1[0] = (v)[0] - (w)[0], _mathlib_temp_vec1[1] = (v)[1] - (w)[1], _mathlib_temp_vec1[2] = (v)[2] - (w)[2],	\
-	_mathlib_temp_vec1[0] * _mathlib_temp_vec1[0] +		\
-	_mathlib_temp_vec1[1] * _mathlib_temp_vec1[1] +		\
-	_mathlib_temp_vec1[2] * _mathlib_temp_vec1[2] < _mathlib_temp_float1)
+	(((v)[0] - (w)[0]) * ((v)[0] - (w)[0]) +		\
+	((v)[1] - (w)[1]) * ((v)[1] - (w)[1]) +		\
+	((v)[2] - (w)[2]) * ((v)[2] - (w)[2]) < ((m) * (m)))
 
 #define VectorCompare(v, w)	((v)[0] == (w)[0] && (v)[1] == (w)[1] && (v)[2] == (w)[2])
 
@@ -133,6 +128,7 @@ do {																\
 #define AngleInterpolate(v1, _frac, v2, v)									\
 do {																		\
 	float _mathlib_temp_float1 = _frac;											\
+	vec3_t _mathlib_temp_vec1; \
 	VectorSubtract((v2), (v1), _mathlib_temp_vec1);							\
 																			\
 	if (_mathlib_temp_vec1[0] > 180) _mathlib_temp_vec1[0] -= 360;			\
@@ -148,8 +144,7 @@ do {																		\
 } while (0)
 
 #define FloatInterpolate(f1, _frac, f2)			\
-	(_mathlib_temp_float1 = _frac,				\
-	(f1) + _mathlib_temp_float1 * ((f2) - (f1)))
+	((f1) + (_frac) * ((f2) - (f1)))
 
 #define PlaneDist(point, plane) (														\
 	(plane)->type < 3 ? (point)[(plane)->type] : DotProduct((point), (plane)->normal)	\
@@ -177,9 +172,6 @@ void ProjectPointOnPlane(vec3_t dst, const vec3_t p, const vec3_t normal);
 void PerpendicularVector(vec3_t dst, const vec3_t src);
 void RotatePointAroundVector(vec3_t dst, const vec3_t dir, const vec3_t point, float degrees);
 
-extern vec3_t vec3_origin;
-extern int _mathlib_temp_int1, _mathlib_temp_int2, _mathlib_temp_int3;
-extern float _mathlib_temp_float1, _mathlib_temp_float2, _mathlib_temp_float3;
-extern vec3_t _mathlib_temp_vec1, _mathlib_temp_vec2, _mathlib_temp_vec3;
+extern const vec3_t vec3_origin;
 
 #endif	//__MATHLIB_H_
