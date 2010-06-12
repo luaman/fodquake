@@ -127,21 +127,13 @@ void R_DrawParticles (void);
 
 void R_ReadPointFile_f (void);
 
-void R_RunParticleEffect (vec3_t, vec3_t, int, int);
-void R_ParticleTrail (vec3_t, vec3_t, vec3_t *, trail_type_t);
-void R_BlobExplosion (vec3_t);
-void R_ParticleExplosion (vec3_t);
-void R_LavaSplash (vec3_t);
-void R_TeleportSplash (vec3_t);
+void R_RunParticleEffect(const vec3_t, const vec3_t, int, int);
+void R_ParticleTrail(vec3_t, vec3_t, vec3_t *, trail_type_t);
+void R_BlobExplosion(vec3_t);
+void R_ParticleExplosion(vec3_t);
+void R_LavaSplash(vec3_t);
+void R_TeleportSplash(vec3_t);
 
-void Classic_ClearParticles(void);
-void Classic_DrawParticles(void);
-void Classic_RunParticleEffect (vec3_t org, vec3_t dir, int color, int count);
-void Classic_ParticleTrail (vec3_t start, vec3_t end, vec3_t *, trail_type_t type);
-void Classic_BlobExplosion (vec3_t org);
-void Classic_ParticleExplosion (vec3_t org);
-void Classic_LavaSplash (vec3_t org);
-void Classic_TeleportSplash (vec3_t org);
 
 void R_PushDlights (void);
 

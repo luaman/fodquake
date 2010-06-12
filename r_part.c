@@ -231,7 +231,7 @@ void Classic_LoadParticleTextures (void)
 }
 #endif
 
-int Classic_InitParticles (void)
+static int Classic_InitParticles(void)
 {
 	int i;
 
@@ -251,12 +251,12 @@ int Classic_InitParticles (void)
 	return 0;
 }
 
-void Classic_ShutdownParticles()
+static void Classic_ShutdownParticles()
 {
 	free(particles);
 }
 
-void Classic_ClearParticles (void)
+static void Classic_ClearParticles (void)
 {
 	int		i;
 
@@ -319,7 +319,7 @@ void R_ReadPointFile_f (void)
 }
 #endif
 
-void Classic_ParticleExplosion (vec3_t org)
+static void Classic_ParticleExplosion(vec3_t org)
 {
 	int	i, j;
 	particle_t	*p;
@@ -362,7 +362,7 @@ void Classic_ParticleExplosion (vec3_t org)
 	}
 }
 
-void Classic_BlobExplosion (vec3_t org)
+static void Classic_BlobExplosion(vec3_t org)
 {
 	int i, j;
 	particle_t *p;
@@ -401,7 +401,7 @@ void Classic_BlobExplosion (vec3_t org)
 	}
 }
 
-void Classic_RunParticleEffect (vec3_t org, vec3_t dir, int color, int count)
+static void Classic_RunParticleEffect(const vec3_t org, const vec3_t dir, int color, int count)
 {
 	int i, j, scale;
 	particle_t *p;
@@ -428,7 +428,7 @@ void Classic_RunParticleEffect (vec3_t org, vec3_t dir, int color, int count)
 	}
 }
 
-void Classic_LavaSplash (vec3_t org)
+static void Classic_LavaSplash(vec3_t org)
 {
 	int i, j, k;
 	particle_t *p;
@@ -468,7 +468,7 @@ void Classic_LavaSplash (vec3_t org)
 	}
 }
 
-void Classic_TeleportSplash (vec3_t org)
+static void Classic_TeleportSplash(vec3_t org)
 {
 	int i, j, k;
 	particle_t *p;
@@ -508,7 +508,7 @@ void Classic_TeleportSplash (vec3_t org)
 	}
 }
 
-void Classic_ParticleTrail (vec3_t start, vec3_t end, vec3_t *trail_origin, trail_type_t type)
+static void Classic_ParticleTrail(vec3_t start, vec3_t end, vec3_t *trail_origin, trail_type_t type)
 {
 	vec3_t point, delta, dir;
 	float len;
@@ -620,7 +620,7 @@ done:
 	VectorCopy(point, *trail_origin);
 }
 
-void Classic_DrawParticles(void)
+static void Classic_DrawParticles(void)
 {
 	particle_t *p, *kill;
 	int i;
@@ -822,7 +822,7 @@ void R_DrawParticles(void)
 	else													\
 		Classic_RunParticleEffect(org, dir, color, count);
 
-void R_RunParticleEffect (vec3_t org, vec3_t dir, int color, int count)
+void R_RunParticleEffect(const vec3_t org, const vec3_t dir, int color, int count)
 {
 	#ifndef GLQUAKE
 
