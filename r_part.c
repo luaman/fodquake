@@ -26,11 +26,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "gl_local.h"
 
-typedef enum {
+typedef enum
+{
 	pt_static, pt_grav, pt_slowgrav, pt_fire, pt_explode, pt_explode2, pt_blob, pt_blob2
 } ptype_t;
 
-typedef struct particle_s {
+typedef struct particle_s
+{
 	vec3_t		org;
 	float		color;
 	vec3_t		vel;
@@ -63,7 +65,8 @@ vec3_t				r_pright, r_pup, r_ppn;
 
 #if   !defined(id386) && !defined(GLQUAKE)
 
-void D_DrawParticle (particle_t *pparticle) {
+void D_DrawParticle (particle_t *pparticle)
+{
 	vec3_t local, transformed;
 	float zi;
 	byte *pdest;
@@ -75,7 +78,7 @@ void D_DrawParticle (particle_t *pparticle) {
 
 	transformed[0] = DotProduct(local, r_pright);
 	transformed[1] = DotProduct(local, r_pup);
-	transformed[2] = DotProduct(local, r_ppn);		
+	transformed[2] = DotProduct(local, r_ppn);
 
 	if (transformed[2] < PARTICLE_Z_CLIP)
 		return;
@@ -96,12 +99,15 @@ void D_DrawParticle (particle_t *pparticle) {
 	pix = izi >> d_pix_shift;
 	pix = bound(d_pix_min, pix, d_pix_max);
 
-	switch (pix) {
+	switch (pix)
+	{
 	case 1:
 		count = 1 << d_y_aspect_shift;
 
-		for ( ; count; count--, pz += d_zwidth, pdest += screenwidth) {
-			if (pz[0] <= izi) {
+		for ( ; count; count--, pz += d_zwidth, pdest += screenwidth)
+		{
+			if (pz[0] <= izi)
+			{
 				pz[0] = izi;
 				pdest[0] = pparticle->color;
 			}
@@ -110,13 +116,16 @@ void D_DrawParticle (particle_t *pparticle) {
 	case 2:
 		count = 2 << d_y_aspect_shift;
 
-		for ( ; count; count--, pz += d_zwidth, pdest += screenwidth) {
-			if (pz[0] <= izi) {
+		for ( ; count; count--, pz += d_zwidth, pdest += screenwidth)
+		{
+			if (pz[0] <= izi)
+			{
 				pz[0] = izi;
 				pdest[0] = pparticle->color;
 			}
 
-			if (pz[1] <= izi) {
+			if (pz[1] <= izi)
+			{
 				pz[1] = izi;
 				pdest[1] = pparticle->color;
 			}
@@ -125,16 +134,20 @@ void D_DrawParticle (particle_t *pparticle) {
 	case 3:
 		count = 3 << d_y_aspect_shift;
 
-		for ( ; count; count--, pz += d_zwidth, pdest += screenwidth) {
-			if (pz[0] <= izi) {
+		for ( ; count; count--, pz += d_zwidth, pdest += screenwidth)
+		{
+			if (pz[0] <= izi)
+			{
 				pz[0] = izi;
 				pdest[0] = pparticle->color;
 			}
-			if (pz[1] <= izi) {
+			if (pz[1] <= izi)
+			{
 				pz[1] = izi;
 				pdest[1] = pparticle->color;
 			}
-			if (pz[2] <= izi) {
+			if (pz[2] <= izi)
+			{
 				pz[2] = izi;
 				pdest[2] = pparticle->color;
 			}
@@ -143,20 +156,25 @@ void D_DrawParticle (particle_t *pparticle) {
 	case 4:
 		count = 4 << d_y_aspect_shift;
 
-		for ( ; count; count--, pz += d_zwidth, pdest += screenwidth) {
-			if (pz[0] <= izi) {
+		for ( ; count; count--, pz += d_zwidth, pdest += screenwidth)
+		{
+			if (pz[0] <= izi)
+			{
 				pz[0] = izi;
 				pdest[0] = pparticle->color;
 			}
-			if (pz[1] <= izi) {
+			if (pz[1] <= izi)
+			{
 				pz[1] = izi;
 				pdest[1] = pparticle->color;
 			}
-			if (pz[2] <= izi) {
+			if (pz[2] <= izi)
+			{
 				pz[2] = izi;
 				pdest[2] = pparticle->color;
 			}
-			if (pz[3] <= izi) {
+			if (pz[3] <= izi)
+			{
 				pz[3] = izi;
 				pdest[3] = pparticle->color;
 			}
@@ -165,9 +183,12 @@ void D_DrawParticle (particle_t *pparticle) {
 	default:
 		count = pix << d_y_aspect_shift;
 
-		for ( ; count; count--, pz += d_zwidth, pdest += screenwidth) {
-			for (i = 0; i < pix; i++) {
-				if (pz[i] <= izi) {
+		for ( ; count; count--, pz += d_zwidth, pdest += screenwidth)
+		{
+			for (i = 0; i < pix; i++)
+			{
+				if (pz[i] <= izi)
+				{
 					pz[i] = izi;
 					pdest[i] = pparticle->color;
 				}
@@ -180,7 +201,8 @@ void D_DrawParticle (particle_t *pparticle) {
 #endif	// !id386
 
 #ifdef GLQUAKE
-void Classic_LoadParticleTextures (void) {
+void Classic_LoadParticleTextures (void)
+{
 	int	i, x, y;
 	unsigned int data[32][32];
 
@@ -192,8 +214,10 @@ void Classic_LoadParticleTextures (void) {
 		((unsigned int*) data)[i] = COLOURMASK_RGBA;
 
 	// draw a circle in the top left corner
-	for (x = 0; x < 16; x++) {
-		for (y = 0; y < 16; y++) {
+	for (x = 0; x < 16; x++)
+	{
+		for (y = 0; y < 16; y++)
+		{
 			if ((x - 7.5) * (x - 7.5) + (y - 7.5) * (y - 7.5) <= 8 * 8)
 				data[y][x] = 0xFFFFFFFF;	// solid white
 		}
@@ -207,13 +231,16 @@ void Classic_LoadParticleTextures (void) {
 }
 #endif
 
-int Classic_InitParticles (void) {
+int Classic_InitParticles (void)
+{
 	int i;
 
 	if ((i = COM_CheckParm ("-particles")) && i + 1 < com_argc)	{
 		r_numparticles = (int) (Q_atoi(com_argv[i + 1]));
 		r_numparticles = bound(ABSOLUTE_MIN_PARTICLES, r_numparticles, ABSOLUTE_MAX_PARTICLES);
-	} else {
+	}
+	else
+	{
 		r_numparticles = DEFAULT_NUM_PARTICLES;
 	}
 
@@ -229,9 +256,10 @@ void Classic_ShutdownParticles()
 	free(particles);
 }
 
-void Classic_ClearParticles (void) {
+void Classic_ClearParticles (void)
+{
 	int		i;
-	
+
 	free_particles = &particles[0];
 	active_particles = NULL;
 
@@ -241,7 +269,8 @@ void Classic_ClearParticles (void) {
 }
 
 #ifndef CLIENTONLY
-void R_ReadPointFile_f (void) {
+void R_ReadPointFile_f (void)
+{
 	FILE *f;
 	vec3_t org;
 	int r, c;
@@ -253,20 +282,23 @@ void R_ReadPointFile_f (void) {
 
 	Q_snprintfz (name, sizeof(name), "maps/%s.pts", mapname.string);
 
-	if (FS_FOpenFile (name, &f) == -1) {
+	if (FS_FOpenFile (name, &f) == -1)
+	{
 		Com_Printf ("couldn't open %s\n", name);
 		return;
 	}
 
 	Com_Printf ("Reading %s...\n", name);
 	c = 0;
-	while (1) {
+	while (1)
+	{
 		r = fscanf (f,"%f %f %f\n", &org[0], &org[1], &org[2]);
 		if (r != 3)
 			break;
 
 		c++;
-		if (!free_particles) {
+		if (!free_particles)
+		{
 			Com_Printf ("Not enough free particles\n");
 			break;
 		}
@@ -274,7 +306,7 @@ void R_ReadPointFile_f (void) {
 		free_particles = p->next;
 		p->next = active_particles;
 		active_particles = p;
-		
+
 		p->die = 99999;
 		p->color = (-c)&15;
 		p->type = pt_static;
@@ -287,7 +319,8 @@ void R_ReadPointFile_f (void) {
 }
 #endif
 
-void Classic_ParticleExplosion (vec3_t org) {
+void Classic_ParticleExplosion (vec3_t org)
+{
 	int	i, j;
 	particle_t	*p;
 
@@ -295,8 +328,9 @@ void Classic_ParticleExplosion (vec3_t org) {
 
 	if (r_explosiontype.value == 1)
 		return;
-	
-	for (i = 0; i < 1024; i++) {
+
+	for (i = 0; i < 1024; i++)
+	{
 		if (!free_particles)
 			return;
 		p = free_particles;
@@ -307,15 +341,20 @@ void Classic_ParticleExplosion (vec3_t org) {
 		p->die = cl.time + 5;
 		p->color = ramp1[0];
 		p->ramp = rand() & 3;
-		if (i & 1) {
+		if (i & 1)
+		{
 			p->type = pt_explode;
-			for (j = 0; j < 3; j++) {
+			for (j = 0; j < 3; j++)
+			{
 				p->org[j] = org[j] + ((rand() % 32) - 16);
 				p->vel[j] = (rand() % 512) - 256;
 			}
-		} else {
+		}
+		else
+		{
 			p->type = pt_explode2;
-			for (j = 0; j < 3; j++) {
+			for (j = 0; j < 3; j++)
+			{
 				p->org[j] = org[j] + ((rand() % 32) - 16);
 				p->vel[j] = (rand()%512) - 256;
 			}
@@ -323,11 +362,13 @@ void Classic_ParticleExplosion (vec3_t org) {
 	}
 }
 
-void Classic_BlobExplosion (vec3_t org) {
+void Classic_BlobExplosion (vec3_t org)
+{
 	int i, j;
 	particle_t *p;
-	
-	for (i = 0; i < 1024; i++) {
+
+	for (i = 0; i < 1024; i++)
+	{
 		if (!free_particles)
 			return;
 		p = free_particles;
@@ -337,17 +378,22 @@ void Classic_BlobExplosion (vec3_t org) {
 
 		p->die = cl.time + 1 + (rand() & 8) * 0.05;
 
-		if (i & 1) {
+		if (i & 1)
+		{
 			p->type = pt_blob;
 			p->color = 66 + rand() % 6;
-			for (j = 0; j < 3; j++) {
+			for (j = 0; j < 3; j++)
+			{
 				p->org[j] = org[j] + ((rand() % 32) - 16);
 				p->vel[j] = (rand() % 512) - 256;
 			}
-		} else {
+		}
+		else
+		{
 			p->type = pt_blob2;
 			p->color = 150 + rand() % 6;
-			for (j = 0; j < 3; j++) {
+			for (j = 0; j < 3; j++)
+			{
 				p->org[j] = org[j] + ((rand() % 32) - 16);
 				p->vel[j] = (rand() % 512) - 256;
 			}
@@ -355,13 +401,15 @@ void Classic_BlobExplosion (vec3_t org) {
 	}
 }
 
-void Classic_RunParticleEffect (vec3_t org, vec3_t dir, int color, int count) {
+void Classic_RunParticleEffect (vec3_t org, vec3_t dir, int color, int count)
+{
 	int i, j, scale;
 	particle_t *p;
 
 	scale = (count > 130) ? 3 : (count > 20) ? 2  : 1;
 
-	for (i = 0; i < count; i++) {
+	for (i = 0; i < count; i++)
+	{
 		if (!free_particles)
 			return;
 		p = free_particles;
@@ -372,22 +420,27 @@ void Classic_RunParticleEffect (vec3_t org, vec3_t dir, int color, int count) {
 		p->die = cl.time + 0.1 * (rand() % 5);
 		p->color = (color & ~7) + (rand() & 7);
 		p->type = pt_grav;
-		for (j = 0; j < 3; j++) {
+		for (j = 0; j < 3; j++)
+		{
 			p->org[j] = org[j] + scale * ((rand() & 15) - 8);
 			p->vel[j] = dir[j] * 15;
 		}
 	}
 }
 
-void Classic_LavaSplash (vec3_t org) {
+void Classic_LavaSplash (vec3_t org)
+{
 	int i, j, k;
 	particle_t *p;
 	float vel;
 	vec3_t dir;
 
-	for (i = -16; i < 16; i++) {
-		for (j = -16; j < 16; j++) {
-			for (k = 0; k < 1; k++) {
+	for (i = -16; i < 16; i++)
+	{
+		for (j = -16; j < 16; j++)
+		{
+			for (k = 0; k < 1; k++)
+			{
 				if (!free_particles)
 					return;
 				p = free_particles;
@@ -415,15 +468,19 @@ void Classic_LavaSplash (vec3_t org) {
 	}
 }
 
-void Classic_TeleportSplash (vec3_t org) {
+void Classic_TeleportSplash (vec3_t org)
+{
 	int i, j, k;
 	particle_t *p;
 	float vel;
 	vec3_t dir;
 
-	for (i = -16; i < 16; i += 4) {
-		for (j = -16; j < 16; j += 4) {
-			for (k = -24; k < 32; k += 4) {
+	for (i = -16; i < 16; i += 4)
+	{
+		for (j = -16; j < 16; j += 4)
+		{
+			for (k = -24; k < 32; k += 4)
+			{
 				if (!free_particles)
 					return;
 				p = free_particles;
@@ -451,7 +508,8 @@ void Classic_TeleportSplash (vec3_t org) {
 	}
 }
 
-void Classic_ParticleTrail (vec3_t start, vec3_t end, vec3_t *trail_origin, trail_type_t type) {
+void Classic_ParticleTrail (vec3_t start, vec3_t end, vec3_t *trail_origin, trail_type_t type)
+{
 	vec3_t point, delta, dir;
 	float len;
 	int i, j, num_particles;
@@ -464,13 +522,14 @@ void Classic_ParticleTrail (vec3_t start, vec3_t end, vec3_t *trail_origin, trai
 		goto done;
 	VectorScale(delta, 1 / len, dir);	//unit vector in direction of trail
 
-	switch (type) {
+	switch (type)
+	{
 	case ALT_ROCKET_TRAIL:
 		len /= 1.5; break;
 	case BLOOD_TRAIL:
 		len /= 6; break;
 	default:
-		len /= 3; break;	
+		len /= 3; break;
 	}
 
 	if (!(num_particles = (int) len))
@@ -478,7 +537,8 @@ void Classic_ParticleTrail (vec3_t start, vec3_t end, vec3_t *trail_origin, trai
 
 	VectorScale (delta, 1.0 / num_particles, delta);
 
-	for (i = 0; i < num_particles && free_particles; i++) {
+	for (i = 0; i < num_particles && free_particles; i++)
+	{
 		p = free_particles;
 		free_particles = p->next;
 		p->next = active_particles;
@@ -487,7 +547,8 @@ void Classic_ParticleTrail (vec3_t start, vec3_t end, vec3_t *trail_origin, trai
 		VectorClear (p->vel);
 		p->die = cl.time + 2;
 
-		switch(type) {		
+		switch(type)
+		{
 		case GRENADE_TRAIL:
 			p->ramp = (rand() & 3) + 2;
 			p->color = ramp3[(int) p->ramp];
@@ -519,10 +580,13 @@ void Classic_ParticleTrail (vec3_t start, vec3_t end, vec3_t *trail_origin, trai
 			tracercount++;
 
 			VectorCopy (point, p->org);
-			if (tracercount & 1) {
+			if (tracercount & 1)
+			{
 				p->vel[0] = 90 * dir[1];
 				p->vel[1] = 90 * -dir[0];
-			} else {
+			}
+			else
+			{
 				p->vel[0] = 90 * -dir[1];
 				p->vel[1] = 90 * dir[0];
 			}
@@ -542,7 +606,7 @@ void Classic_ParticleTrail (vec3_t start, vec3_t end, vec3_t *trail_origin, trai
 				p->org[j] = point[j] + ((rand() % 6) - 3);
 			break;
 		case ROCKET_TRAIL:
-		default:		
+		default:
 			p->ramp = (rand() & 3);
 			p->color = ramp3[(int) p->ramp];
 			p->type = pt_fire;
@@ -647,7 +711,7 @@ void Classic_DrawParticles(void)
 		p->org[0] += p->vel[0] * frametime;
 		p->org[1] += p->vel[1] * frametime;
 		p->org[2] += p->vel[2] * frametime;
-		
+
 		switch(p->type)
 		{
 			case pt_static:
@@ -758,19 +822,22 @@ void R_DrawParticles(void)
 	else													\
 		Classic_RunParticleEffect(org, dir, color, count);
 
-void R_RunParticleEffect (vec3_t org, vec3_t dir, int color, int count) {
+void R_RunParticleEffect (vec3_t org, vec3_t dir, int color, int count)
+{
 	#ifndef GLQUAKE
 
 	Classic_RunParticleEffect(org, dir, color, count);
 
 	#else
 
-	if (color == 73 || color == 225) {
+	if (color == 73 || color == 225)
+	{
 		RunParticleEffect(blood, org, dir, color, count);
 		return;
 	}
 
-	switch (count) {
+	switch (count)
+	{
 	case 10:
 	case 20:
 	case 30:
@@ -783,7 +850,8 @@ void R_RunParticleEffect (vec3_t org, vec3_t dir, int color, int count) {
 	#endif
 }
 
-void R_ParticleTrail (vec3_t start, vec3_t end, vec3_t *trail_origin, trail_type_t type) {
+void R_ParticleTrail (vec3_t start, vec3_t end, vec3_t *trail_origin, trail_type_t type)
+{
 #ifdef GLQUAKE
 	if (qmb_initialized && gl_part_trails.value)
 		QMB_ParticleTrail(start, end, trail_origin, type);
