@@ -437,7 +437,7 @@ void SND_Spatialize (channel_t *ch)
 // Start a sound effect
 // =======================================================================
 
-void S_StartSound (int entnum, int entchannel, sfx_t *sfx, vec3_t origin, float fvol, float attenuation)
+void S_StartSound(int entnum, int entchannel, sfx_t *sfx, const vec3_t origin, float fvol, float attenuation)
 {
 	channel_t *target_chan, *check;
 	sfxcache_t *sc;
@@ -652,7 +652,7 @@ static void S_UpdateAmbientSounds (void)
 }
 
 //Called once each time through the main loop
-void S_Update (vec3_t origin, vec3_t forward, vec3_t right, vec3_t up)
+void S_Update(const vec3_t origin, const vec3_t forward, const vec3_t right, const vec3_t up)
 {
 	int i, j, total;
 	channel_t *ch, *combine;

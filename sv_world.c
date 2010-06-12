@@ -31,9 +31,9 @@ line of sight checks trace->crosscontent, but bullets don't
 typedef struct
 {
 	vec3_t		boxmins, boxmaxs;// enclose the test object along entire move
-	float		*mins, *maxs;	// size of the moving object
+	const float		*mins, *maxs;	// size of the moving object
 	vec3_t		mins2, maxs2;	// size when clipping against mosnters
-	float		*start, *end;
+	const float		*start, *end;
 	trace_t		trace;
 	int			type;
 	edict_t		*passedict;
@@ -98,7 +98,7 @@ hull_t	*SV_HullForBox (vec3_t mins, vec3_t maxs)
 //Returns a hull that can be used for testing or clipping an object of mins/maxs size.
 //Offset is filled in to contain the adjustment that must be added to the
 //testing object's origin to get a point to use with the returned hull.
-hull_t *SV_HullForEntity (edict_t *ent, vec3_t mins, vec3_t maxs, vec3_t offset)
+hull_t *SV_HullForEntity(edict_t *ent, const vec3_t mins, const vec3_t maxs, vec3_t offset)
 {
 	model_t *model;
 	vec3_t size, hullmins, hullmaxs;
@@ -591,7 +591,7 @@ qboolean SV_RecursiveHullCheck (hull_t *hull, int num, float p1f, float p2f, vec
 }
 
 //Handles selection or creation of a clipping hull, and offseting (and eventually rotation) of the end points
-trace_t SV_ClipMoveToEntity (edict_t *ent, vec3_t start, vec3_t mins, vec3_t maxs, vec3_t end)
+trace_t SV_ClipMoveToEntity(edict_t *ent, const vec3_t start, const vec3_t mins, const vec3_t maxs, const vec3_t end)
 {
 	trace_t trace;
 	vec3_t offset, start_l, end_l;
@@ -704,7 +704,7 @@ void SV_ClipToLinks ( areanode_t *node, moveclip_t *clip)
 		SV_ClipToLinks (node->children[1], clip);
 }
 
-void SV_MoveBounds (vec3_t start, vec3_t mins, vec3_t maxs, vec3_t end, vec3_t boxmins, vec3_t boxmaxs)
+void SV_MoveBounds(const vec3_t start, const vec3_t mins, const vec3_t maxs, const vec3_t end, vec3_t boxmins, vec3_t boxmaxs)
 {
 	int i;
 
@@ -723,7 +723,7 @@ void SV_MoveBounds (vec3_t start, vec3_t mins, vec3_t maxs, vec3_t end, vec3_t b
 	}
 }
 
-trace_t SV_Move (vec3_t start, vec3_t mins, vec3_t maxs, vec3_t end, int type, edict_t *passedict)
+trace_t SV_Move(const vec3_t start, const vec3_t mins, const vec3_t maxs, const vec3_t end, int type, edict_t *passedict)
 {
 	moveclip_t clip;
 	int i;
