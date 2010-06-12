@@ -54,6 +54,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "strl.h"
 #include "ruleset.h"
 
+#ifndef GLQUAKE
+#include "d_local.h"
+#endif
+
 int movementkey;
 
 static qboolean net_maxfps_callback(cvar_t *var, char *string);
@@ -305,14 +309,14 @@ static qboolean r_drawflat_enable_callback(cvar_t *var, char *string)
 	model_t *model;
 	unsigned int i;
 
-	if (!cl.worldmodel)
-		return;
-
 	model = cl.worldmodel;
 
-	for (i=0;i<model->numsurfaces;i++)
+	if (model)
 	{
-		D_UncacheSurface(&model->surfaces[i]);
+		for (i=0;i<model->numsurfaces;i++)
+		{
+			D_UncacheSurface(&model->surfaces[i]);
+		}
 	}
 #endif
 
