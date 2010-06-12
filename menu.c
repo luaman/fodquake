@@ -1635,6 +1635,14 @@ void M_SinglePlayer_Draw (void)
 	int f;
 	mpic_t *p;
 
+	p = Draw_CachePic ("gfx/ttl_sgl.lmp");
+	M_DrawPic ( (320-p->width)/2, 4, p);
+	M_DrawTextBox(48, 10*8, 25, 5);
+	M_PrintWhite(68+16, 12*8, "Single player games");
+	M_PrintWhite(68+8, 13*8, "currently do not work");
+	M_PrintWhite(68, 14*8, "Please check back later");
+	return;
+
 	if (m_singleplayer_notavail)
 	{
 		p = Draw_CachePic ("gfx/ttl_sgl.lmp");
@@ -1734,6 +1742,7 @@ void M_SinglePlayer_Key (int key)
 		M_LeaveMenu (m_main);
 		break;
 
+#if 0
 	case K_DOWNARROW:
 		S_LocalSound ("misc/menu1.wav");
 		if (++m_singleplayer_cursor >= SINGLEPLAYER_ITEMS)
@@ -1788,6 +1797,7 @@ void M_SinglePlayer_Key (int key)
 			M_Menu_Save_f ();
 			break;
 		}
+#endif
 	}
 }
 
