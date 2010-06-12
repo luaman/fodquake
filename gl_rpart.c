@@ -586,7 +586,7 @@ void QMB_DrawParticles (void) {
 		VectorCopy(_color, _p->color);
 
 
-__inline static void AddParticle(part_type_t type, vec3_t org, int count, float size, float time, col_t col, vec3_t dir) {
+__inline static void AddParticle(part_type_t type, const vec3_t org, int count, float size, float time, col_t col, vec3_t dir) {
 	byte *color;
 	int i, j;
 	float tempSize;
@@ -826,7 +826,7 @@ void QMB_ParticleExplosion (vec3_t org) {
 	}
 }
 
-void QMB_RunParticleEffect (vec3_t org, vec3_t dir, int col, int count) {
+void QMB_RunParticleEffect(const vec3_t org, const vec3_t dir, int col, int count) {
 	col_t color;
 	vec3_t neworg;
 	int i, scale, blastcount, blastsize, sparksize, sparkcount, chunkcount, particlecount, bloodcount;
