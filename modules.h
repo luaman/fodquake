@@ -30,6 +30,8 @@ extern char _temp_modulename[MAX_OSPATH];
 
 
 #ifdef _WIN32
+#include <windows.h>
+
 #define QLIB_HANDLETYPE_T HINSTANCE
 #define QLIB_LIBRARY_EXTENSION ".dll"
 #define QLIB_LOADLIBRARY(lib)									\
