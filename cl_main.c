@@ -1728,9 +1728,6 @@ void CL_Init (void)
 
 	W_LoadWadFile ("gfx.wad");
 
-#ifdef SECURITY_NONSENSE
-	Modules_Init();
-#endif
 	FChecks_Init();				
 
 	host_basepal = (byte *) FS_LoadMallocFile("gfx/palette.lmp");
@@ -2007,9 +2004,6 @@ void CL_Shutdown (void)
 	CDAudio_Shutdown();
 	S_Shutdown();
 	MP3_Shutdown();
-#ifdef SECURITY_NONSENSE
-	Modules_Shutdown();
-#endif
 	TP_Shutdown();
 	Log_Shutdown();
 	if (cl_vidinitialised)

@@ -22,8 +22,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #define _MODULES_H
 
-#include "security.h"
-
 #if defined(__linux__) || defined(__OpenBSD__) || defined(__FreeBSD__)
 #include <dlfcn.h>
 #endif
@@ -75,14 +73,5 @@ void QLib_RegisterModule(qlib_id_t module, qlib_shutdown_fn shutdown);
 qboolean QLib_isModuleLoaded (qlib_id_t module);
 qboolean QLib_ProcessProcdef(QLIB_HANDLETYPE_T handle, qlib_dllfunction_t *procdefs, int size);
 void QLib_MissingModuleError(int, char *libname, char *cmdline, char *features);
-
-qboolean Modules_SecurityLoaded (void);
-void Modules_Init(void);
-qboolean VerifyData(signed_buffer_t *p);
-void Modules_Shutdown(void);
-
-extern Security_Verify_Response_t Security_Verify_Response;
-extern Security_Generate_Crc_t Security_Generate_Crc;
-extern Security_IsModelModified_t Security_IsModelModified;
 
 #endif
