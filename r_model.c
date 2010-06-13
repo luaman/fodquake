@@ -126,6 +126,40 @@ byte *Mod_LeafPVS (mleaf_t *leaf, model_t *model)
 	return Mod_DecompressVis (leaf->compressed_vis, model);
 }
 
+static void Mod_FreeSpriteData(model_t *model)
+{
+	unsigned int i;
+	unsigned int j;
+	msprite_t *sprite;
+	mspritegroup_t *spritegroup;
+
+	sprite = model->extradata;
+	if (sprite)
+	{
+		for(i=0;i<sprite->numframes;i++)
+		{
+			if (sprite->frames[i].type == SPR_SINGLE)
+			{
+				free(sprite->frames[i].frameptr);
+			}
+			else
+			{
+				spritegroup = sprite->frames[i].frameptr;
+
+				for(j=0;j<spritegroup->numframes;j++)
+					free(spritegroup->frames[j]);
+
+				free(spritegroup->intervals);
+
+				free(spritegroup);
+			}
+		}
+
+		free(sprite);
+		model->extradata = 0;
+	}
+}
+
 static void Mod_FreeBrushData(model_t *model)
 {
 	free(model->submodels);
@@ -182,6 +216,8 @@ void Mod_ClearBrushesSprites(void)
 		{
 			if (mod->type == mod_brush)
 				Mod_FreeBrushData(mod);
+			else if (mod->type == mod_sprite)
+				Mod_FreeSpriteData(mod);
 
 			mod->needload = true;
 		}
@@ -199,6 +235,10 @@ void Mod_ClearAll(void)
 		{
 			free(mod->extradata);
 			mod->extradata = 0;
+		}
+		else if (mod->type == mod_sprite)
+		{
+			Mod_FreeSpriteData(mod);
 		}
 		else if (mod->type == mod_brush)
 		{
@@ -1708,7 +1748,7 @@ static void Mod_LoadAliasModel(model_t *mod, void *buffer)
 
 //=============================================================================
 
-static void *Mod_LoadSpriteFrame (void * pin, mspriteframe_t **ppframe)
+static void *Mod_LoadSpriteFrame(void * pin, mspriteframe_t **ppframe)
 {
 	dspriteframe_t *pinframe;
 	mspriteframe_t *pspriteframe;
@@ -1720,7 +1760,9 @@ static void *Mod_LoadSpriteFrame (void * pin, mspriteframe_t **ppframe)
 	height = LittleLong (pinframe->height);
 	size = width * height;
 
-	pspriteframe = Hunk_AllocName (sizeof (mspriteframe_t) + size, loadname);
+	pspriteframe = malloc(sizeof (mspriteframe_t) + size);
+	if (pspriteframe == 0)
+		Sys_Error("Mod_LoadSpriteFrame: Out of memory\n");
 
 	memset (pspriteframe, 0, sizeof (mspriteframe_t) + size);
 	*ppframe = pspriteframe;
@@ -1740,7 +1782,7 @@ static void *Mod_LoadSpriteFrame (void * pin, mspriteframe_t **ppframe)
 	return (void *)((byte *)pinframe + sizeof (dspriteframe_t) + size);
 }
 
-static void * Mod_LoadSpriteGroup (void * pin, mspriteframe_t **ppframe)
+static void *Mod_LoadSpriteGroup(void * pin, mspriteframe_t **ppframe)
 {
 	dspritegroup_t *pingroup;
 	mspritegroup_t *pspritegroup;
@@ -1753,8 +1795,9 @@ static void * Mod_LoadSpriteGroup (void * pin, mspriteframe_t **ppframe)
 
 	numframes = LittleLong (pingroup->numframes);
 
-	pspritegroup = Hunk_AllocName (sizeof (mspritegroup_t) +
-				(numframes - 1) * sizeof (pspritegroup->frames[0]), loadname);
+	pspritegroup = malloc(sizeof (mspritegroup_t) + (numframes - 1) * sizeof (pspritegroup->frames[0]));
+	if (pspritegroup == 0)
+		Sys_Error("Mod_LoadSpriteGroup: Out of memory\n");
 
 	pspritegroup->numframes = numframes;
 
@@ -1762,7 +1805,9 @@ static void * Mod_LoadSpriteGroup (void * pin, mspriteframe_t **ppframe)
 
 	pin_intervals = (dspriteinterval_t *)(pingroup + 1);
 
-	poutintervals = Hunk_AllocName (numframes * sizeof (float), loadname);
+	poutintervals = malloc(numframes * sizeof (float));
+	if (poutintervals == 0)
+		Sys_Error("Mod_LoadSpriteGroup: Out of memory\n");
 
 	pspritegroup->intervals = poutintervals;
 
