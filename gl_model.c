@@ -126,6 +126,38 @@ byte *Mod_LeafPVS (mleaf_t *leaf, model_t *model)
 	return Mod_DecompressVis (leaf->compressed_vis, model);
 }
 
+static void Mod_FreeSpriteData(model_t *model)
+{
+	unsigned int i;
+	unsigned int j;
+	msprite_t *sprite;
+	mspritegroup_t *spritegroup;
+
+	sprite = model->extradata;
+	if (sprite)
+	{
+		for(i=0;i<sprite->numframes;i++)
+		{
+			if (sprite->frames[i].type == SPR_SINGLE)
+			{
+				free(sprite->frames[i].frameptr);
+			}
+			else
+			{
+				spritegroup = sprite->frames[i].frameptr;
+
+				for(j=0;j<spritegroup->numframes;j++)
+					free(spritegroup->frames[j]);
+
+				free(spritegroup);
+			}
+		}
+
+		free(sprite);
+		model->extradata = 0;
+	}
+}
+
 static void Mod_FreeBrushData(model_t *model)
 {
 	struct glwarppoly *warppoly, *nextwarppoly;
@@ -224,6 +256,10 @@ void Mod_ClearAll(void)
 		{
 			free(mod->extradata);
 			mod->extradata = 0;
+		}
+		else if (mod->type == mod_sprite)
+		{
+			Mod_FreeSpriteData(mod);
 		}
 		else if (mod->type == mod_brush)
 		{
@@ -2126,7 +2162,7 @@ static void *Mod_LoadSpriteFrame(model_t *model, void * pin, mspriteframe_t **pp
 	height = LittleLong (pinframe->height);
 	size = width * height;
 
-	pspriteframe = Hunk_AllocName (sizeof (mspriteframe_t),loadname);
+	pspriteframe = malloc(sizeof (mspriteframe_t));
 
 	memset (pspriteframe, 0, sizeof (mspriteframe_t));
 
@@ -2163,9 +2199,10 @@ static void *Mod_LoadSpriteGroup(model_t *model, void * pin, mspriteframe_t **pp
 	pingroup = (dspritegroup_t *) pin;
 
 	numframes = LittleLong (pingroup->numframes);
+	if (numframes < 1 || numframes >= 65536)
+		Host_Error("Invalid number of sprite frames");
 
-	pspritegroup = Hunk_AllocName (sizeof (mspritegroup_t) +
-				(numframes - 1) * sizeof (pspritegroup->frames[0]), loadname);
+	pspritegroup = malloc(sizeof (mspritegroup_t) + (numframes - 1) * sizeof (pspritegroup->frames[0]));
 
 	pspritegroup->numframes = numframes;
 
@@ -2173,7 +2210,7 @@ static void *Mod_LoadSpriteGroup(model_t *model, void * pin, mspriteframe_t **pp
 
 	pin_intervals = (dspriteinterval_t *) (pingroup + 1);
 
-	poutintervals = Hunk_AllocName (numframes * sizeof (float), loadname);
+	poutintervals = malloc(numframes * sizeof (float));
 
 	pspritegroup->intervals = poutintervals;
 
