@@ -147,7 +147,7 @@ void SV_SaveSpawnparms (void)
 
 //Expands the PVS and calculates the PHS
 //(Potentially Hearable Set)
-void SV_CalcPHS (void)
+static void SV_CalcPHS(void)
 {
 	int rowbytes, rowwords, i, j, k, l, index, num, bitbyte, count, vcount;
 	unsigned *dest, *src;
@@ -159,10 +159,14 @@ void SV_CalcPHS (void)
 	rowwords = (num + 31) >> 5;
 	rowbytes = rowwords * 4;
 
-	sv.pvs = Hunk_Alloc (rowbytes * num);
+	sv.pvs = malloc(rowbytes * num);
+	if (sv.pvs == 0)
+		Sys_Error("SV_CalcPHS: Out of memory\n");
+
 	scan = sv.pvs;
 	vcount = 0;
-	for (i = 0; i < num; i++, scan += rowbytes)	{
+	for (i = 0; i < num; i++, scan += rowbytes)
+	{
 		memcpy (scan, Mod_LeafPVS(sv.worldmodel->leafs + i, sv.worldmodel), rowbytes);
 		if (i == 0)
 			continue;
@@ -175,7 +179,10 @@ void SV_CalcPHS (void)
 		}
 	}
 
-	sv.phs = Hunk_Alloc (rowbytes*num);
+	sv.phs = malloc(rowbytes*num);
+	if (sv.phs == 0)
+		Sys_Error("SV_CalcPHS: Out of memory\n");
+
 	count = 0;
 	scan = sv.pvs;
 	dest = (unsigned *)sv.phs;
@@ -252,6 +259,18 @@ void SV_LoadEntFile (void)
 	Info_SetValueForStarKey (svs.info, "*entfile", crc, MAX_SERVERINFO_STRING);
 }
 
+static void SV_KillServer()
+{
+	free(sv.edicts);
+	sv.edicts = 0;
+
+	free(sv.phs);
+	sv.phs = 0;
+
+	free(sv.pvs);
+	sv.pvs = 0;
+}
+
 //Change the server to a new map, taking all connected clients along with it.
 //This is only called from the SV_Map_f() function.
 void SV_SpawnServer (char *server, qboolean devmap)
@@ -270,6 +289,8 @@ void SV_SpawnServer (char *server, qboolean devmap)
 	sv.state = ss_dead;
 	com_serveractive = false;
 	sv.paused = false;
+
+	SV_KillServer();
 
 	Host_ClearMemory();
 
@@ -313,7 +334,9 @@ void SV_SpawnServer (char *server, qboolean devmap)
 	PR_LoadProgs ();
 
 	// allocate edicts
-	sv.edicts = Hunk_AllocName (SV_MAX_EDICTS*pr_edict_size, "edicts");
+	sv.edicts = malloc(SV_MAX_EDICTS*pr_edict_size);
+	if (sv.edicts == 0)
+		Sys_Error("SV_SpawnServer: Out of memory\n");
 
 	// leave slots at start for clients only
 	sv.num_edicts = MAX_CLIENTS+1;
