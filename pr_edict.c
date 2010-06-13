@@ -467,7 +467,7 @@ void ED_PrintEdicts (void)
 }
 
 //For debugging, prints a single edicy
-static void ED_PrintEdict_f (void)
+static void ED_PrintEdict_f(void)
 {
 	int i;
 
@@ -492,7 +492,7 @@ static void ED_PrintEdict_f (void)
 }
 
 //For debugging
-void ED_Count (void)
+static void ED_Count(void)
 {
 	int i, active, models, solid, step;
 	edict_t *ent;
