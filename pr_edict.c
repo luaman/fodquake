@@ -38,8 +38,8 @@ int				pr_edict_size;	// in bytes
 
 int type_size[8] = {1, sizeof(void *) / 4, 1 ,3, 1, 1, sizeof(void *) / 4, sizeof(void *) / 4};
 
-ddef_t *ED_FieldAtOfs (int ofs);
-qboolean ED_ParseEpair (void *base, ddef_t *key, char *s);
+static ddef_t *ED_FieldAtOfs (int ofs);
+static qboolean ED_ParseEpair (void *base, ddef_t *key, char *s);
 
 #define	MAX_FIELD_LEN	64
 #define GEFV_CACHESIZE	2
@@ -129,7 +129,7 @@ void ED_Free (edict_t *ed)
 
 //===========================================================================
 
-ddef_t *ED_GlobalAtOfs (int ofs)
+static ddef_t *ED_GlobalAtOfs(int ofs)
 {
 	ddef_t *def;
 	int i;
@@ -143,7 +143,7 @@ ddef_t *ED_GlobalAtOfs (int ofs)
 	return NULL;
 }
 
-ddef_t *ED_FieldAtOfs (int ofs)
+static ddef_t *ED_FieldAtOfs(int ofs)
 {
 	ddef_t *def;
 	int i;
@@ -157,7 +157,7 @@ ddef_t *ED_FieldAtOfs (int ofs)
 	return NULL;
 }
 
-ddef_t *ED_FindField (char *name)
+static ddef_t *ED_FindField(char *name)
 {
 	ddef_t *def;
 	int i;
@@ -171,7 +171,7 @@ ddef_t *ED_FindField (char *name)
 	return NULL;
 }
 
-ddef_t *ED_FindGlobal (char *name)
+static ddef_t *ED_FindGlobal(char *name)
 {
 	ddef_t *def;
 	int i;
@@ -185,7 +185,7 @@ ddef_t *ED_FindGlobal (char *name)
 	return NULL;
 }
 
-dfunction_t *ED_FindFunction (char *name)
+static dfunction_t *ED_FindFunction(char *name)
 {
 	dfunction_t *func;
 	int i;
@@ -231,7 +231,7 @@ Done:
 }
 
 //Returns a string describing *data in a type specific manner
-char *PR_ValueString (etype_t type, eval_t *val)
+static char *PR_ValueString(etype_t type, eval_t *val)
 {
 	static char	line[256];
 	ddef_t *def;
@@ -277,7 +277,7 @@ char *PR_ValueString (etype_t type, eval_t *val)
 
 //Returns a string describing *data in a type specific manner
 //Easier to parse than PR_ValueString
-char *PR_UglyValueString (etype_t type, eval_t *val)
+static char *PR_UglyValueString(etype_t type, eval_t *val)
 {
 	static char line[256];
 	ddef_t *def;
@@ -319,7 +319,7 @@ char *PR_UglyValueString (etype_t type, eval_t *val)
 }
 
 //Returns a string with a description and the contents of a global, padded to 20 field width
-char *PR_GlobalString (int ofs)
+char *PR_GlobalString(int ofs)
 {
 	char *s;
 	int i;
@@ -467,7 +467,7 @@ void ED_PrintEdicts (void)
 }
 
 //For debugging, prints a single edicy
-void ED_PrintEdict_f (void)
+static void ED_PrintEdict_f (void)
 {
 	int i;
 
@@ -592,7 +592,7 @@ void ED_ParseGlobals (char *data)
 
 //============================================================================
 
-char *ED_NewString (char *string)
+static char *ED_NewString(char *string)
 {
 	char *new, *new_p;
 	int i, l;
@@ -623,7 +623,7 @@ char *ED_NewString (char *string)
 
 //Can parse either fields or globals
 //returns false if error
-qboolean ED_ParseEpair (void *base, ddef_t *key, char *s)
+static qboolean ED_ParseEpair(void *base, ddef_t *key, char *s)
 {
 	int i;
 	char string[128], *v, *w;
