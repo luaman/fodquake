@@ -41,6 +41,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "gl_local.h"
 #endif
 
+#include "menu.h"
+
 #ifdef _WIN32
 #include <windows.h>
 #else
@@ -52,53 +54,53 @@ enum {m_none, m_main, m_singleplayer, m_load, m_save, m_multiplayer,
 	m_setup, m_options, m_video, m_video_verify, m_keys, m_help, m_quit,
 	m_gameoptions, m_fps, m_demos, m_mp3_control, m_mp3_playlist} m_state;
 
-void M_Menu_Main_f (void);
-	void M_Menu_SinglePlayer_f (void);
-		void M_Menu_Load_f (void);
-		void M_Menu_Save_f (void);
-	void M_Menu_MultiPlayer_f (void);
-			void M_Menu_SEdit_f (void);
-		void M_Menu_Setup_f (void);
-		void M_Menu_Demos_f (void);
-		void M_Menu_GameOptions_f (void);
-	void M_Menu_Options_f (void);
-		void M_Menu_Keys_f (void);
-		void M_Menu_Fps_f (void);
-		void M_Menu_Video_f (void);
-	void M_Menu_MP3_Control_f (void);
-	void M_Menu_Quit_f (void);
+static void M_Menu_Main_f(void);
+	void M_Menu_SinglePlayer_f(void);
+		void M_Menu_Load_f(void);
+		void M_Menu_Save_f(void);
+	void M_Menu_MultiPlayer_f(void);
+			void M_Menu_SEdit_f(void);
+		void M_Menu_Setup_f(void);
+		void M_Menu_Demos_f(void);
+		void M_Menu_GameOptions_f(void);
+	static void M_Menu_Options_f(void);
+		static void M_Menu_Keys_f(void);
+		void M_Menu_Fps_f(void);
+		void M_Menu_Video_f(void);
+	void M_Menu_MP3_Control_f(void);
+	void M_Menu_Quit_f(void);
 
-void M_Main_Draw (void);
-	void M_SinglePlayer_Draw (void);
-		void M_Load_Draw (void);
-		void M_Save_Draw (void);
-	void M_MultiPlayer_Draw (void);
-			void M_SEdit_Draw (void);
-		void M_Setup_Draw (void);
-		void M_Demos_Draw (void);
-		void M_GameOptions_Draw (void);
-	void M_Options_Draw (void);
-		void M_Keys_Draw (void);
-		void M_Fps_Draw (void);
-		void M_Video_Draw (void);
-	void M_Help_Draw (void);
-	void M_Quit_Draw (void);
+static void M_Main_Draw(void);
+	void M_SinglePlayer_Draw(void);
+		void M_Load_Draw(void);
+		void M_Save_Draw(void);
+	void M_MultiPlayer_Draw(void);
+			void M_SEdit_Draw(void);
+		void M_Setup_Draw(void);
+		void M_Demos_Draw(void);
+		void M_GameOptions_Draw(void);
+	static void M_Options_Draw(void);
+		static void M_Keys_Draw(void);
+		void M_Fps_Draw(void);
+		void M_Video_Draw(void);
+	void M_Help_Draw(void);
+	void M_Quit_Draw(void);
 
-void M_Main_Key (int key);
-	void M_SinglePlayer_Key (int key);
-		void M_Load_Key (int key);
-		void M_Save_Key (int key);
-	void M_MultiPlayer_Key (int key);
-			void M_SEdit_Key (int key);
-		void M_Setup_Key (int key);
-		void M_Demos_Key (int key);
-		void M_GameOptions_Key (int key);
-	void M_Options_Key (int key);
-		void M_Keys_Key (int key);
-		void M_Fps_Key (int key);
-		void M_Video_Key (int key);
-	void M_Help_Key (int key);
-	void M_Quit_Key (int key);
+static void M_Main_Key(int key);
+	void M_SinglePlayer_Key(int key);
+		void M_Load_Key(int key);
+		void M_Save_Key(int key);
+	void M_MultiPlayer_Key(int key);
+			void M_SEdit_Key(int key);
+		void M_Setup_Key(int key);
+		void M_Demos_Key(int key);
+		void M_GameOptions_Key(int key);
+	static void M_Options_Key(int key);
+		static void M_Keys_Key(int key);
+		void M_Fps_Key(int key);
+		void M_Video_Key(int key);
+	void M_Help_Key(int key);
+	void M_Quit_Key(int key);
 
 
 qboolean	m_entersound;		// play after drawing a frame, so caching
@@ -113,8 +115,8 @@ int			m_topmenu;			// set if a submenu was entered via a
 
 #ifdef GLQUAKE
 cvar_t	scr_scaleMenu = {"scr_scaleMenu","1"};
-int		menuwidth = 320;
-int		menuheight = 240;
+static int		menuwidth = 320;
+static int		menuheight = 240;
 #else
 #define menuwidth vid.width
 #define menuheight vid.height
@@ -123,36 +125,36 @@ int		menuheight = 240;
 cvar_t	scr_centerMenu = {"scr_centerMenu","1"};
 int		m_yofs = 0;
 
-void M_DrawCharacter (int cx, int line, int num)
+static void M_DrawCharacter(int cx, int line, int num)
 {
 	Draw_Character (cx + ((menuwidth - 320)>>1), line + m_yofs, num);
 }
 
-void M_Print (int cx, int cy, const char *str)
+static void M_Print(int cx, int cy, const char *str)
 {
 	Draw_Alt_String (cx + ((menuwidth - 320)>>1), cy + m_yofs, str);
 }
 
-void M_PrintWhite (int cx, int cy, const char *str)
+static void M_PrintWhite(int cx, int cy, const char *str)
 {
 	Draw_String (cx + ((menuwidth - 320)>>1), cy + m_yofs, str);
 }
 
-void M_DrawTransPic (int x, int y, mpic_t *pic)
+static void M_DrawTransPic(int x, int y, mpic_t *pic)
 {
-	Draw_TransPic (x + ((menuwidth - 320)>>1), y + m_yofs, pic);
+	Draw_TransPic(x + ((menuwidth - 320)>>1), y + m_yofs, pic);
 }
 
-void M_DrawPic (int x, int y, mpic_t *pic)
+static void M_DrawPic(int x, int y, mpic_t *pic)
 {
 	Draw_Pic (x + ((menuwidth - 320)>>1), y + m_yofs, pic);
 }
 
-byte identityTable[256];
-byte translationTable[256];
+static byte translationTable[256];
 
-void M_BuildTranslationTable(int top, int bottom)
+static void M_BuildTranslationTable(int top, int bottom)
 {
+	byte identityTable[256];
 	int		j;
 	byte	*dest, *source;
 
@@ -176,20 +178,20 @@ void M_BuildTranslationTable(int top, int bottom)
 }
 
 
-void M_DrawTransPicTranslate (int x, int y, mpic_t *pic)
+static void M_DrawTransPicTranslate(int x, int y, mpic_t *pic)
 {
 	Draw_TransPicTranslate (x + ((menuwidth - 320) >> 1), y + m_yofs, pic, translationTable);
 }
 
 
-void M_DrawTextBox (int x, int y, int width, int lines)
+static void M_DrawTextBox(int x, int y, int width, int lines)
 {
 	Draw_TextBox (x + ((menuwidth - 320) >> 1), y + m_yofs, width, lines);
 }
 
 //=============================================================================
 
-void M_ToggleMenu_f (void)
+void M_ToggleMenu_f(void)
 {
 	m_entersound = true;
 
@@ -210,7 +212,7 @@ void M_ToggleMenu_f (void)
 	}
 }
 
-void M_EnterMenu (int state)
+static void M_EnterMenu(int state)
 {
 	if (key_dest != key_menu)
 	{
@@ -230,7 +232,7 @@ void M_EnterMenu (int state)
 	m_entersound = true;
 }
 
-void M_LeaveMenu (int parent)
+static void M_LeaveMenu(int parent)
 {
 	if (m_topmenu == m_state)
 	{
@@ -251,12 +253,12 @@ int	m_main_cursor;
 #define	MAIN_ITEMS	5
 
 
-void M_Menu_Main_f (void)
+static void M_Menu_Main_f(void)
 {
 	M_EnterMenu (m_main);
 }
 
-void M_Main_Draw (void)
+static void M_Main_Draw(void)
 {
 	int f;
 	mpic_t *p;
@@ -271,7 +273,7 @@ void M_Main_Draw (void)
 	M_DrawTransPic (54, 32 + m_main_cursor * 20,Draw_CachePic( va("gfx/menudot%i.lmp", f+1 ) ) );
 }
 
-void M_Main_Key (int key)
+static void M_Main_Key(int key)
 {
 	switch (key)
 	{
@@ -342,16 +344,16 @@ void M_Main_Key (int key)
 
 #define	SLIDER_RANGE	10
 
-int		options_cursor;
+static int		options_cursor;
 
 
-void M_Menu_Options_f (void)
+static void M_Menu_Options_f(void)
 {
 	M_EnterMenu (m_options);
 }
 
 
-void M_AdjustSliders (int dir)
+static void M_AdjustSliders(int dir)
 {
 	S_LocalSound ("misc/menu3.wav");
 
@@ -429,7 +431,7 @@ void M_AdjustSliders (int dir)
 }
 
 
-void M_DrawSlider (int x, int y, float range)
+static void M_DrawSlider(int x, int y, float range)
 {
 	int	i;
 
@@ -441,7 +443,7 @@ void M_DrawSlider (int x, int y, float range)
 	M_DrawCharacter (x + (SLIDER_RANGE-1)*8 * range, y, 131);
 }
 
-void M_DrawCheckbox (int x, int y, int on)
+static void M_DrawCheckbox(int x, int y, int on)
 {
 	if (on)
 		M_Print (x, y, "on");
@@ -449,7 +451,7 @@ void M_DrawCheckbox (int x, int y, int on)
 		M_Print (x, y, "off");
 }
 
-void M_Options_Draw (void)
+static void M_Options_Draw(void)
 {
 	float		r;
 	mpic_t	*p;
@@ -534,7 +536,7 @@ void M_Options_Draw (void)
 }
 
 
-void M_Options_Key (int k)
+static void M_Options_Key(int k)
 {
 	switch (k)
 	{
@@ -625,7 +627,7 @@ void M_Options_Key (int k)
 //=============================================================================
 /* KEYS MENU */
 
-char *bindnames[][2] =
+static char *bindnames[][2] =
 {
 {"+attack", 		"attack"},
 {"+use", 			"use"},
@@ -649,14 +651,14 @@ char *bindnames[][2] =
 int		keys_cursor;
 int		bind_grab;
 
-void M_Menu_Keys_f (void)
+static void M_Menu_Keys_f(void)
 {
 	M_EnterMenu (m_keys);
 }
 
 qboolean Key_IsLeftRightSameBind(int b);
 
-void M_FindKeysForCommand (char *command, int *twokeys)
+static void M_FindKeysForCommand(char *command, int *twokeys)
 {
 	int count, j, l;
 	char *b;
@@ -694,7 +696,7 @@ void M_FindKeysForCommand (char *command, int *twokeys)
 	}
 }
 
-void M_UnbindCommand (char *command)
+static void M_UnbindCommand(char *command)
 {
 	int j, l;
 	char *b;
@@ -712,7 +714,7 @@ void M_UnbindCommand (char *command)
 }
 
 
-void M_Keys_Draw (void)
+static void M_Keys_Draw(void)
 {
 	int x, y, i, l, keys[2];
 	char *name;
@@ -761,7 +763,7 @@ void M_Keys_Draw (void)
 }
 
 
-void M_Keys_Key (int k)
+static void M_Keys_Key(int k)
 {
 	int keys[2];
 
