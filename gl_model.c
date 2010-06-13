@@ -2014,8 +2014,12 @@ static void Mod_LoadAliasModel(model_t *mod, void *buffer)
 		return;
 	}
 
+	numframes = LittleLong(pinmodel->numframes);
+	if (numframes < 1 || numframes > 65535)
+		Host_Error("Mod_LoadAliasModel: Invalid number of alias frames");
+
 	// allocate space for a working header, plus all the data except the frames, skin and group info
-	size = 	sizeof (aliashdr_t) + (LittleLong (pinmodel->numframes) - 1) * sizeof (pheader->frames[0]);
+	size = 	sizeof (aliashdr_t) + (numframes - 1) * sizeof (pheader->frames[0]);
 	pheader = malloc(size);
 	if (pheader == 0)
 		Sys_Error("Mod_LoadAliasModel: Out of memory\n");
@@ -2044,10 +2048,7 @@ static void Mod_LoadAliasModel(model_t *mod, void *buffer)
 	if (pheader->numtris <= 0)
 		Host_Error ("Mod_LoadAliasModel: model %s has no triangles", mod->name);
 
-	pheader->numframes = LittleLong (pinmodel->numframes);
-	numframes = pheader->numframes;
-	if (numframes < 1)
-		Host_Error ("Mod_LoadAliasModel: Invalid # of frames: %d\n", numframes);
+	pheader->numframes = numframes;
 
 	pheader->size = LittleFloat (pinmodel->size) * ALIAS_BASE_SIZE_RATIO;
 	mod->synctype = LittleLong (pinmodel->synctype);

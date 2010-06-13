@@ -1580,8 +1580,12 @@ static void Mod_LoadAliasModel(model_t *mod, void *buffer)
 	if (version != ALIAS_VERSION)
 		Host_Error("Mod_LoadAliasModel: %s has wrong version number (%i should be %i)", mod->name, version, ALIAS_VERSION);
 
+	numframes = LittleLong(pinmodel->numframes);
+	if (numframes < 1 || numframes > 65535)
+		Host_Error("Mod_LoadAliasModel: Invalid number of alias frames");
+
 	// allocate space for a working header, plus all the data except the frames, skin and group info
-	size = 	sizeof (aliashdr_t) + (LittleLong (pinmodel->numframes) - 1) *
+	size = sizeof (aliashdr_t) + (numframes - 1) *
 			 sizeof (pheader->frames[0]) +
 			sizeof (mdl_t) +
 			LittleLong (pinmodel->numverts) * sizeof (stvert_t) +
@@ -1589,7 +1593,7 @@ static void Mod_LoadAliasModel(model_t *mod, void *buffer)
 
 	pheader = Hunk_AllocName (size, loadname);
 	pmodel = (mdl_t *) ((byte *)&pheader[1] +
-			(LittleLong (pinmodel->numframes) - 1) *
+			(numframes - 1) *
 			 sizeof (pheader->frames[0]));
 
 	//	mod->cache.data = pheader;
@@ -1617,7 +1621,7 @@ static void Mod_LoadAliasModel(model_t *mod, void *buffer)
 	if (pmodel->numtris <= 0)
 		Host_Error("Mod_LoadAliasModel: model %s has no triangles", mod->name);
 
-	pmodel->numframes = LittleLong (pinmodel->numframes);
+	pmodel->numframes = numframes;
 	pmodel->size = LittleFloat (pinmodel->size) * ALIAS_BASE_SIZE_RATIO;
 	mod->synctype = LittleLong (pinmodel->synctype);
 	mod->numframes = pmodel->numframes;
