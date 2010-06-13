@@ -1691,6 +1691,7 @@ extern int file_from_gamedir;
 
 static void StartNewGame (void)
 {
+#if 0
 	key_dest = key_game;
 	Cvar_Set (&maxclients, "1");
 	Cvar_Set (&teamplay, "0");
@@ -1705,6 +1706,7 @@ static void StartNewGame (void)
 	if (progs && !file_from_gamedir)
 		Cbuf_AddText ("gamedir qw\n");
 	Cbuf_AddText ("map start\n");
+#endif
 }
 
 void M_SinglePlayer_Key (int key)
