@@ -53,7 +53,7 @@ static int		striptris[128];
 StripLength
 ================
 */
-int	StripLength (int starttri, int startv)
+int	StripLength (aliashdr_t *pheader, int starttri, int startv)
 {
 	int			m1, m2;
 	int			j;
@@ -123,7 +123,7 @@ done:
 FanLength
 ===========
 */
-int	FanLength (int starttri, int startv)
+int	FanLength (aliashdr_t *pheader, int starttri, int startv)
 {
 	int		m1, m2;
 	int		j;
@@ -195,7 +195,7 @@ Generate a list of trifans or strips
 for the model, which holds for all frames
 ================
 */
-void BuildTris (void)
+void BuildTris(aliashdr_t *pheader)
 {
 	int		i, j, k;
 	int		startv;
@@ -227,9 +227,9 @@ void BuildTris (void)
 			for (startv =0 ; startv < 3 ; startv++)
 			{
 				if (type == 1)
-					len = StripLength (i, startv);
+					len = StripLength(pheader, i, startv);
 				else
-					len = FanLength (i, startv);
+					len = FanLength(pheader, i, startv);
 
 				if (len > bestlen)
 				{
@@ -308,7 +308,7 @@ void GL_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr)
 
 	// Tonik: don't cache anything, because it seems just as fast
 	// (if not faster) to rebuild the tris instead of loading them from disk
-	BuildTris ();		// trifans or lists
+	BuildTris(paliashdr);		// trifans or lists
 
 	// save the data out
 

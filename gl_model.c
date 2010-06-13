@@ -1658,8 +1658,6 @@ ALIAS MODELS
 ==============================================================================
 */
 
-aliashdr_t	*pheader;
-
 stvert_t	stverts[MAXALIASVERTS];
 mtriangle_t	triangles[MAXALIASTRIS];
 
@@ -1670,7 +1668,7 @@ int			posenum;
 
 byte		player_8bit_texels[320 * 200];
 
-static void *Mod_LoadAliasFrame (void * pin, maliasframedesc_t *frame)
+static void *Mod_LoadAliasFrame(aliashdr_t *pheader, void * pin, maliasframedesc_t *frame)
 {
 	trivertx_t *pinframe;
 	int i;
@@ -1700,7 +1698,7 @@ static void *Mod_LoadAliasFrame (void * pin, maliasframedesc_t *frame)
 	return (void *)pinframe;
 }
 
-static void *Mod_LoadAliasGroup (void * pin,  maliasframedesc_t *frame)
+static void *Mod_LoadAliasGroup(aliashdr_t *pheader, void *pin, maliasframedesc_t *frame)
 {
 	daliasgroup_t *pingroup;
 	int i, numframes;
@@ -1838,7 +1836,7 @@ static int Mod_LoadExternalSkin(model_t *model, char *identifier, int *fb_texnum
 	return texnum;
 }
 
-static void *Mod_LoadAllSkins(model_t *model, int numskins, daliasskintype_t *pskintype)
+static void *Mod_LoadAllSkins(model_t *model, aliashdr_t *pheader, int numskins, daliasskintype_t *pskintype)
 {
 	int i, j, k, s, groupskins, gl_texnum, fb_texnum, texmode;
 	char basename[64], identifier[64];
@@ -1940,9 +1938,10 @@ static void *Mod_LoadAllSkins(model_t *model, int numskins, daliasskintype_t *ps
 
 //=========================================================================
 
-static void Mod_LoadAliasModel (model_t *mod, void *buffer)
+static void Mod_LoadAliasModel(model_t *mod, void *buffer)
 {
 	int i, j, version, numframes, size, start, end, total;
+	aliashdr_t *pheader;
 	mdl_t *pinmodel;
 	stvert_t *pinstverts;
 	dtriangle_t *pintriangles;
@@ -2006,9 +2005,7 @@ static void Mod_LoadAliasModel (model_t *mod, void *buffer)
 	}
 
 	// allocate space for a working header, plus all the data except the frames, skin and group info
-	size = 	sizeof (aliashdr_t)
-			+ (LittleLong (pinmodel->numframes) - 1) *
-			sizeof (pheader->frames[0]);
+	size = 	sizeof (aliashdr_t) + (LittleLong (pinmodel->numframes) - 1) * sizeof (pheader->frames[0]);
 	pheader = Hunk_AllocName (size, loadname);
 
 	mod->flags = LittleLong (pinmodel->flags);
@@ -2053,7 +2050,7 @@ static void Mod_LoadAliasModel (model_t *mod, void *buffer)
 
 	// load the skins
 	pskintype = (daliasskintype_t *)&pinmodel[1];
-	pskintype = Mod_LoadAllSkins(mod, pheader->numskins, pskintype);
+	pskintype = Mod_LoadAllSkins(mod, pheader, pheader->numskins, pskintype);
 
 	// load base s and t vertices
 	pinstverts = (stvert_t *)pskintype;
@@ -2088,9 +2085,9 @@ static void Mod_LoadAliasModel (model_t *mod, void *buffer)
 		frametype = LittleLong (pframetype->type);
 
 		if (frametype == ALIAS_SINGLE)
-			pframetype = (daliasframetype_t *) Mod_LoadAliasFrame (pframetype + 1, &pheader->frames[i]);
+			pframetype = (daliasframetype_t *) Mod_LoadAliasFrame(pheader, pframetype + 1, &pheader->frames[i]);
 		else
-			pframetype = (daliasframetype_t *) Mod_LoadAliasGroup (pframetype + 1, &pheader->frames[i]);
+			pframetype = (daliasframetype_t *) Mod_LoadAliasGroup(pheader, pframetype + 1, &pheader->frames[i]);
 
 		for (j = 0; j < 3; j++)
 		{
