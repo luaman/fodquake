@@ -237,11 +237,7 @@ static byte *FS_LoadFile(char *path, int usehunk)
 	// extract the filename base name for hunk tag
 	COM_FileBase(path, base, sizeof(base));
 
-	if (usehunk == 1)
-	{
-		buf = Hunk_AllocName(len + 1, base);
-	}
-	else if (usehunk == 0)
+	if (usehunk == 0)
 	{
 		buf = Z_Malloc(len + 1);
 	}
@@ -285,11 +281,6 @@ static byte *FS_LoadFile(char *path, int usehunk)
 void *FS_LoadZFile(char *path)
 {
 	return FS_LoadFile(path, 0);
-}
-
-void *FS_LoadHunkFile(char *path)
-{
-	return FS_LoadFile(path, 1);
 }
 
 // uses temp hunk if larger than bufsize
