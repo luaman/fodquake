@@ -54,12 +54,14 @@ int				r_anumverts;
 
 float	aliastransform[3][4];
 
-typedef struct {
+typedef struct
+{
 	int	index0;
 	int	index1;
 } aedge_t;
 
-static aedge_t	aedges[12] = {
+static aedge_t	aedges[12] =
+{
 {0, 1}, {1, 2}, {2, 3}, {3, 0},
 {4, 5}, {5, 6}, {6, 7}, {7, 4},
 {0, 5}, {1, 4}, {2, 7}, {3, 6}
@@ -67,7 +69,8 @@ static aedge_t	aedges[12] = {
 
 #define NUMVERTEXNORMALS	162
 
-float	r_avertexnormals[NUMVERTEXNORMALS][3] = {
+float	r_avertexnormals[NUMVERTEXNORMALS][3] =
+{
 #include "anorms.h"
 };
 
@@ -83,15 +86,19 @@ void R_AliasProjectFinalVert (finalvert_t *fv, auxvert_t *av);
 
 extern cvar_t r_lerpframes;
 
-void R_AliasCheckBBoxFrame (int frame, trivertx_t **mins, trivertx_t **maxs) {
+void R_AliasCheckBBoxFrame (int frame, trivertx_t **mins, trivertx_t **maxs)
+{
 	int	i, numframes;
 	maliasgroup_t *paliasgroup;
 	float *pintervals, fullinterval, targettime;
 
-	if (paliashdr->frames[frame].type == ALIAS_SINGLE) {
+	if (paliashdr->frames[frame].type == ALIAS_SINGLE)
+	{
 		*mins = &paliashdr->frames[frame].bboxmin;
 		*maxs = &paliashdr->frames[frame].bboxmax;
-	} else {
+	}
+	else
+	{
 		paliasgroup = (maliasgroup_t *) ((byte *) paliashdr + paliashdr->frames[frame].frame);
 		pintervals = (float *) ((byte *) paliashdr + paliasgroup->intervals);
 		numframes = paliasgroup->numframes;
@@ -101,7 +108,8 @@ void R_AliasCheckBBoxFrame (int frame, trivertx_t **mins, trivertx_t **maxs) {
 		// are positive, so we don't have to worry about division by 0
 		targettime = cl.time - ((int) (cl.time / fullinterval)) * fullinterval;
 
-		for (i = 0; i < numframes - 1; i++) {
+		for (i = 0; i < numframes - 1; i++)
+		{
 			if (pintervals[i] > targettime)
 				break;
 		}
@@ -110,7 +118,8 @@ void R_AliasCheckBBoxFrame (int frame, trivertx_t **mins, trivertx_t **maxs) {
 	}
 }
 
-qboolean R_AliasCheckBBox (entity_t *ent) {
+qboolean R_AliasCheckBBox (entity_t *ent)
+{
 	int i, flags, numv, minz;
 	float zi, basepts[8][3], v0, v1, frac;
 	finalvert_t *pv0, *pv1, viewpts[16];
@@ -125,7 +134,8 @@ qboolean R_AliasCheckBBox (entity_t *ent) {
 	R_AliasSetUpTransform (0);
 
 	// construct the base bounding box for this frame
-	if (r_framelerp == 1) {
+	if (r_framelerp == 1)
+	{
 		R_AliasCheckBBoxFrame (ent->frame, &mins, &maxs);
 
 		// x worldspace coordinates
@@ -137,7 +147,9 @@ qboolean R_AliasCheckBBox (entity_t *ent) {
 		// z worldspace coordinates
 		basepts[0][2] = basepts[1][2] = basepts[4][2] = basepts[5][2] = (float) mins->v[2];
 		basepts[2][2] = basepts[3][2] = basepts[6][2] = basepts[7][2] = (float) maxs->v[2];
-	} else {
+	}
+	else
+	{
 		R_AliasCheckBBoxFrame (ent->oldframe, &oldmins, &oldmaxs);
 		R_AliasCheckBBoxFrame (ent->frame, &mins, &maxs);
 
@@ -156,14 +168,18 @@ qboolean R_AliasCheckBBox (entity_t *ent) {
 	zfullyclipped = true;
 
 	minz = 9999;
-	for (i = 0; i < 8; i++) {
+	for (i = 0; i < 8; i++)
+	{
 		R_AliasTransformVector  (&basepts[i][0], &viewaux[i].fv[0]);
 
-		if (viewaux[i].fv[2] < ALIAS_Z_CLIP_PLANE) {
+		if (viewaux[i].fv[2] < ALIAS_Z_CLIP_PLANE)
+		{
 			// we must clip points that are closer than the near clip plane
 			viewpts[i].flags = ALIAS_Z_CLIP;
 			zclipped = true;
-		} else {
+		}
+		else
+		{
 			if (viewaux[i].fv[2] < minz)
 				minz = viewaux[i].fv[2];
 			viewpts[i].flags = 0;
@@ -176,9 +192,11 @@ qboolean R_AliasCheckBBox (entity_t *ent) {
 
 	numv = 8;
 
-	if (zclipped) {
+	if (zclipped)
+	{
 		// organize points by edges, use edges to get new points (possible trivial reject)
-		for (i = 0; i < 12; i++) {
+		for (i = 0; i < 12; i++)
+		{
 			// edge endpoints
 			pv0 = &viewpts[aedges[i].index0];
 			pv1 = &viewpts[aedges[i].index1];
@@ -186,7 +204,8 @@ qboolean R_AliasCheckBBox (entity_t *ent) {
 			pa1 = &viewaux[aedges[i].index1];
 
 			// if one end is clipped and the other isn't, make a new point
-			if (pv0->flags ^ pv1->flags) {
+			if (pv0->flags ^ pv1->flags)
+			{
 				frac = (ALIAS_Z_CLIP_PLANE - pa0->fv[2]) / (pa1->fv[2] - pa0->fv[2]);
 				viewaux[numv].fv[0] = pa0->fv[0] + (pa1->fv[0] - pa0->fv[0]) * frac;
 				viewaux[numv].fv[1] = pa0->fv[1] + (pa1->fv[1] - pa0->fv[1]) * frac;
@@ -202,7 +221,8 @@ qboolean R_AliasCheckBBox (entity_t *ent) {
 	allclip = ALIAS_XY_CLIP_MASK;
 
 	// TODO: probably should do this loop in ASM, especially if we use floats
-	for (i = 0; i < numv; i++) {
+	for (i = 0; i < numv; i++)
+	{
 		// we don't need to bother with vertices that were z-clipped
 		if (viewpts[i].flags & ALIAS_Z_CLIP)
 			continue;
@@ -233,7 +253,8 @@ qboolean R_AliasCheckBBox (entity_t *ent) {
 
 	ent->trivial_accept = !anyclip & !zclipped;
 
-	if (ent->trivial_accept) {
+	if (ent->trivial_accept)
+	{
 		if (minz > (r_aliastransition + (pmdl->size * r_resfudge)))
 			ent->trivial_accept |= 2;
 	}
@@ -242,7 +263,8 @@ qboolean R_AliasCheckBBox (entity_t *ent) {
 }
 
 //General clipped case
-void R_AliasPreparePoints (void) {
+void R_AliasPreparePoints (void)
+{
 	int i;
 	stvert_t *pstverts;
 	finalvert_t *fv;
@@ -255,11 +277,15 @@ void R_AliasPreparePoints (void) {
  	fv = pfinalverts;
 	av = pauxverts;
 
-	for (i = 0; i < r_anumverts; i++, fv++, av++, r_oldapverts++, r_apverts++, pstverts++) {
+	for (i = 0; i < r_anumverts; i++, fv++, av++, r_oldapverts++, r_apverts++, pstverts++)
+	{
 		R_AliasTransformFinalVert (fv, av, r_oldapverts, r_apverts, pstverts);
-		if (av->fv[2] < ALIAS_Z_CLIP_PLANE) {
+		if (av->fv[2] < ALIAS_Z_CLIP_PLANE)
+		{
 			fv->flags |= ALIAS_Z_CLIP;
-		} else {
+		}
+		else
+		{
 			 R_AliasProjectFinalVert (fv, av);
 
 			if (fv->v[0] < r_refdef.aliasvrect.x)
@@ -269,34 +295,38 @@ void R_AliasPreparePoints (void) {
 			if (fv->v[0] > r_refdef.aliasvrectright)
 				fv->flags |= ALIAS_RIGHT_CLIP;
 			if (fv->v[1] > r_refdef.aliasvrectbottom)
-				fv->flags |= ALIAS_BOTTOM_CLIP;	
+				fv->flags |= ALIAS_BOTTOM_CLIP;
 		}
 	}
 
 	r_affinetridesc.numtriangles = 1;
 
 	ptri = (mtriangle_t *)((byte *)paliashdr + paliashdr->triangles);
-	for (i = 0; i < pmdl->numtris; i++, ptri++) {
+	for (i = 0; i < pmdl->numtris; i++, ptri++)
+	{
 		pfv[0] = &pfinalverts[ptri->vertindex[0]];
 		pfv[1] = &pfinalverts[ptri->vertindex[1]];
 		pfv[2] = &pfinalverts[ptri->vertindex[2]];
 
 		if (pfv[0]->flags & pfv[1]->flags & pfv[2]->flags & (ALIAS_XY_CLIP_MASK | ALIAS_Z_CLIP))
 			continue;		// completely clipped
-		
-		if (!((pfv[0]->flags | pfv[1]->flags | pfv[2]->flags) & (ALIAS_XY_CLIP_MASK | ALIAS_Z_CLIP))) {	
+
+		if (!((pfv[0]->flags | pfv[1]->flags | pfv[2]->flags) & (ALIAS_XY_CLIP_MASK | ALIAS_Z_CLIP)))
+		{
 			// totally unclipped
 			r_affinetridesc.pfinalverts = pfinalverts;
 			r_affinetridesc.ptriangles = ptri;
 			D_PolysetDraw ();
-		} else{	
+		}
+		else{
 			// partially clipped
 			R_AliasClipTriangle (ptri);
 		}
 	}
 }
 
-void R_AliasSetUpTransform (int trivial_accept) {
+void R_AliasSetUpTransform (int trivial_accept)
+{
 	int i;
 	float scale, rotationmatrix[3][4], t2matrix[3][4];
 	vec3_t angles;
@@ -316,8 +346,9 @@ void R_AliasSetUpTransform (int trivial_accept) {
 	tmatrix[1][1] = pmdl->scale[1];
 	tmatrix[2][2] = pmdl->scale[2];
 
-	if ((currententity->flags & RF_WEAPONMODEL)) {		
-		scale = 0.5 + bound(0, r_viewmodelsize.value, 1) / 2; 
+	if ((currententity->flags & RF_WEAPONMODEL))
+	{
+		scale = 0.5 + bound(0, r_viewmodelsize.value, 1) / 2;
 		tmatrix[0][0] *= scale;
 	}
 
@@ -326,7 +357,8 @@ void R_AliasSetUpTransform (int trivial_accept) {
 	tmatrix[2][3] = pmdl->scale_origin[2];
 
 	// TODO: can do this with simple matrix rearrangement
-	for (i = 0; i < 3; i++) {
+	for (i = 0; i < 3; i++)
+	{
 		t2matrix[i][0] = alias_forward[i];
 		t2matrix[i][1] = -alias_right[i];
 		t2matrix[i][2] = alias_up[i];
@@ -351,8 +383,10 @@ void R_AliasSetUpTransform (int trivial_accept) {
 	// Also scale down z, so 1/z is scaled 31 bits for free, and scale down x and y
 	// correspondingly so the projected x and y come out right
 	// FIXME: make this work for clipped case too?
-	if (trivial_accept) {
-		for (i = 0; i < 4; i++) {
+	if (trivial_accept)
+	{
+		for (i = 0; i < 4; i++)
+		{
 			aliastransform[0][i] *= aliasxscale * (1.0 / ((float) 0x8000 * 0x10000));
 			aliastransform[1][i] *= aliasyscale * (1.0 / ((float) 0x8000 * 0x10000));
 			aliastransform[2][i] *= 1.0 / ((float) 0x8000 * 0x10000);
@@ -361,15 +395,16 @@ void R_AliasSetUpTransform (int trivial_accept) {
 	}
 }
 
-void R_AliasTransformFinalVert (finalvert_t *fv, auxvert_t *av, trivertx_t *pverts1, trivertx_t *pverts2, stvert_t *pstverts) {
+void R_AliasTransformFinalVert (finalvert_t *fv, auxvert_t *av, trivertx_t *pverts1, trivertx_t *pverts2, stvert_t *pstverts)
+{
 	int temp;
 	float lightcos, lerpfrac;
 	vec3_t interpolated_verts, interpolated_norm;
 
 
 	lerpfrac = r_framelerp;
-	if ((currententity->flags & RF_LIMITLERP)) {
-		
+	if ((currententity->flags & RF_LIMITLERP))
+	{
 		lerpfrac = VectorL2Compare(pverts1->v, pverts2->v, r_lerpdistance) ? r_framelerp : 1;
 	}
 
@@ -391,7 +426,8 @@ void R_AliasTransformFinalVert (finalvert_t *fv, auxvert_t *av, trivertx_t *pver
 	temp = r_ambientlight;
 
 
-	if (lightcos < 0) {
+	if (lightcos < 0)
+	{
 		temp += (int) (r_shadelight * lightcos);
 		// clamp; because we limited the minimum ambient and shading light, we don't have to clamp low light, just bright
 		temp = max(temp, 0);
@@ -399,7 +435,8 @@ void R_AliasTransformFinalVert (finalvert_t *fv, auxvert_t *av, trivertx_t *pver
 	fv->v[4] = temp;
 }
 
-void R_AliasTransformAndProjectFinalVerts (finalvert_t *fv, stvert_t *pstverts) {
+void R_AliasTransformAndProjectFinalVerts (finalvert_t *fv, stvert_t *pstverts)
+{
 	int i, temp;
 	float lightcos, zi;
 	trivertx_t *pverts1, *pverts2;
@@ -408,7 +445,8 @@ void R_AliasTransformAndProjectFinalVerts (finalvert_t *fv, stvert_t *pstverts) 
 	pverts1 = r_oldapverts;
 	pverts2 = r_apverts;
 
-	for (i = 0; i < r_anumverts; i++, fv++, pverts1++, pverts2++, pstverts++) {
+	for (i = 0; i < r_anumverts; i++, fv++, pverts1++, pverts2++, pstverts++)
+	{
 
 		VectorInterpolate(pverts1->v, r_framelerp, pverts2->v, interpolated_verts);
 		// transform and project
@@ -432,7 +470,8 @@ void R_AliasTransformAndProjectFinalVerts (finalvert_t *fv, stvert_t *pstverts) 
 		temp = r_ambientlight;
 
 
-		if (lightcos < 0) {
+		if (lightcos < 0)
+		{
 			temp += (int) (r_shadelight * lightcos);
 			// clamp; because we limited the minimum ambient and shading light, we don't have to clamp low light, just bright
 			temp = max(temp, 0);
@@ -442,7 +481,8 @@ void R_AliasTransformAndProjectFinalVerts (finalvert_t *fv, stvert_t *pstverts) 
 	}
 }
 
-void R_AliasProjectFinalVert (finalvert_t *fv, auxvert_t *av) {
+void R_AliasProjectFinalVert (finalvert_t *fv, auxvert_t *av)
+{
 	float zi;
 
 	// project points
@@ -452,7 +492,8 @@ void R_AliasProjectFinalVert (finalvert_t *fv, auxvert_t *av) {
 	fv->v[1] = (av->fv[1] * aliasyscale * zi) + aliasycenter;
 }
 
-void R_AliasPrepareUnclippedPoints (void) {
+void R_AliasPrepareUnclippedPoints (void)
+{
 	stvert_t *pstverts;
 
 	pstverts = (stvert_t *)((byte *)paliashdr + paliashdr->stverts);
@@ -470,14 +511,16 @@ void R_AliasPrepareUnclippedPoints (void) {
 	D_PolysetDraw ();
 }
 
-void R_AliasSetupSkin (entity_t *ent) {
+void R_AliasSetupSkin (entity_t *ent)
+{
 	byte *base;
 	int skinnum, i, numskins;
 	maliasskingroup_t *paliasskingroup;
 	float *pskinintervals, fullskininterval, skintargettime, skintime;
 
 	skinnum = ent->skinnum;
-	if (skinnum >= pmdl->numskins || skinnum < 0) {
+	if (skinnum >= pmdl->numskins || skinnum < 0)
+	{
 		Com_DPrintf ("R_AliasSetupSkin: no such skin # %d\n", skinnum);
 		skinnum = 0;
 	}
@@ -485,19 +528,21 @@ void R_AliasSetupSkin (entity_t *ent) {
 	pskindesc = ((maliasskindesc_t *) ((byte *) paliashdr + paliashdr->skindesc)) + skinnum;
 	a_skinwidth = pmdl->skinwidth;
 
-	if (pskindesc->type == ALIAS_SKIN_GROUP) {
+	if (pskindesc->type == ALIAS_SKIN_GROUP)
+	{
 		paliasskingroup = (maliasskingroup_t *) ((byte *) paliashdr + pskindesc->skin);
 		pskinintervals = (float *) ((byte *) paliashdr + paliasskingroup->intervals);
 		numskins = paliasskingroup->numskins;
 		fullskininterval = pskinintervals[numskins - 1];
-	
+
 		skintime = cl.time;
-	
+
 		// when loading in Mod_LoadAliasSkinGroup, we guaranteed all interval
 		// values are positive, so we don't have to worry about division by 0
 		skintargettime = skintime - ((int) (skintime / fullskininterval)) * fullskininterval;
-	
-		for (i = 0; i < numskins - 1; i++) {
+
+		for (i = 0; i < numskins - 1; i++)
+		{
 			if (pskinintervals[i] > skintargettime)
 				break;
 		}
@@ -511,11 +556,13 @@ void R_AliasSetupSkin (entity_t *ent) {
 	r_affinetridesc.seamfixupX16 =  (a_skinwidth >> 1) << 16;
 	r_affinetridesc.skinheight = pmdl->skinheight;
 
-	if (ent->scoreboard) {
+	if (ent->scoreboard)
+	{
 		if (!ent->scoreboard->skin)
 			Skin_Find (ent->scoreboard);
 		base = Skin_Cache (ent->scoreboard->skin);
-		if (base) {
+		if (base)
+		{
 			r_affinetridesc.pskin = base;
 			r_affinetridesc.skinwidth = 320;
 			r_affinetridesc.skinheight = 200;
@@ -523,14 +570,16 @@ void R_AliasSetupSkin (entity_t *ent) {
 	}
 }
 
-void R_AliasSetupLighting (entity_t *ent) {
+void R_AliasSetupLighting (entity_t *ent)
+{
 	int lnum, minlight, ambientlight, shadelight;
 	float add, fbskins;
 	vec3_t dist;
 
 	ambientlight = shadelight = R_LightPoint (currententity->origin);
 
-	for (lnum = 0; lnum < MAX_DLIGHTS; lnum++) {
+	for (lnum = 0; lnum < MAX_DLIGHTS; lnum++)
+	{
 		if (cl_dlights[lnum].die < cl.time || !cl_dlights[lnum].radius)
 			continue;
 
@@ -552,16 +601,19 @@ void R_AliasSetupLighting (entity_t *ent) {
 		ambientlight = shadelight = 24;
 
 	// never allow players to go totally black
-	if (currententity->model->modhint == MOD_PLAYER) {
+	if (currententity->model->modhint == MOD_PLAYER)
+	{
 		if (ambientlight < 8)
 			ambientlight = shadelight = 8;
 	}
 
 
-	if (currententity->model->modhint == MOD_PLAYER) {
+	if (currententity->model->modhint == MOD_PLAYER)
+	{
 		extern cvar_t r_fullbrightSkins;
 		fbskins = bound(0, r_fullbrightSkins.value, cl.fbskins);
-		if (fbskins) {
+		if (fbskins)
+		{
 			ambientlight = max (ambientlight, 8 + fbskins * 120);
 			shadelight = max (shadelight, 8 + fbskins * 120);
 		}
@@ -584,14 +636,18 @@ void R_AliasSetupLighting (entity_t *ent) {
 	VectorSet(r_plightvec, -alias_forward[0], alias_right[0], -alias_up[0]);
 }
 
-void R_AliasSetupFrameVerts (int frame, trivertx_t **verts) {
+void R_AliasSetupFrameVerts (int frame, trivertx_t **verts)
+{
 	int	i, numframes;
 	maliasgroup_t *paliasgroup;
 	float *pintervals, fullinterval, targettime;
 
-	if (paliashdr->frames[frame].type == ALIAS_SINGLE) {
+	if (paliashdr->frames[frame].type == ALIAS_SINGLE)
+	{
 		*verts = (trivertx_t *) ((byte *) paliashdr + paliashdr->frames[frame].frame);
-	} else {
+	}
+	else
+	{
 		paliasgroup = (maliasgroup_t *) ((byte *)paliashdr + paliashdr->frames[frame].frame);
 		pintervals = (float *) ((byte *) paliashdr + paliasgroup->intervals);
 		numframes = paliasgroup->numframes;
@@ -601,7 +657,8 @@ void R_AliasSetupFrameVerts (int frame, trivertx_t **verts) {
 		// are positive, so we don't have to worry about division by 0
 		targettime = cl.time - ((int) (cl.time / fullinterval)) * fullinterval;
 
-		for (i = 0; i < numframes - 1; i++) {
+		for (i = 0; i < numframes - 1; i++)
+		{
 			if (pintervals[i] > targettime)
 				break;
 		}
@@ -610,12 +667,14 @@ void R_AliasSetupFrameVerts (int frame, trivertx_t **verts) {
 }
 
 //set r_oldapverts, r_apverts
-void R_AliasSetupFrame (entity_t *ent) {
+void R_AliasSetupFrame (entity_t *ent)
+{
 	R_AliasSetupFrameVerts(ent->oldframe, &r_oldapverts);
 	R_AliasSetupFrameVerts(ent->frame, &r_apverts);
 }
 
-void R_AliasDrawModel (entity_t *ent) {
+void R_AliasDrawModel (entity_t *ent)
+{
 	finalvert_t finalverts[MAXALIASVERTS + ((CACHE_SIZE - 1) / sizeof(finalvert_t)) + 1];
 	auxvert_t auxverts[MAXALIASVERTS];
 
@@ -626,11 +685,13 @@ void R_AliasDrawModel (entity_t *ent) {
 	paliashdr = Mod_Extradata (pmodel);
 	pmdl = (mdl_t *) ((byte *) paliashdr + paliashdr->model);
 
-	if (ent->frame >= pmdl->numframes || ent->frame < 0) {
+	if (ent->frame >= pmdl->numframes || ent->frame < 0)
+	{
 		Com_DPrintf ("R_AliasDrawModel: no such frame %d\n", ent->frame);
 		ent->frame = 0;
 	}
-	if (ent->oldframe >= pmdl->numframes || ent->oldframe < 0) {
+	if (ent->oldframe >= pmdl->numframes || ent->oldframe < 0)
+	{
 		Com_DPrintf ("R_AliasDrawModel: no such oldframe %d\n", ent->oldframe);
 		ent->oldframe = 0;
 	}
@@ -642,7 +703,8 @@ void R_AliasDrawModel (entity_t *ent) {
 		r_framelerp = min (ent->framelerp, 1);
 
 
-	if (!(ent->flags & RF_WEAPONMODEL)) {
+	if (!(ent->flags & RF_WEAPONMODEL))
+	{
 		if (!R_AliasCheckBBox(ent))
 			return;
 	}
@@ -663,7 +725,8 @@ void R_AliasDrawModel (entity_t *ent) {
 
 	r_affinetridesc.drawtype = (ent->trivial_accept == 3);
 
-	if (r_affinetridesc.drawtype) {
+	if (r_affinetridesc.drawtype)
+	{
 		D_PolysetUpdateTables ();		// FIXME: precalc...
 	}
 	else
