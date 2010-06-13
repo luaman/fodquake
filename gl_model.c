@@ -126,6 +126,20 @@ byte *Mod_LeafPVS (mleaf_t *leaf, model_t *model)
 	return Mod_DecompressVis (leaf->compressed_vis, model);
 }
 
+static void Mod_FreeAliasData(model_t *model)
+{
+	aliashdr_t *alias;
+
+	alias = model->extradata;
+	if (alias)
+	{
+		free(alias->commands);
+		free(alias->posedata);
+		free(alias);
+		model->extradata = 0;
+	}
+}
+
 static void Mod_FreeSpriteData(model_t *model)
 {
 	unsigned int i;
@@ -256,8 +270,7 @@ void Mod_ClearAll(void)
 	{
 		if (mod->type == mod_alias)
 		{
-			free(mod->extradata);
-			mod->extradata = 0;
+			Mod_FreeAliasData(mod);
 		}
 		else if (mod->type == mod_sprite)
 		{
@@ -1940,7 +1953,7 @@ static void *Mod_LoadAllSkins(model_t *model, aliashdr_t *pheader, int numskins,
 
 static void Mod_LoadAliasModel(model_t *mod, void *buffer)
 {
-	int i, j, version, numframes, size, start, end, total;
+	int i, j, version, numframes, size;
 	aliashdr_t *pheader;
 	mdl_t *pinmodel;
 	stvert_t *pinstverts;
@@ -1991,22 +2004,21 @@ static void Mod_LoadAliasModel(model_t *mod, void *buffer)
 		}
 	}
 
-	start = Hunk_LowMark ();
-
 	pinmodel = (mdl_t *)buffer;
 
 	version = LittleLong (pinmodel->version);
 
 	if (version != ALIAS_VERSION)
 	{
-		Hunk_FreeToLowMark (start);
 		Host_Error ("Mod_LoadAliasModel: %s has wrong version number (%i should be %i)\n", mod->name, version, ALIAS_VERSION);
 		return;
 	}
 
 	// allocate space for a working header, plus all the data except the frames, skin and group info
 	size = 	sizeof (aliashdr_t) + (LittleLong (pinmodel->numframes) - 1) * sizeof (pheader->frames[0]);
-	pheader = Hunk_AllocName (size, loadname);
+	pheader = malloc(size);
+	if (pheader == 0)
+		Sys_Error("Mod_LoadAliasModel: Out of memory\n");
 
 	mod->flags = LittleLong (pinmodel->flags);
 
@@ -2105,17 +2117,7 @@ static void Mod_LoadAliasModel(model_t *mod, void *buffer)
 	// build the draw lists
 	GL_MakeAliasModelDisplayLists (mod, pheader);
 
-	// move the complete, relocatable alias model to the cache
-	end = Hunk_LowMark ();
-	total = end - start;
-
-	mod->extradata = malloc(total);
-	if (mod->extradata == 0)
-		Host_Error("Out of memory\n");
-
-	memcpy (mod->extradata, pheader, total);
-
-	Hunk_FreeToLowMark (start);
+	mod->extradata = pheader;
 }
 
 //=============================================================================

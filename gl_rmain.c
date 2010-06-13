@@ -308,12 +308,12 @@ static void GL_DrawAliasFrame_Lerp(aliashdr_t *paliashdr, int pose1, int pose2, 
 	lerpfrac = r_framelerp;
 	lastposenum = (lerpfrac >= 0.5) ? pose2 : pose1;
 
-	verts2 = verts1 = (trivertx_t *) ((byte *) paliashdr + paliashdr->posedata);
+	verts2 = verts1 = paliashdr->posedata;
 
 	verts1 += pose1 * paliashdr->poseverts;
 	verts2 += pose2 * paliashdr->poseverts;
 
-	order = (int *) ((byte *) paliashdr + paliashdr->commands);
+	order = paliashdr->commands;
 
 	if (r_modelalpha < 1)
 		glEnable(GL_BLEND);
@@ -378,11 +378,11 @@ static void GL_DrawAliasFrame_NoLerp(aliashdr_t *paliashdr, int pose, qboolean m
 	trivertx_t *verts;
 	vec3_t v3;
 
-	verts = (trivertx_t *) ((byte *) paliashdr + paliashdr->posedata);
+	verts = paliashdr->posedata;
 
 	verts += pose * paliashdr->poseverts;
 
-	order = (int *) ((byte *) paliashdr + paliashdr->commands);
+	order = paliashdr->commands;
 
 	if (r_modelalpha < 1)
 		glEnable(GL_BLEND);
