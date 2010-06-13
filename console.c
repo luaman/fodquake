@@ -166,7 +166,9 @@ void Con_CheckResize(unsigned int pixelwidth)
 static void Con_InitConsoleBuffer(console_t *conbuffer, int size)
 {
 	con.maxsize = size;
-	con.text = Hunk_AllocName(con.maxsize, "console_buffer");
+	con.text = malloc(con.maxsize);
+	if (con.text == 0)
+		Sys_Error("Con_InitConsoleBuffer: Out of memory\n");
 }
 
 void Con_CvarInit(void)
@@ -215,6 +217,8 @@ void Con_Shutdown(void)
 {
 	if (qconsole_log)
 		fclose(qconsole_log);
+
+	free(con.text);
 }
 
 static void Con_Linefeed(void)
