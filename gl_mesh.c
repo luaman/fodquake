@@ -53,7 +53,7 @@ static int		striptris[128];
 StripLength
 ================
 */
-int	StripLength (aliashdr_t *pheader, int starttri, int startv)
+static int StripLength(aliashdr_t *pheader, int starttri, int startv)
 {
 	int			m1, m2;
 	int			j;
@@ -123,7 +123,7 @@ done:
 FanLength
 ===========
 */
-int	FanLength (aliashdr_t *pheader, int starttri, int startv)
+static int FanLength(aliashdr_t *pheader, int starttri, int startv)
 {
 	int		m1, m2;
 	int		j;
@@ -195,7 +195,7 @@ Generate a list of trifans or strips
 for the model, which holds for all frames
 ================
 */
-void BuildTris(aliashdr_t *pheader)
+static void BuildTris(aliashdr_t *pheader)
 {
 	int		i, j, k;
 	int		startv;
