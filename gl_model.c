@@ -149,6 +149,8 @@ static void Mod_FreeSpriteData(model_t *model)
 				for(j=0;j<spritegroup->numframes;j++)
 					free(spritegroup->frames[j]);
 
+				free(spritegroup->intervals);
+
 				free(spritegroup);
 			}
 		}
@@ -2163,6 +2165,8 @@ static void *Mod_LoadSpriteFrame(model_t *model, void * pin, mspriteframe_t **pp
 	size = width * height;
 
 	pspriteframe = malloc(sizeof (mspriteframe_t));
+	if (pspriteframe == 0)
+		Sys_Error("Mod_LoadSpriteFrame: Out of memory\n");
 
 	memset (pspriteframe, 0, sizeof (mspriteframe_t));
 
@@ -2203,6 +2207,8 @@ static void *Mod_LoadSpriteGroup(model_t *model, void * pin, mspriteframe_t **pp
 		Host_Error("Invalid number of sprite frames");
 
 	pspritegroup = malloc(sizeof (mspritegroup_t) + (numframes - 1) * sizeof (pspritegroup->frames[0]));
+	if (pspritegroup == 0)
+		Sys_Error("Mod_LoadSpriteGroup: Out of memory\n");
 
 	pspritegroup->numframes = numframes;
 
@@ -2211,6 +2217,8 @@ static void *Mod_LoadSpriteGroup(model_t *model, void * pin, mspriteframe_t **pp
 	pin_intervals = (dspriteinterval_t *) (pingroup + 1);
 
 	poutintervals = malloc(numframes * sizeof (float));
+	if (poutintervals == 0)
+		Sys_Error("Mod_LoadSpriteGroup: Out of memory\n");
 
 	pspritegroup->intervals = poutintervals;
 
