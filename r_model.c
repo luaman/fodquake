@@ -1457,22 +1457,20 @@ static void *Mod_LoadAliasGroup(void * pin, int *pframeindex, int numv, trivertx
 	return ptemp;
 }
 
-static void *Mod_LoadAliasSkin(void * pin, int *pskinindex, int skinsize, aliashdr_t *pheader)
+static void *Mod_LoadAliasSkin(void *pin, int *pskinindex, int skinsize, aliashdr_t *pheader)
 {
-	byte *pskin, *pinskin;
+	byte *pskin;
 
 	pskin = Hunk_AllocName (skinsize, loadname);
-	pinskin = (byte *)pin;
+
 	*pskinindex = (byte *)pskin - (byte *)pheader;
 
-	memcpy (pskin, pinskin, skinsize);
+	memcpy(pskin, pin, skinsize);
 
-	pinskin += skinsize;
-
-	return ((void *)pinskin);
+	return pin + skinsize;
 }
 
-static void *Mod_LoadAliasSkinGroup (void * pin, int *pskinindex, int skinsize, aliashdr_t *pheader)
+static void *Mod_LoadAliasSkinGroup(void *pin, int *pskinindex, int skinsize, aliashdr_t *pheader)
 {
 	daliasskingroup_t *pinskingroup;
 	maliasskingroup_t *paliasskingroup;
