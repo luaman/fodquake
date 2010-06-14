@@ -242,7 +242,7 @@ typedef struct {
 
 typedef struct {
 	aliasskintype_t		type;
-	int					skin;
+	byte					*skin;
 } maliasskindesc_t;
 
 typedef struct {

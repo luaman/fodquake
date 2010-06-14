@@ -128,14 +128,37 @@ byte *Mod_LeafPVS (mleaf_t *leaf, model_t *model)
 
 static void Mod_FreeAliasData(model_t *model)
 {
+	mdl_t *othermodel;
 	aliashdr_t *alias;
 	maliasgroup_t *aliasgroup;
+	maliasskingroup_t *skingroup;
 	unsigned int i;
 	unsigned int j;
 
 	alias = model->extradata;
 	if (alias)
 	{
+		othermodel = ((void *)alias) + alias->model;
+
+		for(i=0;i<othermodel->numskins;i++)
+		{
+			if (alias->skindesc[i].type == ALIAS_SKIN_SINGLE)
+			{
+				free(alias->skindesc[i].skin);
+			}
+			else
+			{
+				skingroup = (maliasskingroup_t *)alias->skindesc[i].skin;
+
+				for(j=0;j<skingroup->numskins;j++)
+				{
+					free(skingroup->skindescs[i].skin);
+				}
+
+				free(skingroup);
+			}
+		}
+
 		for(i=0;i<model->numframes;i++)
 		{
 			if (alias->frames[i].type == ALIAS_SINGLE)
@@ -237,6 +260,9 @@ static void Mod_FreeBrushData(model_t *model)
 
 	free(model->planes);
 	model->planes = 0;
+
+	free(model->hulls[0].clipnodes);
+	model->hulls[0].clipnodes = 0;
 }
 
 void Mod_ClearBrushesSprites(void)
@@ -1152,7 +1178,9 @@ static void Mod_MakeHull0(model_t *model)
 
 	in = model->nodes;
 	count = model->numnodes;
-	out = Hunk_AllocName ( count*sizeof(*out), loadname);
+	out = malloc(count*sizeof(*out));
+	if (out == 0)
+		Sys_Error("Mod_MakeHull0: Out of memory\n");
 
 	hull->clipnodes = out;
 	hull->firstclipnode = 0;
@@ -1491,20 +1519,22 @@ static void *Mod_LoadAliasGroup(void * pin, maliasgroup_t **pframeindex, int num
 	return ptemp;
 }
 
-static void *Mod_LoadAliasSkin(void *pin, int *pskinindex, int skinsize, aliashdr_t *pheader)
+static void *Mod_LoadAliasSkin(void *pin, byte **pskinindex, int skinsize, aliashdr_t *pheader)
 {
 	byte *pskin;
 
-	pskin = Hunk_AllocName (skinsize, loadname);
+	pskin = malloc(skinsize);
+	if (pskin == 0)
+		Sys_Error("Mod_LoadAliasSkin: Out of memory\n");
 
-	*pskinindex = (byte *)pskin - (byte *)pheader;
+	*pskinindex = pskin;
 
 	memcpy(pskin, pin, skinsize);
 
 	return pin + skinsize;
 }
 
-static void *Mod_LoadAliasSkinGroup(void *pin, int *pskinindex, int skinsize, aliashdr_t *pheader)
+static void *Mod_LoadAliasSkinGroup(void *pin, byte **pskinindex, int skinsize, aliashdr_t *pheader)
 {
 	daliasskingroup_t *pinskingroup;
 	maliasskingroup_t *paliasskingroup;
@@ -1517,12 +1547,13 @@ static void *Mod_LoadAliasSkinGroup(void *pin, int *pskinindex, int skinsize, al
 
 	numskins = LittleLong (pinskingroup->numskins);
 
-	paliasskingroup = Hunk_AllocName (sizeof (maliasskingroup_t) +
-			(numskins - 1) * sizeof (paliasskingroup->skindescs[0]), loadname);
+	paliasskingroup = malloc(sizeof(maliasskingroup_t) + (numskins - 1) * sizeof(paliasskingroup->skindescs[0]));
+	if (paliasskingroup == 0)
+		Sys_Error("Mod_LoadAliasSkinGroup: Out of memory\n");
 
 	paliasskingroup->numskins = numskins;
 
-	*pskinindex = (byte *)paliasskingroup - (byte *)pheader;
+	*pskinindex = (byte *)paliasskingroup;
 
 	pinskinintervals = (daliasskininterval_t *)(pinskingroup + 1);
 

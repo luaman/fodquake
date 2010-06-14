@@ -529,7 +529,7 @@ void R_AliasSetupSkin (entity_t *ent)
 
 	if (pskindesc->type == ALIAS_SKIN_GROUP)
 	{
-		paliasskingroup = (maliasskingroup_t *) ((byte *) paliashdr + pskindesc->skin);
+		paliasskingroup = (maliasskingroup_t *)pskindesc->skin;
 		pskinintervals = (float *) ((byte *) paliashdr + paliasskingroup->intervals);
 		numskins = paliasskingroup->numskins;
 		fullskininterval = pskinintervals[numskins - 1];
@@ -550,7 +550,7 @@ void R_AliasSetupSkin (entity_t *ent)
 	}
 
 	r_affinetridesc.pskindesc = pskindesc;
-	r_affinetridesc.pskin = (void *)((byte *)paliashdr + pskindesc->skin);
+	r_affinetridesc.pskin = pskindesc->skin;
 	r_affinetridesc.skinwidth = a_skinwidth;
 	r_affinetridesc.seamfixupX16 =  (a_skinwidth >> 1) << 16;
 	r_affinetridesc.skinheight = pmdl->skinheight;
