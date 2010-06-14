@@ -530,7 +530,7 @@ void R_AliasSetupSkin (entity_t *ent)
 	if (pskindesc->type == ALIAS_SKIN_GROUP)
 	{
 		paliasskingroup = (maliasskingroup_t *)pskindesc->skin;
-		pskinintervals = (float *) ((byte *) paliashdr + paliasskingroup->intervals);
+		pskinintervals = paliasskingroup->intervals;
 		numskins = paliasskingroup->numskins;
 		fullskininterval = pskinintervals[numskins - 1];
 

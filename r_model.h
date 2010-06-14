@@ -259,7 +259,7 @@ typedef struct {
 
 typedef struct {
 	int					numskins;
-	int					intervals;
+	float					*intervals;
 	maliasskindesc_t	skindescs[1];
 } maliasskingroup_t;
 

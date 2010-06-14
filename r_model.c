@@ -219,6 +219,8 @@ static void Mod_FreeSpriteData(model_t *model)
 
 static void Mod_FreeBrushData(model_t *model)
 {
+	unsigned int i;
+
 	free(model->submodels);
 	model->submodels = 0;
 
@@ -263,6 +265,15 @@ static void Mod_FreeBrushData(model_t *model)
 
 	free(model->hulls[0].clipnodes);
 	model->hulls[0].clipnodes = 0;
+
+	if (model->textures)
+	{
+		for(i=0;i<model->numtextures;i++)
+			free(model->textures[i]);
+
+		free(model->textures);
+		model->textures = 0;
+	}
 }
 
 void Mod_ClearBrushesSprites(void)
@@ -456,9 +467,17 @@ static void Mod_LoadTextures(model_t *model, lump_t *l)
 	m = (dmiptexlump_t *)(mod_base + l->fileofs);
 
 	m->nummiptex = LittleLong (m->nummiptex);
-
 	model->numtextures = m->nummiptex;
-	model->textures = Hunk_AllocName (m->nummiptex * sizeof(*model->textures), loadname);
+
+	if (m->nummiptex < 0 || m->nummiptex > 65535)
+		Sys_Error("Mod_LoadTextures: Invalid number of textures\n");
+
+	if (m->nummiptex)
+	{
+		model->textures = malloc(m->nummiptex * sizeof(*model->textures));
+		if (model->textures == 0)
+			Sys_Error("Mod_LoadTextures: Out of memory\n");
+	}
 
 	for (i = 0; i < m->nummiptex; i++)
 	{
@@ -479,7 +498,12 @@ static void Mod_LoadTextures(model_t *model, lump_t *l)
 			width = ISTURBTEX(model, mt->name) ? 64 : 16;
 			pixels = width * width;
 
-			tx = model->textures[i] = Hunk_AllocName (sizeof(texture_t) + pixels, loadname);
+			tx = model->textures[i] = malloc(sizeof(texture_t) + pixels);
+			if (tx == 0)
+				Sys_Error("Mod_LoadTextures: Out of memory\n");
+
+			memset(tx, 0, sizeof(texture_t));
+
 			memcpy (tx->name, mt->name, sizeof(tx->name));
 			tx->height = tx->width = width;
 
@@ -493,7 +517,12 @@ static void Mod_LoadTextures(model_t *model, lump_t *l)
 		}
 		else if (model->isworldmodel && r_max_size_1.value && !ISTURBTEX(model, mt->name))
 		{
-			model->textures[i] = tx = Hunk_AllocName (sizeof(texture_t) + 16 * 16, loadname);
+			model->textures[i] = tx = malloc(sizeof(texture_t) + 16 * 16);
+			if (tx == 0)
+				Sys_Error("Mod_LoadTextures: Out of memory\n");
+
+			memset(tx, 0, sizeof(texture_t));
+
 			memcpy (tx->name, mt->name, sizeof(tx->name));
 			tx->width = tx->height = 16;
 
@@ -530,7 +559,12 @@ static void Mod_LoadTextures(model_t *model, lump_t *l)
 		{
 			pixels = mt->width * mt->height / 64 * 85;
 
-			model->textures[i] = tx = Hunk_AllocName (sizeof(texture_t) + pixels, loadname);
+			model->textures[i] = tx = malloc(sizeof(texture_t) + pixels);
+			if (tx == 0)
+				Sys_Error("Mod_LoadTextures: Out of memory\n");
+
+			memset(tx, 0, sizeof(texture_t));
+
 			memcpy (tx->name, mt->name, sizeof(tx->name));
 			tx->width = mt->width;
 			tx->height = mt->height;
@@ -1557,9 +1591,11 @@ static void *Mod_LoadAliasSkinGroup(void *pin, byte **pskinindex, int skinsize, 
 
 	pinskinintervals = (daliasskininterval_t *)(pinskingroup + 1);
 
-	poutskinintervals = Hunk_AllocName (numskins * sizeof (float), loadname);
+	poutskinintervals = malloc(numskins * sizeof(float));
+	if (poutskinintervals == 0)
+		Sys_Error("Mod_LoadAliasSkinGroup: Out of memory\n");
 
-	paliasskingroup->intervals = (byte *)poutskinintervals - (byte *)pheader;
+	paliasskingroup->intervals = poutskinintervals;
 
 	for (i = 0; i < numskins; i++)
 	{
@@ -1581,7 +1617,7 @@ static void *Mod_LoadAliasSkinGroup(void *pin, byte **pskinindex, int skinsize, 
 
 static void Mod_LoadAliasModel(model_t *mod, void *buffer)
 {
-	int i, j, version, numframes, numskins, size, skinsize, start, end, total;
+	int i, j, version, numframes, numskins, size, skinsize;
 	mdl_t *pmodel, *pinmodel;
 	stvert_t *pstverts, *pinstverts;
 	aliashdr_t *pheader;
@@ -1635,8 +1671,6 @@ static void Mod_LoadAliasModel(model_t *mod, void *buffer)
 		}
 	}
 
-	start = Hunk_LowMark ();
-
 	pinmodel = (mdl_t *) buffer;
 
 	version = LittleLong (pinmodel->version);
@@ -1654,7 +1688,10 @@ static void Mod_LoadAliasModel(model_t *mod, void *buffer)
 			LittleLong (pinmodel->numverts) * sizeof (stvert_t) +
 			LittleLong (pinmodel->numtris) * sizeof (mtriangle_t);
 
-	pheader = Hunk_AllocName (size, loadname);
+	pheader = malloc(size);
+	if (pheader == 0)
+		Sys_Error("Mod_LoadAliasModel: Out of memory\n");
+
 	pmodel = (mdl_t *) ((byte *)&pheader[1] +
 			(numframes - 1) *
 			 sizeof (pheader->frames[0]));
@@ -1801,17 +1838,7 @@ static void Mod_LoadAliasModel(model_t *mod, void *buffer)
 	mod->mins[0] = mod->mins[1] = mod->mins[2] = -16;
 	mod->maxs[0] = mod->maxs[1] = mod->maxs[2] = 16;
 
-	// move the complete, relocatable alias model to the cache
-	end = Hunk_LowMark ();
-	total = end - start;
-
-	mod->extradata = malloc(total);
-	if (mod->extradata == 0)
-		Host_Error("Out of memory\n");
-
-	memcpy(mod->extradata, pheader, total);
-
-	Hunk_FreeToLowMark (start);
+	mod->extradata = pheader;
 }
 
 //=============================================================================
