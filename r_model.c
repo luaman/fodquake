@@ -1465,7 +1465,7 @@ static void *Mod_LoadAliasGroup(void * pin, maliasgroup_t **pframeindex, int num
 
 	pin_intervals = (daliasinterval_t *)(pingroup + 1);
 
-	poutintervals = Hunk_AllocName (numframes * sizeof (float), loadname);
+	poutintervals = malloc(numframes * sizeof (float));
 	if (poutintervals == 0)
 		Sys_Error("Mod_LoadAliasGroup: Out of memory\n");
 
