@@ -126,6 +126,40 @@ byte *Mod_LeafPVS (mleaf_t *leaf, model_t *model)
 	return Mod_DecompressVis (leaf->compressed_vis, model);
 }
 
+static void Mod_FreeAliasData(model_t *model)
+{
+	aliashdr_t *alias;
+	maliasgroup_t *aliasgroup;
+	unsigned int i;
+	unsigned int j;
+
+	alias = model->extradata;
+	if (alias)
+	{
+		for(i=0;i<model->numframes;i++)
+		{
+			if (alias->frames[i].type == ALIAS_SINGLE)
+			{
+				free(alias->frames[i].frame);
+			}
+			else
+			{
+				aliasgroup = (maliasgroup_t *)alias->frames[i].frame;
+
+				for(j=0;j<aliasgroup->numframes;j++)
+					free(aliasgroup->frames[j].frame);
+
+				free(aliasgroup->intervals);
+				free(aliasgroup);
+			}
+		}
+
+		free(alias->skindesc);
+		free(alias);
+		model->extradata = 0;
+	}
+}
+
 static void Mod_FreeSpriteData(model_t *model)
 {
 	unsigned int i;
@@ -233,8 +267,7 @@ void Mod_ClearAll(void)
 	{
 		if (mod->type == mod_alias)
 		{
-			free(mod->extradata);
-			mod->extradata = 0;
+			Mod_FreeAliasData(mod);
 		}
 		else if (mod->type == mod_sprite)
 		{
@@ -1363,7 +1396,7 @@ ALIAS MODELS
 ==============================================================================
 */
 
-static void *Mod_LoadAliasFrame(void * pin, int *pframeindex, int numv, trivertx_t *pbboxmin, trivertx_t *pbboxmax, aliashdr_t *pheader, char *name)
+static void *Mod_LoadAliasFrame(void * pin, trivertx_t **pframeindex, int numv, trivertx_t *pbboxmin, trivertx_t *pbboxmax, aliashdr_t *pheader, char *name)
 {
 	trivertx_t *pframe, *pinframe;
 	int	 i, j;
@@ -1381,9 +1414,11 @@ static void *Mod_LoadAliasFrame(void * pin, int *pframeindex, int numv, trivertx
 	}
 
 	pinframe = (trivertx_t *)(pdaliasframe + 1);
-	pframe = Hunk_AllocName (numv * sizeof(*pframe), loadname);
+	pframe = malloc(numv * sizeof(*pframe));
+	if (pframe == 0)
+		Sys_Error("Mod_LoadAliasFrame: Out of memory\n");
 
-	*pframeindex = (byte *)pframe - (byte *)pheader;
+	*pframeindex = pframe;
 
 	for (j = 0; j < numv; j++)
 	{
@@ -1400,7 +1435,7 @@ static void *Mod_LoadAliasFrame(void * pin, int *pframeindex, int numv, trivertx
 	return pinframe;
 }
 
-static void *Mod_LoadAliasGroup(void * pin, int *pframeindex, int numv, trivertx_t *pbboxmin, trivertx_t *pbboxmax, aliashdr_t *pheader, char *name)
+static void *Mod_LoadAliasGroup(void * pin, maliasgroup_t **pframeindex, int numv, trivertx_t *pbboxmin, trivertx_t *pbboxmax, aliashdr_t *pheader, char *name)
 {
 	daliasgroup_t *pingroup;
 	maliasgroup_t *paliasgroup;
@@ -1413,8 +1448,9 @@ static void *Mod_LoadAliasGroup(void * pin, int *pframeindex, int numv, trivertx
 
 	numframes = LittleLong (pingroup->numframes);
 
-	paliasgroup = Hunk_AllocName (sizeof (maliasgroup_t) +
-			(numframes - 1) * sizeof (paliasgroup->frames[0]), loadname);
+	paliasgroup = malloc(sizeof (maliasgroup_t) + (numframes - 1) * sizeof (paliasgroup->frames[0]));
+	if (paliasgroup == 0)
+		Sys_Error("Mod_LoadAliasGroup: Out of memory\n");
 
 	paliasgroup->numframes = numframes;
 
@@ -1425,13 +1461,15 @@ static void *Mod_LoadAliasGroup(void * pin, int *pframeindex, int numv, trivertx
 		pbboxmax->v[i] = pingroup->bboxmax.v[i];
 	}
 
-	*pframeindex = (byte *)paliasgroup - (byte *)pheader;
+	*pframeindex = paliasgroup;
 
 	pin_intervals = (daliasinterval_t *)(pingroup + 1);
 
 	poutintervals = Hunk_AllocName (numframes * sizeof (float), loadname);
+	if (poutintervals == 0)
+		Sys_Error("Mod_LoadAliasGroup: Out of memory\n");
 
-	paliasgroup->intervals = (byte *)poutintervals - (byte *)pheader;
+	paliasgroup->intervals = poutintervals;
 
 	for (i = 0 ; i < numframes; i++)
 	{
@@ -1447,13 +1485,9 @@ static void *Mod_LoadAliasGroup(void * pin, int *pframeindex, int numv, trivertx
 
 	for (i = 0; i < numframes; i++)
 	{
-		ptemp = Mod_LoadAliasFrame (ptemp,
-									&paliasgroup->frames[i].frame,
-									numv,
-									&paliasgroup->frames[i].bboxmin,
-									&paliasgroup->frames[i].bboxmax,
-									pheader, name);
+		ptemp = Mod_LoadAliasFrame(ptemp, &paliasgroup->frames[i].frame, numv, &paliasgroup->frames[i].bboxmin, &paliasgroup->frames[i].bboxmax, pheader, name);
 	}
+
 	return ptemp;
 }
 
@@ -1647,10 +1681,11 @@ static void Mod_LoadAliasModel(model_t *mod, void *buffer)
 
 	pskintype = (daliasskintype_t *)&pinmodel[1];
 
-	pskindesc = Hunk_AllocName (numskins * sizeof (maliasskindesc_t),
-								loadname);
+	pskindesc = malloc(numskins * sizeof (maliasskindesc_t));
+	if (pskindesc == 0)
+		Sys_Error("Mod_LoadAliasModel: Out of memory\n");
 
-	pheader->skindesc = (byte *) pskindesc - (byte *)pheader;
+	pheader->skindesc = pskindesc;
 
 	for (i = 0; i < numskins; i++)
 	{
@@ -1721,7 +1756,7 @@ static void Mod_LoadAliasModel(model_t *mod, void *buffer)
 		{
 			pframetype = (daliasframetype_t *)
 					Mod_LoadAliasGroup (pframetype + 1,
-										&pheader->frames[i].frame,
+										(maliasgroup_t **)&pheader->frames[i].frame,
 										pmodel->numverts,
 										&pheader->frames[i].bboxmin,
 										&pheader->frames[i].bboxmax,

@@ -46,8 +46,6 @@ static float		ziscale;
 
 static vec3_t		alias_forward, alias_right, alias_up;
 
-static maliasskindesc_t	*pskindesc;
-
 int				r_amodels_drawn;
 int				a_skinwidth;
 int				r_anumverts;
@@ -99,8 +97,8 @@ void R_AliasCheckBBoxFrame (int frame, trivertx_t **mins, trivertx_t **maxs)
 	}
 	else
 	{
-		paliasgroup = (maliasgroup_t *) ((byte *) paliashdr + paliashdr->frames[frame].frame);
-		pintervals = (float *) ((byte *) paliashdr + paliasgroup->intervals);
+		paliasgroup = (maliasgroup_t *)paliashdr->frames[frame].frame;
+		pintervals = paliasgroup->intervals;
 		numframes = paliasgroup->numframes;
 		fullinterval = pintervals[numframes - 1];
 
@@ -515,6 +513,7 @@ void R_AliasSetupSkin (entity_t *ent)
 {
 	byte *base;
 	int skinnum, i, numskins;
+	maliasskindesc_t *pskindesc;
 	maliasskingroup_t *paliasskingroup;
 	float *pskinintervals, fullskininterval, skintargettime, skintime;
 
@@ -525,7 +524,7 @@ void R_AliasSetupSkin (entity_t *ent)
 		skinnum = 0;
 	}
 
-	pskindesc = ((maliasskindesc_t *) ((byte *) paliashdr + paliashdr->skindesc)) + skinnum;
+	pskindesc = paliashdr->skindesc + skinnum;
 	a_skinwidth = pmdl->skinwidth;
 
 	if (pskindesc->type == ALIAS_SKIN_GROUP)
@@ -644,12 +643,12 @@ void R_AliasSetupFrameVerts (int frame, trivertx_t **verts)
 
 	if (paliashdr->frames[frame].type == ALIAS_SINGLE)
 	{
-		*verts = (trivertx_t *) ((byte *) paliashdr + paliashdr->frames[frame].frame);
+		*verts = paliashdr->frames[frame].frame;
 	}
 	else
 	{
-		paliasgroup = (maliasgroup_t *) ((byte *)paliashdr + paliashdr->frames[frame].frame);
-		pintervals = (float *) ((byte *) paliashdr + paliasgroup->intervals);
+		paliasgroup = (maliasgroup_t *)paliashdr->frames[frame].frame;
+		pintervals = paliasgroup->intervals;
 		numframes = paliasgroup->numframes;
 		fullinterval = pintervals[numframes - 1];
 
@@ -662,7 +661,7 @@ void R_AliasSetupFrameVerts (int frame, trivertx_t **verts)
 			if (pintervals[i] > targettime)
 				break;
 		}
-		*verts = (trivertx_t *) ((byte *) paliashdr + paliasgroup->frames[i].frame);
+		*verts = paliasgroup->frames[i].frame;
 	}
 }
 
