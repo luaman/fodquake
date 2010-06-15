@@ -305,6 +305,7 @@ void R_Shutdown()
 {
 	R_ShutdownParticles();
 	R_ShutdownTextures();
+	free(surfacememory);
 	free(auxedges);
 }
 
