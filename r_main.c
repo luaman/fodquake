@@ -39,7 +39,6 @@ mvertex_t	*r_pcurrentvertbase;
 
 int			c_surf;
 int			r_maxsurfsseen, r_maxedgesseen, r_cnumsurfs;
-qboolean	r_surfsonstack;
 int			r_clipflags;
 
 byte		*r_warpbuffer;
@@ -228,6 +227,8 @@ void R_CvarInit(void)
 	Cvar_SetValue (&r_maxsurfs, (float) NUMSTACKSURFACES);
 }
 
+static void *surfacememory;
+
 int R_Init(void)
 {
 	int dummy;
@@ -245,23 +246,54 @@ int R_Init(void)
 	r_refdef.xOrigin = XCENTERING;
 	r_refdef.yOrigin = YCENTERING;
 
-	if (R_InitTextures())
+	r_numallocatededges = r_maxedges.value;
+
+	if (r_numallocatededges < MINEDGES)
+		r_numallocatededges = MINEDGES;
+
+	auxedges = malloc(r_numallocatededges * sizeof(*auxedges) + (CACHE_SIZE - 1));
+	if (auxedges)
 	{
-		if (R_InitParticles())
+		r_cnumsurfs = r_maxsurfs.value;
+
+		if (r_cnumsurfs <= MINSURFACES)
+			r_cnumsurfs = MINSURFACES;
+
+		surfacememory = malloc(r_cnumsurfs * sizeof(surf_t) + (CACHE_SIZE - 1));
+		if (surfacememory)
 		{
+			surfaces = (void *)((((long)surfacememory) + CACHE_SIZE - 1) & ~(CACHE_SIZE - 1));
+			surface_p = surfaces;
+			surf_max = &surfaces[r_cnumsurfs];
+			// surface 0 doesn't really exist; it's just a dummy because index 0
+			// is used to indicate no edge attached to surface
+			surfaces--;
+#ifdef id386
+			R_SurfacePatch ();
+#endif
+			if (R_InitTextures())
+			{
+				if (R_InitParticles())
+				{
 // TODO: collect 386-specific code in one place
 #if	id386
-			Sys_MakeCodeWriteable ((long) R_EdgeCodeStart, (long) R_EdgeCodeEnd - (long) R_EdgeCodeStart);
+					Sys_MakeCodeWriteable ((long) R_EdgeCodeStart, (long) R_EdgeCodeEnd - (long) R_EdgeCodeStart);
 #endif	// id386
 
-			D_Init ();
+					D_Init ();
 
-			Draw_Init();
+					Draw_Init();
 
-			return 1;
+					return 1;
+				}
+
+				R_ShutdownTextures();
+			}
+
+			free(surfacememory);
 		}
 
-		R_ShutdownTextures();
+		free(auxedges);
 	}
 
 	Sys_Error("R_Init() failed.");
@@ -273,6 +305,7 @@ void R_Shutdown()
 {
 	R_ShutdownParticles();
 	R_ShutdownTextures();
+	free(auxedges);
 }
 
 void R_PreMapLoad(char *name) {
@@ -293,35 +326,8 @@ void R_NewMap (void) {
 	r_viewleaf = NULL;
 	R_ClearParticles ();
 
-	r_cnumsurfs = r_maxsurfs.value;
-
-	if (r_cnumsurfs <= MINSURFACES)
-		r_cnumsurfs = MINSURFACES;
-
-	if (r_cnumsurfs > NUMSTACKSURFACES)	{
-		surfaces = Hunk_AllocName (r_cnumsurfs * sizeof(surf_t), "surfaces");
-		surface_p = surfaces;
-		surf_max = &surfaces[r_cnumsurfs];
-		r_surfsonstack = false;
-		// surface 0 doesn't really exist; it's just a dummy because index 0
-		// is used to indicate no edge attached to surface
-		surfaces--;
-#ifdef id386
-		R_SurfacePatch ();
-#endif
-	} else {
-		r_surfsonstack = true;
-	}
-
 	r_maxedgesseen = 0;
 	r_maxsurfsseen = 0;
-
-	r_numallocatededges = r_maxedges.value;
-
-	if (r_numallocatededges < MINEDGES)
-		r_numallocatededges = MINEDGES;
-
-	auxedges = (r_numallocatededges <= NUMSTACKEDGES) ? NULL : Hunk_AllocName (r_numallocatededges * sizeof(edge_t), "edges");
 
 	r_dowarpold = false;
 	r_viewchanged = false;
@@ -734,24 +740,7 @@ void R_DrawBEntitiesOnList (visentlist_t *vislist) {
 }
 
 void R_EdgeDrawing (void) {
-	edge_t	ledges[NUMSTACKEDGES + ((CACHE_SIZE - 1) / sizeof(edge_t)) + 1];
-	surf_t	lsurfs[NUMSTACKSURFACES + ((CACHE_SIZE - 1) / sizeof(surf_t)) + 1];
-
-	if (auxedges)
-		r_edges = auxedges;
-	else
-		r_edges =  (edge_t *) (((long) &ledges[0] + CACHE_SIZE - 1) & ~(CACHE_SIZE - 1));
-
-	if (r_surfsonstack) {
-		surfaces =  (surf_t *) (((long) &lsurfs[0] + CACHE_SIZE - 1) & ~(CACHE_SIZE - 1));
-		surf_max = &surfaces[r_cnumsurfs];
-		// surface 0 doesn't really exist; it's just a dummy because index 0
-		// is used to indicate no edge attached to surface
-		surfaces--;
-#ifdef id386
-		R_SurfacePatch ();
-#endif
-	}
+	r_edges = (void *)((((long)auxedges) + CACHE_SIZE - 1) & ~(CACHE_SIZE - 1));
 
 	R_BeginEdgeFrame ();
 
