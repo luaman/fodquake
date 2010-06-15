@@ -143,8 +143,6 @@ sfxcache_t *S_LoadSound(sfx_t *s)
 
 			len = len * info.width * info.channels;
 
-			printf("%d bytes in %s\n", len, namebuffer);
-
 			sc = malloc(len + sizeof(sfxcache_t));
 			if (sc)
 			{
