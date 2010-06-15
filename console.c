@@ -143,17 +143,24 @@ void Con_CheckResize(unsigned int pixelwidth)
 		if (con_linewidth < numchars)
 			numchars = con_linewidth;
 
-		tempbuf = Hunk_TempAlloc(con.maxsize);
-		memcpy (tempbuf, con.text, con.maxsize);
+		tempbuf = malloc(con.maxsize);
+		if (tempbuf)
+			memcpy (tempbuf, con.text, con.maxsize);
+
 		memset (con.text, ' ', con.maxsize);
 
-		for (i = 0; i < numlines; i++)
+		if (tempbuf)
 		{
-			for (j = 0; j < numchars; j++)
+			for (i = 0; i < numlines; i++)
 			{
-				con.text[(con_totallines - 1 - i) * con_linewidth + j] =
-					tempbuf[((con.current - i + oldtotallines) % oldtotallines) * oldwidth + j];
+				for (j = 0; j < numchars; j++)
+				{
+					con.text[(con_totallines - 1 - i) * con_linewidth + j] =
+						tempbuf[((con.current - i + oldtotallines) % oldtotallines) * oldwidth + j];
+				}
 			}
+
+			free(tempbuf);
 		}
 
 		Con_ClearNotify ();
