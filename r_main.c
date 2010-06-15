@@ -924,9 +924,6 @@ void R_RenderView (void)
 	if (delta < -10000 || delta > 10000)
 		Sys_Error ("R_RenderView: called without enough stack");
 
-	if (Hunk_LowMark() & 3)
-		Sys_Error ("Hunk is misaligned");
-
 	if ((long) (&dummy) & 3)
 		Sys_Error ("Stack is misaligned");
 

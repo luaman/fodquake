@@ -63,7 +63,6 @@ qboolean	dedicated = false;
 
 double		curtime;
 
-static int	host_hunklevel;
 static void	*host_membase;
 
 qboolean	host_initialized;	// true if into command execution
@@ -158,13 +157,6 @@ void Host_ClearMemory(void)
 	D_FlushCaches();
 #endif
 	Mod_ClearBrushesSprites();
-
-	// any data previously allocated on hunk is no longer valid
-	Hunk_FreeToLowMark(host_hunklevel);
-
-#ifndef CLIENTONLY
-	server_hunklevel = host_hunklevel;
-#endif
 }
 
 void Host_Frame(double time)
@@ -325,12 +317,6 @@ void Host_Init(int argc, char **argv, int default_memsize)
 #ifndef SERVERONLY
 	if (!dedicated)
 		CL_SaveArgv(argc, argv);
-#endif
-
-	Hunk_AllocName(0, "-HOST_HUNKLEVEL-");
-	host_hunklevel = Hunk_LowMark();
-#ifndef CLIENTONLY
-	server_hunklevel = host_hunklevel;
 #endif
 
 	host_initialized = true;

@@ -25,8 +25,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "filesystem.h"
 #include "crc.h"
 
-int server_hunklevel;
-
 serverPersistent_t	svs;	// persistent server info
 server_t sv;				// local server
 
@@ -422,8 +420,5 @@ void SV_SpawnServer (char *server, qboolean devmap)
 
 	Info_SetValueForKey (svs.info, "map", sv.name, MAX_SERVERINFO_STRING);
 	Com_DPrintf ("Server spawned.\n");
-
-	Hunk_AllocName(0, "-SERVER_HUNKLEVEL-");
-	server_hunklevel = Hunk_LowMark();
 }
 

@@ -199,7 +199,6 @@ void VID_Restart(void)
 	Host_ClearMemory();
 #else
 	Mod_ClearAll();
-	Hunk_FreeToLowMark(server_hunklevel);
 #endif
 	VID_Open();
 	
