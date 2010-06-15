@@ -92,8 +92,6 @@ int		d_lightstylevalue[256];	// 8.8 fraction of base light value
 float	dp_time1, dp_time2, db_time1, db_time2, rw_time1, rw_time2;
 float	se_time1, se_time2, de_time1, de_time2, dv_time1, dv_time2;
 
-void R_MarkLeaves (void);
-
 cvar_t	r_draworder = {"r_draworder", "0"};
 cvar_t	r_speeds = {"r_speeds", "0"};
 cvar_t	r_timegraph = {"r_timegraph", "0"};
@@ -129,7 +127,7 @@ extern cvar_t	scr_fov;
 void R_NetGraph (void);
 void R_ZGraph (void);
 
-int R_InitTextures(void)
+static int R_InitTextures(void)
 {
 	int x,y, m;
 	byte *dest;
@@ -166,7 +164,7 @@ int R_InitTextures(void)
 	return 0;
 }
 
-void R_ShutdownTextures()
+static void R_ShutdownTextures()
 {
 	free(r_notexture_mip);
 }
@@ -225,6 +223,17 @@ void R_CvarInit(void)
 
 	Cvar_SetValue (&r_maxedges, (float) NUMSTACKEDGES);
 	Cvar_SetValue (&r_maxsurfs, (float) NUMSTACKSURFACES);
+}
+
+static void R_InitTurb(void)
+{
+	int i;
+
+	for (i = 0; i < MAXWIDTH + CYCLE; i++)
+	{
+		sintable[i] = AMP + sin(i * M_PI * 2 / CYCLE) * AMP;
+		intsintable[i] = AMP2 + sin(i * M_PI * 2 / CYCLE) * AMP2;	// AMP2, not 20
+	}
 }
 
 static void *surfacememory;
@@ -314,7 +323,7 @@ void R_PreMapLoad(char *name)
 	Cvar_ForceSet (&mapname, name);
 }
 
-void R_NewMap (void)
+void R_NewMap(void)
 {
 	int i;
 
@@ -336,7 +345,7 @@ void R_NewMap (void)
 	r_viewchanged = false;
 }
 
-void R_SetVrect (vrect_t *pvrectin, vrect_t *pvrect, int lineadj)
+void R_SetVrect(vrect_t *pvrectin, vrect_t *pvrect, int lineadj)
 {
 	int h;
 	float size;
@@ -392,7 +401,7 @@ void R_SetVrect (vrect_t *pvrectin, vrect_t *pvrect, int lineadj)
 
 //Called every time the vid structure or r_refdef changes.
 //Guaranteed to be called before the first refresh
-void R_ViewChanged (vrect_t *pvrect, int lineadj, float aspect)
+void R_ViewChanged(vrect_t *pvrect, int lineadj, float aspect)
 {
 	int i;
 	float res_scale;
@@ -500,7 +509,7 @@ void R_ViewChanged (vrect_t *pvrect, int lineadj, float aspect)
 	D_ViewChanged ();
 }
 
-void R_MarkLeaves (void)
+static void R_MarkLeaves(void)
 {
 	byte *vis;
 	mnode_t *node;
@@ -530,7 +539,7 @@ void R_MarkLeaves (void)
 	}
 }
 
-void R_DrawEntitiesOnList (visentlist_t *vislist)
+static void R_DrawEntitiesOnList(visentlist_t *vislist)
 {
 	int i;
 
@@ -553,7 +562,7 @@ void R_DrawEntitiesOnList (visentlist_t *vislist)
 	}
 }
 
-void R_DrawViewModel (void)
+static void R_DrawViewModel(void)
 {
 	centity_t *cent;
 	static entity_t gun;
@@ -608,7 +617,7 @@ void R_DrawViewModel (void)
 	R_AliasDrawModel (currententity);
 }
 
-int R_BmodelCheckBBox (model_t *clmodel, float *minmaxs)
+static int R_BmodelCheckBBox(model_t *clmodel, float *minmaxs)
 {
 	int i, *pindex, clipflags;
 	vec3_t acceptpt, rejectpt;
@@ -665,7 +674,7 @@ int R_BmodelCheckBBox (model_t *clmodel, float *minmaxs)
 	return clipflags;
 }
 
-mnode_t *R_FindTopNode (vec3_t mins, vec3_t maxs)
+static mnode_t *R_FindTopNode(vec3_t mins, vec3_t maxs)
 {
 	mplane_t *splitplane;
 	int sides;
@@ -697,7 +706,7 @@ mnode_t *R_FindTopNode (vec3_t mins, vec3_t maxs)
 	}
 }
 
-void R_DrawBEntitiesOnList (visentlist_t *vislist)
+static void R_DrawBEntitiesOnList(visentlist_t *vislist)
 {
 	int i, k, clipflags;
 	vec3_t oldorigin;
@@ -780,7 +789,7 @@ void R_DrawBEntitiesOnList (visentlist_t *vislist)
 	insubmodel = false;
 }
 
-void R_EdgeDrawing (void)
+static void R_EdgeDrawing(void)
 {
 	r_edges = (void *)((((long)auxedges) + CACHE_SIZE - 1) & ~(CACHE_SIZE - 1));
 
@@ -816,7 +825,7 @@ void R_EdgeDrawing (void)
 }
 
 //r_refdef must be set before the first call
-void R_RenderView_ (void)
+static void R_RenderView_(void)
 {
 	byte warpbuffer[WARP_WIDTH * WARP_HEIGHT];
 
@@ -934,13 +943,3 @@ void R_RenderView (void)
 	R_RenderView_ ();
 }
 
-void R_InitTurb (void)
-{
-	int i;
-
-	for (i = 0; i < MAXWIDTH + CYCLE; i++)
-	{
-		sintable[i] = AMP + sin(i * M_PI * 2 / CYCLE) * AMP;
-		intsintable[i] = AMP2 + sin(i * M_PI * 2 / CYCLE) * AMP2;	// AMP2, not 20
-	}
-}

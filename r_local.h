@@ -170,8 +170,6 @@ extern int			vstartscan;
 extern int		r_currentkey;
 extern int		r_currentbkey;
 
-void	R_InitTurb (void);
-
 //=========================================================
 // Alias models
 //=========================================================
