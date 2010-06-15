@@ -117,8 +117,7 @@ sfxcache_t *S_LoadSound(sfx_t *s)
 		return s->sfxcache;
 
 // load it in
-	strcpy(namebuffer, "sound/");
-	strcat(namebuffer, s->name);
+	snprintf(namebuffer, sizeof(namebuffer), "sound/%s", s->name);
 
 	data = FS_LoadStackFile (namebuffer, stackbuf, sizeof(stackbuf));
 
