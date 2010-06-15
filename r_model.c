@@ -371,7 +371,6 @@ static model_t *Mod_FindName(const char *name)
 model_t *Mod_LoadModel (model_t *mod, qboolean crash)
 {
 	unsigned *buf;
-	byte stackbuf[1024];		// avoid dirtying the cache heap
 
 	if (!mod->needload)
 	{
@@ -389,7 +388,7 @@ model_t *Mod_LoadModel (model_t *mod, qboolean crash)
 	// because the world is so huge, load it one piece at a time
 
 	// load the file
-	buf = (unsigned *) FS_LoadStackFile (mod->name, stackbuf, sizeof(stackbuf));
+	buf = (unsigned *)FS_LoadMallocFile(mod->name);
 	if (!buf)
 	{
 		if (crash)
@@ -418,6 +417,8 @@ model_t *Mod_LoadModel (model_t *mod, qboolean crash)
 		Mod_LoadBrushModel (mod, buf);
 		break;
 	}
+
+	free(buf);
 
 	return mod;
 }

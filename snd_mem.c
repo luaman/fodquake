@@ -119,41 +119,49 @@ sfxcache_t *S_LoadSound(sfx_t *s)
 // load it in
 	snprintf(namebuffer, sizeof(namebuffer), "sound/%s", s->name);
 
-	data = FS_LoadStackFile (namebuffer, stackbuf, sizeof(stackbuf));
+	data = FS_LoadMallocFile(namebuffer);
+
+	sc = 0;
 
 	if (!data)
 	{
 		Com_Printf ("Couldn't load %s\n", namebuffer);
-		return NULL;
 	}
-
-	FMod_CheckModel(namebuffer, data, com_filesize);
-
-	info = GetWavinfo (s->name, data, com_filesize);
-	if (info.channels != 1)
+	else
 	{
-		Com_Printf ("%s is a stereo sample\n",s->name);
-		return NULL;
+		FMod_CheckModel(namebuffer, data, com_filesize);
+
+		info = GetWavinfo (s->name, data, com_filesize);
+		if (info.channels != 1)
+		{
+			Com_Printf ("%s is a stereo sample\n",s->name);
+		}
+		else
+		{
+			stepscale = (float)info.rate / soundcard->speed;
+			len = info.samples / stepscale;
+
+			len = len * info.width * info.channels;
+
+			printf("%d bytes in %s\n", len, namebuffer);
+
+			sc = malloc(len + sizeof(sfxcache_t));
+			if (sc)
+			{
+				sc->length = info.samples;
+				sc->loopstart = info.loopstart;
+				sc->speed = info.rate;
+				sc->width = info.width;
+				sc->stereo = info.channels;
+
+				s->sfxcache = sc;
+
+				ResampleSfx (s, sc->speed, sc->width, data + info.dataofs);
+			}
+		}
+
+		free(data);
 	}
-
-	stepscale = (float)info.rate / soundcard->speed;
-	len = info.samples / stepscale;
-
-	len = len * info.width * info.channels;
-
-	sc = malloc(len + sizeof(sfxcache_t));
-	if (!sc)
-		return NULL;
-
-	sc->length = info.samples;
-	sc->loopstart = info.loopstart;
-	sc->speed = info.rate;
-	sc->width = info.width;
-	sc->stereo = info.channels;
-
-	s->sfxcache = sc;
-
-	ResampleSfx (s, sc->speed, sc->width, data + info.dataofs);
 
 	return sc;
 }

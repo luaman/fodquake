@@ -218,14 +218,15 @@ static void SV_CalcPHS(void)
 
 unsigned SV_CheckModel(char *mdl)
 {
-	byte stackbuf[1024];		// avoid dirtying the cache heap
 	byte *buf;
 	unsigned short crc;
 
-	buf = (byte *) FS_LoadStackFile (mdl, stackbuf, sizeof(stackbuf));
+	buf = (byte *) FS_LoadMallocFile(mdl);
 	if (!buf)
 		Host_Error ("SV_CheckModel: could not load %s\n", mdl);
 	crc = CRC_Block(buf, com_filesize);
+
+	free(buf);
 
 	return crc;
 }

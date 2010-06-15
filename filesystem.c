@@ -217,8 +217,6 @@ int FS_FOpenFile(char *filename, FILE ** file)
 
 //Filename are relative to the quake directory.
 //Always appends a 0 byte to the loaded data.
-static byte *loadbuf;
-static int loadsize;
 static byte *FS_LoadFile(char *path, int usehunk)
 {
 	FILE *h;
@@ -240,13 +238,6 @@ static byte *FS_LoadFile(char *path, int usehunk)
 	if (usehunk == 0)
 	{
 		buf = Z_Malloc(len + 1);
-	}
-	else if (usehunk == 4)
-	{
-		if (len + 1 > loadsize)
-			buf = Hunk_TempAlloc(len + 1);
-		else
-			buf = loadbuf;
 	}
 	else if (usehunk == 5)
 	{
@@ -281,18 +272,6 @@ static byte *FS_LoadFile(char *path, int usehunk)
 void *FS_LoadZFile(char *path)
 {
 	return FS_LoadFile(path, 0);
-}
-
-// uses temp hunk if larger than bufsize
-void *FS_LoadStackFile(char *path, void *buffer, int bufsize)
-{
-	byte *buf;
-
-	loadbuf = (byte *) buffer;
-	loadsize = bufsize;
-	buf = FS_LoadFile(path, 4);
-
-	return buf;
 }
 
 void *FS_LoadMallocFile(char *path)
