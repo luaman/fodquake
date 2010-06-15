@@ -267,7 +267,7 @@ int main(int argc, char **argv)
 #endif
 	}
 
-	Host_Init(argc, argv, 16 * 1024 * 1024);
+	Host_Init(argc, argv);
 
 	checkmousepoll();
 

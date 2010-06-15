@@ -119,10 +119,8 @@ void Host_Error(char *error, ...)
 }
 
 //memsize is the recommended amount of memory to use for hunk
-static void Host_InitMemory(int memsize)
+static void Host_InitMemory()
 {
-	int t;
-
 	Memory_Init();
 }
 
@@ -185,7 +183,7 @@ void CL_SaveArgv(int, char **);
 
 int cvarsregged;
 
-void Host_Init(int argc, char **argv, int default_memsize)
+void Host_Init(int argc, char **argv)
 {
 	FILE *f;
 
@@ -193,7 +191,7 @@ void Host_Init(int argc, char **argv, int default_memsize)
 
 	COM_InitArgv(argc, argv);
 
-	Host_InitMemory(default_memsize);
+	Host_InitMemory();
 
 	ReadableChars_Init();
 	Cbuf_Init();

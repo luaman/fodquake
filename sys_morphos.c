@@ -287,7 +287,7 @@ int main(int argc, char **argv)
 
 	COM_InitArgv(argc, argv);
 
-	Host_Init(argc, argv, 16*1024*1024);
+	Host_Init(argc, argv);
 
 	oldtime = Sys_DoubleTime();
 	while((SetSignal(0, 0)&SIGBREAKF_CTRL_C) == 0)

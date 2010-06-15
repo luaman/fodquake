@@ -358,7 +358,7 @@ extern double		curtime;	// not bounded or scaled, shared by local client and ser
 // host
 extern qboolean		host_initialized;
 
-void Host_Init (int argc, char **argv, int default_memsize);
+void Host_Init (int argc, char **argv);
 void Host_ClearMemory ();
 void Host_Shutdown (void);
 void Host_Frame (double time);
