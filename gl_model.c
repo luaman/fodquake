@@ -253,6 +253,8 @@ void Mod_ClearBrushesSprites(void)
 		{
 			if (mod->type == mod_brush)
 				Mod_FreeBrushData(mod);
+			else if (mod->type == mod_sprite)
+				Mod_FreeSpriteData(mod);
 
 			mod->needload = true;
 		}
