@@ -255,12 +255,6 @@ void S_CvarInit(void)
 	Cmd_AddCommand("soundlist", S_SoundList_f);
 	Cmd_AddCommand("soundinfo", S_SoundInfo_f);
 
-	if (host_memsize < 0x800000)
-	{
-		Cvar_Set (&s_loadas8bit, "1");
-		Com_Printf ("loading all sounds as 8bit\n");
-	}
-
 	for(i=0;i<NUMSOUNDDRIVERS;i++)
 	{
 		if (*sounddrivers[i].cvarinit)

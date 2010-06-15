@@ -35,6 +35,8 @@ Version 0.3
 - Removed the last remnants of the obscurity module nonsense. As a result the
   'auth_validate', 'auth_viewcrc' and 'auth_warninvalid' cvars and the
   'validate_clients' command have been removed.
+- Completely removed the Quake hunk memory system. The command line arguments
+  '-minmemory', '-heapsize' and '­mem' are now obsolete and have been removed.
 
 Version 0.2
 ===========

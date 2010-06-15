@@ -63,10 +63,7 @@ qboolean	dedicated = false;
 
 double		curtime;
 
-static void	*host_membase;
-
 qboolean	host_initialized;	// true if into command execution
-int			host_memsize;
 
 static jmp_buf 	host_abort;
 
@@ -126,27 +123,12 @@ static void Host_InitMemory(int memsize)
 {
 	int t;
 
-	if (COM_CheckParm("-minmemory"))
-		memsize = MINIMUM_MEMORY;
-
-	if ((t = COM_CheckParm("-heapsize")) != 0 && t + 1 < com_argc)
-		memsize = Q_atoi (com_argv[t + 1]) * 1024;
-
-	if ((t = COM_CheckParm("-mem")) != 0 && t + 1 < com_argc)
-		memsize = Q_atoi (com_argv[t + 1]) * 1024 * 1024;
-
-	if (memsize < MINIMUM_MEMORY)
-		Sys_Error("Only %4.1f megs of memory reported, can't execute game", memsize / (float)0x100000);
-
-	host_memsize = memsize;
-	host_membase = Q_Malloc (host_memsize);
-	Memory_Init(host_membase, host_memsize);
+	Memory_Init();
 }
 
 static void Host_ShutdownMemory()
 {
 	Memory_Shutdown();
-	free(host_membase);
 }
 
 //Free hunk memory up to host_hunklevel
@@ -324,7 +306,6 @@ void Host_Init(int argc, char **argv, int default_memsize)
 	Cmd_EnableFunctionExecution();
 
 	Com_Printf("Exe: "__TIME__" "__DATE__"\n");
-	Com_Printf("Hunk allocation: %4.1f MB.\n", (float) host_memsize / (1024 * 1024));
 
 	Com_Printf("\nFodQuake version %s\n\n", VersionString());
 

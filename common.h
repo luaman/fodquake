@@ -55,8 +55,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 //============================================================================
 
-#define	MINIMUM_MEMORY	0x550000
-
 #define	MAX_QPATH		64			// max length of a quake game pathname
 #define	MAX_OSPATH		128			// max length of a filesystem pathname
 
@@ -359,7 +357,6 @@ extern double		curtime;	// not bounded or scaled, shared by local client and ser
 
 // host
 extern qboolean		host_initialized;
-extern int			host_memsize;
 
 void Host_Init (int argc, char **argv, int default_memsize);
 void Host_ClearMemory ();
