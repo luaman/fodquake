@@ -308,11 +308,13 @@ void R_Shutdown()
 	free(auxedges);
 }
 
-void R_PreMapLoad(char *name) {
+void R_PreMapLoad(char *name)
+{
 	Cvar_ForceSet (&mapname, name);
 }
 
-void R_NewMap (void) {
+void R_NewMap (void)
+{
 	int i;
 
 	memset (&r_worldentity, 0, sizeof(r_worldentity));
@@ -333,19 +335,24 @@ void R_NewMap (void) {
 	r_viewchanged = false;
 }
 
-void R_SetVrect (vrect_t *pvrectin, vrect_t *pvrect, int lineadj) {
+void R_SetVrect (vrect_t *pvrectin, vrect_t *pvrect, int lineadj)
+{
 	int h;
 	float size;
 	qboolean full = false;
 
-	if (scr_viewsize.value >= 100.0) {
+	if (scr_viewsize.value >= 100.0)
+	{
 		size = 100.0;
 		full = true;
-	} else {
+	}
+	else
+	{
 		size = scr_viewsize.value;
 	}
 
-	if (cl.intermission) {
+	if (cl.intermission)
+	{
 		full = true;
 		size = 100.0;
 		lineadj = 0;
@@ -356,16 +363,20 @@ void R_SetVrect (vrect_t *pvrectin, vrect_t *pvrect, int lineadj) {
 
 	pvrect->width = full ? pvrectin->width : pvrectin->width * size;
 
-	if (pvrect->width < 96) {
+	if (pvrect->width < 96)
+	{
 		size = 96.0 / pvrectin->width;
 		pvrect->width = 96;	// min for icons
 	}
 	pvrect->width &= ~7;
 	pvrect->height = pvrectin->height * size;
-	if (cl_sbar.value || !full) {
+	if (cl_sbar.value || !full)
+	{
 		if (pvrect->height > pvrectin->height - lineadj)
 			pvrect->height = pvrectin->height - lineadj;
-	} else if (pvrect->height > pvrectin->height) {
+	}
+	else if (pvrect->height > pvrectin->height)
+	{
 			pvrect->height = pvrectin->height;
 	}
 
@@ -380,7 +391,8 @@ void R_SetVrect (vrect_t *pvrectin, vrect_t *pvrect, int lineadj) {
 
 //Called every time the vid structure or r_refdef changes.
 //Guaranteed to be called before the first refresh
-void R_ViewChanged (vrect_t *pvrect, int lineadj, float aspect) {
+void R_ViewChanged (vrect_t *pvrect, int lineadj, float aspect)
+{
 	int i;
 	float res_scale;
 
@@ -413,7 +425,7 @@ void R_ViewChanged (vrect_t *pvrect, int lineadj, float aspect) {
 	pixelAspect = aspect;
 	xOrigin = r_refdef.xOrigin;
 	yOrigin = r_refdef.yOrigin;
-	
+
 	screenAspect = r_refdef.vrect.width*pixelAspect /
 			r_refdef.vrect.height;
 	// 320 * 200 1.0 pixelAspect = 1.6 screenAspect
@@ -447,26 +459,26 @@ void R_ViewChanged (vrect_t *pvrect, int lineadj, float aspect) {
 	screenedge[0].normal[1] = 0;
 	screenedge[0].normal[2] = 1;
 	screenedge[0].type = PLANE_ANYZ;
-	
+
 	// right side clip
 	screenedge[1].normal[0] =
 			1.0 / ((1.0 - xOrigin) * r_refdef.horizontalFieldOfView);
 	screenedge[1].normal[1] = 0;
 	screenedge[1].normal[2] = 1;
 	screenedge[1].type = PLANE_ANYZ;
-	
+
 	// top side clip
 	screenedge[2].normal[0] = 0;
 	screenedge[2].normal[1] = -1.0 / (yOrigin * verticalFieldOfView);
 	screenedge[2].normal[2] = 1;
 	screenedge[2].type = PLANE_ANYZ;
-	
+
 	// bottom side clip
 	screenedge[3].normal[0] = 0;
 	screenedge[3].normal[1] = 1.0 / ((1.0 - yOrigin) * verticalFieldOfView);
-	screenedge[3].normal[2] = 1;	
+	screenedge[3].normal[2] = 1;
 	screenedge[3].type = PLANE_ANYZ;
-	
+
 	for (i = 0; i < 4; i++)
 		VectorNormalize (screenedge[i].normal);
 
@@ -487,23 +499,27 @@ void R_ViewChanged (vrect_t *pvrect, int lineadj, float aspect) {
 	D_ViewChanged ();
 }
 
-void R_MarkLeaves (void) {
+void R_MarkLeaves (void)
+{
 	byte *vis;
 	mnode_t *node;
 	int i;
 
 	if (r_oldviewleaf == r_viewleaf)
 		return;
-	
+
 	r_visframecount++;
 	r_oldviewleaf = r_viewleaf;
 
 	vis = Mod_LeafPVS (r_viewleaf, cl.worldmodel);
-		
-	for (i = 0; i < cl.worldmodel->numleafs; i++) {
-		if (vis[i >> 3] & (1 << (i & 7))) {
+
+	for (i = 0; i < cl.worldmodel->numleafs; i++)
+	{
+		if (vis[i >> 3] & (1 << (i & 7)))
+		{
 			node = (mnode_t *) &cl.worldmodel->leafs[i+1];
-			do {
+			do
+			{
 				if (node->visframe == r_visframecount)
 					break;
 				node->visframe = r_visframecount;
@@ -513,16 +529,19 @@ void R_MarkLeaves (void) {
 	}
 }
 
-void R_DrawEntitiesOnList (visentlist_t *vislist) {
+void R_DrawEntitiesOnList (visentlist_t *vislist)
+{
 	int i;
 
 	if (!r_drawentities.value || !vislist->count)
 		return;
 
-	for (i = 0; i < vislist->count; i++) {
+	for (i = 0; i < vislist->count; i++)
+	{
 		currententity = &vislist->list[i];
 
-		switch (currententity->model->type) {
+		switch (currententity->model->type)
+		{
 		case mod_sprite:
 			R_DrawSprite ();
 			break;
@@ -533,7 +552,8 @@ void R_DrawEntitiesOnList (visentlist_t *vislist) {
 	}
 }
 
-void R_DrawViewModel (void) {
+void R_DrawViewModel (void)
+{
 	centity_t *cent;
 	static entity_t gun;
 
@@ -554,7 +574,8 @@ void R_DrawViewModel (void) {
 	VectorCopy(cent->current.angles, gun.angles);
 	gun.colormap = vid.colormap;
 	gun.flags = RF_WEAPONMODEL | RF_NOSHADOW;
-	if (r_lerpmuzzlehack.value) {
+	if (r_lerpmuzzlehack.value)
+	{
 		if (cent->current.modelindex != cl_modelindices[mi_vaxe] &&
 			cent->current.modelindex != cl_modelindices[mi_vbio] &&
 			cent->current.modelindex != cl_modelindices[mi_vgrap] &&
@@ -564,17 +585,20 @@ void R_DrawViewModel (void) {
 			cent->current.modelindex != cl_modelindices[mi_vspan])
 		{
 			extern float r_lerpdistance;
-			gun.flags |= RF_LIMITLERP;			
+			gun.flags |= RF_LIMITLERP;
 			r_lerpdistance =  135;
 		}
 	}
 
 
 	gun.frame = cent->current.frame;
-	if (cent->frametime >= 0 && cent->frametime <= cl.time) {
+	if (cent->frametime >= 0 && cent->frametime <= cl.time)
+	{
 		gun.oldframe = cent->oldframe;
 		gun.framelerp = (cl.time - cent->frametime) * 10;
-	} else {
+	}
+	else
+	{
 		gun.oldframe = gun.frame;
 		gun.framelerp = -1;
 	}
@@ -583,15 +607,18 @@ void R_DrawViewModel (void) {
 	R_AliasDrawModel (currententity);
 }
 
-int R_BmodelCheckBBox (model_t *clmodel, float *minmaxs) {
+int R_BmodelCheckBBox (model_t *clmodel, float *minmaxs)
+{
 	int i, *pindex, clipflags;
 	vec3_t acceptpt, rejectpt;
 	double d;
 
 	clipflags = 0;
 
-	if (currententity->angles[0] || currententity->angles[1] || currententity->angles[2]) {
-		for (i = 0; i < 4; i++) {
+	if (currententity->angles[0] || currententity->angles[1] || currententity->angles[2])
+	{
+		for (i = 0; i < 4; i++)
+		{
 			d = DotProduct (currententity->origin, view_clipplanes[i].normal);
 			d -= view_clipplanes[i].dist;
 
@@ -601,8 +628,11 @@ int R_BmodelCheckBBox (model_t *clmodel, float *minmaxs) {
 			if (d <= clmodel->radius)
 				clipflags |= (1 << i);
 		}
-	} else {
-		for (i = 0; i < 4; i++) {
+	}
+	else
+	{
+		for (i = 0; i < 4; i++)
+		{
 			// generate accept and reject points
 			// FIXME: do with fast look-ups or integer tests based on the sign bit
 			// of the floating point values
@@ -612,7 +642,7 @@ int R_BmodelCheckBBox (model_t *clmodel, float *minmaxs) {
 			rejectpt[0] = minmaxs[pindex[0]];
 			rejectpt[1] = minmaxs[pindex[1]];
 			rejectpt[2] = minmaxs[pindex[2]];
-			
+
 			d = DotProduct (rejectpt, view_clipplanes[i].normal);
 			d -= view_clipplanes[i].dist;
 
@@ -634,18 +664,21 @@ int R_BmodelCheckBBox (model_t *clmodel, float *minmaxs) {
 	return clipflags;
 }
 
-mnode_t *R_FindTopNode (vec3_t mins, vec3_t maxs) {
+mnode_t *R_FindTopNode (vec3_t mins, vec3_t maxs)
+{
 	mplane_t *splitplane;
 	int sides;
 	mnode_t *node;
 
 	node = cl.worldmodel->nodes;
 
-	while (1) {
+	while (1)
+	{
 		if (node->visframe != r_visframecount)
 			return NULL;		// not visible at all
 
-		if (node->contents < 0) {
+		if (node->contents < 0)
+		{
 			if (node->contents != CONTENTS_SOLID)
 				return node; // we've reached a non-solid leaf, so it's
 							//  visible and not BSP clipped
@@ -663,7 +696,8 @@ mnode_t *R_FindTopNode (vec3_t mins, vec3_t maxs) {
 	}
 }
 
-void R_DrawBEntitiesOnList (visentlist_t *vislist) {
+void R_DrawBEntitiesOnList (visentlist_t *vislist)
+{
 	int i, k, clipflags;
 	vec3_t oldorigin;
 	model_t *clmodel;
@@ -677,7 +711,8 @@ void R_DrawBEntitiesOnList (visentlist_t *vislist) {
 	insubmodel = true;
 	r_dlightframecount = r_framecount;
 
-	for (i = 0; i < vislist->count; i++) {
+	for (i = 0; i < vislist->count; i++)
+	{
 		currententity = &vislist->list[i];
 		clmodel = currententity->model;
 
@@ -702,8 +737,10 @@ void R_DrawBEntitiesOnList (visentlist_t *vislist) {
 		R_RotateBmodel ();
 
 		// calculate dynamic lighting for bmodel if it's not an instanced model
-		if (clmodel->firstmodelsurface != 0) {
-			for (k = 0; k < MAX_DLIGHTS; k++) {
+		if (clmodel->firstmodelsurface != 0)
+		{
+			for (k = 0; k < MAX_DLIGHTS; k++)
+			{
 				if (cl_dlights[k].die < cl.time || !cl_dlights[k].radius)
 					continue;
 
@@ -714,11 +751,14 @@ void R_DrawBEntitiesOnList (visentlist_t *vislist) {
 
 		currententity->topnode = topnode;
 
-		if (topnode->contents >= 0) {
+		if (topnode->contents >= 0)
+		{
 			// not a leaf; has to be clipped to the world BSP
 			r_clipflags = clipflags;
 			R_DrawSolidClippedSubmodelPolygons (clmodel);
-		} else {
+		}
+		else
+		{
 			// falls entirely in one leaf, so we just put all the
 			// edges in the edge list and let 1/z sorting handle drawing order
 			R_DrawSubmodelPolygons (clmodel, clipflags);
@@ -726,7 +766,7 @@ void R_DrawBEntitiesOnList (visentlist_t *vislist) {
 
 		currententity->topnode = NULL;
 
-		// put back world rotation and frustum clipping		
+		// put back world rotation and frustum clipping
 		// FIXME: R_RotateBmodel should just work off base_vxx
 		VectorCopy (base_vpn, vpn);
 		VectorCopy (base_vup, vup);
@@ -739,7 +779,8 @@ void R_DrawBEntitiesOnList (visentlist_t *vislist) {
 	insubmodel = false;
 }
 
-void R_EdgeDrawing (void) {
+void R_EdgeDrawing (void)
+{
 	r_edges = (void *)((((long)auxedges) + CACHE_SIZE - 1) & ~(CACHE_SIZE - 1));
 
 	R_BeginEdgeFrame ();
@@ -749,29 +790,33 @@ void R_EdgeDrawing (void) {
 
 	R_RenderWorld ();
 
-	if (r_dspeeds.value) {
+	if (r_dspeeds.value)
+	{
 		rw_time2 = Sys_DoubleTime ();
 		db_time1 = rw_time2;
 	}
 
 	R_DrawBEntitiesOnList (&cl_visbents);
 
-	if (r_dspeeds.value) {
+	if (r_dspeeds.value)
+	{
 		db_time2 = Sys_DoubleTime ();
 		se_time1 = db_time2;
 	}
 
-	if (!r_dspeeds.value) {
+	if (!r_dspeeds.value)
+	{
 		VID_UnlockBuffer ();
 		S_ExtraUpdate ();	// don't let sound get messed up if going slow
 		VID_LockBuffer ();
 	}
-	
+
 	R_ScanEdges ();
 }
 
 //r_refdef must be set before the first call
-void R_RenderView_ (void) {
+void R_RenderView_ (void)
+{
 	byte warpbuffer[WARP_WIDTH * WARP_HEIGHT];
 
 	r_warpbuffer = warpbuffer;
@@ -792,8 +837,9 @@ void R_RenderView_ (void) {
 
 	if (!r_worldentity.model || !cl.worldmodel)
 		Sys_Error ("R_RenderView: NULL worldmodel");
-		
-	if (!r_dspeeds.value) {
+
+	if (!r_dspeeds.value)
+	{
 		VID_UnlockBuffer ();
 		S_ExtraUpdate ();	// don't let sound get messed up if going slow
 		VID_LockBuffer ();
@@ -801,27 +847,31 @@ void R_RenderView_ (void) {
 
 	R_EdgeDrawing ();
 
-	if (!r_dspeeds.value) {
+	if (!r_dspeeds.value)
+	{
 		VID_UnlockBuffer ();
 		S_ExtraUpdate ();	// don't let sound get messed up if going slow
 		VID_LockBuffer ();
 	}
-	
-	if (r_dspeeds.value) {
+
+	if (r_dspeeds.value)
+	{
 		se_time2 = Sys_DoubleTime ();
 		de_time1 = se_time2;
 	}
 
 	R_DrawEntitiesOnList (&cl_visents);
 
-	if (r_dspeeds.value) {
+	if (r_dspeeds.value)
+	{
 		de_time2 = Sys_DoubleTime ();
 		dv_time1 = de_time2;
 	}
 
 	R_DrawViewModel ();
 
-	if (r_dspeeds.value) {
+	if (r_dspeeds.value)
+	{
 		dv_time2 = Sys_DoubleTime ();
 		dp_time1 = Sys_DoubleTime ();
 	}
@@ -847,7 +897,7 @@ void R_RenderView_ (void) {
 
 	if (r_aliasstats.value)
 		R_PrintAliasStats ();
-		
+
 	if (r_speeds.value)
 		R_PrintTimes ();
 
@@ -866,9 +916,10 @@ void R_RenderView_ (void) {
 #endif
 }
 
-void R_RenderView (void) {
+void R_RenderView (void)
+{
 	int dummy, delta;
-	
+
 	delta = (byte *) &dummy - r_stack_start;
 	if (delta < -10000 || delta > 10000)
 		Sys_Error ("R_RenderView: called without enough stack");
@@ -885,10 +936,12 @@ void R_RenderView (void) {
 	R_RenderView_ ();
 }
 
-void R_InitTurb (void) {
+void R_InitTurb (void)
+{
 	int i;
-	
-	for (i = 0; i < MAXWIDTH + CYCLE; i++) {
+
+	for (i = 0; i < MAXWIDTH + CYCLE; i++)
+	{
 		sintable[i] = AMP + sin(i * M_PI * 2 / CYCLE) * AMP;
 		intsintable[i] = AMP2 + sin(i * M_PI * 2 / CYCLE) * AMP2;	// AMP2, not 20
 	}
