@@ -64,6 +64,7 @@ struct display
 	int scrnum;
 	qboolean doShm; 
 	Display *x_disp;
+	Cursor x_cursor;
 	Colormap x_cmap;
 	Window x_win;
 	GC x_gc;
@@ -526,7 +527,7 @@ void *Sys_Video_Open(const char *mode, unsigned int width, unsigned int height, 
 		}
 
 		// inviso cursor
-		XDefineCursor(d->x_disp, d->x_win, CreateNullCursor(d->x_disp, d->x_win));
+		XDefineCursor(d->x_disp, d->x_win, (d->x_cursor = CreateNullCursor(d->x_disp, d->x_win)));
 
 		// create the GC
 		{
@@ -669,6 +670,11 @@ void Sys_Video_Close(void *display)
 	if (d->vidmode_active)
 		XF86VidModeSwitchToMode(d->x_disp, d->scrnum, &d->origvidmode);
 #endif
+
+	XDestroyImage(d->x_framebuffer[0]);
+	XDestroyImage(d->x_framebuffer[1]);
+
+	XFreeCursor(d->x_disp, d->x_cursor);
 
 	XFree(d->x_visinfo);
 
