@@ -1794,9 +1794,6 @@ static void Mod_LoadAliasModel(model_t *mod, void *buffer)
 	}
 
 	// load the frames
-	if (numframes < 1)
-		Host_Error("Mod_LoadAliasModel: Invalid # of frames: %d\n", numframes);
-
 	pframetype = (daliasframetype_t *)&pintriangles[pmodel->numtris];
 
 	for (i = 0; i < numframes; i++)
