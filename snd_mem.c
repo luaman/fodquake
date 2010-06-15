@@ -107,7 +107,6 @@ sfxcache_t *S_LoadSound(sfx_t *s)
 	int		len;
 	float	stepscale;
 	sfxcache_t	*sc;
-	byte	stackbuf[1*1024];		// avoid dirtying the cache heap
 
 	if (!soundcard)
 		return 0;
