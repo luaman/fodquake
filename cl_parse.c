@@ -279,7 +279,6 @@ void Model_NextDownload (void)
 	TP_NewMap();
 	MT_NewMap();
 	Stats_NewMap();
-	Hunk_Check();		// make sure nothing is hurt
 	R_DrawFlat_NewMap();
 
 #ifdef NETQW
