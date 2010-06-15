@@ -34,8 +34,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "fmod.h"
 
-char	loadname[32];	// for hunk tags
-
 static void Mod_LoadSpriteModel(model_t *mod, void *buffer);
 static void Mod_LoadBrushModel(model_t *mod, void *buffer);
 static void Mod_LoadAliasModel(model_t *mod, void *buffer);
@@ -400,8 +398,6 @@ model_t *Mod_LoadModel (model_t *mod, qboolean crash)
 	}
 
 	// allocate a new model
-	COM_FileBase(mod->name, loadname, sizeof(loadname));
-
 	FMod_CheckModel(mod->name, buf, com_filesize);
 
 	// fill it in
