@@ -184,10 +184,15 @@ void SV_LoadGame_f (void) {
 	sv.paused = true;		// pause until all clients connect
 	sv.loadgame = true;
 
+	Sys_Error("The local server is currently broken. Sorry.");
+
 	// load the light styles
 	for (i = 0; i < MAX_LIGHTSTYLES; i++) {
 		fscanf (f, "%s\n", str);
-		sv.lightstyles[i] = Hunk_Alloc (strlen(str) + 1);
+#if 0
+		/* You need to fix that call */
+		sv.lightstyles[i] = Junk_Alloc(strlen(str) + 1);
+#endif
 		strcpy (sv.lightstyles[i], str);
 	}
 

@@ -597,8 +597,13 @@ static char *ED_NewString(char *string)
 	char *new, *new_p;
 	int i, l;
 
+	Sys_Error("The local server is currently broken. Sorry.");
+
 	l = strlen(string) + 1;
-	new = Hunk_Alloc (l);
+#if 0
+	/* You need to fix that call */
+	new = Junk_Alloc(l);
+#endif
 	new_p = new;
 
 	for (i = 0; i < l; i++)
