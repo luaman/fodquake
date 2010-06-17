@@ -231,7 +231,9 @@ void Sys_Video_GetMouseMovement(void *display, int *mousex, int *mousey)
 {
 	struct display *d = display;
 
+#if 0
 	ProcessMessages();
+#endif
 
 	Sys_Input_GetMouseMovement(d->inputdata, mousex, mousey);
 }
