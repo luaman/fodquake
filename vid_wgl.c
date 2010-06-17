@@ -456,9 +456,9 @@ void *Sys_Video_Open(const char *mode, unsigned int width, unsigned int height, 
 				}
 
 				if (fullscreen)
-				{
 					d->gammaworks = GetDeviceGammaRamp(d->dc, d->originalgammaramps);
-				}
+				else
+					d->gammaworks = 0;
 
 				if (!(d->glctx = wglCreateContext(d->dc)))
 				{
