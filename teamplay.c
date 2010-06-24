@@ -1999,7 +1999,7 @@ void TP_SearchForMsgTriggers (char *s, int level)
 
 	if (cls.demoplayback)
 		return;
-	if (!tp_msgtriggers.value || Ruleset_AllowMsgTriggers())
+	if (!tp_msgtriggers.value || !Ruleset_AllowMsgTriggers())
 		return;
 
 	for (t = msg_triggers; t; t = t->next)
