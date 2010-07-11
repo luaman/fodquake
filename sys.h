@@ -33,7 +33,7 @@ void Sys_mkdir (char *path);
 void Sys_MakeCodeWriteable (unsigned long startaddr, unsigned long length);
 
 // an error will cause the entire program to exit
-void Sys_Error (char *error, ...);
+void Sys_Error (char *error, ...) __attribute__((noreturn));
 
 // send text to the console
 void Sys_Printf (char *fmt, ...);
