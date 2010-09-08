@@ -526,11 +526,7 @@ static int Draw_LoadCharset(char *name)
 		return 1;
 	}
 
-	if (!gl_smoothfont.value)
-	{
-		glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-		glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	}
+	SetupFontSmoothing();
 
 	return 0;
 }
