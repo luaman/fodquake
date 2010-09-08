@@ -433,23 +433,70 @@ static void QMB_UpdateParticles(void) {
 }
 
 
-#define DRAW_PARTICLE_BILLBOARD(_ptex, _p, _coord)			\
-	glPushMatrix();											\
-	glTranslatef(_p->org[0], _p->org[1], _p->org[2]);		\
-	glScalef(_p->size, _p->size, _p->size);					\
-	if (_p->rotspeed)										\
-		glRotatef(_p->rotangle, vpn[0], vpn[1], vpn[2]);	\
-															\
-	glColor4ubv(_p->color);									\
-															\
-	glBegin(GL_QUADS);										\
-	glTexCoord2f(_ptex->coords[_p->texindex][0], ptex->coords[_p->texindex][3]); glVertex3fv(_coord[0]);	\
-	glTexCoord2f(_ptex->coords[_p->texindex][0], ptex->coords[_p->texindex][1]); glVertex3fv(_coord[1]);	\
-	glTexCoord2f(_ptex->coords[_p->texindex][2], ptex->coords[_p->texindex][1]); glVertex3fv(_coord[2]);	\
-	glTexCoord2f(_ptex->coords[_p->texindex][2], ptex->coords[_p->texindex][3]); glVertex3fv(_coord[3]);	\
-	glEnd();			\
-						\
+static void QWB_DrawBillboardParticle(particle_texture_t *ptex, particle_t *p, vec3_t *coord)
+{
+	vec3_t newcoord[4];
+
+	newcoord[0][0] = coord[0][0]*p->size+p->org[0];
+	newcoord[0][1] = coord[0][1]*p->size+p->org[1];
+	newcoord[0][2] = coord[0][2]*p->size+p->org[2];
+
+	newcoord[1][0] = coord[1][0]*p->size+p->org[0];
+	newcoord[1][1] = coord[1][1]*p->size+p->org[1];
+	newcoord[1][2] = coord[1][2]*p->size+p->org[2];
+
+	newcoord[2][0] = coord[2][0]*p->size+p->org[0];
+	newcoord[2][1] = coord[2][1]*p->size+p->org[1];
+	newcoord[2][2] = coord[2][2]*p->size+p->org[2];
+
+	newcoord[3][0] = coord[3][0]*p->size+p->org[0];
+	newcoord[3][1] = coord[3][1]*p->size+p->org[1];
+	newcoord[3][2] = coord[3][2]*p->size+p->org[2];
+
+	glColor4ubv(p->color);
+	glBegin(GL_QUADS);
+
+	glTexCoord2f(ptex->coords[p->texindex][0], ptex->coords[p->texindex][3]);
+	glVertex3fv(newcoord[0]);
+
+	glTexCoord2f(ptex->coords[p->texindex][0], ptex->coords[p->texindex][1]);
+	glVertex3fv(newcoord[1]);
+
+	glTexCoord2f(ptex->coords[p->texindex][2], ptex->coords[p->texindex][1]);
+	glVertex3fv(newcoord[2]);
+
+	glTexCoord2f(ptex->coords[p->texindex][2], ptex->coords[p->texindex][3]);
+	glVertex3fv(newcoord[3]);
+
+	glEnd();
+}
+
+static void QWB_DrawBillboardParticleRotate(particle_texture_t *ptex, particle_t *p, vec3_t *coord, vec3_t vpn)
+{
+	glPushMatrix();
+	glTranslatef(p->org[0], p->org[1], p->org[2]);
+	glScalef(p->size, p->size, p->size);
+	glRotatef(p->rotangle, vpn[0], vpn[1], vpn[2]);
+
+	glColor4ubv(p->color);
+	glBegin(GL_QUADS);
+
+	glTexCoord2f(ptex->coords[p->texindex][0], ptex->coords[p->texindex][3]);
+	glVertex3fv(coord[0]);
+
+	glTexCoord2f(ptex->coords[p->texindex][0], ptex->coords[p->texindex][1]);
+	glVertex3fv(coord[1]);
+
+	glTexCoord2f(ptex->coords[p->texindex][2], ptex->coords[p->texindex][1]);
+	glVertex3fv(coord[2]);
+
+	glTexCoord2f(ptex->coords[p->texindex][2], ptex->coords[p->texindex][3]);
+	glVertex3fv(coord[3]);
+
+	glEnd();
+
 	glPopMatrix();
+}
 
 void QMB_DrawParticles (void) {
 	int	i, j, k, drawncount;
@@ -534,7 +581,7 @@ void QMB_DrawParticles (void) {
 						continue;
 					drawncount++;
 				}
-				DRAW_PARTICLE_BILLBOARD(ptex, p, billboard);
+				QWB_DrawBillboardParticle(ptex, p, billboard);
 			}
 			break;
 		case pd_billboard_vel:
@@ -554,7 +601,11 @@ void QMB_DrawParticles (void) {
 				VectorSubtract(right, up, velcoord[3]);
 				VectorNegate(velcoord[2], velcoord[0]);
 				VectorNegate(velcoord[3], velcoord[1]);
-				DRAW_PARTICLE_BILLBOARD(ptex, p, velcoord);
+
+				if (p->rotspeed)
+					QWB_DrawBillboardParticleRotate(ptex, p, billboard, vpn);
+				else
+					QWB_DrawBillboardParticle(ptex, p, billboard);
 			}
 			break;
 		default:
