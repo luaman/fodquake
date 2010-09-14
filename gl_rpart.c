@@ -103,7 +103,6 @@ static particle_texture_t particle_textures[num_particletextures];
 
 static int r_numparticles;		
 static vec3_t zerodir = {22, 22, 22};
-static int particle_count = 0;
 static float particle_time;		
 static vec3_t trail_stop;
 
@@ -309,7 +308,6 @@ void QMB_ClearParticles (void) {
 	if (!qmb_initialized)
 		return;
 
-	particle_count = 0;
 	memset(particles, 0, r_numparticles * sizeof(particle_t));
 	free_particles = &particles[0];
 
@@ -326,38 +324,34 @@ static void QMB_UpdateParticles(void) {
 	float grav, bounce;
 	vec3_t oldorg, stop, normal;
 	particle_type_t *pt;
-	particle_t *p, *kill;
+	particle_t *p;
+	particle_t *prevp;
+	particle_t *nextp;
 
-	particle_count = 0;
 	grav = movevars.gravity / 800.0;
 
 	for (i = 0; i < num_particletypes; i++) {
 		pt = &particle_types[i];
-		
-		if (pt->start) {
-			for (p = pt->start; p && p->next; ) {
-				kill = p->next;
-				if (kill->die <= particle_time) {
-					p->next = kill->next;
-					kill->next = free_particles;
-					free_particles = kill;
-				} else {
-					p = p->next;
-				}
-			}
-			if (pt->start->die <= particle_time) {
-				kill = pt->start;
-				pt->start = kill->next;
-				kill->next = free_particles;
-				free_particles = kill;
-			}
-		}
 
-		for (p = pt->start; p; p = p->next) {
+		prevp = ((void *)pt) + (((void*)&((particle_type_t *)0)->start) - ((void *)&((particle_t *)0)->next)) ;
+		nextp = pt->start;
+		while((p = nextp))
+		{
+			nextp = p->next;
+
+			if (p->die <= particle_time)
+			{
+				prevp->next = p->next;
+				p->next = free_particles;
+				free_particles = p;
+
+				continue;
+			}
+			else
+				prevp = p;
+
 			if (particle_time < p->start)
 				continue;
-			
-			particle_count++;
 			
 			p->size += p->growth * cls.frametime;
 			
