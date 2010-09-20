@@ -131,21 +131,21 @@ static const unsigned char keytable[] =
 	K_F8,
 	K_F9,
 	K_F10,
-	0,
-	0, /* 70 */
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0,
-	0, /* 80 */
-	0,
-	0,
-	0,
+	KP_NUMLOCK,
+	K_SCRLCK, /* 70 */
+	KP_HOME,
+	KP_UPARROW,
+	KP_PGUP,
+	KP_MINUS,
+	KP_LEFTARROW,
+	KP_5,
+	KP_RIGHTARROW,
+	KP_PLUS,
+	KP_END,
+	KP_DOWNARROW, /* 80 */
+	KP_PGDN,
+	KP_INS,
+	KP_DEL,
 	0,
 	0,
 	0,
@@ -218,7 +218,7 @@ static const unsigned char keytable[] =
 	0,
 	0,
 	0,
-	0,
+	KP_ENTER,
 	K_RCTRL,
 	0,
 	0,
@@ -243,7 +243,7 @@ static const unsigned char keytable[] =
 	0,
 	0,
 	0, /* 180 */
-	0,
+	KP_SLASH,
 	0,
 	0,
 	K_RALT,
@@ -398,8 +398,8 @@ static void keyevent(struct InputData *inputdata, unsigned char rawkey, unsigned
 	{
 		queuekey(inputdata, keytable[rawkey], down);
 	}
-	else
-		printf("Key %d\n", rawkey);
+	else if (developer.value)
+		Com_Printf("No mapping for key %d\n", rawkey);
 }
 
 static void pollstuff(struct InputData *inputdata)
