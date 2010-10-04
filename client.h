@@ -473,8 +473,8 @@ extern char emodel_name[], pmodel_name[];
 
 // cl_demo.c
 qboolean CL_GetDemoMessage (void);
-void CL_WriteDemoCmd (usercmd_t *pcmd);
-void CL_WriteDemoMessage (sizebuf_t *msg);
+void CL_WriteDemoCmd(const usercmd_t *pcmd);
+void CL_WriteDemoMessage(const sizebuf_t *msg);
 void CL_WriteDemoEntities (void);
 void CL_StopPlayback (void);
 void CL_Stop_f (void);

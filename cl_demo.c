@@ -121,7 +121,7 @@ static void CL_Demo_Flush(void)
 }
 
 //Writes the current user cmd
-void CL_WriteDemoCmd (usercmd_t *pcmd)
+void CL_WriteDemoCmd(const usercmd_t *pcmd)
 {
 	int i;
 	float fl, t[3];
@@ -154,7 +154,7 @@ void CL_WriteDemoCmd (usercmd_t *pcmd)
 }
 
 //Dumps the current net message, prefixed by the length and view angles
-void CL_WriteDemoMessage (sizebuf_t *msg)
+void CL_WriteDemoMessage(const sizebuf_t *msg)
 {
 	int len;
 	float fl;
