@@ -39,7 +39,8 @@ ifeq ($(OS), linux)
 		thread_posix.o \
 		cd_linux.o \
 		snd_oss.o \
-		snd_alsa.o
+		snd_alsa.o \
+		sys_io_linux.o \
 
 	OSCFLAGS=-DBUILD_STRL
 	OSLDFLAGS=-lpthread -lrt
@@ -123,6 +124,7 @@ ifeq ($(OS), win32)
 		net_win32.o \
 		cd_null.o \
 		in_dinput8.o \
+		sys_io_win32.o \
 
 	OSSWOBJS=vid_win.o vid_mode_win32.o fodquake-sw.windowsicon
 	OSSWLDFLAGS=-lmgllt -lwsock32 -lgdi32 -ldxguid -lwinmm

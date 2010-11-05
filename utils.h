@@ -26,6 +26,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define	PLAYER_NAME_NOMATCH		-2
 #define	PLAYER_NUM_NOMATCH		-3
 
+#include "sys_io.h"
+
 char *SecondsToMinutesString(int print_time);
 char *SecondsToHourString(int time);
 byte *StringToRGB(char *s);
@@ -47,5 +49,32 @@ qboolean Util_F_Match(char *msg, char *f_req);
 
 char *Utils_TF_ColorToTeam(int);
 int Utils_TF_TeamToColor(char *);
+
+char *Util_Remove_Colors(const char *string, int size);
+char *Util_strcasestr (const char *psz_big, const char *psz_little);
+
+int Colored_String_Length(char *string);
+
+//struct directory_list *Util_Dir_Read(char *dir, int recursive, char **filters);
+struct directory_list *Util_Dir_Read(char *dir, int recursive, int remove_dirs, char **filter);
+struct directory_list *Util_Dir_Recursive_Read_Filter(char *dir, char **filters);
+void Util_Dir_Delete(struct directory_list *dlist);
+void Util_Dir_Sort(struct directory_list *dlist);
+
+struct directory_entry
+{
+	enum directory_entry_type type;
+	char *name;
+};
+
+struct directory_list
+{
+	char *base_dir;
+	unsigned int entry_count;
+	struct directory_entry *entries;
+};
+
+
+
 
 #endif

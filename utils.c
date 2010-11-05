@@ -24,6 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <math.h>
 
 #include "quakedef.h"
+#include "readablechars.h"
 #include "utils.h"
 
 int TP_CategorizeMessage (char *s, int *offset);
@@ -401,3 +402,403 @@ int Utils_TF_TeamToColor(char *team)
 		return 11;
 	return 0;
 }
+
+// maybe make this a macro?
+static int is_valid_color_info (char *c)
+{
+	if ((*c >= '0' &&  *c <= '9') || (*c >= 'a' && *c <= 'z') || (*c >= 'A' && *c <= 'Z'))
+		if ((*(c+1) >= '0' &&  *(c+1) <= '9') || (*(c+1) >= 'a' && *(c+1) <= 'z') || (*(c+1) >= 'A' && *(c+1) <= 'Z'))
+			if ((*(c+2) >= '0' &&  *(c+2) <= '9') || (*(c+2) >= 'a' && *(c+2) <= 'z') || (*(c+2) >= 'A' && *(c+2) <= 'Z'))
+				return 1;
+	return 0;
+}
+
+char *Util_Remove_Colors(const char *string, int size)
+{
+	const char *src;
+	char *dest, *new_string;
+	int x = 0;
+	int ignore = 0;
+
+	new_string = malloc((size+1) * sizeof(char));
+
+	if (new_string == NULL)
+		return NULL;
+
+	src = string;
+	dest = new_string;
+
+	while (*src != '\0' && x < size)
+	{
+		ignore = 0;
+		if (*src == '&')
+		{
+			if (x + 1 < size)
+			{
+				if (*(src + 1) == 'c')
+				{
+					if (x + 5 >= size)
+					{
+						ignore = 0;
+					}
+					else
+					{
+						if (is_valid_color_info((src + 2)))
+						{
+							ignore = 1;
+						}
+					}
+				}
+			}
+		}
+		if (!ignore)
+		{
+			*dest = readablechars[(unsigned char)*src];
+			src++;
+			dest++;
+			x++;
+		}
+		else
+		{
+			src += 5;
+			x += 5;
+		}
+	}
+	*dest = 0;
+
+	return new_string;
+}
+
+// implementaiton taken from the vlc project
+char *Util_strcasestr (const char *psz_big, const char *psz_little)
+{
+	char *p_pos = (char *)psz_big;
+
+	if( !*psz_little ) return p_pos;
+
+	while( *p_pos )
+	{
+		if( toupper( *p_pos ) == toupper( *psz_little ) )
+		{
+			char * psz_cur1 = p_pos + 1;
+			char * psz_cur2 = (char *)psz_little + 1;
+			while( *psz_cur1 && *psz_cur2 &&
+			toupper( *psz_cur1 ) == toupper( *psz_cur2 ) )
+			{
+				psz_cur1++;
+				psz_cur2++;
+			}
+			if( !*psz_cur2 ) return p_pos;
+		}
+		p_pos++;
+	}
+	return NULL;
+}
+
+/*
+ * Directory Reading
+ */
+
+static void del_det_list(struct directory_entry_temp *list, int free_name)
+{
+	struct directory_entry_temp *temp, *temp1;
+
+	temp = list;
+
+	while (temp)
+	{
+		temp1 = temp->next;
+		if (free_name)
+			free(temp->name);
+		free(temp);
+		temp = temp1;
+	}
+}	
+
+struct directory_entry_temp *add_det(struct directory_entry_temp **list)
+{
+	struct directory_entry_temp *temp;
+
+	if (*list == NULL)
+	{
+		temp = calloc(1, sizeof(struct directory_entry_temp));
+		if (temp == NULL)
+			return NULL;
+		*list = temp;
+		return temp;
+	}
+	temp = *list;
+	while (temp->next)
+		temp = temp->next;
+
+	temp->next = calloc(1, sizeof(struct directory_entry_temp));
+
+	return temp->next;
+}
+
+static int create_entries(struct directory_list *list, struct directory_entry_temp *det, int count)
+{
+	int i;
+	struct directory_entry_temp *dett;
+
+	list->entries = calloc(count, sizeof(struct directory_entry));
+	if (list->entries == NULL)
+		return 1;
+
+	dett = det;
+	for (i=0; i<count; i++)
+	{
+		if (dett == NULL)
+			return 1;
+		list->entries[i].type = dett->type;
+		list->entries[i].name = dett->name;
+		dett = dett->next;
+	}
+
+	return 0;
+}
+
+void Util_Dir_Delete(struct directory_list *dlist)
+{
+	int i;
+
+	for (i=0; i<dlist->entry_count; i++)
+		free(dlist->entries[i].name);
+
+	free(dlist->base_dir);
+	free(dlist->entries);
+	free(dlist);
+}
+
+static int dir_entry_compare(const void *a, const void *b)
+{
+	struct directory_entry *x, *y;
+
+	x = (struct directory_entry *) a;
+	y = (struct directory_entry *) b;
+
+	if (x->type == y->type)
+	{
+		return strcasecmp(x->name, y->name);
+	}
+	else if (x->type == et_file && y->type == et_dir)
+		return 1;
+	else if (x->type == et_dir && y->type == et_file)
+		return -1;
+	else
+		return 0;
+}
+
+void Util_Dir_Sort(struct directory_list *dlist)
+{
+	qsort(dlist->entries, dlist->entry_count, sizeof(struct directory_entry), dir_entry_compare);
+}
+
+static int remove_dirs_from_det(struct directory_entry_temp **list)
+{
+	struct directory_entry_temp *tmp, *tmpn, *tmpp;
+	int count;
+
+	tmp = *list;
+	tmpp = NULL;
+
+	count = 0;
+
+	while(tmp)
+	{
+		tmpn = tmp->next;
+		if (tmp->type == et_dir)
+		{
+			if (tmp == *list)
+				*list = tmpn;
+			else if (tmpp)
+				tmpp->next = tmpn;
+			free(tmp->name);
+			free(tmp);
+			count++;
+		}
+		else
+			tmpp = tmp;
+
+		tmp = tmpn;
+	}	
+
+	return count;
+}
+
+static int filter_det(struct directory_entry_temp **list, char **filter)
+{
+	struct directory_entry_temp *tmp, *tmpn, *tmpp;
+	char **cfilter;
+	int remove, count;
+
+	tmp = *list;
+	tmpp = NULL;
+	count = 0;
+
+	while (tmp)
+	{
+		tmpn = tmp->next;
+		cfilter = filter;
+		remove = 1;
+		if (tmp->type == et_dir)
+		{
+			remove = 0;
+		}
+		else
+		{
+			while (*cfilter)
+			{
+				if (Util_strcasestr(tmp->name, *cfilter) != NULL)
+				{
+					remove = 0;
+					break;
+				}
+				cfilter++;
+			}
+		}
+
+		if (remove)
+		{
+			count++;
+			if (tmp == *list)
+				*list = tmpn;
+			else if (tmpp)
+				tmpp->next = tmpn;
+			free(tmp->name);
+			free(tmp);
+		}
+		else
+		{
+			tmpp = tmp;
+		}
+
+
+		tmp = tmpn;
+	}	
+
+	return count;
+}
+
+struct directory_list *Util_Dir_Read(char *dir, int recursive, int remove_dirs, char **filters)
+{
+	struct directory_list *dlist;
+	struct directory_entry_temp *det, *cdet;
+	int count;
+
+	if (dir == NULL)
+		return NULL;
+
+	dlist = calloc(1, sizeof(struct directory_list));
+	if (dlist == NULL)
+		return NULL;
+
+	dlist->base_dir = strdup(dir);
+	if (dlist->base_dir == NULL)
+	{
+		free(dlist);
+		return NULL;
+	}
+
+	count = 0;
+	det = NULL;
+
+	if (Sys_Read_Dir(dir, NULL, &count, &det))
+	{
+		del_det_list(det, 1);
+		free(dlist->base_dir);
+		free(dlist);
+		return NULL;
+
+	}
+
+	if (recursive)
+	{
+		cdet = det;
+		while (cdet)
+		{
+			if (cdet->type == et_dir)
+			{
+				if (Sys_Read_Dir(dir, cdet->name, &count, &det))
+				{
+					del_det_list(det, 1);
+					free(dlist->base_dir);
+					free(dlist);
+					return NULL;
+				}
+			}
+			cdet = cdet->next;
+		}
+
+		count -= remove_dirs_from_det(&det);
+	}
+
+	if (filters)
+	{
+		count -= filter_det(&det, filters);
+	}
+
+#warning This code is unnecessary, remove it, please :)
+	count = 0;
+
+	cdet = det;
+	while (cdet)
+	{
+		count++;
+		cdet = cdet->next;
+	}
+
+	if (create_entries(dlist, det, count))
+	{
+		del_det_list(det, 1);
+		Util_Dir_Delete(dlist);
+		return NULL;
+	}
+
+#warning "Doesn't 'det' get leaked here?"
+
+	dlist->entry_count = count;
+
+	return dlist;
+}
+
+int Colored_String_Length(char *string)
+{
+        char *ptr;
+        int count = 0;
+	int len;
+	int ignore;
+
+        ptr = string;
+	len = strlen(string);
+
+	ignore = 0;
+        while (*ptr != '\0')
+        {
+
+                if (*ptr == '&')
+                {
+			if (count + 5 <= len)
+			{
+				if (*(ptr + 1) == 'c')
+					if (is_valid_color_info((ptr+2)))
+						ignore = 1;
+			}
+                }
+
+		if (!ignore)
+                {
+                        ptr++;
+                        count++;
+                }
+		else
+		{
+			ptr+=5;
+			ignore = 0;
+		}
+        }
+
+        return count;
+}
+
+
