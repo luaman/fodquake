@@ -540,7 +540,7 @@ no_lf:
 
 		case K_BACKSPACE:
 			if (key_linepos > 1) {
-				strcpy(key_lines[edit_line] + key_linepos - 1, key_lines[edit_line] + key_linepos);
+				memmove(key_lines[edit_line] + key_linepos - 1, key_lines[edit_line] + key_linepos, strlen(key_lines[edit_line] + key_linepos) + 1);
 				key_linepos--;
 			}
 			return;
