@@ -478,6 +478,7 @@ static void Mod_LoadTextures(model_t *model, lump_t *l)
 
 	for (i = 0; i < m->nummiptex; i++)
 	{
+		model->textures[i] = 0;
 		m->dataofs[i] = LittleLong(m->dataofs[i]);
 		if (m->dataofs[i] == -1)
 			continue;
