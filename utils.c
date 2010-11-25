@@ -515,7 +515,7 @@ static void del_det_list(struct directory_entry_temp *list, int free_name)
 	}
 }	
 
-struct directory_entry_temp *add_det(struct directory_entry_temp **list)
+static struct directory_entry_temp *add_det(struct directory_entry_temp **list)
 {
 	struct directory_entry_temp *temp;
 
@@ -703,7 +703,7 @@ struct directory_list *Util_Dir_Read(char *dir, int recursive, int remove_dirs, 
 	count = 0;
 	det = NULL;
 
-	if (Sys_Read_Dir(dir, NULL, &count, &det))
+	if (Sys_Read_Dir(dir, NULL, &count, &det, &add_det))
 	{
 		del_det_list(det, 1);
 		free(dlist->base_dir);
@@ -719,9 +719,10 @@ struct directory_list *Util_Dir_Read(char *dir, int recursive, int remove_dirs, 
 		{
 			if (cdet->type == et_dir)
 			{
-				if (Sys_Read_Dir(dir, cdet->name, &count, &det))
+				if (Sys_Read_Dir(dir, cdet->name, &count, &det, &add_det))
 				{
 					del_det_list(det, 1);
+                    free(det);
 					free(dlist->base_dir);
 					free(dlist);
 					return NULL;
@@ -738,24 +739,16 @@ struct directory_list *Util_Dir_Read(char *dir, int recursive, int remove_dirs, 
 		count -= filter_det(&det, filters);
 	}
 
-#warning This code is unnecessary, remove it, please :)
-	count = 0;
-
-	cdet = det;
-	while (cdet)
-	{
-		count++;
-		cdet = cdet->next;
-	}
-
 	if (create_entries(dlist, det, count))
 	{
 		del_det_list(det, 1);
+        free(det);
 		Util_Dir_Delete(dlist);
 		return NULL;
 	}
 
-#warning "Doesn't 'det' get leaked here?"
+    del_det_list(det, 0);
+    free(det);
 
 	dlist->entry_count = count;
 
