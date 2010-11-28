@@ -61,10 +61,14 @@ sub get_rss_data
 	foreach my $item (@{$rss->{items}})
 	{
 		$$item{title} =~ /(.*):(\d+)/;
-		$address = inet_ntoa(inet_aton($1));
-		$dbh->do("INSERT INTO servers (proxy_id, id, name) VALUES (\'" . $id . "\', \'" . $internal_count . "\', \'" . $address . ":" . $2 . "\');");
-		if ($dbh->err()) { die "$DBI::errstr\n"};
-		$dbh->commit();
+		$iaddr = inet_aton($1);
+		if (defined($iaddr))
+		{
+			$address = inet_ntoa($iaddr);
+			$dbh->do("INSERT INTO servers (proxy_id, id, name) VALUES (\'" . $id . "\', \'" . $internal_count . "\', \'" . $address . ":" . $2 . "\');");
+			if ($dbh->err()) { die "$DBI::errstr\n"};
+			$dbh->commit();
+		}
 		$internal_count++;
 #		$addresses[$int_count] = $address . ":" . $2;
 	}
