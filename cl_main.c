@@ -1776,6 +1776,7 @@ void CL_Init (void)
 	Ignore_Init();
 	Stats_Init();
 	MP3_Init();
+	Context_Sensitive_Tab_Completion_Init();
 
 	Sleep_Init();
 }

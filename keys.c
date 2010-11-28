@@ -34,6 +34,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "server_browser.h"
 
+#include "context_sensitive_tab.h"
+
 //key up events are sent even if in console mode
 
 cvar_t	cl_chatmode = {"cl_chatmode", "2"};
@@ -487,9 +489,17 @@ static void AdjustConsoleHeight (int delta) {
 	Cvar_SetValue (&scr_consize, (float)height / vid.height);
 }
 
+extern int context_sensitive_tab_completion_active;
 //Interactive line editing and console scrollback
 void Key_Console (int key) {
 	int i, len;
+	extern cvar_t context_sensitive_tab_completion;
+
+	if (context_sensitive_tab_completion_active == 1)
+	{
+		Context_Sensitive_Tab_Completion_Key(key);
+		return;
+	}
 
 	switch (key) {
 	    case K_ENTER:
@@ -532,6 +542,10 @@ no_lf:
 
 		case K_TAB:
 			// command completion
+			if (context_sensitive_tab_completion.value == 1)
+				if (Context_Sensitive_Tab_Completion())
+					return;
+
 			if (keydown[K_CTRL])
 				CompleteName ();
 			else
@@ -1150,6 +1164,12 @@ void Key_Event(int key, qboolean down)
 	{
 		if (!down)
 			return;
+
+		if (context_sensitive_tab_completion_active)
+		{
+			Context_Sensitive_Tab_Completion_Key(key);
+			return;
+		}
 
 		switch(key_dest)
 		{
