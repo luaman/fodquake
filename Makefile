@@ -188,6 +188,7 @@ OBJS= \
 	common.o \
 	config_manager.o \
 	console.o \
+	context_sensitive_tab.o \
 	crc.o \
 	cvar.o \
 	filesystem.o \
@@ -239,6 +240,7 @@ OBJS= \
 	sv_world.o \
 	tableprint.o \
 	teamplay.o \
+	tokenize_string.o \
 	utils.o \
 	version.o \
 	vid.o \
