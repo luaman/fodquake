@@ -30,6 +30,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "logging.h"
 #include "readablechars.h"
 
+#include "context_sensitive_tab.h"
+
 #define		MINIMUM_CONBUFSIZE	(1 << 15)
 #define		DEFAULT_CONBUFSIZE	(1 << 16)
 #define		MAXIMUM_CONBUFSIZE	(1 << 22)
@@ -560,6 +562,7 @@ void Con_DrawConsole(int lines)
 
 	// draw the input prompt, user text, and cursor if desired
 	Con_DrawInput();
+	Context_Sensitive_Tab_Completion_Draw();
 }
 
 void Con_Suppress(void)
