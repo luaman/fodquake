@@ -38,6 +38,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "netqw.h"
 #endif
 
+#include "context_sensitive_tab.h"
+#include "tokenize_string.h"
+
 static vec3_t desired_position; // where the camera wants to be
 static qboolean locked = false;
 static int oldbuttons;
@@ -530,12 +533,72 @@ void Cam_TryLock (void) {
 	}
 }
 
+static int track_check_player(struct cst_info *self, player_info_t *player)
+{
+	char *uncpn;
+	int rval, i;
+
+	if (!self || !player)
+		return 0;
+	if (player->name[0] == '\0' || player->spectator == 1)
+		return 0;
+
+	uncpn = Util_Remove_Colors(player->name, strlen(player->name));
+
+	rval = 1;
+
+	for (i=0; i<self->tokenized_input->count; i++)
+	{
+		if (Util_strcasestr(uncpn, self->tokenized_input->tokens[i]) == NULL)
+		{
+			rval = 0;
+			break;
+		}
+	}
+
+	free(uncpn);
+	return rval;
+}	
+
+static int cstc_track_results(struct cst_info *self, int *results, int get_result, int result_type, char **result)
+{
+	int i, count;
+
+	for (i=0, count=0; i<MAX_CLIENTS; i++)
+	{
+		if (track_check_player(self, &cl.players[i]))
+		{
+			if (result)
+			{
+				if (count == get_result)
+				{
+					*result = va("\"%s\"", cl.players[i].name);
+				}
+			}
+			count++;
+		}
+	}
+	if (results)
+		*results = count;
+	return 0;
+}
+
+static int cstc_track_conditions(void)
+{
+	if (cls.demoplayback || cls.mvdplayback || cls.state > ca_connected)
+		return 1;
+
+	return 0;
+}
+
 void CL_CvarInitCam(void) {
 	Cvar_SetCurrentGroup(CVAR_GROUP_SPECTATOR);
 	Cvar_Register (&cl_chasecam);
 
 	Cvar_ResetCurrentGroup();
 	Cmd_AddCommand ("track", CL_Track_f);		
+
+	CSTC_Add("track", &cstc_track_conditions, &cstc_track_results, NULL);
 }
 
 void CL_Track_f(void) {	
