@@ -26,6 +26,9 @@ Foundation,	Inc., 59 Temple	Place -	Suite 330, Boston, MA  02111-1307, USA.
 #include "utils.h"
 #include "teamplay.h"
 
+#include "context_sensitive_tab.h"
+#include "tokenize_string.h"
+
 void Key_WriteBindings (FILE *);
 char *Key_KeynumToString (int keynum);
 qboolean Key_IsLeftRightSameBind(int b);
@@ -704,6 +707,99 @@ void LoadConfig_f(void)	{
 	Cbuf_AddText ("cl_warncmd 1\n");
 }
 
+static int cstc_cfg_load_get_data(struct cst_info *self, int remove)
+{
+	struct directory_list *data;
+	char *cfg_endings[] = { ".cfg", NULL};
+
+	if (!self)
+		return 1;
+
+	if (self->data)
+	{
+		data = (struct directory_list *)self->data;
+		Util_Dir_Delete(data);
+		self->data = NULL;
+	}
+
+	if (remove)
+		return 0;
+
+	self->data = Util_Dir_Read(va("%s/fodquake/configs/", com_basedir), 1, 1, cfg_endings);
+
+	if (self->data)
+	{
+		return 0;
+	}
+
+	return 1;
+}
+
+static int cstc_cfg_load_check(char *entry, struct tokenized_string *ts)
+{
+	int i;
+
+	for (i=0; i<ts->count; i++)
+	{
+		if (Util_strcasestr(entry, ts->tokens[i]) == NULL)
+			return 0;
+	}
+	return 1;
+}
+
+static int cstc_cfg_load_get_results(struct cst_info *self, int *results, int get_result, int result_type, char **result)
+{
+	struct directory_list *data;
+	int count, i;
+#warning "Sad panda is sad :( (Sad panda is sad because he doesn't like global)"
+	static int initiated = 0;
+	static qboolean *checked = NULL;
+
+	if (self->data == NULL)
+		return 1;
+
+	data = (struct directory_list *)self->data;
+
+
+	if (results || initiated == 0)
+	{
+		if (checked)
+			free(checked);
+		checked = calloc(data->entry_count, sizeof(qboolean));
+		if (checked == NULL)
+			return 1;
+
+		for (i=0, count=0; i<data->entry_count; i++)
+		{
+			if (cstc_cfg_load_check(data->entries[i].name, self->tokenized_input))
+			{
+				checked[i] = true;
+				count++;
+			}
+		}
+		*results = count;
+		initiated = 1;
+		return 0;
+	}
+
+	if (result == NULL)
+		return 0;
+
+	for (i=0, count=-1; i<data->entry_count; i++)
+	{
+		if (checked[i] == true)
+			count++;
+		if (count == get_result)
+		{
+			*result = data->entries[i].name;
+			return 0;
+		}
+	}
+	return 1;
+}
+
+
+
 void ConfigManager_CvarInit(void)
 {
 	Cmd_AddCommand("cfg_save", SaveConfig_f);
@@ -724,5 +820,8 @@ void ConfigManager_CvarInit(void)
 	Cvar_Register(&cfg_backup);
 
 	Cvar_ResetCurrentGroup();
+
+	CSTC_Add("cfg_load", NULL, &cstc_cfg_load_get_results, &cstc_cfg_load_get_data);
+	CSTC_Add("cfg_save", NULL, &cstc_cfg_load_get_results, &cstc_cfg_load_get_data);
 }
 
