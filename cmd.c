@@ -28,6 +28,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "strl.h"
 
+#include "context_sensitive_tab.h"
+#include "tokenize_string.h"
+
 extern cvar_t vid_fullscreen;
 extern cvar_t vid_width;
 extern cvar_t vid_height;
@@ -1508,6 +1511,71 @@ void Cmd_EnableFunctionExecution()
 	Cbuf_ExecuteEx(&cbuf_cmdsave);
 }
 
+static int cstc_alias_check(char *string, struct tokenized_string *ts)
+{
+	int i;
+
+	for (i=0; i<ts->count; i++)
+	{
+		if (strstr(string, ts->tokens[i]) == NULL)
+			return 0;
+	}
+
+	return 1;
+}
+
+static int cstc_alias_get_results(struct cst_info *self, int *results, int get_result, int result_type, char **result)
+{
+	int count;
+	cmd_alias_t *a;
+	extern cmd_alias_t	*cmd_alias;
+
+	if (results)
+	{
+		a = cmd_alias;
+		while (a)
+		{
+			if (cstc_alias_check(a->name, self->tokenized_input))
+				count++;
+			a = a->next;
+		}
+		*results = count;
+		return 0;
+	}
+
+	if (result == NULL)
+		return 0;
+
+	count = -1;
+
+	a = cmd_alias;
+
+	while (a)
+	{
+		if (cstc_alias_check(a->name, self->tokenized_input))
+			count++;
+
+		if (count == get_result)
+		{
+			if (a->value)
+				*result = va("%s \"%s\"", a->name, a->value);
+			else
+				*result = va("%s \"\"", a->name);
+			return 0;
+		}
+
+#warning "This can never happen (unless you're allowed to pass <2 or less in as get_result, which I don't think so :P"
+		if (count > get_result)
+			return 1;
+
+		a = a->next;
+	}
+
+	return 1;
+}
+
+
+
 void Cmd_Init (void)
 {
 	// register our commands
@@ -1524,6 +1592,8 @@ void Cmd_Init (void)
 	Cmd_AddCommand("cmdlist", Cmd_CmdList_f);
 	Cmd_AddCommand("if", Cmd_If_f);
 	Cmd_AddCommand("macrolist", Cmd_MacroList_f);
+
+	CSTC_Add("alias", NULL, &cstc_alias_get_results, NULL);
 }
 
 void Cmd_Shutdown()
