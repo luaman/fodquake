@@ -22,7 +22,7 @@ use DBI;
 use Socket;
 use XML::RSS;
 
-my $dbargs = {AutoCommit => 0, PrintError => 1};
+my $dbargs = {AutoCommit => 1, PrintError => 1};
 my $dbh = DBI->connect("dbi:SQLite:dbname=proxies.db", "", "", $dbargs);
 $dbh->do("DELETE FROM proxies;");
 $dbh->do("DELETE FROM servers;");
@@ -50,7 +50,6 @@ sub get_rss_data
 	
 	$dbh->do("INSERT INTO proxies (name) VALUES (\'" . $1 . "\');");
 	if ($dbh->err()) { die "$DBI::errstr\n"};
-	$dbh->commit();
 	
 	$id = $dbh->selectrow_array("SELECT id FROM proxies WHERE name=\'" . $1 . "\';");
 	if ($dbh->err()) { die "$DBI::errstr\n"};
@@ -67,7 +66,6 @@ sub get_rss_data
 			$address = inet_ntoa($iaddr);
 			$dbh->do("INSERT INTO servers (proxy_id, id, name) VALUES (\'" . $id . "\', \'" . $internal_count . "\', \'" . $address . ":" . $2 . "\');");
 			if ($dbh->err()) { die "$DBI::errstr\n"};
-			$dbh->commit();
 		}
 		$internal_count++;
 #		$addresses[$int_count] = $address . ":" . $2;
