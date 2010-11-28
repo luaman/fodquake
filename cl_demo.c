@@ -29,6 +29,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "utils.h"
 #include "movie.h"
 
+#include "context_sensitive_tab.h"
+#include "tokenize_string.h"
+
 float olddemotime, nextdemotime;
 
 
@@ -1438,6 +1441,100 @@ void CL_Demo_Jump_f (void)
 	cls.demotime = newdemotime;
 }
 
+static int playdemo_checkdemo (char  *name, struct tokenized_string *check)
+{
+	int i;
+
+	if (check->count == 0)
+		return 1;
+
+	for (i=0; i<check->count; i++)
+		if (Util_strcasestr(name, check->tokens[i]) == NULL)
+			return 0;
+
+	return 1;
+}
+
+static int cstc_playdemo_data(struct cst_info *self, int remove)
+{
+	struct directory_list *data;
+	char *demo_endings[] = { ".qwd", ".mvd", NULL};
+
+	if (!self)
+		return 1;
+
+	if (self->data)
+	{
+		data = (struct directory_list *)self->data;
+		Util_Dir_Delete(data);
+		self->data = NULL;
+	}
+
+	if (remove)
+		return 0;
+
+	self->data = Util_Dir_Read(va("%s", com_basedir), 1, 1, demo_endings);
+
+	if (self->data)
+	{
+		return 0;
+	}
+
+	return 1;
+}
+
+#warning "This looks a bit weird and I can't get it to work at all when I try to tab complete playdemo or timedemo."
+
+static int cstc_playdemo_get_results(struct cst_info *self, int *results, int get_result, int result_type, char **result)
+{
+	struct directory_list *data;
+	int count, i;
+	static int initiated = 0;
+	static qboolean *checked = NULL;
+
+	if (self->data == NULL)
+		return 1;
+
+	data = (struct directory_list *)self->data;
+
+
+	if (results || initiated == 0)
+	{
+		if (checked)
+			free(checked);
+		checked = calloc(data->entry_count, sizeof(qboolean));
+		if (checked == NULL)
+			return 1;
+
+		for (i=0, count=0; i<data->entry_count; i++)
+		{
+			if (playdemo_checkdemo(data->entries[i].name, self->tokenized_input))
+			{
+				checked[i] = true;
+				count++;
+			}
+		}
+		*results = count;
+		initiated = 1;
+		return 0;
+	}
+
+	if (result == NULL)
+		return 0;
+
+	for (i=0, count=-1; i<data->entry_count; i++)
+	{
+		if (checked[i] == true)
+			count++;
+		if (count == get_result)
+		{
+			*result = va("../%s", data->entries[i].name);
+			return 0;
+		}
+	}
+	return 1;
+}
+
 void CL_CvarDemoInit(void)
 {
 	Cmd_AddCommand ("record", CL_Record_f);
@@ -1452,6 +1549,10 @@ void CL_CvarDemoInit(void)
 	Cvar_SetCurrentGroup(CVAR_GROUP_DEMO);
 	Cvar_Register(&demo_dir);
 	Cvar_ResetCurrentGroup();
+
+	CSTC_Add("playdemo", NULL, &cstc_playdemo_get_results, &cstc_playdemo_data);
+	CSTC_Add("timedemo", NULL, &cstc_playdemo_get_results, &cstc_playdemo_data);
+
 }
 
 void CL_Demo_Init(void)
