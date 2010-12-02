@@ -19,6 +19,12 @@
  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 
+#define true qtrue
+#define false qfalse
+#include "qtypes.h"
+#undef true
+#undef false
+
 #include <CoreServices/CoreServices.h>
 #include <AudioUnit/AudioUnit.h>
 
@@ -90,7 +96,7 @@ static void coreaudio_shutdown(struct SoundCard *sc)
 	free(p);
 }
 
-static qboolean coreaudio_init(struct SoundCard *sc, const char *device, int rate, int channels, int bits)
+static qboolean coreaudio_init(struct SoundCard *sc, int rate, int channels, int bits)
 {
 	struct coreaudio_private *p;
 	ComponentResult err;
@@ -98,7 +104,6 @@ static qboolean coreaudio_init(struct SoundCard *sc, const char *device, int rat
 	Component comp;
 	AudioStreamBasicDescription streamFormat;
 	AURenderCallbackStruct input;
-	int speed;
 
 	p = malloc(sizeof(*p));
 	if (p)
@@ -119,7 +124,7 @@ static qboolean coreaudio_init(struct SoundCard *sc, const char *device, int rat
 		{
 			// Set up a callback function to generate output to the output unit
 			input.inputProc = AudioRender;
-			input.inputProcRefCon = NULL;
+			input.inputProcRefCon = p;
 
 			err = AudioUnitSetProperty(p->OutputUnit, kAudioUnitProperty_SetRenderCallback, kAudioUnitScope_Input, 0, &input, sizeof(input));
 			if (err == 0)
