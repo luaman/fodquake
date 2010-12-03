@@ -785,7 +785,10 @@ static void S_Update_(void)
 	}
 
 	// mix ahead of current position
-	endtime = soundtime + (int)(s_mixahead.value * soundcard->speed);
+	if (soundcard->GetAvail)
+		endtime = soundtime + soundcard->GetAvail(soundcard);
+	else
+		endtime = soundtime + (int)(s_mixahead.value * soundcard->speed);
 	samps = soundcard->samples >> (soundcard->channels - 1);
 	if (endtime - soundtime > samps)
 		endtime = soundtime + samps;
