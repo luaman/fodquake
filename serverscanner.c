@@ -1000,6 +1000,7 @@ const struct QWServer **ServerScanner_GetServers(struct ServerScanner *serversca
 	struct qwserverpriv *qwserver;
 	struct QWServer **servers;
 	unsigned int i;
+	unsigned int count;
 
 	servers = 0;
 
@@ -1011,14 +1012,18 @@ const struct QWServer **ServerScanner_GetServers(struct ServerScanner *serversca
 		if (servers)
 		{
 			qwserver = serverscanner->qwservers;
+			count = 0;
 			for(i=0;i<serverscanner->numqwservers;i++)
 			{
-				servers[i] = &qwserver->pub;
+				if (qwserver->pub.status >= QWSS_DONE)
+				{
+					servers[count++] = &qwserver->pub;
+				}
 
 				qwserver = qwserver->next;
 			}
 
-			*numservers = serverscanner->numqwservers;
+			*numservers = count;
 
 			serverscanner->updated = 0;
 		}
