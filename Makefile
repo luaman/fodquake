@@ -24,7 +24,8 @@ ifeq ($(OS), morphos)
 		thread_morphos.o \
 		cd_morphos.o \
 		snd_morphos.o \
-		in_morphos.o
+		in_morphos.o \
+		sys_io_morphos.o
 
 	OSSWOBJS=vid_mode_morphos.o vid_morphos.o
 
