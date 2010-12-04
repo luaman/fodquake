@@ -722,7 +722,6 @@ struct directory_list *Util_Dir_Read(char *dir, int recursive, int remove_dirs, 
 				if (Sys_Read_Dir(dir, cdet->name, &count, &det, &add_det))
 				{
 					del_det_list(det, 1);
-                    free(det);
 					free(dlist->base_dir);
 					free(dlist);
 					return NULL;
@@ -742,13 +741,11 @@ struct directory_list *Util_Dir_Read(char *dir, int recursive, int remove_dirs, 
 	if (create_entries(dlist, det, count))
 	{
 		del_det_list(det, 1);
-        free(det);
 		Util_Dir_Delete(dlist);
 		return NULL;
 	}
 
-    del_det_list(det, 0);
-    free(det);
+	del_det_list(det, 0);
 
 	dlist->entry_count = count;
 
