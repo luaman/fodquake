@@ -60,7 +60,8 @@ ifeq ($(OS), freebsd)
 		net_posix.o \
 		thread_posix.o \
 		cd_null.o \
-		snd_oss.o
+		snd_oss.o \
+		sys_io_linux.o
 
 	OSCFLAGS=-I/usr/local/include
 	OSLDFLAGS=-lpthread
