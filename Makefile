@@ -40,7 +40,7 @@ ifeq ($(OS), linux)
 		thread_posix.o \
 		cd_linux.o \
 		snd_oss.o \
-		snd_alsa.o \
+		snd_alsa2.o \
 		sys_io_linux.o \
 
 	OSCFLAGS=-DBUILD_STRL
