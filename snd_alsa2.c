@@ -52,6 +52,7 @@ static void alsa_writestuff(struct alsa_private *p, unsigned int max)
 	unsigned int count;
 	snd_pcm_sframes_t ret;
 	int avail;
+	int dorestart;
 
 	while(max)
 	{
@@ -66,10 +67,10 @@ static void alsa_writestuff(struct alsa_private *p, unsigned int max)
 		DEBUG("Avail: %d\n", avail);
 
 		/* This workaround is required to keep sound working on Ubuntu 10.04 and 10.10 (Yay for Ubuntu) */
-		if (avail < 100)
+		if (avail < 64)
 			break;
 
-		avail -= 100;
+		avail -= 64;
 
 		if (count > avail)
 			count = avail;
@@ -81,9 +82,18 @@ static void alsa_writestuff(struct alsa_private *p, unsigned int max)
 		DEBUG("Ret was %d\n", ret);
 		if (ret < 0)
 		{
+			dorestart = 0;
+
+			if (ret == -EPIPE)
+				dorestart = 1;
+
 			ret = p->snd_pcm_recover(p->pcmhandle, ret, 0);
 			if (ret < 0)
 				fprintf(stderr, "ALSA made a boo-boo: %d (%s)\n", (int)ret, p->snd_strerror(ret));
+
+			if (dorestart)
+				p->snd_pcm_start(p->pcmhandle);
+
 			break;
 		}
 
