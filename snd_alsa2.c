@@ -55,6 +55,8 @@ static void alsa_writestuff(struct alsa_private *p, unsigned int max)
 	while(max)
 	{
 		count = p->buffersamples - p->bufferpos;
+		if (count > max)
+			count = max;
 
 		avail = p->snd_pcm_avail_update(p->pcmhandle);
 		avail *= 2;
@@ -62,8 +64,17 @@ static void alsa_writestuff(struct alsa_private *p, unsigned int max)
 		DEBUG("count: %d\n", count);
 		DEBUG("Avail: %d\n", avail);
 
+		/* This workaround is required to keep sound working on Ubuntu 10.04 and 10.10 (Yay for Ubuntu) */
+		if (avail < 100)
+			break;
+
+		avail -= 100;
+
 		if (count > avail)
 			count = avail;
+
+		if (count == 0)
+			break;
 
 		ret = p->snd_pcm_writei(p->pcmhandle, p->buffer + (p->samplesize * p->bufferpos), count/2);
 		DEBUG("Ret was %d\n", ret);
