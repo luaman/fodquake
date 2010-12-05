@@ -856,8 +856,7 @@ void *X11_Input_Init(Window x_win, unsigned int windowwidth, unsigned int window
 				}
 
 				attr.event_mask = KeyPressMask | KeyReleaseMask | ButtonPressMask | ButtonReleaseMask | PointerMotionMask | FocusChangeMask;
-				attr.override_redirect = 1;
-				XChangeWindowAttributes(id->x_disp, x_win, CWEventMask | CWOverrideRedirect, &attr);
+				XChangeWindowAttributes(id->x_disp, x_win, CWEventMask, &attr);
 
 				XGetInputFocus(id->x_disp, &focuswindow, &revertto);
 
