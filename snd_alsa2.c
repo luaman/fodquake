@@ -42,6 +42,7 @@ struct alsa_private
 	int (*snd_pcm_open)(snd_pcm_t **pcm, const char *name, snd_pcm_stream_t stream, int mode);
 	int (*snd_pcm_recover)(snd_pcm_t *pcm, int err, int silent);
 	int (*snd_pcm_set_params)(snd_pcm_t *pcm, snd_pcm_format_t format, snd_pcm_access_t access, unsigned int channels, unsigned int rate, int soft_resample, unsigned int latency);
+	int (*snd_pcm_start)(snd_pcm_t *pcm);
 	snd_pcm_sframes_t (*snd_pcm_writei)(snd_pcm_t *pcm, const void *buffer, snd_pcm_uframes_t size);
 	const char *(*snd_strerror)(int errnum);
 };
@@ -157,6 +158,7 @@ static qboolean alsa_initso(struct alsa_private *p)
 		p->snd_pcm_open = dlsym(p->alsasharedobject, "snd_pcm_open");
 		p->snd_pcm_recover = dlsym(p->alsasharedobject, "snd_pcm_recover");
 		p->snd_pcm_set_params = dlsym(p->alsasharedobject, "snd_pcm_set_params");
+		p->snd_pcm_start = dlsym(p->alsasharedobject, "snd_pcm_start");
 		p->snd_pcm_writei = dlsym(p->alsasharedobject, "snd_pcm_writei");
 		p->snd_strerror = dlsym(p->alsasharedobject, "snd_strerror");
 
@@ -223,6 +225,8 @@ static qboolean alsa_init_internal(struct SoundCard *sc, const char *device, int
 						sc->buffer = p->buffer;
 
 						alsa_writestuff(p, p->buffersamples);
+
+						p->snd_pcm_start(p->pcmhandle);
 
 						return true;
 					}
