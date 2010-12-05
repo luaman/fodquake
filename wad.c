@@ -61,16 +61,31 @@ static void W_CleanupName(char *in, char *out)
 		out[i] = 0;
 }
 
+static int lump_filepos_compare(const void *a, const void *b)
+{
+	const lumpinfo_t *c, *d;
+
+	c = a;
+	d = b;
+
+	return c->filepos - d->filepos;
+}
+
 void W_LoadWadFile(char *filename)
 {
 	lumpinfo_t *lump_p;
 	wadinfo_t *header;
 	unsigned i;
+	unsigned int j;
 	int infotableofs;
+	unsigned int lump_end;
 
 	wad_base = FS_LoadMallocFile(filename);
 	if (!wad_base)
 		Sys_Error ("W_LoadWadFile: couldn't load %s", filename);
+
+	if (com_filesize > 512*1024*1024)
+		Sys_Error("Wad file %s is too large (%d bytes)\n", filename, com_filesize);
 
 	header = (wadinfo_t *)wad_base;
 
@@ -81,11 +96,63 @@ void W_LoadWadFile(char *filename)
 	infotableofs = LittleLong(header->infotableofs);
 	wad_lumps = (lumpinfo_t *)(wad_base + infotableofs);
 
+	if (wad_numlumps >= 65536)
+		Sys_Error("Wad file %s contains too many lumps (%d)\n", filename, wad_numlumps);
+
+	if (infotableofs >= 512*1024*1024)
+		Sys_Error("Wad file %s has invalid info table offset (%d)\n", filename, infotableofs);
+
+	if (infotableofs >= com_filesize || infotableofs + wad_numlumps * sizeof(lumpinfo_t) > com_filesize)
+		Sys_Error("Was file %s corrupt. Info table out of range.\n", filename);
+
+	for(i=0;i<wad_numlumps;i++)
+	{
+		wad_lumps[i].filepos = LittleLong(wad_lumps[i].filepos);
+		wad_lumps[i].size = LittleLong(wad_lumps[i].size);
+		W_CleanupName(wad_lumps[i].name, wad_lumps[i].name);
+	}
+
+	qsort(wad_lumps, wad_numlumps, sizeof(*wad_lumps), lump_filepos_compare);
+
 	for (i = 0, lump_p = wad_lumps; i < wad_numlumps; i++,lump_p++)
 	{
-		lump_p->filepos = LittleLong(lump_p->filepos);
-		lump_p->size = LittleLong(lump_p->size);
-		W_CleanupName (lump_p->name, lump_p->name);
+		for(j=0;j<sizeof(lump_p->name);j++)
+		{
+			if (lump_p->name[j] == 0)
+				break;
+		}
+		if (j == sizeof(lump_p->name))
+			Sys_Error("Was file %s corrupt. Unterminated lump name.\n", filename);
+
+		if (lump_p->size <= 0 || lump_p->size >= 512*1024*1024)
+			Sys_Error("Wad file %s contains lump with invalid size (%d)\n", filename, lump_p->size);
+
+		/* Now find the largest possible size of the lump... */
+		if (i + 1 != wad_numlumps)
+			lump_end = lump_p[1].filepos;
+		else
+			lump_end = com_filesize;
+
+		/* If the lump info table is somewhere inside the computed max size, crop it to the beginning of the lump info table */
+		if (infotableofs >= lump_p->filepos && infotableofs <= lump_end)
+			lump_end = infotableofs;
+
+		if (lump_end - lump_p->filepos < lump_p->size)
+			lump_p->size = lump_end - lump_p->filepos;
+
+		/* Now verify that the lump is inside the file and not inside the lump info table */
+		if (lump_p->filepos < 0 || lump_p->filepos >= com_filesize)
+			Sys_Error("Wad file %s contains lump with invalid offset (%d)\n", filename, lump_p->filepos);
+
+		if (lump_p->filepos + lump_p->size >= com_filesize || lump_p->filepos + lump_p->size >= com_filesize)
+			Sys_Error("Wad file %s contains out of bounds lump\n", filename);
+
+		if (!((lump_p->filepos <= infotableofs && lump_p->filepos + lump_p->size <= infotableofs)
+		  || (lump_p->filepos >= infotableofs + wad_numlumps * sizeof(lumpinfo_t) && lump_p->filepos + lump_p->size >= infotableofs + wad_numlumps * sizeof(lumpinfo_t))))
+		{
+			Sys_Error("Wad file %s contains lump and info table overlap\n", filename);
+		}
+
 		if (lump_p->type == TYP_QPIC)
 			SwapPic ( (qpic_t *)(wad_base + lump_p->filepos));
 	}
