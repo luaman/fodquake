@@ -24,6 +24,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "console.h"
 #include "tableprint.h"
 
+#warning "This file should either use common.c's console mutex or not use Con_Print() directly."
+
 #define min(a, b) ((a) < (b) ? (a) : (b))
 
 struct TablePrint
