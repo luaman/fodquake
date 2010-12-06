@@ -22,7 +22,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // disable data conversion warnings
 
 #ifdef __MACOSX__
+#if 0
 #include <AGL/agl.h>
+#endif
+
+#include <OpenGL/gl.h>
+
 #else
 #include <GL/gl.h>
 #endif
