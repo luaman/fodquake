@@ -47,12 +47,45 @@ struct alsa_private
 	const char *(*snd_strerror)(int errnum);
 };
 
+static void alsa_alsasucksdonkeyballs(struct alsa_private *p, unsigned int ret, int dorestart)
+{
+	if (dorestart && ret != -EPIPE)
+		dorestart = 0;
+
+	ret = p->snd_pcm_recover(p->pcmhandle, ret, 0);
+	if (ret < 0)
+		fprintf(stderr, "ALSA made a boo-boo: %d (%s)\n", (int)ret, p->snd_strerror(ret));
+
+	if (dorestart)
+		p->snd_pcm_start(p->pcmhandle);
+}
+
+static int alsa_reallygetavail(struct alsa_private *p)
+{
+	int ret;
+
+	ret = p->snd_pcm_avail_update(p->pcmhandle);
+	if (ret < 0)
+	{
+		alsa_alsasucksdonkeyballs(p, ret, 1);
+		ret = p->snd_pcm_avail_update(p->pcmhandle);
+		if (ret < 0)
+		{
+			DEBUG("Sorry, your ALSA is really totally utterly fucked. (%d - %s)\n", avail, p->snd_strerror(ret));
+			return 0;
+		}
+	}
+
+	ret *= 2;
+
+	return ret;
+}
+
 static void alsa_writestuff(struct alsa_private *p, unsigned int max)
 {
 	unsigned int count;
 	snd_pcm_sframes_t ret;
 	int avail;
-	int dorestart;
 
 	while(max)
 	{
@@ -60,8 +93,7 @@ static void alsa_writestuff(struct alsa_private *p, unsigned int max)
 		if (count > max)
 			count = max;
 
-		avail = p->snd_pcm_avail_update(p->pcmhandle);
-		avail *= 2;
+		avail = alsa_reallygetavail(p);
 
 		DEBUG("count: %d\n", count);
 		DEBUG("Avail: %d\n", avail);
@@ -82,18 +114,7 @@ static void alsa_writestuff(struct alsa_private *p, unsigned int max)
 		DEBUG("Ret was %d\n", ret);
 		if (ret < 0)
 		{
-			dorestart = 0;
-
-			if (ret == -EPIPE)
-				dorestart = 1;
-
-			ret = p->snd_pcm_recover(p->pcmhandle, ret, 0);
-			if (ret < 0)
-				fprintf(stderr, "ALSA made a boo-boo: %d (%s)\n", (int)ret, p->snd_strerror(ret));
-
-			if (dorestart)
-				p->snd_pcm_start(p->pcmhandle);
-
+			alsa_alsasucksdonkeyballs(p, ret, 1);
 			break;
 		}
 
@@ -119,14 +140,10 @@ static int alsa_getdmapos(struct SoundCard *sc)
 static int alsa_getavail(struct SoundCard *sc)
 {
 	struct alsa_private *p;
-	int ret;
 
 	p = sc->driverprivate;
 
-	ret = p->snd_pcm_avail_update(p->pcmhandle);
-	ret *= 2;
-
-	return ret;
+	return alsa_reallygetavail(p);
 }
 
 static void alsa_shutdown(struct SoundCard *sc)
