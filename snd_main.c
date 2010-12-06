@@ -770,6 +770,7 @@ static void S_Update_(void)
 {
 	unsigned endtime;
 	int samps;
+	int avail;
 
 	if (!sound_started || (snd_blocked > 0))
 		return;
@@ -786,7 +787,13 @@ static void S_Update_(void)
 
 	// mix ahead of current position
 	if (soundcard->GetAvail)
-		endtime = soundtime + soundcard->GetAvail(soundcard);
+	{
+		avail = soundcard->GetAvail(soundcard);
+		if (avail <= 0)
+			return;
+
+		endtime = soundtime + avail;
+	}
 	else
 		endtime = soundtime + (int)(s_mixahead.value * soundcard->speed);
 	samps = soundcard->samples >> (soundcard->channels - 1);
