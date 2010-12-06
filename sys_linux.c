@@ -120,11 +120,6 @@ int Sys_FileTime(char *path)
 	return buf.st_mtime;
 }
 
-void Sys_mkdir(char *path)
-{
-	mkdir(path, 0777);
-}
-
 static unsigned int secbase;
 
 #if LINUX_DOES_NOT_SUCK /* haha, good joke! */
