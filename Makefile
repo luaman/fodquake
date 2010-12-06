@@ -9,7 +9,7 @@ STRIPFLAGS=--strip-unneeded --remove-section=.comment
 
 TARGETSYSTEM:=$(shell $(CC) -dumpmachine)
 
-OS=$(shell echo $(TARGETSYSTEM) | sed "s/-gnu//" | sed "s/.*-//" | tr [A-Z] [a-z] | sed s/^mingw.*/win32/ | sed s/^openbsd.*/openbsd/ | sed s/^freebsd.*/freebsd/)
+OS=$(shell echo $(TARGETSYSTEM) | sed "s/-gnu//" | sed "s/.*-//" | tr [A-Z] [a-z] | sed s/^mingw.*/win32/ | sed s/^openbsd.*/openbsd/ | sed s/^freebsd.*/freebsd/ | sed s/^darwin.*/macosx/)
 CPU=$(shell echo $(TARGETSYSTEM) | cut -d '-' -f 1 | tr [A-Z] [a-z] | sed "s/powerpc/ppc/")
 
 TARGETS=sw gl
@@ -159,6 +159,27 @@ ifeq ($(OS), gekko)
 	# -I/usr/local/devkitPro/devkitPPC/powerpc-gekko/include/
 	OSCFLAGS = -DGEKKO -mrvl -mcpu=750 -meabi -mhard-float -I/usr/local/devkitPro/devkitPPC/include
 	OSLDFLAGS = -L/usr/local/devkitPro/devkitPPC/lib/wii/ -logc
+endif
+
+ifeq ($(OS), macosx)
+	STRIPFLAGS=
+
+	OSOBJS = \
+		sys_darwin.o \
+		sys_io_linux.o \
+		thread_posix.o \
+		net_posix.o \
+		snd_coreaudio.o \
+		vid_mode_macosx.o \
+		clipboard_macosx.o \
+		cd_null.o
+
+	OSGLOBJS = \
+		vid_coregl.o
+
+	OSGLLDFLAGS = -framework OpenGL -framework ApplicationServices -framework AudioUnit -framework CoreServices
+
+	OSCFLAGS = -D__MACOSX__
 endif
 
 # CPU specific settings
