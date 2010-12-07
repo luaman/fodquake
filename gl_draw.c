@@ -214,6 +214,8 @@ void customCrosshair_Init(void)
 
 	customcrosshair_loaded = CROSSHAIR_NONE;
 
+	Crosshair_LoadImage(gl_crosshairimage.string);
+
 	if (FS_FOpenFile("crosshairs/crosshair.txt", &f) == -1)
 		return;
 
@@ -241,8 +243,6 @@ void customCrosshair_Init(void)
 	glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	customcrosshair_loaded |= CROSSHAIR_TXT;
-
-	Crosshair_LoadImage(gl_crosshairimage.string);
 }
 
 
