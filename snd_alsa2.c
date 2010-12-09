@@ -25,6 +25,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #define DEBUG(x...) do { } while(0)
 
+#define PCM_RECOVER_VERBOSE 0
+
 static cvar_t snd_alsa_device = { "snd_alsa_device", "default", CVAR_ARCHIVE };
 static cvar_t snd_alsa_latency = { "snd_alsa_latency", "0.04", CVAR_ARCHIVE };
 
@@ -52,7 +54,7 @@ static void alsa_alsasucksdonkeyballs(struct alsa_private *p, unsigned int ret, 
 	if (dorestart && ret != -EPIPE)
 		dorestart = 0;
 
-	ret = p->snd_pcm_recover(p->pcmhandle, ret, 0);
+	ret = p->snd_pcm_recover(p->pcmhandle, ret, !PCM_RECOVER_VERBOSE);
 	if (ret < 0)
 		fprintf(stderr, "ALSA made a boo-boo: %d (%s)\n", (int)ret, p->snd_strerror(ret));
 
