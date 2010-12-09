@@ -580,28 +580,14 @@ unsigned int Con_GetColumns()
 	return con_linewidth;
 }
 
-void Con_LineUp()
-{
-	con.display -= 2;
-	if (con.display - con.current + con.numlines < 0)
-		con.display = con.current - con.numlines;
-}
-
-void Con_LineDown()
-{
-	con.display += 2;
-	if (con.display - con.current > 0)
-		con.display = con.current;
-}
-
-void Con_PageUp(unsigned int numlines)
+void Con_ScrollUp(unsigned int numlines)
 {
 	con.display -= numlines;
 	if (con.display - con.current + con.numlines < 0)
 		con.display = con.current - con.numlines;
 }
 
-void Con_PageDown(unsigned int numlines)
+void Con_ScrollDown(unsigned int numlines)
 {
 	con.display += numlines;
 	if (con.display - con.current > 0)

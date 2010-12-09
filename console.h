@@ -36,10 +36,8 @@ unsigned int Con_GetColumns(void);
 
 void Con_Print(const char *txt);
 
-void Con_LineUp(void);
-void Con_LineDown(void);
-void Con_PageUp(unsigned int numlines);
-void Con_PageDown(unsigned int numlines);
+void Con_ScrollUp(unsigned int numlines);
+void Con_ScrollDown(unsigned int numlines);
 void Con_Home(void);
 void Con_End(void);
 
