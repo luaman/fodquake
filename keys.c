@@ -631,7 +631,7 @@ no_lf:
 	    case K_PGUP:
 	    case K_MWHEELUP:
 			if (keydown[K_CTRL] && key == K_PGUP)
-				Con_PageUp();
+				Con_PageUp(((int)scr_conlines - 40) >> 3);
 			else
 				Con_LineUp();
 			return;
@@ -639,7 +639,7 @@ no_lf:
 	    case K_MWHEELDOWN:
 	    case K_PGDN:
 			if (keydown[K_CTRL] && key == K_PGDN)
-				Con_PageDown();
+				Con_PageDown(((int)scr_conlines - 40) >> 3);
 			else
 				Con_LineDown();
 			return;

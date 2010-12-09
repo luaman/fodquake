@@ -594,16 +594,16 @@ void Con_LineDown()
 		con.display = con.current;
 }
 
-void Con_PageUp()
+void Con_PageUp(unsigned int numlines)
 {
-	con.display -= ((int)scr_conlines - 40) >> 3;
+	con.display -= numlines;
 	if (con.display - con.current + con.numlines < 0)
 		con.display = con.current - con.numlines;
 }
 
-void Con_PageDown()
+void Con_PageDown(unsigned int numlines)
 {
-	con.display += ((int)scr_conlines - 40) >> 3;
+	con.display += numlines;
 	if (con.display - con.current > 0)
 		con.display = con.current;
 }

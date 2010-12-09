@@ -38,8 +38,8 @@ void Con_Print(const char *txt);
 
 void Con_LineUp(void);
 void Con_LineDown(void);
-void Con_PageUp(void);
-void Con_PageDown(void);
+void Con_PageUp(unsigned int numlines);
+void Con_PageDown(unsigned int numlines);
 void Con_Home(void);
 void Con_End(void);
 
