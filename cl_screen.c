@@ -33,6 +33,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "teamplay.h"
 #include "utils.h"
 #include "modules.h"
+#include "strl.h"
 
 #include "config.h"
 
@@ -70,6 +71,10 @@ int				scr_copyeverything;
 
 float			scr_con_current;
 float			scr_conlines;           // lines of console to display
+
+static float con_cursorspeed = 4;
+
+#define		MAXCMDLINE	256
 
 unsigned int scr_clearnotifylines;
 
@@ -129,7 +134,7 @@ mpic_t			*scr_turtle;
 int				scr_fullupdate;
 
 int				clearconsole;
-int				clearnotify;
+static int				clearnotify;
 
 viddef_t		vid;                            // global video state
 
@@ -799,6 +804,52 @@ void SCR_SetUpToDrawConsole(void)
 #endif
 }
 
+static void SCR_DrawMessageMode(unsigned int y)
+{
+	char temp[MAXCMDLINE + 1];
+	char *s;
+	int len;
+	int skip;
+
+	clearnotify = 0;
+	scr_copytop = 1;
+
+	if (chat_team)
+	{
+		Draw_String(8, y, "say_team:");
+		skip = 11;
+	}
+	else
+	{
+		Draw_String(8, y, "say:");
+		skip = 5;
+	}
+
+	// FIXME: clean this up
+	strlcpy(temp, chat_buffer, sizeof(temp));
+	s = temp;
+
+	// add the cursor frame
+	if ((int) (curtime * con_cursorspeed) & 1)
+	{
+		if (chat_linepos == strlen(s))
+			s[chat_linepos+1] = '\0';
+
+		s[chat_linepos] = 11;
+	}
+
+	// prestep if horizontally scrolling
+	if (chat_linepos + skip >= (vid.width >> 3))
+		s += 1 + chat_linepos + skip - (vid.width >> 3);
+
+	len = strlen(s);
+	if (len+skip > (vid.width>>3))
+		len = (vid.width>>3) - skip;
+
+	if (len > 0)
+		Draw_String_Length(skip<<3, y, s, len);
+}
+
 void SCR_DrawConsole(void)
 {
 	unsigned int lines;
@@ -814,12 +865,43 @@ void SCR_DrawConsole(void)
 		if (key_dest == key_game || key_dest == key_message)
 		{
 			lines = Con_DrawNotify();      // only draw notify in game
-			if (lines > scr_clearnotifylines)
+
+			if (key_dest == key_message)
 			{
-				scr_clearnotifylines = lines;
+				SCR_DrawMessageMode(lines * 8);
+				lines++;
+			}
+
+			if (lines)
+			{
+				clearnotify = 0;
+
+				if (lines > scr_clearnotifylines)
+					scr_clearnotifylines = lines;
 			}
 		}
 	}
+}
+
+static void SCR_BeginChat(unsigned int is_chat_team)
+{
+	if (cls.state != ca_active)
+		return;
+
+	chat_team = is_chat_team;
+	key_dest = key_message;
+	chat_buffer[0] = 0;
+	chat_linepos = 0;
+}
+
+static void Con_MessageMode_f(void)
+{
+	SCR_BeginChat(false);
+}
+
+static void Con_MessageMode2_f (void)
+{
+	SCR_BeginChat(true);
 }
 
 /*********************************** AUTOID ***********************************/
@@ -1664,6 +1746,8 @@ void SCR_CvarInit (void)
 	Cmd_AddCommand ("screenshot", SCR_ScreenShot_f);
 	Cmd_AddCommand ("sizeup", SCR_SizeUp_f);
 	Cmd_AddCommand ("sizedown", SCR_SizeDown_f);
+	Cmd_AddCommand ("messagemode", Con_MessageMode_f);
+	Cmd_AddCommand ("messagemode2", Con_MessageMode2_f);
 }
 
 void SCR_LoadTextures()

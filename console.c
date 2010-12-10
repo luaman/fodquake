@@ -88,28 +88,6 @@ void Con_ClearNotify(void)
 		con_times[i] = 0;
 }
 
-static void Con_MessageMode_f(void)
-{
-	if (cls.state != ca_active)
-		return;
-
-	chat_team = false;
-	key_dest = key_message;
-	chat_buffer[0] = 0;
-	chat_linepos = 0;
-}
-
-static void Con_MessageMode2_f (void)
-{
-	if (cls.state != ca_active)
-		return;
-
-	chat_team = true;
-	key_dest = key_message;
-	chat_buffer[0] = 0;
-	chat_linepos = 0;
-}
-
 //If the line width has changed, reformat the buffer
 void Con_CheckResize(unsigned int pixelwidth)
 {
@@ -188,8 +166,6 @@ void Con_CvarInit(void)
 	Cvar_Register (&con_wordwrap);
 	Cvar_ResetCurrentGroup();
 
-	Cmd_AddCommand ("messagemode", Con_MessageMode_f);
-	Cmd_AddCommand ("messagemode2", Con_MessageMode2_f);
 	Cmd_AddCommand ("clear", Con_Clear_f);
 }
 
@@ -378,8 +354,8 @@ static void Con_DrawInput(void)
 //Draws the last few lines of output transparently over the game top
 unsigned int Con_DrawNotify (void)
 {
-	int v, skip, maxlines, i;
-	char *text, *s;
+	int v, maxlines, i;
+	char *text;
 	float time;
 
 	Draw_BeginTextRendering();
@@ -406,56 +382,9 @@ unsigned int Con_DrawNotify (void)
 
 		text = con.text + (i % con_totallines)*con_linewidth;
 
-		clearnotify = 0;
 		scr_copytop = 1;
 
 		Draw_String_Length(8, v, text, con_linewidth);
-
-		v += 8;
-	}
-
-
-	if (key_dest == key_message)
-	{
-		char temp[MAXCMDLINE + 1];
-		int len;
-
-		clearnotify = 0;
-		scr_copytop = 1;
-
-		if (chat_team)
-		{
-			Draw_String (8, v, "say_team:");
-			skip = 11;
-		}
-		else
-		{
-			Draw_String (8, v, "say:");
-			skip = 5;
-		}
-
-		// FIXME: clean this up
-		s = strcpy (temp, chat_buffer);
-
-		// add the cursor frame
-		if ((int) (curtime * con_cursorspeed) & 1)
-		{
-			if (chat_linepos == strlen(s))
-				s[chat_linepos+1] = '\0';
-
-			s[chat_linepos] = 11;
-		}
-
-		// prestep if horizontally scrolling
-		if (chat_linepos + skip >= (vid.width >> 3))
-			s += 1 + chat_linepos + skip - (vid.width >> 3);
-
-		len = strlen(s);
-		if (len+skip > (vid.width>>3))
-			len = (vid.width>>3) - skip;
-
-		if (len > 0)
-			Draw_String_Length(skip<<3, v, s, len);
 
 		v += 8;
 	}
