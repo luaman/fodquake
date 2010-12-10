@@ -21,14 +21,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifndef _CONSOLE_H_
 #define _CONSOLE_H_
 
-extern int con_notifylines;		// scan lines to clear for notify lines
-
 void Con_Init(void);
 void Con_Shutdown(void);
 void Con_CvarInit(void);
 void Con_CheckResize(unsigned int pixelwidth);
 void Con_DrawConsole(int lines);
-void Con_DrawNotify(void);
+unsigned int Con_DrawNotify(void);
 void Con_ClearNotify(void);
 void Con_Suppress(void);
 void Con_Unsuppress(void);

@@ -62,7 +62,6 @@ static float con_times[NUM_CON_TIMES];  // cls.realtime time the line was genera
                                         // for transparent notify lines
 
 static int con_vislines;
-int con_notifylines;			// scan lines to clear for notify lines
 
 #define		MAXCMDLINE	256
 extern	char	key_lines[32][MAXCMDLINE];
@@ -377,7 +376,7 @@ static void Con_DrawInput(void)
 }
 
 //Draws the last few lines of output transparently over the game top
-void Con_DrawNotify (void)
+unsigned int Con_DrawNotify (void)
 {
 	int v, skip, maxlines, i;
 	char *text, *s;
@@ -461,10 +460,9 @@ void Con_DrawNotify (void)
 		v += 8;
 	}
 
-	if (v > con_notifylines)
-		con_notifylines = v;
-	
 	Draw_EndTextRendering();
+
+	return v / 8;
 }
 
 //Draws the console with the solid background

@@ -71,6 +71,8 @@ int				scr_copyeverything;
 float			scr_con_current;
 float			scr_conlines;           // lines of console to display
 
+unsigned int scr_clearnotifylines;
+
 float			oldscreensize, oldfov, oldsbar;
 cvar_t			scr_viewsize = {"viewsize", "100", CVAR_ARCHIVE};
 cvar_t			scr_fov = {"fov", "90", CVAR_ARCHIVE};	// 10 - 140
@@ -776,12 +778,12 @@ void SCR_SetUpToDrawConsole(void)
 	{
 #ifndef GLQUAKE
 		scr_copytop = 1;
-		Draw_TileClear (0, 0, vid.width, con_notifylines);
+		Draw_TileClear(0, 0, vid.width, scr_clearnotifylines * 8);
 #endif
 	}
 	else
 	{
-		con_notifylines = 0;
+		scr_clearnotifylines = 0;
 	}
 
 #ifndef GLQUAKE
@@ -799,6 +801,8 @@ void SCR_SetUpToDrawConsole(void)
 
 void SCR_DrawConsole(void)
 {
+	unsigned int lines;
+
 	if (scr_con_current)
 	{
 		scr_copyeverything = 1;
@@ -808,7 +812,13 @@ void SCR_DrawConsole(void)
 	else
 	{
 		if (key_dest == key_game || key_dest == key_message)
-			Con_DrawNotify ();      // only draw notify in game
+		{
+			lines = Con_DrawNotify();      // only draw notify in game
+			if (lines > scr_clearnotifylines)
+			{
+				scr_clearnotifylines = lines;
+			}
+		}
 	}
 }
 
