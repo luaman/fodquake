@@ -21,6 +21,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifndef _CVAR_H_
 #define _CVAR_H_
 
+#include "qtypes.h"
+
 #include <stdio.h>
 
 #include "cvar_groups.h"
