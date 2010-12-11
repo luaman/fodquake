@@ -28,7 +28,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 static cvar_t con_notifylines = { "con_notifylines", "4" };
 static cvar_t con_notifytime = { "con_notifytime", "3" };
 
-static unsigned char conbuf[1024*256];
+static unsigned char *conbuf;
 static unsigned int contail;
 static unsigned int consize;
 static unsigned int partiallinestart;
@@ -232,19 +232,31 @@ static void Con_Clear()
 void Con_Init(void)
 {
 	consize = 1024*256;
-	lines = malloc(sizeof(*lines)*512);
-	memset(lines, 0, sizeof(*lines)*512);
-	maxlines = 512/8;
-	lastline = maxlines - 1;
-	displayline = lastline;
+	conbuf = malloc(consize);
+	if (conbuf)
+	{
+		lines = malloc(sizeof(*lines)*512);
+		if (lines)
+		{
+			memset(lines, 0, sizeof(*lines)*512);
+			maxlines = 512/8;
+			lastline = maxlines - 1;
+			displayline = lastline;
 
-	textcolumns = 65536;
+			textcolumns = 65536;
+		}
+	}
 }
 
 void Con_Shutdown(void)
 {
+	free(conbuf);
 	free(lines);
 	free(scrollupmarker);
+
+	conbuf = 0;
+	lines = 0;
+	scrollupmarker = 0;
 }
 
 void Con_CvarInit(void)
