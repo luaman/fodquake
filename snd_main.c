@@ -60,6 +60,8 @@ static int		num_sfx;
 
 static sfx_t	*ambient_sfx[NUM_AMBIENTS];
 
+static int soundtime_bufferwraps, soundtime_oldsamplepos;
+
 static int sound_started = 0;
 
 cvar_t bgmvolume = {"bgmvolume", "1", CVAR_ARCHIVE};
@@ -177,6 +179,10 @@ static void S_InitDriver()
 		sound_started = 0;
 		return;
 	}
+
+	soundtime_bufferwraps = 0;
+	soundtime_oldsamplepos = 0;
+	paintedtime = 0;
 
 	sound_started = 1;
 }
@@ -735,28 +741,28 @@ void S_Update(const vec3_t origin, const vec3_t forward, const vec3_t right, con
 void GetSoundtime (void)
 {
 	int samplepos, fullsamples;
-	static int buffers, oldsamplepos;
 
 	fullsamples = soundcard->samples / soundcard->channels;
 
 	// it is possible to miscount buffers if it has wrapped twice between calls to S_Update.  Oh well.
 	samplepos = soundcard->GetDMAPos(soundcard);
 
-	if (samplepos < oldsamplepos)
+	if (samplepos < soundtime_oldsamplepos)
 	{
-		buffers++;					// buffer wrapped
+		soundtime_bufferwraps++;					// buffer wrapped
 
 		if (paintedtime > 0x40000000)
 		{
 			// time to chop things off to avoid 32 bit limits
-			buffers = 0;
+			soundtime_bufferwraps = 0;
 			paintedtime = fullsamples;
 			S_StopAllSounds (true);
 		}
 	}
-	oldsamplepos = samplepos;
 
-	soundtime = buffers*fullsamples + samplepos/soundcard->channels;
+	soundtime_oldsamplepos = samplepos;
+
+	soundtime = soundtime_bufferwraps * fullsamples + samplepos/soundcard->channels;
 }
 
 void S_ExtraUpdate(void)
