@@ -1,5 +1,5 @@
 /*
-Copyright (C) 1996-1997 Id Software, Inc.
+Copyright (C) 2010 Mark Olsen
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -8,480 +8,607 @@ of the License, or (at your option) any later version.
 
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
 
 See the GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
-
 */
-// console.c
 
 #include <stdlib.h>
 #include <string.h>
-#include <stdio.h>
 
+/* Fixme: Include less. */
 #include "quakedef.h"
-#include "keys.h"
+#include "strl.h"
+#include "console.h"
 
-#include "ignore.h"
-#include "logging.h"
-#include "readablechars.h"
+static cvar_t con_notifylines = { "con_notifylines", "4" };
+static cvar_t con_notifytime = { "con_notifytime", "3" };
 
-#include "context_sensitive_tab.h"
+static char conbuf[1024*256];
+static unsigned int contail;
+static unsigned int consize;
+static unsigned int partiallinestart;
 
-#define		MINIMUM_CONBUFSIZE	(1 << 15)
-#define		DEFAULT_CONBUFSIZE	(1 << 16)
-#define		MAXIMUM_CONBUFSIZE	(1 << 22)
+static unsigned int *lines;
+static unsigned int maxlines; /* Must be a power of 2 */
+static unsigned int firstline;
+static unsigned int lastline;
+static unsigned int displayline;
 
-typedef struct
+static unsigned int textcolumns;
+
+static char *scrollupmarker;
+
+static unsigned int editlinepos;
+
+static const float con_cursorspeed = 4;
+
+static unsigned int suppressed;
+
+#define MAXNOTIFYLINES 16
+static unsigned long long notifytimes[MAXNOTIFYLINES];
+static unsigned int notifystart;
+
+/* Ugly :( */
+#define MAXCMDLINE 256
+extern char key_lines[32][MAXCMDLINE];
+extern int edit_line;
+extern int key_linepos;
+
+static void Con_CopyToBuffer(const void *buf, unsigned int size)
 {
-	char *text;
-	int maxsize;
-	int current;         // line where next message will be printed
-	int x;               // offset in current line for next print
-	int display;         // bottom of console displays this line
-	int numlines;        // number of non-blank text lines, used for backscroling
-} console_t;
-
-console_t	con;
-
-static int con_ormask;
-static int con_linewidth;		// characters across screen
-static int con_totallines;		// total lines in console scrollback
-static float con_cursorspeed = 4;
-
-static cvar_t _con_notifylines = {"con_notifylines","4"};
-static cvar_t con_notifytime = {"con_notifytime","3"};         //seconds
-static cvar_t con_wordwrap = {"con_wordwrap","1"};
-
-#define	NUM_CON_TIMES 16
-static float con_times[NUM_CON_TIMES];  // cls.realtime time the line was generated
-                                        // for transparent notify lines
-
-static int con_vislines;
-
-#define		MAXCMDLINE	256
-extern	char	key_lines[32][MAXCMDLINE];
-extern	int		edit_line;
-extern	int		key_linepos;
-
-static qboolean con_initialized = false;
-static qboolean con_suppress = false;
-
-static FILE		*qconsole_log;
-
-static void Con_Clear_f(void)
-{
-	con.numlines = 0;
-	memset(con.text, ' ', con.maxsize);
-	con.display = con.current;
-}
-
-void Con_ClearNotify(void)
-{
-	int i;
-
-	for (i = 0; i < NUM_CON_TIMES; i++)
-		con_times[i] = 0;
-}
-
-//If the line width has changed, reformat the buffer
-void Con_CheckResize(unsigned int pixelwidth)
-{
-	int i, j, width, oldwidth, oldtotallines, numlines, numchars;
-	char *tempbuf;
-
-	width = (pixelwidth >> 3) - 2;
-
-	if (width == con_linewidth)
-		return;
-
-	if (width < 1) // video hasn't been initialized yet
+	if (contail + size <= consize)
 	{
-		width = 38;
-		con_linewidth = width;
-		con_totallines = con.maxsize / con_linewidth;
-		memset (con.text, ' ', con.maxsize);
+		memcpy(conbuf + contail, buf, size);
+		contail += size;
+		if (contail == consize)
+			contail = 0;
 	}
 	else
 	{
-		oldwidth = con_linewidth;
-		con_linewidth = width;
-		oldtotallines = con_totallines;
-		con_totallines = con.maxsize / con_linewidth;
-		numlines = oldtotallines;
-
-		if (con_totallines < numlines)
-			numlines = con_totallines;
-
-		numchars = oldwidth;
-
-		if (con_linewidth < numchars)
-			numchars = con_linewidth;
-
-		tempbuf = malloc(con.maxsize);
-		if (tempbuf)
-			memcpy (tempbuf, con.text, con.maxsize);
-
-		memset (con.text, ' ', con.maxsize);
-
-		if (tempbuf)
-		{
-			for (i = 0; i < numlines; i++)
-			{
-				for (j = 0; j < numchars; j++)
-				{
-					con.text[(con_totallines - 1 - i) * con_linewidth + j] =
-						tempbuf[((con.current - i + oldtotallines) % oldtotallines) * oldwidth + j];
-				}
-			}
-
-			free(tempbuf);
-		}
-
-		Con_ClearNotify ();
+		memcpy(conbuf + contail, buf, consize - contail);
+		memcpy(conbuf, buf + (consize - contail), size - (consize - contail));
+		contail = size - (consize - contail);
 	}
-
-	con.current = con_totallines - 1;
-	con.display = con.current;
 }
 
-
-static void Con_InitConsoleBuffer(console_t *conbuffer, int size)
+static unsigned int Con_BufferStringLength(unsigned int offset)
 {
-	con.maxsize = size;
-	con.text = malloc(con.maxsize);
-	if (con.text == 0)
-		Sys_Error("Con_InitConsoleBuffer: Out of memory\n");
+	unsigned int i;
+	unsigned int len;
+
+	i = offset;
+
+	while(i < consize && conbuf[i] != 0)
+	{
+		i++;
+	}
+
+	len = i - offset;
+
+	if (i == consize)
+	{
+		i = 0;
+
+		while(i < offset && conbuf[i] != 0)
+		{
+			i++;
+		}
+
+		len += i;
+	}
+
+	return len;
+}
+
+static unsigned int Con_BufferFindLinebreak(unsigned int offset, unsigned int max)
+{
+	unsigned int i;
+
+	if (max <= textcolumns)
+		return max;
+
+	i = textcolumns;
+
+	while(i > 0 && conbuf[(offset + i) % consize] != ' ')
+		i--;
+
+	if (i == 0)
+		return textcolumns;
+
+	while(conbuf[(offset + i) % consize] == ' ')
+		i++;
+
+	return i;
+}
+
+static int Con_ExpandMaxLines()
+{
+	unsigned int *newlines;
+	unsigned int i;
+	unsigned int j;
+
+	fprintf(stderr, "Expanding number of lines from %d\n", maxlines);
+
+	newlines = malloc(maxlines*2*sizeof(*lines));
+	if (newlines)
+	{
+		i = 0;
+		j = firstline;
+		while (j != ((lastline + 1) % maxlines))
+		{
+			newlines[i++] = lines[j++];
+			j %= maxlines;
+		}
+
+		fprintf(stderr, "%d loops\n", i);
+
+
+		fprintf(stderr, "Before: displayline: %d lastline: %d firstline: %d\n", displayline, lastline, firstline);
+		displayline = (displayline - firstline) % maxlines;
+		lastline = (lastline - firstline) % maxlines;
+		firstline = 0;
+		fprintf(stderr, "After: displayline: %d lastline: %d firstline: %d\n", displayline, lastline, firstline);
+
+		lines = newlines;
+		maxlines *= 2;
+
+		fprintf(stderr, "Expanded number of lines to %d\n", maxlines);
+
+		return 1;
+	}
+
+	return 0;
+}
+
+static void Con_LayoutLine(unsigned int offset)
+{
+	unsigned int i;
+	unsigned int j;
+
+	i = Con_BufferStringLength(offset);
+
+	do
+	{
+		j = i;
+
+		j = Con_BufferFindLinebreak(offset, i);
+
+		if ((lastline+2)%maxlines == firstline)
+		{
+			if (!Con_ExpandMaxLines())
+			{
+				firstline++;
+				firstline = firstline % maxlines;
+			}
+		}
+
+		if (displayline == lastline)
+		{
+			displayline++;
+			displayline %= maxlines;
+		}
+
+		lastline++;
+		lastline %= maxlines;
+
+		lines[lastline] = offset;
+
+		notifytimes[notifystart] = Sys_IntTime();
+		notifystart++;
+		notifystart %= MAXNOTIFYLINES;
+
+		offset += j;
+		offset %= consize;
+		i -= j;
+	} while(i);
+}
+
+static void Con_Relayout()
+{
+	unsigned int i;
+
+	if (firstline != ((lastline + 1) % maxlines))
+	{
+		firstline = 0;
+		lastline = maxlines - 1;
+		displayline = lastline;
+
+		i = lines[firstline];
+
+		while(i != contail)
+		{
+			Con_LayoutLine(i);
+			i += Con_BufferStringLength(i) + 1;
+			i %= consize;
+		}
+	}
+}
+
+static void Con_Clear()
+{
+	contail = 0;
+	partiallinestart = 0;
+	firstline = 0;
+	lastline = maxlines - 1;
+	displayline = lastline;
+}
+
+void Con_Init(void)
+{
+	consize = 1024*256;
+	lines = malloc(sizeof(*lines)*512);
+	memset(lines, 0, sizeof(*lines)*512);
+	maxlines = 512/8;
+	lastline = maxlines - 1;
+	displayline = lastline;
+
+	textcolumns = 65536;
+}
+
+void Con_Shutdown(void)
+{
+	free(lines);
+	free(scrollupmarker);
 }
 
 void Con_CvarInit(void)
 {
 	Cvar_SetCurrentGroup(CVAR_GROUP_CONSOLE);
-	Cvar_Register (&_con_notifylines);
-	Cvar_Register (&con_notifytime);
-	Cvar_Register (&con_wordwrap);
+	Cvar_Register(&con_notifylines);
+	Cvar_Register(&con_notifytime);
 	Cvar_ResetCurrentGroup();
 
-	Cmd_AddCommand ("clear", Con_Clear_f);
+	Cmd_AddCommand("clear", Con_Clear);
 }
 
-void Con_Init(void)
+void Con_CheckResize(unsigned int pixelwidth)
 {
-	int i, conbufsize;
+	unsigned int newtextcolumns;
+	unsigned int i;
 
-	if (dedicated)
-		return;
-
-	if (COM_CheckParm("-condebug"))
-		qconsole_log = fopen(va("%s/qw/qconsole.log",com_basedir), "a");
-
-	if ((i = COM_CheckParm("-conbufsize")) && i + 1 < com_argc)
-	{
-		conbufsize = Q_atoi(com_argv[i + 1]) << 10;
-		conbufsize = bound (MINIMUM_CONBUFSIZE , conbufsize, MAXIMUM_CONBUFSIZE);
-	}
+	newtextcolumns = pixelwidth / 8;
+	if (newtextcolumns > 2)
+		newtextcolumns -= 2;
 	else
+		newtextcolumns = 1;
+
+	if (newtextcolumns != textcolumns)
 	{
-		conbufsize = DEFAULT_CONBUFSIZE;
-	}
+		textcolumns = newtextcolumns;
 
-	Con_InitConsoleBuffer(&con, conbufsize);
-
-	con_linewidth = -1;
-	Con_CheckResize(vid.width);
-
-	con_initialized = true;
-	Com_Printf ("Console initialized\n");
-}
-
-void Con_Shutdown(void)
-{
-	if (qconsole_log)
-		fclose(qconsole_log);
-
-	free(con.text);
-}
-
-static void Con_Linefeed(void)
-{
-	con.x = 0;
-	if (con.display == con.current)
-		con.display++;
-
-	con.current++;
-	if (con.numlines < con_totallines)
-		con.numlines++;
-
-	memset (&con.text[(con.current%con_totallines)*con_linewidth], ' ', con_linewidth);
-
-	// mark time for transparent overlay
-	if (con.current >= 0)
-		con_times[con.current % NUM_CON_TIMES] = cls.realtime;
-}
-
-//Handles cursor positioning, line wrapping, etc
-void Con_Print(const char *txt)
-{
-	int y, c, l, mask;
-	static int cr;
-
-	if (qconsole_log)
-	{
-		fprintf(qconsole_log, "%s", txt);
-		fflush(qconsole_log);
-	}
-
-	if (Log_IsLogging())
-	{
-		if (log_readable.value)
+		free(scrollupmarker);
+		if (textcolumns)
 		{
-			char *s, *tempbuf;
+			scrollupmarker = malloc(textcolumns + 1);
+			for(i=0;i<textcolumns;i++)
+				scrollupmarker[i] = i%4==0?'^':' ';
 
-			tempbuf = Z_Malloc(strlen(txt) + 1);
-			strcpy(tempbuf, txt);
-			for (s = tempbuf; *s; s++)
-				*s = readablechars[(unsigned char) *s];
-			Log_Write(tempbuf);
-			Z_Free(tempbuf);
+			scrollupmarker[i] = 0;
 		}
 		else
-		{
-			Log_Write(txt);	
-		}
-	}
+			scrollupmarker = 0;
 
-	if (!con_initialized || con_suppress)
-		return;
-
-	if (txt[0] == 1 || txt[0] == 2)
-	{
-		mask = 128;		// go to colored text
-		txt++;
-	}
-	else
-	{
-		mask = 0;
-	}
-
-	while ((c = *txt))
-	{
-		// count word length
-		for (l = 0; l < con_linewidth; l++)
-		{
-			char d = txt[l] & 127;
-			if ((con_wordwrap.value && (!txt[l] || d == 0x09 || d == 0x0D || d == 0x0A || d == 0x20)) ||
-			    (!con_wordwrap.value && txt[l] <= ' '))
-			{
-				break;
-			}
-		}
-
-		// word wrap
-		if (l != con_linewidth && con.x + l > con_linewidth)
-			con.x = 0;
-
-		txt++;
-
-		if (cr)
-		{
-			con.current--;
-			cr = false;
-		}
-
-		if (!con.x)
-			Con_Linefeed ();
-
-		switch (c)
-		{
-			case '\n':
-				con.x = 0;
-				break;
-
-			case '\r':
-				con.x = 0;
-				cr = 1;
-				break;
-
-			default:	// display character and advance
-				if (con.x >= con_linewidth)
-					Con_Linefeed();
-
-				y = con.current % con_totallines;
-				con.text[y * con_linewidth+con.x] = c | mask | con_ormask;
-				con.x++;
-				break;
-		}
+		Con_Relayout();
 	}
 }
 
-/*
-==============================================================================
-DRAWING
-==============================================================================
-*/
-
-//The input line scrolls horizontally if typing goes beyond the right edge
-static void Con_DrawInput(void)
+static void Con_DrawTextLines(unsigned int y, unsigned int maxlinestodraw, unsigned int lastlinetodraw)
 {
-	int len;
-	char *text, temp[MAXCMDLINE + 1];	//+ 1 for cursor if strlen(key_lines[edit_line]) == (MAX_CMDLINE - 1)
+	unsigned int i;
+	unsigned int j;
+	unsigned int nextline;
+	unsigned int linelength;
 
-	if (key_dest != key_console && cls.state == ca_active)
+	if (firstline == ((lastline + 1) % maxlines))
 		return;
 
-	Q_strncpyz(temp, key_lines[edit_line], MAXCMDLINE);
-	len = strlen(temp);
-	text = temp;
-
-	memset(text + len, ' ', MAXCMDLINE - len);		// fill out remainder with spaces
-	text[MAXCMDLINE] = 0;
-
-	// add the cursor frame
-	if ((int) (curtime * con_cursorspeed) & 1)
-		text[key_linepos] = 11;
-
-	//	prestep if horizontally scrolling
-	if (key_linepos >= con_linewidth)
-		text += 1 + key_linepos - con_linewidth;
-
-	Draw_String(8, con_vislines - 22, text);
-}
-
-//Draws the last few lines of output transparently over the game top
-unsigned int Con_DrawNotify (void)
-{
-	int v, maxlines, i;
-	char *text;
-	float time;
+	if (maxlinestodraw == 0)
+		return;
 
 	Draw_BeginTextRendering();
 
-	maxlines = _con_notifylines.value;
-	if (maxlines > NUM_CON_TIMES)
-		maxlines = NUM_CON_TIMES;
-	if (maxlines < 0)
-		maxlines = 0;
+	i = firstline;
+	y += maxlinestodraw * 8;
 
-	v = 0;
-	for (i = con.current-maxlines + 1; i <= con.current; i++)
+	j = lastlinetodraw;
+
+	if (firstline > lastlinetodraw)
+		j += maxlines;
+
+	if (firstline + maxlinestodraw - 1 <= j)
 	{
-		if (i < 0)
-			continue;
+		i = j - maxlinestodraw + 1;
+	}
+	else
+	{
+		i = firstline;
+		maxlinestodraw = j - firstline + 1;
+	}
 
-		time = con_times[i % NUM_CON_TIMES];
-		if (time == 0)
-			continue;
+	i %= maxlines;
 
-		time = cls.realtime - time;
-		if (time > con_notifytime.value)
-			continue;
+	y -= maxlinestodraw * 8;
 
-		text = con.text + (i % con_totallines)*con_linewidth;
+	while(i != ((lastline + 1) % maxlines) && maxlinestodraw)
+	{
+		if (maxlinestodraw == 1 && i != lastline)
+		{
+			Draw_String(8, y, scrollupmarker);
+			break;
+		}
 
-		scr_copytop = 1;
+		nextline = (i + 1) % maxlines;
+		linelength = Con_BufferStringLength(lines[i]);
+		if (nextline != ((lastline + 1) % maxlines))
+		{
+			if (lines[nextline] < lines[i])
+				j = consize - lines[i] + lines[nextline];
+			else
+				j = lines[nextline] - lines[i];
 
-		Draw_String_Length(8, v, text, con_linewidth);
+			if (j < linelength)
+				linelength = j;
+		}
 
-		v += 8;
+		if (lines[i] + linelength > consize)
+		{
+			j = consize - lines[i];
+			Draw_String_Length(8, y, conbuf + lines[i], j);
+			Draw_String_Length(8 + j * 8, y, conbuf, linelength - j);
+		}
+		else
+			Draw_String_Length(8, y, conbuf + lines[i], linelength);
+
+		y += 8;
+		i = nextline;
+		maxlinestodraw--;
 	}
 
 	Draw_EndTextRendering();
-
-	return v / 8;
 }
 
-//Draws the console with the solid background
-void Con_DrawConsole(int lines)
+void Con_DrawConsole(int pixellines)
 {
-	int i, x, y, rows, row;
-	char *text;
+	unsigned int linelength;
+	unsigned char tmpline[2048];
 
-	if (lines <= 0)
-		return;
+	Draw_ConsoleBackground(pixellines);
 
-// draw the background
-	Draw_ConsoleBackground (lines);
+	Con_DrawTextLines((pixellines+2)%8, (pixellines - 22) / 8, displayline);
 
-	// draw the text
-	con_vislines = lines;
+	if (key_linepos && key_linepos - 1 < editlinepos)
+		editlinepos = key_linepos - 1;
+	else if (key_linepos >= editlinepos + textcolumns)
+		editlinepos = key_linepos - textcolumns + 1;
 
-	// changed to line things up better
-	rows = (lines - 22) >> 3;		// rows of text to draw
+	linelength = strlen(key_lines[edit_line] + editlinepos);
+	if (linelength > textcolumns)
+		linelength = textcolumns;
+	if (linelength > sizeof(tmpline) - 1)
+		linelength = sizeof(tmpline) - 1;
 
-	y = lines - 30;
+	strlcpy(tmpline, key_lines[edit_line] + editlinepos, linelength + 1);
 
-	row = con.display;
-
-	// draw from the bottom up
-	if (con.display != con.current)
+	if ((int) (Sys_DoubleTime() * con_cursorspeed) & 1)
 	{
-		// draw arrows to show the buffer is backscrolled
-		for (x = 0; x < con_linewidth; x += 4)
-			Draw_Character ((x + 1) << 3, y, '^');
-
-		y -= 8;
-		rows--;
-		row--;
+		if (tmpline[key_linepos - editlinepos] == 0)
+			linelength++;
+		tmpline[key_linepos - editlinepos] = 11;
 	}
 
-	for (i = 0; i < rows; i++, y -= 8, row--)
+	Draw_String_Length(8, pixellines - 22, tmpline, linelength);
+}
+
+unsigned int Con_DrawNotify(void)
+{
+	unsigned int maxnotifylines;
+	unsigned int notifytime;
+	unsigned long long now;
+	unsigned int i;
+
+	now = Sys_IntTime();
+
+	notifytime = ((double)con_notifytime.value)*1000000;
+
+	maxnotifylines = con_notifylines.value;
+	if (maxnotifylines > MAXNOTIFYLINES)
+		maxnotifylines = MAXNOTIFYLINES;
+
+	i = (notifystart + (MAXNOTIFYLINES - maxnotifylines)) % MAXNOTIFYLINES;
+
+	while(maxnotifylines && notifytimes[i] + notifytime < now)
 	{
-		if (row < 0)
-			break;
-
-		if (con.current - row >= con_totallines)
-			break;		// past scrollback wrap point
-
-		text = con.text + (row % con_totallines)*con_linewidth;
-
-		Draw_String_Length(8, y, text, con_linewidth);
+		i++;
+		i %= MAXNOTIFYLINES;
+		maxnotifylines--;
 	}
 
-	// draw the input prompt, user text, and cursor if desired
-	Con_DrawInput();
-	Context_Sensitive_Tab_Completion_Draw();
+	Con_DrawTextLines(0, maxnotifylines, lastline);
+
+	return maxnotifylines;
+}
+
+void Con_ClearNotify(void)
+{
+	memset(notifytimes, 0, sizeof(notifytimes));
 }
 
 void Con_Suppress(void)
 {
-	con_suppress = true;
+	suppressed = 1;
 }
 
 void Con_Unsuppress(void)
 {
-	con_suppress = false;
+	suppressed = 0;
 }
 
 unsigned int Con_GetColumns()
 {
-	return con_linewidth;
+	return textcolumns;
+}
+
+static void Con_ClearBufferSpace(unsigned int size)
+{
+	while(firstline != ((lastline + 1) % maxlines) && ((lines[firstline] >= contail && lines[firstline] < contail + size) || (contail + size >= consize && lines[firstline] < (((contail + size) % consize)))))
+	{
+		printf("Clearing line\n");
+
+		if (displayline == firstline)
+		{
+			displayline++;
+			displayline %= maxlines;
+		}
+
+		lines[firstline++] = 0;
+		firstline %= maxlines;
+	}
+}
+
+void Con_Print(const char *txt)
+{
+	unsigned int i;
+	unsigned int j;
+	unsigned int linebegin;
+	const char *newline;
+	char *tmp;
+	char colourbuf[256];
+	void *freethis;
+
+	if (suppressed)
+		return;
+
+	if (lines == 0)
+	{
+		printf("%s\n", txt);
+		return;
+	}
+
+	freethis = 0;
+
+	if (*txt == 1 || *txt == 2)
+	{
+		/* OMGWTFBBQ */
+
+		txt++;
+
+		if (strlen(txt) + 1 < sizeof(colourbuf))
+		{
+			strcpy(colourbuf, txt);
+			tmp = colourbuf;
+		}
+		else
+		{
+			freethis = malloc(strlen(txt) + 1);
+			if (freethis == 0)
+			{
+				Con_Print("Out of memory\n");
+				return;
+			}
+
+			strcpy(freethis, txt);
+			tmp = freethis;
+		}
+
+		txt = tmp;
+		tmp--;
+
+		while(*++tmp)
+		{
+			if (*tmp != '\n')
+				*tmp |= 128;
+		}
+	}
+
+	while((newline = strchr(txt, '\n')))
+	{
+		if ((tmp = strchr(txt, '\r')) && tmp < newline)
+			txt = tmp + 1;
+
+		i = newline - txt + 1;
+
+		if (i + partiallinestart < consize)
+		{
+			Con_ClearBufferSpace(i);
+
+			if (partiallinestart)
+				linebegin = partiallinestart;
+			else
+				linebegin = contail;
+
+			Con_CopyToBuffer(txt, i);
+
+			j = contail - 1;
+			if (j >= consize)
+				j = consize - 1;
+			conbuf[j] = 0;
+
+			Con_LayoutLine(linebegin);
+		}
+
+		partiallinestart = 0;
+		txt += i;
+	}
+
+	if (*txt)
+	{
+		i = strlen(txt);
+		if (i + partiallinestart < consize)
+		{
+			if (!partiallinestart)
+				partiallinestart = contail;
+
+			Con_ClearBufferSpace(i + 1);
+			Con_CopyToBuffer(txt, i);
+			conbuf[contail] = 0;
+		}
+	}
+
+	free(freethis);
 }
 
 void Con_ScrollUp(unsigned int numlines)
 {
-	con.display -= numlines;
-	if (con.display - con.current + con.numlines < 0)
-		con.display = con.current - con.numlines;
+	int distance;
+
+	distance = displayline - firstline;
+	if (distance < 0)
+		distance += maxlines;
+
+	if (numlines > distance)
+		numlines = distance;
+
+	displayline -= numlines;
+	displayline %= maxlines;
 }
 
 void Con_ScrollDown(unsigned int numlines)
 {
-	con.display += numlines;
-	if (con.display - con.current > 0)
-		con.display = con.current;
+	int distance;
+
+	distance = lastline - displayline;
+	if (distance < 0)
+		distance += maxlines;
+
+	if (numlines > distance)
+		numlines = distance;
+
+	displayline += numlines;
+	displayline %= maxlines;
 }
 
-void Con_Home()
+void Con_Home(void)
 {
-	con.display = con.current - con.numlines;
+	displayline = firstline;
 }
 
-void Con_End()
+void Con_End(void)
 {
-	con.display = con.current;
+	displayline = lastline;
 }
 
