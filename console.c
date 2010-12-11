@@ -28,7 +28,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 static cvar_t con_notifylines = { "con_notifylines", "4" };
 static cvar_t con_notifytime = { "con_notifytime", "3" };
 
-static char conbuf[1024*256];
+static unsigned char conbuf[1024*256];
 static unsigned int contail;
 static unsigned int consize;
 static unsigned int partiallinestart;
@@ -114,13 +114,13 @@ static unsigned int Con_BufferFindLinebreak(unsigned int offset, unsigned int ma
 
 	i = textcolumns;
 
-	while(i > 0 && conbuf[(offset + i) % consize] != ' ')
+	while(i > 0 && conbuf[(offset + i) % consize] != ' ' && conbuf[(offset + i) % consize] != (' '|0x80))
 		i--;
 
 	if (i == 0)
 		return textcolumns;
 
-	while(conbuf[(offset + i) % consize] == ' ')
+	while(conbuf[(offset + i) % consize] == ' ' || conbuf[(offset + i) % consize] == (' '|0x80))
 		i++;
 
 	return i;
