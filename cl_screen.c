@@ -804,6 +804,59 @@ void SCR_SetUpToDrawConsole(void)
 #endif
 }
 
+static void SCR_DrawDownload(unsigned int vislines)
+{
+	int i, j, x, y, n;
+	char *text;
+	char dlbar[1024];
+	unsigned int linewidth;
+
+	linewidth = (vid.width >> 3) - 2;
+
+	// draw the download bar
+	// figure out width
+	if ((text = strrchr(cls.downloadname, '/')) != NULL)
+		text++;
+	else
+		text = cls.downloadname;
+
+	x = linewidth - ((linewidth * 7) / 40);
+	y = x - strlen(text) - 8;
+	i = linewidth/3;
+	if (strlen(text) > i)
+	{
+		y = x - i - 11;
+		Q_strncpyz (dlbar, text, i+1);
+		strcat(dlbar, "...");
+	}
+	else
+	{
+		strcpy(dlbar, text);
+	}
+	strcat(dlbar, ": ");
+	i = strlen(dlbar);
+	dlbar[i++] = '\x80';
+	// where's the dot go?
+	if (cls.downloadpercent == 0)
+		n = 0;
+	else
+		n = y * cls.downloadpercent / 100;
+
+	for (j = 0; j < y; j++)
+		if (j == n)
+			dlbar[i++] = '\x83';
+		else
+			dlbar[i++] = '\x81';
+	dlbar[i++] = '\x82';
+	dlbar[i] = 0;
+
+	sprintf(dlbar + strlen(dlbar), " %02d%%", cls.downloadpercent);
+
+	// draw it
+	y = vislines - 22 + 8;
+	Draw_String (8, y, dlbar);
+}
+
 static void SCR_DrawMessageMode(unsigned int y)
 {
 	char temp[MAXCMDLINE + 1];
@@ -857,8 +910,11 @@ void SCR_DrawConsole(void)
 	if (scr_con_current)
 	{
 		scr_copyeverything = 1;
-		Con_DrawConsole (scr_con_current);
+		Con_DrawConsole(scr_con_current);
 		clearconsole = 0;
+
+		if (cls.download)
+			SCR_DrawDownload(scr_con_current);
 	}
 	else
 	{
