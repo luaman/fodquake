@@ -132,8 +132,6 @@ static int Con_ExpandMaxLines()
 	unsigned int i;
 	unsigned int j;
 
-	fprintf(stderr, "Expanding number of lines from %d\n", maxlines);
-
 	newlines = malloc(maxlines*2*sizeof(*lines));
 	if (newlines)
 	{
@@ -145,19 +143,12 @@ static int Con_ExpandMaxLines()
 			j %= maxlines;
 		}
 
-		fprintf(stderr, "%d loops\n", i);
-
-
-		fprintf(stderr, "Before: displayline: %d lastline: %d firstline: %d\n", displayline, lastline, firstline);
 		displayline = (displayline - firstline) % maxlines;
 		lastline = (lastline - firstline) % maxlines;
 		firstline = 0;
-		fprintf(stderr, "After: displayline: %d lastline: %d firstline: %d\n", displayline, lastline, firstline);
 
 		lines = newlines;
 		maxlines *= 2;
-
-		fprintf(stderr, "Expanded number of lines to %d\n", maxlines);
 
 		return 1;
 	}
