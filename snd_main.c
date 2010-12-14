@@ -150,12 +150,13 @@ static void S_InitDriver()
 	soundcard = malloc(sizeof(*soundcard));
 	if (soundcard)
 	{
-		bzero(soundcard, sizeof(*soundcard));
 
 		for(i=0;i<NUMSOUNDDRIVERS;i++)
 		{
 			if (*sounddrivers[i].init)
 			{
+				bzero(soundcard, sizeof(*soundcard));
+
 				rc = (*sounddrivers[i].init)(soundcard, rate, 2, 16);
 				if (rc)
 				{
