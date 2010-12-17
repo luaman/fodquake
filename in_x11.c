@@ -22,9 +22,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <string.h>
 
 #include <X11/Xlib.h>
+#include <X11/Xatom.h>
 #include <X11/Xutil.h>
 #include <X11/keysym.h>
 #include <X11/extensions/xf86dga.h>
+#include <X11/extensions/XInput.h>
+
+#include <dlfcn.h>
 
 #include "quakedef.h"
 #include "input.h"
@@ -43,6 +47,14 @@ typedef struct
 	int key;
 	int down;
 } keyq_t;
+
+struct xpropertyrestore
+{
+	struct xpropertyrestore *next;
+	XID deviceid;
+	Atom property;
+	unsigned char oldvalue;
+};
 
 struct inputdata
 {
@@ -71,7 +83,154 @@ struct inputdata
 	int grab_mouse;
 	int dga_mouse_enabled;
 	int mouse_grabbed;
+
+	void *libxi;
+	XDevice *(*__XOpenDevice)(Display *display, XID device_id);
+	void (*__XCloseDevice)(Display *display, XDevice *device);
+	XDeviceInfo *(*__XListInputDevices)(Display *display, int *ndevices_return);
+	int (*__XFreeDeviceList)(XDeviceInfo *list);
+	Atom *(*__XListDeviceProperties)(Display *display, XDevice *device, int *nprops_return);
+	int (*__XGetDeviceProperty)(Display *display, XDevice *device, Atom property, long offset, long length, Bool delete, Atom req_type, Atom *actual_type_return, int *actual_format_return, unsigned long *nitems_return, unsigned long *bytes_after_return, unsigned char **prop_return);
+	void (*__XChangeDeviceProperty)(Display *display, XDevice *device, Atom property, Atom type, int format, int mode, const char *data, int nelements);
+
+	struct xpropertyrestore *xpropertyrestore;
 };
+
+static void open_libxi(struct inputdata *id)
+{
+	/* libXi will unfortunately leak memory on each use... However there's no easy way around it really :( */
+
+	id->libxi = dlopen("libXi.so", RTLD_NOW);
+	if (id->libxi)
+	{
+		id->__XOpenDevice = dlsym(id->libxi, "XOpenDevice");
+		id->__XCloseDevice = dlsym(id->libxi, "XCloseDevice");
+		id->__XListInputDevices = dlsym(id->libxi, "XListInputDevices");
+		id->__XFreeDeviceList = dlsym(id->libxi, "XFreeDeviceList");
+		id->__XListDeviceProperties = dlsym(id->libxi, "XListDeviceProperties");
+		id->__XGetDeviceProperty = dlsym(id->libxi, "XGetDeviceProperty");
+		id->__XChangeDeviceProperty = dlsym(id->libxi, "XChangeDeviceProperty");
+
+		if (id->__XOpenDevice
+		 && id->__XCloseDevice
+		 && id->__XListInputDevices
+		 && id->__XFreeDeviceList
+		 && id->__XListDeviceProperties
+		 && id->__XGetDeviceProperty
+		 && id->__XChangeDeviceProperty)
+		{
+			return;
+		}
+
+		dlclose(id->libxi);
+		id->libxi = 0;
+	}
+}
+
+static void enable_middle_button_emulation(struct inputdata *id)
+{
+	struct xpropertyrestore *xpropertyrestore;
+	struct xpropertyrestore *next;
+	XDevice *xd;
+
+	next = id->xpropertyrestore;
+	while((xpropertyrestore = next))
+	{
+		xd = id->__XOpenDevice(id->x_disp, xpropertyrestore->deviceid);
+		if (xd)
+		{
+			id->__XChangeDeviceProperty(id->x_disp, xd, xpropertyrestore->property, XA_INTEGER, 8, PropModeReplace, &xpropertyrestore->oldvalue, 1);
+
+			id->__XCloseDevice(id->x_disp, xd);
+		}
+
+		next = xpropertyrestore->next;
+		free(xpropertyrestore);
+	}
+}
+
+static void disable_middle_button_emulation(struct inputdata *id)
+{
+	XDeviceInfo *xdi;
+	XDevice *xd;
+	Atom *xprops;
+	char *name;
+	Atom actual_type;
+	int actual_format;
+	unsigned long nitems;
+	unsigned long bytes_after;
+	unsigned char *propdata;
+	int numxdi;
+	int numxprops;
+	int i;
+	int j;
+	int ret;
+	unsigned char oldval;
+	static const unsigned char newval = 0;
+	struct xpropertyrestore *xpropertyrestore;
+
+	xdi = id->__XListInputDevices(id->x_disp, &numxdi);
+	if (xdi)
+	{
+		for(i=0;i<numxdi;i++)
+		{
+			if (xdi[i].use != IsXExtensionPointer)
+				continue;
+
+			xd = id->__XOpenDevice(id->x_disp, xdi[i].id);
+			if (xd)
+			{
+				xprops = id->__XListDeviceProperties(id->x_disp, xd, &numxprops);
+				if (xprops)
+				{
+					for(j=0;j<numxprops;j++)
+					{
+						name = XGetAtomName(id->x_disp, xprops[j]);
+						if (name)
+						{
+							if (strcmp(name, "Evdev Middle Button Emulation") == 0)
+							{
+								ret = id->__XGetDeviceProperty(id->x_disp, xd, xprops[j], 0, 1, False, AnyPropertyType, &actual_type, &actual_format, &nitems, &bytes_after, &propdata);
+								if (ret == Success)
+								{
+									if (actual_format == 8 && actual_type == XA_INTEGER)
+									{
+										oldval = *(unsigned char *)propdata;
+										if (oldval)
+										{
+											xpropertyrestore = malloc(sizeof(*xpropertyrestore));
+											if (xpropertyrestore)
+											{
+												xpropertyrestore->next = id->xpropertyrestore;
+												xpropertyrestore->deviceid = xdi[i].id;
+												xpropertyrestore->property = xprops[j];
+												xpropertyrestore->oldvalue = oldval;
+
+												id->xpropertyrestore = xpropertyrestore;
+
+												id->__XChangeDeviceProperty(id->x_disp, xd, xprops[j], XA_INTEGER, 8, PropModeReplace, &newval, 1);
+											}
+										}
+									}
+
+									XFree(propdata);
+								}
+							}
+
+							XFree(name);
+						}
+					}
+
+					XFree(xprops);
+				}
+
+				id->__XCloseDevice(id->x_disp, xd);
+			}
+		}
+
+		id->__XFreeDeviceList(xdi);
+	}
+}
 
 static int is_evdev_rules(struct inputdata *id)
 {
@@ -844,6 +1003,13 @@ void *X11_Input_Init(Window x_win, unsigned int windowwidth, unsigned int window
 			id->x_disp = XOpenDisplay(0);
 			if (id->x_disp)
 			{
+				id->xpropertyrestore = 0;
+
+				open_libxi(id);
+
+				if (id->libxi)
+					disable_middle_button_emulation(id);
+
 				if (is_evdev_rules(id))
 				{
 					id->keytable = keytable_evdev;
@@ -908,6 +1074,13 @@ void X11_Input_Shutdown(void *inputdata)
 	XChangeWindowAttributes(id->x_disp, id->x_win, CWEventMask, &attr);
 
 	XCloseDisplay(id->x_disp);
+
+	if (id->libxi)
+	{
+		enable_middle_button_emulation(id);
+
+		dlclose(id->libxi);
+	}
 
 	Sys_Thread_DeleteMutex(id->mutex);
 
