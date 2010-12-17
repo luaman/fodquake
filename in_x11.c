@@ -1073,14 +1073,13 @@ void X11_Input_Shutdown(void *inputdata)
 	attr.event_mask = 0;
 	XChangeWindowAttributes(id->x_disp, id->x_win, CWEventMask, &attr);
 
+	if (id->libxi)
+		enable_middle_button_emulation(id);
+
 	XCloseDisplay(id->x_disp);
 
 	if (id->libxi)
-	{
-		enable_middle_button_emulation(id);
-
 		dlclose(id->libxi);
-	}
 
 	Sys_Thread_DeleteMutex(id->mutex);
 
