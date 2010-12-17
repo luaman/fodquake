@@ -8,8 +8,6 @@
 #include "context_sensitive_tab.h"
 #include "tokenize_string.h"
 
-#warning "Try entering 'cfg_load                          j<tab>' in Quake, assuming you have a one and only one config that starts with a j. In my case it's jogi.cfg, and my command line ends up looking something like 'cfg_load jogi.cfg                 j'"
-
 struct cst_commands
 {
 	struct cst_commands *next;
@@ -18,6 +16,8 @@ struct cst_commands
 	int (*result)(struct cst_info *self, int *results, int get_result, int result_type, char **result);
 	int (*get_data)(struct cst_info *self, int remove);
 };
+
+struct cst_commands Command_Completion;
 
 #define MAXCMDLINE 256
 extern int key_linepos;
@@ -35,13 +35,20 @@ static void cleanup_cst(struct cst_info *info)
 	if (info == NULL)
 		return;
 
+	if (info->tokenized_input)
+		Tokenize_String_Delete(info->tokenized_input);
+
 	if (info->get_data)
 		info->get_data(info, 1);
 
-	free(info);
+	if (info->checked)
+		free(info->checked);
+
+	//free(info);
 }
 
-static struct cst_info *cst_info;
+static struct cst_info cst_info_static;
+static struct cst_info *cst_info = &cst_info_static;
 
 static struct cst_commands *commands;
 
@@ -88,45 +95,6 @@ void CSTC_Add(char *name, int (*conditions)(void), int (*result)(struct cst_info
 	command->get_data = get_data;
 }
 
-static struct cst_info *create_info_from_command(struct cst_commands *cc, char *args)
-{
-
-	struct cst_info *info;
-
-	if (cc == NULL)
-		return NULL;
-
-	info = (struct cst_info *) calloc(1, sizeof(struct cst_info));
-	
-	if (info == NULL)
-		return NULL;
-
-	if (args)
-		snprintf(info->input, sizeof(info->input), "%s", args);
-
-	info->name = cc->name;
-	info->result = cc->result;
-	info->get_data = cc->get_data;
-
-	return info;
-}
-
-static void strip_leading_space(char *string, int size)
-{
-	int i;
-	char *p1;
-
-	if (string[0] != ' ')
-		return;
-
-	p1 = string;
-	while (*p1 != '\0' && isspace(*p1))
-		p1++;
-	i = strlen(p1);
-	memmove(string, p1, i + 1);
-
-}
-
 static void Tokenize_Input(struct cst_info *self)
 {
 	if (self == NULL)
@@ -141,166 +109,39 @@ static void Tokenize_Input(struct cst_info *self)
 	self->tokenized_input = Tokenize_String(self->input);
 }
 
-static struct cst_info *get_current_command(void)
+static void insert_result(struct cst_info *self, char *ptr)
 {
-	int cp;
-	int ep;
-	int i;
-	struct cst_commands *cc;
-	struct cst_info *ci;
-	char cmd[512], info[512];
+	char *result;
+	char new_keyline[MAXCMDLINE];
 
-	cmd[0] = '\0';
+	if (ptr)
+		result = ptr;
+	else
+		if (cst_info->result(cst_info, NULL, cst_info->selection, 0, &result))
+			return;
 
-	cp = key_linepos;
+	if (self->insert_space)
+		snprintf(new_keyline, MAXCMDLINE, "%*.*s %s%s", self->argument_start, self->argument_start, key_lines[edit_line], result, key_lines[edit_line] + self->argument_start + self->argument_length);
+	else
+		snprintf(new_keyline, MAXCMDLINE, "%*.*s%s%s", self->argument_start, self->argument_start, key_lines[edit_line], result, key_lines[edit_line] + self->argument_start + self->argument_length);
+	memcpy(key_lines[edit_line], new_keyline, MAXCMDLINE);
 
-#warning Why the '/' here?
-	while (cp > 1 && key_lines[edit_line][cp] != ';' && key_lines[edit_line][cp] != '/')
-	{
-		cp--;
-	}
+	key_linepos = self->argument_start + strlen(result);
+	if (self->insert_space)
+		key_linepos++;
 
-	if (key_lines[edit_line][cp] == ';' || key_lines[edit_line][cp] == '/')
-	{
-		cp++;
-	}
-
-#warning The following code makes 'foo; cfg_load <tab>' fail, where 'foo;cfg_load <tab>' works. I guess you want to skip whitespaces first?
-	ep = 0;
-
-	while ((ep + cp) < key_linepos)
-	{
-		if (isspace(key_lines[edit_line][ep + cp]))
-			break;
-		ep++;
-	}
-	ep--;
-
-	if (ep == 0)
-		return NULL;
-
-#warning Potential buffer overflow here.
-	for (i=0; i<=ep; i++)
-		cmd[i] = key_lines[edit_line][cp+i];
-	cmd[i] = '\0';
-
-	info[0] = '\0';
-	ep++;
-	for (i=0; i<(key_linepos - (ep + cp)); i++)
-		info[i] = key_lines[edit_line][ep+cp+i];	
-	info[i] = '\0';
-
-#warning How about just skipping the space before copying?
-	strip_leading_space(info, strlen(info));
-
-	cc = commands;
-
-	while (cc)
-	{
-		if (strcmp(cc->name, cmd) == 0)
-			break;
-		cc = cc->next;
-	}
-
-	if (cc == NULL)
-		return NULL;
-
-
-	if (cc->conditions)
-		if (cc->conditions() == 0)
-			return NULL;
-
-	ci = create_info_from_command(cc, info);
-	ci->argument_start = ep + cp;
-	ci->input_position = strlen(ci->input);
-
-	Tokenize_Input(ci);
-
-	if (ci->get_data)
-	{
-		if (ci->get_data(ci, 0))
-		{
-#warning Worst. Com_Printf(). Ever. :) Same for the next two.
-			Com_Printf("get_data was 1\n");
-			CSTC_Cleanup(ci);
-			return NULL;
-		}
-	}
-
-	if (ci->result(ci, &ci->results, 0, 0, NULL))
-	{
-		CSTC_Cleanup(ci);
-		Com_Printf("results returned 1\n");
-		return NULL;
-	}
-
-	if (ci->results == 0)
-	{
-		Com_Printf("results was 0\n");
-		CSTC_Cleanup(ci);
-		return NULL;
-	}
-
-
-	return ci;
+#warning You need to clamp key_linepos here (it can otherwise overflow)
 }
 
-static struct cst_info *check_is_command(void)
+void CSTC_Insert_And_Close(void)
 {
-	struct cst_info *current_command;
-
-	if (key_linepos < 2)
-	{
-		return NULL;
-	}
-
-	current_command = get_current_command();
-
-	return current_command;
-}
-
-int Context_Sensitive_Tab_Completion(void)
-{
-	cst_info = check_is_command();
-
-	if (cst_info)
-	{
-		context_sensitive_tab_completion_active = 1;
-		Com_Printf("Context sensitive active for %s\n", cst_info->name);
-		return 1;
-	}
-
-	Com_Printf("Context sensitive not active\n");
-
-	return 0;
-}
-
-#warning This function definitely needs to be a bit more graceful. You need to move the rest of the command line, if any, to the right first. Also you should probably update the cursor position.
-static void insert_result(char *result, int argument_start)
-{
-	int i;
-
-	if (!result)
-		return;
-
-	key_lines[edit_line][argument_start] = ' ';
-#warning Potential buffer overflow.
-	for (i=0; i<strlen(result);i++)
-		key_lines[edit_line][argument_start + 1 + i] = result[i];
-
-}
-
-void CSTC_Insert_And_Close(char *result, int argument_start)
-{
-	insert_result(result, argument_start);
+	insert_result(cst_info, NULL);
 	context_sensitive_tab_completion_active = 0;
 }
 
 static void cstc_insert_only_find(struct cst_info *self)
 {
-	char *ptr;
-	self->result(self, NULL, 0, 0, &ptr);
-	insert_result(ptr, self->argument_start);
+	insert_result(self, NULL);
 	CSTC_Cleanup(self);
 }
 
@@ -322,8 +163,7 @@ void Context_Sensitive_Tab_Completion_Key(int key)
 
 	if (key == K_ENTER)
 	{
-		if (!cst_info->result(cst_info, NULL, cst_info->selection, 0, &ptr))
-			insert_result(ptr, cst_info->argument_start);
+		insert_result(cst_info, NULL);
 		CSTC_Cleanup(cst_info);
 		return;
 	}
@@ -358,6 +198,8 @@ void Context_Sensitive_Tab_Completion_Key(int key)
 			cst_info->selection++;
 		else
 			cst_info->selection--;
+		if (cst_info->selection < 0)
+			cst_info->selection = i-1;
 		if (cst_info->selection >= i)
 			cst_info->selection = 0;
 		return;
@@ -379,9 +221,9 @@ void Context_Sensitive_Tab_Completion_Key(int key)
 	if ((key > 32 && key < 127) || key == K_SPACE) 
 	{
 #warning So the \0 will be inserted at buffer + INPUT_MAX? Buffer overflow.
-		if (cst_info->input_position >= INPUT_MAX)
+		if (cst_info->input_position >= INPUT_MAX-1)
 		{
-			cst_info->input_position = INPUT_MAX - 1;
+			cst_info->input_position = INPUT_MAX - 2;
 			return;
 		}
 		cst_info->input[cst_info->input_position++] = key;
@@ -392,7 +234,49 @@ void Context_Sensitive_Tab_Completion_Key(int key)
 
 }
 
-static void CSTC_Draw(struct cst_info *self, int y_offset);
+static void CSTC_Draw(struct cst_info *self, int y_offset)
+{
+	int i, result_offset, offset, rows;
+	char *ptr;
+
+	if (self->direction == -1)
+		offset = y_offset - 32;
+	else
+		offset = y_offset - 14;
+
+	Draw_Fill(0, offset , vid.width, 10, 4);
+	Draw_String(8, offset, self->input);
+	Draw_String(8 + self->input_position * 8 , offset + 2, "_");
+
+	offset += 8 * self->direction;
+
+	if (self->direction == -1)
+		rows = offset / 8;
+	else
+		rows = (vid.height - offset) / 8;
+
+	result_offset = 0;
+	if (rows < self->results)
+	{
+		if (self->selection > rows/2)
+			result_offset = self->selection - rows/2;
+		if ((self->results - self->selection) < rows/2)
+			result_offset = self->results - rows;
+	}
+
+	for (i=0, ptr = NULL; i<rows; i++)
+	{
+		if (self->result(self, NULL, i + result_offset, 1, &ptr))
+			break;
+		if (i + result_offset == self->selection)
+			Draw_Fill(0, offset + i * 8 * self->direction, vid.width, 8, 40);
+		else
+			Draw_Fill(0, offset + i * 8 * self->direction, vid.width, 8, 4);
+
+		Draw_String(32, offset + i * 8 * self->direction, ptr);
+	}
+}
+
 void Context_Sensitive_Tab_Completion_Draw(void)
 {
 	extern float scr_conlines;
@@ -417,76 +301,584 @@ void Context_Sensitive_Tab_Completion_Draw(void)
 	CSTC_Draw(cst_info, scr_conlines);
 }
 
-
-/*
-static void SC_Test(void)
+static void getarg(const char *s, char **start, char **end, char **next)
 {
-	struct directory_list *dlist;
-	int i;
+	char endchar;
 
-	//char *demo_endigs[] = {".mvd", ".qwd", ".qwz", NULL};
-	//dlist = Util_Dir_Recursive_Read_Filter(va("%s",com_basedir), demo_endigs);
+	while(*s == ' ')
+		s++;
 
-	dlist = Util_Dir_Recursive_Read_Filter("//Mephisto/tv", NULL);
-	Com_Printf("%s\n", com_basedir);
-
-	if (dlist == NULL)
+	if (*s == '"')
 	{
-		Com_Printf("reading failed!\n");
-		return;
+		endchar = '"';
+		s++;
 	}
-
-	Util_Dir_Sort(dlist);
-
-	Com_Printf("%i\n", dlist->entry_count);
-
-	for (i=0; i<dlist->entry_count; i++)
-	{
-		if (dlist->entries[i].type == et_dir)
-			Com_Printf("DIR : %s\n", dlist->entries[i].name);
-		else if (dlist->entries[i].type == et_file)
-			Com_Printf("FILE: %s\n", dlist->entries[i].name);
-
-	}
-	Util_Dir_Delete(dlist);
-}
-*/
-
-#warning "This function happily draws far outside the screen and there's also no scrolling offered."
-static void CSTC_Draw(struct cst_info *self, int y_offset)
-{
-	int i, offset;
-	char *ptr;
-
-	if (self->direction == -1)
-		offset = y_offset - 32;
 	else
-		offset = y_offset - 14;
+		endchar = ' ';
 
-	Draw_Fill(0, offset , vid.width, 10, 4);
-	Draw_String(8, offset, self->input);
-	Draw_String(8 + self->input_position * 8 , offset + 2, "_");
+	*start = s;
 
-	offset += 8 * self->direction;
+	while(*s && *s != endchar && (endchar != ' ' || *s != ';'))
+		s++;
 
-	for (i=0, ptr = NULL; i<self->results; i++)
-	{
-		if (self->result(self, NULL, i, 1, &ptr))
-			break;
-		if (i == self->selection)
-			Draw_Fill(0, offset + i * 8 * self->direction, vid.width, 8, 40);
-		else
-			Draw_Fill(0, offset + i * 8 * self->direction, vid.width, 8, 4);
+	*end = s;
 
-		Draw_String(32, offset + i * 8 * self->direction, ptr);
-	}
+	if (*s == '"')
+		s++;
+
+	*next = s;
 }
 
-#warning This should be CvarInit, and its calling point in cl_main.c should be changed.
-void Context_Sensitive_Tab_Completion_Init(void)
+void read_info_new (char *string, int position, char **cmd_begin, int *cmd_len, char **arg_begin, int *arg_len, int *cursor_on_command, int *is_invalid)
 {
-	//Cmd_AddCommand("sc_test", &SC_Test);
+	char *cmd_start, *cmd_stop, *arg_start, *arg_stop;
+	char **start, **stop;
+	char *s;
+	char *next;
+	unsigned int i;
+	int docontinue;
+	int dobreak;
+	int isinvalid;
 
+	docontinue = 0;
+	dobreak = 0;
+
+	s = string;
+
+	cmd_start = string;
+	cmd_stop = string;
+	arg_start = string;
+	arg_stop = string;
+
+	isinvalid = 0;
+
+	if (cursor_on_command)
+		*cursor_on_command = 0;
+
+
+	while(*s)
+	{
+		if (*s == '/')
+		{
+			if (s != string)
+				isinvalid = 1;
+
+			s++;
+		}
+
+		if (*s == ' ')
+			break;
+
+		if (position < s - string)
+			break;
+
+		start = &cmd_start;
+		stop = &cmd_stop;
+
+		while(*s)
+		{
+			getarg(s, start, stop, &next);
+
+#if 0
+			printf("'%s' '%s'\n", cmd_start, cmd_stop);
+#endif
+
+			if (dobreak)
+				break;
+
+			s = next;
+			while(*s == ' ')
+				s++;
+
+			if (position >= (*start - string) && position <= (next - string))
+			{
+#if 0
+				printf("Cursor is in command\n");
+#endif
+				if (cursor_on_command)
+					*cursor_on_command = 1;
+
+				dobreak = 1;
+
+#if 0
+				if (*s == 0 || *s == ';')
+#endif
+					break;
+			}
+
+			if (*s == ';')
+			{
+				isinvalid = 0;
+
+				s++;
+				while(*s == ' ')
+					s++;
+
+				cmd_start = string;
+				cmd_stop = string;
+				arg_start = string;
+				arg_stop = string;
+
+				docontinue = 1;
+				break;
+			}
+
+			start = &arg_start;
+			stop = &arg_stop;
+		}
+
+		if (docontinue)
+		{
+			docontinue = 0;
+			continue;
+		}
+
+		if (dobreak)
+			break;
+	}
+
+	if (isinvalid)
+	{
+		cmd_start = string;
+		cmd_stop = string;
+		arg_start = string;
+		arg_stop = string;
+
+		if (cmd_begin)
+			*cmd_begin = NULL;
+
+		if (cmd_len)
+			cmd_len = 0;
+
+		if (arg_begin)
+			*arg_begin = NULL;
+
+		if (arg_len)
+			*arg_len = 0;
+
+		if (is_invalid)
+			*is_invalid = 1;
+
+	}
+	else
+	{
+		if (cmd_begin)
+			*cmd_begin = cmd_start;
+
+		if (cmd_len)
+			*cmd_len = cmd_stop - cmd_start;
+
+		if (arg_begin)
+			*arg_begin = arg_start;
+
+		if (arg_len)
+			*arg_len = arg_stop - arg_start;
+
+		if (is_invalid)
+			*is_invalid = 0;
+	}
+
+	/*
+	printf(" %s\n", string);
+	printf("%*s%s\n", position + 1, " ", "_");
+	printf("%*s%s\n", cmd_start - string + 1, " ", "^");
+	printf("%*s%s\n", cmd_stop - string + 1, " ", "^");
+	printf("%*s%s\n", arg_start - string + 1, " ", "^");
+	printf("%*s%s\n", arg_stop - string + 1, " ", "^");
+	*/
+
+}
+
+
+static void setup_completion(struct cst_commands *cc, struct cst_info *c, int arg_start, int arg_len, int insert_space)
+{
+	if (c == NULL || cc == NULL)
+		return;
+
+	memset(c, 0, sizeof(struct cst_info));
+
+	c->name = cc->name;
+	c->result = cc->result;
+	c->get_data = cc->get_data;
+	snprintf(c->input, sizeof(c->input), "%.*s", arg_len, key_lines[edit_line] + arg_start);
+	c->input_position = arg_len;
+	Tokenize_Input(c);
+	c->argument_start = arg_start;
+	c->argument_length = arg_len;
+	if (c->get_data)
+		c->get_data(c, 0);
+	c->result(c, &c->results, 0, 0, NULL);
+	c->insert_space = insert_space;
+}
+
+static int setup_current_command(void)
+{
+	int cmd_len, arg_len, cursor_on_command, isinvalid;
+	char *cmd_start, *arg_start;
+	struct cst_commands *c;
+
+		
+	read_info_new(key_lines[edit_line] + 1, key_linepos, &cmd_start, &cmd_len, &arg_start, &arg_len, &cursor_on_command, &isinvalid);
+
+	if (isinvalid)
+		return 0;
+
+	if (cursor_on_command || key_lines[edit_line] + key_linepos == cmd_start + cmd_len)
+	{
+		setup_completion(&Command_Completion, cst_info, cmd_start - key_lines[edit_line], cmd_len, 0);
+		return 1;
+	}
+
+	if (cmd_start && arg_start)
+	{
+		c = commands;
+
+		while (c)
+		{
+			if (strncmp(c->name, cmd_start, cmd_len) == 0)
+			{
+				if (arg_start - key_lines[edit_line] - 1 == 0)
+					setup_completion(c, cst_info, cmd_start + cmd_len - key_lines[edit_line], arg_len, 1);
+				else
+					setup_completion(c, cst_info, arg_start - key_lines[edit_line], arg_len, 0);
+				return 1;
+			}
+			c = c->next;
+		}
+	}
+	return 0;
+}
+
+int Context_Sensitive_Tab_Completion(void)
+{
+	if (setup_current_command())
+	{
+		context_sensitive_tab_completion_active = 1;
+		Com_Printf("Context sensitive active for %s\n", cst_info->name);
+		return 1;
+	}
+
+	Com_Printf("Context sensitive not active\n");
+
+	return 0;
+}
+
+int Cmd_CompleteCountPossible (char *partial);
+int Cmd_AliasCompleteCountPossible (char *partial);
+int Cvar_CompleteCountPossible (char *partial);
+
+struct cva_s
+{
+	union
+	{
+		cmd_function_t *c;
+		cmd_alias_t *a;
+		cvar_t *v;
+	} info;
+	int type;
+};
+
+static int name_compare(const void *a, const void *b)
+{
+	struct cva_s *x, *y;
+	char *na, *nb;
+
+	if (a == NULL)
+		return -1;
+
+	if (b == NULL)
+		return -1;
+
+	x = (struct cva_s *)a;
+	y = (struct cva_s *)b;
+
+	switch (x->type)
+	{
+		case 0:
+			na = x->info.c->name;
+			break;
+		case 1:
+			na = x->info.a->name;
+			break;
+		case 2:
+			na = x->info.v->name;
+			break;
+		default:
+			return -1;
+	}
+
+	switch (y->type)
+	{
+		case 0:
+			nb = y->info.c->name;
+			break;
+		case 1:
+			nb = y->info.a->name;
+			break;
+		case 2:
+			nb = y->info.v->name;
+			break;
+		default:
+			return -1;
+	}
+
+	return(strcasecmp(na, nb));
+}
+
+static int setup_command_completion_data(struct cst_info *self)
+{
+	extern cvar_t *cvar_vars;
+	extern cmd_function_t *cmd_functions;
+	extern cmd_alias_t *cmd_alias;
+	cmd_function_t *cmd;
+	cmd_alias_t *alias;
+	cvar_t *var;
+	int count, i, add;
+
+	struct cva_s *cd;
+
+	if (self->data)
+	{
+		free(self->data);
+		self->data = NULL;
+	}
+
+	count = 0;
+
+	for (cmd=cmd_functions; cmd; cmd=cmd->next)
+	{
+		add = 1;
+		if (self->tokenized_input->count == 1)
+		{
+			if (strcmp(cmd->name, self->tokenized_input->tokens[0]) == 0)
+			{
+				cd = self->data = calloc(1, sizeof(struct cva_s));
+				if (cd == NULL)
+					return -1;
+				cd->type = 0;
+				cd->info.c = cmd;
+				return 1;
+			}
+		}
+		{
+			for (i=0; i<self->tokenized_input->count; i++)
+			{
+				if (strstr(cmd->name, self->tokenized_input->tokens[i]) == NULL)
+				{
+					add = 0;
+					break;
+				}
+			}
+			if (add)
+				count++;
+		}
+	}
+
+	for (alias=cmd_alias; alias; alias=alias->next)
+	{
+		add = 1;
+		if (self->tokenized_input->count == 1)
+		{
+			if (strcmp(alias->name, self->tokenized_input->tokens[0]) == 0)
+			{
+				cd = self->data = calloc(1, sizeof(struct cva_s));
+				if (cd == NULL)
+					return -1;
+				cd->type = 1;
+				cd->info.a = alias;
+				return 1;
+			}
+		}
+		{
+			for (i=0; i<self->tokenized_input->count; i++)
+			{
+				if (strstr(alias->name, self->tokenized_input->tokens[i]) == NULL)
+				{
+					add = 0;
+					break;
+				}
+			}
+			if (add)
+				count++;
+		}
+	}
+
+	for (var=cvar_vars; var; var=var->next)
+	{
+		add = 1;
+
+		if (self->tokenized_input->count == 1)
+		{
+			if (strcmp(var->name, self->tokenized_input->tokens[0]) == 0)
+			{
+				cd = self->data = calloc(1, sizeof(struct cva_s));
+				if (cd == NULL)
+					return -1;
+				cd->type = 2;
+				cd->info.v = var;
+				return 1;
+			}
+		}
+		{
+			for (i=0; i<self->tokenized_input->count; i++)
+			{
+			
+				if (strstr(var->name, self->tokenized_input->tokens[i]) == NULL)
+				{
+					add = 0;
+					break;
+				}
+			}
+			if (add)
+				count++;
+		}
+	}
+
+	if (count == 0)
+		return -1;
+
+	self->data = calloc(count, sizeof(struct cva_s));
+	if (self->data == NULL)
+		return -1;
+
+	cd = self->data;
+
+	for (cmd=cmd_functions; cmd; cmd=cmd->next)
+	{
+		add = 1;
+		for (i=0; i<self->tokenized_input->count; i++)
+		{
+			if (strstr(cmd->name, self->tokenized_input->tokens[i]) == NULL)
+			{
+				add = 0;
+				break;
+			}
+		}
+		if (add)
+		{
+			cd->info.c = cmd;
+			cd->type = 0;
+			cd++;
+		}
+	}
+
+	for (alias=cmd_alias; alias; alias=alias->next)
+	{
+		add = 1;
+		for (i=0; i<self->tokenized_input->count; i++)
+		{
+			if (strstr(alias->name, self->tokenized_input->tokens[i]) == NULL)
+			{
+				add = 0;
+				break;
+			}
+		}
+
+		if (add)
+		{
+			cd->info.a = alias;
+			cd->type = 1;
+			cd++;
+		}
+	}
+
+	for (var=cvar_vars; var; var=var->next)
+	{
+		add = 1;
+		for (i=0; i<self->tokenized_input->count; i++)
+		{
+			if (strstr(var->name, self->tokenized_input->tokens[i]) == NULL)
+			{
+				add = 0;
+				break;
+			}
+		}
+		if (add)
+		{
+			cd->info.v = var;
+			cd->type = 2;
+			cd++;
+		}
+	}
+
+	cd = self->data;
+
+	qsort(self->data, count, sizeof(struct cva_s), &name_compare);
+
+	return count;
+}
+
+static int Command_Completion_Result(struct cst_info *self, int *results, int get_result, int result_type, char **result)
+{
+	int count;
+	int i;
+	struct cva_s *cc;
+
+	if (self == NULL)
+		return 1;
+	
+	if (results || self->initialized == 0)
+	{
+		count = setup_command_completion_data(self);
+
+		if (count == -1)
+			return 1;
+
+		if (results)
+			*results = count;
+
+		self->results = count;
+
+		self->initialized = 1;
+
+		self->count = count;
+
+		return 0;
+	}
+
+	if (result == NULL)
+		return 0;
+
+	if (get_result >= self->count)
+		return 1;
+
+	cc = self->data;
+
+	switch (cc[get_result].type)
+	{
+		case 0:
+			*result = cc[get_result].info.c->name;
+			break;
+		case 1:
+			*result = cc[get_result].info.a->name;
+			break;
+		case 2:
+			*result = cc[get_result].info.v->name;
+			break;
+		default:
+			*result = NULL;
+			return 1;
+	}
+
+	return 0;
+}
+
+static int Command_Completion_Get_Data(struct cst_info *self, int remove)
+{
+	if (remove)
+	{
+		free(self->data);
+		self->data = NULL;
+	}
+	return 0;
+}
+
+void Context_Sensitive_Tab_Completion_CvarInit(void)
+{
+	Command_Completion.name = "Command_Completion";
+	Command_Completion.result = &Command_Completion_Result;
+	Command_Completion.get_data = &Command_Completion_Get_Data;
+	Command_Completion.conditions = NULL;
 	Cvar_Register(&context_sensitive_tab_completion);
 }
 

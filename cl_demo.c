@@ -1483,39 +1483,36 @@ static int cstc_playdemo_data(struct cst_info *self, int remove)
 	return 1;
 }
 
-#warning "This looks a bit weird and I can't get it to work at all when I try to tab complete playdemo or timedemo."
-
 static int cstc_playdemo_get_results(struct cst_info *self, int *results, int get_result, int result_type, char **result)
 {
 	struct directory_list *data;
 	int count, i;
-	static int initiated = 0;
-	static qboolean *checked = NULL;
 
 	if (self->data == NULL)
 		return 1;
 
 	data = (struct directory_list *)self->data;
 
-
-	if (results || initiated == 0)
+	if (results || self->initialized == 0)
 	{
-		if (checked)
-			free(checked);
-		checked = calloc(data->entry_count, sizeof(qboolean));
-		if (checked == NULL)
+		if (self->checked)
+			free(self->checked);
+		self->checked = calloc(data->entry_count, sizeof(qboolean));
+		if (self->checked == NULL)
 			return 1;
 
 		for (i=0, count=0; i<data->entry_count; i++)
 		{
 			if (playdemo_checkdemo(data->entries[i].name, self->tokenized_input))
 			{
-				checked[i] = true;
+				self->checked[i] = true;
 				count++;
 			}
 		}
-		*results = count;
-		initiated = 1;
+		if (results)
+			*results = count;
+
+		self->initialized = 1;
 		return 0;
 	}
 
@@ -1524,7 +1521,7 @@ static int cstc_playdemo_get_results(struct cst_info *self, int *results, int ge
 
 	for (i=0, count=-1; i<data->entry_count; i++)
 	{
-		if (checked[i] == true)
+		if (self->checked[i] == true)
 			count++;
 		if (count == get_result)
 		{

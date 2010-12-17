@@ -535,34 +535,34 @@ void Cam_TryLock (void) {
 
 static int track_check_player(struct cst_info *self, player_info_t *player)
 {
-	char *uncpn;
-	int rval, i;
+	char uncpn[64];
+	int i;
 
 	if (!self || !player)
 		return 0;
 	if (player->name[0] == '\0' || player->spectator == 1)
 		return 0;
 
-	uncpn = Util_Remove_Colors(player->name, strlen(player->name));
-
-	rval = 1;
+#warning The return value from Util_Remove_Colors() is never freed. Also snprintf() is a bit overkill when what you really want is strlcpy().
+	snprintf(uncpn, 64, "%s",  Util_Remove_Colors(player->name, strlen(player->name)));
 
 	for (i=0; i<self->tokenized_input->count; i++)
 	{
 		if (Util_strcasestr(uncpn, self->tokenized_input->tokens[i]) == NULL)
 		{
-			rval = 0;
-			break;
+			return 0;
 		}
 	}
 
-	free(uncpn);
-	return rval;
+	return 1;
 }	
 
 static int cstc_track_results(struct cst_info *self, int *results, int get_result, int result_type, char **result)
 {
 	int i, count;
+
+	if (result)
+		*result = NULL;
 
 	for (i=0, count=0; i<MAX_CLIENTS; i++)
 	{
@@ -573,13 +573,19 @@ static int cstc_track_results(struct cst_info *self, int *results, int get_resul
 				if (count == get_result)
 				{
 					*result = va("\"%s\"", cl.players[i].name);
+					return 0;
 				}
 			}
 			count++;
 		}
 	}
+
 	if (results)
 		*results = count;
+
+	if (result)
+		if (*result == NULL)
+			return 1;
 	return 0;
 }
 

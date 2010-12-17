@@ -1530,6 +1530,7 @@ static int cstc_alias_get_results(struct cst_info *self, int *results, int get_r
 	cmd_alias_t *a;
 	extern cmd_alias_t	*cmd_alias;
 
+	count = 0;
 	if (results)
 	{
 		a = cmd_alias;
@@ -1563,10 +1564,6 @@ static int cstc_alias_get_results(struct cst_info *self, int *results, int get_r
 				*result = va("%s \"\"", a->name);
 			return 0;
 		}
-
-#warning "This can never happen (unless you're allowed to pass <2 or less in as get_result, which I don't think so :P"
-		if (count > get_result)
-			return 1;
 
 		a = a->next;
 	}

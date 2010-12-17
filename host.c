@@ -52,6 +52,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <setjmp.h>
 #include "server_browser.h"
 #include "ruleset.h"
+#include "context_sensitive_tab.h"
 
 #ifndef CLIENTONLY
 #include "server.h"
@@ -240,6 +241,7 @@ void Host_Init(int argc, char **argv)
 	Sys_CvarInit();
 	SB_CvarInit();
 	Ruleset_CvarInit();
+	Context_Sensitive_Tab_Completion_CvarInit();
 
 	cvarsregged = 1;
 

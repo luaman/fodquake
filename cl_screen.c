@@ -925,6 +925,7 @@ void SCR_DrawConsole(void)
 	{
 		scr_copyeverything = 1;
 		Con_DrawConsole(scr_con_current);
+		Context_Sensitive_Tab_Completion_Draw();
 		clearconsole = 0;
 
 		if (cls.download)
