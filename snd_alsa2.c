@@ -23,7 +23,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "sound.h"
 #include <dlfcn.h>
 
+#if 1
 #define DEBUG(x...) do { } while(0)
+#else
+#define DEBUG(x...) fprintf(stderr, x)
+#endif
 
 #define PCM_RECOVER_VERBOSE 0
 
@@ -73,7 +77,7 @@ static int alsa_reallygetavail(struct alsa_private *p)
 		ret = p->snd_pcm_avail_update(p->pcmhandle);
 		if (ret < 0)
 		{
-			DEBUG("Sorry, your ALSA is really totally utterly fucked. (%d - %s)\n", avail, p->snd_strerror(ret));
+			DEBUG("Sorry, your ALSA is really totally utterly fucked. (%d - %s)\n", ret, p->snd_strerror(ret));
 			return 0;
 		}
 	}
