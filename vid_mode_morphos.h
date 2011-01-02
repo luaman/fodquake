@@ -5,3 +5,5 @@ struct modeinfo
 	unsigned int height;
 	unsigned int depth;
 };
+
+int modeline_to_modeinfo(const char *modeline, struct modeinfo *modeinfo);
