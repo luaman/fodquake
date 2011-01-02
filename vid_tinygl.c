@@ -31,6 +31,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "keys.h"
 #include "gl_local.h"
 #include "in_morphos.h"
+#include "vid_mode_morphos.h"
 
 #ifndef SA_GammaControl
 #define SA_GammaControl (SA_Dummy + 123)
@@ -61,6 +62,7 @@ struct display
 
 	unsigned int width, height;
 	int fullscreen;
+	char used_mode[256];
 
 	struct Screen *screen;
 	struct Window *window;
@@ -81,9 +83,9 @@ void Sys_Video_CvarInit(void)
 void *Sys_Video_Open(const char *mode, unsigned int width, unsigned int height, int fullscreen, unsigned char *palette)
 {
 	struct display *d;
-
+	struct modeinfo modeinfo;
+	char monitorname[128];
 	int r;
-
 	int i;
 
 	d = AllocVec(sizeof(*d), MEMF_CLEAR);
@@ -99,19 +101,34 @@ void *Sys_Video_Open(const char *mode, unsigned int width, unsigned int height, 
 		{
 			if (fullscreen)
 			{
-				d->screen = OpenScreenTags(0,
-					SA_Width, width,
-					SA_Height, height,
-					SA_Depth, 24,
-					SA_Quiet, TRUE,
-					SA_GammaControl, TRUE,
-					SA_3DSupport, TRUE,
-					TAG_DONE);
+				if (*mode && modeline_to_modeinfo(mode, &modeinfo))
+				{
+					snprintf(monitorname, sizeof(monitorname), "%s.monitor", modeinfo.monitorname);
+					d->screen = OpenScreenTags(0,
+						SA_Width, modeinfo.width,
+						SA_Height, modeinfo.height,
+						SA_Depth, modeinfo.depth,
+						SA_MonitorName, monitorname,
+						SA_Quiet, TRUE,
+						SA_GammaControl, TRUE,
+						SA_3DSupport, TRUE,
+						TAG_DONE);
+				}
+				else
+				{
+					d->screen = OpenScreenTags(0,
+						SA_Quiet, TRUE,
+						SA_GammaControl, TRUE,
+						SA_3DSupport, TRUE,
+						TAG_DONE);
+				}
 
 				if (d->screen)
 				{
 					width = d->screen->Width;
 					height = d->screen->Height;
+
+					snprintf(d->used_mode, sizeof(d->used_mode), "Dunno,%d,%d,42", width, height);
 
 					if (d->gammaenabled)
 					{
@@ -289,7 +306,11 @@ qboolean Sys_Video_GetFullscreen(void *display)
 
 const char *Sys_Video_GetMode(void *display)
 {
-	return 0;
+	struct display *d;
+
+	d = display;
+
+	return d->used_mode;
 }
 
 void Sys_Video_BeginFrame(void *display, unsigned int *x, unsigned int *y, unsigned int *width, unsigned int *height)
