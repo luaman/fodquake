@@ -32,12 +32,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "input.h"
 #include "keys.h"
 #include "in_morphos.h"
+#include "vid_mode_morphos.h"
 
 struct display
 {
 	unsigned int width;
 	unsigned int height;
 	int fullscreen;
+	char used_mode[256];
 
 	void *inputdata;
 
@@ -63,48 +65,63 @@ void Sys_Video_CvarInit(void)
 void *Sys_Video_Open(const char *mode, unsigned int width, unsigned int height, int fullscreen, unsigned char *palette)
 {
 	struct display *d;
+	struct modeinfo modeinfo;
+	char monitorname[128];
 	int i;
 	int screenbuffersallocated;
 
 	d = AllocVec(sizeof(*d), MEMF_CLEAR);
 	if (d)
 	{
-		d->buffer = AllocVec(width * height, MEMF_ANY);
-		if (d->buffer)
+		if (fullscreen)
 		{
-			if (fullscreen)
+			if (*mode && modeline_to_modeinfo(mode, &modeinfo))
+			{
+				snprintf(monitorname, sizeof(monitorname), "%s.monitor", modeinfo.monitorname);
+				d->screen = OpenScreenTags(0,
+					SA_Width, modeinfo.width,
+					SA_Height, modeinfo.height,
+					SA_Depth, 8,
+					SA_MonitorName, monitorname,
+					SA_Quiet, TRUE,
+					TAG_DONE);
+			}
+			else
 			{
 				d->screen = OpenScreenTags(0,
-					SA_Width, width,
-					SA_Height, height,
 					SA_Depth, 8,
 					SA_Quiet, TRUE,
 					TAG_DONE);
-
-
-				if (d->screen)
-				{
-					width = d->screen->Width;
-					height = d->screen->Height;
-				}
-				else
-					fullscreen = 0;
 			}
 
-			d->window = OpenWindowTags(0,
-				WA_InnerWidth, width,
-				WA_InnerHeight, height,
-				WA_Title, "FodQuake",
-				WA_DragBar, d->screen ? FALSE : TRUE,
-				WA_DepthGadget, d->screen ? FALSE : TRUE,
-				WA_Borderless, d->screen ? TRUE : FALSE,
-				WA_RMBTrap, TRUE,
-				d->screen ? WA_PubScreen : TAG_IGNORE, (ULONG) d->screen,
-				WA_Activate, TRUE,
-				WA_ReportMouse, TRUE,
-				TAG_DONE);
+			if (d->screen)
+			{
+				width = d->screen->Width;
+				height = d->screen->Height;
 
-			if (d->window)
+				snprintf(d->used_mode, sizeof(d->used_mode), "Dunno,%d,%d,8", width, height);
+			}
+			else
+				fullscreen = 0;
+		}
+
+		d->window = OpenWindowTags(0,
+			WA_InnerWidth, width,
+			WA_InnerHeight, height,
+			WA_Title, "FodQuake",
+			WA_DragBar, d->screen ? FALSE : TRUE,
+			WA_DepthGadget, d->screen ? FALSE : TRUE,
+			WA_Borderless, d->screen ? TRUE : FALSE,
+			WA_RMBTrap, TRUE,
+			d->screen ? WA_PubScreen : TAG_IGNORE, (ULONG) d->screen,
+			WA_Activate, TRUE,
+			WA_ReportMouse, TRUE,
+			TAG_DONE);
+
+		if (d->window)
+		{
+			d->buffer = AllocVec(width * height, MEMF_ANY);
+			if (d->buffer)
 			{
 				d->pointermem = AllocVec(256, MEMF_ANY | MEMF_CLEAR);
 				if (d->pointermem)
@@ -152,15 +169,15 @@ void *Sys_Video_Open(const char *mode, unsigned int width, unsigned int height, 
 					FreeVec(d->pointermem);
 				}
 
-				CloseWindow(d->window);
+				FreeVec(d->buffer);
 			}
 
-			if (d->screen)
-			{
-				CloseScreen(d->screen);
-			}
+			CloseWindow(d->window);
+		}
 
-			FreeVec(d->buffer);
+		if (d->screen)
+		{
+			CloseScreen(d->screen);
 		}
 
 		FreeVec(d);
@@ -355,7 +372,11 @@ qboolean Sys_Video_GetFullscreen(void *display)
 
 const char *Sys_Video_GetMode(void *display)
 {
-	return 0;
+	struct display *d;
+
+	d = display;
+
+	return d->used_mode;
 }
 
 unsigned int Sys_Video_GetBytesPerRow(void *display)
