@@ -697,7 +697,7 @@ static qboolean PNG_LoadLibrary(void)
 	if (!(png_handle = LoadLibrary("libpng.dll")))
 	{
 #else
-	if (!(png_handle = dlopen("libpng12.so.0", RTLD_NOW)) && !(png_handle = dlopen("libpng.so", RTLD_NOW)))
+	if (!(png_handle = dlopen("libpng.so", RTLD_NOW)) && !(png_handle = dlopen("libpng12.so.0", RTLD_NOW)))
 	{
 		if (!(zlib_handle = dlopen("libz.so", RTLD_NOW | RTLD_GLOBAL)))
 		{
