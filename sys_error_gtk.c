@@ -41,6 +41,17 @@ static void button_callback(GtkButton *button, void *nothing)
 	dyn_gtk_main_quit();
 }
 
+static int window_delete_callback(GtkWidget *window, GdkEvent *event, void *nothing)
+{
+	void (*dyn_gtk_main_quit)(void);
+
+	dyn_gtk_main_quit = nothing;
+
+	dyn_gtk_main_quit();
+
+	return TRUE;
+}
+
 static void Sys_Error_GTK_DisplayError_Real(const char *error)
 {
 	void *gtk;
@@ -145,7 +156,7 @@ static void Sys_Error_GTK_DisplayError_Real(const char *error)
 				{
 					dyn_gtk_window_set_title(GTK_WINDOW(window), "Fodquake error");
 					dyn_gtk_container_set_border_width(GTK_CONTAINER(window), 5);
-					g_signal_connect(GTK_OBJECT(window), "delete-event", GTK_SIGNAL_FUNC(button_callback), dyn_gtk_main_quit);
+					g_signal_connect(GTK_OBJECT(window), "delete-event", GTK_SIGNAL_FUNC(window_delete_callback), dyn_gtk_main_quit);
 
 					frame = dyn_gtk_frame_new(NULL);
 					if (frame)
