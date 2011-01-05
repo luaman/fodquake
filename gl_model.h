@@ -122,6 +122,7 @@ typedef struct glpoly_s
 	struct	glpoly_s	*caustics_chain;	//next caustic poly in chain
 	struct	glpoly_s	*detail_chain;		//next detail poly in chain
 	int		numverts;
+	int firstindex;
 	float	verts[4][VERTEXSIZE];	// variable sized (xyz s1t1 s2t2)
 } glpoly_t;
 
@@ -382,6 +383,18 @@ typedef struct model_s {
 
 	// additional model data
 	void *extradata;
+
+	unsigned int num_vertices;
+
+	qboolean surface_colours_dirty;
+
+	unsigned int vertcoords_vbo_number;
+	unsigned int vertcolours_vbo_number;
+	unsigned int verttexcoords_vbo_number[3];
+
+	float *vertcoords;
+	float *vertcolours;
+	float *verttexcoords[3];
 } model_t;
 
 

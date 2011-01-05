@@ -250,11 +250,16 @@ void R_InitOtherTextures(void);
 #define GL_COMBINE_RGB_EXT			0x8571
 #define GL_RGB_SCALE_EXT			0x8573
 
+/* GL_ARB_vertex_buffer_object */
+#define GL_ARRAY_BUFFER_ARB                             0x8892
+#define GL_STATIC_DRAW_ARB                              0x88E4
+
 typedef void (APIENTRY *lpMTexFUNC) (GLenum, GLfloat, GLfloat);
 typedef void (APIENTRY *lpSelTexFUNC) (GLenum);
 
 extern lpMTexFUNC qglMultiTexCoord2f;
 extern lpSelTexFUNC qglActiveTexture;
+extern void (APIENTRY *qglClientActiveTexture)(GLenum);
 
 typedef ptrdiff_t GLsizeiptrARB;
 extern void (*qglBindBufferARB)(GLenum, GLuint);

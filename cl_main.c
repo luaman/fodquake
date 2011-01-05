@@ -322,9 +322,23 @@ static qboolean r_drawflat_enable_callback(cvar_t *var, char *string)
 	return false;
 }
 
-static void R_DrawFlat_UpdateSWSurface(msurface_t *surface)
+static void R_DrawFlat_UpdateSurface(model_t *model, msurface_t *surface)
 {
-#ifndef GLQUAKE
+#ifdef GLQUAKE
+	unsigned int i;
+
+	if (model->vertcolours)
+	{
+		for(i=surface->polys->firstindex;i<surface->polys->firstindex+surface->polys->numverts;i++)
+		{
+			model->vertcolours[i*3+0] = surface->color[0];
+			model->vertcolours[i*3+1] = surface->color[1];
+			model->vertcolours[i*3+2] = surface->color[2];
+		}
+
+		model->surface_colours_dirty = 1;
+	}
+#else
 	surface->palcolor = V_LookUpColour(surface->color[0], surface->color[1], surface->color[2]);
 	if (r_drawflat_enable.value == 1)
 		D_UncacheSurface(surface);
@@ -401,7 +415,7 @@ static void R_DrawFlatShoot_f(void)
 			(*surface)->color[1] = color[1];
 			(*surface)->color[2] = color[2];
 
-			R_DrawFlat_UpdateSWSurface(*surface);
+			R_DrawFlat_UpdateSurface(model, *surface);
 		}
 		free(points);
 	}
@@ -494,7 +508,7 @@ static void R_Draw_Flat(float x_lower_limit, float x_upper_limit, float y_lower_
 			model->surfaces[i].color[1] = g;
 			model->surfaces[i].color[2] = b;
 
-			R_DrawFlat_UpdateSWSurface(&model->surfaces[i]);
+			R_DrawFlat_UpdateSurface(model, &model->surfaces[i]);
 		}
 	}
 
@@ -607,7 +621,7 @@ static void R_DrawFlat_Set_f(void)
 	model->surfaces[surface].color[1] = g;
 	model->surfaces[surface].color[2] = b;
 
-	R_DrawFlat_UpdateSWSurface(&model->surfaces[surface]);
+	R_DrawFlat_UpdateSurface(model, &model->surfaces[surface]);
 }
 
 static void R_DrawFlat_Unset_f(void)

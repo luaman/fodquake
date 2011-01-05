@@ -19,6 +19,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 // r_surf.c: surface-related refresh code
 
+#include <stdlib.h>
 #include <string.h>
 #include <math.h>
 
@@ -861,12 +862,26 @@ static void R_ClearTextureChains(model_t *clmodel)
 	CHAIN_RESET(drawflatchain);
 }
 
+static void FinishDraw(GLvoid *glelements, unsigned int *numglelements)
+{
+	if (*numglelements == 0)
+		return;
+
+	glDrawElements(GL_TRIANGLES, *numglelements, GL_UNSIGNED_INT, glelements);
+
+	*numglelements = 0;
+}
+
 static void DrawTextureChains (model_t *model)
 {
 	int waterline, i, k, GL_LIGHTMAP_TEXTURE, GL_FB_TEXTURE;
 	msurface_t *s;
+	msurface_t *sprev;
 	texture_t *t;
 	float *v;
+	int lightmapprevtexturenum;
+	unsigned int glindices[300];
+	unsigned int numglelements;
 
 	qboolean render_lightmaps = false, render_caustics = false, render_details = false;
 	qboolean drawLumasGlowing, doMtex1, doMtex2;
@@ -878,7 +893,6 @@ static void DrawTextureChains (model_t *model)
 	qboolean draw_mtex_fbs;
 
 	qboolean mtex_lightmaps, mtex_fbs;
-
 
 	drawLumasGlowing = (com_serveractive || cl.allow_lumas) && gl_fb_bmodels.value;
 
@@ -899,8 +913,39 @@ static void DrawTextureChains (model_t *model)
 	GL_DisableMultitexture();
 	glTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
 
+	if (model->vertcoords)
+	{
+		if (gl_vbo)
+		{
+			qglBindBufferARB(GL_ARRAY_BUFFER_ARB, model->vertcoords_vbo_number);
+			glVertexPointer(3, GL_FLOAT, 0, 0);
+#if 0
+			glColorPointer(4, GL_FLOAT, 0, model->colouroffset);
+#endif
+
+			qglBindBufferARB(GL_ARRAY_BUFFER_ARB, model->verttexcoords_vbo_number[0]);
+			qglClientActiveTexture(GL_TEXTURE0_ARB);
+			glTexCoordPointer(2, GL_FLOAT, 0, 0);
+			glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+
+			qglBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
+		}
+		else
+		{
+			glVertexPointer(3, GL_FLOAT, 0, model->vertcoords);
+
+			qglClientActiveTexture(GL_TEXTURE0_ARB);
+			glTexCoordPointer(2, GL_FLOAT, 0, model->verttexcoords[0]);
+			glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+		}
+
+		glEnableClientState(GL_VERTEX_ARRAY);
+	}
+
 	for (i = 0; i < model->numtextures; i++)
 	{
+		lightmapprevtexturenum = -1;
+
 		if (!model->textures[i] || (!model->textures[i]->texturechain[0] && !model->textures[i]->texturechain[1]))
 			continue;
 
@@ -977,6 +1022,48 @@ static void DrawTextureChains (model_t *model)
 			doMtex1 = doMtex2 = mtex_lightmaps = mtex_fbs = false;
 		}
 
+		if (model->vertcoords && (mtex_fbs || mtex_lightmaps))
+		{
+			if (gl_vbo)
+			{
+				if (mtex_fbs)
+				{
+					qglBindBufferARB(GL_ARRAY_BUFFER_ARB, model->verttexcoords_vbo_number[0]);
+					qglClientActiveTexture(GL_FB_TEXTURE);
+					glTexCoordPointer(2, GL_FLOAT, 0, 0);
+					glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+				}
+
+				if (mtex_lightmaps)
+				{
+					qglBindBufferARB(GL_ARRAY_BUFFER_ARB, model->verttexcoords_vbo_number[1]);
+					qglClientActiveTexture(GL_LIGHTMAP_TEXTURE);
+					glTexCoordPointer(2, GL_FLOAT, 0, 0);
+					glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+				}
+
+				qglBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
+			}
+			else
+			{
+				if (mtex_fbs)
+				{
+					qglClientActiveTexture(GL_FB_TEXTURE);
+					glTexCoordPointer(2, GL_FLOAT, 0, model->verttexcoords[0]);
+					glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+				}
+
+				if (mtex_lightmaps)
+				{
+					qglClientActiveTexture(GL_LIGHTMAP_TEXTURE);
+					glTexCoordPointer(2, GL_FLOAT, 0, model->verttexcoords[1]);
+					glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+				}
+			}
+		}
+
+		numglelements = 0;
+		sprev = 0;
 
 		for (waterline = 0; waterline < 2; waterline++)
 		{
@@ -985,8 +1072,12 @@ static void DrawTextureChains (model_t *model)
 
 			for ( ; s; s = s->texturechain)
 			{
+				if ((sprev && s->lightmaptexturenum != sprev->lightmaptexturenum) || numglelements + (s->polys->numverts-2)*3 > sizeof(glindices)/sizeof(*glindices))
+					FinishDraw(glindices, &numglelements);
+
 				if (mtex_lightmaps)
 				{
+					lightmapprevtexturenum = s->lightmaptexturenum;
 					//bind the lightmap texture
 					GL_SelectTexture(GL_LIGHTMAP_TEXTURE);
 					GL_Bind (lightmap_textures + s->lightmaptexturenum);
@@ -997,27 +1088,40 @@ static void DrawTextureChains (model_t *model)
 					lightmap_polys[s->lightmaptexturenum] = s->polys;
 				}
 
-				glBegin(GL_POLYGON);
-				v = s->polys->verts[0];
-				for (k = 0; k < s->polys->numverts; k++, v += VERTEXSIZE)
+				if (model->vertcoords)
 				{
-					if (doMtex1)
+					for(k=0;k<s->polys->numverts-2;k++)
 					{
-						qglMultiTexCoord2f (GL_TEXTURE0_ARB, v[3], v[4]);
-
-						if (mtex_lightmaps)
-							qglMultiTexCoord2f (GL_LIGHTMAP_TEXTURE, v[5], v[6]);
-
-						if (mtex_fbs)
-							qglMultiTexCoord2f (GL_FB_TEXTURE, v[3], v[4]);
+						glindices[numglelements++] = s->polys->firstindex;
+						glindices[numglelements++] = s->polys->firstindex + k + 1;
+						glindices[numglelements++] = s->polys->firstindex + k + 2;
 					}
-					else
-					{
-						glTexCoord2f (v[3], v[4]);
-					}
-					glVertex3fv (v);
+					sprev = s;
 				}
-				glEnd ();
+				else
+				{
+					glBegin(GL_POLYGON);
+					v = s->polys->verts[0];
+					for (k = 0; k < s->polys->numverts; k++, v += VERTEXSIZE)
+					{
+						if (doMtex1)
+						{
+							qglMultiTexCoord2f(GL_TEXTURE0_ARB, v[3], v[4]);
+
+							if (mtex_lightmaps)
+								qglMultiTexCoord2f(GL_LIGHTMAP_TEXTURE, v[5], v[6]);
+
+							if (mtex_fbs)
+								qglMultiTexCoord2f(GL_FB_TEXTURE, v[3], v[4]);
+						}
+						else
+						{
+							glTexCoord2f(v[3], v[4]);
+						}
+						glVertex3fv(v);
+					}
+					glEnd();
+				}
 
 				if (waterline && draw_caustics)
 				{
@@ -1048,10 +1152,36 @@ static void DrawTextureChains (model_t *model)
 			}
 		}
 
+		FinishDraw(glindices, &numglelements);
+
+		if (model->vertcoords)
+		{
+			if (mtex_lightmaps)
+			{
+				qglClientActiveTexture(GL_LIGHTMAP_TEXTURE);
+				glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+			}
+
+			if (mtex_fbs)
+			{
+				qglClientActiveTexture(GL_FB_TEXTURE);
+				GL_SelectTexture(GL_FB_TEXTURE);
+				glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+			}
+		}
+
 		if (doMtex1)
 			GL_DisableTMU(GL_TEXTURE1_ARB);
 		if (doMtex2)
 			GL_DisableTMU(GL_TEXTURE2_ARB);
+	}
+
+	if (model->vertcoords)
+	{
+		glDisableClientState(GL_VERTEX_ARRAY);
+
+		qglClientActiveTexture(GL_TEXTURE0_ARB);
+		glDisableClientState(GL_TEXTURE_COORD_ARRAY);
 	}
 
 	if (gl_mtexable)
@@ -1080,13 +1210,26 @@ static void DrawTextureChains (model_t *model)
 	EmitDetailPolys();
 }
 
+static void R_UpdateFlatColours(model_t *model)
+{
+	if (model->surface_colours_dirty && model->vertcolours && gl_vbo)
+	{
+		qglBindBufferARB(GL_ARRAY_BUFFER_ARB, model->vertcolours_vbo_number);
+		qglBufferDataARB(GL_ARRAY_BUFFER_ARB, sizeof(*model->vertcolours)*3*model->num_vertices, model->vertcolours, GL_STATIC_DRAW_ARB);
+		qglBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
 
+		model->surface_colours_dirty = 0;
+	}
+}
 
 static void R_DrawFlat (model_t *model)
 {
 	msurface_t *s;
+	msurface_t *sprev;
 	int k;
 	float *v;
+	unsigned int glindices[300];
+	unsigned int numglelements;
 
 	if (r_drawflat_enable.value == 0)
 		return;
@@ -1097,20 +1240,76 @@ static void R_DrawFlat (model_t *model)
 
 	GL_SelectTexture(GL_TEXTURE0_ARB);
 
+	if (model->vertcoords)
+	{
+		qglClientActiveTexture(GL_TEXTURE0_ARB);
+
+		if (gl_vbo)
+		{
+			qglBindBufferARB(GL_ARRAY_BUFFER_ARB, model->vertcoords_vbo_number);
+			glVertexPointer(3, GL_FLOAT, 0, 0);
+
+			qglBindBufferARB(GL_ARRAY_BUFFER_ARB, model->vertcolours_vbo_number);
+			glColorPointer(3, GL_FLOAT, 0, 0);
+
+			qglBindBufferARB(GL_ARRAY_BUFFER_ARB, model->verttexcoords_vbo_number[1]);
+			glTexCoordPointer(2, GL_FLOAT, 0, 0);
+
+			qglBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
+		}
+		else
+		{
+			glVertexPointer(3, GL_FLOAT, 0, model->vertcoords);
+			glColorPointer(3, GL_FLOAT, 0, model->vertcolours);
+			glTexCoordPointer(2, GL_FLOAT, 0, model->verttexcoords[1]);
+		}
+
+		glEnableClientState(GL_VERTEX_ARRAY);
+		glEnableClientState(GL_COLOR_ARRAY);
+		glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+	}
+
+	numglelements = 0;
+	sprev = 0;
+
 	for (s = drawflatchain; s; s = s->texturechain)
 	{
+		if ((sprev && s->lightmaptexturenum != sprev->lightmaptexturenum) || numglelements + (s->polys->numverts-2)*3 > sizeof(glindices)/sizeof(*glindices))
+			FinishDraw(glindices, &numglelements);
+
 		GL_Bind (lightmap_textures + s->lightmaptexturenum);
 
-		v = s->polys->verts[0];
-		glColor3f(s->color[0], s->color[1], s->color[2]);
-
-		glBegin(GL_POLYGON);
-		for (k = 0; k < s->polys->numverts; k++, v += VERTEXSIZE)
+		if (model->vertcoords)
 		{
-			glTexCoord2f(v[5], v[6]);
-			glVertex3fv (v);
+			for(k=0;k<s->polys->numverts-2;k++)
+			{
+				glindices[numglelements++] = s->polys->firstindex;
+				glindices[numglelements++] = s->polys->firstindex + k + 1;
+				glindices[numglelements++] = s->polys->firstindex + k + 2;
+			}
+			sprev = s;
 		}
-		glEnd ();
+		else
+		{
+			v = s->polys->verts[0];
+			glColor3f(s->color[0], s->color[1], s->color[2]);
+
+			glBegin(GL_POLYGON);
+			for (k = 0; k < s->polys->numverts; k++, v += VERTEXSIZE)
+			{
+				glTexCoord2f(v[5], v[6]);
+				glVertex3fv (v);
+			}
+			glEnd ();
+		}
+	}
+
+	FinishDraw(glindices, &numglelements);
+
+	if (model->vertcoords)
+	{
+		glDisableClientState(GL_VERTEX_ARRAY);
+		glDisableClientState(GL_COLOR_ARRAY);
 	}
 
 	glColor3f(1.0f, 1.0f, 1.0f);
@@ -1222,6 +1421,7 @@ void R_DrawBrushModel (entity_t *e)
 
 	//draw the textures chains for the model
 	R_RenderAllDynamicLightmaps(clmodel);
+	R_UpdateFlatColours(clmodel);
 	DrawTextureChains(clmodel);
 	R_DrawFlat(clmodel);
 	R_DrawSkyChain();
@@ -1363,6 +1563,7 @@ void R_DrawWorld (void)
 
 	//draw the world
 	R_RenderAllDynamicLightmaps(cl.worldmodel);
+	R_UpdateFlatColours(cl.worldmodel);
 	DrawTextureChains(cl.worldmodel);
 	R_DrawFlat(cl.worldmodel);
 
@@ -1438,7 +1639,7 @@ static int AllocBlock (int w, int h, int *x, int *y)
 	{
 		best = BLOCK_HEIGHT + 1;
 
-		for (i = 0; i < BLOCK_WIDTH - w; i++)
+		for (i = 0; i < /*BLOCK_WIDTH*/128 - w; i++)
 		{
 			best2 = 0;
 
@@ -1572,6 +1773,107 @@ static void GL_CreateSurfaceLightmap (msurface_t *surf)
 	R_BuildLightMap (surf, base, BLOCK_WIDTH * 3);
 }
 
+static void BuildGLArrays(model_t *model)
+{
+	glpoly_t *polys;
+	unsigned int i;
+	unsigned int j;
+	unsigned int vert;
+	unsigned int totalverts;
+
+#if VERTEXSIZE != 9
+#error Fix this up.
+#endif
+
+	/* Performance-wise this doesn't make sense unless VBO-support is available, so... */
+	if (!gl_vbo && 0)
+		return;
+
+	totalverts = 0;
+	for(i=0;i<model->numsurfaces;i++)
+	{
+		if (model->surfaces[i].polys)
+			totalverts += model->surfaces[i].polys->numverts;
+	}
+
+	model->num_vertices = totalverts;
+
+	if (totalverts > 200)
+		printf("Model \"%s\" has %d verts\n", model->name, totalverts);
+
+	if (totalverts && totalverts <= 131072)
+	{
+		model->vertcoords = malloc(sizeof(*model->vertcoords)*3*totalverts);
+		model->vertcolours = malloc(sizeof(*model->vertcolours)*3*totalverts);
+		model->verttexcoords[0] = malloc(sizeof(**model->verttexcoords)*2*totalverts);
+		model->verttexcoords[1] = malloc(sizeof(**model->verttexcoords)*2*totalverts);
+		model->verttexcoords[2] = malloc(sizeof(**model->verttexcoords)*2*totalverts);
+
+		if (model->vertcoords && model->vertcolours && model->verttexcoords[0] && model->verttexcoords[1] && model->verttexcoords[2])
+		{
+			vert = 0;
+			for(i=0;i<model->numsurfaces;i++)
+			{
+				polys = model->surfaces[i].polys;
+
+				if (!polys)
+					continue;
+
+				polys->firstindex = vert;
+				for(j=0;j<polys->numverts;j++)
+				{
+					model->vertcoords[3*vert+0] = polys->verts[j][0];
+					model->vertcoords[3*vert+1] = polys->verts[j][1];
+					model->vertcoords[3*vert+2] = polys->verts[j][2];
+					model->vertcolours[3*vert+0] = 1;
+					model->vertcolours[3*vert+1] = 1;
+					model->vertcolours[3*vert+2] = 1;
+					model->verttexcoords[0][2*vert+0] = polys->verts[j][3];
+					model->verttexcoords[0][2*vert+1] = polys->verts[j][4];
+					model->verttexcoords[1][2*vert+0] = polys->verts[j][5];
+					model->verttexcoords[1][2*vert+1] = polys->verts[j][6];
+					model->verttexcoords[2][2*vert+0] = polys->verts[j][7];
+					model->verttexcoords[2][2*vert+1] = polys->verts[j][8];
+					vert++;
+				}
+			}
+
+			if (gl_vbo)
+			{
+				model->vertcoords_vbo_number = vbo_number++;
+				qglBindBufferARB(GL_ARRAY_BUFFER_ARB, model->vertcoords_vbo_number);
+				qglBufferDataARB(GL_ARRAY_BUFFER_ARB, sizeof(*model->vertcoords)*3*totalverts, model->vertcoords, GL_STATIC_DRAW_ARB);
+
+				model->vertcolours_vbo_number = vbo_number++;
+				model->surface_colours_dirty = true;
+
+				for(i=0;i<3;i++)
+				{
+					model->verttexcoords_vbo_number[i] = vbo_number++;
+					qglBindBufferARB(GL_ARRAY_BUFFER_ARB, model->verttexcoords_vbo_number[i]);
+					qglBufferDataARB(GL_ARRAY_BUFFER_ARB, sizeof(**model->verttexcoords)*2*totalverts, model->verttexcoords[i], GL_STATIC_DRAW_ARB);
+				}
+
+				qglBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
+			}
+
+			return;
+		}
+
+		free(model->vertcoords);
+		free(model->vertcolours);
+		free(model->verttexcoords[0]);
+		free(model->verttexcoords[1]);
+		free(model->verttexcoords[2]);
+
+		model->vertcoords = 0;
+		model->vertcolours = 0;
+		model->verttexcoords[0] = 0;
+		model->verttexcoords[1] = 0;
+		model->verttexcoords[2] = 0;
+	}
+}
+
 //Builds the lightmap texture with all the surfaces from all brush models
 void GL_BuildLightmaps (void)
 {
@@ -1590,6 +1892,9 @@ void GL_BuildLightmaps (void)
 			break;
 		if (strchr(m->name, '*'))
 			continue;
+		if (m->type != mod_brush)
+			continue;
+
 		for (i = 0; i < m->numsurfaces; i++)
 		{
 			if (m->surfaces[i].flags & (SURF_DRAWTURB | SURF_DRAWSKY))
@@ -1599,6 +1904,8 @@ void GL_BuildLightmaps (void)
 			GL_CreateSurfaceLightmap(m->surfaces + i);
 			BuildSurfaceDisplayList(m, m->surfaces + i);
 		}
+
+		BuildGLArrays(m);
 	}
 
  	if (gl_mtexable)

@@ -48,6 +48,7 @@ qboolean gl_mtexable = false;
 int gl_textureunits = 1;
 lpMTexFUNC qglMultiTexCoord2f = NULL;
 lpSelTexFUNC qglActiveTexture = NULL;
+void (APIENTRY *qglClientActiveTexture)(GLenum);
 void (*qglBindBufferARB)(GLenum, GLuint);
 void (*qglBufferDataARB)(GLenum, GLsizeiptrARB, const GLvoid *, GLenum);
 
@@ -113,7 +114,8 @@ void CheckMultiTextureExtensions (void)
 
 		qglMultiTexCoord2f = (void *) qglGetProcAddress("glMultiTexCoord2fARB");
 		qglActiveTexture = (void *) qglGetProcAddress("glActiveTextureARB");
-		if (qglMultiTexCoord2f && qglActiveTexture)
+		qglClientActiveTexture = (void *) qglGetProcAddress("glClientActiveTextureARB");
+		if (qglMultiTexCoord2f && qglActiveTexture && qglClientActiveTexture)
 		{
 			glGetIntegerv(GL_MAX_TEXTURE_UNITS_ARB, &gl_textureunits);
 
