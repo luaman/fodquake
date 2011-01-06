@@ -238,7 +238,7 @@ void Context_Sensitive_Tab_Completion_Key(int key)
 
 static void CSTC_Draw(struct cst_info *self, int y_offset)
 {
-	int i, result_offset, offset, rows;
+	int i, result_offset, offset, rows, sup, sdown;
 	char *ptr;
 
 	if (self->direction == -1)
@@ -257,13 +257,27 @@ static void CSTC_Draw(struct cst_info *self, int y_offset)
 	else
 		rows = (vid.height - offset) / 8;
 
-	result_offset = 0;
+	if (rows % 2 != 0)
+		rows--;
+
+
+	result_offset = sup = sdown = 0;
+
 	if (rows < self->results)
 	{
+		sup = 1;
+
 		if (self->selection > rows/2)
+		{
 			result_offset = self->selection - rows/2;
+			sdown = 1;
+		}
+
 		if ((self->results - self->selection) < rows/2)
+		{
 			result_offset = self->results - rows;
+			sup = 0;
+		}
 	}
 
 	for (i=0, ptr = NULL; i<rows; i++)
@@ -276,6 +290,16 @@ static void CSTC_Draw(struct cst_info *self, int y_offset)
 			Draw_Fill(0, offset + i * 8 * self->direction, vid.width, 8, 4);
 
 		Draw_String(32, offset + i * 8 * self->direction, ptr);
+	}
+
+	if (sup)
+	{
+		Draw_String(8, offset + (rows - 1) * 8 * self->direction, "^");
+	}
+
+	if (sdown)
+	{
+		Draw_String(8, offset + 8 * self->direction, "v");
 	}
 }
 
