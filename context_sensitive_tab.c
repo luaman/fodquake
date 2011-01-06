@@ -849,11 +849,12 @@ static int setup_command_completion_data(struct cst_info *self)
 static int Command_Completion_Result(struct cst_info *self, int *results, int get_result, int result_type, char **result)
 {
 	int count;
-	int i;
 	struct cva_s *cc;
+	char *res;
 
 	if (self == NULL)
 		return 1;
+
 	
 	if (results || self->initialized == 0)
 	{
@@ -880,23 +881,32 @@ static int Command_Completion_Result(struct cst_info *self, int *results, int ge
 	if (get_result >= self->count)
 		return 1;
 
+
+	if (self->data == NULL)
+		return 1;
+
 	cc = self->data;
 
 	switch (cc[get_result].type)
 	{
 		case 0:
-			*result = cc[get_result].info.c->name;
+			res = cc[get_result].info.c->name;
 			break;
 		case 1:
-			*result = cc[get_result].info.a->name;
+			res = cc[get_result].info.a->name;
 			break;
 		case 2:
-			*result = cc[get_result].info.v->name;
+			res = cc[get_result].info.v->name;
 			break;
 		default:
 			*result = NULL;
 			return 1;
 	}
+
+	if (result_type == 0)
+		*result = va("/%s", res);
+	else
+		*result = res;
 
 	return 0;
 }
