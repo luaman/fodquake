@@ -15,6 +15,7 @@ struct cst_commands
 	int (*conditions)(void);
 	int (*result)(struct cst_info *self, int *results, int get_result, int result_type, char **result);
 	int (*get_data)(struct cst_info *self, int remove);
+	int parser_behaviour;
 };
 
 struct cst_commands Command_Completion;
@@ -59,7 +60,7 @@ static void CSTC_Cleanup(struct cst_info *self)
 }
 
 
-void CSTC_Add(char *name, int (*conditions)(void), int (*result)(struct cst_info *self, int *results, int get_result, int result_type, char **result), int (*get_data)(struct cst_info *self, int remove))
+void CSTC_Add(char *name, int (*conditions)(void), int (*result)(struct cst_info *self, int *results, int get_result, int result_type, char **result), int (*get_data)(struct cst_info *self, int remove), int parser_behaviour)
 {
 	struct cst_commands *command, *cc;
 	char *in;
@@ -93,6 +94,7 @@ void CSTC_Add(char *name, int (*conditions)(void), int (*result)(struct cst_info
 	command->conditions = conditions;
 	command->result = result;
 	command->get_data = get_data;
+	command->parser_behaviour = parser_behaviour;
 }
 
 static void Tokenize_Input(struct cst_info *self)
@@ -509,6 +511,7 @@ static void setup_completion(struct cst_commands *cc, struct cst_info *c, int ar
 		c->get_data(c, 0);
 	c->result(c, &c->results, 0, 0, NULL);
 	c->insert_space = insert_space;
+	c->parser_behaviour = cc->parser_behaviour;
 }
 
 static int setup_current_command(void)
@@ -537,10 +540,21 @@ static int setup_current_command(void)
 		{
 			if (strncmp(c->name, cmd_start, cmd_len) == 0)
 			{
+				if (c->conditions)
+					if (c->conditions() == 0)
+						return 0;
+
 				if (arg_start - key_lines[edit_line] - 1 == 0)
 					setup_completion(c, cst_info, cmd_start + cmd_len - key_lines[edit_line], arg_len, 1);
 				else
-					setup_completion(c, cst_info, arg_start - key_lines[edit_line], arg_len, 0);
+				{
+					if (c->parser_behaviour == 0)
+						setup_completion(c, cst_info, arg_start - key_lines[edit_line], arg_len, 0);
+					else
+					{
+						setup_completion(c, cst_info, cmd_start + cmd_len - key_lines[edit_line] + 1,  (arg_start - cmd_start) + arg_len-1, 0);
+					}
+				}
 				return 1;
 			}
 			c = c->next;

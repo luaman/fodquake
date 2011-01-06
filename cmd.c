@@ -1590,7 +1590,7 @@ void Cmd_Init (void)
 	Cmd_AddCommand("if", Cmd_If_f);
 	Cmd_AddCommand("macrolist", Cmd_MacroList_f);
 
-	CSTC_Add("alias", NULL, &cstc_alias_get_results, NULL);
+	CSTC_Add("alias", NULL, &cstc_alias_get_results, NULL, 0);
 }
 
 void Cmd_Shutdown()
