@@ -29,8 +29,8 @@ int context_sensitive_tab_completion_active = 0;
 
 cvar_t	context_sensitive_tab_completion = {"context_sensitive_tab_completion", "1"};
 cvar_t	context_sensitive_tab_completion_close_on_tab = {"context_sensitive_tab_completion_close_on_tab", "1"};
-
 cvar_t	context_sensitive_tab_completion_execute_on_enter = {"context_sensitive_tab_completion_execute_on_enter", "1"};
+cvar_t	context_sensitive_tab_completion_sorting_method = {"context_sensitive_tab_completion_sorting_method", "0"};
 
 static void cleanup_cst(struct cst_info *info)
 {
@@ -621,6 +621,7 @@ struct cva_s
 		cvar_t *v;
 	} info;
 	int type;
+	unsigned int match;
 };
 
 static int name_compare(const void *a, const void *b)
@@ -670,6 +671,25 @@ static int name_compare(const void *a, const void *b)
 	return(strcasecmp(na, nb));
 }
 
+static int match_compare(const void *a, const void *b)
+{
+	struct cva_s *x, *y;
+	char *na, *nb;
+
+	if (a == NULL)
+		return -1;
+
+	if (b == NULL)
+		return -1;
+
+	x = (struct cva_s *)a;
+	y = (struct cva_s *)b;
+
+	return x->match - y->match;
+}
+
+
+
 static int setup_command_completion_data(struct cst_info *self)
 {
 	extern cvar_t *cvar_vars;
@@ -678,7 +698,9 @@ static int setup_command_completion_data(struct cst_info *self)
 	cmd_function_t *cmd;
 	cmd_alias_t *alias;
 	cvar_t *var;
-	int count, i, add;
+	int count, i, add, *tlen, match;
+
+	char *s;
 
 	struct cva_s *cd;
 
@@ -788,67 +810,93 @@ static int setup_command_completion_data(struct cst_info *self)
 
 	cd = self->data;
 
+	/*
+
+	tlen = calloc(self->tokenized_input->count, sizeof(int));
+	if (tlen == NULL)
+	{
+		free(self->data);
+		return -1;
+	}
+
+	for (i =0; i<self->tokenized_input->count; i++)
+		tlen[i] = strlen(self->tokenized_input->tokens[i]);
+		*/
+
 	for (cmd=cmd_functions; cmd; cmd=cmd->next)
 	{
 		add = 1;
+		match = 0;
 		for (i=0; i<self->tokenized_input->count; i++)
 		{
-			if (strstr(cmd->name, self->tokenized_input->tokens[i]) == NULL)
+			if ((s = strstr(cmd->name, self->tokenized_input->tokens[i])) == NULL)
 			{
 				add = 0;
 				break;
 			}
+				match += s - cmd->name;
 		}
+
 		if (add)
 		{
 			cd->info.c = cmd;
 			cd->type = 0;
+			cd->match = match;
 			cd++;
 		}
 	}
 
 	for (alias=cmd_alias; alias; alias=alias->next)
 	{
+		match = 0;
 		add = 1;
 		for (i=0; i<self->tokenized_input->count; i++)
 		{
-			if (strstr(alias->name, self->tokenized_input->tokens[i]) == NULL)
+			if ((s = strstr(alias->name, self->tokenized_input->tokens[i])) == NULL)
 			{
 				add = 0;
 				break;
 			}
+				match += s - alias->name;
 		}
 
 		if (add)
 		{
 			cd->info.a = alias;
 			cd->type = 1;
+			cd->match = match;
 			cd++;
 		}
 	}
 
 	for (var=cvar_vars; var; var=var->next)
 	{
+		match = 0;
 		add = 1;
 		for (i=0; i<self->tokenized_input->count; i++)
 		{
-			if (strstr(var->name, self->tokenized_input->tokens[i]) == NULL)
+			if ((s = strstr(var->name, self->tokenized_input->tokens[i])) == NULL)
 			{
 				add = 0;
 				break;
 			}
+			match += s - var->name;
 		}
 		if (add)
 		{
 			cd->info.v = var;
 			cd->type = 2;
+			cd->match = match;
 			cd++;
 		}
 	}
 
 	cd = self->data;
 
-	qsort(self->data, count, sizeof(struct cva_s), &name_compare);
+	if (context_sensitive_tab_completion_sorting_method.value == 1)
+		qsort(self->data, count, sizeof(struct cva_s), &match_compare);
+	else
+		qsort(self->data, count, sizeof(struct cva_s), &name_compare);
 
 	return count;
 }
@@ -937,5 +985,6 @@ void Context_Sensitive_Tab_Completion_CvarInit(void)
 	Cvar_Register(&context_sensitive_tab_completion);
 	Cvar_Register(&context_sensitive_tab_completion_close_on_tab);
 	Cvar_Register(&context_sensitive_tab_completion_execute_on_enter);
+	Cvar_Register(&context_sensitive_tab_completion_sorting_method);
 }
 
