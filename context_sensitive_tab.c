@@ -537,7 +537,6 @@ static int setup_current_command(void)
 	int cmd_len, arg_len, cursor_on_command, isinvalid;
 	char *cmd_start, *arg_start;
 	struct cst_commands *c;
-
 		
 	read_info_new(key_lines[edit_line] + 1, key_linepos, &cmd_start, &cmd_len, &arg_start, &arg_len, &cursor_on_command, &isinvalid);
 
@@ -552,11 +551,12 @@ static int setup_current_command(void)
 
 	if (cmd_start && arg_start)
 	{
+
 		c = commands;
 
 		while (c)
 		{
-			if (strncmp(c->name, cmd_start, cmd_len) == 0)
+			if (cmd_len == strlen(c->name) && strncasecmp(c->name, cmd_start, cmd_len) == 0)
 			{
 				if (c->conditions)
 					if (c->conditions() == 0)
