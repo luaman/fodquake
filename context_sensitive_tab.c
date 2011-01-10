@@ -44,8 +44,6 @@ static void cleanup_cst(struct cst_info *info)
 
 	if (info->checked)
 		free(info->checked);
-
-	//free(info);
 }
 
 static struct cst_info cst_info_static;
@@ -150,7 +148,6 @@ static void cstc_insert_only_find(struct cst_info *self)
 void Context_Sensitive_Tab_Completion_Key(int key)
 {
 	int i;
-	char *ptr;
 
 	if (context_sensitive_tab_completion_active == 0)
 		return;
@@ -361,7 +358,6 @@ void read_info_new (char *string, int position, char **cmd_begin, int *cmd_len, 
 	char **start, **stop;
 	char *s;
 	char *next;
-	unsigned int i;
 	int docontinue;
 	int dobreak;
 	int isinvalid;
