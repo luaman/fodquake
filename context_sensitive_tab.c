@@ -32,7 +32,7 @@ int context_sensitive_tab_completion_active = 0;
 cvar_t	context_sensitive_tab_completion = {"context_sensitive_tab_completion", "1"};
 cvar_t	context_sensitive_tab_completion_close_on_tab = {"context_sensitive_tab_completion_close_on_tab", "1"};
 cvar_t	context_sensitive_tab_completion_execute_on_enter = {"context_sensitive_tab_completion_execute_on_enter", "1"};
-cvar_t	context_sensitive_tab_completion_sorting_method = {"context_sensitive_tab_completion_sorting_method", "0"};
+cvar_t	context_sensitive_tab_completion_sorting_method = {"context_sensitive_tab_completion_sorting_method", "1"};
 
 static void cleanup_cst(struct cst_info *info)
 {
@@ -673,8 +673,6 @@ static int match_compare(const void *a, const void *b)
 
 	return x->match - y->match;
 }
-
-
 
 static int setup_command_completion_data(struct cst_info *self)
 {
