@@ -7,6 +7,8 @@
 #include "utils.h"
 #include "context_sensitive_tab.h"
 #include "tokenize_string.h"
+#include "text_input.h"
+
 
 struct cst_commands
 {
@@ -45,6 +47,9 @@ static void cleanup_cst(struct cst_info *info)
 
 	if (info->checked)
 		free(info->checked);
+
+	if (info->new_input)
+		Text_Input_Delete(info->new_input);
 }
 
 static struct cst_info cst_info_static;
@@ -57,7 +62,6 @@ static void CSTC_Cleanup(struct cst_info *self)
 	context_sensitive_tab_completion_active = 0;
 	cleanup_cst(self);
 }
-
 
 void CSTC_Add(char *name, int (*conditions)(void), int (*result)(struct cst_info *self, int *results, int get_result, int result_type, char **result), int (*get_data)(struct cst_info *self, int remove), int parser_behaviour)
 {
@@ -171,17 +175,6 @@ void Context_Sensitive_Tab_Completion_Key(int key)
 		return;
 	}
 
-	if (key == K_BACKSPACE)
-	{
-		cst_info->input_position--;
-		if (cst_info->input_position < 0)
-			cst_info->input_position = 0;
-		cst_info->input[cst_info->input_position] = '\0';
-		Tokenize_Input(cst_info);
-		cst_info->result(cst_info, &cst_info->results, 0, 0, NULL);
-		return;
-	}
-
 	if (key == K_UPARROW)
 	{
 		if (cst_info->direction == 1)
@@ -228,20 +221,11 @@ void Context_Sensitive_Tab_Completion_Key(int key)
 		return;
 	}
 
-	if ((key > 32 && key < 127) || key == K_SPACE) 
-	{
-#warning So the \0 will be inserted at buffer + INPUT_MAX? Buffer overflow.
-		if (cst_info->input_position > INPUT_MAX - 2)
-		{
-			cst_info->input_position = INPUT_MAX - 3;
-			return;
-		}
-		cst_info->input[cst_info->input_position++] = key;
-		cst_info->input[cst_info->input_position] = '\0';
-		Tokenize_Input(cst_info);
-		cst_info->result(cst_info, &cst_info->results, 0, 0, NULL);
-	}
-
+	Text_Input_Handle_Key(cst_info->new_input, key);
+	
+	Tokenize_Input(cst_info);
+	cst_info->result(cst_info, &cst_info->results, 0, 0, NULL);
+	return;
 }
 
 static void CSTC_Draw(struct cst_info *self, int y_offset)
@@ -256,7 +240,7 @@ static void CSTC_Draw(struct cst_info *self, int y_offset)
 
 	Draw_Fill(0, offset , vid.width, 10, 4);
 	Draw_String(8, offset, self->input);
-	Draw_String(8 + self->input_position * 8 , offset + 2, "_");
+	Draw_String(8 + self->new_input->position * 8 , offset + 2, "_");
 
 	offset += 8 * self->direction;
 
@@ -534,7 +518,9 @@ static void setup_completion(struct cst_commands *cc, struct cst_info *c, int ar
 	c->result = cc->result;
 	c->get_data = cc->get_data;
 	snprintf(c->input, sizeof(c->input), "%.*s", arg_len, key_lines[edit_line] + arg_start);
-	c->input_position = arg_len;
+
+	c->new_input = Text_Input_Create(c->input, sizeof(c->input), arg_len, 0);
+
 	Tokenize_Input(c);
 	c->argument_start = arg_start;
 	c->argument_length = arg_len;
@@ -543,6 +529,7 @@ static void setup_completion(struct cst_commands *cc, struct cst_info *c, int ar
 	c->result(c, &c->results, 0, 0, NULL);
 	c->insert_space = insert_space;
 	c->parser_behaviour = cc->parser_behaviour;
+
 }
 
 static int setup_current_command(void)
@@ -674,7 +661,6 @@ static int name_compare(const void *a, const void *b)
 static int match_compare(const void *a, const void *b)
 {
 	struct cva_s *x, *y;
-	char *na, *nb;
 
 	if (a == NULL)
 		return -1;
@@ -698,7 +684,7 @@ static int setup_command_completion_data(struct cst_info *self)
 	cmd_function_t *cmd;
 	cmd_alias_t *alias;
 	cvar_t *var;
-	int count, i, add, *tlen, match;
+	int count, i, add, match;
 
 	char *s;
 
@@ -959,7 +945,7 @@ static int Command_Completion_Result(struct cst_info *self, int *results, int ge
 	}
 
 	if (result_type == 0)
-		*result = va("/%s", res);
+		*result = va("%s", res);
 	else
 		*result = res;
 
