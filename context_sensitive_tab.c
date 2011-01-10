@@ -33,6 +33,7 @@ cvar_t	context_sensitive_tab_completion = {"context_sensitive_tab_completion", "
 cvar_t	context_sensitive_tab_completion_close_on_tab = {"context_sensitive_tab_completion_close_on_tab", "1"};
 cvar_t	context_sensitive_tab_completion_execute_on_enter = {"context_sensitive_tab_completion_execute_on_enter", "1"};
 cvar_t	context_sensitive_tab_completion_sorting_method = {"context_sensitive_tab_completion_sorting_method", "1"};
+cvar_t	context_sensitive_tab_completion_show_results = {"context_sensitive_tab_completion_show_results", "1"};
 
 static void cleanup_cst(struct cst_info *info)
 {
@@ -232,6 +233,7 @@ static void CSTC_Draw(struct cst_info *self, int y_offset)
 {
 	int i, result_offset, offset, rows, sup, sdown;
 	char *ptr;
+	char buf[128];
 
 	if (self->direction == -1)
 		offset = y_offset - 32;
@@ -292,6 +294,12 @@ static void CSTC_Draw(struct cst_info *self, int y_offset)
 	if (sdown)
 	{
 		Draw_String(8, offset + 8 * self->direction, "v");
+	}
+
+	if (rows < self->results && context_sensitive_tab_completion_show_results.value == 1)
+	{
+		sprintf(buf, "showing %i of %i results", rows, self->results);
+		Draw_String(vid.width - strlen(buf) * 8, offset, buf);
 	}
 }
 
@@ -970,5 +978,6 @@ void Context_Sensitive_Tab_Completion_CvarInit(void)
 	Cvar_Register(&context_sensitive_tab_completion_close_on_tab);
 	Cvar_Register(&context_sensitive_tab_completion_execute_on_enter);
 	Cvar_Register(&context_sensitive_tab_completion_sorting_method);
+	Cvar_Register(&context_sensitive_tab_completion_show_results);
 }
 
