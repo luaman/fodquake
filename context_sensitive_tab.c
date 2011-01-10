@@ -936,5 +936,6 @@ void Context_Sensitive_Tab_Completion_CvarInit(void)
 	Command_Completion.conditions = NULL;
 	Cvar_Register(&context_sensitive_tab_completion);
 	Cvar_Register(&context_sensitive_tab_completion_close_on_tab);
+	Cvar_Register(&context_sensitive_tab_completion_execute_on_enter);
 }
 
