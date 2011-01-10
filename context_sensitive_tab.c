@@ -130,6 +130,9 @@ static void insert_result(struct cst_info *self, char *ptr)
 	if (self->insert_space)
 		key_linepos++;
 
+	if (key_linepos >= MAXCMDLINE)
+		key_linepos = MAXCMDLINE - 1;
+
 #warning You need to clamp key_linepos here (it can otherwise overflow)
 }
 
