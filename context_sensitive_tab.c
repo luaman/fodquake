@@ -34,6 +34,7 @@ cvar_t	context_sensitive_tab_completion_close_on_tab = {"context_sensitive_tab_c
 cvar_t	context_sensitive_tab_completion_execute_on_enter = {"context_sensitive_tab_completion_execute_on_enter", "1"};
 cvar_t	context_sensitive_tab_completion_sorting_method = {"context_sensitive_tab_completion_sorting_method", "1"};
 cvar_t	context_sensitive_tab_completion_show_results = {"context_sensitive_tab_completion_show_results", "1"};
+cvar_t	context_sensitive_tab_completion_ignore_alt_tab = {"context_sensitive_tab_completion_ignore_alt_tab", "1"};
 
 static void cleanup_cst(struct cst_info *info)
 {
@@ -591,14 +592,20 @@ static int setup_current_command(void)
 
 int Context_Sensitive_Tab_Completion(void)
 {
+
+	if (context_sensitive_tab_completion_ignore_alt_tab.value == 1)
+		if (keydown[K_ALT])
+			return 0;
+
+
 	if (setup_current_command())
 	{
 		context_sensitive_tab_completion_active = 1;
-		Com_Printf("Context sensitive active for %s\n", cst_info->name);
+	//	Com_Printf("Context sensitive active for %s\n", cst_info->name);
 		return 1;
 	}
 
-	Com_Printf("Context sensitive not active\n");
+	//Com_Printf("Context sensitive not active\n");
 
 	return 0;
 }
@@ -979,5 +986,6 @@ void Context_Sensitive_Tab_Completion_CvarInit(void)
 	Cvar_Register(&context_sensitive_tab_completion_execute_on_enter);
 	Cvar_Register(&context_sensitive_tab_completion_sorting_method);
 	Cvar_Register(&context_sensitive_tab_completion_show_results);
+	Cvar_Register(&context_sensitive_tab_completion_ignore_alt_tab);
 }
 
