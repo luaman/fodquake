@@ -28,6 +28,7 @@ extern char key_lines[32][MAXCMDLINE];
 int context_sensitive_tab_completion_active = 0;
 
 cvar_t	context_sensitive_tab_completion = {"context_sensitive_tab_completion", "1"};
+cvar_t	context_sensitive_tab_completion_close_on_tab = {"context_sensitive_tab_completion_close_on_tab", "1"};
 
 cvar_t	context_sensitive_tab_completion_execute_on_enter = {"context_sensitive_tab_completion_execute_on_enter", "1"};
 
@@ -209,14 +210,21 @@ void Context_Sensitive_Tab_Completion_Key(int key)
 
 	if (key == K_TAB)
 	{
-		if (cst_info->direction == 1)
-			cst_info->selection++;
+		if (context_sensitive_tab_completion_close_on_tab.value == 1)
+		{
+			CSTC_Cleanup(cst_info);
+		}
 		else
-			cst_info->selection--;
-		if (cst_info->selection < 0)
-			cst_info->selection = i-1;
-		if (cst_info->selection >= i)
-			cst_info->selection = 0;
+		{
+			if (cst_info->direction == 1)
+				cst_info->selection++;
+			else
+				cst_info->selection--;
+			if (cst_info->selection < 0)
+				cst_info->selection = i-1;
+			if (cst_info->selection >= i)
+				cst_info->selection = 0;
+		}
 		return;
 	}
 
@@ -927,5 +935,6 @@ void Context_Sensitive_Tab_Completion_CvarInit(void)
 	Command_Completion.get_data = &Command_Completion_Get_Data;
 	Command_Completion.conditions = NULL;
 	Cvar_Register(&context_sensitive_tab_completion);
+	Cvar_Register(&context_sensitive_tab_completion_close_on_tab);
 }
 
