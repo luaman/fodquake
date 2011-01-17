@@ -694,33 +694,43 @@ static qboolean PNG_LoadLibrary(void)
 		return false;
 
 #ifdef _WIN32
-	if (!(png_handle = LoadLibrary("libpng.dll")))
-	{
+	png_handle = LoadLibrary("libpng.dll");
 #else
-	if (!(png_handle = dlopen("libpng.so", RTLD_NOW)) && !(png_handle = dlopen("libpng12.so.0", RTLD_NOW)))
+
+	png_handle = 0;
+
+	while(1)
 	{
-		if (!(zlib_handle = dlopen("libz.so", RTLD_NOW | RTLD_GLOBAL)))
-		{
-			QLib_MissingModuleError(QLIB_ERROR_MODULE_NOT_FOUND, "libz", "-nolibpng", "png image features");
-			return false;
-		}
-		if (!(png_handle = dlopen("libpng12.so.0", RTLD_NOW)) && !(png_handle = dlopen("libpng.so", RTLD_NOW)))
+		if (PNG_LIBPNG_VER_MINOR == 2)
+			png_handle = dlopen("libpng12.so.0", RTLD_NOW);
+
+		if (png_handle == 0)
+			png_handle = dlopen("libpng.so", RTLD_NOW);
+
+		if (png_handle)
+			break;
+
+		if (zlib_handle)
+			break;
+
+		zlib_handle = dlopen("libz.so", RTLD_NOW | RTLD_GLOBAL);
+		if (zlib_handle == 0)
+			break;
+	}
 #endif
+
+	if (png_handle)
+	{
+		if (QLib_ProcessProcdef(png_handle, pngprocs, NUM_PNGPROCS))
 		{
-			PNG_FreeLibrary();
-			QLib_MissingModuleError(QLIB_ERROR_MODULE_NOT_FOUND, "libpng", "-nolibpng", "png image features");
-			return false;
+			return true;
 		}
 	}
 
-	if (!QLib_ProcessProcdef(png_handle, pngprocs, NUM_PNGPROCS))
-	{
-		PNG_FreeLibrary();
-		QLib_MissingModuleError(QLIB_ERROR_MODULE_MISSING_PROC, "libpng", "-nolibpng", "png image features");
-		return false;
-	}
+	fprintf(stderr, "Unable to open libpng - PNG image loading will be disabled\n");
+	Con_Print("Unable to open libpng - PNG image loading will be disabled\n");
 
-	return true;
+	return false;
 }
 #endif
 
