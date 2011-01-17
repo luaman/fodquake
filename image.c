@@ -725,7 +725,12 @@ static qboolean PNG_LoadLibrary(void)
 		{
 			return true;
 		}
+
+		QLIB_FREELIBRARY(png_handle);
 	}
+
+	if (zlib_handle)
+		QLIB_FREELIBRARY(zlib_handle);
 
 	fprintf(stderr, "Unable to open libpng - PNG image loading will be disabled\n");
 	Con_Print("Unable to open libpng - PNG image loading will be disabled\n");
