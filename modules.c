@@ -22,7 +22,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "modules.h"
 #include "version.h"
 
-typedef struct registeredModule_s {
+typedef struct registeredModule_s
+{
 	qlib_id_t id;
 	qboolean loaded;
 	qlib_shutdown_fn shutdown;
@@ -31,28 +32,34 @@ typedef struct registeredModule_s {
 char _temp_modulename[MAX_OSPATH];
 static registeredModule_t registeredModules[qlib_nummodules];
 
-void QLib_Init(void) {
+void QLib_Init(void)
+{
 	int i;
 
-	for (i = 0; i < qlib_nummodules; i++) {
+	for (i = 0; i < qlib_nummodules; i++)
+	{
 		registeredModules[i].id = i;
 		registeredModules[i].loaded = false;
 		registeredModules[i].shutdown = NULL;
 	}
 }
 
-void QLib_Shutdown(void) {
+void QLib_Shutdown(void)
+{
 	int i;
 
-	for (i = 0; i < qlib_nummodules; i++) {
-		if (registeredModules[i].loaded) {
+	for (i = 0; i < qlib_nummodules; i++)
+	{
+		if (registeredModules[i].loaded)
+		{
 			registeredModules[i].shutdown();
 			registeredModules[i].loaded = false;
 		}
 	}
 }
 
-void QLib_RegisterModule(qlib_id_t module, qlib_shutdown_fn shutdown) {
+void QLib_RegisterModule(qlib_id_t module, qlib_shutdown_fn shutdown)
+{
 	if (module < 0 || module >= qlib_nummodules)
 		Sys_Error("QLib_isModuleLoaded: bad module %d", module);
 
@@ -60,7 +67,8 @@ void QLib_RegisterModule(qlib_id_t module, qlib_shutdown_fn shutdown) {
 	registeredModules[module].shutdown = shutdown;
 }
 
-qboolean QLib_isModuleLoaded(qlib_id_t module) {
+qboolean QLib_isModuleLoaded(qlib_id_t module)
+{
 	if (module < 0 || module >= qlib_nummodules)
 		Sys_Error("QLib_isModuleLoaded: bad module %d", module);
 
@@ -68,35 +76,43 @@ qboolean QLib_isModuleLoaded(qlib_id_t module) {
 }
 
 #ifndef __MORPHOS__
-qboolean QLib_ProcessProcdef(QLIB_HANDLETYPE_T handle, qlib_dllfunction_t *procdefs, int size) {
+qboolean QLib_ProcessProcdef(QLIB_HANDLETYPE_T handle, qlib_dllfunction_t *procdefs, int size)
+{
 	int i;
 
-	for (i = 0; i < size; i++) {
-		if (!(*procdefs[i].function = QLIB_GETPROCADDRESS(handle, procdefs[i].name))) {
+	for (i = 0; i < size; i++)
+	{
+		if (!(*procdefs[i].function = QLIB_GETPROCADDRESS(handle, procdefs[i].name)))
+		{
 			for (i = 0; i < size; i++)
 				procdefs[i].function = NULL;
+
 			return false;
 		}
 	}
+
 	return true;
 }
 #endif
 
-void QLib_MissingModuleError(int errortype, char *libname, char *cmdline, char *features) {
-	switch (errortype) {
-	case QLIB_ERROR_MODULE_NOT_FOUND:
-		Sys_Error(
-			"FuhQuake couldn't load the required \"%s" QLIB_LIBRARY_EXTENSION "\" library.  You must either:\n"
-			"i) (recommended) download the required libraries from www.fuhquake.net, or\n"
-			"ii) specify \"%s\" on the cmdline to disable %s.",
-			libname, cmdline, features
-			);
-		break;
-	case QLIB_ERROR_MODULE_MISSING_PROC:
-		Sys_Error("Broken \"%s" QLIB_LIBRARY_EXTENSION "\" library - required function missing.", libname);
-		break;
-	default:
-		Sys_Error("QLib_MissingModuleError: unknown error type (%d)", errortype);
+void QLib_MissingModuleError(int errortype, char *libname, char *cmdline, char *features)
+{
+	switch (errortype)
+	{
+		case QLIB_ERROR_MODULE_NOT_FOUND:
+			Sys_Error(
+				"FuhQuake couldn't load the required \"%s" QLIB_LIBRARY_EXTENSION "\" library.  You must either:\n"
+				"i) (recommended) download the required libraries from www.fuhquake.net, or\n"
+				"ii) specify \"%s\" on the cmdline to disable %s.",
+				libname, cmdline, features);
+
+			break;
+		case QLIB_ERROR_MODULE_MISSING_PROC:
+			Sys_Error("Broken \"%s" QLIB_LIBRARY_EXTENSION "\" library - required function missing.", libname);
+
+			break;
+		default:
+			Sys_Error("QLib_MissingModuleError: unknown error type (%d)", errortype);
 	}
 }
 
