@@ -22,6 +22,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "modules.h"
 #include "version.h"
 
+#include "sys_lib.h"
+
 typedef struct registeredModule_s
 {
 	qlib_id_t id;
@@ -29,7 +31,6 @@ typedef struct registeredModule_s
 	qlib_shutdown_fn shutdown;
 } registeredModule_t;
 
-char _temp_modulename[MAX_OSPATH];
 static registeredModule_t registeredModules[qlib_nummodules];
 
 void QLib_Init(void)
@@ -76,13 +77,13 @@ qboolean QLib_isModuleLoaded(qlib_id_t module)
 }
 
 #ifndef __MORPHOS__
-qboolean QLib_ProcessProcdef(QLIB_HANDLETYPE_T handle, qlib_dllfunction_t *procdefs, int size)
+qboolean QLib_ProcessProcdef(struct SysLib *lib, qlib_dllfunction_t *procdefs, int size)
 {
 	int i;
 
 	for (i = 0; i < size; i++)
 	{
-		if (!(*procdefs[i].function = QLIB_GETPROCADDRESS(handle, procdefs[i].name)))
+		if (!(*procdefs[i].function = Sys_Lib_GetAddressByName(lib, procdefs[i].name)))
 		{
 			for (i = 0; i < size; i++)
 				procdefs[i].function = NULL;

@@ -42,6 +42,7 @@ ifeq ($(OS), linux)
 		snd_oss.o \
 		snd_alsa2.o \
 		sys_io_linux.o \
+		sys_lib_posix.o
 
 	OSCFLAGS=-DBUILD_STRL
 	OSLDFLAGS=-lpthread -lrt
@@ -61,7 +62,8 @@ ifeq ($(OS), freebsd)
 		thread_posix.o \
 		cd_null.o \
 		snd_oss.o \
-		sys_io_linux.o
+		sys_io_linux.o \
+		sys_lib_posix.o
 
 	OSCFLAGS=-I/usr/local/include
 	OSLDFLAGS=-lpthread
@@ -96,6 +98,7 @@ ifeq ($(OS), openbsd)
 		net_posix.o \
 		thread_posix.o \
 		cd_null.o \
+		sys_lib_posix.o \
 #		snd_oss.o
 
 	OSCFLAGS=-I/usr/X11R6/include -I/usr/local/include -I/usr/local/include/libpng -I/usr/local/include/gtk-2.0

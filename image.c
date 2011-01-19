@@ -40,6 +40,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <proto/exec.h>
 #endif
 
+#include "sys_lib.h"
+
 #define	IMAGE_MAX_DIMENSIONS	4096
 
 int image_width, image_height;
@@ -606,8 +608,8 @@ static void PNG_FreeLibrary(void)
 
 #else
 
-static QLIB_HANDLETYPE_T png_handle = NULL;
-static QLIB_HANDLETYPE_T zlib_handle = NULL;
+static struct SysLib *png_handle;
+static struct SysLib *zlib_handle;
 
 static void (*qpng_set_sig_bytes)(png_structp, int);
 static int (*qpng_sig_cmp)(png_bytep, png_size_t, png_size_t);
@@ -683,29 +685,27 @@ qlib_dllfunction_t pngprocs[] =
 static void PNG_FreeLibrary(void)
 {
 	if (png_handle)
-		QLIB_FREELIBRARY(png_handle);
+	{
+		Sys_Lib_Close(png_handle);
+		png_handle = 0;
+	}
+
 	if (zlib_handle)
-		QLIB_FREELIBRARY(zlib_handle);
+	{
+		Sys_Lib_Close(zlib_handle);
+		zlib_handle = 0;
+	}
 }
 
 static qboolean PNG_LoadLibrary(void)
 {
-	if (COM_CheckParm("-nolibpng"))
-		return false;
-
-#ifdef _WIN32
-	png_handle = LoadLibrary("libpng.dll");
-#else
-
-	png_handle = 0;
-
 	while(1)
 	{
 		if (PNG_LIBPNG_VER_MINOR == 2)
-			png_handle = dlopen("libpng12.so.0", RTLD_NOW);
+			png_handle = Sys_Lib_Open("png12");
 
 		if (png_handle == 0)
-			png_handle = dlopen("libpng.so", RTLD_NOW);
+			png_handle = Sys_Lib_Open("png");
 
 		if (png_handle)
 			break;
@@ -713,11 +713,10 @@ static qboolean PNG_LoadLibrary(void)
 		if (zlib_handle)
 			break;
 
-		zlib_handle = dlopen("libz.so", RTLD_NOW | RTLD_GLOBAL);
+		zlib_handle = Sys_Lib_Open("z");
 		if (zlib_handle == 0)
 			break;
 	}
-#endif
 
 	if (png_handle)
 	{
@@ -726,14 +725,18 @@ static qboolean PNG_LoadLibrary(void)
 			return true;
 		}
 
-		QLIB_FREELIBRARY(png_handle);
+		Sys_Lib_Close(png_handle);
+		png_handle = 0;
 	}
 
 	if (zlib_handle)
-		QLIB_FREELIBRARY(zlib_handle);
+	{
+		Sys_Lib_Close(zlib_handle);
+		zlib_handle = 0;
+	}
 
-	fprintf(stderr, "Unable to open libpng - PNG image loading will be disabled\n");
-	Con_Print("Unable to open libpng - PNG image loading will be disabled\n");
+	fprintf(stderr, "Unable to open libpng - PNG image loading and saving will be disabled\n");
+	Con_Print("Unable to open libpng - PNG image loading and saving will be disabled\n");
 
 	return false;
 }
@@ -1308,7 +1311,7 @@ static void JPEG_FreeLibrary(void)
 
 #else
 
-static QLIB_HANDLETYPE_T jpeg_handle = NULL;
+static struct SysLib *jpeg_handle = NULL;
 
 static struct jpeg_error_mgr *(*qjpeg_std_error)(struct jpeg_error_mgr *);
 static void (*qjpeg_destroy_compress)(j_compress_ptr);
@@ -1336,33 +1339,30 @@ qlib_dllfunction_t jpegprocs[] =
 static void JPEG_FreeLibrary(void)
 {
 	if (jpeg_handle)
-		QLIB_FREELIBRARY(jpeg_handle);
+	{
+		Sys_Lib_Close(jpeg_handle);
+		jpeg_handle = 0;
+	}
 }
 
 static qboolean JPEG_LoadLibrary(void)
 {
-	if (COM_CheckParm("-nolibjpeg"))
-		return false;
+	jpeg_handle = Sys_Lib_Open("jpeg");
+	if (jpeg_handle)
+	{
+		if (QLib_ProcessProcdef(jpeg_handle, jpegprocs, NUM_JPEGPROCS))
+		{
+			return true;
+		}
 
-#ifdef _WIN32
-	if (!(jpeg_handle = LoadLibrary("libjpeg.dll")))
-	{
-#else
-	if (!(jpeg_handle = dlopen("libjpeg.so.62", RTLD_NOW)) && !(jpeg_handle = dlopen("libjpeg.so", RTLD_NOW)))
-	{
-#endif
-		QLib_MissingModuleError(QLIB_ERROR_MODULE_NOT_FOUND, "libjpeg", "-nolibjpeg", "jpeg image features");
-		return false;
+		Sys_Lib_Close(jpeg_handle);
+		jpeg_handle = 0;
 	}
 
-	if (!QLib_ProcessProcdef(jpeg_handle, jpegprocs, NUM_JPEGPROCS))
-	{
-		JPEG_FreeLibrary();
-		QLib_MissingModuleError(QLIB_ERROR_MODULE_MISSING_PROC, "libjpeg", "-nolibjpeg", "jpeg image features");
-		return false;
-	}
+	fprintf(stderr, "Unable to open libpng - PNG image loading and saving will be disabled\n");
+	Con_Print("Unable to open libpng - PNG image loading and saving will be disabled\n");
 
-	return true;
+	return false;
 }
 
 #endif
