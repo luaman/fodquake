@@ -100,14 +100,6 @@ void QLib_MissingModuleError(int errortype, char *libname, char *cmdline, char *
 {
 	switch (errortype)
 	{
-		case QLIB_ERROR_MODULE_NOT_FOUND:
-			Sys_Error(
-				"FuhQuake couldn't load the required \"%s" QLIB_LIBRARY_EXTENSION "\" library.  You must either:\n"
-				"i) (recommended) download the required libraries from www.fuhquake.net, or\n"
-				"ii) specify \"%s\" on the cmdline to disable %s.",
-				libname, cmdline, features);
-
-			break;
 		case QLIB_ERROR_MODULE_MISSING_PROC:
 			Sys_Error("Broken \"%s" QLIB_LIBRARY_EXTENSION "\" library - required function missing.", libname);
 

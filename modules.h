@@ -30,7 +30,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define QLIB_LIBRARY_EXTENSION ".so"
 #endif
 
-#define QLIB_ERROR_MODULE_NOT_FOUND			-1
 #define QLIB_ERROR_MODULE_MISSING_PROC		-2
 
 typedef struct qlib_dllfunction_s {
