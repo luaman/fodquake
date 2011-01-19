@@ -1441,6 +1441,14 @@ static image_format_t SShot_FormatForName(char *name) {
 		return IMAGE_JPEG;
 #endif
 
+#ifdef GLQUAKE
+	else if (!Q_strcasecmp(scr_sshot_format.string, "tga"))
+		return IMAGE_TGA;
+#else
+	else if (!Q_strcasecmp(scr_sshot_format.string, "pcx"))
+		return IMAGE_PCX;
+#endif
+
 #if USE_PNG
 	else if (!Q_strcasecmp(scr_sshot_format.string, "png"))
 		return IMAGE_PNG;
@@ -1601,6 +1609,15 @@ void SCR_ScreenShot_f (void) {
 		Q_strncpyz (name, Cmd_Argv(1), sizeof(name));
 	} else if (Cmd_Argc() == 1) {
 		// find a file name to save it to
+
+#ifdef GLQUAKE
+		if (Q_strcasecmp(scr_sshot_format.string, "tga") == 0)
+			strcpy(ext, "tga");
+#else
+		if (Q_strcasecmp(scr_sshot_format.string, "pcx") == 0)
+			strcpy(ext, "pcx");
+#endif
+
 #if USE_PNG
 		if (!Q_strcasecmp(scr_sshot_format.string, "png"))
 			Q_strncpyz(ext, "png", 4);
