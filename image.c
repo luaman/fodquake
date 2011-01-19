@@ -1489,8 +1489,8 @@ int Image_WriteJPEG(char *filename, int quality, byte *pixels, int width, int he
 
 	while (cinfo.next_scanline < height)
 	{
-	    *row_pointer = &pixels[cinfo.next_scanline * width * 3];
-	    qjpeg_write_scanlines(&cinfo, row_pointer, 1);
+		*row_pointer = &pixels[(int)cinfo.next_scanline * width * 3];
+		qjpeg_write_scanlines(&cinfo, row_pointer, 1);
 		if (jpeg_in_error)
 			break;
 	}
