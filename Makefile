@@ -130,6 +130,7 @@ ifeq ($(OS), win32)
 		cd_null.o \
 		in_dinput8.o \
 		sys_io_win32.o \
+		sys_lib_null.o
 
 	OSSWOBJS=vid_win.o vid_mode_win32.o fodquake-sw.windowsicon
 	OSSWLDFLAGS=-lmgllt -lwsock32 -lgdi32 -ldxguid -lwinmm
