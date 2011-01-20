@@ -128,14 +128,17 @@ static void insert_result(struct cst_info *self, char *ptr)
 			return;
 
 	if (self->insert_space)
-		snprintf(new_keyline, MAXCMDLINE, "%*.*s %s%s", self->argument_start, self->argument_start, key_lines[edit_line], result, key_lines[edit_line] + self->argument_start + self->argument_length);
+		snprintf(new_keyline, MAXCMDLINE, "%*.*s %s %s", self->argument_start, self->argument_start, key_lines[edit_line], result, key_lines[edit_line] + self->argument_start + self->argument_length);
 	else
-		snprintf(new_keyline, MAXCMDLINE, "%*.*s%s%s", self->argument_start, self->argument_start, key_lines[edit_line], result, key_lines[edit_line] + self->argument_start + self->argument_length);
+		snprintf(new_keyline, MAXCMDLINE, "%*.*s%s %s", self->argument_start, self->argument_start, key_lines[edit_line], result, key_lines[edit_line] + self->argument_start + self->argument_length);
 	memcpy(key_lines[edit_line], new_keyline, MAXCMDLINE);
 
 	key_linepos = self->argument_start + strlen(result);
+
 	if (self->insert_space)
 		key_linepos++;
+
+	key_linepos++;
 
 	if (key_linepos >= MAXCMDLINE)
 		key_linepos = MAXCMDLINE - 1;
