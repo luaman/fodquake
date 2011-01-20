@@ -22,38 +22,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #define _MODULES_H
 
-#if defined(__linux__) || defined(__OpenBSD__) || defined(__FreeBSD__)
-#include <dlfcn.h>
-#endif
-
-extern char _temp_modulename[MAX_OSPATH];
-
+#include "sys_lib.h"
 
 #ifdef _WIN32
-#include <windows.h>
-
-#define QLIB_HANDLETYPE_T HINSTANCE
 #define QLIB_LIBRARY_EXTENSION ".dll"
-#define QLIB_LOADLIBRARY(lib)									\
-	(																\
-	Q_snprintfz(_temp_modulename, MAX_OSPATH, "%s.dll", lib),	\
-	LoadLibrary(_temp_modulename)								\
-	)
-#define QLIB_GETPROCADDRESS(lib, func) GetProcAddress(lib, func)
-#define QLIB_FREELIBRARY(lib) (FreeLibrary(lib), lib = NULL)
 #else
-#define QLIB_HANDLETYPE_T void *
 #define QLIB_LIBRARY_EXTENSION ".so"
-#define QLIB_LOADLIBRARY(lib)									\
-	(																\
-	Q_snprintfz(_temp_modulename, MAX_OSPATH, "%s.so", lib),	\
-	dlopen(_temp_modulename, RTLD_NOW)							\
-	)
-#define QLIB_GETPROCADDRESS(lib, func) dlsym(lib, func)
-#define QLIB_FREELIBRARY(lib) (dlclose(lib), lib = NULL)
 #endif
 
-#define QLIB_ERROR_MODULE_NOT_FOUND			-1
 #define QLIB_ERROR_MODULE_MISSING_PROC		-2
 
 typedef struct qlib_dllfunction_s {
@@ -73,7 +49,7 @@ void QLib_Init(void);
 void QLib_Shutdown(void);
 void QLib_RegisterModule(qlib_id_t module, qlib_shutdown_fn shutdown);
 qboolean QLib_isModuleLoaded (qlib_id_t module);
-qboolean QLib_ProcessProcdef(QLIB_HANDLETYPE_T handle, qlib_dllfunction_t *procdefs, int size);
+qboolean QLib_ProcessProcdef(struct SysLib *lib, qlib_dllfunction_t *procdefs, int size);
 void QLib_MissingModuleError(int, char *libname, char *cmdline, char *features);
 
 #endif

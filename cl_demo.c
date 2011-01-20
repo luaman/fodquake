@@ -249,7 +249,7 @@ static void CL_WriteSetDemoMessage (void)
 static void CL_WriteStartupData (void)
 {
 	sizebuf_t buf;
-	char buf_data[MAX_MSGLEN * 2], *s;
+	char buf_data[MAX_MSGLEN * 2], *s, *s2;
 	int n, i, j, seq = 1;
 	entity_t *ent;
 	entity_state_t *es, blankes;
@@ -334,6 +334,11 @@ static void CL_WriteStartupData (void)
 	s = cl.model_name[n + 1];
 	while (*s)
 	{
+		/* To convert Fodquake's internal "foo.bsp*1" representation back into "*1" */
+		s2 = strrchr(s, '*');
+		if (s2)
+			s = s2;
+
 		MSG_WriteString (&buf, s);
 		if (buf.cursize > MAX_MSGLEN / 2)
 		{
@@ -1547,8 +1552,8 @@ void CL_CvarDemoInit(void)
 	Cvar_Register(&demo_dir);
 	Cvar_ResetCurrentGroup();
 
-	CSTC_Add("playdemo", NULL, &cstc_playdemo_get_results, &cstc_playdemo_data);
-	CSTC_Add("timedemo", NULL, &cstc_playdemo_get_results, &cstc_playdemo_data);
+	CSTC_Add("playdemo", NULL, &cstc_playdemo_get_results, &cstc_playdemo_data, 0);
+	CSTC_Add("timedemo", NULL, &cstc_playdemo_get_results, &cstc_playdemo_data, 0);
 
 }
 

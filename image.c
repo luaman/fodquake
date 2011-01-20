@@ -40,6 +40,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <proto/exec.h>
 #endif
 
+#include "sys_lib.h"
+
 #define	IMAGE_MAX_DIMENSIONS	4096
 
 int image_width, image_height;
@@ -606,8 +608,8 @@ static void PNG_FreeLibrary(void)
 
 #else
 
-static QLIB_HANDLETYPE_T png_handle = NULL;
-static QLIB_HANDLETYPE_T zlib_handle = NULL;
+static struct SysLib *png_handle;
+static struct SysLib *zlib_handle;
 
 static void (*qpng_set_sig_bytes)(png_structp, int);
 static int (*qpng_sig_cmp)(png_bytep, png_size_t, png_size_t);
@@ -683,44 +685,60 @@ qlib_dllfunction_t pngprocs[] =
 static void PNG_FreeLibrary(void)
 {
 	if (png_handle)
-		QLIB_FREELIBRARY(png_handle);
+	{
+		Sys_Lib_Close(png_handle);
+		png_handle = 0;
+	}
+
 	if (zlib_handle)
-		QLIB_FREELIBRARY(zlib_handle);
+	{
+		Sys_Lib_Close(zlib_handle);
+		zlib_handle = 0;
+	}
 }
 
 static qboolean PNG_LoadLibrary(void)
 {
-	if (COM_CheckParm("-nolibpng"))
-		return false;
+	while(1)
+	{
+		if (PNG_LIBPNG_VER_MINOR == 2)
+			png_handle = Sys_Lib_Open("png12");
 
-#ifdef _WIN32
-	if (!(png_handle = LoadLibrary("libpng.dll")))
-	{
-#else
-	if (!(png_handle = dlopen("libpng.so", RTLD_NOW)) && !(png_handle = dlopen("libpng12.so.0", RTLD_NOW)))
-	{
-		if (!(zlib_handle = dlopen("libz.so", RTLD_NOW | RTLD_GLOBAL)))
-		{
-			QLib_MissingModuleError(QLIB_ERROR_MODULE_NOT_FOUND, "libz", "-nolibpng", "png image features");
-			return false;
-		}
-		if (!(png_handle = dlopen("libpng12.so.0", RTLD_NOW)) && !(png_handle = dlopen("libpng.so", RTLD_NOW)))
-#endif
-		{
-			PNG_FreeLibrary();
-			QLib_MissingModuleError(QLIB_ERROR_MODULE_NOT_FOUND, "libpng", "-nolibpng", "png image features");
-			return false;
-		}
+		if (png_handle == 0)
+			png_handle = Sys_Lib_Open("png");
+
+		if (png_handle)
+			break;
+
+		if (zlib_handle)
+			break;
+
+		zlib_handle = Sys_Lib_Open("z");
+		if (zlib_handle == 0)
+			break;
 	}
 
-	if (!QLib_ProcessProcdef(png_handle, pngprocs, NUM_PNGPROCS))
+	if (png_handle)
 	{
-		PNG_FreeLibrary();
-		QLib_MissingModuleError(QLIB_ERROR_MODULE_MISSING_PROC, "libpng", "-nolibpng", "png image features");
-		return false;
+		if (QLib_ProcessProcdef(png_handle, pngprocs, NUM_PNGPROCS))
+		{
+			return true;
+		}
+
+		Sys_Lib_Close(png_handle);
+		png_handle = 0;
 	}
 
-	return true;
+	if (zlib_handle)
+	{
+		Sys_Lib_Close(zlib_handle);
+		zlib_handle = 0;
+	}
+
+	fprintf(stderr, "Unable to open libpng - PNG image loading and saving will be disabled\n");
+	Con_Print("Unable to open libpng - PNG image loading and saving will be disabled\n");
+
+	return false;
 }
 #endif
 
@@ -1293,7 +1311,7 @@ static void JPEG_FreeLibrary(void)
 
 #else
 
-static QLIB_HANDLETYPE_T jpeg_handle = NULL;
+static struct SysLib *jpeg_handle = NULL;
 
 static struct jpeg_error_mgr *(*qjpeg_std_error)(struct jpeg_error_mgr *);
 static void (*qjpeg_destroy_compress)(j_compress_ptr);
@@ -1321,33 +1339,30 @@ qlib_dllfunction_t jpegprocs[] =
 static void JPEG_FreeLibrary(void)
 {
 	if (jpeg_handle)
-		QLIB_FREELIBRARY(jpeg_handle);
+	{
+		Sys_Lib_Close(jpeg_handle);
+		jpeg_handle = 0;
+	}
 }
 
 static qboolean JPEG_LoadLibrary(void)
 {
-	if (COM_CheckParm("-nolibjpeg"))
-		return false;
+	jpeg_handle = Sys_Lib_Open("jpeg");
+	if (jpeg_handle)
+	{
+		if (QLib_ProcessProcdef(jpeg_handle, jpegprocs, NUM_JPEGPROCS))
+		{
+			return true;
+		}
 
-#ifdef _WIN32
-	if (!(jpeg_handle = LoadLibrary("libjpeg.dll")))
-	{
-#else
-	if (!(jpeg_handle = dlopen("libjpeg.so.62", RTLD_NOW)) && !(jpeg_handle = dlopen("libjpeg.so", RTLD_NOW)))
-	{
-#endif
-		QLib_MissingModuleError(QLIB_ERROR_MODULE_NOT_FOUND, "libjpeg", "-nolibjpeg", "jpeg image features");
-		return false;
+		Sys_Lib_Close(jpeg_handle);
+		jpeg_handle = 0;
 	}
 
-	if (!QLib_ProcessProcdef(jpeg_handle, jpegprocs, NUM_JPEGPROCS))
-	{
-		JPEG_FreeLibrary();
-		QLib_MissingModuleError(QLIB_ERROR_MODULE_MISSING_PROC, "libjpeg", "-nolibjpeg", "jpeg image features");
-		return false;
-	}
+	fprintf(stderr, "Unable to open libpng - PNG image loading and saving will be disabled\n");
+	Con_Print("Unable to open libpng - PNG image loading and saving will be disabled\n");
 
-	return true;
+	return false;
 }
 
 #endif
@@ -1474,8 +1489,8 @@ int Image_WriteJPEG(char *filename, int quality, byte *pixels, int width, int he
 
 	while (cinfo.next_scanline < height)
 	{
-	    *row_pointer = &pixels[cinfo.next_scanline * width * 3];
-	    qjpeg_write_scanlines(&cinfo, row_pointer, 1);
+		*row_pointer = &pixels[(int)cinfo.next_scanline * width * 3];
+		qjpeg_write_scanlines(&cinfo, row_pointer, 1);
 		if (jpeg_in_error)
 			break;
 	}

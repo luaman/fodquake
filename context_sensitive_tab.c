@@ -15,6 +15,7 @@ struct cst_commands
 	int (*conditions)(void);
 	int (*result)(struct cst_info *self, int *results, int get_result, int result_type, char **result);
 	int (*get_data)(struct cst_info *self, int remove);
+	int parser_behaviour;
 };
 
 struct cst_commands Command_Completion;
@@ -27,6 +28,7 @@ extern char key_lines[32][MAXCMDLINE];
 int context_sensitive_tab_completion_active = 0;
 
 cvar_t	context_sensitive_tab_completion = {"context_sensitive_tab_completion", "1"};
+cvar_t	context_sensitive_tab_completion_close_on_tab = {"context_sensitive_tab_completion_close_on_tab", "1"};
 
 cvar_t	context_sensitive_tab_completion_execute_on_enter = {"context_sensitive_tab_completion_execute_on_enter", "1"};
 
@@ -43,8 +45,6 @@ static void cleanup_cst(struct cst_info *info)
 
 	if (info->checked)
 		free(info->checked);
-
-	//free(info);
 }
 
 static struct cst_info cst_info_static;
@@ -59,7 +59,7 @@ static void CSTC_Cleanup(struct cst_info *self)
 }
 
 
-void CSTC_Add(char *name, int (*conditions)(void), int (*result)(struct cst_info *self, int *results, int get_result, int result_type, char **result), int (*get_data)(struct cst_info *self, int remove))
+void CSTC_Add(char *name, int (*conditions)(void), int (*result)(struct cst_info *self, int *results, int get_result, int result_type, char **result), int (*get_data)(struct cst_info *self, int remove), int parser_behaviour)
 {
 	struct cst_commands *command, *cc;
 	char *in;
@@ -93,6 +93,7 @@ void CSTC_Add(char *name, int (*conditions)(void), int (*result)(struct cst_info
 	command->conditions = conditions;
 	command->result = result;
 	command->get_data = get_data;
+	command->parser_behaviour = parser_behaviour;
 }
 
 static void Tokenize_Input(struct cst_info *self)
@@ -130,6 +131,9 @@ static void insert_result(struct cst_info *self, char *ptr)
 	if (self->insert_space)
 		key_linepos++;
 
+	if (key_linepos >= MAXCMDLINE)
+		key_linepos = MAXCMDLINE - 1;
+
 #warning You need to clamp key_linepos here (it can otherwise overflow)
 }
 
@@ -148,7 +152,6 @@ static void cstc_insert_only_find(struct cst_info *self)
 void Context_Sensitive_Tab_Completion_Key(int key)
 {
 	int i;
-	char *ptr;
 
 	if (context_sensitive_tab_completion_active == 0)
 		return;
@@ -207,14 +210,21 @@ void Context_Sensitive_Tab_Completion_Key(int key)
 
 	if (key == K_TAB)
 	{
-		if (cst_info->direction == 1)
-			cst_info->selection++;
+		if (context_sensitive_tab_completion_close_on_tab.value == 1)
+		{
+			CSTC_Cleanup(cst_info);
+		}
 		else
-			cst_info->selection--;
-		if (cst_info->selection < 0)
-			cst_info->selection = i-1;
-		if (cst_info->selection >= i)
-			cst_info->selection = 0;
+		{
+			if (cst_info->direction == 1)
+				cst_info->selection++;
+			else
+				cst_info->selection--;
+			if (cst_info->selection < 0)
+				cst_info->selection = i-1;
+			if (cst_info->selection >= i)
+				cst_info->selection = 0;
+		}
 		return;
 	}
 
@@ -236,7 +246,7 @@ void Context_Sensitive_Tab_Completion_Key(int key)
 
 static void CSTC_Draw(struct cst_info *self, int y_offset)
 {
-	int i, result_offset, offset, rows;
+	int i, result_offset, offset, rows, sup, sdown;
 	char *ptr;
 
 	if (self->direction == -1)
@@ -255,13 +265,27 @@ static void CSTC_Draw(struct cst_info *self, int y_offset)
 	else
 		rows = (vid.height - offset) / 8;
 
-	result_offset = 0;
+	if (rows % 2 != 0)
+		rows--;
+
+
+	result_offset = sup = sdown = 0;
+
 	if (rows < self->results)
 	{
+		sup = 1;
+
 		if (self->selection > rows/2)
+		{
 			result_offset = self->selection - rows/2;
+			sdown = 1;
+		}
+
 		if ((self->results - self->selection) < rows/2)
+		{
 			result_offset = self->results - rows;
+			sup = 0;
+		}
 	}
 
 	for (i=0, ptr = NULL; i<rows; i++)
@@ -274,6 +298,16 @@ static void CSTC_Draw(struct cst_info *self, int y_offset)
 			Draw_Fill(0, offset + i * 8 * self->direction, vid.width, 8, 4);
 
 		Draw_String(32, offset + i * 8 * self->direction, ptr);
+	}
+
+	if (sup)
+	{
+		Draw_String(8, offset + (rows - 1) * 8 * self->direction, "^");
+	}
+
+	if (sdown)
+	{
+		Draw_String(8, offset + 8 * self->direction, "v");
 	}
 }
 
@@ -335,7 +369,6 @@ void read_info_new (char *string, int position, char **cmd_begin, int *cmd_len, 
 	char **start, **stop;
 	char *s;
 	char *next;
-	unsigned int i;
 	int docontinue;
 	int dobreak;
 	int isinvalid;
@@ -509,6 +542,7 @@ static void setup_completion(struct cst_commands *cc, struct cst_info *c, int ar
 		c->get_data(c, 0);
 	c->result(c, &c->results, 0, 0, NULL);
 	c->insert_space = insert_space;
+	c->parser_behaviour = cc->parser_behaviour;
 }
 
 static int setup_current_command(void)
@@ -537,10 +571,21 @@ static int setup_current_command(void)
 		{
 			if (strncmp(c->name, cmd_start, cmd_len) == 0)
 			{
+				if (c->conditions)
+					if (c->conditions() == 0)
+						return 0;
+
 				if (arg_start - key_lines[edit_line] - 1 == 0)
 					setup_completion(c, cst_info, cmd_start + cmd_len - key_lines[edit_line], arg_len, 1);
 				else
-					setup_completion(c, cst_info, arg_start - key_lines[edit_line], arg_len, 0);
+				{
+					if (c->parser_behaviour == 0)
+						setup_completion(c, cst_info, arg_start - key_lines[edit_line], arg_len, 0);
+					else
+					{
+						setup_completion(c, cst_info, cmd_start + cmd_len - key_lines[edit_line] + 1,  (arg_start - cmd_start) + arg_len-1, 0);
+					}
+				}
 				return 1;
 			}
 			c = c->next;
@@ -811,11 +856,12 @@ static int setup_command_completion_data(struct cst_info *self)
 static int Command_Completion_Result(struct cst_info *self, int *results, int get_result, int result_type, char **result)
 {
 	int count;
-	int i;
 	struct cva_s *cc;
+	char *res;
 
 	if (self == NULL)
 		return 1;
+
 	
 	if (results || self->initialized == 0)
 	{
@@ -842,23 +888,32 @@ static int Command_Completion_Result(struct cst_info *self, int *results, int ge
 	if (get_result >= self->count)
 		return 1;
 
+
+	if (self->data == NULL)
+		return 1;
+
 	cc = self->data;
 
 	switch (cc[get_result].type)
 	{
 		case 0:
-			*result = cc[get_result].info.c->name;
+			res = cc[get_result].info.c->name;
 			break;
 		case 1:
-			*result = cc[get_result].info.a->name;
+			res = cc[get_result].info.a->name;
 			break;
 		case 2:
-			*result = cc[get_result].info.v->name;
+			res = cc[get_result].info.v->name;
 			break;
 		default:
 			*result = NULL;
 			return 1;
 	}
+
+	if (result_type == 0)
+		*result = va("/%s", res);
+	else
+		*result = res;
 
 	return 0;
 }
@@ -880,5 +935,7 @@ void Context_Sensitive_Tab_Completion_CvarInit(void)
 	Command_Completion.get_data = &Command_Completion_Get_Data;
 	Command_Completion.conditions = NULL;
 	Cvar_Register(&context_sensitive_tab_completion);
+	Cvar_Register(&context_sensitive_tab_completion_close_on_tab);
+	Cvar_Register(&context_sensitive_tab_completion_execute_on_enter);
 }
 
