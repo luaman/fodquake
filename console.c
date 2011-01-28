@@ -460,8 +460,6 @@ static void Con_ClearBufferSpace(unsigned int size)
 {
 	while(firstline != ((lastline + 1) % maxlines) && ((lines[firstline] >= contail && lines[firstline] < contail + size) || (contail + size >= consize && lines[firstline] < (((contail + size) % consize)))))
 	{
-		printf("Clearing line\n");
-
 		if (displayline == firstline)
 		{
 			displayline++;
