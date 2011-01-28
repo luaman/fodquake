@@ -546,9 +546,11 @@ void Con_Print(const char *txt)
 
 			Con_CopyToBuffer(txt, i);
 
-			j = contail - 1;
-			if (j >= consize)
+			if (contail == 0)
 				j = consize - 1;
+			else
+				j = contail - 1;
+
 			conbuf[j] = 0;
 
 			Con_LayoutLine(linebegin);
