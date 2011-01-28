@@ -490,6 +490,9 @@ void Con_Print(const char *txt)
 		return;
 	}
 
+	if (strlen(txt) >= consize)
+		return;
+
 	freethis = 0;
 
 	if (*txt == 1 || *txt == 2)
