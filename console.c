@@ -205,11 +205,11 @@ static void Con_Relayout()
 
 	if (firstline != ((lastline + 1) % maxlines))
 	{
+		i = lines[firstline];
+
 		firstline = 0;
 		lastline = maxlines - 1;
 		displayline = lastline;
-
-		i = lines[firstline];
 
 		while(i != contail)
 		{
