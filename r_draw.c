@@ -248,11 +248,15 @@ void Draw_ColoredString (int x, int y, char *text, int red)
 				g = HexToInt(text[3]);
 				b = HexToInt(text[4]);
 				if (r >= 0 && g >= 0 && b >= 0)
-					text += 5;
+				{
+					text += 4;
+					continue;
+				}
 			}
 			else if (text[1] == 'r')
 			{
-				text += 2;
+				text += 1;
+				continue;
 			}
 		}
 
