@@ -404,6 +404,8 @@ int Utils_TF_TeamToColor(char *team)
 }
 
 #define ISHEX(x) (((x) >= '0' && (x) <= '9') || ((x) >= 'a' && (x) <= 'f') || ((x) >= 'A' && (x) <= 'F'))
+#define HEXTOINT(x) ((x) >= '0' && (x) <= '9'?(x)-'0':(x) >= 'a' && (x) <= 'f'?(x)-'a'+10:(x) >= 'A' && (x) <= 'F'?(x)-'A'+10:0)
+
 // maybe make this a macro?
 static int is_valid_color_info (char *c)
 {
@@ -777,5 +779,43 @@ int Colored_String_Length(char *string)
         }
 
         return count;
+}
+
+int Colored_String_Offset(char *string, unsigned int maxlen, unsigned short *lastcolour)
+{
+        char *ptr;
+        int count = 0;
+	unsigned short colour;
+
+        ptr = string;
+
+	colour = 0x0fff;
+
+        while (*ptr != '\0' && count != maxlen)
+        {
+		if (ptr[0] == '&' && ptr[1] == 'c' && is_valid_color_info(ptr + 2))
+		{
+			if (lastcolour)
+			{
+				colour = (HEXTOINT(ptr[2])<<8)|(HEXTOINT(ptr[3])<<4)|HEXTOINT(ptr[4]);
+			}
+
+			ptr += 5;
+		}
+		else if (ptr[0] == '&' && ptr[1] == 'r')
+		{
+			ptr += 2;
+		}
+		else
+		{
+			ptr++;
+			count++;
+		}
+        }
+
+	if (lastcolour)
+		*lastcolour = colour;
+
+        return ptr - string;
 }
 

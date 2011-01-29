@@ -54,6 +54,7 @@ char *Util_Remove_Colors(const char *string, int size);
 char *Util_strcasestr (const char *psz_big, const char *psz_little);
 
 int Colored_String_Length(char *string);
+int Colored_String_Offset(char *string, unsigned int maxlen, unsigned short *lastcolour);
 
 //struct directory_list *Util_Dir_Read(char *dir, int recursive, char **filters);
 struct directory_list *Util_Dir_Read(char *dir, int recursive, int remove_dirs, char **filter);
