@@ -756,39 +756,26 @@ int Colored_String_Length(char *string)
 {
         char *ptr;
         int count = 0;
-	int len;
-	int ignore;
 
         ptr = string;
-	len = strlen(string);
 
-	ignore = 0;
         while (*ptr != '\0')
         {
-
-                if (*ptr == '&')
-                {
-			if (count + 5 <= len)
-			{
-				if (*(ptr + 1) == 'c')
-					if (is_valid_color_info((ptr+2)))
-						ignore = 1;
-			}
-                }
-
-		if (!ignore)
-                {
-                        ptr++;
-                        count++;
-                }
+		if (ptr[0] == '&' && ptr[1] == 'c' && is_valid_color_info(ptr + 2))
+		{
+			ptr += 5;
+		}
+		else if (ptr[0] == '&' && ptr[1] == 'r')
+		{
+			ptr += 2;
+		}
 		else
 		{
-			ptr+=5;
-			ignore = 0;
+			ptr++;
+			count++;
 		}
         }
 
         return count;
 }
-
 
