@@ -45,6 +45,9 @@ static char *scrollupmarker;
 
 static unsigned int editlinepos;
 
+static char *stitchbuffer; /* A buffer which contains a linear representation of the line that cross the end of the console buffer, if any */
+unsigned int stitchbufferlength;
+
 static const float con_cursorspeed = 4;
 
 static unsigned int suppressed;
@@ -360,9 +363,8 @@ static void Con_DrawTextLines(unsigned int y, unsigned int maxlinestodraw, unsig
 
 		if (lines[i] + linelength > consize)
 		{
-			j = consize - lines[i];
-			Draw_String_Length(8, y, conbuf + lines[i], j);
-			Draw_String_Length(8 + j * 8, y, conbuf, linelength - j);
+			if (stitchbuffer)
+				Draw_String_Length(8, y, stitchbuffer, linelength);
 		}
 		else
 			Draw_String_Length(8, y, conbuf + lines[i], linelength);
@@ -553,6 +555,22 @@ void Con_Print(const char *txt)
 				j = contail - 1;
 
 			conbuf[j] = 0;
+
+			if (contail < linebegin)
+			{
+				j = consize - linebegin + contail;
+				if (j > stitchbufferlength)
+				{
+					free(stitchbuffer);
+					stitchbuffer = malloc(j);
+				}
+
+				if (stitchbuffer)
+				{
+					memcpy(stitchbuffer, conbuf + linebegin, consize - linebegin);
+					memcpy(stitchbuffer + (consize - linebegin), conbuf, contail);
+				}
+			}
 
 			Con_LayoutLine(linebegin);
 		}
