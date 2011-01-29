@@ -23,10 +23,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 /* Fixme: Include less. */
 #include "quakedef.h"
 #include "strl.h"
+#include "utils.h"
 #include "console.h"
+
+static qboolean con_parsecolors_callback(cvar_t *, char *);
 
 static cvar_t con_notifylines = { "con_notifylines", "4" };
 static cvar_t con_notifytime = { "con_notifytime", "3" };
+static cvar_t con_parsecolors = { "con_parsecolors", "1", 0, con_parsecolors_callback };
 
 static unsigned char *conbuf;
 static unsigned int contail;
@@ -34,6 +38,7 @@ static unsigned int consize;
 static unsigned int partiallinestart;
 
 static unsigned int *lines;
+static unsigned short *linestartcolours;
 static unsigned int maxlines; /* Must be a power of 2 */
 static unsigned int firstline;
 static unsigned int lastline;
@@ -108,14 +113,65 @@ static unsigned int Con_BufferStringLength(unsigned int offset)
 	return len;
 }
 
-static unsigned int Con_BufferFindLinebreak(unsigned int offset, unsigned int max)
+static unsigned int Con_BufferColouredStringLength(unsigned int offset)
+{
+	unsigned int len;
+
+	len = Con_BufferStringLength(offset);
+
+	if (offset + len > consize)
+	{
+		if (stitchbuffer)
+			return Colored_String_Length(stitchbuffer);
+
+		return 0;
+	}
+	else
+	{
+		return Colored_String_Length(conbuf + offset);
+	}
+}
+
+static unsigned int Con_BufferColouredStringLengthOffset(unsigned int offset, unsigned int maxlen, unsigned short *lastcolour)
+{
+	unsigned int len;
+
+	len = Con_BufferStringLength(offset);
+
+	if (offset + len > consize)
+	{
+		if (stitchbuffer)
+			return Colored_String_Offset(stitchbuffer, maxlen, lastcolour);
+
+		return len;
+	}
+	else
+	{
+		return Colored_String_Offset(conbuf + offset, maxlen, lastcolour);
+	}
+}
+
+static unsigned int Con_BufferFindLinebreak(unsigned int offset, unsigned int max, unsigned short *lastcolour)
 {
 	unsigned int i;
 
-	if (max <= textcolumns)
-		return max;
+	if (con_parsecolors.value)
+	{
+		max = Con_BufferColouredStringLength(offset);
+		if (max <= textcolumns)
+			return Con_BufferStringLength(offset);
 
-	i = textcolumns;
+		i = Con_BufferColouredStringLengthOffset(offset, textcolumns, lastcolour);
+	}
+	else
+	{
+		if (max <= textcolumns)
+			return max;
+
+		i = textcolumns;
+
+		*lastcolour = 0x0fff;
+	}
 
 	while(i > 0 && conbuf[(offset + i) % consize] != ' ' && conbuf[(offset + i) % consize] != (' '|0x80))
 		i--;
@@ -132,28 +188,37 @@ static unsigned int Con_BufferFindLinebreak(unsigned int offset, unsigned int ma
 static int Con_ExpandMaxLines()
 {
 	unsigned int *newlines;
+	unsigned short *newlinestartcolours;
 	unsigned int i;
 	unsigned int j;
 
 	newlines = malloc(maxlines*2*sizeof(*lines));
 	if (newlines)
 	{
-		i = 0;
-		j = firstline;
-		while (j != ((lastline + 1) % maxlines))
+		newlinestartcolours = malloc(maxlines*2*sizeof(*linestartcolours));
+		if (newlinestartcolours)
 		{
-			newlines[i++] = lines[j++];
-			j %= maxlines;
+			i = 0;
+			j = firstline;
+			while (j != ((lastline + 1) % maxlines))
+			{
+				newlines[i++] = lines[j++];
+				newlinestartcolours[i++] = linestartcolours[j++];
+				j %= maxlines;
+			}
+
+			displayline = (displayline - firstline) % maxlines;
+			lastline = (lastline - firstline) % maxlines;
+			firstline = 0;
+
+			lines = newlines;
+			linestartcolours = newlinestartcolours;
+			maxlines *= 2;
+
+			return 1;
 		}
 
-		displayline = (displayline - firstline) % maxlines;
-		lastline = (lastline - firstline) % maxlines;
-		firstline = 0;
-
-		lines = newlines;
-		maxlines *= 2;
-
-		return 1;
+		free(newlines);
 	}
 
 	return 0;
@@ -163,6 +228,10 @@ static void Con_LayoutLine(unsigned int offset)
 {
 	unsigned int i;
 	unsigned int j;
+	unsigned short linestartcolour;
+	unsigned short lastcolour;
+
+	linestartcolour = 0x0fff;
 
 	i = Con_BufferStringLength(offset);
 
@@ -170,7 +239,7 @@ static void Con_LayoutLine(unsigned int offset)
 	{
 		j = i;
 
-		j = Con_BufferFindLinebreak(offset, i);
+		j = Con_BufferFindLinebreak(offset, i, &lastcolour);
 
 		if ((lastline+2)%maxlines == firstline)
 		{
@@ -191,6 +260,7 @@ static void Con_LayoutLine(unsigned int offset)
 		lastline %= maxlines;
 
 		lines[lastline] = offset;
+		linestartcolours[lastline] = linestartcolour;
 
 		notifytimes[notifystart] = Sys_IntTime();
 		notifystart++;
@@ -199,6 +269,8 @@ static void Con_LayoutLine(unsigned int offset)
 		offset += j;
 		offset %= consize;
 		i -= j;
+
+		linestartcolour = lastcolour;
 	} while(i);
 }
 
@@ -241,12 +313,17 @@ void Con_Init(void)
 		lines = malloc(sizeof(*lines)*512);
 		if (lines)
 		{
-			memset(lines, 0, sizeof(*lines)*512);
-			maxlines = 512/8;
-			lastline = maxlines - 1;
-			displayline = lastline;
+			linestartcolours = malloc(sizeof(*linestartcolours)*512);
+			if (lines)
+			{
+				memset(lines, 0, sizeof(*lines)*512);
+				memset(linestartcolours, 0, sizeof(*linestartcolours)*512);
+				maxlines = 512;
+				lastline = maxlines - 1;
+				displayline = lastline;
 
-			textcolumns = 65536;
+				textcolumns = 65536;
+			}
 		}
 	}
 }
@@ -267,9 +344,19 @@ void Con_CvarInit(void)
 	Cvar_SetCurrentGroup(CVAR_GROUP_CONSOLE);
 	Cvar_Register(&con_notifylines);
 	Cvar_Register(&con_notifytime);
+	Cvar_Register(&con_parsecolors);
 	Cvar_ResetCurrentGroup();
 
 	Cmd_AddCommand("clear", Con_Clear);
+}
+
+static qboolean con_parsecolors_callback(cvar_t *cvar, char *value)
+{
+	cvar->value = atof(value);
+
+	Con_Relayout();
+
+	return false;
 }
 
 void Con_CheckResize(unsigned int pixelwidth)
@@ -316,7 +403,8 @@ static void Con_DrawTextLines(unsigned int y, unsigned int maxlinestodraw, unsig
 	if (maxlinestodraw == 0)
 		return;
 
-	Draw_BeginTextRendering();
+	if (!con_parsecolors.value)
+		Draw_BeginTextRendering();
 
 	i = firstline;
 	y += maxlinestodraw * 8;
@@ -364,17 +452,28 @@ static void Con_DrawTextLines(unsigned int y, unsigned int maxlinestodraw, unsig
 		if (lines[i] + linelength > consize)
 		{
 			if (stitchbuffer)
-				Draw_String_Length(8, y, stitchbuffer, linelength);
+			{
+				if (con_parsecolors.value)
+					Draw_ColoredString_Length(8, y, stitchbuffer, 0, linelength, linestartcolours[i]);
+				else
+					Draw_String_Length(8, y, stitchbuffer, linelength);
+			}
 		}
 		else
-			Draw_String_Length(8, y, conbuf + lines[i], linelength);
+		{
+			if (con_parsecolors.value)
+				Draw_ColoredString_Length(8, y, conbuf + lines[i], 0, linelength, linestartcolours[i]);
+			else
+				Draw_String_Length(8, y, conbuf + lines[i], linelength);
+		}
 
 		y += 8;
 		i = nextline;
 		maxlinestodraw--;
 	}
 
-	Draw_EndTextRendering();
+	if (!con_parsecolors.value)
+		Draw_EndTextRendering();
 }
 
 void Con_DrawConsole(int pixellines)
