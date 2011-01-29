@@ -403,13 +403,13 @@ int Utils_TF_TeamToColor(char *team)
 	return 0;
 }
 
+#define ISHEX(x) (((x) >= '0' && (x) <= '9') || ((x) >= 'a' && (x) <= 'f') || ((x) >= 'A' && (x) <= 'F'))
 // maybe make this a macro?
 static int is_valid_color_info (char *c)
 {
-	if ((*c >= '0' &&  *c <= '9') || (*c >= 'a' && *c <= 'z') || (*c >= 'A' && *c <= 'Z'))
-		if ((*(c+1) >= '0' &&  *(c+1) <= '9') || (*(c+1) >= 'a' && *(c+1) <= 'z') || (*(c+1) >= 'A' && *(c+1) <= 'Z'))
-			if ((*(c+2) >= '0' &&  *(c+2) <= '9') || (*(c+2) >= 'a' && *(c+2) <= 'z') || (*(c+2) >= 'A' && *(c+2) <= 'Z'))
-				return 1;
+	if (ISHEX(c[0]) && ISHEX(c[1]) && ISHEX(c[2]))
+		return 1;
+
 	return 0;
 }
 
