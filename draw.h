@@ -67,6 +67,7 @@ void Draw_String (int x, int y, const char *str);
 void Draw_String_Length(int x, int y, const char *str, int len);
 void Draw_Alt_String (int x, int y, const char *str);
 void Draw_ColoredString (int x, int y, char *str, int red);
+void Draw_ColoredString_Length(int x, int y, char *text, int red, int len, unsigned short startcolour);
 mpic_t *Draw_CachePic (char *path);
 mpic_t *Draw_CacheWadPic (char *name);
 void Draw_FreeWadPic(mpic_t *pic);

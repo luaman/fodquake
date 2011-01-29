@@ -916,6 +916,91 @@ void Draw_ColoredString (int x, int y, char *text, int red)
 }
 
 
+void Draw_ColoredString_Length(int x, int y, char *text, int red, int len, unsigned short startcolour)
+{
+	int r, g, b, num;
+	qboolean white;
+
+	if (y <= -8)
+		return;			// totally off screen
+
+	if (!*text)
+		return;
+
+	GL_Bind(char_texture);
+
+	if (scr_coloredText.value)
+		glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+
+	if (startcolour == 0x0fff)
+	{
+		white = true;
+	}
+	else
+	{
+		glColor3f(((startcolour>>8)&0xf) / 16.0, ((startcolour>>4)&0xf) / 16.0, (startcolour&0xf) / 16.0);
+		white = false;
+	}
+
+	glBegin(GL_QUADS);
+
+	while(len)
+	{
+		if (*text == '&')
+		{
+			if (len >= 5 && text[1] == 'c' && text[2] && text[3] && text[4])
+			{
+				r = HexToInt(text[2]);
+				g = HexToInt(text[3]);
+				b = HexToInt(text[4]);
+				if (r >= 0 && g >= 0 && b >= 0)
+				{
+					if (scr_coloredText.value)
+					{
+						glColor3f(r / 16.0, g / 16.0, b / 16.0);
+						white = false;
+					}
+					text += 5;
+					len -= 5;
+				}
+				continue;
+			}
+			else if (len >= 2 && text[1] == 'r')
+			{
+				if (!white)
+				{
+					glColor3ubv(color_white);
+					white = true;
+				}
+				text += 2;
+				len -= 2;
+				continue;
+			}
+		}
+
+		num = *text & 255;
+		if (!scr_coloredText.value && red)
+			num |= 128;
+
+		if (num != 32 && num != (32 | 128))
+			Draw_CharPoly(x, y, num);
+
+		x += 8;
+
+		text++;
+		len--;
+	}
+
+	glEnd();
+
+	if (!white)
+		glColor3ubv(color_white);
+
+	if (scr_coloredText.value)
+		glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+}
+
+
 void Draw_Crosshair(void)
 {
 	float x, y, ofs1, ofs2, sh, th, sl, tl;

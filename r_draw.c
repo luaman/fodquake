@@ -265,6 +265,42 @@ void Draw_ColoredString (int x, int y, char *text, int red)
 	}
 }
 
+void Draw_ColoredString_Length(int x, int y, char *text, int red, int len, unsigned short startcolour)
+{
+	int r, g, b;
+
+	while(len)
+	{
+		if (*text == '&')
+		{
+			if (text[1] == 'c' && text[2] && text[3] && text[4])
+			{
+				r = HexToInt(text[2]);
+				g = HexToInt(text[3]);
+				b = HexToInt(text[4]);
+				if (r >= 0 && g >= 0 && b >= 0)
+				{
+					text += 5;
+					len -= 5;
+					continue;
+				}
+			}
+			else if (text[1] == 'r')
+			{
+				text += 2;
+				len -= 2;
+				continue;
+			}
+		}
+
+		Draw_Character (x, y, (*text) | (red ? 0x80 : 0));
+		x += 8;
+
+		text++;
+		len--;
+	}
+}
+
 void Draw_Pixel(int x, int y, byte color) {
 	byte *dest;
 
