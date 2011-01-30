@@ -202,8 +202,10 @@ static int Con_ExpandMaxLines()
 			j = firstline;
 			while (j != ((lastline + 1) % maxlines))
 			{
-				newlines[i++] = lines[j++];
-				newlinestartcolours[i++] = linestartcolours[j++];
+				newlines[i] = lines[j];
+				newlinestartcolours[i] = linestartcolours[j];
+				i++;
+				j++;
 				j %= maxlines;
 			}
 
