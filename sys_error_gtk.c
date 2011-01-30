@@ -1,5 +1,5 @@
 /*
-Copyright (C) 2009 Mark Olsen
+Copyright (C) 2009, 2011 Mark Olsen
 Copyright (C) 2009 Jürgen Legler
 
 This program is free software; you can redistribute it and/or
