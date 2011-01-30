@@ -279,6 +279,7 @@ SWOBJS= \
 	d_edge.o \
 	d_init.o \
 	d_modech.o \
+	d_part.o \
 	d_polyse.o \
 	d_scan.o \
 	d_sky.o \
