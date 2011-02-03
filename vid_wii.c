@@ -221,14 +221,6 @@ void VID_UnlockBuffer()
 {
 }
 
-void D_BeginDirectRect(int x, int y, byte *pbitmap, int width, int height)
-{
-}
-
-void D_EndDirectRect(int x, int y, int width, int height)
-{
-}
-
 void Sys_Video_SetWindowTitle(void *display, const char *text)
 {
 }
