@@ -253,18 +253,10 @@ static byte *FS_LoadFile(char *path, int usehunk)
 
 	((byte *) buf)[len] = 0;
 
-#ifndef SERVERONLY
-	Draw_BeginDisc();
-#endif
-
 	r = fread(buf, 1, len, h);
 	fclose(h);
 	if (r != len)
 		Sys_Error("FS_LoadFile: Error while reading file %s", path);
-
-#ifndef SERVERONLY
-	Draw_EndDisc();
-#endif
 
 	return buf;
 }

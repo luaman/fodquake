@@ -59,8 +59,6 @@ void Draw_Pic (int x, int y, mpic_t *pic);
 void Draw_TransPic (int x, int y, mpic_t *pic);
 void Draw_TransPicTranslate (int x, int y, mpic_t *pic, byte *translation);
 void Draw_ConsoleBackground (int lines);
-void Draw_BeginDisc (void);
-void Draw_EndDisc (void);
 void Draw_TileClear (int x, int y, int w, int h);
 void Draw_Fill (int x, int y, int w, int h, int c);
 void Draw_FadeScreen (void);

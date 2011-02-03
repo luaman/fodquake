@@ -1370,23 +1370,6 @@ void Draw_FadeScreen(void)
 
 //=============================================================================
 
-//Draws the little blue disc in the corner of the screen. 
-//Call before beginning any disc IO.
-void Draw_BeginDisc(void)
-{
-	if (!draw_disc)
-		return;
-	glDrawBuffer(GL_FRONT);
-	Draw_Pic(vid.width - 24, 0, draw_disc);
-	glDrawBuffer(GL_BACK);
-}
-
-//Erases the disc icon.
-//Call after completing any disc IO
-void Draw_EndDisc(void)
-{
-}
-
 void GL_Set2D(void)
 {
 	glViewport(glx, gly, glwidth, glheight);
