@@ -40,7 +40,6 @@ typedef struct {
 static rectdesc_t	r_rectdesc;
 
 byte		*draw_chars;				// 8*8 graphic characters
-mpic_t		*draw_disc;
 mpic_t		*draw_backtile;
 
 cvar_t	scr_conalpha	= {"scr_conalpha", "1"};
@@ -121,7 +120,6 @@ void Draw_CvarInit(void)
 void Draw_Init(void)
 {
 	draw_chars = (byte *) Draw_CacheWadPic ("conchars");
-	draw_disc = Draw_CacheWadPic ("disc");
 	draw_backtile = Draw_CacheWadPic ("backtile");
 
 	r_rectdesc.width = draw_backtile->width;

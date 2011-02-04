@@ -50,6 +50,7 @@ mpic_t		*sb_weapons[7][8];	// 0 is active, 1 is owned, 2-5 are flashes
 mpic_t		*sb_ammo[4];
 mpic_t		*sb_sigil[4];
 mpic_t		*sb_armor[3];
+mpic_t		*sb_armor_invuln;
 mpic_t		*sb_items[32];
 
 mpic_t	*sb_faces[5][2];		// 0 is dead, 1-4 are alive
@@ -208,6 +209,7 @@ void Sbar_Init (void)
 	sb_armor[0] = Draw_CacheWadPic ("sb_armor1");
 	sb_armor[1] = Draw_CacheWadPic ("sb_armor2");
 	sb_armor[2] = Draw_CacheWadPic ("sb_armor3");
+	sb_armor_invuln = Draw_CacheWadPic("disc");
 
 	sb_items[0] = Draw_CacheWadPic ("sb_key1");
 	sb_items[1] = Draw_CacheWadPic ("sb_key2");
@@ -275,6 +277,8 @@ void Sbar_Shutdown(void)
 	{
 		Draw_FreeWadPic(sb_ammo[i]);
 	}
+
+	Draw_FreeWadPic(sb_armor_invuln);
 
 	for(i=0;i<3;i++)
 	{
@@ -880,7 +884,7 @@ static void Sbar_DrawNormal (void) {
 	// armor
 	if (cl.stats[STAT_ITEMS] & IT_INVULNERABILITY)	{
 		Sbar_DrawNum (24, 0, 666, 3, 1);
-		Sbar_DrawPic (0, 0, draw_disc);
+		Sbar_DrawPic (0, 0, sb_armor_invuln);
 	} else {
 		Sbar_DrawNum (24, 0, cl.stats[STAT_ARMOR], 3, cl.stats[STAT_ARMOR] <= 25);
 		if (cl.stats[STAT_ITEMS] & IT_ARMOR3)

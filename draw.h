@@ -43,8 +43,6 @@ typedef struct
 } mpic_t;
 #endif
 
-extern	mpic_t		*draw_disc;	// also used on sbar
-
 void Draw_CvarInit(void);
 void Draw_Init (void);
 #ifdef GLQUAKE

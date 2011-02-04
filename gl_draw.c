@@ -53,7 +53,6 @@ qboolean OnChange_gl_smoothfont (cvar_t *var, char *string);
 cvar_t gl_smoothfont = {"gl_smoothfont", "0", 0, OnChange_gl_smoothfont};
 
 byte			*draw_chars;						// 8*8 graphic characters
-mpic_t			*draw_disc;
 static mpic_t	*draw_backtile;
 
 static int		translate_texture;
@@ -618,7 +617,6 @@ void Draw_InitGL(void)
 	}
 	customCrosshair_Init();		
 	// get the other pics we need
-	draw_disc = Draw_CacheWadPic ("disc");
 	draw_backtile = Draw_CacheWadPic ("backtile");
 
 	drawgl_inited = 1;
