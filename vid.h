@@ -19,6 +19,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 // vid.h -- video driver defs
 
+#ifndef VID_H
+#define VID_H
+
 #include "keys.h"
 
 #define VID_CBITS	6
@@ -101,3 +104,4 @@ const char *VID_GetMode(void);
 
 int VID_FocusChanged(void);
 
+#endif

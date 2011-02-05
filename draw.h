@@ -22,6 +22,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // draw.h -- these are the only functions outside the refresh allowed
 // to touch the vid buffer
 
+#ifndef DRAW_H
+#define DRAW_H
+
 #include "wad.h"
 
 #ifdef GLQUAKE
@@ -70,3 +73,6 @@ mpic_t *Draw_CacheWadPic (char *name);
 void Draw_FreeWadPic(mpic_t *pic);
 void Draw_Crosshair(void);
 void Draw_TextBox (int x, int y, int width, int lines);
+
+#endif
+
