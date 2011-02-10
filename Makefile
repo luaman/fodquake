@@ -309,6 +309,7 @@ GLOBJS= \
 	gl_mesh.o \
 	gl_model.o \
 	gl_ngraph.o \
+	gl_part.o \
 	gl_refrag.o \
 	gl_rlight.o \
 	gl_rmain.o \

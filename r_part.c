@@ -26,21 +26,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "gl_local.h"
 
-typedef enum
-{
-	pt_static, pt_grav, pt_slowgrav, pt_fire, pt_explode, pt_explode2, pt_blob, pt_blob2
-} ptype_t;
-
-typedef struct particle_s
-{
-	vec3_t		org;
-	float		color;
-	vec3_t		vel;
-	float		ramp;
-	float		die;
-	ptype_t		type;
-	struct particle_s	*next;
-} particle_t;
+#include "particles.h"
 
 #else			//software
 
@@ -59,8 +45,6 @@ static int	ramp3[8] = {0x6d, 0x6b, 6, 5, 4, 3};
 static particle_t	*particles, *active_particles, *free_particles;
 
 static int			r_numparticles;
-
-vec3_t				r_pright, r_pup, r_ppn;
 
 #ifdef GLQUAKE
 void Classic_LoadParticleTextures (void)
@@ -487,32 +471,14 @@ static void Classic_DrawParticles(void)
 	particle_t *p, *kill;
 	int i;
 	float time2, time3, time1, dvel, frametime, grav;
-#ifdef GLQUAKE
-	unsigned char *at, theAlpha;
-	vec3_t up, right;
-	float dist, scale, r_partscale;
-#endif
 
 	if (!active_particles)
 		return;
 
 #ifdef GLQUAKE
-	r_partscale = 0.004 * tan (r_refdef.fov_x * (M_PI / 180) * 0.5f);
-
-	GL_Bind(particletexture);
-
-	glEnable (GL_BLEND);
-	if (!gl_solidparticles.value)
-		glDepthMask (GL_FALSE);
-	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-	glBegin (GL_TRIANGLES);
-
-	VectorScale (vup, 1.5, up);
-	VectorScale (vright, 1.5, right);
+	GL_DrawParticleBegin();
 #else
-	VectorScale (vright, xscaleshrink, r_pright);
-	VectorScale (vup, yscaleshrink, r_pup);
-	VectorCopy (vpn, r_ppn);
+	D_DrawParticleBegin();
 #endif
 
 	frametime = cls.frametime;
@@ -553,21 +519,9 @@ static void Classic_DrawParticles(void)
 		}
 
 #ifdef GLQUAKE
-		// hack a scale up to keep particles from disapearing
-		dist = (p->org[0] - r_origin[0]) * vpn[0] + (p->org[1] - r_origin[1]) * vpn[1] + (p->org[2] - r_origin[2]) * vpn[2];
-		scale = 1 + dist * r_partscale;
-
-		at = (byte *) &d_8to24table[(int)p->color];
-		if (p->type == pt_fire)
-			theAlpha = 255 * (6 - p->ramp) / 6;
-		else
-			theAlpha = 255;
-		glColor4ub (*at, *(at + 1), *(at + 2), theAlpha);
-		glTexCoord2f (0, 0); glVertex3fv (p->org);
-		glTexCoord2f (1, 0); glVertex3f (p->org[0] + up[0] * scale, p->org[1] + up[1] * scale, p->org[2] + up[2] * scale);
-		glTexCoord2f (0, 1); glVertex3f (p->org[0] + right[0] * scale, p->org[1] + right[1] * scale, p->org[2] + right[2] * scale);
+		GL_DrawParticle(p);
 #else
-		D_DrawParticle (p);
+		D_DrawParticle(p);
 #endif
 
 		p->org[0] += p->vel[0] * frametime;
@@ -630,11 +584,7 @@ static void Classic_DrawParticles(void)
 	}
 
 #ifdef GLQUAKE
-	glEnd ();
-	glDisable (GL_BLEND);
-	glDepthMask (GL_TRUE);
-	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
-	glColor3ubv (color_white);
+	GL_DrawParticleEnd();
 #endif
 }
 

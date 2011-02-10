@@ -20,6 +20,15 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "quakedef.h"
 #include "d_local.h"
 
+static vec3_t r_pright, r_pup, r_ppn;
+
+void D_DrawParticleBegin()
+{
+	VectorScale (vright, xscaleshrink, r_pright);
+	VectorScale (vup, yscaleshrink, r_pup);
+	VectorCopy (vpn, r_ppn);
+}
+
 #if !defined(id386)
 
 void D_DrawParticle (particle_t *pparticle)
