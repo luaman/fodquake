@@ -221,7 +221,6 @@ static byte *FS_LoadFile(char *path, int usehunk)
 {
 	FILE *h;
 	byte *buf;
-	char base[32];
 	int len;
 	int r;
 
@@ -231,9 +230,6 @@ static byte *FS_LoadFile(char *path, int usehunk)
 	len = com_filesize = FS_FOpenFile(path, &h);
 	if (!h)
 		return NULL;
-
-	// extract the filename base name for hunk tag
-	COM_FileBase(path, base, sizeof(base));
 
 	if (usehunk == 0)
 	{
