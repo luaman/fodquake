@@ -1,5 +1,7 @@
 #include <stdio.h>
 
+#include "qtypes.h"
+
 void FS_InitFilesystem(void);
 void FS_ShutdownFilesystem(void);
 
