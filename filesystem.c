@@ -77,7 +77,7 @@ static int FS_FileLength(FILE * f)
 	return end;
 }
 
-int FS_FileOpenRead(char *path, FILE ** hndl)
+int FS_FileOpenRead(const char *path, FILE ** hndl)
 {
 	FILE *f;
 
@@ -92,7 +92,7 @@ int FS_FileOpenRead(char *path, FILE ** hndl)
 }
 
 //The filename will be prefixed by com_basedir
-qboolean FS_WriteFile(char *filename, void *data, int len)
+qboolean FS_WriteFile(const char *filename, void *data, int len)
 {
 	FILE *f;
 	char name[MAX_OSPATH];
@@ -153,7 +153,7 @@ static int pakfile_compare(const void *a, const void *b)
 	return strcmp(paka->name, pakb->name);
 }
 
-int FS_FOpenFile(char *filename, FILE ** file)
+int FS_FOpenFile(const char *filename, FILE ** file)
 {
 	struct searchpath *search;
 	struct pack *pak;
@@ -217,7 +217,7 @@ int FS_FOpenFile(char *filename, FILE ** file)
 
 //Filename are relative to the quake directory.
 //Always appends a 0 byte to the loaded data.
-static byte *FS_LoadFile(char *path, int usehunk)
+static byte *FS_LoadFile(const char *path, int usehunk)
 {
 	FILE *h;
 	byte *buf;
@@ -257,12 +257,12 @@ static byte *FS_LoadFile(char *path, int usehunk)
 	return buf;
 }
 
-void *FS_LoadZFile(char *path)
+void *FS_LoadZFile(const char *path)
 {
 	return FS_LoadFile(path, 0);
 }
 
-void *FS_LoadMallocFile(char *path)
+void *FS_LoadMallocFile(const char *path)
 {
 	return FS_LoadFile(path, 5);
 }
@@ -420,7 +420,7 @@ static void FS_AddGameDirectory(char *dir)
 }
 
 //Sets the gamedir and path to a different directory.
-void FS_SetGamedir(char *dir)
+void FS_SetGamedir(const char *dir)
 {
 	struct searchpath *search;
 	int i;
