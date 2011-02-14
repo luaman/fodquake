@@ -1144,6 +1144,7 @@ void SCR_TileClear(void)
 	{
 		if (scr_viewsize.value < 100)
 		{
+			static const char str[11] = "xxxxxxxxxx";
 			// clear background for counters
 			if (show_speed.value)
 				Draw_TileClear(ELEMENT_X_COORD(show_speed), ELEMENT_Y_COORD(show_speed), 10 * 8, 8);
