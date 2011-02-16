@@ -66,7 +66,6 @@ qboolean	sb_showteamscores;
 int			sb_lines;			// scan lines to draw
 
 static int Sbar_TeamOverlay(void);
-void Draw_AlphaFill (int x, int y, int w, int h, int c, float alpha);
 
 static int	sbar_xofs;
 

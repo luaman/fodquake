@@ -62,6 +62,7 @@ void Draw_TransPicTranslate (int x, int y, mpic_t *pic, byte *translation);
 void Draw_ConsoleBackground (int lines);
 void Draw_TileClear (int x, int y, int w, int h);
 void Draw_Fill (int x, int y, int w, int h, int c);
+void Draw_AlphaFill (int x, int y, int w, int h, int c, float alpha);
 void Draw_FadeScreen (void);
 void Draw_String (int x, int y, const char *str);
 void Draw_String_Length(int x, int y, const char *str, int len);
