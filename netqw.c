@@ -126,6 +126,7 @@ struct NetQW
 	struct ReliableBuffer *reliablebuffertail;
 	struct NetPacket *clientnetpackethead;
 	struct NetPacket *clientnetpackettail;
+	unsigned long long lastserverpackettime;
 
 	struct
 	{
@@ -524,6 +525,8 @@ static int NetQW_Thread_DoReceive(struct NetQW *netqw)
 		{
 			if (!NET_CompareAdr(&addr, &netqw->addr))
 				continue;
+
+			netqw->lastserverpackettime = Sys_IntTime();
 
 			if (netqw->state == state_sendchallenge)
 			{
@@ -994,6 +997,8 @@ struct NetQW *NetQW_Create(const char *hoststring, const char *userinfo, unsigne
 		netqw->packetloss = 0;
 		netqw->state = state_uninitialised;
 
+		netqw->lastserverpackettime = 0;
+
 		netqw->lastsentframe = 0;
 		netqw->framestosend = 0;
 
@@ -1309,5 +1314,10 @@ void NetQW_SetLag(struct NetQW *netqw, unsigned int microseconds)
 void NetQW_SetLagEzcheat(struct NetQW *netqw, int enabled)
 {
 	netqw->lag_ezcheat = enabled;
+}
+
+unsigned long long NetQW_GetTimeSinceLastPacketFromServer(struct NetQW *netqw)
+{
+	return Sys_IntTime() - netqw->lastserverpackettime;
 }
 

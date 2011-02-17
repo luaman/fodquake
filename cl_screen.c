@@ -481,8 +481,13 @@ void SCR_DrawTurtle(void)
 
 void SCR_DrawNet (void)
 {
+#ifdef NETQW
+	if (NetQW_GetTimeSinceLastPacketFromServer(cls.netqw) < 500000)
+		return;
+#else
 	if (cls.netchan.outgoing_sequence - cls.netchan.incoming_acknowledged < UPDATE_BACKUP-1)
 		return;
+#endif
 
 	if (cls.demoplayback)
 		return;
