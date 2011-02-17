@@ -21,6 +21,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifndef __bspfile_h
 #define __bspfile_h
 
+#include "qtypes.h"
+
 // upper design bounds
 
 #define	MAX_MAP_HULLS		4

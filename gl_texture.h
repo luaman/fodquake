@@ -22,6 +22,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #define __GL_TEXTURE_H
 
+#include "draw.h"
+#include "cvar.h"
+
 #define	TEX_COMPLAIN		1
 #define TEX_MIPMAP			2
 #define TEX_ALPHA			4

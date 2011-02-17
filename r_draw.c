@@ -1,5 +1,6 @@
 /*
 Copyright (C) 1996-1997 Id Software, Inc.
+Copyright (C) 2005-2007, 2009-2011 Mark Olsen
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -39,7 +40,6 @@ typedef struct {
 static rectdesc_t	r_rectdesc;
 
 byte		*draw_chars;				// 8*8 graphic characters
-mpic_t		*draw_disc;
 mpic_t		*draw_backtile;
 
 cvar_t	scr_conalpha	= {"scr_conalpha", "1"};
@@ -120,7 +120,6 @@ void Draw_CvarInit(void)
 void Draw_Init(void)
 {
 	draw_chars = (byte *) Draw_CacheWadPic ("conchars");
-	draw_disc = Draw_CacheWadPic ("disc");
 	draw_backtile = Draw_CacheWadPic ("backtile");
 
 	r_rectdesc.width = draw_backtile->width;
@@ -150,7 +149,7 @@ void Draw_Character (int x, int y, int num) {
 	if (y <= -8)
 		return;			// totally off screen
 
-	if (y > (int) vid.height - 8 || x < 0 || x > vid.width - 8)
+	if (y > (int) vid.conheight - 8 || x < 0 || x > vid.conwidth - 8)
 		return;
 
 	if (num < 0 || num > 255)
@@ -248,16 +247,56 @@ void Draw_ColoredString (int x, int y, char *text, int red)
 				g = HexToInt(text[3]);
 				b = HexToInt(text[4]);
 				if (r >= 0 && g >= 0 && b >= 0)
-					text += 5;
+				{
+					text += 4;
+					continue;
+				}
 			}
 			else if (text[1] == 'r')
 			{
-				text += 2;
+				text += 1;
+				continue;
 			}
 		}
 
 		Draw_Character (x, y, (*text) | (red ? 0x80 : 0));
 		x += 8;
+	}
+}
+
+void Draw_ColoredString_Length(int x, int y, char *text, int red, int len, unsigned short startcolour)
+{
+	int r, g, b;
+
+	while(len)
+	{
+		if (*text == '&')
+		{
+			if (text[1] == 'c' && text[2] && text[3] && text[4])
+			{
+				r = HexToInt(text[2]);
+				g = HexToInt(text[3]);
+				b = HexToInt(text[4]);
+				if (r >= 0 && g >= 0 && b >= 0)
+				{
+					text += 5;
+					len -= 5;
+					continue;
+				}
+			}
+			else if (text[1] == 'r')
+			{
+				text += 2;
+				len -= 2;
+				continue;
+			}
+		}
+
+		Draw_Character (x, y, (*text) | (red ? 0x80 : 0));
+		x += 8;
+
+		text++;
+		len--;
 	}
 }
 
@@ -474,7 +513,7 @@ void Draw_Pic (int x, int y, mpic_t *pic) {
 		return;
 	}
 
-	if (x < 0 || x + pic->width > vid.width || y < 0 || y + pic->height > vid.height)
+	if (x < 0 || x + pic->width > vid.conwidth || y < 0 || y + pic->height > vid.conheight)
 		Sys_Error ("Draw_Pic: bad coordinates");
 
 	source = pic->data;
@@ -499,7 +538,7 @@ void Draw_SubPic (int x, int y, mpic_t *pic, int srcx, int srcy, int width, int 
 		return;
 	}
 
-	if (x < 0 || x + width > vid.width || y < 0 || y + height > vid.height)
+	if (x < 0 || x + width > vid.conwidth || y < 0 || y + height > vid.conheight)
 		Sys_Error ("Draw_Pic: bad coordinates");
 
 	source = pic->data + srcy * pic->width + srcx;
@@ -517,7 +556,7 @@ void Draw_TransPic (int x, int y, mpic_t *pic) {
 	byte *dest, *source, tbyte;
 	int v, u;
 
-	if (x < 0 || (unsigned) (x + pic->width) > vid.width || y < 0 || (unsigned)(y + pic->height) > vid.height)
+	if (x < 0 || (unsigned) (x + pic->width) > vid.conwidth || y < 0 || (unsigned)(y + pic->height) > vid.conheight)
 		Sys_Error ("Draw_TransPic: bad coordinates");
 
 	source = pic->data;
@@ -564,7 +603,7 @@ void Draw_TransSubPic (int x, int y, mpic_t *pic, int srcx, int srcy, int width,
 	byte *dest, *source, tbyte;
 	int v, u;
 
-	if (x < 0 || x + width > vid.width || y < 0 || y + height > vid.height)
+	if (x < 0 || x + width > vid.conwidth || y < 0 || y + height > vid.conheight)
 		Sys_Error ("Draw_Pic: bad coordinates");
 
 	source = pic->data + srcy * pic->width + srcx;
@@ -612,7 +651,7 @@ void Draw_TransPicTranslate (int x, int y, mpic_t *pic, byte *translation) {
 	byte *dest, *source, tbyte;
 	int v, u;
 
-	if (x < 0 || (unsigned)(x + pic->width) > vid.width || y < 0 || (unsigned) (y + pic->height) > vid.height)
+	if (x < 0 || (unsigned)(x + pic->width) > vid.conwidth || y < 0 || (unsigned) (y + pic->height) > vid.conheight)
 		Sys_Error ("Draw_TransPic: bad coordinates");
 
 	source = pic->data;
@@ -813,7 +852,7 @@ void Draw_Fill (int x, int y, int w, int h, int c) {
 	byte *dest;
 	int u, v;
 
-	if (x < 0 || x + w > vid.width || y < 0 || y + h > vid.height) {
+	if (x < 0 || x + w > vid.conwidth || y < 0 || y + h > vid.conheight) {
 		Com_Printf ("Bad Draw_Fill(%d, %d, %d, %d, %c)\n", x, y, w, h, c);
 		return;
 	}
@@ -840,7 +879,7 @@ void Draw_FadeScreen (void) {
 	S_ExtraUpdate ();
 	VID_LockBuffer ();
 
-	for (y = 0; y < vid.height; y++) {
+	for (y = 0; y < vid.displayheight; y++) {
 		int	t;
 
 		pbuf = (byte *) (vid.buffer + vid.rowbytes * y);
@@ -848,26 +887,26 @@ void Draw_FadeScreen (void) {
         if (alpha < 1 / 3.0) {
             t = (y & 1) << 1;
 
-            for (x = 0; x < vid.width; x++) {
+            for (x = 0; x < vid.displaywidth; x++) {
                 if ((x & 3) == t)
                     pbuf[x] = 0;
             }
 		} else if (alpha < 2 / 3.0) {
             t = (y & 1) << 1;
 
-            for (x = 0; x < vid.width; x++) {
+            for (x = 0; x < vid.displaywidth; x++) {
                 if ((x & 1) == t)
                     pbuf[x] = 0;
             }
 		} else if (alpha < 1) {
 			t = (y & 1) << 1;
 
-			for (x = 0; x < vid.width; x++) {
+			for (x = 0; x < vid.displaywidth; x++) {
 				if ((x & 3) != t)
 					pbuf[x] = 0;
 			}
 		} else {            
-			for (x = 0; x < vid.width; x++)
+			for (x = 0; x < vid.displaywidth; x++)
                 pbuf[x] = 0;
 		}
 	}
@@ -877,16 +916,3 @@ void Draw_FadeScreen (void) {
 	VID_LockBuffer ();
 }
 
-//=============================================================================
-
-//Draws the little blue disc in the corner of the screen.
-//Call before beginning any disc IO.
-void Draw_BeginDisc (void) {
-	D_BeginDirectRect (vid.width - 24, 0, draw_disc->data, 24, 24);
-}
-
-//Erases the disc icon.
-//Call after completing any disc IO
-void Draw_EndDisc (void) {
-	D_EndDirectRect (vid.width - 24, 0, 24, 24);
-}

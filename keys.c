@@ -480,13 +480,13 @@ static void AdjustConsoleHeight (int delta) {
 
 	if (cls.state != ca_active && !cl.intermission)
 		return;
-	height = (scr_consize.value * vid.height + delta + 5) / 10;
+	height = (scr_consize.value * vid.conheight + delta + 5) / 10;
 	height *= 10;
 	if (delta < 0 && height < 30)
 		height = 30;
-	if (delta > 0 && height > vid.height - 10)
-		height = vid.height - 10;
-	Cvar_SetValue (&scr_consize, (float)height / vid.height);
+	if (delta > 0 && height > vid.conheight - 10)
+		height = vid.conheight - 10;
+	Cvar_SetValue (&scr_consize, (float)height / vid.conheight);
 }
 
 extern int context_sensitive_tab_completion_active;

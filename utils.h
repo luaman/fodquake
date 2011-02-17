@@ -1,6 +1,7 @@
 /*
 
 Copyright (C) 2001-2002       A Nourai
+Copyright (C) 2006, 2011 Mark Olsen
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -54,6 +55,7 @@ char *Util_Remove_Colors(const char *string, int size);
 char *Util_strcasestr (const char *psz_big, const char *psz_little);
 
 int Colored_String_Length(char *string);
+int Colored_String_Offset(char *string, unsigned int maxlen, unsigned short *lastcolour);
 
 //struct directory_list *Util_Dir_Read(char *dir, int recursive, char **filters);
 struct directory_list *Util_Dir_Read(char *dir, int recursive, int remove_dirs, char **filter);

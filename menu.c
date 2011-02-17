@@ -118,8 +118,8 @@ cvar_t	scr_scaleMenu = {"scr_scaleMenu","1"};
 static int		menuwidth = 320;
 static int		menuheight = 240;
 #else
-#define menuwidth vid.width
-#define menuheight vid.height
+#define menuwidth vid.conwidth
+#define menuheight vid.conheight
 #endif
 
 cvar_t	scr_centerMenu = {"scr_centerMenu","1"};
@@ -3815,15 +3815,15 @@ void M_Draw (void)
 #ifdef GLQUAKE
 	if (scr_scaleMenu.value)
 	{
-		if (((double)vid.width)/320 > ((double)vid.height)/200)
+		if (((double)vid.conwidth)/320 > ((double)vid.conheight)/200)
 		{
-			menuwidth = ((double)vid.width)*(200.0/((double)vid.height));
+			menuwidth = ((double)vid.conwidth)*(200.0/((double)vid.conheight));
 			menuheight = 200;
 		}
 		else
 		{
 			menuwidth = 320;
-			menuheight = ((double)vid.height)*(320.0/((double)vid.width));
+			menuheight = ((double)vid.conheight)*(320.0/((double)vid.conwidth));
 		}
 
 		glMatrixMode(GL_PROJECTION);
@@ -3832,8 +3832,8 @@ void M_Draw (void)
 	}
 	else
 	{
-		menuwidth = vid.width;
-		menuheight = vid.height;
+		menuwidth = vid.conwidth;
+		menuheight = vid.conheight;
 	}
 #endif
 
@@ -3927,7 +3927,7 @@ void M_Draw (void)
 	{
 		glMatrixMode (GL_PROJECTION);
 		glLoadIdentity ();
-		glOrtho  (0, vid.width, vid.height, 0, -99999, 99999);
+		glOrtho  (0, vid.conwidth, vid.conheight, 0, -99999, 99999);
 	}
 #endif
 

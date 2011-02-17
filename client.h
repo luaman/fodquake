@@ -19,6 +19,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 // client.h
 
+#ifndef CLIENT_H
+#define CLIENT_H
+
 #include "net_chan.h"
 
 extern struct netaddr cl_net_from;
@@ -614,4 +617,6 @@ void Stats_GetFlagStats(int num, int *stats);
 dlighttype_t dlightColor(float f, dlighttype_t def, qboolean random);
 
 void ToggleConsole_f(void);
+
+#endif
 

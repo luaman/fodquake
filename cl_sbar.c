@@ -50,6 +50,7 @@ mpic_t		*sb_weapons[7][8];	// 0 is active, 1 is owned, 2-5 are flashes
 mpic_t		*sb_ammo[4];
 mpic_t		*sb_sigil[4];
 mpic_t		*sb_armor[3];
+mpic_t		*sb_armor_invuln;
 mpic_t		*sb_items[32];
 
 mpic_t	*sb_faces[5][2];		// 0 is dead, 1-4 are alive
@@ -65,7 +66,6 @@ qboolean	sb_showteamscores;
 int			sb_lines;			// scan lines to draw
 
 static int Sbar_TeamOverlay(void);
-void Draw_AlphaFill (int x, int y, int w, int h, int c, float alpha);
 
 static int	sbar_xofs;
 
@@ -208,6 +208,7 @@ void Sbar_Init (void)
 	sb_armor[0] = Draw_CacheWadPic ("sb_armor1");
 	sb_armor[1] = Draw_CacheWadPic ("sb_armor2");
 	sb_armor[2] = Draw_CacheWadPic ("sb_armor3");
+	sb_armor_invuln = Draw_CacheWadPic("disc");
 
 	sb_items[0] = Draw_CacheWadPic ("sb_key1");
 	sb_items[1] = Draw_CacheWadPic ("sb_key2");
@@ -276,6 +277,8 @@ void Sbar_Shutdown(void)
 		Draw_FreeWadPic(sb_ammo[i]);
 	}
 
+	Draw_FreeWadPic(sb_armor_invuln);
+
 	for(i=0;i<3;i++)
 	{
 		Draw_FreeWadPic(sb_armor[i]);
@@ -313,29 +316,29 @@ void Sbar_Shutdown(void)
 // drawing routines are relative to the status bar location
 
 static void Sbar_DrawPic (int x, int y, mpic_t *pic) {
-	Draw_Pic (x + sbar_xofs, y + (vid.height - SBAR_HEIGHT), pic);
+	Draw_Pic (x + sbar_xofs, y + (vid.conheight - SBAR_HEIGHT), pic);
 }
 
 //JACK: Draws a portion of the picture in the status bar.
 static void Sbar_DrawSubPic(int x, int y, mpic_t *pic, int srcx, int srcy, int width, int height) {
-	Draw_SubPic (x, y + (vid.height - SBAR_HEIGHT), pic, srcx, srcy, width, height);
+	Draw_SubPic (x, y + (vid.conheight - SBAR_HEIGHT), pic, srcx, srcy, width, height);
 }
 
 static void Sbar_DrawTransPic (int x, int y, mpic_t *pic) {
-	Draw_TransPic (x + sbar_xofs, y + (vid.height - SBAR_HEIGHT), pic);
+	Draw_TransPic (x + sbar_xofs, y + (vid.conheight - SBAR_HEIGHT), pic);
 }
 
 //Draws one solid graphics character
 static void Sbar_DrawCharacter (int x, int y, int num) {
-	Draw_Character (x + 4 + sbar_xofs, y + vid.height - SBAR_HEIGHT, num);
+	Draw_Character (x + 4 + sbar_xofs, y + vid.conheight - SBAR_HEIGHT, num);
 }
 
 void Sbar_DrawString (int x, int y, char *str) {
-	Draw_String (x + sbar_xofs, y + vid.height - SBAR_HEIGHT, str);
+	Draw_String (x + sbar_xofs, y + vid.conheight - SBAR_HEIGHT, str);
 }
 
 static void Sbar_DrawAltString (int x, int y, char *str) {
-	Draw_Alt_String (x + sbar_xofs, y + vid.height - SBAR_HEIGHT, str);
+	Draw_Alt_String (x + sbar_xofs, y + vid.conheight - SBAR_HEIGHT, str);
 }
 
 static int Sbar_itoa (int num, char *buf) {
@@ -669,8 +672,8 @@ static void Sbar_DrawInventory (void) {
 				flashon = (flashon % 5) + 2;
 
 			if (headsup) {
-				if (i || vid.height > 200)
-					Sbar_DrawSubPic (hudswap ? 0 : vid.width - 24,-68 - (7 - i) * 16 , sb_weapons[flashon][i], 0, 0, 24, 16);
+				if (i || vid.conheight > 200)
+					Sbar_DrawSubPic (hudswap ? 0 : vid.conwidth - 24,-68 - (7 - i) * 16 , sb_weapons[flashon][i], 0, 0, 24, 16);
 			
 			} else {
 				Sbar_DrawPic (i * 24, -16, sb_weapons[flashon][i]);
@@ -685,13 +688,13 @@ static void Sbar_DrawInventory (void) {
 	for (i = 0; i < 4; i++) {
 		Q_snprintfz (num, sizeof(num), "%3i", cl.stats[STAT_SHELLS + i]);
 		if (headsup) {
-			Sbar_DrawSubPic(hudswap ? 0 : vid.width - 42, -24 - (4 - i) * 11, sb_ibar, 3 + (i * 48), 0, 42, 11);
+			Sbar_DrawSubPic(hudswap ? 0 : vid.conwidth - 42, -24 - (4 - i) * 11, sb_ibar, 3 + (i * 48), 0, 42, 11);
 			if (num[0] != ' ')
-				Draw_Character (hudswap ? 7: vid.width - 35, vid.height - SBAR_HEIGHT - 24 - (4 - i) * 11, 18 + num[0] - '0');
+				Draw_Character (hudswap ? 7: vid.conwidth - 35, vid.conheight - SBAR_HEIGHT - 24 - (4 - i) * 11, 18 + num[0] - '0');
 			if (num[1] != ' ')
-				Draw_Character (hudswap ? 15: vid.width - 27, vid.height - SBAR_HEIGHT - 24 - (4 - i) * 11, 18 + num[1] - '0');
+				Draw_Character (hudswap ? 15: vid.conwidth - 27, vid.conheight - SBAR_HEIGHT - 24 - (4 - i) * 11, 18 + num[1] - '0');
 			if (num[2] != ' ')
-				Draw_Character (hudswap ? 23: vid.width - 19, vid.height - SBAR_HEIGHT - 24 - (4 - i) * 11, 18 + num[2] - '0');
+				Draw_Character (hudswap ? 23: vid.conwidth - 19, vid.conheight - SBAR_HEIGHT - 24 - (4 - i) * 11, 18 + num[2] - '0');
 		} else {
 			if (num[0] != ' ')
 				Sbar_DrawCharacter ((6 * i + 1) * 8 - 2, -24, 18 + num[0] - '0');
@@ -766,7 +769,7 @@ static void Sbar_DrawFrags (void) {
 		return;
 
 	x = 23;
-	y = vid.height - SBAR_HEIGHT - 23;
+	y = vid.conheight - SBAR_HEIGHT - 23;
 
 	mynum = Sbar_PlayerNum();
 
@@ -880,7 +883,7 @@ static void Sbar_DrawNormal (void) {
 	// armor
 	if (cl.stats[STAT_ITEMS] & IT_INVULNERABILITY)	{
 		Sbar_DrawNum (24, 0, 666, 3, 1);
-		Sbar_DrawPic (0, 0, draw_disc);
+		Sbar_DrawPic (0, 0, sb_armor_invuln);
 	} else {
 		Sbar_DrawNum (24, 0, cl.stats[STAT_ARMOR], 3, cl.stats[STAT_ARMOR] <= 25);
 		if (cl.stats[STAT_ITEMS] & IT_ARMOR3)
@@ -920,7 +923,7 @@ static void Sbar_DrawCompact(void) {
 		Sbar_DrawPic (0, 0, sb_sbar);
 
 	old_sbar_xofs = sbar_xofs;
-	sbar_xofs = scr_centerSbar.value ? (vid.width - 306) >> 1: 0;
+	sbar_xofs = scr_centerSbar.value ? (vid.conwidth - 306) >> 1: 0;
 
 	if (cl.stats[STAT_ITEMS] & IT_INVULNERABILITY)
 		Sbar_DrawNum (2, 0, 666, 3, 1);
@@ -956,7 +959,7 @@ static void Sbar_DrawCompact_TF(void) {
 		Sbar_DrawPic (0, 0, sb_sbar);
 
 	old_sbar_xofs = sbar_xofs;
-	sbar_xofs = scr_centerSbar.value ? (vid.width - 222) >> 1: 0;
+	sbar_xofs = scr_centerSbar.value ? (vid.conwidth - 222) >> 1: 0;
 
 	align = scr_compactHudAlign.value ? 1 : 0;
 	if (cl.stats[STAT_ITEMS] & IT_INVULNERABILITY)
@@ -981,7 +984,7 @@ static void Sbar_DrawCompact_Bare (void) {
 		Sbar_DrawPic (0, 0, sb_sbar);
 
 	old_sbar_xofs = sbar_xofs;
-	sbar_xofs = scr_centerSbar.value ? (vid.width - 158) >> 1: 0;
+	sbar_xofs = scr_centerSbar.value ? (vid.conwidth - 158) >> 1: 0;
 
 	if (cl.stats[STAT_ITEMS] & IT_INVULNERABILITY)
 		Sbar_DrawNum (2, 0, 666, 3, 1);
@@ -1036,7 +1039,7 @@ static void Sbar_SoloScoreboard (void) {
 	}
 }
 
-#define SCOREBOARD_LASTROW		(vid.height - 34)
+#define SCOREBOARD_LASTROW		(vid.conheight - 34)
 
 #define	RANK_WIDTH_BASICSTATS	(11 * 8)
 #define	RANK_WIDTH_TEAMSTATS	(4 * 8)
@@ -1109,13 +1112,13 @@ static void Sbar_DeathmatchOverlay()
 	stats_basic = stats_team = stats_touches = stats_caps = 0;
 	if (scr_scoreboard_showfrags.value && Stats_IsActive())
 	{
-		if (rank_width + statswidth + RANK_WIDTH_BASICSTATS < vid.width - 16)
+		if (rank_width + statswidth + RANK_WIDTH_BASICSTATS < vid.conwidth - 16)
 		{
 			statswidth += RANK_WIDTH_BASICSTATS;
 			stats_basic++;
 			if (cl.teamplay)
 			{
-				if (rank_width + statswidth + RANK_WIDTH_TEAMSTATS < vid.width - 16)
+				if (rank_width + statswidth + RANK_WIDTH_TEAMSTATS < vid.conwidth - 16)
 				{
 					if ((cl.teamfortress || cl.teamplay != 3)
 					 && (!cl.teamfortress || (cl.teamplay & 21) != 21))
@@ -1126,12 +1129,12 @@ static void Sbar_DeathmatchOverlay()
 				}
 				if (Stats_IsFlagsParsed())
 				{
-					if (rank_width + statswidth + RANK_WIDTH_TCHSTATS < vid.width - 16)
+					if (rank_width + statswidth + RANK_WIDTH_TCHSTATS < vid.conwidth - 16)
 					{
 						statswidth += RANK_WIDTH_TCHSTATS;
 						stats_touches++;
 					}
-					if (rank_width + statswidth + RANK_WIDTH_CAPSTATS < vid.width - 16)
+					if (rank_width + statswidth + RANK_WIDTH_CAPSTATS < vid.conwidth - 16)
 					{
 						statswidth += RANK_WIDTH_CAPSTATS;
 						stats_caps++;
@@ -1144,9 +1147,9 @@ static void Sbar_DeathmatchOverlay()
 	rank_width += statswidth;
 
 	leftover = rank_width;
-	rank_width = bound(0, rank_width, vid.width - 16);
+	rank_width = bound(0, rank_width, vid.conwidth - 16);
 	leftover = max(0, leftover - rank_width);
-	xofs = ((vid.width - rank_width) >> 1);
+	xofs = ((vid.conwidth - rank_width) >> 1);
 
 	if (!start)
 	{
@@ -1403,9 +1406,9 @@ static int Sbar_TeamOverlay(void)
 	scr_fullupdate = 0;
 
 	rank_width = cl.teamplay ? RANK_WIDTH_TEAM : RANK_WIDTH_DM;
-	rank_width = bound(0, rank_width, vid.width - 16);
+	rank_width = bound(0, rank_width, vid.conwidth - 16);
 
-	xofs = (vid.width - rank_width) >> 1;
+	xofs = (vid.conwidth - rank_width) >> 1;
 
 	if (scr_scoreboard_drawtitle.value)
 	{
@@ -1514,7 +1517,7 @@ static void Sbar_MiniDeathmatchOverlay (void)
 	x = 324;
 
 	
-	if (vid.width < 640 && cl.teamplay && scr_drawVFrags.value == 2)
+	if (vid.conwidth < 640 && cl.teamplay && scr_drawVFrags.value == 2)
 		goto drawteams;			
 
 	// scores
@@ -1524,7 +1527,7 @@ static void Sbar_MiniDeathmatchOverlay (void)
 		return; // no one there?
 
 	// draw the text
-	y = vid.height - sb_lines - 1;
+	y = vid.conheight - sb_lines - 1;
 	numlines = sb_lines / 8;
 	if (numlines < 3)
 		return; // not enough room
@@ -1541,7 +1544,7 @@ static void Sbar_MiniDeathmatchOverlay (void)
 
 	i = bound(0, i, scoreboardlines - numlines);
 
-	for ( ; i < scoreboardlines && y < vid.height - 8 + 1; i++) {
+	for ( ; i < scoreboardlines && y < vid.conheight - 8 + 1; i++) {
 		k = fragsort[i];
 		s = &cl.players[k];
 
@@ -1583,7 +1586,7 @@ static void Sbar_MiniDeathmatchOverlay (void)
 	}
 
 	// draw teams if room
-	if (vid.width < 640 || !cl.teamplay)
+	if (vid.conwidth < 640 || !cl.teamplay)
 		return;
 
 	Sbar_SortTeams();
@@ -1592,7 +1595,7 @@ static void Sbar_MiniDeathmatchOverlay (void)
 
 	// draw seperator
 	x += 208;
-	for (y = vid.height - sb_lines; y < vid.height - 6; y += 2)
+	for (y = vid.conheight - sb_lines; y < vid.conheight - 6; y += 2)
 		Draw_Character(x, y, 14);
 
 	x += 16;
@@ -1600,8 +1603,8 @@ static void Sbar_MiniDeathmatchOverlay (void)
 drawteams:
 	Sbar_SortTeams();	
 
-	y = vid.height - sb_lines;
-	for (i = 0; i < scoreboardteams && y < vid.height - 8 + 1; i++) {
+	y = vid.conheight - sb_lines;
+	for (i = 0; i < scoreboardteams && y < vid.conheight - 8 + 1; i++) {
 		k = teamsort[i];
 		tm = teams + k;
 
@@ -1661,7 +1664,7 @@ void Sbar_IntermissionOverlay (void) {
 		return;
 	}
 
-	xofs = (vid.width - 320 ) >> 1;
+	xofs = (vid.conwidth - 320 ) >> 1;
 
 	pic = Draw_CachePic ("gfx/complete.lmp");
 	Draw_Pic (xofs + 64, 24, pic);
@@ -1700,7 +1703,7 @@ void Sbar_FinaleOverlay (void) {
 	scr_copyeverything = 1;
 
 	pic = Draw_CachePic ("gfx/finale.lmp");
-	Draw_TransPic ( (vid.width-pic->width)/2, 16, pic);
+	Draw_TransPic ( (vid.conwidth-pic->width)/2, 16, pic);
 }
 
 /********************************* INTERFACE *********************************/
@@ -1719,7 +1722,7 @@ void Sbar_Draw(void)
 	sb_updates++;
 
 	if (scr_centerSbar.value)
-		sbar_xofs = (vid.width - 320) >> 1;
+		sbar_xofs = (vid.conwidth - 320) >> 1;
 	else
 		sbar_xofs = 0;
 
@@ -1729,7 +1732,7 @@ void Sbar_Draw(void)
 		if (!cl.spectator || autocam == CAM_TRACK)
 			Sbar_DrawInventory();
 		
-		if (cl.gametype == GAME_DEATHMATCH && (!headsup || vid.width < 512))
+		if (cl.gametype == GAME_DEATHMATCH && (!headsup || vid.conwidth < 512))
 			Sbar_DrawFrags();
 	}	
 
@@ -1789,18 +1792,18 @@ void Sbar_Draw(void)
 		sb_updates = 0;
 
 	// clear unused areas in GL
-	if (vid.width > 320 && !headsup)
+	if (vid.conwidth > 320 && !headsup)
 	{
 		if (scr_centerSbar.value)	// left
-			Draw_TileClear (0, vid.height - sb_lines, sbar_xofs, sb_lines);
+			Draw_TileClear (0, vid.conheight - sb_lines, sbar_xofs, sb_lines);
 
-		Draw_TileClear (320 + sbar_xofs, vid.height - sb_lines, vid.width - (320 + sbar_xofs), sb_lines);	// right
+		Draw_TileClear (320 + sbar_xofs, vid.conheight - sb_lines, vid.conwidth - (320 + sbar_xofs), sb_lines);	// right
 	}
 	if (!headsup && cl.spectator && autocam != CAM_TRACK && sb_lines > SBAR_HEIGHT)
-		Draw_TileClear (sbar_xofs, vid.height - sb_lines, 320, sb_lines - SBAR_HEIGHT);
+		Draw_TileClear (sbar_xofs, vid.conheight - sb_lines, 320, sb_lines - SBAR_HEIGHT);
 #endif
 
-	if (vid.width >= 512 && sb_lines > 0 && cl.gametype == GAME_DEATHMATCH && !scr_centerSbar.value)
+	if (vid.conwidth >= 512 && sb_lines > 0 && cl.gametype == GAME_DEATHMATCH && !scr_centerSbar.value)
 		Sbar_MiniDeathmatchOverlay ();
 }
 

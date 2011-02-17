@@ -279,6 +279,7 @@ SWOBJS= \
 	d_edge.o \
 	d_init.o \
 	d_modech.o \
+	d_part.o \
 	d_polyse.o \
 	d_scan.o \
 	d_sky.o \
@@ -308,6 +309,7 @@ GLOBJS= \
 	gl_mesh.o \
 	gl_model.o \
 	gl_ngraph.o \
+	gl_part.o \
 	gl_refrag.o \
 	gl_rlight.o \
 	gl_rmain.o \

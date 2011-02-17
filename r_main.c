@@ -43,8 +43,6 @@ int			r_clipflags;
 
 byte		*r_warpbuffer;
 
-byte		*r_stack_start;
-
 entity_t	r_worldentity;
 
 // view origin
@@ -241,9 +239,6 @@ static void *surfacememory;
 int R_Init(void)
 {
 	int dummy;
-
-	// get stack position so we can guess if we are going to overflow
-	r_stack_start = (byte *) &dummy;
 
 	R_InitTurb ();
 
@@ -825,7 +820,7 @@ static void R_EdgeDrawing(void)
 }
 
 //r_refdef must be set before the first call
-static void R_RenderView_(void)
+void R_RenderView(void)
 {
 	byte warpbuffer[WARP_WIDTH * WARP_HEIGHT];
 
@@ -924,22 +919,5 @@ static void R_RenderView_(void)
 #ifdef id386
 	Sys_HighFPPrecision ();
 #endif
-}
-
-void R_RenderView (void)
-{
-	int dummy, delta;
-
-	delta = (byte *) &dummy - r_stack_start;
-	if (delta < -10000 || delta > 10000)
-		Sys_Error ("R_RenderView: called without enough stack");
-
-	if ((long) (&dummy) & 3)
-		Sys_Error ("Stack is misaligned");
-
-	if ((long) (&r_warpbuffer) & 3)
-		Sys_Error ("Globals are misaligned");
-
-	R_RenderView_ ();
 }
 

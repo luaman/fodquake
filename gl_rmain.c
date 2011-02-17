@@ -1083,9 +1083,9 @@ void R_BrightenScreen (void)
 		else
 			glColor3f (f - 1, f - 1, f - 1);
 		glVertex2f (0, 0);
-		glVertex2f (vid.width, 0);
-		glVertex2f (vid.width, vid.height);
-		glVertex2f (0, vid.height);
+		glVertex2f (vid.conwidth, 0);
+		glVertex2f (vid.conwidth, vid.conheight);
+		glVertex2f (0, vid.conheight);
 		f *= 0.5;
 	}
 	glEnd ();
@@ -1206,10 +1206,10 @@ static void R_SetupGL (void)
 	// set up viewpoint
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity ();
-	x = r_refdef.vrect.x * glwidth / vid.width;
-	x2 = (r_refdef.vrect.x + r_refdef.vrect.width) * glwidth / vid.width;
-	y = (vid.height-r_refdef.vrect.y) * glheight / vid.height;
-	y2 = (vid.height - (r_refdef.vrect.y + r_refdef.vrect.height)) * glheight / vid.height;
+	x = r_refdef.vrect.x * glwidth / vid.conwidth;
+	x2 = (r_refdef.vrect.x + r_refdef.vrect.width) * glwidth / vid.conwidth;
+	y = (vid.conheight-r_refdef.vrect.y) * glheight / vid.conheight;
+	y2 = (vid.conheight - (r_refdef.vrect.y + r_refdef.vrect.height)) * glheight / vid.conheight;
 
 	w = x2 - x;
 	h = y - y2;

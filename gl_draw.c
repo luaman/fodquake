@@ -1,5 +1,6 @@
 /*
 Copyright (C) 1996-1997 Id Software, Inc.
+Copyright (C) 2005-2007, 2009-2011 Mark Olsen
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -52,7 +53,6 @@ qboolean OnChange_gl_smoothfont (cvar_t *var, char *string);
 cvar_t gl_smoothfont = {"gl_smoothfont", "0", 0, OnChange_gl_smoothfont};
 
 byte			*draw_chars;						// 8*8 graphic characters
-mpic_t			*draw_disc;
 static mpic_t	*draw_backtile;
 
 static int		translate_texture;
@@ -617,7 +617,6 @@ void Draw_InitGL(void)
 	}
 	customCrosshair_Init();		
 	// get the other pics we need
-	draw_disc = Draw_CacheWadPic ("disc");
 	draw_backtile = Draw_CacheWadPic ("backtile");
 
 	drawgl_inited = 1;
@@ -916,6 +915,91 @@ void Draw_ColoredString (int x, int y, char *text, int red)
 }
 
 
+void Draw_ColoredString_Length(int x, int y, char *text, int red, int len, unsigned short startcolour)
+{
+	int r, g, b, num;
+	qboolean white;
+
+	if (y <= -8)
+		return;			// totally off screen
+
+	if (!*text)
+		return;
+
+	GL_Bind(char_texture);
+
+	if (scr_coloredText.value)
+		glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+
+	if (startcolour == 0x0fff)
+	{
+		white = true;
+	}
+	else
+	{
+		glColor3f(((startcolour>>8)&0xf) / 16.0, ((startcolour>>4)&0xf) / 16.0, (startcolour&0xf) / 16.0);
+		white = false;
+	}
+
+	glBegin(GL_QUADS);
+
+	while(len)
+	{
+		if (*text == '&')
+		{
+			if (len >= 5 && text[1] == 'c' && text[2] && text[3] && text[4])
+			{
+				r = HexToInt(text[2]);
+				g = HexToInt(text[3]);
+				b = HexToInt(text[4]);
+				if (r >= 0 && g >= 0 && b >= 0)
+				{
+					if (scr_coloredText.value)
+					{
+						glColor3f(r / 16.0, g / 16.0, b / 16.0);
+						white = false;
+					}
+					text += 5;
+					len -= 5;
+				}
+				continue;
+			}
+			else if (len >= 2 && text[1] == 'r')
+			{
+				if (!white)
+				{
+					glColor3ubv(color_white);
+					white = true;
+				}
+				text += 2;
+				len -= 2;
+				continue;
+			}
+		}
+
+		num = *text & 255;
+		if (!scr_coloredText.value && red)
+			num |= 128;
+
+		if (num != 32 && num != (32 | 128))
+			Draw_CharPoly(x, y, num);
+
+		x += 8;
+
+		text++;
+		len--;
+	}
+
+	glEnd();
+
+	if (!white)
+		glColor3ubv(color_white);
+
+	if (scr_coloredText.value)
+		glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+}
+
+
 void Draw_Crosshair(void)
 {
 	float x, y, ofs1, ofs2, sh, th, sl, tl;
@@ -967,8 +1051,8 @@ void Draw_Crosshair(void)
 			tl = sl = 0;
 			sh = th = 1;
 		}
-		ofs1 *= (vid.width / 320) * bound(0, crosshairsize.value, 20);
-		ofs2 *= (vid.width / 320) * bound(0, crosshairsize.value, 20);
+		ofs1 *= (vid.conwidth / 320) * bound(0, crosshairsize.value, 20);
+		ofs2 *= (vid.conwidth / 320) * bound(0, crosshairsize.value, 20);
 
 		glBegin(GL_QUADS);
 		glTexCoord2f(sl, tl);
@@ -1123,7 +1207,7 @@ void Draw_SubPic(int x, int y, mpic_t *pic, int srcx, int srcy, int width, int h
 
 void Draw_TransPic(int x, int y, mpic_t *pic)
 {
-	if (x < 0 || (unsigned) (x + pic->width) > vid.width || y < 0 || (unsigned) (y + pic->height) > vid.height)
+	if (x < 0 || (unsigned) (x + pic->width) > vid.conwidth || y < 0 || (unsigned) (y + pic->height) > vid.conheight)
 		Sys_Error("Draw_TransPic: bad coordinates");
 		
 	Draw_Pic(x, y, pic);
@@ -1174,12 +1258,12 @@ void Draw_ConsoleBackground(int lines)
 
 	if (SCR_NEED_CONSOLE_BACKGROUND)
 	{
-		Draw_Pic(0, lines - vid.height, &conback);
+		Draw_Pic(0, lines - vid.conheight, &conback);
 	}
 	else
 	{
 		if (scr_conalpha.value)
-			Draw_AlphaPic (0, lines - vid.height, &conback, bound (0, scr_conalpha.value, 1));
+			Draw_AlphaPic (0, lines - vid.conheight, &conback, bound (0, scr_conalpha.value, 1));
 	}
 
 	sprintf(ver, "FodQuake %s", FODQUAKE_VERSION);
@@ -1266,9 +1350,9 @@ void Draw_FadeScreen(void)
 
 	glBegin(GL_QUADS);
 	glVertex2f(0, 0);
-	glVertex2f(vid.width, 0);
-	glVertex2f(vid.width, vid.height);
-	glVertex2f(0, vid.height);
+	glVertex2f(vid.conwidth, 0);
+	glVertex2f(vid.conwidth, vid.conheight);
+	glVertex2f(0, vid.conheight);
 	glEnd();
 
 	if (alpha < 1)
@@ -1284,30 +1368,13 @@ void Draw_FadeScreen(void)
 
 //=============================================================================
 
-//Draws the little blue disc in the corner of the screen. 
-//Call before beginning any disc IO.
-void Draw_BeginDisc(void)
-{
-	if (!draw_disc)
-		return;
-	glDrawBuffer(GL_FRONT);
-	Draw_Pic(vid.width - 24, 0, draw_disc);
-	glDrawBuffer(GL_BACK);
-}
-
-//Erases the disc icon.
-//Call after completing any disc IO
-void Draw_EndDisc(void)
-{
-}
-
 void GL_Set2D(void)
 {
 	glViewport(glx, gly, glwidth, glheight);
 
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	glOrtho(0, vid.width, vid.height, 0, -99999, 99999);
+	glOrtho(0, vid.conwidth, vid.conheight, 0, -99999, 99999);
 
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();

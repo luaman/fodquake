@@ -69,8 +69,8 @@ void D_ViewChanged (void)
 	if (yscale > xscale)
 		scale_for_mip = yscale;
 
-	d_zrowbytes = vid.width * 2;
-	d_zwidth = vid.width;
+	d_zrowbytes = vid.displaywidth * 2;
+	d_zwidth = vid.displaywidth;
 
 	d_pix_min = r_refdef.vrect.width / 320;
 	if (d_pix_min < 1)
@@ -95,7 +95,7 @@ void D_ViewChanged (void)
 	{
 		int		i;
 
-		for (i=0 ; i<vid.height; i++)
+		for (i=0 ; i<vid.displayheight; i++)
 		{
 			d_scantable[i] = i*rowbytes;
 			zspantable[i] = d_pzbuffer + i*d_zwidth;

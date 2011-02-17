@@ -2,6 +2,7 @@
  
  Copyright (C) 2001-2002       A Nourai
  Copyright (C) 2006            Jacek Piszczek (Mac OSX port)
+ Copyright (C) 2010-2011       Mark Olsen
  
  This program is free software; you can redistribute it and/or
  modify it under the terms of the GNU General Public License
@@ -39,24 +40,33 @@ struct coreaudio_private
 {
 	AudioUnit OutputUnit;
 	unsigned int readpos;
+	unsigned int maxpos;
 	void *buffer;
 };
 
 static OSStatus AudioRender(void *inRefCon, AudioUnitRenderActionFlags * ioActionFlags, const AudioTimeStamp * inTimeStamp, UInt32 inBusNumber, UInt32 inNumberFrames, AudioBufferList * ioData)
 {
 	struct coreaudio_private *p;
+	void *bytes;
+	unsigned int bytesize;
+	unsigned int i;
 
 	p = inRefCon;
 
-	memcpy(ioData->mBuffers[0].mData, p->buffer + (p->readpos * 4), ioData->mBuffers[0].mDataByteSize);
+	bytes = ioData->mBuffers[0].mData;
+	bytesize = inNumberFrames * 4;
 
-	if (p->readpos >= 128 * 1023)
+	while(bytesize)
 	{
-		p->readpos = 0;
-	}
-	else
-	{
-		p->readpos += inNumberFrames;
+		i = bytesize / 4;
+		if (p->readpos + i > p->maxpos)
+			i = p->maxpos - p->readpos;
+
+		memcpy(bytes, p->buffer + (p->readpos * 4), i * 4);
+		bytes += i * 4;
+		bytesize -= i * 4;
+		p->readpos += i;
+		p->readpos %= p->maxpos;
 	}
 
 	return noErr;
@@ -143,7 +153,7 @@ static qboolean coreaudio_init(struct SoundCard *sc, int rate, int channels, int
 				err = AudioUnitSetProperty(p->OutputUnit, kAudioUnitProperty_StreamFormat, kAudioUnitScope_Input, 0, &streamFormat, sizeof(AudioStreamBasicDescription));
 				if (err == 0)
 				{
-					p->buffer = malloc(128 * 4 * 1025);
+					p->buffer = malloc(128 * 4 * 1024);
 					if (p->buffer)
 					{
 						// Initialize unit
@@ -154,6 +164,9 @@ static qboolean coreaudio_init(struct SoundCard *sc, int rate, int channels, int
 							err = AudioOutputUnitStart(p->OutputUnit);
 							if (err == 0)
 							{
+								p->readpos = 0;
+								p->maxpos = 128 * 1024;
+
 								sc->driverprivate = p;
 
 								sc->GetDMAPos = coreaudio_getdmapos;

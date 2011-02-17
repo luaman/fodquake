@@ -1,6 +1,7 @@
 /*
 
 Copyright (C) 2001-2002       A Nourai
+Copyright (C) 2006-2008, 2010-2011 Mark Olsen
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -403,13 +404,15 @@ int Utils_TF_TeamToColor(char *team)
 	return 0;
 }
 
+#define ISHEX(x) (((x) >= '0' && (x) <= '9') || ((x) >= 'a' && (x) <= 'f') || ((x) >= 'A' && (x) <= 'F'))
+#define HEXTOINT(x) ((x) >= '0' && (x) <= '9'?(x)-'0':(x) >= 'a' && (x) <= 'f'?(x)-'a'+10:(x) >= 'A' && (x) <= 'F'?(x)-'A'+10:0)
+
 // maybe make this a macro?
 static int is_valid_color_info (char *c)
 {
-	if ((*c >= '0' &&  *c <= '9') || (*c >= 'a' && *c <= 'z') || (*c >= 'A' && *c <= 'Z'))
-		if ((*(c+1) >= '0' &&  *(c+1) <= '9') || (*(c+1) >= 'a' && *(c+1) <= 'z') || (*(c+1) >= 'A' && *(c+1) <= 'Z'))
-			if ((*(c+2) >= '0' &&  *(c+2) <= '9') || (*(c+2) >= 'a' && *(c+2) <= 'z') || (*(c+2) >= 'A' && *(c+2) <= 'Z'))
-				return 1;
+	if (ISHEX(c[0]) && ISHEX(c[1]) && ISHEX(c[2]))
+		return 1;
+
 	return 0;
 }
 
@@ -756,39 +759,64 @@ int Colored_String_Length(char *string)
 {
         char *ptr;
         int count = 0;
-	int len;
-	int ignore;
 
         ptr = string;
-	len = strlen(string);
 
-	ignore = 0;
         while (*ptr != '\0')
         {
-
-                if (*ptr == '&')
-                {
-			if (count + 5 <= len)
-			{
-				if (*(ptr + 1) == 'c')
-					if (is_valid_color_info((ptr+2)))
-						ignore = 1;
-			}
-                }
-
-		if (!ignore)
-                {
-                        ptr++;
-                        count++;
-                }
+		if (ptr[0] == '&' && ptr[1] == 'c' && is_valid_color_info(ptr + 2))
+		{
+			ptr += 5;
+		}
+		else if (ptr[0] == '&' && ptr[1] == 'r')
+		{
+			ptr += 2;
+		}
 		else
 		{
-			ptr+=5;
-			ignore = 0;
+			ptr++;
+			count++;
 		}
         }
 
         return count;
 }
 
+int Colored_String_Offset(char *string, unsigned int maxlen, unsigned short *lastcolour)
+{
+        char *ptr;
+        int count = 0;
+	unsigned short colour;
+
+        ptr = string;
+
+	colour = 0x0fff;
+
+        while (*ptr != '\0' && count != maxlen)
+        {
+		if (ptr[0] == '&' && ptr[1] == 'c' && is_valid_color_info(ptr + 2))
+		{
+			if (lastcolour)
+			{
+				colour = (HEXTOINT(ptr[2])<<8)|(HEXTOINT(ptr[3])<<4)|HEXTOINT(ptr[4]);
+			}
+
+			ptr += 5;
+		}
+		else if (ptr[0] == '&' && ptr[1] == 'r')
+		{
+			ptr += 2;
+		}
+		else
+		{
+			ptr++;
+			count++;
+		}
+        }
+
+	if (lastcolour)
+		*lastcolour = colour;
+
+        return ptr - string;
+}
 

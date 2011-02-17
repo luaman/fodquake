@@ -19,6 +19,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 // vid.h -- video driver defs
 
+#ifndef VID_H
+#define VID_H
+
 #include "keys.h"
 
 #define VID_CBITS	6
@@ -37,8 +40,8 @@ typedef struct
 {
 	pixel_t			*buffer;		// invisible buffer
 	pixel_t			*colormap;		// 256 * VID_GRADES size
-	unsigned		width;		
-	unsigned		height;
+	unsigned		displaywidth;		
+	unsigned		displayheight;
 	float			aspect;		// width / height -- < 0 is taller than wide
 	int				numpages;
 	int				recalc_refdef;	// if true, recalc vid-based stuff
@@ -101,3 +104,4 @@ const char *VID_GetMode(void);
 
 int VID_FocusChanged(void);
 
+#endif

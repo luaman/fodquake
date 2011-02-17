@@ -752,16 +752,6 @@ void Sys_Video_Update(void *display, vrect_t *rects)
 	}
 }
 
-void D_BeginDirectRect(int x, int y, byte * pbitmap, int width, int height)
-{
-// direct drawing of the "accessing disk" icon isn't supported under Linux
-}
-
-void D_EndDirectRect(int x, int y, int width, int height)
-{
-// direct drawing of the "accessing disk" icon isn't supported under Linux
-}
-
 void VID_LockBuffer(void)
 {
 }

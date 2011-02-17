@@ -1,5 +1,5 @@
 /*
-Copyright (C) 2006-2007 Mark Olsen
+Copyright (C) 2006-2011 Mark Olsen
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License

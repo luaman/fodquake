@@ -397,40 +397,6 @@ char *COM_FileExtension (char *in)
 	return exten;
 }
 
-//Extract file name without extension, to be used for hunk tags (up to 32 characters, including trailing zero)
-
-
-
-void COM_FileBase (char *in, char *out, unsigned int outlen)
-{
-	char *start, *end;
-	int	length;
-
-	if (!(end = strrchr(in, '.')))
-		end = in + strlen(in);
-
-	if (!(start = strrchr(in, '/')))
-		start = in;
-	else
-		start += 1;
-
-	length = end - start;
-	if (length < 0)	
-		strcpy (out, "?empty filename?");
-	else if (length == 0)
-	{
-		if (outlen)
-			out[0] = 0;
-	}
-	else
-	{
-		if (length >= outlen)
-			length = outlen - 1;
-
-		memcpy (out, start, length);
-		out[length] = 0;
-	}
-}
 
 //If path doesn't have a .EXT, append extension (extension should include the .)
 void COM_DefaultExtension (char *path, char *extension)

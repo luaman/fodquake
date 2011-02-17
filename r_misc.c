@@ -203,19 +203,19 @@ void R_NetGraph (void) {
 	int a, x, y, y2, w, i, lost;
 	char st[80];
 
-	if (vid.width - 16 <= NET_TIMINGS)
-		w = vid.width - 16;
+	if (vid.conwidth - 16 <= NET_TIMINGS)
+		w = vid.conwidth - 16;
 	else
 		w = NET_TIMINGS;
 
 	x =	0;
-	y = vid.height - sb_lines - 24 - (int)r_graphheight.value * 2 - 2;
+	y = vid.conheight - sb_lines - 24 - (int)r_graphheight.value * 2 - 2;
 
 	if (r_netgraph.value != 2 && r_netgraph.value != 3)
 		Draw_TextBox (x, y, (w + 7) / 8, ((int)r_graphheight.value * 2 + 7) / 8 + 1);
 
 	y2 = y + 8;
-	y = vid.height - sb_lines - 8 - 2;
+	y = vid.conheight - sb_lines - 8 - 2;
 
 	x = 8;
 	lost = CL_CalcNet();
@@ -390,16 +390,16 @@ void R_SetupFrame (void) {
 
 	if (r_dowarp != r_dowarpold || r_viewchanged) {
 		if (r_dowarp) {
-			if (vid.width <= vid.maxwarpwidth && vid.height <= vid.maxwarpheight) {
+			if (vid.displaywidth <= vid.maxwarpwidth && vid.displayheight <= vid.maxwarpheight) {
 				vrect.x = 0;
 				vrect.y = 0;
-				vrect.width = vid.width;
-				vrect.height = vid.height;
+				vrect.width = vid.displaywidth;
+				vrect.height = vid.displayheight;
 
 				R_ViewChanged (&vrect, sb_lines, vid.aspect);
 			} else {
-				w = vid.width;
-				h = vid.height;
+				w = vid.displaywidth;
+				h = vid.displayheight;
 
 				if (w > vid.maxwarpwidth) {
 					h *= (float)vid.maxwarpwidth / w;
@@ -417,15 +417,15 @@ void R_SetupFrame (void) {
 				vrect.height = (int)h;
 
 				R_ViewChanged (&vrect,
-								(int) ((float) sb_lines * (h/(float)vid.height)),
+								(int) ((float) sb_lines * (h/(float)vid.displayheight)),
 								vid.aspect * (h / w) *
-								((float) vid.width / (float) vid.height));
+								((float) vid.displaywidth / (float) vid.displayheight));
 			}
 		} else {
 			vrect.x = 0;
 			vrect.y = 0;
-			vrect.width = vid.width;
-			vrect.height = vid.height;
+			vrect.width = vid.displaywidth;
+			vrect.height = vid.displayheight;
 
 			R_ViewChanged (&vrect, sb_lines, vid.aspect);
 		}

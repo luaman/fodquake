@@ -1,6 +1,7 @@
 /*
 
 Copyright (C) 1996-2003 A Nourai, Id Software, Inc.
+Copyright (C) 2005, 2007-2011 Mark Olsen
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
