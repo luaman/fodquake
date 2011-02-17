@@ -254,7 +254,7 @@ static void CSTC_Draw(struct cst_info *self, int y_offset)
 	else
 		offset = y_offset - 14;
 
-	Draw_Fill(0, offset , vid.width, 10, 4);
+	Draw_Fill(0, offset , vid.conwidth, 10, 4);
 	Draw_String(8, offset, self->input);
 	Draw_String(8 + self->input_position * 8 , offset + 2, "_");
 
@@ -263,7 +263,7 @@ static void CSTC_Draw(struct cst_info *self, int y_offset)
 	if (self->direction == -1)
 		rows = offset / 8;
 	else
-		rows = (vid.height - offset) / 8;
+		rows = (vid.conheight - offset) / 8;
 
 	if (rows % 2 != 0)
 		rows--;
@@ -293,9 +293,9 @@ static void CSTC_Draw(struct cst_info *self, int y_offset)
 		if (self->result(self, NULL, i + result_offset, 1, &ptr))
 			break;
 		if (i + result_offset == self->selection)
-			Draw_Fill(0, offset + i * 8 * self->direction, vid.width, 8, 40);
+			Draw_Fill(0, offset + i * 8 * self->direction, vid.conwidth, 8, 40);
 		else
-			Draw_Fill(0, offset + i * 8 * self->direction, vid.width, 8, 4);
+			Draw_Fill(0, offset + i * 8 * self->direction, vid.conwidth, 8, 4);
 
 		Draw_String(32, offset + i * 8 * self->direction, ptr);
 	}
@@ -321,7 +321,7 @@ void Context_Sensitive_Tab_Completion_Draw(void)
 	if (cst_info == NULL)
 		return;
 
-	if (scr_conlines > vid.height/2)
+	if (scr_conlines > vid.conheight/2)
 		cst_info->direction = -1;
 	else
 		cst_info->direction = 1;

@@ -40,8 +40,8 @@ typedef struct
 {
 	pixel_t			*buffer;		// invisible buffer
 	pixel_t			*colormap;		// 256 * VID_GRADES size
-	unsigned		width;		
-	unsigned		height;
+	unsigned		displaywidth;		
+	unsigned		displayheight;
 	float			aspect;		// width / height -- < 0 is taller than wide
 	int				numpages;
 	int				recalc_refdef;	// if true, recalc vid-based stuff

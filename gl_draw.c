@@ -1051,8 +1051,8 @@ void Draw_Crosshair(void)
 			tl = sl = 0;
 			sh = th = 1;
 		}
-		ofs1 *= (vid.width / 320) * bound(0, crosshairsize.value, 20);
-		ofs2 *= (vid.width / 320) * bound(0, crosshairsize.value, 20);
+		ofs1 *= (vid.conwidth / 320) * bound(0, crosshairsize.value, 20);
+		ofs2 *= (vid.conwidth / 320) * bound(0, crosshairsize.value, 20);
 
 		glBegin(GL_QUADS);
 		glTexCoord2f(sl, tl);
@@ -1207,7 +1207,7 @@ void Draw_SubPic(int x, int y, mpic_t *pic, int srcx, int srcy, int width, int h
 
 void Draw_TransPic(int x, int y, mpic_t *pic)
 {
-	if (x < 0 || (unsigned) (x + pic->width) > vid.width || y < 0 || (unsigned) (y + pic->height) > vid.height)
+	if (x < 0 || (unsigned) (x + pic->width) > vid.conwidth || y < 0 || (unsigned) (y + pic->height) > vid.conheight)
 		Sys_Error("Draw_TransPic: bad coordinates");
 		
 	Draw_Pic(x, y, pic);
@@ -1258,12 +1258,12 @@ void Draw_ConsoleBackground(int lines)
 
 	if (SCR_NEED_CONSOLE_BACKGROUND)
 	{
-		Draw_Pic(0, lines - vid.height, &conback);
+		Draw_Pic(0, lines - vid.conheight, &conback);
 	}
 	else
 	{
 		if (scr_conalpha.value)
-			Draw_AlphaPic (0, lines - vid.height, &conback, bound (0, scr_conalpha.value, 1));
+			Draw_AlphaPic (0, lines - vid.conheight, &conback, bound (0, scr_conalpha.value, 1));
 	}
 
 	sprintf(ver, "FodQuake %s", FODQUAKE_VERSION);
@@ -1350,9 +1350,9 @@ void Draw_FadeScreen(void)
 
 	glBegin(GL_QUADS);
 	glVertex2f(0, 0);
-	glVertex2f(vid.width, 0);
-	glVertex2f(vid.width, vid.height);
-	glVertex2f(0, vid.height);
+	glVertex2f(vid.conwidth, 0);
+	glVertex2f(vid.conwidth, vid.conheight);
+	glVertex2f(0, vid.conheight);
 	glEnd();
 
 	if (alpha < 1)
@@ -1374,7 +1374,7 @@ void GL_Set2D(void)
 
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	glOrtho(0, vid.width, vid.height, 0, -99999, 99999);
+	glOrtho(0, vid.conwidth, vid.conheight, 0, -99999, 99999);
 
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();

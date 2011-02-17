@@ -90,7 +90,7 @@ void R_NetGraph (void) {
 			ngraph_pixels[y][x] = d_8to24table[ngraph_texels[y][x]];
 
 	x =	0;
-	y = vid.height - sb_lines - 24 - NET_GRAPHHEIGHT - 1;
+	y = vid.conheight - sb_lines - 24 - NET_GRAPHHEIGHT - 1;
 
 	if (r_netgraph.value != 2 && r_netgraph.value != 3)
 		Draw_TextBox (x, y, NET_TIMINGS / 8, NET_GRAPHHEIGHT / 8 + 1);

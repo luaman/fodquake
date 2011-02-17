@@ -197,7 +197,7 @@ void SCR_DrawCenterString(void)
 	scr_erase_center = 0;
 	start = scr_centerstring;
 
-	y = (scr_center_lines <= 4) ? vid.height * 0.35 : 48;
+	y = (scr_center_lines <= 4) ? vid.conheight * 0.35 : 48;
 
 	while (1)
 	{
@@ -208,7 +208,7 @@ void SCR_DrawCenterString(void)
 				break;
 		}
 
-		x = (vid.width - l * 8) / 2;
+		x = (vid.conwidth - l * 8) / 2;
 
 		for (j = 0; j < l; j++, x += 8)
 		{
@@ -255,10 +255,10 @@ void SCR_EraseCenterString(void)
 		return;
 	}
 
-	y = (scr_center_lines <= 4) ? vid.height * 0.35 : 48;
+	y = (scr_center_lines <= 4) ? vid.conheight * 0.35 : 48;
 
 	scr_copytop = 1;
-	Draw_TileClear (0, y, vid.width, min(8 * scr_erase_lines, vid.height - y - 1));
+	Draw_TileClear (0, y, vid.conwidth, min(8 * scr_erase_lines, vid.conheight - y - 1));
 }
 
 /************************************ FOV ************************************/
@@ -378,28 +378,28 @@ static void SCR_CalcRefdef (void)
 	size /= 100.0;
 
 	if (!cl_sbar.value && full)
-		h = vid.height;
+		h = vid.conheight;
 	else
-		h = vid.height - sb_lines;
+		h = vid.conheight - sb_lines;
 
-	r_refdef.vrect.width = vid.width * size;
+	r_refdef.vrect.width = vid.conwidth * size;
 	if (r_refdef.vrect.width < 96)
 	{
 		size = 96.0 / r_refdef.vrect.width;
 		r_refdef.vrect.width = 96;      // min for icons
 	}
 
-	r_refdef.vrect.height = vid.height * size;
+	r_refdef.vrect.height = vid.conheight * size;
 	if (cl_sbar.value || !full)
 	{
-  		if (r_refdef.vrect.height > vid.height - sb_lines)
-  			r_refdef.vrect.height = vid.height - sb_lines;
+  		if (r_refdef.vrect.height > vid.conheight - sb_lines)
+  			r_refdef.vrect.height = vid.conheight - sb_lines;
 	}
-	else if (r_refdef.vrect.height > vid.height)
+	else if (r_refdef.vrect.height > vid.conheight)
 	{
-			r_refdef.vrect.height = vid.height;
+			r_refdef.vrect.height = vid.conheight;
 	}
-	r_refdef.vrect.x = (vid.width - r_refdef.vrect.width) / 2;
+	r_refdef.vrect.x = (vid.conwidth - r_refdef.vrect.width) / 2;
 	if (full)
 		r_refdef.vrect.y = 0;
 	else 
@@ -414,16 +414,17 @@ static void SCR_CalcRefdef (void)
 
 	CalcFov(scr_fov.value, &r_refdef.fov_x, &r_refdef.fov_y, r_refdef.vrect.width, r_refdef.vrect.height);
 
+#warning No idea of the below lines are correct.
 	// these calculations mirror those in R_Init() for r_refdef, but take noaccount of water warping
 	vrect.x = 0;
 	vrect.y = 0;
-	vrect.width = vid.width;
-	vrect.height = vid.height;
+	vrect.width = vid.displaywidth;
+	vrect.height = vid.displayheight;
 
 	R_SetVrect (&vrect, &scr_vrect, sb_lines);
 
 	// guard against going from one mode to another that's less than half the vertical resolution
-	scr_con_current = min(scr_con_current, vid.height);
+	scr_con_current = min(scr_con_current, vid.conheight);
 
 	// notify the refresh of the change
 	R_ViewChanged (&vrect, sb_lines, vid.aspect);
@@ -489,8 +490,8 @@ void SCR_DrawNet (void)
 	Draw_Pic (scr_vrect.x + 64, scr_vrect.y, scr_net);
 }
 
-#define	ELEMENT_X_COORD(var)	((var##_x.value < 0) ? vid.width - strlen(str) * 8 + 8 * var##_x.value: 8 * var##_x.value)
-#define	ELEMENT_Y_COORD(var)	((var##_y.value < 0) ? vid.height - sb_lines + 8 * var##_y.value : 8 * var##_y.value)
+#define	ELEMENT_X_COORD(var)	((var##_x.value < 0) ? vid.conwidth - strlen(str) * 8 + 8 * var##_x.value: 8 * var##_x.value)
+#define	ELEMENT_Y_COORD(var)	((var##_y.value < 0) ? vid.conheight - sb_lines + 8 * var##_y.value : 8 * var##_y.value)
 
 void SCR_DrawFPS (void)
 {
@@ -694,7 +695,7 @@ void SCR_DrawPause (void)
 		return;
 
 	pic = Draw_CachePic ("gfx/pause.lmp");
-	Draw_Pic ((vid.width - pic->width) / 2, (vid.height - 48 - pic->height) / 2, pic);
+	Draw_Pic ((vid.conwidth - pic->width) / 2, (vid.conheight - 48 - pic->height) / 2, pic);
 }
 
 void SCR_DrawLoading (void)
@@ -705,7 +706,7 @@ void SCR_DrawLoading (void)
 		return;
 
 	pic = Draw_CachePic ("gfx/loading.lmp");
-	Draw_Pic ( (vid.width - pic->width )/ 2, (vid.height - 48 - pic->height) / 2, pic);
+	Draw_Pic ( (vid.conwidth - pic->width )/ 2, (vid.conheight - 48 - pic->height) / 2, pic);
 }
 
 
@@ -743,18 +744,18 @@ void SCR_EndLoadingPlaque(void)
 
 void SCR_SetUpToDrawConsole(void)
 {
-	Con_CheckResize(vid.width);
+	Con_CheckResize(vid.conwidth);
 
 	// decide on the height of the console
 	if (SCR_NEED_CONSOLE_BACKGROUND)
 	{
-		scr_conlines = vid.height;		// full screen
+		scr_conlines = vid.conheight;		// full screen
 		scr_con_current = scr_conlines;
 	}
 	else if (key_dest == key_console)
 	{
-		scr_conlines = vid.height * scr_consize.value;
-		scr_conlines = bound(30, scr_conlines, vid.height);
+		scr_conlines = vid.conheight * scr_consize.value;
+		scr_conlines = bound(30, scr_conlines, vid.conheight);
 	}
 	else
 	{
@@ -763,12 +764,12 @@ void SCR_SetUpToDrawConsole(void)
 
 	if (scr_conlines < scr_con_current)
 	{
-		scr_con_current -= scr_conspeed.value * cls.trueframetime * vid.height / 320;
+		scr_con_current -= scr_conspeed.value * cls.trueframetime * vid.conheight / 320;
 		scr_con_current = max(scr_con_current, scr_conlines);
 	}
 	else if (scr_conlines > scr_con_current)
 	{
-		scr_con_current += scr_conspeed.value * cls.trueframetime * vid.height / 320;
+		scr_con_current += scr_conspeed.value * cls.trueframetime * vid.conheight / 320;
 		scr_con_current = min(scr_con_current, scr_conlines);
 	}
 
@@ -776,7 +777,7 @@ void SCR_SetUpToDrawConsole(void)
 	{
 #ifndef GLQUAKE
 		scr_copytop = 1;
-		Draw_TileClear (0, (int) scr_con_current, vid.width, vid.height - (int) scr_con_current);
+		Draw_TileClear (0, (int) scr_con_current, vid.conwidth, vid.conheight - (int) scr_con_current);
 #endif
 		Sbar_Changed ();
 	}
@@ -784,7 +785,7 @@ void SCR_SetUpToDrawConsole(void)
 	{
 #ifndef GLQUAKE
 		scr_copytop = 1;
-		Draw_TileClear(0, 0, vid.width, scr_clearnotifylines * 8);
+		Draw_TileClear(0, 0, vid.conwidth, scr_clearnotifylines * 8);
 #endif
 	}
 	else
@@ -799,7 +800,7 @@ void SCR_SetUpToDrawConsole(void)
 		if (!scr_conalpha.value && scr_con_current)
 		{
 
-			Draw_TileClear(0, 0, vid.width, scr_con_current);
+			Draw_TileClear(0, 0, vid.conwidth, scr_con_current);
 		}
 	}
 #endif
@@ -815,7 +816,7 @@ static void SCR_DrawDownload(unsigned int vislines)
 	unsigned int dotlength;
 	unsigned int barlength;
 
-	linewidth = (vid.width >> 3) - 2;
+	linewidth = (vid.conwidth >> 3) - 2;
 
 	// draw the download bar
 	// figure out width
@@ -907,12 +908,12 @@ static void SCR_DrawMessageMode(unsigned int y)
 	}
 
 	// prestep if horizontally scrolling
-	if (chat_linepos + skip >= (vid.width >> 3))
-		s += 1 + chat_linepos + skip - (vid.width >> 3);
+	if (chat_linepos + skip >= (vid.conwidth >> 3))
+		s += 1 + chat_linepos + skip - (vid.conwidth >> 3);
 
 	len = strlen(s);
-	if (len+skip > (vid.width>>3))
-		len = (vid.width>>3) - skip;
+	if (len+skip > (vid.conwidth>>3))
+		len = (vid.conwidth>>3) - skip;
 
 	if (len > 0)
 		Draw_String_Length(skip<<3, y, s, len);
@@ -1091,8 +1092,8 @@ void SCR_DrawAutoID (void) {
 		return;
 
 	for (i = 0; i < autoid_count; i++) {
-		x =  autoids[i].x * vid.width / glwidth;
-		y =  (glheight - autoids[i].y) * vid.height / glheight;
+		x =  autoids[i].x * vid.conwidth / glwidth;
+		y =  (glheight - autoids[i].y) * vid.conheight / glheight;
 		Draw_String(x - strlen(autoids[i].player->name) * 4, y - 8, autoids[i].player->name);
 	}
 }
@@ -1105,27 +1106,27 @@ void SCR_DrawAutoID (void) {
 
 void SCR_TileClear (void) {
 	if (cls.state != ca_active && cl.intermission) {
-		Draw_TileClear (0, 0, vid.width, vid.height);
+		Draw_TileClear (0, 0, vid.conwidth, vid.conheight);
 		return;
 	}
 
 	if (r_refdef.vrect.x > 0) {
 		// left
-		Draw_TileClear (0, 0, r_refdef.vrect.x, vid.height - sb_lines);
+		Draw_TileClear (0, 0, r_refdef.vrect.x, vid.conheight - sb_lines);
 		// right
 		Draw_TileClear (r_refdef.vrect.x + r_refdef.vrect.width, 0, 
-			vid.width - (r_refdef.vrect.x + r_refdef.vrect.width), vid.height - sb_lines);
+			vid.conwidth - (r_refdef.vrect.x + r_refdef.vrect.width), vid.conheight - sb_lines);
 	}
 	if (r_refdef.vrect.y > 0) {
 		// top
 		Draw_TileClear (r_refdef.vrect.x, 0, r_refdef.vrect.width, r_refdef.vrect.y);
 	}
-	if (r_refdef.vrect.y + r_refdef.vrect.height < vid.height - sb_lines) {
+	if (r_refdef.vrect.y + r_refdef.vrect.height < vid.conheight - sb_lines) {
 		// bottom
 		Draw_TileClear (r_refdef.vrect.x,
 			r_refdef.vrect.y + r_refdef.vrect.height, 
 			r_refdef.vrect.width, 
-			vid.height - sb_lines - (r_refdef.vrect.height + r_refdef.vrect.y));
+			vid.conheight - sb_lines - (r_refdef.vrect.height + r_refdef.vrect.y));
 	}
 }
 
@@ -1137,7 +1138,7 @@ void SCR_TileClear(void)
 	{
 		// clear the entire screen
 		scr_copyeverything = 1;
-		Draw_TileClear (0, 0, vid.width, vid.height);
+		Draw_TileClear (0, 0, vid.conwidth, vid.conheight);
 		Sbar_Changed ();
 	}
 	else
@@ -1373,16 +1374,17 @@ void SCR_UpdateScreen (void) {
 	if (scr_copyeverything) {
 		vrect.x = 0;
 		vrect.y = 0;
-		vrect.width = vid.width;
-		vrect.height = vid.height;
+		vrect.width = vid.displaywidth;
+		vrect.height = vid.displayheight;
 		vrect.pnext = 0;
 
 		VID_Update (&vrect);
 	} else if (scr_copytop) {
 		vrect.x = 0;
 		vrect.y = 0;
-		vrect.width = vid.width;
-		vrect.height = vid.height - sb_lines;
+		vrect.width = vid.displaywidth;
+		vrect.height = vid.displayheight - sb_lines;
+#warning This needs translation from con space to display space
 		vrect.pnext = 0;
 
 		VID_Update (&vrect);
@@ -1571,14 +1573,14 @@ int SCR_Screenshot(char *name) {
 
 	if (format == IMAGE_PCX)
 	{
-		success = Image_WritePCX (name, vid.buffer, vid.width, vid.height, vid.rowbytes, current_pal) ? SSHOT_SUCCESS : SSHOT_FAILED;
+		success = Image_WritePCX (name, vid.buffer, vid.displaywidth, vid.displayheight, vid.rowbytes, current_pal) ? SSHOT_SUCCESS : SSHOT_FAILED;
 	}
 #if USE_PNG
 	else if (format == IMAGE_PNG)
 	{
 		if (QLib_isModuleLoaded(qlib_libpng))
 		{
-			success = Image_WritePNGPLTE(name, image_png_compression_level.value, vid.buffer, vid.width, vid.height, vid.rowbytes, current_pal) ? SSHOT_SUCCESS : SSHOT_FAILED;
+			success = Image_WritePNGPLTE(name, image_png_compression_level.value, vid.buffer, vid.displaywidth, vid.displayheight, vid.rowbytes, current_pal) ? SSHOT_SUCCESS : SSHOT_FAILED;
 		}
 		else 
 		{
@@ -1713,13 +1715,13 @@ sshot_taken:
 
 #if USE_PNG
 	if (QLib_isModuleLoaded(qlib_libpng)) {
-		success = Image_WritePNGPLTE(filename, 9, vid.buffer, vid.width, vid.height, vid.rowbytes, current_pal)
+		success = Image_WritePNGPLTE(filename, 9, vid.buffer, vid.displaywidth, vid.displayheight, vid.rowbytes, current_pal)
 			? SSHOT_SUCCESS : SSHOT_FAILED;
 		goto sshot_taken;
 	}
 #endif
 
-	success = Image_WritePCX (filename, vid.buffer, vid.width, vid.height, vid.rowbytes, current_pal)
+	success = Image_WritePCX (filename, vid.buffer, vid.displaywidth, vid.displayheight, vid.rowbytes, current_pal)
 		? SSHOT_SUCCESS : SSHOT_FAILED;
 	goto sshot_taken;
 

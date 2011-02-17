@@ -104,25 +104,25 @@ static void set_up_conwidth_conheight()
 {
 	if (display)
 	{
-		vid.width = Sys_Video_GetWidth(display);
-		vid.height = Sys_Video_GetHeight(display);
+		vid.displaywidth = Sys_Video_GetWidth(display);
+		vid.displayheight = Sys_Video_GetHeight(display);
 	}
 	else
 	{
-		vid.width = 320;
-		vid.height = 240;
+		vid.displaywidth = 320;
+		vid.displayheight = 240;
 	}
 
 #ifdef GLQUAKE
-	if (vid.width <= 640 || vid.height < 400)
+	if (vid.displaywidth <= 640 || vid.displayheight < 400)
 	{
-		vid.conwidth = vid.width;
-		vid.conheight = vid.height;
+		vid.conwidth = vid.displaywidth;
+		vid.conheight = vid.displayheight;
 	}
 	else
 	{
-		vid.conwidth = vid.width/2;
-		vid.conheight = vid.height/2;
+		vid.conwidth = vid.displaywidth/2;
+		vid.conheight = vid.displayheight/2;
 	}
 
 	if (vid_conwidth.value)
@@ -146,17 +146,14 @@ static void set_up_conwidth_conheight()
 			vid.conheight = 200;
 	}
 
-	if (vid.conwidth > vid.width)
-		vid.conwidth = vid.width;
+	if (vid.conwidth > vid.displaywidth)
+		vid.conwidth = vid.displaywidth;
 	
-	if (vid.conheight > vid.height)
-		vid.conheight = vid.height;
-
-	vid.width = vid.conwidth;
-	vid.height = vid.conheight;
+	if (vid.conheight > vid.displayheight)
+		vid.conheight = vid.displayheight;
 #else
-	vid.conwidth = vid.width;
-	vid.conheight = vid.height;
+	vid.conwidth = vid.displaywidth;
+	vid.conheight = vid.displayheight;
 #endif
 
 	vid.recalc_refdef = 1;

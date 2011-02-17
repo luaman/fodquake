@@ -149,7 +149,7 @@ void Draw_Character (int x, int y, int num) {
 	if (y <= -8)
 		return;			// totally off screen
 
-	if (y > (int) vid.height - 8 || x < 0 || x > vid.width - 8)
+	if (y > (int) vid.conheight - 8 || x < 0 || x > vid.conwidth - 8)
 		return;
 
 	if (num < 0 || num > 255)
@@ -513,7 +513,7 @@ void Draw_Pic (int x, int y, mpic_t *pic) {
 		return;
 	}
 
-	if (x < 0 || x + pic->width > vid.width || y < 0 || y + pic->height > vid.height)
+	if (x < 0 || x + pic->width > vid.conwidth || y < 0 || y + pic->height > vid.conheight)
 		Sys_Error ("Draw_Pic: bad coordinates");
 
 	source = pic->data;
@@ -538,7 +538,7 @@ void Draw_SubPic (int x, int y, mpic_t *pic, int srcx, int srcy, int width, int 
 		return;
 	}
 
-	if (x < 0 || x + width > vid.width || y < 0 || y + height > vid.height)
+	if (x < 0 || x + width > vid.conwidth || y < 0 || y + height > vid.conheight)
 		Sys_Error ("Draw_Pic: bad coordinates");
 
 	source = pic->data + srcy * pic->width + srcx;
@@ -556,7 +556,7 @@ void Draw_TransPic (int x, int y, mpic_t *pic) {
 	byte *dest, *source, tbyte;
 	int v, u;
 
-	if (x < 0 || (unsigned) (x + pic->width) > vid.width || y < 0 || (unsigned)(y + pic->height) > vid.height)
+	if (x < 0 || (unsigned) (x + pic->width) > vid.conwidth || y < 0 || (unsigned)(y + pic->height) > vid.conheight)
 		Sys_Error ("Draw_TransPic: bad coordinates");
 
 	source = pic->data;
@@ -603,7 +603,7 @@ void Draw_TransSubPic (int x, int y, mpic_t *pic, int srcx, int srcy, int width,
 	byte *dest, *source, tbyte;
 	int v, u;
 
-	if (x < 0 || x + width > vid.width || y < 0 || y + height > vid.height)
+	if (x < 0 || x + width > vid.conwidth || y < 0 || y + height > vid.conheight)
 		Sys_Error ("Draw_Pic: bad coordinates");
 
 	source = pic->data + srcy * pic->width + srcx;
@@ -651,7 +651,7 @@ void Draw_TransPicTranslate (int x, int y, mpic_t *pic, byte *translation) {
 	byte *dest, *source, tbyte;
 	int v, u;
 
-	if (x < 0 || (unsigned)(x + pic->width) > vid.width || y < 0 || (unsigned) (y + pic->height) > vid.height)
+	if (x < 0 || (unsigned)(x + pic->width) > vid.conwidth || y < 0 || (unsigned) (y + pic->height) > vid.conheight)
 		Sys_Error ("Draw_TransPic: bad coordinates");
 
 	source = pic->data;
@@ -852,7 +852,7 @@ void Draw_Fill (int x, int y, int w, int h, int c) {
 	byte *dest;
 	int u, v;
 
-	if (x < 0 || x + w > vid.width || y < 0 || y + h > vid.height) {
+	if (x < 0 || x + w > vid.conwidth || y < 0 || y + h > vid.conheight) {
 		Com_Printf ("Bad Draw_Fill(%d, %d, %d, %d, %c)\n", x, y, w, h, c);
 		return;
 	}
@@ -879,7 +879,7 @@ void Draw_FadeScreen (void) {
 	S_ExtraUpdate ();
 	VID_LockBuffer ();
 
-	for (y = 0; y < vid.height; y++) {
+	for (y = 0; y < vid.displayheight; y++) {
 		int	t;
 
 		pbuf = (byte *) (vid.buffer + vid.rowbytes * y);
@@ -887,26 +887,26 @@ void Draw_FadeScreen (void) {
         if (alpha < 1 / 3.0) {
             t = (y & 1) << 1;
 
-            for (x = 0; x < vid.width; x++) {
+            for (x = 0; x < vid.displaywidth; x++) {
                 if ((x & 3) == t)
                     pbuf[x] = 0;
             }
 		} else if (alpha < 2 / 3.0) {
             t = (y & 1) << 1;
 
-            for (x = 0; x < vid.width; x++) {
+            for (x = 0; x < vid.displaywidth; x++) {
                 if ((x & 1) == t)
                     pbuf[x] = 0;
             }
 		} else if (alpha < 1) {
 			t = (y & 1) << 1;
 
-			for (x = 0; x < vid.width; x++) {
+			for (x = 0; x < vid.displaywidth; x++) {
 				if ((x & 3) != t)
 					pbuf[x] = 0;
 			}
 		} else {            
-			for (x = 0; x < vid.width; x++)
+			for (x = 0; x < vid.displaywidth; x++)
                 pbuf[x] = 0;
 		}
 	}
