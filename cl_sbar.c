@@ -245,7 +245,6 @@ void Sbar_Init (void)
 	sb_inited = 1;
 }
 
-#ifdef GLQUAKE
 void Sbar_Shutdown(void)
 {
 	int i, j;
@@ -308,7 +307,6 @@ void Sbar_Shutdown(void)
 	Draw_FreeWadPic(sb_ibar);
 	Draw_FreeWadPic(sb_scorebar);
 }
-#endif
 
 
 /****************************** SUPPORT ROUTINES ******************************/

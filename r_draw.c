@@ -71,6 +71,10 @@ mpic_t *Draw_CacheWadPic (char *name) {
 	return pic;
 }
 
+void Draw_FreeWadPic(mpic_t *pic)
+{
+}
+
 mpic_t *Draw_CachePic(char *path)
 {
 	cachepic_t *pic;

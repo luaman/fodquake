@@ -1764,9 +1764,6 @@ void CL_Init (void)
 		Sys_Error("CL_InitEnts() failed\n");
 
 	CL_InitTEnts ();
-#ifndef GLQUAKE
-	Sbar_Init ();
-#endif
 
 #warning If I want to keep compatibility with Win32 server browsers, I need to open a socket on port 27001 here.
 

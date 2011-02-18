@@ -350,10 +350,7 @@ void VID_Open()
 #endif
 
 			Draw_Init();
-
-#ifdef GLQUAKE
 			Sbar_Init();
-#endif
 			SCR_LoadTextures();
 
 			return;
@@ -375,10 +372,7 @@ void VID_Close()
 {
 	Sys_Thread_LockMutex(display_mutex);
 
-#ifdef GLQUAKE
 	Sbar_Shutdown();
-#endif
-
 	Draw_Shutdown();
 
 	if (display)
