@@ -599,9 +599,15 @@ void Draw_CvarInit(void)
 	GL_Texture_CvarInit();
 }
 
-void Draw_InitGL(void)
+void Draw_Init(void)
 {
 	int i;
+
+	// save a texture slot for translated picture
+	translate_texture = texture_extension_number++;
+
+	// save slots for scraps
+	Scrap_Init();
 
 	// load the console background and the charset by hand, because we need to write the version
 	// string into the background before turning it into a texture
@@ -622,18 +628,9 @@ void Draw_InitGL(void)
 	drawgl_inited = 1;
 }
 
-void Draw_ShutdownGL()
+void Draw_Shutdown()
 {
 	drawgl_inited = 0;
-}
-
-void Draw_Init(void)
-{
-	// save a texture slot for translated picture
-	translate_texture = texture_extension_number++;
-
-	// save slots for scraps
-	Scrap_Init();
 }
 
 __inline static void Draw_CharPoly(int x, int y, int num)

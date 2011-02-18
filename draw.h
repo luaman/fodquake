@@ -47,11 +47,8 @@ typedef struct
 #endif
 
 void Draw_CvarInit(void);
-void Draw_Init (void);
-#ifdef GLQUAKE
-void Draw_InitGL(void);
-void Draw_ShutdownGL(void);
-#endif
+void Draw_Init(void);
+void Draw_Shutdown(void);
 void Draw_BeginTextRendering(void);
 void Draw_EndTextRendering(void);
 void Draw_Character (int x, int y, int num);

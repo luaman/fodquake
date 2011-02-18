@@ -1355,8 +1355,6 @@ int R_Init(void)
 			skyboxtextures = texture_extension_number;
 			texture_extension_number += 6;
 
-			Draw_Init();
-
 			return 1;
 		}
 

@@ -130,6 +130,10 @@ void Draw_Init(void)
 	customCrosshair_Init();
 }
 
+void Draw_Shutdown()
+{
+}
+
 void Draw_BeginTextRendering()
 {
 }

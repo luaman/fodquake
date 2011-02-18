@@ -347,7 +347,11 @@ void VID_Open()
 
 			R_InitGL();
 			GL_Particles_TextureInit();
-			Draw_InitGL();
+#endif
+
+			Draw_Init();
+
+#ifdef GLQUAKE
 			Sbar_Init();
 #endif
 			SCR_LoadTextures();
@@ -373,8 +377,9 @@ void VID_Close()
 
 #ifdef GLQUAKE
 	Sbar_Shutdown();
-	Draw_ShutdownGL();
 #endif
+
+	Draw_Shutdown();
 
 	if (display)
 	{
