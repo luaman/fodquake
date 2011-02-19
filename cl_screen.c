@@ -482,6 +482,9 @@ void SCR_DrawTurtle(void)
 void SCR_DrawNet (void)
 {
 #ifdef NETQW
+	if (!cls.netqw)
+		return;
+
 	if (NetQW_GetTimeSinceLastPacketFromServer(cls.netqw) < 500000)
 		return;
 #else
