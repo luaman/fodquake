@@ -296,6 +296,8 @@ void Host_Init(int argc, char **argv)
 	SV_Init();
 	CL_Init();
 
+    Context_Weighting_Init();
+
 #ifndef SERVERONLY
 	if (!dedicated)
 		CL_SaveArgv(argc, argv);
@@ -333,6 +335,8 @@ void Host_Shutdown(void)
 		return;
 	}
 	isdown = true;
+
+    Context_Weighting_Shutdown();
 
 	SB_Quit();
 	SV_Shutdown("Server quit\n");

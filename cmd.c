@@ -394,14 +394,18 @@ void Cmd_Exec_f(void)
 #ifndef SERVERONLY
 	if (cbuf_current == &cbuf_svc)
 	{
+        Cbuf_AddText("weight_disable\n");
 		Cbuf_AddText(f);
 		Cbuf_AddText("\n");
+        Cbuf_AddText("weight_enable\n");
 	}
 	else
 #endif
 	{
+        Cbuf_InsertText("weight_enable\n");
 		Cbuf_InsertText("\n");
 		Cbuf_InsertText(f);
+        Cbuf_InsertText("weight_disable\n");
 	}
 
 	free(f);
@@ -1242,6 +1246,7 @@ static void Cmd_ExecuteStringEx (cbuf_t *context, char *text)
 	cmd_alias_t *a;
 	static char buf[2048];
 	cbuf_t *inserttarget, *oldcontext;
+    extern int weight_disable;
 
 	oldcontext = cbuf_current;
 	cbuf_current = context;
@@ -1296,10 +1301,14 @@ static void Cmd_ExecuteStringEx (cbuf_t *context, char *text)
 			}
 #endif
 
+            if (weight_disable == 0)
+                cmd->weight++;
+
 			if (cmd->function)
 				cmd->function();
 			else
 				Cmd_ForwardToServer ();
+
 			goto done;
 		}
 		else
@@ -1317,6 +1326,8 @@ static void Cmd_ExecuteStringEx (cbuf_t *context, char *text)
 	// check cvars
 	if ((v = Cvar_FindVar (Cmd_Argv(0))))
 	{
+        if (weight_disable == 0)
+            v->weight++;
 #ifndef SERVERONLY
 		if (cbuf_current == &cbuf_formatted_comms)
 		{
@@ -1332,6 +1343,8 @@ static void Cmd_ExecuteStringEx (cbuf_t *context, char *text)
 checkaliases:
 	if ((a = Cmd_FindAlias(cmd_argv[0])))
 	{
+        if (weight_disable == 0)
+            a->weight++;
 #ifndef SERVERONLY
 		if (cbuf_current == &cbuf_svc)
 		{
