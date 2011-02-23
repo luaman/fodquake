@@ -721,7 +721,7 @@ static int match_compare(const void *a, const void *b)
 
 
 
-	return x->match - y->match + w2 * 3 - w1 *3;
+	return x->match - y->match + w2 *2 - w1 *2;
 }
 
 static int setup_command_completion_data(struct cst_info *self)
@@ -1052,7 +1052,7 @@ void Context_Weighting_Init(void)
     if (f == NULL)
         return;
 
-    while (fscanf(f, "%i %s", &weight, &buf) > 0)
+    while (fscanf(f, "%i %s", &weight, &buf[0]) > 0)
     {
         if ((cvar=Cvar_FindVar(buf)))
         {
