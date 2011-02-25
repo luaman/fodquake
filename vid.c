@@ -351,7 +351,7 @@ void VID_Open()
 
 			Draw_Init();
 			Sbar_Init();
-			SCR_LoadTextures();
+			SCR_Init();
 
 			return;
 		}
@@ -372,6 +372,7 @@ void VID_Close()
 {
 	Sys_Thread_LockMutex(display_mutex);
 
+	SCR_Shutdown();
 	Sbar_Shutdown();
 	Draw_Shutdown();
 

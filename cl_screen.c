@@ -1855,15 +1855,16 @@ void SCR_CvarInit (void)
 	Cmd_AddCommand ("messagemode2", Con_MessageMode2_f);
 }
 
-void SCR_LoadTextures()
+void SCR_Init(void)
 {
 	scr_ram = Draw_CacheWadPic ("ram");
 	scr_net = Draw_CacheWadPic ("net");
 	scr_turtle = Draw_CacheWadPic ("turtle");
+
+	scr_initialized = true;
 }
 
-void SCR_Init(void)
+void SCR_Shutdown()
 {
-	scr_initialized = true;
 }
 
