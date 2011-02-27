@@ -871,6 +871,10 @@ void Draw_Fill (int x, int y, int w, int h, int c) {
 			dest[u] = c;
 }
 
+void Draw_AlphaFill (int x, int y, int w, int h, int c, float alpha)
+{
+}
+
 //=============================================================================
 
 void Draw_FadeScreen (void) {

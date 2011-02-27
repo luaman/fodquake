@@ -84,10 +84,8 @@ cvar_t	scr_scoreboard_drawtitle = {"scr_scoreboard_drawtitle", "1"};
 cvar_t	scr_scoreboard_borderless = {"scr_scoreboard_borderless", "0"};
 cvar_t scr_scoreboard_titleseperator = { "scr_scoreboard_titleseperator", "0" };
 
-#ifdef GLQUAKE
 cvar_t	scr_scoreboard_fillalpha = {"scr_scoreboard_fillalpha", "0.7"};
 cvar_t	scr_scoreboard_fillcolored = {"scr_scoreboard_fillcolored", "2"};		
-#endif
 
 /********************************** CONTROL **********************************/
 
@@ -143,10 +141,8 @@ void Sbar_CvarInit(void)
 	Cvar_Register (&scr_scoreboard_drawtitle);
 	Cvar_Register (&scr_scoreboard_borderless);
 	Cvar_Register (&scr_scoreboard_titleseperator);
-#ifdef GLQUAKE
 	Cvar_Register (&scr_scoreboard_fillalpha);
 	Cvar_Register (&scr_scoreboard_fillcolored);
-#endif
 
 	Cvar_ResetCurrentGroup();
 
@@ -1047,12 +1043,8 @@ static void Sbar_SoloScoreboard (void) {
 #define RANK_WIDTH_DM				(-8 + 168 + (MAX_SCOREBOARDNAME * 8))
 #define RANK_WIDTH_TEAM				(-8 + 208 + (MAX_SCOREBOARDNAME * 8))
 
-#ifdef GLQUAKE
 #define SCOREBOARD_ALPHA			(0.5 * bound(0, scr_scoreboard_fillalpha.value, 1))
 #define SCOREBOARD_HEADINGALPHA		(bound(0, scr_scoreboard_fillalpha.value, 1))
-#else
-#define Draw_AlphaFill(a, b, c, d, e, f)
-#endif
 
 static void Sbar_DeathmatchOverlay()
 {
@@ -1239,7 +1231,6 @@ static void Sbar_DeathmatchOverlay()
 		top = scr_scoreboard_forcecolors.value ? s->topcolor : s->real_topcolor;
 		bottom = scr_scoreboard_forcecolors.value ? s->bottomcolor : s->real_bottomcolor;
 
-#ifdef GLQUAKE
 		if (!cl.teamplay
 		 || s->spectator
 		 || !scr_scoreboard_fillcolored.value
@@ -1262,7 +1253,6 @@ static void Sbar_DeathmatchOverlay()
 				Draw_AlphaFill (xofs, y, rank_width, skip, Sbar_ColorForMap(bottom), SCOREBOARD_ALPHA);
 			}
 		}
-#endif
 
 		// draw ping
 		p = s->ping;
