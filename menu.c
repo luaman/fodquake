@@ -629,21 +629,21 @@ static void M_Options_Key(int k)
 
 static char *bindnames[][2] =
 {
-{"+attack", 		"attack"},
-{"+use", 			"use"},
-{"+jump", 			"jump"},
-{"+forward", 		"move forward"},
-{"+back", 			"move back"},
-{"+moveleft", 		"move left"},
-{"+moveright", 		"move right"},
-{"+moveup",			"swim up"},
-{"+movedown",		"swim down"},
-{"impulse 12", 		"previous weapon"},
-{"impulse 10", 		"next weapon"},
-{"+left", 			"turn left"},
-{"+right", 			"turn right"},
-{"+lookup", 		"look up"},
-{"+lookdown", 		"look down"},
+	{ "+attack",    "attack" },
+	{ "+use",       "use" },
+	{ "+jump",      "jump" },
+	{ "+forward",   "move forward" },
+	{ "+back",      "move back" },
+	{ "+moveleft",  "move left" },
+	{ "+moveright", "move right"},
+	{ "+moveup",    "swim up" },
+	{ "+movedown",  "swim down" },
+	{ "impulse 12", "previous weapon" },
+	{ "impulse 10", "next weapon" },
+	{ "+left",      "turn left" },
+	{ "+right",     "turn right" },
+	{ "+lookup",    "look up" },
+	{ "+lookdown",  "look down" },
 };
 
 #define	NUMCOMMANDS	(sizeof(bindnames)/sizeof(bindnames[0]))
