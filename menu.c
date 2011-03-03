@@ -55,49 +55,48 @@ enum {m_none, m_main, m_singleplayer, m_load, m_save, m_multiplayer,
 	m_gameoptions, m_fps, m_demos, m_mp3_control, m_mp3_playlist} m_state;
 
 static void M_Menu_Main_f(void);
-	void M_Menu_SinglePlayer_f(void);
-		void M_Menu_Load_f(void);
-		void M_Menu_Save_f(void);
-	void M_Menu_MultiPlayer_f(void);
-		void M_Menu_Setup_f(void);
-		void M_Menu_Demos_f(void);
-		void M_Menu_GameOptions_f(void);
+	static void M_Menu_SinglePlayer_f(void);
+		static void M_Menu_Load_f(void);
+		static void M_Menu_Save_f(void);
+	static void M_Menu_MultiPlayer_f(void);
+		static void M_Menu_Setup_f(void);
+		static void M_Menu_Demos_f(void);
+		static void M_Menu_GameOptions_f(void);
 	static void M_Menu_Options_f(void);
 		static void M_Menu_Keys_f(void);
-		void M_Menu_Fps_f(void);
-		void M_Menu_Video_f(void);
-	void M_Menu_MP3_Control_f(void);
-	void M_Menu_Quit_f(void);
+		static void M_Menu_Fps_f(void);
+		static void M_Menu_Video_f(void);
+	static void M_Menu_MP3_Control_f(void);
 
 static void M_Main_Draw(void);
-	void M_SinglePlayer_Draw(void);
-		void M_Load_Draw(void);
-		void M_Save_Draw(void);
-	void M_MultiPlayer_Draw(void);
-		void M_Setup_Draw(void);
-		void M_Demos_Draw(void);
-		void M_GameOptions_Draw(void);
+	static void M_SinglePlayer_Draw(void);
+		static void M_Load_Draw(void);
+		static void M_Save_Draw(void);
+	static void M_MultiPlayer_Draw(void);
+		static void M_Setup_Draw(void);
+		static void M_Demos_Draw(void);
+		static void M_GameOptions_Draw(void);
 	static void M_Options_Draw(void);
 		static void M_Keys_Draw(void);
-		void M_Fps_Draw(void);
-		void M_Video_Draw(void);
-	void M_Help_Draw(void);
-	void M_Quit_Draw(void);
+		static void M_Fps_Draw(void);
+		static void M_Video_Draw(void);
+	static void M_Help_Draw(void);
+	static void M_Quit_Draw(void);
 
 static void M_Main_Key(int key);
-	void M_SinglePlayer_Key(int key);
-		void M_Load_Key(int key);
-		void M_Save_Key(int key);
-	void M_MultiPlayer_Key(int key);
-		void M_Setup_Key(int key);
-		void M_Demos_Key(int key);
-		void M_GameOptions_Key(int key);
+	static void M_SinglePlayer_Key(int key);
+		static void M_Load_Key(int key);
+		static void M_Save_Key(int key);
+	static void M_MultiPlayer_Key(int key);
+		static void M_Setup_Key(int key);
+		static void M_Demos_Key(int key);
+		static void M_GameOptions_Key(int key);
 	static void M_Options_Key(int key);
 		static void M_Keys_Key(int key);
-		void M_Fps_Key(int key);
-		void M_Video_Key(int key);
-	void M_Help_Key(int key);
-	void M_Quit_Key(int key);
+		static void M_Fps_Key(int key);
+		static void M_Video_Key(int key);
+	static void M_Help_Key(int key);
+	static void M_Quit_Key(int key);
 
 
 qboolean	m_entersound;		// play after drawing a frame, so caching
@@ -188,7 +187,7 @@ static void M_DrawTextBox(int x, int y, int width, int lines)
 
 //=============================================================================
 
-void M_ToggleMenu_f(void)
+void M_ToggleMenu_f()
 {
 	m_entersound = true;
 
@@ -250,12 +249,12 @@ int	m_main_cursor;
 #define	MAIN_ITEMS	5
 
 
-static void M_Menu_Main_f(void)
+static void M_Menu_Main_f()
 {
 	M_EnterMenu (m_main);
 }
 
-static void M_Main_Draw(void)
+static void M_Main_Draw()
 {
 	int f;
 	mpic_t *p;
@@ -344,7 +343,7 @@ static void M_Main_Key(int key)
 static int		options_cursor;
 
 
-static void M_Menu_Options_f(void)
+static void M_Menu_Options_f()
 {
 	M_EnterMenu (m_options);
 }
@@ -448,7 +447,7 @@ static void M_DrawCheckbox(int x, int y, int on)
 		M_Print (x, y, "off");
 }
 
-static void M_Options_Draw(void)
+static void M_Options_Draw()
 {
 	float		r;
 	mpic_t	*p;
@@ -648,7 +647,7 @@ static char *bindnames[][2] =
 int		keys_cursor;
 int		bind_grab;
 
-static void M_Menu_Keys_f(void)
+static void M_Menu_Keys_f()
 {
 	M_EnterMenu (m_keys);
 }
@@ -711,7 +710,7 @@ static void M_UnbindCommand(char *command)
 }
 
 
-static void M_Keys_Draw(void)
+static void M_Keys_Draw()
 {
 	int x, y, i, l, keys[2];
 	char *name;
@@ -843,14 +842,14 @@ extern cvar_t r_fastsky;
 extern cvar_t r_drawflame;
 extern cvar_t gl_part_inferno;
 
-void M_Menu_Fps_f (void)
+static void M_Menu_Fps_f()
 {
 	M_EnterMenu (m_fps);
 }
 
 #define ALIGN_FPS_OPTIONS	208
 
-void M_Fps_Draw (void)
+static void M_Fps_Draw()
 {
 	mpic_t	*p;
 	char temp[32];
@@ -934,7 +933,7 @@ void M_Fps_Draw (void)
 	M_DrawCharacter (196, 32 + fps_cursor * 8, 12 + ((int) (curtime * 4) & 1));
 }
 
-void M_Fps_Key (int k)
+static void M_Fps_Key(int k)
 {
 	int i;
 
@@ -1141,7 +1140,7 @@ static void M_Menu_Video_Verify_Cleanup()
 	free(video_verify_oldactive_mode);
 }
 
-void M_Menu_Video_Verify_f(void)
+void M_Menu_Video_Verify_f()
 {
 	video_verify_oldcvar_width = strdup(vid_width.string);
 	video_verify_oldcvar_height = strdup(vid_height.string);
@@ -1172,7 +1171,7 @@ void M_Menu_Video_Verify_f(void)
 	M_EnterMenu(m_video_verify);
 }
 
-void M_Video_Verify_Draw(void)
+void M_Video_Verify_Draw()
 {
 	int timeremaining;
 	char buf[40];
@@ -1263,7 +1262,7 @@ static unsigned int video_windowmodecursor;
 static unsigned int video_windowmodelistbegin;
 static unsigned int video_typenum;
 
-void M_Menu_Video_f(void)
+void M_Menu_Video_f()
 {
 	M_EnterMenu (m_video);
 
@@ -1281,7 +1280,7 @@ void M_Menu_Video_f(void)
 	video_windowmodelistbegin = 0;
 }
 
-void M_Video_Draw (void)
+static void M_Video_Draw()
 {
 	const char * const *vidmodes;
 	const char *t;
@@ -1438,7 +1437,7 @@ void M_Video_Draw (void)
 	M_Print(160-(20*4), bottom-8, "Enter selects a mode");
 }
 
-void M_Video_Key (int key)
+static void M_Video_Key(int key)
 {
 	switch(key)
 	{
@@ -1524,18 +1523,18 @@ void M_Video_Key (int key)
 int		help_page;
 #define	NUM_HELP_PAGES	6
 
-void M_Menu_Help_f (void)
+static void M_Menu_Help_f()
 {
 	M_EnterMenu (m_help);
 	help_page = 0;
 }
 
-void M_Help_Draw (void)
+static void M_Help_Draw()
 {
 	M_DrawPic (0, 0, Draw_CachePic ( va("gfx/help%i.lmp", help_page)) );
 }
 
-void M_Help_Key (int key)
+static void M_Help_Key(int key)
 {
 	switch (key)
 	{
@@ -1569,7 +1568,7 @@ int		msgNumber;
 int		m_quit_prevstate;
 qboolean	wasInMenus;
 
-void M_Menu_Quit_f (void)
+void M_Menu_Quit_f()
 {
 	if (m_state == m_quit)
 		return;
@@ -1579,7 +1578,7 @@ void M_Menu_Quit_f (void)
 	M_EnterMenu (m_quit);
 }
 
-void M_Quit_Key (int key)
+static void M_Quit_Key(int key)
 {
 	switch (key)
 	{
@@ -1622,14 +1621,14 @@ qboolean m_singleplayer_notavail;
 
 extern	cvar_t	maxclients;
 
-void M_Menu_SinglePlayer_f (void)
+static void M_Menu_SinglePlayer_f()
 {
 	M_EnterMenu (m_singleplayer);
 	m_singleplayer_confirm = false;
 	m_singleplayer_notavail = false;
 }
 
-void M_SinglePlayer_Draw (void)
+static void M_SinglePlayer_Draw()
 {
 	int f;
 	mpic_t *p;
@@ -1668,7 +1667,7 @@ void M_SinglePlayer_Draw (void)
 	M_DrawTransPic (54, 32 + m_singleplayer_cursor * 20,Draw_CachePic( va("gfx/menudot%i.lmp", f+1 ) ) );
 }
 
-static void CheckSPGame (void)
+static void CheckSPGame ()
 {
 	FILE *f;
 
@@ -1686,7 +1685,7 @@ static void CheckSPGame (void)
 
 extern int file_from_gamedir;
 
-static void StartNewGame (void)
+static void StartNewGame ()
 {
 #if 0
 	key_dest = key_game;
@@ -1706,7 +1705,7 @@ static void StartNewGame (void)
 #endif
 }
 
-void M_SinglePlayer_Key (int key)
+static void M_SinglePlayer_Key(int key)
 {
 	if (m_singleplayer_notavail)
 	{
@@ -1804,12 +1803,12 @@ void M_SinglePlayer_Key (int key)
 
 #else	// !CLIENTONLY
 
-void M_Menu_SinglePlayer_f (void)
+static void M_Menu_SinglePlayer_f()
 {
 	M_EnterMenu (m_singleplayer);
 }
 
-void M_SinglePlayer_Draw (void)
+static void M_SinglePlayer_Draw()
 {
 	mpic_t *p;
 
@@ -1823,7 +1822,7 @@ void M_SinglePlayer_Draw (void)
 	M_PrintWhite (88, 13*8, "Internet play only");
 }
 
-void M_SinglePlayer_Key (key)
+static void M_SinglePlayer_Key(key)
 {
 	switch (key)
 	{
@@ -1849,7 +1848,7 @@ int		load_cursor;		// 0 < load_cursor < MAX_SAVEGAMES
 char	m_filenames[MAX_SAVEGAMES][SAVEGAME_COMMENT_LENGTH + 1];
 int		loadable[MAX_SAVEGAMES];
 
-void M_ScanSaves (char *sp_gamedir)
+static void M_ScanSaves(char *sp_gamedir)
 {
 	int i, j, version;
 	char name[MAX_OSPATH];
@@ -1875,7 +1874,7 @@ void M_ScanSaves (char *sp_gamedir)
 	}
 }
 
-void M_Menu_Load_f (void)
+static void M_Menu_Load_f()
 {
 	FILE *f;
 
@@ -1886,7 +1885,7 @@ void M_Menu_Load_f (void)
 	M_ScanSaves (!file_from_gamedir ? "qw" : com_gamedir);
 }
 
-void M_Menu_Save_f (void)
+static void M_Menu_Save_f()
 {
 	if (sv.state != ss_active)
 		return;
@@ -1897,7 +1896,7 @@ void M_Menu_Save_f (void)
 	M_ScanSaves (com_gamedir);
 }
 
-void M_Load_Draw (void)
+static void M_Load_Draw()
 {
 	int i;
 	mpic_t *p;
@@ -1912,7 +1911,7 @@ void M_Load_Draw (void)
 	M_DrawCharacter (8, 32 + load_cursor * 8, 12 + ((int)(curtime * 4) & 1));
 }
 
-void M_Save_Draw (void)
+static void M_Save_Draw()
 {
 	int i;
 	mpic_t *p;
@@ -1927,7 +1926,7 @@ void M_Save_Draw (void)
 	M_DrawCharacter (8, 32 + load_cursor * 8, 12 + ((int)(curtime * 4) & 1));
 }
 
-void M_Load_Key (int key)
+static void M_Load_Key(int key)
 {
 	switch (key)
 	{
@@ -1970,7 +1969,7 @@ void M_Load_Key (int key)
 	}
 }
 
-void M_Save_Key (int key)
+static void M_Save_Key(int key)
 {
 	switch (key)
 	{
@@ -2016,12 +2015,12 @@ int	m_multiplayer_cursor;
 #define	MULTIPLAYER_ITEMS	4
 #endif
 
-void M_Menu_MultiPlayer_f (void)
+static void M_Menu_MultiPlayer_f()
 {
 	M_EnterMenu (m_multiplayer);
 }
 
-void M_MultiPlayer_Draw (void)
+static void M_MultiPlayer_Draw()
 {
 	mpic_t	*p;
 
@@ -2039,7 +2038,7 @@ void M_MultiPlayer_Draw (void)
 	M_DrawCharacter (64, 40 + m_multiplayer_cursor * 8, 12 + ((int) (curtime * 4) & 1));
 }
 
-void M_MultiPlayer_Key (int key)
+static void M_MultiPlayer_Key(int key)
 {
 	switch (key)
 	{
@@ -2116,7 +2115,7 @@ static int last_status;
 void MP3_Menu_DrawInfo(void);
 void M_Menu_MP3_Playlist_f(void);
 
-void M_MP3_Control_Draw (void)
+static void M_MP3_Control_Draw()
 {
 	char songinfo_scroll[38 + 1], *s = NULL;
 	int i, scroll_index, print_time;
@@ -2348,7 +2347,7 @@ void M_Menu_MP3_Control_Key(int key)
 	Con_Unsuppress();
 }
 
-void M_Menu_MP3_Control_f (void){
+static void M_Menu_MP3_Control_f(void){
 	M_EnterMenu (m_mp3_control);
 }
 
@@ -2361,7 +2360,7 @@ void M_Menu_MP3_Control_f (void){
 static int playlist_size = 0;
 static int playlist_cursor = 0, playlist_base = 0;
 
-static void Center_Playlist(void)
+static void Center_Playlist()
 {
 	int current;
 
@@ -2385,7 +2384,7 @@ static char *playlist_entries[PLAYLIST_MAXENTRIES];
 
 #ifdef _WIN32
 
-void M_Menu_MP3_Playlist_Read(void)
+void M_Menu_MP3_Playlist_Read()
 {
 	int i, count = 0, skip = 0;
 	long length;
@@ -2411,7 +2410,7 @@ void M_Menu_MP3_Playlist_Read(void)
 
 #else
 
-void M_Menu_MP3_Playlist_Read(void)
+void M_Menu_MP3_Playlist_Read()
 {
 	int i;
 	char *title;
@@ -2444,7 +2443,7 @@ void M_Menu_MP3_Playlist_Read(void)
 
 #endif
 
-void M_Menu_MP3_Playlist_Draw(void)
+void M_Menu_MP3_Playlist_Draw()
 {
 	int	index, print_time, i;
 	char name[PLAYLIST_MAXTITLE];
@@ -2518,7 +2517,7 @@ menu_items:
 	M_DrawCharacter (17 + 286 * ((float) last_elapsed / last_total), M_MP3_CONTROL_BARHEIGHT, 131);
 }
 
-void M_Menu_MP3_Playlist_Key (int k)
+static void M_Menu_MP3_Playlist_Key(int k)
 {
 	Con_Suppress();
 
@@ -2610,7 +2609,7 @@ void M_Menu_MP3_Playlist_Key (int k)
 	Con_Unsuppress();
 }
 
-void M_Menu_MP3_Playlist_f (void){
+static void M_Menu_MP3_Playlist_f(void){
 	if (!MP3_IsActive())
 	{
 		M_Menu_MP3_Control_f();
@@ -2701,7 +2700,7 @@ int Demo_SortCompare(const void *p1, const void *p2)
 	}
 }
 
-static void Demo_SortDemos(void)
+static void Demo_SortDemos()
 {
 	int i;
 
@@ -2713,7 +2712,7 @@ static void Demo_SortDemos(void)
 	qsort(demolist, demolist_count, sizeof(direntry_t *), Demo_SortCompare);
 }
 
-static void Demo_PositionCursor(void)
+static void Demo_PositionCursor()
 {
 	int i;
 
@@ -2740,7 +2739,7 @@ static void Demo_PositionCursor(void)
 }
 
 
-static void Demo_ReadDirectory(void)
+static void Demo_ReadDirectory()
 {
 	int i, size;
 	direntry_type_t type;
@@ -2879,7 +2878,7 @@ static void Demo_ReadDirectory(void)
 	Demo_PositionCursor();
 }
 
-void M_Menu_Demos_f (void)
+static void M_Menu_Demos_f()
 {
 	static qboolean demo_currentdir_init = false;
 	char *s;
@@ -2927,7 +2926,7 @@ static void Demo_FormatSize (char *t)
 
 #define DEMOLIST_NAME_WIDTH	29
 
-void M_Demos_Draw (void)
+static void M_Demos_Draw()
 {
 	int i, y;
 	direntry_t *d;
@@ -3023,7 +3022,7 @@ void M_Demos_Draw (void)
 
 }
 
-void M_Demos_Key (int key)
+static void M_Demos_Key(int key)
 {
 	char *p;
 	demo_sort_t sort_target;
@@ -3249,7 +3248,7 @@ int _maxclients, _maxspectators;
 int _deathmatch, _teamplay, _skill, _coop;
 int _fraglimit, _timelimit;
 
-void M_Menu_GameOptions_f (void)
+static void M_Menu_GameOptions_f()
 {
 	M_EnterMenu (m_gameoptions);
 
@@ -3270,7 +3269,7 @@ int gameoptions_cursor_table[] = {40, 56, 64, 72, 80, 96, 104, 120, 128};
 #define	NUM_GAMEOPTIONS	9
 int		gameoptions_cursor;
 
-void M_GameOptions_Draw (void)
+static void M_GameOptions_Draw()
 {
 	mpic_t *p;
 	char *msg;
@@ -3340,7 +3339,7 @@ void M_GameOptions_Draw (void)
 	M_DrawCharacter (144, gameoptions_cursor_table[gameoptions_cursor], 12+((int)(curtime*4)&1));
 }
 
-void M_NetStart_Change (int dir)
+static void M_NetStart_Change(int dir)
 {
 	int count;
 	extern cvar_t	registered;
@@ -3425,7 +3424,7 @@ void M_NetStart_Change (int dir)
 	}
 }
 
-void M_GameOptions_Key (int key)
+static void M_GameOptions_Key(int key)
 {
 	switch (key)
 	{
@@ -3537,7 +3536,7 @@ extern cvar_t	topcolor, bottomcolor;
 
 #define	NUM_SETUP_CMDS	5
 
-void M_Menu_Setup_f (void)
+static void M_Menu_Setup_f()
 {
 	M_EnterMenu (m_setup);
 	Q_strncpyz (setup_name, name.string, sizeof(setup_name));
@@ -3546,7 +3545,7 @@ void M_Menu_Setup_f (void)
 	setup_bottom = setup_oldbottom = (int)bottomcolor.value;
 }
 
-void M_Setup_Draw (void)
+static void M_Setup_Draw()
 {
 	mpic_t	*p;
 
@@ -3583,7 +3582,7 @@ void M_Setup_Draw (void)
 		M_DrawCharacter (168 + 8*strlen(setup_team), setup_cursor_table [setup_cursor], 10+((int)(curtime*4)&1));
 }
 
-void M_Setup_Key (int k)
+static void M_Setup_Key(int k)
 {
 	int l;
 
@@ -3704,7 +3703,7 @@ void M_Setup_Key (int k)
 		setup_bottom = 13;
 }
 
-void M_Quit_Draw (void)
+static void M_Quit_Draw()
 {
 	static char *quitmsg[] =
 	{
@@ -3743,7 +3742,7 @@ void M_Quit_Draw (void)
 //=============================================================================
 /* Menu Subsystem */
 
-void M_CvarInit (void)
+void M_CvarInit()
 {
 	Cvar_SetCurrentGroup(CVAR_GROUP_SCREEN);
 	Cvar_Register (&scr_centerMenu);
@@ -3777,7 +3776,7 @@ void M_CvarInit (void)
 	Cmd_AddCommand ("menu_quit", M_Menu_Quit_f);
 }
 
-void M_Draw (void)
+void M_Draw()
 {
 	if (m_state == m_none || key_dest != key_menu)
 		return;
@@ -3943,7 +3942,7 @@ void M_Draw (void)
 #endif
 }
 
-void M_Keydown (int key)
+void M_Keydown(int key)
 {
 	switch (m_state)
 	{
