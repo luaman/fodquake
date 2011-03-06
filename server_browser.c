@@ -1892,7 +1892,6 @@ static int sort_players(const void *a, const void *b)
 	return (y->frags - x->frags);
 }
 
-void Draw_AlphaFill (int x, int y, int w, int h, int c, float alpha);
 static void SB_Draw_Server(void)
 {
 	int k, i, x, y, z, header_distance, header_x;
@@ -2087,7 +2086,6 @@ static void SB_Draw_Server(void)
 
 		
 
-		#ifdef GLQUAKE
 		if (sb_highlight_sort_column.value)
 		{
 			for (header_x=0, header_distance=0; header_x<tab->columns; header_x++)
@@ -2101,7 +2099,6 @@ static void SB_Draw_Server(void)
 					header_distance += tab->column_types[header_x].length + 1;
 			}
 		}
-		#endif
 
 		string[0] = 0;
 		
