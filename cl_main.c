@@ -1775,6 +1775,8 @@ void CL_Init (void)
 	MP3_Init();
 
 	Sleep_Init();
+
+	M_Init();
 }
 
 //============================================================================
@@ -1992,6 +1994,8 @@ void CL_Frame (double time)
 
 void CL_Shutdown (void)
 {
+	M_Shutdown();
+
 	CL_Disconnect();
 
 	CL_WriteConfiguration();

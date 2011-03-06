@@ -50,9 +50,29 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <sys/stat.h>
 #endif
 
-enum {m_none, m_main, m_singleplayer, m_load, m_save, m_multiplayer,
-	m_setup, m_options, m_video, m_video_verify, m_keys, m_help, m_quit,
-	m_gameoptions, m_fps, m_demos, m_mp3_control, m_mp3_playlist} m_state;
+enum menustates
+{
+	m_none,
+	m_main,
+	m_singleplayer,
+	m_load,
+	m_save,
+	m_multiplayer,
+	m_setup,
+	m_options,
+	m_video,
+	m_video_verify,
+	m_keys,
+	m_help,
+	m_quit,
+	m_gameoptions,
+	m_fps,
+	m_demos,
+	m_mp3_control,
+	m_mp3_playlist
+};
+
+static enum menustates m_state;
 
 static void M_Menu_Main_f(void);
 	static void M_Menu_SinglePlayer_f(void);
@@ -87,17 +107,21 @@ static void M_Main_Key(int key);
 	static void M_SinglePlayer_Key(int key);
 		static void M_Load_Key(int key);
 		static void M_Save_Key(int key);
-	static void M_MultiPlayer_Key(int key);
+
 		static void M_Setup_Key(int key);
 		static void M_Demos_Key(int key);
 		static void M_GameOptions_Key(int key);
-	static void M_Options_Key(int key);
+
 		static void M_Keys_Key(int key);
-		static void M_Fps_Key(int key);
 		static void M_Video_Key(int key);
 	static void M_Help_Key(int key);
 	static void M_Quit_Key(int key);
 
+static struct Menu *multiplayermenu;
+static struct Menu *optionsmenu;
+static struct Menu *fpsmenu;
+
+static struct MenuItem *optionsmenu_usemouse;
 
 qboolean	m_entersound;		// play after drawing a frame, so caching
 								// won't disrupt the sound
@@ -242,6 +266,686 @@ static void M_LeaveMenu(int parent)
 	}
 }
 
+/* Some less ugly menu crapola */
+
+struct MenuItem
+{
+	struct MenuItem *next;
+	char *label;
+	unsigned int labellen;
+	int whitelabel;
+	int isselectable;
+	int hidden;
+
+	int selectindex;
+
+	unsigned int x;
+	unsigned int y;
+
+	void (*delete)(struct MenuItem *);
+	void (*draw)(struct MenuItem *, unsigned int extra_x, unsigned int extra_width);
+	void (*handlekey)(struct MenuItem *, int key);
+};
+
+struct MenuItemButton
+{
+	struct MenuItem menuitem;
+
+	void (*callback)(void);
+};
+
+struct MenuItemCvarRange
+{
+	struct MenuItem menuitem;
+
+	float minvalue;
+	float maxvalue;
+	float step;
+	cvar_t *cvar;
+};
+
+struct MenuItemCvarBoolean
+{
+	struct MenuItem menuitem;
+
+	cvar_t *cvar;
+	int invert;
+};
+
+struct MenuItemCvarPosNegBoolean
+{
+	struct MenuItem menuitem;
+
+	cvar_t *cvar;
+};
+
+struct MenuItemCvarMultiSelect
+{
+	struct MenuItem menuitem;
+
+	cvar_t *cvar;
+	const char * const *values;
+	int numvalues;
+};
+
+struct Menu
+{
+	int error;
+
+	struct MenuItem *items;
+	struct MenuItem **selectableitemarray;
+	unsigned int numselectableitems;
+
+	int cursor_right;
+	enum menustates prevmenu;
+
+	unsigned int cursor;
+	unsigned int cursor_x;
+	unsigned int cursor_y;
+
+	unsigned int extra_x;
+	unsigned int extra_width;
+};
+
+static struct Menu *Menu_Create(int cursor_right, enum menustates prevmenu)
+{
+	struct Menu *menu;
+
+	menu = malloc(sizeof(*menu));
+	if (menu)
+	{
+		menu->items = 0;
+		menu->selectableitemarray = 0;
+		menu->numselectableitems = 0;
+		menu->error = 0;
+		menu->cursor = 0;
+
+		menu->cursor_right = cursor_right;
+		menu->prevmenu = prevmenu;
+
+		return menu;
+	}
+
+	return 0;
+}
+
+static void Menu_Delete(struct Menu *menu)
+{
+	struct MenuItem *menuitem, *nextmenuitem;
+
+	if (menu == 0)
+		return;
+
+	nextmenuitem = menu->items;
+	while((menuitem = nextmenuitem))
+	{
+		nextmenuitem = menuitem->next;
+
+		menuitem->delete(menuitem);
+	}
+
+	free(menu->selectableitemarray);
+	free(menu);
+}
+
+static void Menu_Layout(struct Menu *menu)
+{
+	struct MenuItem *menuitem;
+	unsigned int numselectableitems;
+	unsigned int labelwidth;
+	unsigned int labelstart;
+	unsigned int y;
+	unsigned int i;
+
+	if (menu == 0)
+		return;
+
+	labelwidth = 0;
+	numselectableitems = 0;
+	menuitem = menu->items;
+	while(menuitem)
+	{
+		if (!menuitem->hidden)
+		{
+			if (menuitem->labellen > labelwidth)
+				labelwidth = menuitem->labellen;
+
+			if (menuitem->isselectable)
+				numselectableitems++;
+		}
+
+		menuitem = menuitem->next;
+	}
+
+	menu->numselectableitems = numselectableitems;
+
+	free(menu->selectableitemarray);
+	menu->selectableitemarray = malloc(numselectableitems*(sizeof(*menu->selectableitemarray)));
+	if (menu->selectableitemarray == 0)
+	{
+		menu->error = 1;
+		return;
+	}
+
+	labelstart = 48;
+	y = 32;
+	i = 0;
+
+	if (menu->cursor_right)
+	{
+		menu->cursor_x = labelstart + labelwidth * 8 + 8;
+	}
+	else
+	{
+		menu->cursor_x = labelstart + 8;
+		labelstart += 8 * 3;
+	}
+
+	menuitem = menu->items;
+	while(menuitem)
+	{
+		if (!menuitem->hidden)
+		{
+			if (menuitem->isselectable)
+			{
+				menuitem->selectindex = i;
+				menu->selectableitemarray[i++] = menuitem;
+			}
+
+			if (menu->cursor_right)
+				menuitem->x = labelstart + (labelwidth - menuitem->labellen) * 8;
+			else
+				menuitem->x = labelstart;
+			menuitem->y = y;
+
+			y += 8;
+		}
+
+		menuitem = menuitem->next;
+	}
+
+	menu->cursor_y = 32;
+
+	menu->extra_x = menu->cursor_x + 16;
+	menu->extra_width = 320 - menu->extra_x - 8;
+}
+
+static void Menu_Draw(struct Menu *menu)
+{
+	struct MenuItem *menuitem;
+
+	if (menu == 0 || menu->error)
+		return;
+
+	menuitem = menu->items;
+	while(menuitem)
+	{
+		if (!menuitem->hidden)
+		{
+			if (menuitem->whitelabel)
+				M_PrintWhite(menuitem->x, menuitem->y, menuitem->label);
+			else
+				M_Print(menuitem->x, menuitem->y, menuitem->label);
+
+			menuitem->draw(menuitem, menu->extra_x, menu->extra_width);
+		}
+
+		menuitem = menuitem->next;
+	}
+
+	M_DrawCharacter(menu->cursor_x, menu->selectableitemarray[menu->cursor]->y, 12 + ((int)(curtime * 4) & 1));
+}
+
+static void Menu_ShowItem(struct Menu *menu, struct MenuItem *menuitem)
+{
+	if (menu == 0 || menuitem == 0)
+		return;
+
+	menuitem->hidden = 0;
+
+	Menu_Layout(menu);
+
+	if (menuitem->isselectable && menuitem->selectindex <= menu->cursor)
+		menu->cursor++;
+}
+
+static void Menu_HideItem(struct Menu *menu, struct MenuItem *menuitem)
+{
+	if (menu == 0 || menuitem == 0)
+		return;
+
+	menuitem->hidden = 1;
+
+	if (menuitem->isselectable && menu->cursor != 0 && menuitem->selectindex <= menu->cursor)
+		menu->cursor--;
+
+	Menu_Layout(menu);
+}
+
+static void Menu_HandleKey(struct Menu *menu, int key)
+{
+	switch(key)
+	{
+		case K_BACKSPACE:
+			m_topmenu = m_none;	// intentional fallthrough
+		case K_ESCAPE:
+			M_LeaveMenu(menu?menu->prevmenu:m_main);
+			break;
+	}
+
+	if (menu == 0 || menu->error)
+		return;
+
+	switch(key)
+	{
+		case K_HOME:
+		case K_PGUP:
+			menu->cursor = 0;
+
+			break;
+
+		case K_END:
+		case K_PGDN:
+			menu->cursor = menu->numselectableitems = 1;
+
+			break;
+
+		case K_UPARROW:
+			if (menu->cursor == 0)
+				menu->cursor = menu->numselectableitems - 1;
+			else
+				menu->cursor--;
+
+			break;
+
+		case K_DOWNARROW:
+			if (menu->cursor == menu->numselectableitems - 1)
+				menu->cursor = 0;
+			else
+				menu->cursor++;
+
+			break;
+
+		default:
+			menu->selectableitemarray[menu->cursor]->handlekey(menu->selectableitemarray[menu->cursor], key);
+
+			return;
+	}
+
+	S_LocalSound("misc/menu1.wav");
+}
+
+static int MenuItem_SetLabel(struct MenuItem *menuitem, const char *label, int white)
+{
+	unsigned int labellen;
+
+	labellen = strlen(label);
+	menuitem->label = malloc(labellen + 1);
+	if (menuitem->label)
+	{
+		menuitem->labellen = labellen;
+		menuitem->whitelabel = white;
+		memcpy(menuitem->label, label, labellen + 1);
+
+		return 1;
+	}
+
+	return 0;
+}
+
+static void Menu_AddItem(struct Menu *menu, struct MenuItem *menuitem)
+{
+	struct MenuItem *mi;
+
+	if (menuitem == 0)
+	{
+		menu->error = 1;
+		return;
+	}
+
+	menuitem->next = 0;
+
+	if (menu->items)
+	{
+		mi = menu->items;
+		while(mi->next)
+			mi = mi->next;
+
+		mi->next = menuitem;
+	}
+	else
+	{
+		menu->items = menuitem;
+	}
+}
+
+static void MenuItem_Delete(struct MenuItem *menuitem)
+{
+	free(menuitem->label);
+	free(menuitem);
+}
+
+static void MenuItemButton_HandleKey(struct MenuItem *menuitem, int key)
+{
+	struct MenuItemButton *menuitembutton;
+
+	menuitembutton = (struct MenuItemButton *)menuitem;
+
+	if (key == K_ENTER)
+	{
+		S_LocalSound("misc/menu2.wav");
+		menuitembutton->callback();
+	}
+}
+
+static void MenuItemButton_Draw(struct MenuItem *menuitem, unsigned int extra_x, unsigned int extra_width)
+{
+}
+
+static struct MenuItem *MenuItemButton_Create(const char *label, int white, void (*callback)(void))
+{
+	struct MenuItemButton *menuitembutton;
+
+	menuitembutton = malloc(sizeof(*menuitembutton));
+	if (menuitembutton)
+	{
+		if (MenuItem_SetLabel((struct MenuItem *)menuitembutton, label, white))
+		{
+			menuitembutton->menuitem.delete = MenuItem_Delete;
+			menuitembutton->menuitem.draw = MenuItemButton_Draw;
+			menuitembutton->menuitem.handlekey = MenuItemButton_HandleKey;
+			menuitembutton->menuitem.isselectable = 1;
+			menuitembutton->menuitem.hidden = 0;
+
+			menuitembutton->callback = callback;
+
+			return (struct MenuItem *)menuitembutton;
+		}
+
+		free(menuitembutton);
+	}
+
+	return 0;
+}
+
+static void MenuItemCvarRange_Draw(struct MenuItem *menuitem, unsigned int extra_x, unsigned int extra_width)
+{
+	struct MenuItemCvarRange *menuitemcvarrange;
+	int i;
+	float position;
+
+	menuitemcvarrange = (struct MenuItemCvarRange *)menuitem;
+
+	position = (bound(menuitemcvarrange->minvalue, menuitemcvarrange->cvar->value, menuitemcvarrange->maxvalue) - menuitemcvarrange->minvalue) / (menuitemcvarrange->maxvalue - menuitemcvarrange->minvalue);
+	if (menuitemcvarrange->step < 0)
+		position = 1-position;
+
+	M_DrawCharacter(extra_x, menuitemcvarrange->menuitem.y, 128);
+	for(i=0;i<(extra_width/8)-2;i++)
+		M_DrawCharacter(extra_x + 8 + i*8, menuitemcvarrange->menuitem.y, 129);
+	M_DrawCharacter(extra_x + 8 + i*8, menuitemcvarrange->menuitem.y, 130);
+	M_DrawCharacter(extra_x + 8 + (position * ((i-1)*8)), menuitemcvarrange->menuitem.y, 131);
+}
+
+static void MenuItemCvarRange_HandleKey(struct MenuItem *menuitem, int key)
+{
+	struct MenuItemCvarRange *menuitemcvarrange;
+
+	menuitemcvarrange = (struct MenuItemCvarRange *)menuitem;
+
+	switch(key)
+	{
+		case K_ENTER:
+		case K_RIGHTARROW:
+			Cvar_SetValue(menuitemcvarrange->cvar, bound(menuitemcvarrange->minvalue, menuitemcvarrange->cvar->value + menuitemcvarrange->step, menuitemcvarrange->maxvalue));
+			break;
+
+		case K_LEFTARROW:
+			Cvar_SetValue(menuitemcvarrange->cvar, bound(menuitemcvarrange->minvalue, menuitemcvarrange->cvar->value - menuitemcvarrange->step, menuitemcvarrange->maxvalue));
+			break;
+
+		default:
+			return;
+	}
+
+	S_LocalSound("misc/menu3.wav");
+}
+
+static struct MenuItem *MenuItemCvarRange_Create(const char *label, float minvalue, float maxvalue, float step, cvar_t *cvar)
+{
+	struct MenuItemCvarRange *menuitemcvarrange;
+
+	menuitemcvarrange = malloc(sizeof(*menuitemcvarrange));
+	if (menuitemcvarrange)
+	{
+		if (MenuItem_SetLabel((struct MenuItem *)menuitemcvarrange, label, 0))
+		{
+			menuitemcvarrange->menuitem.delete = MenuItem_Delete;
+			menuitemcvarrange->menuitem.draw = MenuItemCvarRange_Draw;
+			menuitemcvarrange->menuitem.handlekey = MenuItemCvarRange_HandleKey;
+			menuitemcvarrange->menuitem.isselectable = 1;
+			menuitemcvarrange->menuitem.hidden = 0;
+
+			menuitemcvarrange->minvalue = minvalue;
+			menuitemcvarrange->maxvalue = maxvalue;
+			menuitemcvarrange->step = step;
+			menuitemcvarrange->cvar = cvar;
+
+			return (struct MenuItem *)menuitemcvarrange;
+		}
+
+		free(menuitemcvarrange);
+	}
+
+	return 0;
+}
+
+static void MenuItemCvarBoolean_Draw(struct MenuItem *menuitem, unsigned int extra_x, unsigned int extra_width)
+{
+	struct MenuItemCvarBoolean *menuitemcvarboolean;
+
+	menuitemcvarboolean = (struct MenuItemCvarBoolean *)menuitem;
+
+	M_Print(extra_x + 8, menuitem->y, ((!!menuitemcvarboolean->cvar->value)^menuitemcvarboolean->invert)?"on":"off");
+}
+
+static void MenuItemCvarBoolean_HandleKey(struct MenuItem *menuitem, int key)
+{
+	struct MenuItemCvarBoolean *menuitemcvarboolean;
+
+	menuitemcvarboolean = (struct MenuItemCvarBoolean *)menuitem;
+
+	switch(key)
+	{
+		case K_ENTER:
+		case K_RIGHTARROW:
+		case K_LEFTARROW:
+			S_LocalSound("misc/menu3.wav");
+			Cvar_SetValue(menuitemcvarboolean->cvar, !menuitemcvarboolean->cvar->value);
+			break;
+	}
+}
+
+static struct MenuItem *MenuItemCvarBoolean_Create(const char *label, cvar_t *cvar, int invert)
+{
+	struct MenuItemCvarBoolean *menuitemcvarboolean;
+
+	menuitemcvarboolean = malloc(sizeof(*menuitemcvarboolean));
+	if (menuitemcvarboolean)
+	{
+		if (MenuItem_SetLabel((struct MenuItem *)menuitemcvarboolean, label, 0))
+		{
+			menuitemcvarboolean->menuitem.delete = MenuItem_Delete;
+			menuitemcvarboolean->menuitem.draw = MenuItemCvarBoolean_Draw;
+			menuitemcvarboolean->menuitem.handlekey = MenuItemCvarBoolean_HandleKey;
+			menuitemcvarboolean->menuitem.isselectable = 1;
+			menuitemcvarboolean->menuitem.hidden = 0;
+
+			menuitemcvarboolean->cvar = cvar;
+			menuitemcvarboolean->invert = invert;
+
+			return (struct MenuItem *)menuitemcvarboolean;
+		}
+
+		free(menuitemcvarboolean);
+	}
+
+	return 0;
+}
+
+static void MenuItemCvarPosNegBoolean_Draw(struct MenuItem *menuitem, unsigned int extra_x, unsigned int extra_width)
+{
+	struct MenuItemCvarPosNegBoolean *menuitemcvarposnegboolean;
+
+	menuitemcvarposnegboolean = (struct MenuItemCvarPosNegBoolean *)menuitem;
+
+	M_Print(extra_x + 8, menuitem->y, menuitemcvarposnegboolean->cvar->value<0?"on":"off");
+}
+
+static void MenuItemCvarPosNegBoolean_HandleKey(struct MenuItem *menuitem, int key)
+{
+	struct MenuItemCvarPosNegBoolean *menuitemcvarposnegboolean;
+
+	menuitemcvarposnegboolean = (struct MenuItemCvarPosNegBoolean *)menuitem;
+
+	switch(key)
+	{
+		case K_ENTER:
+		case K_RIGHTARROW:
+		case K_LEFTARROW:
+			S_LocalSound("misc/menu3.wav");
+			Cvar_SetValue(menuitemcvarposnegboolean->cvar, -menuitemcvarposnegboolean->cvar->value);
+			break;
+	}
+}
+
+static struct MenuItem *MenuItemCvarPosNegBoolean_Create(const char *label, cvar_t *cvar)
+{
+	struct MenuItemCvarPosNegBoolean *menuitemcvarposnegboolean;
+
+	menuitemcvarposnegboolean = malloc(sizeof(*menuitemcvarposnegboolean));
+	if (menuitemcvarposnegboolean)
+	{
+		if (MenuItem_SetLabel((struct MenuItem *)menuitemcvarposnegboolean, label, 0))
+		{
+			menuitemcvarposnegboolean->menuitem.delete = MenuItem_Delete;
+			menuitemcvarposnegboolean->menuitem.draw = MenuItemCvarPosNegBoolean_Draw;
+			menuitemcvarposnegboolean->menuitem.handlekey = MenuItemCvarPosNegBoolean_HandleKey;
+			menuitemcvarposnegboolean->menuitem.isselectable = 1;
+			menuitemcvarposnegboolean->menuitem.hidden = 0;
+
+			menuitemcvarposnegboolean->cvar = cvar;
+
+			return (struct MenuItem *)menuitemcvarposnegboolean;
+		}
+
+		free(menuitemcvarposnegboolean);
+	}
+
+	return 0;
+}
+
+static void MenuItemCvarMultiSelect_Draw(struct MenuItem *menuitem, unsigned int extra_x, unsigned int extra_width)
+{
+	struct MenuItemCvarMultiSelect *menuitemcvarmultiselect;
+	int value;
+
+	menuitemcvarmultiselect = (struct MenuItemCvarMultiSelect *)menuitem;
+
+	value = menuitemcvarmultiselect->cvar->value;
+	if (value < 0 || value >= menuitemcvarmultiselect->numvalues)
+		value = 0;
+
+	M_Print(extra_x + 8, menuitem->y, menuitemcvarmultiselect->values[value]);
+}
+
+static void MenuItemCvarMultiSelect_HandleKey(struct MenuItem *menuitem, int key)
+{
+	struct MenuItemCvarMultiSelect *menuitemcvarmultiselect;
+	int value;
+
+	menuitemcvarmultiselect = (struct MenuItemCvarMultiSelect *)menuitem;
+
+	value = menuitemcvarmultiselect->cvar->value;
+
+	switch(key)
+	{
+		case K_ENTER:
+		case K_RIGHTARROW:
+			S_LocalSound("misc/menu2.wav");
+			value++;
+			if (value >= menuitemcvarmultiselect->numvalues)
+				value = 0;
+
+			Cvar_SetValue(menuitemcvarmultiselect->cvar, value);
+			break;
+
+		case K_LEFTARROW:
+			S_LocalSound("misc/menu2.wav");
+			value--;
+			if (value < 0)
+				value = menuitemcvarmultiselect->numvalues - 1;
+
+			Cvar_SetValue(menuitemcvarmultiselect->cvar, value);
+			break;
+	}
+}
+
+static struct MenuItem *MenuItemCvarMultiSelect_Create(const char *label, cvar_t *cvar, const char * const *values)
+{
+	struct MenuItemCvarMultiSelect *menuitemcvarmultiselect;
+	unsigned int i;
+
+	menuitemcvarmultiselect = malloc(sizeof(*menuitemcvarmultiselect));
+	if (menuitemcvarmultiselect)
+	{
+		if (MenuItem_SetLabel((struct MenuItem *)menuitemcvarmultiselect, label, 0))
+		{
+			menuitemcvarmultiselect->menuitem.delete = MenuItem_Delete;
+			menuitemcvarmultiselect->menuitem.draw = MenuItemCvarMultiSelect_Draw;
+			menuitemcvarmultiselect->menuitem.handlekey = MenuItemCvarMultiSelect_HandleKey;
+			menuitemcvarmultiselect->menuitem.isselectable = 1;
+			menuitemcvarmultiselect->menuitem.hidden = 0;
+
+			menuitemcvarmultiselect->cvar = cvar;
+			menuitemcvarmultiselect->values = values;
+
+			for(i=0;values[i];i++);
+
+			menuitemcvarmultiselect->numvalues = i;
+
+			return (struct MenuItem *)menuitemcvarmultiselect;
+		}
+
+		free(menuitemcvarmultiselect);
+	}
+
+	return 0;
+}
+
+static struct MenuItem *MenuItemSpacer_Create()
+{
+	struct MenuItem *menuitem;
+
+	menuitem = malloc(sizeof(*menuitem));
+	if (menuitem)
+	{
+		if (MenuItem_SetLabel(menuitem, "", 0))
+		{
+			menuitem->delete = MenuItem_Delete;
+			menuitem->draw = MenuItemButton_Draw;
+			menuitem->isselectable = 0;
+			menuitem->hidden = 0;
+
+			return menuitem;
+		}
+
+		free(menuitem);
+	}
+
+	return 0;
+}
+
 //=============================================================================
 /* MAIN MENU */
 
@@ -336,289 +1040,50 @@ static void M_Main_Key(int key)
 //=============================================================================
 /* OPTIONS MENU */
 
-#define	OPTIONS_ITEMS	16
-
-#define	SLIDER_RANGE	10
-
-static int		options_cursor;
-
-
 static void M_Menu_Options_f()
 {
 	M_EnterMenu (m_options);
 }
 
-
-static void M_AdjustSliders(int dir)
+static void M_Options_GoToConsole()
 {
-	S_LocalSound ("misc/menu3.wav");
-
-	switch (options_cursor)
-	{
-	case 4:	// screen size
-		scr_viewsize.value += dir * 10;
-		if (scr_viewsize.value < 30)
-			scr_viewsize.value = 30;
-		if (scr_viewsize.value > 120)
-			scr_viewsize.value = 120;
-		Cvar_SetValue (&scr_viewsize, scr_viewsize.value);
-		break;
-	case 5:	// gamma
-		v_gamma.value -= dir * 0.05;
-		if (v_gamma.value < 0.5)
-			v_gamma.value = 0.5;
-		if (v_gamma.value > 1)
-			v_gamma.value = 1;
-		Cvar_SetValue (&v_gamma, v_gamma.value);
-		break;
-	case 6:	// contrast
-		v_contrast.value += dir * 0.1;
-		if (v_contrast.value < 1)
-			v_contrast.value = 1;
-		if (v_contrast.value > 2)
-			v_contrast.value = 2;
-		Cvar_SetValue (&v_contrast, v_contrast.value);
-		break;
-	case 7:	// mouse speed
-		sensitivity.value += dir * 0.5;
-		if (sensitivity.value < 1)
-			sensitivity.value = 1;
-		if (sensitivity.value > 11)
-			sensitivity.value = 11;
-		Cvar_SetValue (&sensitivity, sensitivity.value);
-		break;
-	case 8:	// music volume
-#ifdef _WIN32
-		bgmvolume.value += dir * 1.0;
-#else
-		bgmvolume.value += dir * 0.1;
-#endif
-		if (bgmvolume.value < 0)
-			bgmvolume.value = 0;
-		if (bgmvolume.value > 1)
-			bgmvolume.value = 1;
-		Cvar_SetValue (&bgmvolume, bgmvolume.value);
-		break;
-	case 9:	// sfx volume
-		s_volume.value += dir * 0.1;
-		if (s_volume.value < 0)
-			s_volume.value = 0;
-		if (s_volume.value > 1)
-			s_volume.value = 1;
-		Cvar_SetValue (&s_volume, s_volume.value);
-		break;
-
-	case 10:	// invert mouse
-		Cvar_SetValue (&m_pitch, -m_pitch.value);
-		break;
-
-	case 11:
-		Cvar_SetValue (&cl_sbar, !cl_sbar.value);
-		break;
-
-	case 12:
-		Cvar_SetValue (&cl_hudswap, !cl_hudswap.value);
-		break;
-
-	case 15:	// _windowed_mouse
-		Cvar_SetValue (&in_grab_windowed_mouse, !in_grab_windowed_mouse.value);
-		break;
-	}
+	m_state = m_none;
+	key_dest = key_console;
 }
 
-
-static void M_DrawSlider(int x, int y, float range)
+static void M_Options_ResetToDefaults()
 {
-	int	i;
-
-	range = bound(0, range, 1);
-	M_DrawCharacter (x-8, y, 128);
-	for (i=0 ; i<SLIDER_RANGE ; i++)
-		M_DrawCharacter (x + i*8, y, 129);
-	M_DrawCharacter (x+i*8, y, 130);
-	M_DrawCharacter (x + (SLIDER_RANGE-1)*8 * range, y, 131);
+	Cbuf_AddText("exec default.cfg\n");
 }
 
-static void M_DrawCheckbox(int x, int y, int on)
+static void M_Options_SaveConfiguration()
 {
-	if (on)
-		M_Print (x, y, "on");
-	else
-		M_Print (x, y, "off");
+	Cbuf_AddText("cfg_save config.cfg\n");
 }
 
 static void M_Options_Draw()
 {
-	float		r;
-	mpic_t	*p;
-	int y;
+	mpic_t *p;
+	static int fs;
+	int newfs;
 
-	M_DrawTransPic (16, 4, Draw_CachePic ("gfx/qplaque.lmp") );
-	p = Draw_CachePic ("gfx/p_option.lmp");
-	M_DrawPic ( (320-p->width)/2, 4, p);
+	M_DrawTransPic(16, 4, Draw_CachePic("gfx/qplaque.lmp"));
+	p = Draw_CachePic("gfx/p_option.lmp");
+	M_DrawPic((320-p->width)/2, 4, p);
 
-	y = 32;
-
-	M_Print (16, y, "    Customize controls");
-	y += 8;
-
-	M_Print (16, y, "         Go to console");
-	y += 8;
-
-	M_Print (16, y, "     Reset to defaults");
-	y += 8;
-
-	M_Print (16, y, "    Save configuration");
-	y += 8;
-
-
-	M_Print (16, y, "           Screen size");
-	r = (scr_viewsize.value - 30) / (120 - 30);
-	M_DrawSlider (220, y, r);
-	y += 8;
-
-	M_Print (16, y, "                 Gamma");
-	r = (1.0 - v_gamma.value) / 0.5;
-	M_DrawSlider (220, y, r);
-	y += 8;
-
-	M_Print (16, y, "              Contrast");
-	r = v_contrast.value - 1.0;
-	M_DrawSlider (220, y, r);
-	y += 8;
-
-	M_Print (16, y, "           Mouse speed");
-	r = (sensitivity.value - 1)/10;
-	M_DrawSlider (220, y, r);
-	y += 8;
-
-	M_Print (16, y, "       CD music volume");
-	r = bgmvolume.value;
-	M_DrawSlider (220, y, r);
-	y += 8;
-
-	M_Print (16, y, "          Sound volume");
-	r = s_volume.value;
-	M_DrawSlider (220, y, r);
-	y += 8;
-
-	M_Print (16, y, "          Invert mouse");
-	M_DrawCheckbox (220, y, m_pitch.value < 0);
-	y += 8;
-
-	M_Print (16, y, "    Use old status bar");
-	M_DrawCheckbox (220, y, cl_sbar.value);
-	y += 8;
-
-	M_Print (16, y, "      HUD on left side");
-	M_DrawCheckbox (220, y, cl_hudswap.value);
-	y += 8;
-
-	M_Print (16, y, "          FPS settings");
-	y += 8;
-
-	M_Print (16, y, "           Video modes");
-	y += 8;
-
-	if (!VID_GetFullscreen())
+	newfs = VID_GetFullscreen();
+	if (newfs != fs)
 	{
-		M_Print (16, y, "             Use mouse");
-		M_DrawCheckbox (220, y, in_grab_windowed_mouse.value);
-		y += 8;
+		if (newfs)
+			Menu_ShowItem(optionsmenu, optionsmenu_usemouse);
+		else
+			Menu_HideItem(optionsmenu, optionsmenu_usemouse);
+
+		fs = newfs;
 	}
 
-	// cursor
-	M_DrawCharacter (200, 32 + options_cursor * 8, 12 + ((int)(curtime * 4) & 1));
+	Menu_Draw(optionsmenu);
 }
-
-
-static void M_Options_Key(int k)
-{
-	switch (k)
-	{
-	case K_BACKSPACE:
-		m_topmenu = m_none;	// intentional fallthrough
-	case K_ESCAPE:
-		M_LeaveMenu (m_main);
-		break;
-
-	case K_ENTER:
-		m_entersound = true;
-		switch (options_cursor)
-		{
-	case 0:
-		M_Menu_Keys_f ();
-		break;
-	case 1:
-		m_state = m_none;
-		key_dest = key_console;
-		//			Con_ToggleConsole_f ();
-		break;
-	case 2:
-		Cbuf_AddText ("exec default.cfg\n");
-		break;
-	case 3:
-		Cbuf_AddText ("cfg_save config.cfg\n");
-		break;
-	case 13:
-		M_Menu_Fps_f ();
-		break;
-	case 14:
-		M_Menu_Video_f ();
-		break;
-	default:
-		M_AdjustSliders (1);
-		break;
-		}
-		return;
-
-	case K_UPARROW:
-		S_LocalSound ("misc/menu1.wav");
-		options_cursor--;
-		if (options_cursor < 0)
-			options_cursor = OPTIONS_ITEMS - 1;
-		break;
-
-	case K_DOWNARROW:
-		S_LocalSound ("misc/menu1.wav");
-		options_cursor++;
-		if (options_cursor >= OPTIONS_ITEMS)
-			options_cursor = 0;
-		break;
-
-	case K_HOME:
-	case K_PGUP:
-		S_LocalSound ("misc/menu1.wav");
-		options_cursor = 0;
-		break;
-
-	case K_END:
-	case K_PGDN:
-		S_LocalSound ("misc/menu1.wav");
-		options_cursor = OPTIONS_ITEMS - 1;
-		break;
-
-	case K_LEFTARROW:
-		M_AdjustSliders (-1);
-		break;
-
-	case K_RIGHTARROW:
-		M_AdjustSliders (1);
-		break;
-	}
-
-	if (k == K_UPARROW || k == K_END || k == K_PGDN)
-	{
-		if (options_cursor == 15 && VID_GetFullscreen())
-			options_cursor = 14;
-	}
-	else
-	{
-		if (options_cursor == 15 && VID_GetFullscreen())
-			options_cursor = 0;
-	}
-}
-
 
 //=============================================================================
 /* KEYS MENU */
@@ -831,270 +1296,140 @@ static void M_Keys_Key(int k)
 //=============================================================================
 /* FPS SETTINGS MENU */
 
-#define	FPS_ITEMS	15
-
-int		fps_cursor = 0;
-
-extern cvar_t v_bonusflash;
-extern cvar_t cl_rocket2grenade;
-extern cvar_t v_damagecshift;
-extern cvar_t r_fastsky;
-extern cvar_t r_drawflame;
-extern cvar_t gl_part_inferno;
-
 static void M_Menu_Fps_f()
 {
 	M_EnterMenu (m_fps);
 }
 
-#define ALIGN_FPS_OPTIONS	208
+extern cvar_t cl_rocket2grenade;
+extern cvar_t v_bonusflash;
+extern cvar_t v_damagecshift;
+extern cvar_t r_fastsky;
+extern cvar_t r_drawflame;
+
+static const char * const explosiontypevalues[] =
+{
+	"fire + sparks",
+	"fire only",
+	"teleport",
+	"blood",
+	"big blood",
+	"dbl gunshot",
+	"blob effect",
+	"big explosion",
+	0
+};
+
+static const char * const muzzleflashvalues[] =
+{
+	"off",
+	"on",
+	"own off",
+	0
+};
+
+static const char * const deadbodyfiltervalues[] =
+{
+	"off",
+	"on (normal)",
+	"on (instant)",
+	0
+};
+
+static const char * const rocket2grenadevalues[] =
+{
+	"normal",
+	"grenade",
+	0
+};
+
+static const char * const rockettrailvalues[] =
+{
+	"off",
+	"normal",
+	"grenade",
+	"alt normal",
+	"slight blood",
+	"big blood",
+	"tracer 1",
+	"tracer 2",
+	0
+};
+
+static const char * const powerupglowvalues[] =
+{
+	"off",
+	"on",
+	"own off",
+	0
+};
+
+void M_Fps_FastMode()
+{
+	Cvar_SetValue(&r_explosiontype, 1);
+	Cvar_SetValue(&r_explosionlight, 0);
+	Cvar_SetValue(&cl_muzzleflash, 0);
+	Cvar_SetValue(&cl_gibfilter, 1);
+	Cvar_SetValue(&cl_deadbodyfilter, 1);
+	Cvar_SetValue(&r_rocketlight, 0);
+	Cvar_SetValue(&r_powerupglow, 0);
+	Cvar_SetValue(&r_drawflame, 0);
+	Cvar_SetValue(&r_fastsky, 1);
+	Cvar_SetValue(&r_rockettrail, 1);
+	Cvar_SetValue(&v_damagecshift, 0);
+#ifdef GLQUAKE
+	Cvar_SetValue(&gl_flashblend, 1);
+	Cvar_SetValue(&r_dynamic, 0);
+	Cvar_SetValue(&gl_part_explosions, 0);
+	Cvar_SetValue(&gl_part_trails, 0);
+	Cvar_SetValue(&gl_part_spikes, 0);
+	Cvar_SetValue(&gl_part_gunshots, 0);
+	Cvar_SetValue(&gl_part_blood, 0);
+	Cvar_SetValue(&gl_part_telesplash, 0);
+	Cvar_SetValue(&gl_part_blobs, 0);
+	Cvar_SetValue(&gl_part_lavasplash, 0);
+	Cvar_SetValue(&gl_part_inferno, 0);
+#endif
+}
+
+void M_Fps_HighQuality()
+{
+	Cvar_SetValue(&r_explosiontype, 0);
+	Cvar_SetValue(&r_explosionlight, 1);
+	Cvar_SetValue(&cl_muzzleflash, 1);
+	Cvar_SetValue(&cl_gibfilter, 0);
+	Cvar_SetValue(&cl_deadbodyfilter, 0);
+	Cvar_SetValue(&r_rocketlight, 1);
+	Cvar_SetValue(&r_powerupglow, 2);
+	Cvar_SetValue(&r_drawflame, 1);
+	Cvar_SetValue(&r_fastsky, 0);
+	Cvar_SetValue(&r_rockettrail, 1);
+	Cvar_SetValue(&v_damagecshift, 1);
+#ifdef GLQUAKE
+	Cvar_SetValue(&gl_flashblend, 0);
+	Cvar_SetValue(&r_dynamic, 1);
+	Cvar_SetValue(&gl_part_explosions, 1);
+	Cvar_SetValue(&gl_part_trails, 1);
+	Cvar_SetValue(&gl_part_spikes, 1);
+	Cvar_SetValue(&gl_part_gunshots, 1);
+	Cvar_SetValue(&gl_part_blood, 1);
+	Cvar_SetValue(&gl_part_telesplash, 1);
+	Cvar_SetValue(&gl_part_blobs, 1);
+	Cvar_SetValue(&gl_part_lavasplash, 1);
+	Cvar_SetValue(&gl_part_inferno, 1);
+#endif
+}
 
 static void M_Fps_Draw()
 {
 	mpic_t	*p;
-	char temp[32];
 
-	M_DrawTransPic (16, 4, Draw_CachePic ("gfx/qplaque.lmp"));
-	p = Draw_CachePic ("gfx/ttl_cstm.lmp");
-	M_DrawPic ((320-p->width)/ 2, 4, p);
+	M_DrawTransPic(16, 4, Draw_CachePic("gfx/qplaque.lmp"));
+	p = Draw_CachePic("gfx/ttl_cstm.lmp");
+	M_DrawPic((320-p->width)/ 2, 4, p);
 
-	M_Print (16, 32, "            Explosions");
-	switch ((int) r_explosiontype.value)
-	{
-		case 0	: strcpy(temp, "fire + sparks"); break;
-		case 1	: strcpy(temp, "fire only"); break;
-		case 2	: strcpy(temp, "teleport"); break;
-		case 3	: strcpy(temp, "blood"); break;
-		case 4	: strcpy(temp, "big blood"); break;
-		case 5	: strcpy(temp, "dbl gunshot"); break;
-		case 6	: strcpy(temp, "blob effect"); break;
-		case 7	: strcpy(temp, "big explosion"); break;
-		default : strcpy(temp, "fire + sparks"); break;
-	}
-	M_Print (ALIGN_FPS_OPTIONS, 32, temp);
-
-	M_Print (16, 40, "         Muzzleflashes");
-	M_Print (ALIGN_FPS_OPTIONS, 40, cl_muzzleflash.value == 2 ? "own off" : cl_muzzleflash.value ? "on" : "off");
-
-	M_Print (16, 48, "            Gib filter");
-	M_DrawCheckbox (ALIGN_FPS_OPTIONS, 48, cl_gibfilter.value);
-
-	M_Print (16, 56, "      Dead body filter");
-	M_Print (ALIGN_FPS_OPTIONS, 56, cl_deadbodyfilter.value == 2 ? "on (instant)" : cl_deadbodyfilter.value ? "on (normal)" : "off");
-
-	M_Print (16, 64, "          Rocket model");
-	M_Print (ALIGN_FPS_OPTIONS, 64, cl_rocket2grenade.value ? "grenade" : "normal");
-
-	switch ((int) r_rockettrail.value)
-	{
-		case 0	: strcpy(temp, "off"); break;
-		case 1	: strcpy(temp, "normal"); break;
-		case 2	: strcpy(temp, "grenade"); break;
-		case 3	: strcpy(temp, "alt normal"); break;
-		case 4	: strcpy(temp, "slight blood"); break;
-		case 5	: strcpy(temp, "big blood"); break;
-		case 6	: strcpy(temp, "tracer 1"); break;
-		case 7	: strcpy(temp, "tracer 2"); break;
-		default : strcpy(temp, "normal"); break;
-	}
-
-	M_Print (16, 72, "          Rocket trail");
-	M_Print (ALIGN_FPS_OPTIONS, 72, temp);
-
-	M_Print (16, 80, "          Rocket light");
-	M_DrawCheckbox (ALIGN_FPS_OPTIONS, 80, r_rocketlight.value);
-
-	M_Print (16, 88, "         Damage filter");
-	M_DrawCheckbox (ALIGN_FPS_OPTIONS, 88, v_damagecshift.value == 0);
-
-	M_Print (16, 96, "        Pickup flashes");
-	M_DrawCheckbox (ALIGN_FPS_OPTIONS, 96, v_bonusflash.value);
-
-	M_Print (16, 104, "         Powerup glow");
-	M_Print (ALIGN_FPS_OPTIONS, 104, r_powerupglow.value==2 ? "own off" :
-		r_powerupglow.value ? "on" : "off");
-
-	M_Print (16, 112, "         Draw torches");
-	M_DrawCheckbox (ALIGN_FPS_OPTIONS, 112, r_drawflame.value);
-
-	M_Print (16, 120, "             Fast sky");
-	M_DrawCheckbox (ALIGN_FPS_OPTIONS, 120, r_fastsky.value);
-
-#ifdef GLQUAKE
-	M_Print (16, 128, "          Fast lights");
-	M_DrawCheckbox (ALIGN_FPS_OPTIONS, 128, gl_flashblend.value);
-#endif
-
-	M_PrintWhite (16, 136, "            Fast mode");
-
-	M_PrintWhite (16, 144, "         High quality");
-
-// cursor
-	M_DrawCharacter (196, 32 + fps_cursor * 8, 12 + ((int) (curtime * 4) & 1));
+	Menu_Draw(fpsmenu);
 }
-
-static void M_Fps_Key(int k)
-{
-	int i;
-
-	switch (k)
-	{
-	case K_BACKSPACE:
-		m_topmenu = m_none;	// intentional fallthrough
-	case K_ESCAPE:
-		M_LeaveMenu (m_options);
-		break;
-
-	case K_UPARROW:
-		S_LocalSound ("misc/menu1.wav");
-		fps_cursor--;
-#ifndef GLQUAKE
-		if (fps_cursor == 12)
-			fps_cursor = 11;
-#endif
-		if (fps_cursor < 0)
-			fps_cursor = FPS_ITEMS - 1;
-		break;
-
-	case K_DOWNARROW:
-		S_LocalSound ("misc/menu1.wav");
-		fps_cursor++;
-#ifndef GLQUAKE
-		if (fps_cursor == 12)
-			fps_cursor = 13;
-#endif
-		if (fps_cursor >= FPS_ITEMS)
-			fps_cursor = 0;
-		break;
-
-	case K_HOME:
-	case K_PGUP:
-		S_LocalSound ("misc/menu1.wav");
-		fps_cursor = 0;
-		break;
-
-	case K_END:
-	case K_PGDN:
-		S_LocalSound ("misc/menu1.wav");
-		fps_cursor = FPS_ITEMS - 1;
-		break;
-
-	case K_RIGHTARROW:
-	case K_ENTER:
-		S_LocalSound ("misc/menu2.wav");
-		switch (fps_cursor)
-		{
-		case 0:
-			i = r_explosiontype.value + 1;
-			if (i > 7 || i < 0)
-				i = 0;
-			Cvar_SetValue (&r_explosiontype, i);
-			break;
-		case 1:
-			Cvar_SetValue (&cl_muzzleflash, cl_muzzleflash.value == 2 ? 1 : cl_muzzleflash.value ? 0 : 2);
-			break;
-		case 2:
-			Cvar_SetValue (&cl_gibfilter, !cl_gibfilter.value);
-			break;
-		case 3:
-			Cvar_SetValue (&cl_deadbodyfilter, cl_deadbodyfilter.value == 2 ? 1 : cl_deadbodyfilter.value ? 0 : 2);
-			break;
-		case 4:
-			Cvar_SetValue (&cl_rocket2grenade, !cl_rocket2grenade.value);
-			break;
-		case 5:
-			i = r_rockettrail.value + 1;
-			if (i < 0 || i > 7)
-				i = 0;
-			Cvar_SetValue (&r_rockettrail, i);
-			break;
-		case 6:
-			Cvar_SetValue (&r_rocketlight, !r_rocketlight.value);
-			break;
-		case 7:
-			Cvar_SetValue (&v_damagecshift, !v_damagecshift.value);
-			break;
-		case 8:
-			Cvar_SetValue (&v_bonusflash, !v_bonusflash.value);
-			break;
-		case 9:
-			i = r_powerupglow.value + 1;
-				if (i < 0 || i > 2)
-					i = 0;
-			Cvar_SetValue (&r_powerupglow, i);
-			break;
-		case 10:
-			Cvar_SetValue (&r_drawflame, !r_drawflame.value);
-			break;
-		case 11:
-			Cvar_SetValue (&r_fastsky, !r_fastsky.value);
-			break;
-
-#ifdef GLQUAKE
-		case 12:
-			Cvar_SetValue (&gl_flashblend, !gl_flashblend.value);
-			Cvar_SetValue (&r_dynamic, gl_flashblend.value);
-			break;
-#endif
-
-		// fast
-		case 13:
-			Cvar_SetValue (&r_explosiontype, 1);
-			Cvar_SetValue (&r_explosionlight, 0);
-			Cvar_SetValue (&cl_muzzleflash, 0);
-			Cvar_SetValue (&cl_gibfilter, 1);
-			Cvar_SetValue (&cl_deadbodyfilter, 1);
-			Cvar_SetValue (&r_rocketlight, 0);
-			Cvar_SetValue (&r_powerupglow, 0);
-			Cvar_SetValue (&r_drawflame, 0);
-			Cvar_SetValue (&r_fastsky, 1);
-			Cvar_SetValue (&r_rockettrail, 1);
-			Cvar_SetValue (&v_damagecshift, 0);
-#ifdef GLQUAKE
-			Cvar_SetValue (&gl_flashblend, 1);
-			Cvar_SetValue (&r_dynamic, 0);
-			Cvar_SetValue (&gl_part_explosions, 0);
-			Cvar_SetValue (&gl_part_trails, 0);
-			Cvar_SetValue (&gl_part_spikes, 0);
-			Cvar_SetValue (&gl_part_gunshots, 0);
-			Cvar_SetValue (&gl_part_blood, 0);
-			Cvar_SetValue (&gl_part_telesplash, 0);
-			Cvar_SetValue (&gl_part_blobs, 0);
-			Cvar_SetValue (&gl_part_lavasplash, 0);
-			Cvar_SetValue (&gl_part_inferno, 0);
-#endif
-			break;
-
-		// high quality
-		case 14:
-			Cvar_SetValue (&r_explosiontype, 0);
-			Cvar_SetValue (&r_explosionlight, 1);
-			Cvar_SetValue (&cl_muzzleflash, 1);
-			Cvar_SetValue (&cl_gibfilter, 0);
-			Cvar_SetValue (&cl_deadbodyfilter, 0);
-			Cvar_SetValue (&r_rocketlight, 1);
-			Cvar_SetValue (&r_powerupglow, 2);
-			Cvar_SetValue (&r_drawflame, 1);
-			Cvar_SetValue (&r_fastsky, 0);
-			Cvar_SetValue (&r_rockettrail, 1);
-			Cvar_SetValue (&v_damagecshift, 1);
-#ifdef GLQUAKE
-			Cvar_SetValue (&gl_flashblend, 0);
-			Cvar_SetValue (&r_dynamic, 1);
-			Cvar_SetValue (&gl_part_explosions, 1);
-			Cvar_SetValue (&gl_part_trails, 1);
-			Cvar_SetValue (&gl_part_spikes, 1);
-			Cvar_SetValue (&gl_part_gunshots, 1);
-			Cvar_SetValue (&gl_part_blood, 1);
-			Cvar_SetValue (&gl_part_telesplash, 1);
-			Cvar_SetValue (&gl_part_blobs, 1);
-			Cvar_SetValue (&gl_part_lavasplash, 1);
-			Cvar_SetValue (&gl_part_inferno, 1);
-#endif
-		}
-	}
-}
-
 
 //=============================================================================
 /* VIDEO MENU */
@@ -2008,95 +2343,27 @@ static void M_Save_Key(int key)
 //=============================================================================
 /* MULTIPLAYER MENU */
 
-int	m_multiplayer_cursor;
-#ifdef CLIENTONLY
-#define	MULTIPLAYER_ITEMS	3
-#else
-#define	MULTIPLAYER_ITEMS	4
-#endif
-
 static void M_Menu_MultiPlayer_f()
 {
 	M_EnterMenu (m_multiplayer);
 }
 
-static void M_MultiPlayer_Draw()
+static void M_MultiPlayer_ServerBrowser()
 {
-	mpic_t	*p;
-
-	M_DrawTransPic (16, 4, Draw_CachePic ("gfx/qplaque.lmp") );
-	p = Draw_CachePic ("gfx/p_multi.lmp");
-	M_DrawPic ( (320-p->width)/2, 4, p);
-	M_Print (80, 40, "Server Browser");
-	M_Print (80, 48, "Player Setup");
-	M_Print (80, 56, "Demos");
-#ifndef CLIENTONLY
-	M_Print (80, 64, "New Game");
-#endif
-
-// cursor
-	M_DrawCharacter (64, 40 + m_multiplayer_cursor * 8, 12 + ((int) (curtime * 4) & 1));
+	key_dest = key_game;
+	m_state = m_none;
+	SB_Activate_f();
 }
 
-static void M_MultiPlayer_Key(int key)
+void M_MultiPlayer_Draw()
 {
-	switch (key)
-	{
-	case K_BACKSPACE:
-		m_topmenu = m_none;	// intentional fallthrough
-	case K_ESCAPE:
-		M_LeaveMenu (m_main);
-		break;
+	mpic_t *p;
 
-	case K_DOWNARROW:
-		S_LocalSound ("misc/menu1.wav");
-		if (++m_multiplayer_cursor >= MULTIPLAYER_ITEMS)
-			m_multiplayer_cursor = 0;
-		break;
+	M_DrawTransPic(16, 4, Draw_CachePic("gfx/qplaque.lmp"));
+	p = Draw_CachePic("gfx/p_multi.lmp");
+	M_DrawPic((320-p->width)/2, 4, p);
 
-	case K_UPARROW:
-		S_LocalSound ("misc/menu1.wav");
-		if (--m_multiplayer_cursor < 0)
-			m_multiplayer_cursor = MULTIPLAYER_ITEMS - 1;
-		break;
-
-	case K_HOME:
-	case K_PGUP:
-		S_LocalSound ("misc/menu1.wav");
-		m_multiplayer_cursor = 0;
-		break;
-
-	case K_END:
-	case K_PGDN:
-		S_LocalSound ("misc/menu1.wav");
-		m_multiplayer_cursor = MULTIPLAYER_ITEMS - 1;
-		break;
-
-	case K_ENTER:
-		m_entersound = true;
-		switch (m_multiplayer_cursor)
-		{
-		case 0:
-			key_dest = key_game;
-			m_state = m_none;
-			SB_Activate_f();
-			break;
-
-		case 1:
-			M_Menu_Setup_f ();
-			break;
-
-		case 2:
-			M_Menu_Demos_f ();
-			break;
-
-#ifndef CLIENTONLY
-		case 3:
-			M_Menu_GameOptions_f ();
-			break;
-#endif
-		}
-	}
+	Menu_Draw(multiplayermenu);
 }
 
 //=============================================================================
@@ -3968,7 +4235,7 @@ void M_Keydown(int key)
 #endif
 
 	case m_multiplayer:
-		M_MultiPlayer_Key (key);
+		Menu_HandleKey(multiplayermenu, key);
 		return;
 
 	case m_setup:
@@ -3976,7 +4243,7 @@ void M_Keydown(int key)
 		return;
 
 	case m_options:
-		M_Options_Key (key);
+		Menu_HandleKey(optionsmenu, key);
 		return;
 
 	case m_keys:
@@ -3984,7 +4251,7 @@ void M_Keydown(int key)
 		return;
 
 	case m_fps:
-		M_Fps_Key (key);
+		Menu_HandleKey(fpsmenu, key);
 		return;
 
 	case m_video:
@@ -4024,3 +4291,85 @@ void M_Keydown(int key)
 #endif
 	}
 }
+
+void M_Init()
+{
+	optionsmenu = Menu_Create(1, m_main);
+	if (optionsmenu)
+	{
+		Menu_AddItem(optionsmenu, MenuItemButton_Create("Customize controls", 0, M_Menu_Keys_f));
+		Menu_AddItem(optionsmenu, MenuItemButton_Create("Go to console", 0, M_Options_GoToConsole));
+		Menu_AddItem(optionsmenu, MenuItemButton_Create("Reset to defaults", 0, M_Options_ResetToDefaults));
+		Menu_AddItem(optionsmenu, MenuItemButton_Create("Save configuration", 0, M_Options_SaveConfiguration));
+		Menu_AddItem(optionsmenu, MenuItemCvarRange_Create("Screen size", 30, 120, 10, &scr_viewsize));
+		Menu_AddItem(optionsmenu, MenuItemCvarRange_Create("Gamma", 0.5, 1, -0.05, &v_gamma));
+		Menu_AddItem(optionsmenu, MenuItemCvarRange_Create("Contrast", 1, 2, 0.1, &v_contrast));
+		Menu_AddItem(optionsmenu, MenuItemCvarRange_Create("Mouse speed", 1, 11, 0.5, &sensitivity));
+		Menu_AddItem(optionsmenu, MenuItemCvarRange_Create("CD music volume", 0, 1, 0.1, &bgmvolume));
+		Menu_AddItem(optionsmenu, MenuItemCvarRange_Create("Sound volume", 0, 1, 0.1, &s_volume));
+		Menu_AddItem(optionsmenu, MenuItemCvarPosNegBoolean_Create("Invert mouse", &m_pitch));
+		Menu_AddItem(optionsmenu, MenuItemCvarBoolean_Create("Use old status bar", &cl_sbar, 0));
+		Menu_AddItem(optionsmenu, MenuItemCvarBoolean_Create("HUD on left side", &cl_hudswap, 0));
+		Menu_AddItem(optionsmenu, MenuItemButton_Create("FPS settings", 0, M_Menu_Fps_f));
+		Menu_AddItem(optionsmenu, MenuItemButton_Create("Video modes", 0, M_Menu_Video_f));
+
+		Menu_AddItem(optionsmenu, optionsmenu_usemouse = MenuItemCvarBoolean_Create("Use mouse", &in_grab_windowed_mouse, 0));
+
+		Menu_Layout(optionsmenu);
+	}
+
+	/* FPS menu */
+	fpsmenu = Menu_Create(1, m_options);
+	if (fpsmenu)
+	{
+		Menu_AddItem(fpsmenu, MenuItemCvarMultiSelect_Create("Explosions", &r_explosiontype, explosiontypevalues));
+		Menu_AddItem(fpsmenu, MenuItemCvarMultiSelect_Create("Muzzleflashes", &cl_muzzleflash, muzzleflashvalues));
+		Menu_AddItem(fpsmenu, MenuItemCvarBoolean_Create("Gib filter", &cl_gibfilter, 0));
+		Menu_AddItem(fpsmenu, MenuItemCvarMultiSelect_Create("Dead body filter", &cl_deadbodyfilter, deadbodyfiltervalues));
+		Menu_AddItem(fpsmenu, MenuItemCvarMultiSelect_Create("Rocket model", &cl_rocket2grenade, rocket2grenadevalues));
+		Menu_AddItem(fpsmenu, MenuItemCvarMultiSelect_Create("Rocket trail", &r_rockettrail, rockettrailvalues));
+		Menu_AddItem(fpsmenu, MenuItemCvarBoolean_Create("Rocket light", &r_rocketlight, 0));
+		Menu_AddItem(fpsmenu, MenuItemCvarBoolean_Create("Damage filter", &v_damagecshift, 1));
+		Menu_AddItem(fpsmenu, MenuItemCvarBoolean_Create("Pickup filter", &v_bonusflash, 0));
+		Menu_AddItem(fpsmenu, MenuItemCvarMultiSelect_Create("Powerup glow", &r_powerupglow, powerupglowvalues));
+		Menu_AddItem(fpsmenu, MenuItemCvarBoolean_Create("Draw torches", &r_drawflame, 0));
+		Menu_AddItem(fpsmenu, MenuItemCvarBoolean_Create("Fast sky", &r_fastsky, 0));
+#ifdef GLQUAKE
+		Menu_AddItem(fpsmenu, MenuItemCvarPosNegBoolean_Create("Fast lights", &gl_flashblend));
+#endif
+
+		Menu_AddItem(fpsmenu, MenuItemSpacer_Create());
+
+		Menu_AddItem(fpsmenu, MenuItemButton_Create("Fast mode", 1, M_Fps_FastMode));
+		Menu_AddItem(fpsmenu, MenuItemButton_Create("High quality", 1, M_Fps_HighQuality));
+
+		Menu_Layout(fpsmenu);
+	}
+
+	/* Multiplayer menu */
+	multiplayermenu = Menu_Create(0, m_main);
+	if (multiplayermenu)
+	{
+		Menu_AddItem(multiplayermenu, MenuItemButton_Create("Server Browser", 0, M_MultiPlayer_ServerBrowser));
+		Menu_AddItem(multiplayermenu, MenuItemButton_Create("Player Setup", 0, M_Menu_Setup_f));
+		Menu_AddItem(multiplayermenu, MenuItemButton_Create("Demos", 0, M_Menu_Demos_f));
+#ifndef CLIENTONLY
+		Menu_AddItem(multiplayermenu, MenuItemButton_Create("New Game", 0, M_Menu_GameOptions_f));
+#endif
+
+		Menu_Layout(multiplayermenu);
+	}
+}
+
+void M_Shutdown()
+{
+	Menu_Delete(optionsmenu);
+	optionsmenu = 0;
+
+	Menu_Delete(fpsmenu);
+	fpsmenu = 0;
+
+	Menu_Delete(multiplayermenu);
+	multiplayermenu = 0;
+}
+
