@@ -1767,7 +1767,6 @@ void CL_Init (void)
 
 #warning If I want to keep compatibility with Win32 server browsers, I need to open a socket on port 27001 here.
 
-
 	MT_Init();
 	CL_Demo_Init();
 	Ignore_Init();
