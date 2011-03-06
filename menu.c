@@ -123,12 +123,9 @@ static struct Menu *fpsmenu;
 
 static struct MenuItem *optionsmenu_usemouse;
 
-qboolean	m_entersound;		// play after drawing a frame, so caching
-								// won't disrupt the sound
-qboolean	m_recursiveDraw;
-int			m_topmenu;			// set if a submenu was entered via a
-								// menu_* command
-
+static qboolean m_entersound;     /* play after drawing a frame, so caching won't disrupt the sound */
+static qboolean m_recursiveDraw;
+static int m_topmenu;             /* set if a submenu was entered via a menu_* command */
 
 //=============================================================================
 /* Support Routines */
