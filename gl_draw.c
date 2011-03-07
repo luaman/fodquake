@@ -958,8 +958,8 @@ void Draw_ColoredString_Length(int x, int y, char *text, int red, int len, unsig
 					}
 					text += 5;
 					len -= 5;
+					continue;
 				}
-				continue;
 			}
 			else if (len >= 2 && text[1] == 'r')
 			{
