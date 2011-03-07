@@ -877,8 +877,8 @@ void Draw_ColoredString (int x, int y, char *text, int red)
 						white = false;
 					}
 					text += 4;
+					continue;
 				}
-				continue;
 			}
 			else if (text[1] == 'r')
 			{
