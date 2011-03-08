@@ -41,7 +41,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 extern cvar_t net_maxfps;
 
 void R_TranslatePlayerSkin (int playernum);
-void R_PreMapLoad(char *mapname);
+void R_PreMapLoad(void);
 
 char *svc_strings[] =
 {
@@ -233,7 +233,7 @@ qboolean CL_CheckOrDownloadFile (char *filename)
 void Model_NextDownload (void)
 {
 	char buf[128];
-	char mapname[MAX_QPATH];
+	char mapnamestr[MAX_QPATH];
 	int	i;
 
 	if (cls.downloadnumber == 0)
@@ -253,8 +253,9 @@ void Model_NextDownload (void)
 
 	if (!com_serveractive)
 	{
-		COM_StripExtension (COM_SkipPath(cl.model_name[1]), mapname);
-		R_PreMapLoad(mapname);
+		COM_StripExtension (COM_SkipPath(cl.model_name[1]), mapnamestr);
+		Cvar_ForceSet(&mapname, mapnamestr);
+		R_PreMapLoad();
 	}
 
 	for (i = 1; i < MAX_MODELS; i++)
