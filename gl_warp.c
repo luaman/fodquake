@@ -442,16 +442,17 @@ int R_SetSky(char *skyname)
 {
 	int i, error = 0;
 	byte *data[6] = {NULL, NULL, NULL, NULL, NULL, NULL};
-	extern int image_width, image_height, gl_max_size_default;
+	extern int gl_max_size_default;
+	int imagewidth, imageheight;
 
 	
 	for (i = 0; i < 6; i++)
 	{
 		if (
-		    !(data[i] = GL_LoadImagePixels (va("env/%s%s", skyname, skybox_ext[i]), 0, 0, 0)) &&
-		    !(data[i] = GL_LoadImagePixels (va("gfx/env/%s%s", skyname, skybox_ext[i]), 0, 0, 0)) &&
-		    !(data[i] = GL_LoadImagePixels (va("env/%s_%s", skyname, skybox_ext[i]), 0, 0, 0)) &&
-		    !(data[i] = GL_LoadImagePixels (va("gfx/env/%s_%s", skyname, skybox_ext[i]), 0, 0, 0))
+		    !(data[i] = GL_LoadImagePixels (va("env/%s%s", skyname, skybox_ext[i]), 0, 0, &imagewidth, &imageheight, 0)) &&
+		    !(data[i] = GL_LoadImagePixels (va("gfx/env/%s%s", skyname, skybox_ext[i]), 0, 0, &imagewidth, &imageheight, 0)) &&
+		    !(data[i] = GL_LoadImagePixels (va("env/%s_%s", skyname, skybox_ext[i]), 0, 0, &imagewidth, &imageheight, 0)) &&
+		    !(data[i] = GL_LoadImagePixels (va("gfx/env/%s_%s", skyname, skybox_ext[i]), 0, 0, &imagewidth, &imageheight, 0))
 		   )
 		{
 			Com_Printf ("Couldn't load skybox \"%s\"\n", skyname);
@@ -464,7 +465,7 @@ int R_SetSky(char *skyname)
 	for (i = 0; i < 6; i++)
 	{
 		GL_Bind (skyboxtextures + i);
-		GL_Upload32 ((unsigned int *) data[i], image_width, image_height, TEX_NOCOMPRESS);
+		GL_Upload32 ((unsigned int *) data[i], imagewidth, imageheight, TEX_NOCOMPRESS);
 	}
 
 	r_skyboxloaded = true;

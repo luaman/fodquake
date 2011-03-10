@@ -523,7 +523,7 @@ static qboolean CheckTextureLoaded(int mode)
 	return false;
 }
 
-byte *GL_LoadImagePixels(char *filename, int matchwidth, int matchheight, int mode)
+byte *GL_LoadImagePixels(char *filename, int matchwidth, int matchheight, int *imagewidth, int *imageheight, int mode)
 {
 	char basename[MAX_QPATH], name[MAX_QPATH];
 	byte *c, *data;
@@ -538,7 +538,7 @@ byte *GL_LoadImagePixels(char *filename, int matchwidth, int matchheight, int mo
 	if (FS_FOpenFile(name, &f) != -1)
 	{
 		CHECK_TEXTURE_ALREADY_LOADED;
-		if ((data = Image_LoadTGA(f, name, matchwidth, matchheight)))
+		if ((data = Image_LoadTGA(f, name, matchwidth, matchheight, imagewidth, imageheight)))
 			return data;
 	}
 
@@ -547,7 +547,7 @@ byte *GL_LoadImagePixels(char *filename, int matchwidth, int matchheight, int mo
 	if (FS_FOpenFile(name, &f) != -1)
 	{
 		CHECK_TEXTURE_ALREADY_LOADED;
-		if ((data = Image_LoadPNG(f, name, matchwidth, matchheight)))
+		if ((data = Image_LoadPNG(f, name, matchwidth, matchheight, imagewidth, imageheight)))
 			return data;
 	}
 #endif
@@ -604,6 +604,7 @@ int GL_LoadTextureImage(char *filename, char *identifier, int matchwidth, int ma
 	int texnum;
 	byte *data;
 	struct gltexture *gltexture;
+	int imagewidth, imageheight;
 
 	if (no24bit)
 		return 0;
@@ -613,13 +614,13 @@ int GL_LoadTextureImage(char *filename, char *identifier, int matchwidth, int ma
 
 	gltexture = current_texture = GL_FindTexture(identifier);
 
-	if (!(data = GL_LoadImagePixels(filename, matchwidth, matchheight, mode)))
+	if (!(data = GL_LoadImagePixels(filename, matchwidth, matchheight, &imagewidth, &imageheight, mode)))
 	{
 		texnum = (gltexture && !current_texture) ? gltexture->texnum : 0;
 	}
 	else
 	{
-		texnum = GL_LoadTexturePixels(data, identifier, image_width, image_height, mode);
+		texnum = GL_LoadTexturePixels(data, identifier, imagewidth, imageheight, mode);
 		free(data);
 	}
 
@@ -633,20 +634,21 @@ mpic_t *GL_LoadPicImage(char *filename, char *id, int matchwidth, int matchheigh
 	char identifier[MAX_QPATH] = "pic:";
 	byte *data, *src, *dest, *buf;
 	static mpic_t pic;
+	int imagewidth, imageheight;
 
 	if (no24bit)
 		return NULL;
 
-	if (!(data = GL_LoadImagePixels(filename, matchwidth, matchheight, 0)))
+	if (!(data = GL_LoadImagePixels(filename, matchwidth, matchheight, &imagewidth, &imageheight, 0)))
 		return NULL;
 
-	pic.width = image_width;
-	pic.height = image_height;
+	pic.width = imagewidth;
+	pic.height = imageheight;
 
 	if (mode & TEX_ALPHA)
 	{
 		mode &= ~TEX_ALPHA;
-		for (i = 0; i < image_width * image_height; i++)
+		for (i = 0; i < imagewidth * imageheight; i++)
 		{
 			if ( ( (((unsigned int *) data)[i] >> 24 ) & 0xFF ) < 255)
 			{
@@ -696,17 +698,19 @@ int GL_LoadCharsetImage(char *filename, char *identifier)
 {
 	int i, texnum, image_size;
 	byte *data, *buf, *dest, *src;
+	int imagewidth, imageheight;
 
 	if (no24bit)
 		return 0;
 
-	if (!(data = GL_LoadImagePixels(filename, 0, 0, 0)))
+	if (!(data = GL_LoadImagePixels(filename, 0, 0, &imagewidth, &imageheight, 0)))
 		return 0;
 
 	if (!identifier)
 		identifier = filename;
 
-	image_size = image_width * image_height;
+#warning Integer overflow vulnerability.
+	image_size = imagewidth * imageheight;
 
 	buf = dest = Q_Calloc(image_size * 2, 4); 
 	src = data;
@@ -717,7 +721,7 @@ int GL_LoadCharsetImage(char *filename, char *identifier)
 		dest += image_size >> 1;
 	}
 
-	texnum = GL_LoadTexture(identifier, image_width, image_height * 2, buf, TEX_ALPHA | TEX_NOCOMPRESS, 4);
+	texnum = GL_LoadTexture(identifier, imagewidth, imageheight * 2, buf, TEX_ALPHA | TEX_NOCOMPRESS, 4);
 
 	free(buf);
 	free(data);
