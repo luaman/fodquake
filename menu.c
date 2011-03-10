@@ -1061,7 +1061,7 @@ static void M_Options_SaveConfiguration()
 static void M_Options_Draw()
 {
 	mpic_t *p;
-	static int fs;
+	static int fs = 2;
 	int newfs;
 
 	M_DrawTransPic(16, 4, Draw_CachePic("gfx/qplaque.lmp"));
@@ -1072,9 +1072,9 @@ static void M_Options_Draw()
 	if (newfs != fs)
 	{
 		if (newfs)
-			Menu_ShowItem(optionsmenu, optionsmenu_usemouse);
-		else
 			Menu_HideItem(optionsmenu, optionsmenu_usemouse);
+		else
+			Menu_ShowItem(optionsmenu, optionsmenu_usemouse);
 
 		fs = newfs;
 	}
