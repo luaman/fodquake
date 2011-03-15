@@ -203,15 +203,17 @@ void Draw_Character (int x, int y, int num) {
 	}
 }
 
-void Draw_String (int x, int y, const char *str) {
-	while (*str) {
+void Draw_String(int x, int y, const char *str)
+{
+	while (*str)
+	{
 		Draw_Character (x, y, *str);
 		str++;
 		x += 8;
 	}
 }
 
-void Draw_String_Length (int x, int y, const char *str, int len)
+void Draw_String_Length(int x, int y, const char *str, int len)
 {
 	while(len--)
 	{
@@ -221,16 +223,19 @@ void Draw_String_Length (int x, int y, const char *str, int len)
 	}
 }
 
-void Draw_Alt_String (int x, int y, const char *str) {
-	while (*str) {
-		Draw_Character (x, y, (*str) | 0x80);
+void Draw_Alt_String(int x, int y, const char *str)
+{
+	while (*str)
+	{
+		Draw_Character(x, y, (*str) | 0x80);
 		str++;
 		x += 8;
 	}
 }
 
 
-static int HexToInt(char c) {
+static int HexToInt(char c)
+{
 	if (isdigit(c))
 		return c - '0';
 	else if (c >= 'a' && c <= 'f')
@@ -241,7 +246,7 @@ static int HexToInt(char c) {
 		return -1;
 }
 
-void Draw_ColoredString (int x, int y, char *text, int red)
+void Draw_ColoredString(int x, int y, char *text, int red)
 {
 	int r, g, b;
 
@@ -267,7 +272,7 @@ void Draw_ColoredString (int x, int y, char *text, int red)
 			}
 		}
 
-		Draw_Character (x, y, (*text) | (red ? 0x80 : 0));
+		Draw_Character(x, y, (*text) | (red ? 0x80 : 0));
 		x += 8;
 	}
 }
@@ -300,7 +305,7 @@ void Draw_ColoredString_Length(int x, int y, char *text, int red, int len, unsig
 			}
 		}
 
-		Draw_Character (x, y, (*text) | (red ? 0x80 : 0));
+		Draw_Character(x, y, (*text) | (red ? 0x80 : 0));
 		x += 8;
 
 		text++;
@@ -308,7 +313,8 @@ void Draw_ColoredString_Length(int x, int y, char *text, int red, int len, unsig
 	}
 }
 
-void Draw_Pixel(int x, int y, byte color) {
+void Draw_Pixel(int x, int y, byte color)
+{
 	byte *dest;
 
 	dest = vid.buffer + y * vid.rowbytes + x;
@@ -383,7 +389,8 @@ static qboolean crosshairdata[NUMCROSSHAIRS][64] =
 
 static qboolean customcrosshairdata[64];
 static qboolean customcrosshair_loaded;
-void customCrosshair_Init(void) {
+void customCrosshair_Init(void)
+{
 	FILE *f;
 	int i = 0, c;
 
@@ -391,20 +398,24 @@ void customCrosshair_Init(void) {
 	if (FS_FOpenFile("crosshairs/crosshair.txt", &f) == -1)
 		return;
 
-	while (i < 64) {
+	while (i < 64)
+	{
 		c = fgetc(f);
-		if (c == EOF) {
+		if (c == EOF)
+		{
 			Com_Printf("Invalid format in crosshair.txt (Need 64 X's and O's)\n");
 			fclose(f);
 			return;
 		}
 		if (isspace(c))
 			continue;
-		if (c  != 'x' && c  != 'X' && c  != 'O' && c  != 'o') {
+		if (c  != 'x' && c  != 'X' && c  != 'O' && c  != 'o')
+		{
 			Com_Printf("Invalid format in crosshair.txt (Only X's and O's and whitespace permitted)\n");
 			fclose(f);
 			return;
-		} else if (c == 'x' || c  == 'X' )
+		}
+		else if (c == 'x' || c  == 'X')
 			customcrosshairdata[i++] = true;
 		else
 			customcrosshairdata[i++] = false;		
@@ -413,7 +424,8 @@ void customCrosshair_Init(void) {
 	customcrosshair_loaded = true;
 }
 
-void Draw_Crosshair(void) {
+void Draw_Crosshair(void)
+{
 	int x, y, crosshair_val, row, col;
 	extern cvar_t crosshair, cl_crossx, cl_crossy, crosshaircolor, crosshairsize;
 	extern vrect_t scr_vrect;
@@ -427,12 +439,17 @@ void Draw_Crosshair(void) {
 	y = scr_vrect.y + scr_vrect.height / 2 + cl_crossy.value;
 
 	crosshair_val = (int) crosshair.value;
-	if ((crosshair_val >= 2 && crosshair_val < 2 + NUMCROSSHAIRS) || (crosshair_val == 1 && customcrosshair_loaded)) {
+	if ((crosshair_val >= 2 && crosshair_val < 2 + NUMCROSSHAIRS) || (crosshair_val == 1 && customcrosshair_loaded))
+	{
 		data = (crosshair_val == 1) ? customcrosshairdata : crosshairdata[crosshair_val - 2];
-		for (row = 0; row < 8; row++) {
-			for (col = 0; col < 8; col++) {
-				if (data[row * 8 + col]) {
-					if (crosshairsize.value >= 3) {
+		for (row = 0; row < 8; row++)
+		{
+			for (col = 0; col < 8; col++)
+			{
+				if (data[row * 8 + col])
+				{
+					if (crosshairsize.value >= 3)
+					{
 						Draw_Pixel(x + 3 * (col - 3) - 1,	y + 3 * (row - 3) - 1,	c);
 						Draw_Pixel(x + 3 * (col - 3) - 1,	y + 3 * (row - 3),		c);
 						Draw_Pixel(x + 3 * (col - 3) - 1,	y + 3 * (row - 3) + 1,	c);
@@ -444,26 +461,33 @@ void Draw_Crosshair(void) {
 						Draw_Pixel(x + 3 * (col - 3) + 1,	y + 3 * (row - 3) - 1,	c);
 						Draw_Pixel(x + 3 * (col - 3) + 1,	y + 3 * (row - 3),		c);
 						Draw_Pixel(x + 3 * (col - 3) + 1,	y + 3 * (row - 3) + 1,	c);
-					} else if (crosshairsize.value >= 2) {
+					}
+					else if (crosshairsize.value >= 2)
+					{
 						Draw_Pixel(x + 2 * (col - 3),		y + 2 * (row - 3),		c);
 						Draw_Pixel(x + 2 * (col - 3),		y + 2 * (row - 3) - 1,	c);
 
 						Draw_Pixel(x + 2 * (col - 3) - 1,	y + 2 * (row - 3),		c);
 						Draw_Pixel(x + 2 * (col - 3) - 1,	y + 2 * (row - 3) - 1,	c);
-					} else {
+					}
+					else
+					{
 						Draw_Pixel(x + col - 3, y + row - 3, c);
 					}
 				}
 			}
 		}
-	} else {
+	}
+	else
+	{
 		Draw_Character (x - 4, y - 4, '+');
 	}
 }
 
 
 
-void Draw_TextBox (int x, int y, int width, int lines) {
+void Draw_TextBox(int x, int y, int width, int lines)
+{
 	mpic_t *p;
 	int cx, cy, n;
 
@@ -473,7 +497,8 @@ void Draw_TextBox (int x, int y, int width, int lines) {
 	p = Draw_CachePic ("gfx/box_tl.lmp");
 	Draw_TransPic (cx, cy, p);
 	p = Draw_CachePic ("gfx/box_ml.lmp");
-	for (n = 0; n < lines; n++) {
+	for (n = 0; n < lines; n++)
+	{
 		cy += 8;
 		Draw_TransPic (cx, cy, p);
 	}
@@ -482,12 +507,14 @@ void Draw_TextBox (int x, int y, int width, int lines) {
 
 	// draw middle
 	cx += 8;
-	while (width > 0) {
+	while (width > 0)
+	{
 		cy = y;
 		p = Draw_CachePic ("gfx/box_tm.lmp");
 		Draw_TransPic (cx, cy, p);
 		p = Draw_CachePic ("gfx/box_mm.lmp");
-		for (n = 0; n < lines; n++) {
+		for (n = 0; n < lines; n++)
+		{
 			cy += 8;
 			if (n == 1)
 				p = Draw_CachePic ("gfx/box_mm2.lmp");
@@ -504,7 +531,8 @@ void Draw_TextBox (int x, int y, int width, int lines) {
 	p = Draw_CachePic ("gfx/box_tr.lmp");
 	Draw_TransPic (cx, cy, p);
 	p = Draw_CachePic ("gfx/box_mr.lmp");
-	for (n = 0; n < lines; n++) {
+	for (n = 0; n < lines; n++)
+	{
 		cy += 8;
 		Draw_TransPic (cx, cy, p);
 	}
@@ -721,7 +749,8 @@ void Draw_CharToConback (int num, byte *dest) {
 	}
 }
 
-void Draw_ConsoleBackground (int lines) {
+void Draw_ConsoleBackground(int lines)
+{
 	int x, y, v, f, fstep;
 	byte *src, *dest;
 	mpic_t *conback;
@@ -735,10 +764,13 @@ void Draw_ConsoleBackground (int lines) {
 
 	// hack the version number directly into the pic
 
-	if (cls.download) {
+	if (cls.download)
+	{
 		strcpy (ver, FODQUAKE_VERSION);
 		dest = conback->data + 320 + 320 * 186 - 11 - 8 * strlen(ver);
-	} else {
+	}
+	else
+	{
 		sprintf (ver, "FodQuake %s", FODQUAKE_VERSION);
 		dest = conback->data + 320 - (strlen(ver) * 8 + 11) + 320 * 186;
 	}
@@ -750,15 +782,20 @@ void Draw_ConsoleBackground (int lines) {
 	// draw the pic
 	dest = vid.buffer;
 
-	for (y = 0; y < lines; y++, dest += vid.rowbytes) {
+	for (y = 0; y < lines; y++, dest += vid.rowbytes)
+	{
 		v = (vid.conheight - lines + y) * 200 / vid.conheight;
 		src = conback->data + v * 320;
-		if (vid.conwidth == 320) {
+		if (vid.conwidth == 320)
+		{
 			memcpy (dest, src, vid.conwidth);
-		} else {
+		}
+		else
+		{
 			f = 0;
 			fstep = 320 * 0x10000 / vid.conwidth;
-			for (x = 0; x < vid.conwidth; x += 4) {
+			for (x = 0; x < vid.conwidth; x += 4)
+			{
 				dest[x] = src[f >> 16];
 				f += fstep;
 				dest[x + 1] = src[f >> 16];
@@ -808,7 +845,8 @@ void R_DrawRect8 (vrect_t *prect, int rowbytes, byte *psrc, int transparent) {
 }
 
 //This repeats a 64*64 tile graphic to fill the screen around a sized down refresh window.
-void Draw_TileClear (int x, int y, int w, int h) {
+void Draw_TileClear(int x, int y, int w, int h)
+{
 	int width, height, tileoffsetx, tileoffsety;
 	byte *psrc;
 	vrect_t vr;
@@ -823,7 +861,8 @@ void Draw_TileClear (int x, int y, int w, int h) {
 
 	tileoffsety = vr.y % r_rectdesc.height;
 
-	while (height > 0) {
+	while (height > 0)
+	{
 		vr.x = r_rectdesc.rect.x;
 		width = r_rectdesc.rect.width;
 
@@ -834,7 +873,8 @@ void Draw_TileClear (int x, int y, int w, int h) {
 
 		tileoffsetx = vr.x % r_rectdesc.width;
 
-		while (width > 0) {
+		while (width > 0)
+		{
 			vr.width = r_rectdesc.width - tileoffsetx;
 
 			if (vr.width > width)
@@ -856,11 +896,13 @@ void Draw_TileClear (int x, int y, int w, int h) {
 }
 
 //Fills a box of pixels with a single color
-void Draw_Fill (int x, int y, int w, int h, int c) {
+void Draw_Fill(int x, int y, int w, int h, int c)
+{
 	byte *dest;
 	int u, v;
 
-	if (x < 0 || x + w > vid.conwidth || y < 0 || y + h > vid.conheight) {
+	if (x < 0 || x + w > vid.conwidth || y < 0 || y + h > vid.conheight)
+	{
 		Com_Printf ("Bad Draw_Fill(%d, %d, %d, %d, %c)\n", x, y, w, h, c);
 		return;
 	}
@@ -871,13 +913,14 @@ void Draw_Fill (int x, int y, int w, int h, int c) {
 			dest[u] = c;
 }
 
-void Draw_AlphaFill (int x, int y, int w, int h, int c, float alpha)
+void Draw_AlphaFill(int x, int y, int w, int h, int c, float alpha)
 {
 }
 
 //=============================================================================
 
-void Draw_FadeScreen (void) {
+void Draw_FadeScreen(void)
+{
 	int x,y;
 	byte *pbuf;
 	float alpha;
