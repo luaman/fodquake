@@ -187,10 +187,6 @@ void VID_Restart(void)
 	if (!display)
 		return;
 
-#ifndef GLQUAKE
-	D_FlushCaches();
-#endif
-
 	VID_Close();
 #ifdef CLIENTONLY
 	Host_ClearMemory();
@@ -377,6 +373,10 @@ void VID_Close()
 	Sbar_Shutdown();
 	M_VidShutdown();
 	Draw_Shutdown();
+
+#ifndef GLQUAKE
+	D_FlushCaches();
+#endif
 
 	if (display)
 	{
