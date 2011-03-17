@@ -4327,7 +4327,7 @@ void M_Init()
 		Menu_AddItem(fpsmenu, MenuItemCvarMultiSelect_Create("Rocket trail", &r_rockettrail, rockettrailvalues));
 		Menu_AddItem(fpsmenu, MenuItemCvarBoolean_Create("Rocket light", &r_rocketlight, 0));
 		Menu_AddItem(fpsmenu, MenuItemCvarBoolean_Create("Damage filter", &v_damagecshift, 1));
-		Menu_AddItem(fpsmenu, MenuItemCvarBoolean_Create("Pickup filter", &v_bonusflash, 0));
+		Menu_AddItem(fpsmenu, MenuItemCvarBoolean_Create("Pickup flashes", &v_bonusflash, 0));
 		Menu_AddItem(fpsmenu, MenuItemCvarMultiSelect_Create("Powerup glow", &r_powerupglow, powerupglowvalues));
 		Menu_AddItem(fpsmenu, MenuItemCvarBoolean_Create("Draw torches", &r_drawflame, 0));
 		Menu_AddItem(fpsmenu, MenuItemCvarBoolean_Create("Fast sky", &r_fastsky, 0));
