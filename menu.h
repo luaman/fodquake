@@ -39,3 +39,6 @@ void M_Menu_Quit_f (void);
 void M_Init(void);
 void M_Shutdown(void);
 
+void M_VidInit(void);
+void M_VidShutdown(void);
+

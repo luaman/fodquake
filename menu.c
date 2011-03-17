@@ -4370,3 +4370,11 @@ void M_Shutdown()
 	multiplayermenu = 0;
 }
 
+void M_VidInit()
+{
+}
+
+void M_VidShutdown()
+{
+}
+

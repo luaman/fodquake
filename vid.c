@@ -350,6 +350,7 @@ void VID_Open()
 #endif
 
 			Draw_Init();
+			M_VidInit();
 			Sbar_Init();
 			SCR_Init();
 
@@ -374,6 +375,7 @@ void VID_Close()
 
 	SCR_Shutdown();
 	Sbar_Shutdown();
+	M_VidShutdown();
 	Draw_Shutdown();
 
 	if (display)
