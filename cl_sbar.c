@@ -309,39 +309,47 @@ void Sbar_Shutdown(void)
 
 // drawing routines are relative to the status bar location
 
-static void Sbar_DrawPic (int x, int y, mpic_t *pic) {
-	Draw_Pic (x + sbar_xofs, y + (vid.conheight - SBAR_HEIGHT), pic);
+static void Sbar_DrawPic(int x, int y, mpic_t *pic)
+{
+	Draw_Pic(x + sbar_xofs, y + (vid.conheight - SBAR_HEIGHT), pic);
 }
 
 //JACK: Draws a portion of the picture in the status bar.
-static void Sbar_DrawSubPic(int x, int y, mpic_t *pic, int srcx, int srcy, int width, int height) {
-	Draw_SubPic (x, y + (vid.conheight - SBAR_HEIGHT), pic, srcx, srcy, width, height);
+static void Sbar_DrawSubPic(int x, int y, mpic_t *pic, int srcx, int srcy, int width, int height)
+{
+	Draw_SubPic(x, y + (vid.conheight - SBAR_HEIGHT), pic, srcx, srcy, width, height);
 }
 
-static void Sbar_DrawTransPic (int x, int y, mpic_t *pic) {
-	Draw_TransPic (x + sbar_xofs, y + (vid.conheight - SBAR_HEIGHT), pic);
+static void Sbar_DrawTransPic(int x, int y, mpic_t *pic)
+{
+	Draw_TransPic(x + sbar_xofs, y + (vid.conheight - SBAR_HEIGHT), pic);
 }
 
 //Draws one solid graphics character
-static void Sbar_DrawCharacter (int x, int y, int num) {
-	Draw_Character (x + 4 + sbar_xofs, y + vid.conheight - SBAR_HEIGHT, num);
+static void Sbar_DrawCharacter(int x, int y, int num)
+{
+	Draw_Character(x + 4 + sbar_xofs, y + vid.conheight - SBAR_HEIGHT, num);
 }
 
-void Sbar_DrawString (int x, int y, char *str) {
-	Draw_String (x + sbar_xofs, y + vid.conheight - SBAR_HEIGHT, str);
+void Sbar_DrawString(int x, int y, char *str)
+{
+	Draw_String(x + sbar_xofs, y + vid.conheight - SBAR_HEIGHT, str);
 }
 
-static void Sbar_DrawAltString (int x, int y, char *str) {
-	Draw_Alt_String (x + sbar_xofs, y + vid.conheight - SBAR_HEIGHT, str);
+static void Sbar_DrawAltString(int x, int y, char *str)
+{
+	Draw_Alt_String(x + sbar_xofs, y + vid.conheight - SBAR_HEIGHT, str);
 }
 
-static int Sbar_itoa (int num, char *buf) {
+static int Sbar_itoa(int num, char *buf)
+{
 	char *str;
 	int pow10, dig;
 	
 	str = buf;
 	
-	if (num < 0) {
+	if (num < 0)
+	{
 		*str++ = '-';
 		num = -num;
 	}
@@ -349,7 +357,8 @@ static int Sbar_itoa (int num, char *buf) {
 	for (pow10 = 10 ; num >= pow10 ; pow10 *= 10)
 		;
 	
-	do {
+	do
+	{
 		pow10 /= 10;
 		dig = num / pow10;
 		*str++ = '0' + dig;
@@ -361,27 +370,30 @@ static int Sbar_itoa (int num, char *buf) {
 	return str - buf;
 }
 
-static void Sbar_DrawNum (int x, int y, int num, int digits, int color) {
+static void Sbar_DrawNum(int x, int y, int num, int digits, int color)
+{
 	char str[12], *ptr;
 	int l, frame;
 
-	l = Sbar_itoa (num, str);
+	l = Sbar_itoa(num, str);
 	ptr = str;
 	if (l > digits)
 		ptr += (l - digits);
 	if (l < digits)
 		x += (digits - l) * 24;
 
-	while (*ptr) {
+	while (*ptr)
+	{
 		frame = (*ptr == '-') ? STAT_MINUS : *ptr -'0';
 
-		Sbar_DrawTransPic (x, y, sb_nums[color][frame]);
+		Sbar_DrawTransPic(x, y, sb_nums[color][frame]);
 		x += 24;
 		ptr++;
 	}
 }
 
-static int	Sbar_ColorForMap (int m) {
+static int Sbar_ColorForMap(int m)
+{
 	m = bound(0, m, 13);
 
 	return 16 * m + 8;
@@ -407,7 +419,8 @@ team_t teams[MAX_CLIENTS];
 int teamsort[MAX_CLIENTS];
 int scoreboardteams;
 
-static __inline int Sbar_PlayerNum(void) {
+static __inline int Sbar_PlayerNum(void)
+{
 	int mynum;
 
 	if (!cl.spectator || (mynum = Cam_TrackNum()) == -1)
@@ -417,12 +430,13 @@ static __inline int Sbar_PlayerNum(void) {
 }
 
 
-static __inline qboolean Sbar_IsSpectator(int mynum) {
-	
+static __inline qboolean Sbar_IsSpectator(int mynum)
+{
 	return (mynum == cl.playernum) ? cl.spectator : cl.players[mynum].spectator;
 }
 
-static void Sbar_SortFrags(qboolean spec) {
+static void Sbar_SortFrags(qboolean spec)
+{
 	int i, j, k;
 	static int lastframecount = 0;
 
@@ -434,8 +448,10 @@ static void Sbar_SortFrags(qboolean spec) {
 
 	// sort by frags
 	scoreboardlines = 0;
-	for (i = 0; i < MAX_CLIENTS; i++) {
-		if (cl.players[i].name[0] && (spec || !cl.players[i].spectator)) {
+	for (i = 0; i < MAX_CLIENTS; i++)
+	{
+		if (cl.players[i].name[0] && (spec || !cl.players[i].spectator))
+		{
 			fragsort[scoreboardlines] = i;
 			scoreboardlines++;
 			if (cl.players[i].spectator)
@@ -443,9 +459,12 @@ static void Sbar_SortFrags(qboolean spec) {
 		}
 	}
 		
-	for (i = 0; i < scoreboardlines; i++) {
-		for (j = 0; j < scoreboardlines - 1 - i; j++) {
-			if (cl.players[fragsort[j]].frags < cl.players[fragsort[j + 1]].frags) {
+	for (i = 0; i < scoreboardlines; i++)
+	{
+		for (j = 0; j < scoreboardlines - 1 - i; j++)
+		{
+			if (cl.players[fragsort[j]].frags < cl.players[fragsort[j + 1]].frags)
+			{
 				k = fragsort[j];
 				fragsort[j] = fragsort[j + 1];
 				fragsort[j + 1] = k;
@@ -1637,7 +1656,8 @@ static void Sbar_IntermissionNumber (int x, int y, int num, int digits, int colo
 	}
 }
 
-void Sbar_IntermissionOverlay (void) {
+void Sbar_IntermissionOverlay(void)
+{
 	mpic_t *pic;
 	float time;
 	int	dig, num, xofs;
@@ -1685,7 +1705,8 @@ void Sbar_IntermissionOverlay (void) {
 	Sbar_IntermissionNumber (xofs + 248, 144, cl.stats[STAT_TOTALMONSTERS], 3, 0, false);
 }
 
-void Sbar_FinaleOverlay (void) {
+void Sbar_FinaleOverlay(void)
+{
 	mpic_t *pic;
 
 	scr_copyeverything = 1;
