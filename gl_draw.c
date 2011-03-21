@@ -27,6 +27,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "gl_local.h"
 #include "version.h"
 #include "sbar.h"
+#include "wad.h"
 
 #include "image.h"
 #include "utils.h"
