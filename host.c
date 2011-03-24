@@ -36,6 +36,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "d_iface.h"
 #endif
 #include "fchecks.h"
+#include "filesystem.h"
 #include "fmod.h"
 #include "ignore.h"
 #include "image.h"

@@ -29,6 +29,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "teamplay.h"
 #include "version.h"
 #include "mouse.h"
+#include "filesystem.h"
 
 #include "ignore.h"
 #include "fchecks.h"
