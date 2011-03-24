@@ -22,6 +22,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "quakedef.h"
 
+#ifndef CLIENTONLY
+#include "filesystem.h"
+#endif
+
 #ifdef GLQUAKE
 
 #include "gl_local.h"
