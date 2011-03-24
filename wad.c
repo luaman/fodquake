@@ -43,7 +43,7 @@ Lowercases name and pads with spaces and a terminating 0 to the length of lumpin
 Used so lumpname lookups can proceed rapidly by comparing 4 chars at a time
 Space padding is so names can be printed nicely in tables. Can safely be performed in place.
 */
-static void W_CleanupName(char *in, char *out)
+static void W_CleanupName(const char *in, char *out)
 {
 	int i, c;
 
@@ -72,7 +72,7 @@ static int lump_filepos_compare(const void *a, const void *b)
 	return c->filepos - d->filepos;
 }
 
-void W_LoadWadFile(char *filename)
+void W_LoadWadFile(const char *filename)
 {
 	lumpinfo_t *lump_p;
 	wadinfo_t *header;
@@ -164,7 +164,7 @@ void W_UnloadWadFile()
 	free(wad_base);
 }
 
-static lumpinfo_t *W_GetLumpinfo(char *name)
+static lumpinfo_t *W_GetLumpinfo(const char *name)
 {
 	int i;
 	lumpinfo_t	*lump_p;
@@ -181,7 +181,7 @@ static lumpinfo_t *W_GetLumpinfo(char *name)
 	return NULL;
 }
 
-void *W_GetLumpName(char *name)
+void *W_GetLumpName(const char *name)
 {
 	lumpinfo_t *lump;
 
@@ -295,7 +295,7 @@ typedef struct
 static texwadlump_t *texwadlump;
 static unsigned int texwadlumpcount;
 
-void WAD3_LoadTextureWadFile (char *filename)
+void WAD3_LoadTextureWadFile(const char *filename)
 {
 	texwadlump_t *newtexwadlump;
 	lumpinfo_t *lumps, *lump_p;
