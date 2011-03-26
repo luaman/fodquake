@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 #include <ctype.h>
 #include <math.h>
 
@@ -13,7 +14,7 @@ void Sys_mkdir(char *path)
 	mkdir(path, 0777);
 }
 
-int Sys_Read_Dir(char *dir, char *subdir, int *gcount, struct directory_entry_temp **list, struct directory_entry_temp *(*add_det)(struct directory_entry_temp *tmp))
+int Sys_Read_Dir(char *dir, char *subdir, int *gcount, struct directory_entry_temp **list, struct directory_entry_temp *(*add_det)(struct directory_entry_temp **tmp))
 {
 	enum directory_entry_type type;
 	char dir_buf[4096];
