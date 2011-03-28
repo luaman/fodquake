@@ -50,6 +50,24 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <sys/stat.h>
 #endif
 
+#define	NUM_HELP_PAGES	6
+
+struct Picture *qplaquepic;
+struct Picture *ttl_mainpic;
+struct Picture *mainmenupic;
+struct Picture *menudotpic[6];
+struct Picture *p_optionpic;
+struct Picture *ttl_cstmpic;
+struct Picture *vidmodespic;
+struct Picture *helppic[NUM_HELP_PAGES];
+struct Picture *ttl_sglpic;
+struct Picture *sp_menupic;
+struct Picture *p_loadpic;
+struct Picture *p_savepic;
+struct Picture *p_multipic;
+struct Picture *bigboxpic;
+struct Picture *menuplyrpic;
+
 enum menustates
 {
 	m_none,
@@ -130,14 +148,9 @@ static int m_topmenu;             /* set if a submenu was entered via a menu_* c
 //=============================================================================
 /* Support Routines */
 
-#ifdef GLQUAKE
 cvar_t	scr_scaleMenu = {"scr_scaleMenu","1"};
 static int		menuwidth = 320;
 static int		menuheight = 240;
-#else
-#define menuwidth vid.conwidth
-#define menuheight vid.conheight
-#endif
 
 cvar_t	scr_centerMenu = {"scr_centerMenu","1"};
 int		m_yofs = 0;
@@ -157,16 +170,12 @@ static void M_PrintWhite(int cx, int cy, const char *str)
 	Draw_String (cx + ((menuwidth - 320)>>1), cy + m_yofs, str);
 }
 
-static void M_DrawTransPic(int x, int y, mpic_t *pic)
+static void M_DrawPic(struct Picture *pic, int x, int y, int width, int height)
 {
-	Draw_TransPic(x + ((menuwidth - 320)>>1), y + m_yofs, pic);
+	Draw_DrawPicture(pic, x + ((menuwidth - 320)>>1), y + m_yofs, width, height);
 }
 
-static void M_DrawPic(int x, int y, mpic_t *pic)
-{
-	Draw_Pic (x + ((menuwidth - 320)>>1), y + m_yofs, pic);
-}
-
+#if 0
 static byte translationTable[256];
 
 static void M_BuildTranslationTable(int top, int bottom)
@@ -199,6 +208,7 @@ static void M_DrawTransPicTranslate(int x, int y, mpic_t *pic)
 {
 	Draw_TransPicTranslate (x + ((menuwidth - 320) >> 1), y + m_yofs, pic, translationTable);
 }
+#endif
 
 
 static void M_DrawTextBox(int x, int y, int width, int lines)
@@ -958,16 +968,13 @@ static void M_Menu_Main_f()
 static void M_Main_Draw()
 {
 	int f;
-	mpic_t *p;
 
-	M_DrawTransPic (16, 4, Draw_CachePic ("gfx/qplaque.lmp") );
-	p = Draw_CachePic ("gfx/ttl_main.lmp");
-	M_DrawPic ( (320-p->width)/2, 4, p);
-	M_DrawTransPic (72, 32, Draw_CachePic ("gfx/mainmenu.lmp") );
+	M_DrawPic(qplaquepic, 16, 4, 32, 144);
+	M_DrawPic(ttl_mainpic, (320 - 96) / 2, 4, 96, 24);
+	M_DrawPic(mainmenupic, 72, 32, 240, 112);
 
 	f = (int)(curtime * 10)%6;
-
-	M_DrawTransPic (54, 32 + m_main_cursor * 20,Draw_CachePic( va("gfx/menudot%i.lmp", f+1 ) ) );
+	M_DrawPic(menudotpic[f], 54, 32 + m_main_cursor * 20, 16, 24);
 }
 
 static void M_Main_Key(int key)
@@ -1060,13 +1067,11 @@ static void M_Options_SaveConfiguration()
 
 static void M_Options_Draw()
 {
-	mpic_t *p;
 	static int fs = 2;
 	int newfs;
 
-	M_DrawTransPic(16, 4, Draw_CachePic("gfx/qplaque.lmp"));
-	p = Draw_CachePic("gfx/p_option.lmp");
-	M_DrawPic((320-p->width)/2, 4, p);
+	M_DrawPic(qplaquepic, 16, 4, 32, 144);
+	M_DrawPic(p_optionpic, (320 - 144) / 2, 4, 144, 24);
 
 	newfs = VID_GetFullscreen();
 	if (newfs != fs)
@@ -1176,10 +1181,8 @@ static void M_Keys_Draw()
 {
 	int x, y, i, l, keys[2];
 	char *name;
-	mpic_t *p;
 
-	p = Draw_CachePic ("gfx/ttl_cstm.lmp");
-	M_DrawPic ( (320-p->width)/2, 4, p);
+	M_DrawPic(ttl_cstmpic, (320 - 184) / 2, 4, 184, 24);
 
 	if (bind_grab)
 		M_Print (12, 32, "Press a key or button for this action");
@@ -1419,11 +1422,8 @@ void M_Fps_HighQuality()
 
 static void M_Fps_Draw()
 {
-	mpic_t	*p;
-
-	M_DrawTransPic(16, 4, Draw_CachePic("gfx/qplaque.lmp"));
-	p = Draw_CachePic("gfx/ttl_cstm.lmp");
-	M_DrawPic((320-p->width)/ 2, 4, p);
+	M_DrawPic(qplaquepic, 16, 4, 32, 144);
+	M_DrawPic(ttl_cstmpic, (320 - 184) / 2, 4, 184, 24);
 
 	Menu_Draw(fpsmenu);
 }
@@ -1617,7 +1617,6 @@ static void M_Video_Draw()
 	const char * const *vidmodes;
 	const char *t;
 	char modestring[40];
-	mpic_t *p;
 	unsigned int i;
 	unsigned int j;
 	unsigned int maxwidth;
@@ -1636,8 +1635,7 @@ static void M_Video_Draw()
 	else
 		bottom = menuheight;
 
-	p = Draw_CachePic ("gfx/vidmodes.lmp");
-	M_DrawPic ((320 - p->width) / 2, 4, p);
+	M_DrawPic(vidmodespic, (320 - 216) / 2, 4, 216, 24);
 
 	curmode = VID_GetMode();
 
@@ -1853,7 +1851,6 @@ static void M_Video_Key(int key)
 /* HELP MENU */
 
 int		help_page;
-#define	NUM_HELP_PAGES	6
 
 static void M_Menu_Help_f()
 {
@@ -1863,7 +1860,7 @@ static void M_Menu_Help_f()
 
 static void M_Help_Draw()
 {
-	M_DrawPic (0, 0, Draw_CachePic ( va("gfx/help%i.lmp", help_page)) );
+	M_DrawPic(helppic[help_page], 0, 0, 320, 200);
 }
 
 static void M_Help_Key(int key)
@@ -1963,10 +1960,8 @@ static void M_Menu_SinglePlayer_f()
 static void M_SinglePlayer_Draw()
 {
 	int f;
-	mpic_t *p;
 
-	p = Draw_CachePic ("gfx/ttl_sgl.lmp");
-	M_DrawPic ( (320-p->width)/2, 4, p);
+	M_DrawPic(ttl_sglpic, (320 - 128) / 2, 4, 128, 24);
 	M_DrawTextBox(48, 10*8, 25, 5);
 	M_PrintWhite(68+16, 12*8, "Single player games");
 	M_PrintWhite(68+8, 13*8, "currently do not work");
@@ -1975,8 +1970,7 @@ static void M_SinglePlayer_Draw()
 
 	if (m_singleplayer_notavail)
 	{
-		p = Draw_CachePic ("gfx/ttl_sgl.lmp");
-		M_DrawPic ( (320-p->width)/2, 4, p);
+		M_DrawPic(ttl_sglpic, (320 - 128) / 2, 4, 128, 24);
 		M_DrawTextBox (60, 10*8, 24, 4);
 		M_PrintWhite (80, 12*8, " Cannot start a game");
 		M_PrintWhite (80, 13*8, "spprogs.dat not found");
@@ -1990,13 +1984,12 @@ static void M_SinglePlayer_Draw()
 		return;
 	}
 
-	M_DrawTransPic (16, 4, Draw_CachePic ("gfx/qplaque.lmp") );
-	p = Draw_CachePic ("gfx/ttl_sgl.lmp");
-	M_DrawPic ( (320-p->width)/2, 4, p);
-	M_DrawTransPic (72, 32, Draw_CachePic ("gfx/sp_menu.lmp") );
+	M_DrawPic(qplaquepic, 16, 4, 32, 144);
+	M_DrawPic(ttl_sglpic, (320 - 128) / 2, 4, 128, 24);
+	M_DrawPic(sp_menupic, 72, 32, 232, 64);
 
 	f = (int)(curtime * 10)%6;
-	M_DrawTransPic (54, 32 + m_singleplayer_cursor * 20,Draw_CachePic( va("gfx/menudot%i.lmp", f+1 ) ) );
+	M_DrawPic(menudotpic[f], 54, 32 + m_main_cursor * 20, 16, 24);
 }
 
 static void CheckSPGame ()
@@ -2142,12 +2135,9 @@ static void M_Menu_SinglePlayer_f()
 
 static void M_SinglePlayer_Draw()
 {
-	mpic_t *p;
-
-	M_DrawTransPic (16, 4, Draw_CachePic ("gfx/qplaque.lmp") );
-	p = Draw_CachePic ("gfx/ttl_sgl.lmp");
-	M_DrawPic ( (320-p->width)/2, 4, p);
-//	M_DrawTransPic (72, 32, Draw_CachePic ("gfx/sp_menu.lmp") );
+	M_DrawPic(qplaquepic, 16, 4, 32, 144);
+	M_DrawPic(ttl_sglpic, (320 - 128) / 2, 4, 128, 24);
+//	M_DrawPic(sp_menupic, 72, 32, 232, 64);
 
 	M_DrawTextBox (60, 10*8, 23, 4);
 	M_PrintWhite (88, 12*8, "This client is for");
@@ -2231,10 +2221,8 @@ static void M_Menu_Save_f()
 static void M_Load_Draw()
 {
 	int i;
-	mpic_t *p;
 
-	p = Draw_CachePic ("gfx/p_load.lmp");
-	M_DrawPic ( (320 - p->width) >> 1, 4, p);
+	M_DrawPic(p_loadpic, (320 - 104) >> 1, 4, 104, 24);
 
 	for (i = 0; i < MAX_SAVEGAMES; i++)
 		M_Print (16, 32 + 8*i, m_filenames[i]);
@@ -2246,10 +2234,8 @@ static void M_Load_Draw()
 static void M_Save_Draw()
 {
 	int i;
-	mpic_t *p;
 
-	p = Draw_CachePic ("gfx/p_save.lmp");
-	M_DrawPic ( (320 - p->width) >> 1, 4, p);
+	M_DrawPic(p_savepic, (320 - 88) >> 1, 4, 88, 24);
 
 	for (i = 0; i < MAX_SAVEGAMES; i++)
 		M_Print (16, 32 + 8 * i, m_filenames[i]);
@@ -2354,11 +2340,8 @@ static void M_MultiPlayer_ServerBrowser()
 
 void M_MultiPlayer_Draw()
 {
-	mpic_t *p;
-
-	M_DrawTransPic(16, 4, Draw_CachePic("gfx/qplaque.lmp"));
-	p = Draw_CachePic("gfx/p_multi.lmp");
-	M_DrawPic((320-p->width)/2, 4, p);
+	M_DrawPic(qplaquepic, 16, 4, 32, 144);
+	M_DrawPic(p_multipic, (320 - 216) / 2, 4, 216, 24);
 
 	Menu_Draw(multiplayermenu);
 }
@@ -3535,12 +3518,10 @@ int		gameoptions_cursor;
 
 static void M_GameOptions_Draw()
 {
-	mpic_t *p;
 	char *msg;
 
-	M_DrawTransPic (16, 4, Draw_CachePic ("gfx/qplaque.lmp") );
-	p = Draw_CachePic ("gfx/p_multi.lmp");
-	M_DrawPic ( (320-p->width)/2, 4, p);
+	M_DrawPic(qplaquepic, 16, 4, 32, 144);
+	M_DrawPic(p_multipic, (320 - 216) / 2, 4, 216, 24);
 
 	M_DrawTextBox (152, 32, 10, 1);
 	M_Print (160, 40, "begin game");
@@ -3811,11 +3792,8 @@ static void M_Menu_Setup_f()
 
 static void M_Setup_Draw()
 {
-	mpic_t	*p;
-
-	M_DrawTransPic (16, 4, Draw_CachePic ("gfx/qplaque.lmp") );
-	p = Draw_CachePic ("gfx/p_multi.lmp");
-	M_DrawPic ( (320-p->width)/2, 4, p);
+	M_DrawPic(qplaquepic, 16, 4, 32, 144);
+	M_DrawPic(p_multipic, (320 - 216) / 2, 4, 216, 24);
 
 	M_Print (64, 40, "Your name");
 	M_DrawTextBox (160, 32, 16, 1);
@@ -3831,11 +3809,14 @@ static void M_Setup_Draw()
 	M_DrawTextBox (64, 140-8, 14, 1);
 	M_Print (72, 140, "Accept Changes");
 
-	p = Draw_CachePic ("gfx/bigbox.lmp");
-	M_DrawTransPic (160, 64, p);
-	p = Draw_CachePic ("gfx/menuplyr.lmp");
+	M_DrawPic(bigboxpic, 160, 64, 72, 72);
+
+#if 0
 	M_BuildTranslationTable(setup_top*16, setup_bottom*16);
 	M_DrawTransPicTranslate (172, 72, p);
+#endif
+	#warning Fix this
+	/* M_DrawPic(menuplyr, 172, 72, 48, 56); */
 
 	M_DrawCharacter (56, setup_cursor_table [setup_cursor], 12+((int)(curtime*4)&1));
 
@@ -4010,9 +3991,7 @@ void M_CvarInit()
 {
 	Cvar_SetCurrentGroup(CVAR_GROUP_SCREEN);
 	Cvar_Register (&scr_centerMenu);
-#ifdef GLQUAKE
 	Cvar_Register (&scr_scaleMenu);
-#endif
 
 	Cvar_ResetCurrentGroup();
 
@@ -4042,6 +4021,9 @@ void M_CvarInit()
 
 void M_Draw()
 {
+	int oldconwidth;
+	int oldconheight;
+
 	if (m_state == m_none || key_dest != key_menu)
 		return;
 
@@ -4072,9 +4054,11 @@ void M_Draw()
 		m_recursiveDraw = false;
 	}
 
-#ifdef GLQUAKE
 	if (scr_scaleMenu.value)
 	{
+		oldconwidth = vid.conwidth;
+		oldconheight = vid.conheight;
+
 		if (((double)vid.conwidth)/320 > ((double)vid.conheight)/200)
 		{
 			menuwidth = ((double)vid.conwidth)*(200.0/((double)vid.conheight));
@@ -4086,16 +4070,16 @@ void M_Draw()
 			menuheight = ((double)vid.conheight)*(320.0/((double)vid.conwidth));
 		}
 
-		glMatrixMode(GL_PROJECTION);
-		glLoadIdentity ();
-		glOrtho  (0, menuwidth, menuheight, 0, -99999, 99999);
+		vid.conwidth = menuwidth;
+		vid.conheight = menuheight;
+
+		Draw_SetSize(menuwidth, menuheight);
 	}
 	else
 	{
 		menuwidth = vid.conwidth;
 		menuheight = vid.conheight;
 	}
-#endif
 
 	if (scr_centerMenu.value)
 		m_yofs = (menuheight - 200) / 2;
@@ -4182,14 +4166,13 @@ void M_Draw()
 #endif
 	}
 
-#ifdef GLQUAKE
 	if (scr_scaleMenu.value)
 	{
-		glMatrixMode (GL_PROJECTION);
-		glLoadIdentity ();
-		glOrtho  (0, vid.conwidth, vid.conheight, 0, -99999, 99999);
+		vid.conwidth = oldconwidth;
+		vid.conheight = oldconheight;
+
+		Draw_SetSize(vid.conwidth, vid.conheight);
 	}
-#endif
 
 	if (m_entersound)
 	{
@@ -4372,9 +4355,82 @@ void M_Shutdown()
 
 void M_VidInit()
 {
+	unsigned int i;
+	char buf[64];
+
+	qplaquepic = Draw_LoadPicture("gfx/qplaque.lmp", DRAW_LOADPICTURE_DUMMYFALLBACK);
+	ttl_mainpic = Draw_LoadPicture("gfx/ttl_main.lmp", DRAW_LOADPICTURE_DUMMYFALLBACK);
+	mainmenupic = Draw_LoadPicture("gfx/mainmenu.lmp", DRAW_LOADPICTURE_DUMMYFALLBACK);
+
+	for(i=0;i<6;i++)
+	{
+		snprintf(buf, sizeof(buf), "gfx/menudot%d.lmp", i+1);
+		menudotpic[i] = Draw_LoadPicture(buf, DRAW_LOADPICTURE_DUMMYFALLBACK);
+	}
+
+	p_optionpic = Draw_LoadPicture("gfx/p_option.lmp", DRAW_LOADPICTURE_DUMMYFALLBACK);
+
+	ttl_cstmpic = Draw_LoadPicture("gfx/ttl_cstm.lmp", DRAW_LOADPICTURE_DUMMYFALLBACK);
+
+	vidmodespic = Draw_LoadPicture("gfx/vidmodes.lmp", DRAW_LOADPICTURE_DUMMYFALLBACK);
+
+	for(i=0;i<NUM_HELP_PAGES;i++)
+	{
+		snprintf(buf, sizeof(buf), "gfx/help%d.lmp", i);
+		helppic[i] = Draw_LoadPicture(buf, DRAW_LOADPICTURE_DUMMYFALLBACK);
+	}
+
+	ttl_sglpic = Draw_LoadPicture("gfx/ttl_sgl.lmp", DRAW_LOADPICTURE_DUMMYFALLBACK);
+
+	sp_menupic = Draw_LoadPicture("gfx/sp_menu.lmp", DRAW_LOADPICTURE_DUMMYFALLBACK);
+
+	p_loadpic = Draw_LoadPicture("gfx/p_load.lmp", DRAW_LOADPICTURE_DUMMYFALLBACK);
+
+	p_savepic = Draw_LoadPicture("gfx/p_save.lmp", DRAW_LOADPICTURE_DUMMYFALLBACK);
+
+	p_multipic = Draw_LoadPicture("gfx/p_multi.lmp", DRAW_LOADPICTURE_DUMMYFALLBACK);
+
+	bigboxpic = Draw_LoadPicture("gfx/bigbox.lmp", DRAW_LOADPICTURE_DUMMYFALLBACK);
+
+	menuplyrpic = Draw_LoadPicture("gfx/menuplyr.lmp", DRAW_LOADPICTURE_DUMMYFALLBACK);
 }
 
 void M_VidShutdown()
 {
+	unsigned int i;
+
+	Draw_FreePicture(menuplyrpic);
+
+	Draw_FreePicture(bigboxpic);
+
+	Draw_FreePicture(p_multipic);
+
+	Draw_FreePicture(p_savepic);
+
+	Draw_FreePicture(p_loadpic);
+
+	Draw_FreePicture(sp_menupic);
+
+	Draw_FreePicture(ttl_sglpic);
+
+	for(i=0;i<NUM_HELP_PAGES;i++)
+	{
+		Draw_FreePicture(helppic[i]);
+	}
+
+	Draw_FreePicture(vidmodespic);
+
+	Draw_FreePicture(ttl_cstmpic);
+
+	Draw_FreePicture(p_optionpic);
+
+	for(i=0;i<6;i++)
+	{
+		Draw_FreePicture(menudotpic[i]);
+	}
+
+	Draw_FreePicture(mainmenupic);
+	Draw_FreePicture(ttl_mainpic);
+	Draw_FreePicture(qplaquepic);
 }
 

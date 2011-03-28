@@ -241,6 +241,7 @@ OBJS= \
 	pr_edict.o \
 	pr_exec.o \
 	pr_cmds.o \
+	r_draw.o \
 	r_part.o \
 	readablechars.o \
 	ruleset.o \
@@ -276,6 +277,7 @@ OBJS= \
 	$(OSOBJS)
 
 SWOBJS= \
+	d_draw.o \
 	d_edge.o \
 	d_init.o \
 	d_modech.o \
@@ -290,7 +292,6 @@ SWOBJS= \
 	r_aclip.o \
 	r_alias.o \
 	r_bsp.o \
-	r_draw.o \
 	r_edge.o \
 	r_efrag.o \
 	r_light.o \

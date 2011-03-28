@@ -425,47 +425,6 @@ setup_gltexture:
 	return glt->texnum;
 }
 
-int GL_LoadPicTexture(char *name, mpic_t *pic, byte *data)
-{
-	int glwidth, glheight, i;
-	char fullname[MAX_QPATH] = "pic:";
-	byte *src, *dest, *buf;
-
-	Q_ROUND_POWER2(pic->width, glwidth);
-	Q_ROUND_POWER2(pic->height, glheight);
-
-	Q_strncpyz(fullname + 4, name, sizeof(fullname) - 4);
-	if (glwidth == pic->width && glheight == pic->height)
-	{
-		pic->texnum = GL_LoadTexture(fullname, glwidth, glheight, data, TEX_ALPHA, 1);
-		pic->sl = 0;
-		pic->sh = 1;
-		pic->tl = 0;
-		pic->th = 1;
-	}
-	else
-	{
-		buf = Q_Calloc(glwidth * glheight, 1);
-
-		src = data;
-		dest = buf;
-		for (i = 0; i < pic->height; i++)
-		{
-			memcpy(dest, src, pic->width);
-			src += pic->width;
-			dest += glwidth;
-		}
-		pic->texnum = GL_LoadTexture(fullname, glwidth, glheight, buf, TEX_ALPHA, 1);
-		pic->sl = 0;
-		pic->sh = (float) pic->width / glwidth;
-		pic->tl = 0;
-		pic->th = (float) pic->height / glheight;
-		free(buf);
-	}
-
-	return pic->texnum;
-}
-
 static struct gltexture *GL_FindTexture(const char *identifier)
 {
 	int i;
@@ -627,72 +586,6 @@ int GL_LoadTextureImage(char *filename, char *identifier, int matchwidth, int ma
 
 	current_texture = NULL;
 	return texnum;
-}
-
-mpic_t *GL_LoadPicImage(char *filename, char *id, int matchwidth, int matchheight, int mode)
-{
-	int width, height, i;
-	char identifier[MAX_QPATH] = "pic:";
-	byte *data, *src, *dest, *buf;
-	static mpic_t pic;
-	int imagewidth, imageheight;
-
-	if (no24bit)
-		return NULL;
-
-	if (!(data = GL_LoadImagePixels(filename, matchwidth, matchheight, &imagewidth, &imageheight, 0)))
-		return NULL;
-
-	pic.width = imagewidth;
-	pic.height = imageheight;
-
-	if (mode & TEX_ALPHA)
-	{
-		mode &= ~TEX_ALPHA;
-		for (i = 0; i < imagewidth * imageheight; i++)
-		{
-			if ( ( (((unsigned int *) data)[i] >> 24 ) & 0xFF ) < 255)
-			{
-				mode |= TEX_ALPHA;
-				break;
-			}
-		}
-	}
-
-	Q_ROUND_POWER2(pic.width, width);
-	Q_ROUND_POWER2(pic.height, height);
-
-	Q_strncpyz(identifier + 4, id ? id : filename, sizeof(identifier) - 4);
-	if (width == pic.width && height == pic.height)
-	{
-		pic.texnum = GL_LoadTexture(identifier, pic.width, pic.height, data, mode, 4);
-		pic.sl = 0;
-		pic.sh = 1;
-		pic.tl = 0;
-		pic.th = 1;
-	}
-	else
-	{
-		buf = Q_Calloc(width * height, 4);
-
-		src = data;
-		dest = buf;
-		for (i = 0; i < pic.height; i++)
-		{
-			memcpy(dest, src, pic.width * 4);
-			src += pic.width * 4;
-			dest += width * 4;
-		}
-		pic.texnum = GL_LoadTexture(identifier, width, height, buf, mode & ~TEX_MIPMAP, 4);
-		pic.sl = 0;
-		pic.sh = (float) pic.width / width;
-		pic.tl = 0;
-		pic.th = (float) pic.height / height;
-		free(buf);
-	}
-
-	free(data);
-	return &pic;
 }
 
 int GL_LoadCharsetImage(char *filename, char *identifier)

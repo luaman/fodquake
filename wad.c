@@ -32,7 +32,7 @@ static byte		*wad_base;
 
 static void W_InsertOcranaLeds (byte *data);
 
-void SwapPic (qpic_t *pic)
+static void SwapPic (qpic_t *pic)
 {
 	pic->width = LittleLong(pic->width);
 	pic->height = LittleShort(pic->height);	

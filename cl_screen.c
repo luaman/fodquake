@@ -129,9 +129,12 @@ cvar_t			scr_coloredText = {"scr_coloredText", "1"};
 
 qboolean		scr_initialized;                // ready to draw
 
-mpic_t			*scr_ram;
-mpic_t			*scr_net;
-mpic_t			*scr_turtle;
+static struct Picture *pausepic;
+static struct Picture *loadingpic;
+
+static struct Picture *rampic;
+static struct Picture *netpic;
+static struct Picture *turtlepic;
 
 int				scr_fullupdate;
 
@@ -457,7 +460,7 @@ void SCR_DrawRam(void)
 	if (!r_cache_thrash)
 		return;
 
-	Draw_Pic (scr_vrect.x + 32, scr_vrect.y, scr_ram);
+	Draw_DrawPicture(rampic, scr_vrect.x + 32, scr_vrect.y, 32, 32);
 }
 
 void SCR_DrawTurtle(void)
@@ -477,11 +480,14 @@ void SCR_DrawTurtle(void)
 	if (count < 3)
 		return;
 
-	Draw_Pic (scr_vrect.x, scr_vrect.y, scr_turtle);
+	Draw_DrawPicture(turtlepic, scr_vrect.x, scr_vrect.y, 32, 32);
 }
 
 void SCR_DrawNet (void)
 {
+	if (cls.demoplayback)
+		return;
+
 #ifdef NETQW
 	if (!cls.netqw)
 		return;
@@ -493,10 +499,7 @@ void SCR_DrawNet (void)
 		return;
 #endif
 
-	if (cls.demoplayback)
-		return;
-
-	Draw_Pic (scr_vrect.x + 64, scr_vrect.y, scr_net);
+	Draw_DrawPicture(netpic, scr_vrect.x + 64, scr_vrect.y, 32, 32);
 }
 
 #define	ELEMENT_X_COORD(var)	((var##_x.value < 0) ? vid.conwidth - strlen(str) * 8 + 8 * var##_x.value: 8 * var##_x.value)
@@ -695,27 +698,27 @@ void SCR_DrawDemoClock (void)
 
 void SCR_DrawPause (void)
 {
-	mpic_t *pic;
-
 	if (!scr_showpause.value)               // turn off for screenshots
 		return;
 
 	if (!cl.paused)
 		return;
 
-	pic = Draw_CachePic ("gfx/pause.lmp");
-	Draw_Pic ((vid.conwidth - pic->width) / 2, (vid.conheight - 48 - pic->height) / 2, pic);
+	if (pausepic == 0)
+		pausepic = Draw_LoadPicture("gfx/pause.lmp", DRAW_LOADPICTURE_DUMMYFALLBACK);
+
+	Draw_DrawPicture(pausepic, (vid.conwidth - 128) / 2, (vid.conheight - 48 - 24) / 2, 128, 24);
 }
 
 void SCR_DrawLoading (void)
 {
-	mpic_t *pic;
-
 	if (!scr_drawloading)
 		return;
 
-	pic = Draw_CachePic ("gfx/loading.lmp");
-	Draw_Pic ( (vid.conwidth - pic->width )/ 2, (vid.conheight - 48 - pic->height) / 2, pic);
+	if (loadingpic == 0)
+		loadingpic = Draw_LoadPicture("gfx/loading.lmp", DRAW_LOADPICTURE_DUMMYFALLBACK);
+
+	Draw_DrawPicture(loadingpic, (vid.conwidth - 144) / 2, (vid.conheight - 48 - 24) / 2, 144, 24);
 }
 
 
@@ -1858,14 +1861,31 @@ void SCR_CvarInit (void)
 
 void SCR_Init(void)
 {
-	scr_ram = Draw_CacheWadPic ("ram");
-	scr_net = Draw_CacheWadPic ("net");
-	scr_turtle = Draw_CacheWadPic ("turtle");
+	rampic = Draw_LoadPicture("wad:ram", DRAW_LOADPICTURE_DUMMYFALLBACK);
+	netpic = Draw_LoadPicture("wad:net", DRAW_LOADPICTURE_DUMMYFALLBACK);
+	turtlepic = Draw_LoadPicture("wad:turtle", DRAW_LOADPICTURE_DUMMYFALLBACK);
 
 	scr_initialized = true;
 }
 
 void SCR_Shutdown()
 {
+	if (pausepic)
+	{
+		Draw_FreePicture(pausepic);
+		pausepic = 0;
+	}
+
+	if (loadingpic)
+	{
+		Draw_FreePicture(loadingpic);
+		loadingpic = 0;
+	}
+
+	Draw_FreePicture(turtlepic);
+	Draw_FreePicture(netpic);
+	Draw_FreePicture(rampic);
+
+	scr_initialized = false;
 }
 

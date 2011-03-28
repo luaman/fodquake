@@ -25,52 +25,49 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifndef DRAW_H
 #define DRAW_H
 
-#include "qtypes.h"
-
-#ifdef GLQUAKE
-typedef struct
+enum Draw_LoadPicture_Fallback
 {
-	int			width;
-	short			height;
-	int			texnum;
-	float		sl, tl, sh, th;
-} mpic_t;
-#else
-typedef struct
-{
-	int			width;
-	short		height;
-	byte		alpha;
-	byte		pad;
-	byte		data[4];	// variable sized
-} mpic_t;
-#endif
+	DRAW_LOADPICTURE_NOFALLBACK,
+	DRAW_LOADPICTURE_DUMMYFALLBACK,
+};
 
 void Draw_CvarInit(void);
-void Draw_Init(void);
+int Draw_Init(void);
 void Draw_Shutdown(void);
+void Draw_SetSize(unsigned int width, unsigned int height);
 void Draw_BeginTextRendering(void);
 void Draw_EndTextRendering(void);
-void Draw_Character (int x, int y, int num);
-void Draw_SubPic(int x, int y, mpic_t *pic, int srcx, int srcy, int width, int height);
-void Draw_Pic (int x, int y, mpic_t *pic);
-void Draw_TransPic (int x, int y, mpic_t *pic);
-void Draw_TransPicTranslate (int x, int y, mpic_t *pic, byte *translation);
-void Draw_ConsoleBackground (int lines);
-void Draw_TileClear (int x, int y, int w, int h);
-void Draw_Fill (int x, int y, int w, int h, int c);
-void Draw_AlphaFill (int x, int y, int w, int h, int c, float alpha);
-void Draw_FadeScreen (void);
-void Draw_String (int x, int y, const char *str);
+void Draw_BeginColoredTextRendering(void);
+void Draw_EndColoredTextRendering(void);
+void Draw_Character(int x, int y, unsigned char num);
+void Draw_ConsoleBackground(int lines);
+void Draw_TileClear(int x, int y, int w, int h);
+void Draw_Fill(int x, int y, int w, int h, int c);
+void Draw_AlphaFill(int x, int y, int w, int h, int c, float alpha);
+void Draw_FadeScreen(void);
+void Draw_String(int x, int y, const char *str);
 void Draw_String_Length(int x, int y, const char *str, int len);
-void Draw_Alt_String (int x, int y, const char *str);
-void Draw_ColoredString (int x, int y, char *str, int red);
+void Draw_Alt_String(int x, int y, const char *str);
+void Draw_ColoredString(int x, int y, char *str, int red);
 void Draw_ColoredString_Length(int x, int y, char *text, int red, int len, unsigned short startcolour);
-mpic_t *Draw_CachePic (char *path);
-mpic_t *Draw_CacheWadPic (char *name);
-void Draw_FreeWadPic(mpic_t *pic);
 void Draw_Crosshair(void);
-void Draw_TextBox (int x, int y, int width, int lines);
+void Draw_TextBox(int x, int y, int width, int lines);
+
+
+struct Picture *Draw_LoadPicture(const char *name, enum Draw_LoadPicture_Fallback fallback);
+void Draw_FreePicture(struct Picture *);
+void Draw_DrawPicture(struct Picture *, int x, int y, unsigned int width, unsigned int height);
+void Draw_DrawPictureAlpha(struct Picture *picture, int x, int y, unsigned int width, unsigned int height, float alpha);
+void Draw_DrawSubPicture(struct Picture *picture, unsigned int sx, unsigned int sy, unsigned int swidth, unsigned int sheight, int x, int y, unsigned int width, unsigned int height);
+
+
+
+void DrawImp_CvarInit(void);
+void DrawImp_Init(void);
+void DrawImp_Shutdown(void);
+
+void DrawImp_Character(int x, int y, unsigned char num);
+void DrawImp_SetTextColor(int r, int g, int b);
 
 #endif
 
