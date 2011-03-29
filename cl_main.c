@@ -1751,7 +1751,6 @@ void CL_Init (void)
 	cl_vidinitialised = 1;
 
 	Image_Init();
-	SCR_Init ();
 
 	S_Init ();
 
