@@ -2472,9 +2472,12 @@ menu_items:
 
 	M_DrawCharacter (M_MP3_CONTROL_COL - 8, M_MP3_CONTROL_MENUROW + mp3_cursor * 8, 12 + ((int)(curtime * 4) & 1));
 
+#warning I broke this
+#if 0
 	if (mp3_volumectrl_active)
 		M_DrawSlider(M_MP3_CONTROL_COL + 96, M_MP3_CONTROL_MENUROW + 56, bound(0, mp3_volume.value, 1));
 	else
+#endif
 		M_PrintWhite (M_MP3_CONTROL_COL + 88, M_MP3_CONTROL_MENUROW + 56, "Disabled");;
 
 	MP3_GetToggleState(&last_shuffle, &last_repeat);
