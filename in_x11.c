@@ -101,6 +101,9 @@ static void open_libxi(struct inputdata *id)
 	/* libXi will unfortunately leak memory on each use... However there's no easy way around it really :( */
 
 	id->libxi = dlopen("libXi.so", RTLD_NOW);
+	if (id->libxi == 0)
+		id->libxi = dlopen("libXi.so.6", RTLD_NOW); /* fffffffuuuuuuuuuuuuu */
+
 	if (id->libxi)
 	{
 		id->__XOpenDevice = dlsym(id->libxi, "XOpenDevice");
