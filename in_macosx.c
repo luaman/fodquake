@@ -18,9 +18,14 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 
+#include <IOKit/hid/IOHIDLib.h>
+
+#undef true
+#undef false
+
 #include <pthread.h>
 
-#include "in_macosx.h"
+#include "keys.h"
 
 #define NUMBUTTONEVENTS 32
 
