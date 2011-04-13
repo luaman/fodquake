@@ -31,6 +31,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "image.h"
 #include "utils.h"
+#include "config.h"
 
 #include "draw.h"
 
@@ -963,11 +964,13 @@ struct Picture *Draw_LoadPicture(const char *name, enum Draw_LoadPicture_Fallbac
 
 			strcpy(newnameextension, ".tga");
 			newdata = Image_LoadTGA(0, newname, 0, 0, &width, &height);
+#if USE_PNG
 			if (!newdata)
 			{
 				strcpy(newnameextension, ".png");
 				newdata = Image_LoadPNG(0, newname, 0, 0, &width, &height);
 			}
+#endif
 
 			free(newname);
 		}
