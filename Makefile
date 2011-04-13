@@ -180,9 +180,10 @@ ifeq ($(OS), macosx)
 		cd_null.o
 
 	OSGLOBJS = \
-		vid_coregl.o
+		vid_coregl.o \
+		in_macosx.o
 
-	OSGLLDFLAGS = -framework OpenGL -framework ApplicationServices -framework AudioUnit -framework CoreServices
+	OSGLLDFLAGS = -framework OpenGL -framework ApplicationServices -framework AudioUnit -framework CoreServices -framework IOKit
 
 	OSCFLAGS = -D__MACOSX__
 endif
