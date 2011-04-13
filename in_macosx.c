@@ -26,6 +26,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <pthread.h>
 
 #include "keys.h"
+#include "in_macosx.h"
 
 #define NUMBUTTONEVENTS 32
 
@@ -400,7 +401,7 @@ static void input_callback(void *context, IOReturn result, void *sender, IOHIDVa
 	}
 }
 
-void *Sys_Input_Thread(void *inarg)
+static void *Sys_Input_Thread(void *inarg)
 {
 	struct input_data *input;
 	IOReturn tIOReturn;
