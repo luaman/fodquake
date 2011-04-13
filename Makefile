@@ -171,6 +171,7 @@ ifeq ($(OS), macosx)
 	OSOBJS = \
 		sys_darwin.o \
 		sys_io_linux.o \
+		sys_lib_null.o \
 		thread_posix.o \
 		net_posix.o \
 		snd_coreaudio.o \
