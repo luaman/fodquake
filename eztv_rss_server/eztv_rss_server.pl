@@ -32,7 +32,6 @@ my $count = 0;
 my $proxies = {};
 
 my $dbargs = {AutoCommit => 0, PrintError => 1};
-my $dbh = DBI->connect("dbi:SQLite:dbname=proxies.db", "", "", $dbargs);
 
 
 
@@ -40,6 +39,7 @@ sub get_proxy
 {
 	my $host = $_[0];
 	$host =~ s/\n//;
+	my $dbh = DBI->connect("dbi:SQLite:dbname=proxies.db", "", "", $dbargs);
 	($proxy_id, $id) = $dbh->selectrow_array("SELECT proxy_id,id FROM servers WHERE name=\'" . $host . "\';");
 	print "SELECT proxy_id,id FROM servers WHERE name=\'" . $host . "\';\n";
 	if ($dbh->err()) { return "error";}
