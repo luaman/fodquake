@@ -949,6 +949,29 @@ struct Picture *Draw_LoadPicture(const char *name, enum Draw_LoadPicture_Fallbac
 
 	if (strncmp(name, "wad:", 4) == 0)
 	{
+		namelen = strlen(name + 4);
+		newname = malloc(namelen + strlen("textures/wad/") + 1);
+		if (newname)
+		{
+			memcpy(newname, "textures/wad/", strlen("textures/wad/"));
+			memcpy(newname + strlen("textures/wad/"), name + 4, namelen);
+			newname[strlen("textures/wad/") + namelen] = 0;
+			picture = Draw_LoadPicture(newname, DRAW_LOADPICTURE_NOFALLBACK);
+			free(newname);
+			if (picture)
+				return picture;
+		}
+		newname = malloc(namelen + strlen("gfx/") + 1);
+		if (newname)
+		{
+			memcpy(newname, "gfx/", strlen("gfx/"));
+			memcpy(newname + strlen("gfx/"), name + 4, namelen);
+			newname[strlen("gfx/") + namelen] = 0;
+			picture = Draw_LoadPicture(newname, DRAW_LOADPICTURE_NOFALLBACK);
+			free(newname);
+			if (picture)
+				return picture;
+		}
 		data = Draw_LoadWadPicture(name + 4, &width, &height);
 	}
 	else
