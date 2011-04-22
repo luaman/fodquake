@@ -23,7 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "quakedef.h"
 #include "pmove.h"
-#include "teamplay.h"	
+#include "teamplay.h"
 
 #include "utils.h"
 
@@ -55,7 +55,7 @@ cvar_t	v_viewheight = {"v_viewheight", "0"};
 
 
 cvar_t	cl_drawgun = {"r_drawviewmodel", "1"};
-cvar_t	r_viewmodelsize = {"r_viewmodelSize", "1"};	
+cvar_t	r_viewmodelsize = {"r_viewmodelSize", "1"};
 
 static qboolean Change_v_idle (cvar_t *var, char *value);
 cvar_t	v_iyaw_cycle = {"v_iyaw_cycle", "2", 0, Change_v_idle};
@@ -118,14 +118,14 @@ float V_CalcBob(void)
 	static double bobtime;
 	static float bob;
 	float cycle;
-	
+
 	if (cl.spectator)
 		return 0;
 
 	if (!cl.onground)
 		return bob;		// just use old value
 
-	if (cl_bobcycle.value <= 0)	
+	if (cl_bobcycle.value <= 0)
 		return 0;
 
 	bobtime += cls.frametime;
@@ -141,17 +141,17 @@ float V_CalcBob(void)
 	bob = sqrt(cl.simvel[0] * cl.simvel[0] + cl.simvel[1] * cl.simvel[1]) * cl_bob.value;
 	bob = bob * 0.3 + bob * 0.7 * sin(cycle);
 	bob = bound (-7, bob, 4);
-	return bob;	
+	return bob;
 }
 
 //=============================================================================
 
 /*
-============================================================================== 
- 						PALETTE FLASHES 
-============================================================================== 
+==============================================================================
+ 						PALETTE FLASHES
+==============================================================================
 */
- 
+
 cshift_t	cshift_empty = { {130,80,50}, 0 };
 cshift_t	cshift_water = { {130,80,50}, 128 };
 cshift_t	cshift_slime = { {0,25,5}, 150 };
@@ -202,15 +202,15 @@ qboolean V_CheckGamma(void)
 {
 	static float old_gamma;
 	static float old_contrast;
-	
+
 	if (v_gamma.value == old_gamma && v_contrast.value == old_contrast)
 		return false;
 	old_gamma = v_gamma.value;
 	old_contrast = v_contrast.value;
-	
+
 	BuildGammaTable(v_gamma.value, v_contrast.value);
 	vid.recalc_refdef = 1;				// force a surface cache flush
-	
+
 	return true;
 }
 #endif	// !GLQUAKE
@@ -570,9 +570,9 @@ void V_UpdatePalette(qboolean force_update)
 	{
 		V_CalcPowerupCshift ();
 	}
-	
+
 	new = false;
-	
+
 	for (i = 0; i < NUM_CSHIFTS; i++)
 	{
 		if (cl.cshifts[i].percent != prev_cshifts[i].percent)
@@ -603,7 +603,7 @@ void V_UpdatePalette(qboolean force_update)
 	force = V_CheckGamma();
 	if (!new && !force && !force_update)
 		return;
-			
+
 	basepal = host_basepal;
 	newpal = current_pal;	// Tonik: so we can use current_pal for screenshots
 
@@ -627,7 +627,7 @@ void V_UpdatePalette(qboolean force_update)
 		newpal += 3;
 	}
 
-	VID_SetPalette(current_pal);	
+	VID_SetPalette(current_pal);
 }
 
 unsigned char V_LookUpColour(float r, float g, float b)
@@ -659,10 +659,10 @@ unsigned char V_LookUpColour(float r, float g, float b)
 
 #endif	// !GLQUAKE
 
-/* 
-============================================================================== 
-						         VIEW RENDERING 
-============================================================================== 
+/*
+==============================================================================
+						         VIEW RENDERING
+==============================================================================
 */
 
 float angledelta(float a)
@@ -806,9 +806,9 @@ void V_CalcRefdef(void)
 	vec3_t forward;
 	float height_adjustment;
 
-	
+
 	height_adjustment = v_viewheight.value ? bound (-7, v_viewheight.value, 4) : V_CalcBob ();
-	
+
 
 	// set up the refresh position
 	VectorCopy(cl.simorg, r_refdef.vieworg);
@@ -833,9 +833,9 @@ void V_CalcRefdef(void)
 	{
 		r_refdef.vieworg[2] += 22;	// normal view height
 
-		
+
 		r_refdef.vieworg[2] += height_adjustment;
-		
+
 
 		// smooth out stair step ups
 		r_refdef.vieworg[2] += cl.crouch;
@@ -855,13 +855,11 @@ void V_CalcRefdef(void)
 		// add weapon kick angle
 		r_refdef.viewangles[PITCH] += cl.punchangle * 0.5;
 	}
-	
+
 	if (view_message->flags & PF_DEAD && (cl.stats[STAT_HEALTH] <= 0))
 		r_refdef.viewangles[ROLL] = 80;	// dead view angle
 
-	
 	V_AddViewWeapon(height_adjustment);
-	
 }
 
 void DropPunchAngle(void)
@@ -893,7 +891,7 @@ extern vrect_t scr_vrect;
 
 void V_RenderView(void)
 {
-	cl.simangles[ROLL] = 0;	// FIXME @@@ 
+	cl.simangles[ROLL] = 0;	// FIXME @@@
 
 	if (cls.state != ca_active)
 	{
@@ -907,7 +905,7 @@ void V_RenderView(void)
 	view_message = &view_frame->playerstate[cl.viewplayernum];
 
 	DropPunchAngle();
-	if (cl.intermission) // intermission / finale rendering		
+	if (cl.intermission) // intermission / finale rendering
 		V_CalcIntermissionRefdef();
 	else
 		V_CalcRefdef();
@@ -920,7 +918,7 @@ void V_RenderView(void)
 
 void V_CvarInit(void)
 {
-	Cmd_AddCommand("v_cshift", V_cshift_f);	
+	Cmd_AddCommand("v_cshift", V_cshift_f);
 	Cmd_AddCommand("bf", V_BonusFlash_f);
 
 	Cvar_SetCurrentGroup(CVAR_GROUP_VIEW);
