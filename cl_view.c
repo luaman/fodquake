@@ -89,12 +89,14 @@ float	v_dmg_time, v_dmg_roll, v_dmg_pitch;
 frame_t			*view_frame;
 player_state_t	*view_message;
 
-static qboolean Change_v_idle (cvar_t *var, char *value) {
+static qboolean Change_v_idle(cvar_t *var, char *value)
+{
 	// Don't allow cheating in TF
 	return (cl.teamfortress && cls.state >= ca_connected &&	cbuf_current != &cbuf_svc);
 }
 
-float V_CalcRoll (vec3_t angles, vec3_t velocity) {
+float V_CalcRoll(vec3_t angles, vec3_t velocity)
+{
 	vec3_t right;
 	float sign, side;
 
@@ -109,10 +111,10 @@ float V_CalcRoll (vec3_t angles, vec3_t velocity) {
 		side = 45;
 
 	return side * sign;
-	
 }
 
-float V_CalcBob (void) {
+float V_CalcBob(void)
+{
 	static double bobtime;
 	static float bob;
 	float cycle;
@@ -174,26 +176,30 @@ cvar_t		v_contrast = {"sw_contrast", "1", CVAR_ARCHIVE};
 #endif
 
 #ifndef GLQUAKE
-void BuildGammaTable (float g, float c) {
+void BuildGammaTable(float g, float c)
+{
 	int i, inf;
 
 	g = bound (0.1, g, 3);
 	c = bound (1, c, 3);
 
-	if (g == 1 && c == 1) {
+	if (g == 1 && c == 1)
+	{
 		for (i = 0; i < 256; i++)
 			gammatable[i] = i;
 		return;
 	}
 
-	for (i = 0; i < 256; i++) {
+	for (i = 0; i < 256; i++)
+	{
 		inf = 255 * pow ((i + 0.5) / 255.5 * c, g) + 0.5;
 		inf = bound (0, inf, 255);
 		gammatable[i] = inf;
 	}
 }
 
-qboolean V_CheckGamma (void) {
+qboolean V_CheckGamma(void)
+{
 	static float old_gamma;
 	static float old_contrast;
 	
@@ -202,22 +208,23 @@ qboolean V_CheckGamma (void) {
 	old_gamma = v_gamma.value;
 	old_contrast = v_contrast.value;
 	
-	BuildGammaTable (v_gamma.value, v_contrast.value);
+	BuildGammaTable(v_gamma.value, v_contrast.value);
 	vid.recalc_refdef = 1;				// force a surface cache flush
 	
 	return true;
 }
 #endif	// !GLQUAKE
 
-void V_ParseDamage (void) {
+void V_ParseDamage(void)
+{
 	int armor, blood, i;
 	vec3_t from, forward, right;
 	float side, count, fraction;
 
-	armor = MSG_ReadByte ();
-	blood = MSG_ReadByte ();
+	armor = MSG_ReadByte();
+	blood = MSG_ReadByte();
 	for (i = 0; i < 3; i++)
-		from[i] = MSG_ReadCoord ();
+		from[i] = MSG_ReadCoord();
 
 	count = blood * 0.5 + armor * 0.5;
 	if (count < 10)
@@ -236,33 +243,39 @@ void V_ParseDamage (void) {
 	if (fraction > 1) fraction = 1;
 	cl.cshifts[CSHIFT_DAMAGE].percent *= fraction;
 
-	if (armor > blood) {
+	if (armor > blood)
+	{
 		cl.cshifts[CSHIFT_DAMAGE].destcolor[0] = 200;
 		cl.cshifts[CSHIFT_DAMAGE].destcolor[1] = cl.cshifts[CSHIFT_DAMAGE].destcolor[2] = 100;
-	} else if (armor) {
+	}
+	else if (armor)
+	{
 		cl.cshifts[CSHIFT_DAMAGE].destcolor[0] = 220;
 		cl.cshifts[CSHIFT_DAMAGE].destcolor[1] = cl.cshifts[CSHIFT_DAMAGE].destcolor[2] = 50;
-	} else {
+	}
+	else
+	{
 		cl.cshifts[CSHIFT_DAMAGE].destcolor[0] = 255;
 		cl.cshifts[CSHIFT_DAMAGE].destcolor[1] = cl.cshifts[CSHIFT_DAMAGE].destcolor[2] = 0;
 	}
 
 	// calculate view angle kicks
-	VectorSubtract (from, cl.simorg, from);
-	VectorNormalizeFast (from);
+	VectorSubtract(from, cl.simorg, from);
+	VectorNormalizeFast(from);
 
-	AngleVectors (cl.simangles, forward, right, NULL);
+	AngleVectors(cl.simangles, forward, right, NULL);
 
-	side = DotProduct (from, right);
+	side = DotProduct(from, right);
 	v_dmg_roll = count * side * v_kickroll.value;
 
-	side = DotProduct (from, forward);
+	side = DotProduct(from, forward);
 	v_dmg_pitch = count * side * v_kickpitch.value;
 
 	v_dmg_time = v_kicktime.value;
 }
 
-void V_cshift_f (void) {
+void V_cshift_f(void)
+{
 	// don't allow cheating in TF
 	if (cls.state >= ca_connected && cl.teamfortress && cbuf_current != &cbuf_svc)
 		return;
@@ -274,7 +287,8 @@ void V_cshift_f (void) {
 }
 
 //When you run over an item, the server sends this command
-void V_BonusFlash_f (void) {
+void V_BonusFlash_f(void)
+{
 	if (!v_bonusflash.value && cbuf_current == &cbuf_svc)
 		return;
 
@@ -285,9 +299,10 @@ void V_BonusFlash_f (void) {
 }
 
 //Underwater, lava, etc each has a color shift
-void V_SetContentsColor (int contents) {
-
-	if (!v_contentblend.value) {
+void V_SetContentsColor(int contents)
+{
+	if (!v_contentblend.value)
+	{
 		cl.cshifts[CSHIFT_CONTENTS] = cshift_empty;
 #ifdef GLQUAKE
 		cl.cshifts[CSHIFT_CONTENTS].percent *= 100;
@@ -295,7 +310,8 @@ void V_SetContentsColor (int contents) {
 		return;
 	}
 
-	switch (contents) {
+	switch (contents)
+	{
 		case CONTENTS_EMPTY:
 			cl.cshifts[CSHIFT_CONTENTS] = cshift_empty;
 			break;
@@ -315,68 +331,87 @@ void V_SetContentsColor (int contents) {
 		cl.cshifts[CSHIFT_CONTENTS].percent *= v_contentblend.value;
 
 #ifdef GLQUAKE
-	if (!gl_polyblend.value && !cl.teamfortress) {
+	if (!gl_polyblend.value && !cl.teamfortress)
+	{
 		cl.cshifts[CSHIFT_CONTENTS].percent = 0;
-	} else {
+	}
+	else
+	{
 		// ignore gl_cshiftpercent on custom cshifts (set with v_cshift
 		// command) to avoid cheating in TF
-		if (contents != CONTENTS_EMPTY) {
+		if (contents != CONTENTS_EMPTY)
+		{
 			if (!gl_polyblend.value)
 				cl.cshifts[CSHIFT_CONTENTS].percent = 0;
 			else
 				cl.cshifts[CSHIFT_CONTENTS].percent *= gl_cshiftpercent.value;
 		}
-		else {
+		else
+		{
 			cl.cshifts[CSHIFT_CONTENTS].percent *= 100;
 		}
 	}
 #endif
 }
 
-void V_CalcPowerupCshift (void) {
+void V_CalcPowerupCshift(void)
+{
 	float fraction;
 
-	if (cl.stats[STAT_ITEMS] & IT_QUAD)	{
+	if (cl.stats[STAT_ITEMS] & IT_QUAD)
+	{
 		cl.cshifts[CSHIFT_POWERUP].destcolor[0] = 0;
 		cl.cshifts[CSHIFT_POWERUP].destcolor[1] = 0;
 		cl.cshifts[CSHIFT_POWERUP].destcolor[2] = 255;
 		fraction = bound (0, v_quadcshift.value, 1);
 		cl.cshifts[CSHIFT_POWERUP].percent = 30 * fraction;
-	} else if (cl.stats[STAT_ITEMS] & IT_SUIT) {
+	}
+	else if (cl.stats[STAT_ITEMS] & IT_SUIT)
+	{
 		cl.cshifts[CSHIFT_POWERUP].destcolor[0] = 0;
 		cl.cshifts[CSHIFT_POWERUP].destcolor[1] = 255;
 		cl.cshifts[CSHIFT_POWERUP].destcolor[2] = 0;
 		fraction = bound (0, v_suitcshift.value, 1);
 		cl.cshifts[CSHIFT_POWERUP].percent = 20 * fraction;
-	} else if (cl.stats[STAT_ITEMS] & IT_INVISIBILITY) {
+	}
+	else if (cl.stats[STAT_ITEMS] & IT_INVISIBILITY)
+	{
 		cl.cshifts[CSHIFT_POWERUP].destcolor[0] = 100;
 		cl.cshifts[CSHIFT_POWERUP].destcolor[1] = 100;
 		cl.cshifts[CSHIFT_POWERUP].destcolor[2] = 100;
 		fraction = bound (0, v_ringcshift.value, 1);
 		cl.cshifts[CSHIFT_POWERUP].percent = 100 * fraction;
-	} else if (cl.stats[STAT_ITEMS] & IT_INVULNERABILITY) {
+	}
+	else if (cl.stats[STAT_ITEMS] & IT_INVULNERABILITY)
+	{
 		cl.cshifts[CSHIFT_POWERUP].destcolor[0] = 255;
 		cl.cshifts[CSHIFT_POWERUP].destcolor[1] = 255;
 		cl.cshifts[CSHIFT_POWERUP].destcolor[2] = 0;
 		fraction = bound (0, v_pentcshift.value, 1);
 		cl.cshifts[CSHIFT_POWERUP].percent = 30 * fraction;
-	} else {
+	}
+	else
+	{
 		cl.cshifts[CSHIFT_POWERUP].percent = 0;
 	}
 }
 
 #ifdef	GLQUAKE
-void V_CalcBlend (void) {
+void V_CalcBlend(void)
+{
 	float r, g, b, a, a2;
 	int j;
 
 	r = g = b = a= 0;
 
-	if (cls.state != ca_active) {
+	if (cls.state != ca_active)
+	{
 		cl.cshifts[CSHIFT_CONTENTS] = cshift_empty;
 		cl.cshifts[CSHIFT_POWERUP].percent = 0;
-	} else {
-		V_CalcPowerupCshift ();
+	}
+	else
+	{
+		V_CalcPowerupCshift();
 	}
 
 	// drop the damage value
@@ -389,7 +424,8 @@ void V_CalcBlend (void) {
 	if (cl.cshifts[CSHIFT_BONUS].percent <= 0)
 		cl.cshifts[CSHIFT_BONUS].percent = 0;
 
-	for (j = 0; j < NUM_CSHIFTS; j++)	{
+	for (j = 0; j < NUM_CSHIFTS; j++)
+	{
 		if ((!gl_cshiftpercent.value || !gl_polyblend.value) && j != CSHIFT_CONTENTS)
 			continue;
 
@@ -415,8 +451,9 @@ void V_CalcBlend (void) {
 	v_blend[3] = bound(0, v_blend[3], 1);
 }
 
-void V_AddLightBlend (float r, float g, float b, float a2) {
-	float	a;
+void V_AddLightBlend(float r, float g, float b, float a2)
+{
+	float a;
 
 	if (!gl_polyblend.value || !gl_cshiftpercent.value || !v_dlightcshift.value)
 		return;
@@ -449,26 +486,31 @@ void V_UpdatePalette(qboolean force_update)
 
 	new = false;
 
-	for (i = 0; i < 4; i++) {
-		if (v_blend[i] != prev_blend[i]) {
+	for (i = 0; i < 4; i++)
+	{
+		if (v_blend[i] != prev_blend[i])
+		{
 			new = true;
 			prev_blend[i] = v_blend[i];
 		}
 	}
 
 	current_gamma = bound (0.3, v_gamma.value, 3);
-	if (current_gamma != old_gamma) {
+	if (current_gamma != old_gamma)
+	{
 		old_gamma = current_gamma;
 		new = true;
 	}
 
 	current_contrast = bound (1, v_contrast.value, 3);
-	if (current_contrast != old_contrast) {
+	if (current_contrast != old_contrast)
+	{
 		old_contrast = current_contrast;
 		new = true;
 	}
 
-	if (gl_hwblend.value != old_hwblend) {
+	if (gl_hwblend.value != old_hwblend)
+	{
 		new = true;
 		old_hwblend = gl_hwblend.value;
 	}
@@ -487,13 +529,16 @@ void V_UpdatePalette(qboolean force_update)
 
 	a = 1 - a;
 
-	if (vid_gamma != 1.0) {
+	if (vid_gamma != 1.0)
+	{
 		current_contrast = pow (current_contrast, vid_gamma);
 		current_gamma = current_gamma/vid_gamma;
 	}
 
-	for (i = 0; i < 256; i++) {
-		for (j = 0; j < 3; j++) {
+	for (i = 0; i < 256; i++)
+	{
+		for (j = 0; j < 3; j++)
+		{
 			// apply blend and contrast
 			c = (i * a + rgb[j]) * current_contrast;
 			if (c > 255)
@@ -516,22 +561,29 @@ void V_UpdatePalette(qboolean force_update)
 	byte *basepal, *newpal;
 	static cshift_t	prev_cshifts[NUM_CSHIFTS];
 
-	if (cls.state != ca_active) {
+	if (cls.state != ca_active)
+	{
 		cl.cshifts[CSHIFT_CONTENTS] = cshift_empty;
 		cl.cshifts[CSHIFT_POWERUP].percent = 0;
-	} else {
+	}
+	else
+	{
 		V_CalcPowerupCshift ();
 	}
 	
 	new = false;
 	
-	for (i = 0; i < NUM_CSHIFTS; i++)	{
-		if (cl.cshifts[i].percent != prev_cshifts[i].percent) {
+	for (i = 0; i < NUM_CSHIFTS; i++)
+	{
+		if (cl.cshifts[i].percent != prev_cshifts[i].percent)
+		{
 			new = true;
 			prev_cshifts[i].percent = cl.cshifts[i].percent;
 		}
-		for (j = 0; j < 3; j++) {
-			if (cl.cshifts[i].destcolor[j] != prev_cshifts[i].destcolor[j]) {
+		for (j = 0; j < 3; j++)
+		{
+			if (cl.cshifts[i].destcolor[j] != prev_cshifts[i].destcolor[j])
+			{
 				new = true;
 				prev_cshifts[i].destcolor[j] = cl.cshifts[i].destcolor[j];
 			}
@@ -548,20 +600,22 @@ void V_UpdatePalette(qboolean force_update)
 	if (cl.cshifts[CSHIFT_BONUS].percent <= 0)
 		cl.cshifts[CSHIFT_BONUS].percent = 0;
 
-	force = V_CheckGamma ();
+	force = V_CheckGamma();
 	if (!new && !force && !force_update)
 		return;
 			
 	basepal = host_basepal;
 	newpal = current_pal;	// Tonik: so we can use current_pal for screenshots
 
-	for (i = 0; i < 256; i++) {
+	for (i = 0; i < 256; i++)
+	{
 		r = basepal[0];
 		g = basepal[1];
 		b = basepal[2];
 		basepal += 3;
 
-		for (j = 0; j < NUM_CSHIFTS; j++) {
+		for (j = 0; j < NUM_CSHIFTS; j++)
+		{
 			r += (cl.cshifts[j].percent * (cl.cshifts[j].destcolor[0] - r)) >> 8;
 			g += (cl.cshifts[j].percent * (cl.cshifts[j].destcolor[1] - g)) >> 8;
 			b += (cl.cshifts[j].percent * (cl.cshifts[j].destcolor[2] - b)) >> 8;
@@ -573,7 +627,7 @@ void V_UpdatePalette(qboolean force_update)
 		newpal += 3;
 	}
 
-	VID_SetPalette (current_pal);	
+	VID_SetPalette(current_pal);	
 }
 
 unsigned char V_LookUpColour(float r, float g, float b)
@@ -611,14 +665,16 @@ unsigned char V_LookUpColour(float r, float g, float b)
 ============================================================================== 
 */
 
-float angledelta (float a) {
+float angledelta(float a)
+{
 	a = anglemod(a);
 	if (a > 180)
 		a -= 360;
 	return a;
 }
 
-void V_BoundOffsets (void) {
+void V_BoundOffsets(void)
+{
 	// absolutely bound refresh relative to entity clipping hull
 	// so the view can never be inside a solid wall
 
@@ -639,37 +695,44 @@ void V_BoundOffsets (void) {
 }
 
 //Idle swaying
-void V_AddIdle (void) {
+void V_AddIdle(void)
+{
 	r_refdef.viewangles[ROLL] += v_idlescale.value * sin(cl.time * v_iroll_cycle.value) * v_iroll_level.value;
 	r_refdef.viewangles[PITCH] += v_idlescale.value * sin(cl.time * v_ipitch_cycle.value) * v_ipitch_level.value;
 	r_refdef.viewangles[YAW] += v_idlescale.value * sin(cl.time * v_iyaw_cycle.value) * v_iyaw_level.value;
 }
 
 //Roll is induced by movement and damage
-void V_CalcViewRoll (void) {
+void V_CalcViewRoll(void)
+{
 	float side, adjspeed;
 
 	side = V_CalcRoll (cl.simangles, cl.simvel);
 	adjspeed = 20 * bound (2, fabs(cl_rollangle.value), 45);
-	if (side > cl.rollangle) {
+	if (side > cl.rollangle)
+	{
 		cl.rollangle += cls.frametime * adjspeed;
 		if (cl.rollangle > side)
 			cl.rollangle = side;
-	} else if (side < cl.rollangle) {
+	}
+	else if (side < cl.rollangle)
+	{
 		cl.rollangle -= cls.frametime * adjspeed;
 		if (cl.rollangle < side)
 			cl.rollangle = side;
 	}
 	r_refdef.viewangles[ROLL] += cl.rollangle;
 
-	if (v_dmg_time > 0) {
+	if (v_dmg_time > 0)
+	{
 		r_refdef.viewangles[ROLL] += v_dmg_time/v_kicktime.value*v_dmg_roll;
 		r_refdef.viewangles[PITCH] += v_dmg_time/v_kicktime.value*v_dmg_pitch;
 		v_dmg_time -= cls.frametime;
 	}
 }
 
-void V_AddViewWeapon (float bob) {
+void V_AddViewWeapon(float bob)
+{
 	vec3_t forward;
 	centity_t *cent;
 	extern cvar_t scr_fov;
@@ -704,10 +767,14 @@ void V_AddViewWeapon (float bob) {
 		cent->current.origin[2] += 0.5;
 
 
-	if (cent->current.modelindex != cl.stats[STAT_WEAPON]) {
+	if (cent->current.modelindex != cl.stats[STAT_WEAPON])
+	{
 		cl.viewent.frametime = -1;
-	} else {
-		if (cent->current.frame != view_message->weaponframe) {
+	}
+	else
+	{
+		if (cent->current.frame != view_message->weaponframe)
+		{
 			cent->frametime = cl.time;
 			cent->oldframe = cent->current.frame;
 		}
@@ -717,11 +784,12 @@ void V_AddViewWeapon (float bob) {
 	cent->current.frame = view_message->weaponframe;
 }
 
-void V_CalcIntermissionRefdef (void) {
+void V_CalcIntermissionRefdef(void)
+{
 	float old;
 
-	VectorCopy (cl.simorg, r_refdef.vieworg);
-	VectorCopy (cl.simangles, r_refdef.viewangles);
+	VectorCopy(cl.simorg, r_refdef.vieworg);
+	VectorCopy(cl.simangles, r_refdef.viewangles);
 
 	// we don't draw weapon in intermission
 	cl.viewent.current.modelindex = 0;
@@ -729,11 +797,12 @@ void V_CalcIntermissionRefdef (void) {
 	// always idle in intermission
 	old = v_idlescale.value;
 	v_idlescale.value = 1;
-	V_AddIdle ();
+	V_AddIdle();
 	v_idlescale.value = old;
 }
 
-void V_CalcRefdef (void) {
+void V_CalcRefdef(void)
+{
 	vec3_t forward;
 	float height_adjustment;
 
@@ -742,7 +811,7 @@ void V_CalcRefdef (void) {
 	
 
 	// set up the refresh position
-	VectorCopy (cl.simorg, r_refdef.vieworg);
+	VectorCopy(cl.simorg, r_refdef.vieworg);
 
 	// never let it sit exactly on a node line, because a water plane can
 	// dissapear when viewed with the eye exactly on it.
@@ -752,11 +821,16 @@ void V_CalcRefdef (void) {
 	r_refdef.vieworg[2] += 1.0/16;
 
 	// add view height
-	if (view_message->flags & PF_GIB) {
+	if (view_message->flags & PF_GIB)
+	{
 		r_refdef.vieworg[2] += 8;	// gib view height
-	} else if (view_message->flags & PF_DEAD && (cl.stats[STAT_HEALTH] <= 0)) {	
+	}
+	else if (view_message->flags & PF_DEAD && (cl.stats[STAT_HEALTH] <= 0))
+	{
 		r_refdef.vieworg[2] -= 16;	// corpse view height
-	} else {
+	}
+	else
+	{
 		r_refdef.vieworg[2] += 22;	// normal view height
 
 		
@@ -768,11 +842,12 @@ void V_CalcRefdef (void) {
 	}
 
 	// set up refresh view angles
-	VectorCopy (cl.simangles, r_refdef.viewangles);
-	V_CalcViewRoll ();
-	V_AddIdle ();
+	VectorCopy(cl.simangles, r_refdef.viewangles);
+	V_CalcViewRoll();
+	V_AddIdle();
 
-	if (v_gunkick.value) {
+	if (v_gunkick.value)
+	{
 		// add weapon kick offset
 		AngleVectors (r_refdef.viewangles, forward, NULL, NULL);
 		VectorMA (r_refdef.vieworg, cl.punchangle, forward, r_refdef.vieworg);
@@ -785,22 +860,27 @@ void V_CalcRefdef (void) {
 		r_refdef.viewangles[ROLL] = 80;	// dead view angle
 
 	
-	V_AddViewWeapon (height_adjustment);
+	V_AddViewWeapon(height_adjustment);
 	
 }
 
-void DropPunchAngle (void) {
-	if (cl.ideal_punchangle < cl.punchangle) {
+void DropPunchAngle(void)
+{
+	if (cl.ideal_punchangle < cl.punchangle)
+	{
 		if (cl.ideal_punchangle == -2)	// small kick
 			cl.punchangle -= 20 * cls.frametime;
 		else							// big kick
 			cl.punchangle -= 40 * cls.frametime;
 
-		if (cl.punchangle < cl.ideal_punchangle) {
+		if (cl.punchangle < cl.ideal_punchangle)
+		{
 			cl.punchangle = cl.ideal_punchangle;
 			cl.ideal_punchangle = 0;
 		}
-	}else {
+	}
+	else
+	{
 		cl.punchangle += 20 * cls.frametime;
 		if (cl.punchangle > 0)
 			cl.punchangle = 0;
@@ -811,12 +891,14 @@ void DropPunchAngle (void) {
 //the entity origin, so any view position inside that will be valid
 extern vrect_t scr_vrect;
 
-void V_RenderView (void) {
+void V_RenderView(void)
+{
 	cl.simangles[ROLL] = 0;	// FIXME @@@ 
 
-	if (cls.state != ca_active) {
+	if (cls.state != ca_active)
+	{
 #ifdef GLQUAKE
-		V_CalcBlend ();
+		V_CalcBlend();
 #endif
 		return;
 	}
@@ -824,90 +906,90 @@ void V_RenderView (void) {
 	view_frame = &cl.frames[cl.validsequence & UPDATE_MASK];
 	view_message = &view_frame->playerstate[cl.viewplayernum];
 
-	DropPunchAngle ();
+	DropPunchAngle();
 	if (cl.intermission) // intermission / finale rendering		
-		V_CalcIntermissionRefdef ();	
+		V_CalcIntermissionRefdef();
 	else
-		V_CalcRefdef ();
+		V_CalcRefdef();
 
-	R_PushDlights ();
-	R_RenderView ();
+	R_PushDlights();
+	R_RenderView();
 }
 
 //============================================================================
 
 void V_CvarInit(void)
 {
-	Cmd_AddCommand ("v_cshift", V_cshift_f);	
-	Cmd_AddCommand ("bf", V_BonusFlash_f);
+	Cmd_AddCommand("v_cshift", V_cshift_f);	
+	Cmd_AddCommand("bf", V_BonusFlash_f);
 
 	Cvar_SetCurrentGroup(CVAR_GROUP_VIEW);
-	Cvar_Register (&cl_rollspeed);
-	Cvar_Register (&cl_rollangle);
+	Cvar_Register(&cl_rollspeed);
+	Cvar_Register(&cl_rollangle);
 
-	Cvar_Register (&v_idlescale);
-	Cvar_Register (&v_iyaw_cycle);
-	Cvar_Register (&v_iroll_cycle);
-	Cvar_Register (&v_ipitch_cycle);
-	Cvar_Register (&v_iyaw_level);
-	Cvar_Register (&v_iroll_level);
-	Cvar_Register (&v_ipitch_level);
+	Cvar_Register(&v_idlescale);
+	Cvar_Register(&v_iyaw_cycle);
+	Cvar_Register(&v_iroll_cycle);
+	Cvar_Register(&v_ipitch_cycle);
+	Cvar_Register(&v_iyaw_level);
+	Cvar_Register(&v_iroll_level);
+	Cvar_Register(&v_ipitch_level);
 
 	Cvar_SetCurrentGroup(CVAR_GROUP_CROSSHAIR);
-	Cvar_Register (&crosshaircolor);
-	Cvar_Register (&crosshair);
-	Cvar_Register (&crosshairsize);
-	Cvar_Register (&cl_crossx);
-	Cvar_Register (&cl_crossy);
+	Cvar_Register(&crosshaircolor);
+	Cvar_Register(&crosshair);
+	Cvar_Register(&crosshairsize);
+	Cvar_Register(&cl_crossx);
+	Cvar_Register(&cl_crossy);
 
 	Cvar_SetCurrentGroup(CVAR_GROUP_VIEWMODEL);
-	Cvar_Register (&cl_bob);
-	Cvar_Register (&cl_bobcycle);
-	Cvar_Register (&cl_bobup);
+	Cvar_Register(&cl_bob);
+	Cvar_Register(&cl_bobcycle);
+	Cvar_Register(&cl_bobup);
 
-	Cvar_Register (&cl_drawgun);
-	Cvar_Register (&r_viewmodelsize);
+	Cvar_Register(&cl_drawgun);
+	Cvar_Register(&r_viewmodelsize);
 
 	Cvar_SetCurrentGroup(CVAR_GROUP_VIEW);
-	Cvar_Register (&v_kicktime);
-	Cvar_Register (&v_kickroll);
-	Cvar_Register (&v_kickpitch);
-	Cvar_Register (&v_gunkick);
+	Cvar_Register(&v_kicktime);
+	Cvar_Register(&v_kickroll);
+	Cvar_Register(&v_kickpitch);
+	Cvar_Register(&v_gunkick);
 
 
-	Cvar_Register (&v_viewheight);
+	Cvar_Register(&v_viewheight);
 
 
 	Cvar_SetCurrentGroup(CVAR_GROUP_BLEND);
 
-	Cvar_Register (&v_bonusflash);
-	Cvar_Register (&v_contentblend);
-	Cvar_Register (&v_damagecshift);
-	Cvar_Register (&v_quadcshift);
-	Cvar_Register (&v_suitcshift);
-	Cvar_Register (&v_ringcshift);
-	Cvar_Register (&v_pentcshift);
+	Cvar_Register(&v_bonusflash);
+	Cvar_Register(&v_contentblend);
+	Cvar_Register(&v_damagecshift);
+	Cvar_Register(&v_quadcshift);
+	Cvar_Register(&v_suitcshift);
+	Cvar_Register(&v_ringcshift);
+	Cvar_Register(&v_pentcshift);
 
 #ifdef GLQUAKE
-	Cvar_Register (&v_dlightcshift);
-	Cvar_Register (&gl_cshiftpercent);
-	Cvar_Register (&gl_hwblend);
+	Cvar_Register(&v_dlightcshift);
+	Cvar_Register(&gl_cshiftpercent);
+	Cvar_Register(&gl_hwblend);
 #endif
 
 	Cvar_SetCurrentGroup(CVAR_GROUP_SCREEN);
-	Cvar_Register (&v_gamma);
-	Cvar_Register (&v_contrast);
+	Cvar_Register(&v_gamma);
+	Cvar_Register(&v_contrast);
 
 	Cvar_ResetCurrentGroup();
 
-	Cmd_AddLegacyCommand ("gamma", v_gamma.name);
-	Cmd_AddLegacyCommand ("contrast", v_contrast.name);
+	Cmd_AddLegacyCommand("gamma", v_gamma.name);
+	Cmd_AddLegacyCommand("contrast", v_contrast.name);
 }
 
 void V_Init(void)
 {
 #ifndef GLQUAKE
-	BuildGammaTable (v_gamma.value, v_contrast.value);
+	BuildGammaTable(v_gamma.value, v_contrast.value);
 #endif
 }
 
