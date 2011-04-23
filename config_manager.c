@@ -167,7 +167,6 @@ static void DumpVariables(FILE	*f)
 		if (!count)
 			continue;
 
-	
 		if (
 			strcmp(group->name, CVAR_GROUP_ITEM_NAMES) && 
 			strcmp(group->name, CVAR_GROUP_ITEM_NEED) && 
@@ -176,10 +175,8 @@ static void DumpVariables(FILE	*f)
 		)
 			qsort(sorted_vars, count, sizeof (cvar_t *), Cvar_CvarCompare);
 
-	
 		fprintf(f, "//%s\n", group->name);
 
-	
 		for (i = 0; i < count; i++)
 		{
 			var = sorted_vars[i];
@@ -188,9 +185,9 @@ static void DumpVariables(FILE	*f)
 				fprintf(f, "%s%*s\"%s\"\n", var->name, (int)(col_size - strlen(var->name)), "", var->string);
 			}
 		}
-	
+
 		fprintf(f, "\n");
-	}		
+	}
 
 	for (count = 0, var = cvar_vars; var && count < 256; var = var->next)
 	{
@@ -213,7 +210,7 @@ static void DumpVariables(FILE	*f)
 			var = sorted_vars[i];
 			fprintf(f, "%s%*s\"%s\"\n", var->name, (int)(col_size - strlen(var->name)), "", var->string);
 		}
-	
+
 		fprintf(f, "\n");
 	}
 
@@ -304,14 +301,13 @@ static void DumpAliases(FILE *f)
 
 			if (!Q_strcasecmp(b->name + 1, a->name + 1))
 			{
-			
 				fprintf	(f, "alias %s%*s\"%s\"\n", a->name, (int)(maxlen + 3 - strlen(a->name)), "", a->value);
 				fprintf	(f, "alias %s%*s\"%s\"\n", b->name, (int)(maxlen + 3 - strlen(b->name)), "", b->value);
 				printed = partner = true;
 				break;
 			}
 		}
-	
+
 		if (!partner)
 			lonely_pluses[lonely_count++] = a;
 	}
@@ -319,7 +315,7 @@ static void DumpAliases(FILE *f)
 	for (i = 0; i < lonely_count; i++)
 	{
 		a = lonely_pluses[i];
-			
+
 		fprintf	(f, "alias %s%*s\"%s\"\n", a->name, (int)(maxlen + 3 - strlen(a->name)), "", a->value);
 		printed = true;
 	}
@@ -334,14 +330,12 @@ static void DumpAliases(FILE *f)
 
 			if (!Q_strcasecmp(b->name + 1, a->name + 1))
 			{
-			
 				partner = true;
 				break;
 			}
 		}
 		if (!partner)
 		{
-		
 			fprintf	(f, "alias %s%*s\"%s\"\n", a->name, (int)(maxlen + 3 - strlen(a->name)), "", a->value);
 			printed = true;
 		}
@@ -478,7 +472,7 @@ static void ResetVariables(int cvar_flags, qboolean userinfo)
 				!strcmp(var->name, "spectator") ||!strcmp(var->name, "name") ||
 				!strcmp(var->name, "topcolor") || !strcmp(var->name, "bottomcolor")
 			))
-				continue;	
+				continue;
 
 			Cvar_ResetVar(var);
 		}
@@ -609,11 +603,11 @@ static void ResetConfigs(qboolean resetall)
 
 	ResetVariables(CVAR_SERVERINFO, !resetall);
 
-	DeleteUserAliases();					
+	DeleteUserAliases();
 
-	DeleteUserVariables();					
+	DeleteUserVariables();
 
-	Cbuf_AddText("unbindall\n");			
+	Cbuf_AddText("unbindall\n");
 
 	ResetPlusCommands();
 
