@@ -80,6 +80,7 @@ static void DumpBindings(FILE *f)
 {
 	int i, leftright;
 	char *string;
+	int stringlen;
 	qboolean printed = false;
 
 	for (i = 0; i < 256; i++)
@@ -89,10 +90,11 @@ static void DumpBindings(FILE *f)
 		{
 			printed = true;
 			string = Key_KeynumToString(i);
+			stringlen = BIND_ALIGN_COL - strlen(string) - 6;
 			if (i == ';')
-				fprintf (f, "bind  \";\"%*s\"%s\"\n", BIND_ALIGN_COL - strlen(string) - 6, "", keybindings[i]);
+				fprintf (f, "bind  \";\"%*s\"%s\"\n", stringlen, "", keybindings[i]);
 			else
-				fprintf (f, "bind  %s%*s\"%s\"\n", string, BIND_ALIGN_COL - strlen(string) - 6, "", keybindings[leftright ? i + 1 : i]);
+				fprintf (f, "bind  %s%*s\"%s\"\n", string, stringlen, "", keybindings[leftright ? i + 1 : i]);
 
 			if (leftright)
 				i += 2;
@@ -183,7 +185,7 @@ static void DumpVariables(FILE	*f)
 			var = sorted_vars[i];
 			if (cfg_save_unchanged.value || strcmp(var->string, var->defaultvalue))
 			{
-				fprintf(f, "%s%*s\"%s\"\n", var->name, col_size - strlen(var->name), "", var->string);
+				fprintf(f, "%s%*s\"%s\"\n", var->name, (int)(col_size - strlen(var->name)), "", var->string);
 			}
 		}
 	
@@ -209,7 +211,7 @@ static void DumpVariables(FILE	*f)
 		for (i = 0; i < count; i++)
 		{
 			var = sorted_vars[i];
-			fprintf(f, "%s%*s\"%s\"\n", var->name, col_size - strlen(var->name), "", var->string);
+			fprintf(f, "%s%*s\"%s\"\n", var->name, (int)(col_size - strlen(var->name)), "", var->string);
 		}
 	
 		fprintf(f, "\n");
@@ -239,7 +241,7 @@ static void DumpVariables(FILE	*f)
 	{
 		var = sorted_vars[i];
 
-		fprintf	(f, "%s %s%*s\"%s\"\n", (var->flags & CVAR_USER_ARCHIVE) ? "seta" : "set ", var->name, col_size - strlen(var->name) - 5, "", var->string);
+		fprintf	(f, "%s %s%*s\"%s\"\n", (var->flags & CVAR_USER_ARCHIVE) ? "seta" : "set ", var->name, (int)(col_size - strlen(var->name) - 5), "", var->string);
 	}
 }
 
@@ -303,8 +305,8 @@ static void DumpAliases(FILE *f)
 			if (!Q_strcasecmp(b->name + 1, a->name + 1))
 			{
 			
-				fprintf	(f, "alias %s%*s\"%s\"\n", a->name, maxlen + 3 - strlen(a->name), "", a->value);
-				fprintf	(f, "alias %s%*s\"%s\"\n", b->name, maxlen + 3 - strlen(b->name), "", b->value);
+				fprintf	(f, "alias %s%*s\"%s\"\n", a->name, (int)(maxlen + 3 - strlen(a->name)), "", a->value);
+				fprintf	(f, "alias %s%*s\"%s\"\n", b->name, (int)(maxlen + 3 - strlen(b->name)), "", b->value);
 				printed = partner = true;
 				break;
 			}
@@ -318,7 +320,7 @@ static void DumpAliases(FILE *f)
 	{
 		a = lonely_pluses[i];
 			
-		fprintf	(f, "alias %s%*s\"%s\"\n", a->name, maxlen + 3 - strlen(a->name), "", a->value);
+		fprintf	(f, "alias %s%*s\"%s\"\n", a->name, (int)(maxlen + 3 - strlen(a->name)), "", a->value);
 		printed = true;
 	}
 
@@ -340,7 +342,7 @@ static void DumpAliases(FILE *f)
 		if (!partner)
 		{
 		
-			fprintf	(f, "alias %s%*s\"%s\"\n", a->name, maxlen + 3 - strlen(a->name), "", a->value);
+			fprintf	(f, "alias %s%*s\"%s\"\n", a->name, (int)(maxlen + 3 - strlen(a->name)), "", a->value);
 			printed = true;
 		}
 	}
@@ -353,7 +355,7 @@ static void DumpAliases(FILE *f)
 			if (printed)
 				fprintf(f, "\n");
 			printed = false;
-			fprintf	(f, "alias %s%*s\"%s\"\n", a->name, maxlen + 3 - strlen(a->name), "", a->value);
+			fprintf	(f, "alias %s%*s\"%s\"\n", a->name, (int)(maxlen + 3 - strlen(a->name)), "", a->value);
 		}
 	}
 }
@@ -391,14 +393,14 @@ static void DumpColorForcing(FILE *f, char *name, int topcolor, int bottomcolor)
 	if (topcolor < 0)
 	{
 		if (cfg_save_unchanged.value)
-			fprintf	(f,	"%s%*soff\n", name, 13 - strlen(name), "");
+			fprintf	(f,	"%s%*soff\n", name, (int)(13 - strlen(name)), "");
 	}
 	else
 	{
 		if (topcolor != bottomcolor)
-			fprintf	(f,	"%s%*s%i %i\n", name, 13 - strlen(name), "", topcolor, bottomcolor);
+			fprintf	(f,	"%s%*s%i %i\n", name, (int)(13 - strlen(name)), "", topcolor, bottomcolor);
 		else
-			fprintf	(f,	"%s%*s%i\n", name, 13 - strlen(name), "", topcolor);
+			fprintf	(f,	"%s%*s%i\n", name, (int)(13 - strlen(name)), "", topcolor);
 	}
 }
 
