@@ -974,6 +974,8 @@ static void Sbar_DrawCompact(void) {
 
 	Sbar_DrawNum (86, 0, cl.stats[STAT_HEALTH], 3, cl.stats[STAT_HEALTH] <= 25);
 
+	Draw_BeginTextRendering();
+
 	align = scr_compactHudAlign.value ? 1 : 0;
 	for (i = 0; i < 4; i++) {
 		Q_snprintfz(str, sizeof(str), "%d", cl.stats[STAT_SHELLS + i]);
@@ -991,6 +993,8 @@ static void Sbar_DrawCompact(void) {
 		}
 	}
 	sbar_xofs = old_sbar_xofs;
+
+	Draw_EndTextRendering();
 }
 
 static void Sbar_DrawCompact_TF(void) {
