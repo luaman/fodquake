@@ -33,9 +33,9 @@ void Image_Resample (void *indata, int inwidth, int inheight,
 					 void *outdata, int outwidth, int outheight, int bpp, int quality);
 void Image_MipReduce (byte *in, byte *out, int *width, int *height, int bpp);
 
-byte *Image_LoadPNG (FILE *, char *, int, int);
-byte *Image_LoadTGA (FILE *, char *, int, int);
-byte *Image_LoadPCX (FILE *, char *, int, int);
+byte *Image_LoadPNG(FILE *, char *, int, int, int *imagewidth, int *imageheight);
+byte *Image_LoadTGA(FILE *, char *, int, int, int *imagewidth, int *imageheight);
+byte *Image_LoadPCX(FILE *, char *, int, int, int *imagewidth, int *imageheight);
 
 int Image_WritePNG(char *filename, int compression, byte *pixels, int width, int height);
 #ifdef GLQUAKE
@@ -54,7 +54,5 @@ int Image_WritePCX (char *filename, byte *data, int width, int height, int rowby
 #endif
 
 extern cvar_t image_jpeg_quality_level, image_png_compression_level;
-
-extern int image_width, image_height;
 
 #endif	//_IMAGE_H

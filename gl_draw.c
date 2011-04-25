@@ -27,17 +27,27 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "gl_local.h"
 #include "version.h"
 #include "sbar.h"
+#include "wad.h"
 
 #include "image.h"
 #include "utils.h"
+#include "config.h"
+
+#include "draw.h"
+
+struct Picture
+{
+	int texnum;
+	float invwidth;
+	float invheight;
+};
 
 static unsigned char drawgl_inited;
 
+extern cvar_t scr_menualpha;
+
 extern cvar_t crosshair, cl_crossx, cl_crossy, crosshaircolor, crosshairsize;
 extern cvar_t scr_coloredText;
-
-cvar_t	scr_conalpha		= {"scr_conalpha", "0.8"};
-cvar_t	scr_menualpha		= {"scr_menualpha", "0.7"};
 
 
 qboolean OnChange_gl_crosshairimage(cvar_t *, char *);
@@ -53,18 +63,15 @@ qboolean OnChange_gl_smoothfont (cvar_t *var, char *string);
 cvar_t gl_smoothfont = {"gl_smoothfont", "0", 0, OnChange_gl_smoothfont};
 
 byte			*draw_chars;						// 8*8 graphic characters
-static mpic_t	*draw_backtile;
 
 static int		translate_texture;
 static int		char_texture;
-
-static mpic_t	conback;
 
 
 #define		NUMCROSSHAIRS 6
 int			crosshairtextures[NUMCROSSHAIRS];
 int			crosshairtexture_txt;
-mpic_t		crosshairpic;
+struct Picture *crosshairpic;
 
 static byte customcrosshairdata[64];
 
@@ -176,7 +183,7 @@ qboolean OnChange_gl_smoothfont (cvar_t *var, char *string)
 
 static void Crosshair_LoadImage(const char *s)
 {
-	mpic_t *pic;
+	struct Picture *pic;
 
 	if (!s[0])
 	{
@@ -184,19 +191,30 @@ static void Crosshair_LoadImage(const char *s)
 		return;
 	}
 
-#warning This leaks memory if the cvar is changed, yes?
-	if (!(pic = GL_LoadPicImage(va("crosshairs/%s", s), "crosshair", 0, 0, TEX_ALPHA)))
+	if (*s)
 	{
-		customcrosshair_loaded &= ~CROSSHAIR_IMAGE;
+		if (crosshairpic)
+		{
+			Draw_FreePicture(crosshairpic);
+			crosshairpic = 0;
+		}
+
+		pic = Draw_LoadPicture(va("crosshairs/%s", s), DRAW_LOADPICTURE_NOFALLBACK);
+		if (pic)
+		{
+			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+			crosshairpic = pic;
+			customcrosshair_loaded |= CROSSHAIR_IMAGE;
+
+			return;
+		}
+
 		Com_Printf("Couldn't load image %s\n", s);
-		return;
 	}
 
-	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	crosshairpic = *pic;
-	customcrosshair_loaded |= CROSSHAIR_IMAGE;
 
+	customcrosshair_loaded &= ~CROSSHAIR_IMAGE;
 }
 
 qboolean OnChange_gl_crosshairimage(cvar_t *v, char *s)
@@ -245,255 +263,15 @@ void customCrosshair_Init(void)
 	customcrosshair_loaded |= CROSSHAIR_TXT;
 }
 
-
-/*
-=============================================================================
-  scrap allocation
-
-  Allocate all the little status bar objects into a single texture
-  to crutch up stupid hardware / drivers
-=============================================================================
-*/
-
-#warning My God, this sucks!
-
-// some cards have low quality of alpha pics, so load the pics
-// without transparent pixels into a different scrap block.
-// scrap 0 is solid pics, 1 is transparent
-#define	MAX_SCRAPS		2
-#define	BLOCK_WIDTH		256
-#define	BLOCK_HEIGHT	256
-
-int			scrap_allocated[MAX_SCRAPS][BLOCK_WIDTH];
-byte		scrap_texels[MAX_SCRAPS][BLOCK_WIDTH*BLOCK_HEIGHT*4];
-int			scrap_dirty;	// bit mask
-int			scrap_texnum;
-
-void Scrap_Init()
-{
-	bzero(scrap_allocated, sizeof(scrap_allocated));
-	scrap_dirty = 0;
-
-	scrap_texnum = texture_extension_number;
-	texture_extension_number += MAX_SCRAPS;
-}
-
-// returns false if allocation failed
-qboolean Scrap_AllocBlock(int scrapnum, int w, int h, int *x, int *y)
-{
-	int i, j, best, best2;
-
-	best = BLOCK_HEIGHT;
-	
-	for (i = 0; i < BLOCK_WIDTH - w; i++)
-	{
-		best2 = 0;
-		
-		for (j = 0; j < w; j++)
-		{
-			if (scrap_allocated[scrapnum][i + j] >= best)
-				break;
-			if (scrap_allocated[scrapnum][i + j] > best2)
-				best2 = scrap_allocated[scrapnum][i + j];
-		}
-		if (j == w)
-		{	// this is a valid spot
-			*x = i;
-			*y = best = best2;
-		}
-	}
-	
-	if (best + h > BLOCK_HEIGHT)
-		return false;
-	
-	for (i = 0; i < w; i++)
-		scrap_allocated[scrapnum][*x + i] = best + h;
-
-	scrap_dirty |= (1 << scrapnum);
-
-	return true;
-}
-
-int scrap_uploads;
-
-void Scrap_Upload(void)
-{
-	int i;
-
-	scrap_uploads++;
-	for (i = 0; i < 2 ; i++)
-	{
-		if (!(scrap_dirty & (1 << i)))
-			continue;
-		scrap_dirty &= ~(1 << i);
-		GL_Bind(scrap_texnum + i);
-		GL_Upload8(scrap_texels[i], BLOCK_WIDTH, BLOCK_HEIGHT, TEX_ALPHA);
-	}
-}
-
 //=============================================================================
 /* Support Routines */
 
-typedef struct cachepic_s
-{
-	char		name[MAX_QPATH];
-	mpic_t		pic;
-} cachepic_t;
-
-#define	MAX_CACHED_PICS		128
-cachepic_t	cachepics[MAX_CACHED_PICS];
-int			numcachepics;
-
+#if 0
 byte	menuplyr_pixels[4096];
-
-int		pic_texels;
-
-mpic_t *Draw_CacheWadPic (char *name)
-{
-	qpic_t	*p;
-	mpic_t	*pic, *pic_24bit;
-
-	p = W_GetLumpName (name);
-	pic = (mpic_t *)p;
-
-	pic = malloc(sizeof(*pic));
-	if (pic)
-	{
-		memcpy(pic, p, sizeof(*pic));
-
-		if ((pic_24bit = GL_LoadPicImage(va("textures/wad/%s", name), name, 0, 0, TEX_ALPHA))
-		 || (pic_24bit = GL_LoadPicImage(va("gfx/%s", name), name, 0, 0, TEX_ALPHA)))
-		{
-			memcpy(&pic->texnum, &pic_24bit->texnum, sizeof(mpic_t) - 8);
-			return pic;
-		}
-
-		// load little ones into the scrap
-		if (p->width < 64 && p->height < 64)
-		{
-			int x, y, i, j, k, texnum;
-
-			texnum = memchr(p->data, 255, p->width*p->height) != NULL;
-			if (!Scrap_AllocBlock (texnum, p->width, p->height, &x, &y))
-			{
-				GL_LoadPicTexture (name, pic, p->data);
-				return pic;
-			}
-			k = 0;
-			for (i = 0; i < p->height; i++)
-			{
-				for (j  = 0; j < p->width; j++, k++)
-				{
-					scrap_texels[texnum][(y + i) * BLOCK_WIDTH + x + j] = p->data[k];
-				}
-			}
-
-			texnum += scrap_texnum;
-			pic->texnum = texnum;
-			pic->sl = (x + 0.01) / (float) BLOCK_WIDTH;
-			pic->sh = (x + p->width - 0.01) / (float) BLOCK_WIDTH;
-			pic->tl = (y + 0.01) / (float) BLOCK_WIDTH;
-			pic->th = (y + p->height - 0.01) / (float) BLOCK_WIDTH;
-
-			pic_texels += p->width * p->height;
-		}
-		else
-		{
-			GL_LoadPicTexture (name, pic, p->data);
-		}
-	}
-
-	return pic;
-}
-
-void Draw_FreeWadPic(mpic_t *pic)
-{
-	free(pic);
-}
-
-mpic_t *Draw_CachePic(char *path)
-{
-	cachepic_t *pic;
-	int i;
-	qpic_t *dat;
-	mpic_t *pic_24bit;
-
-	for (pic = cachepics, i = 0; i < numcachepics; pic++, i++)
-		if (!strcmp(path, pic->name))
-			return &pic->pic;
-
-	if (numcachepics == MAX_CACHED_PICS)
-		Sys_Error("numcachepics == MAX_CACHED_PICS");
-	numcachepics++;
-	Q_strncpyz(pic->name, path, sizeof(pic->name));
-
-	// load the pic from disk
-	if (!(dat = (qpic_t *)FS_LoadMallocFile(path)))
-		Sys_Error("Draw_CachePic: failed to load %s", path);
-	SwapPic(dat);
-
-	// HACK HACK HACK --- we need to keep the bytes for
-	// the translatable player picture just for the menu
-	// configuration dialog
-	if (!strcmp(path, "gfx/menuplyr.lmp"))
-		memcpy(menuplyr_pixels, dat->data, dat->width*dat->height);
-
-	pic->pic.width = dat->width;
-	pic->pic.height = dat->height;
-
-	
-	if ((pic_24bit = GL_LoadPicImage(path, NULL, 0, 0, TEX_ALPHA)))
-		memcpy(&pic->pic.texnum, &pic_24bit->texnum, sizeof(mpic_t) - 8);
-	else
-		GL_LoadPicTexture(path, &pic->pic, dat->data);
-
-	free(dat);
-
-	return &pic->pic;
-}
-
-void GL_FlushPics()
-{
-		  numcachepics = 0;
-}
-
-void Draw_InitConback(void)
-{
-	qpic_t *cb;
-	mpic_t *pic_24bit;
-
-	if ((pic_24bit = GL_LoadPicImage("gfx/conback", "conback", 0, 0, 0)))
-	{
-		memcpy(&conback.texnum, &pic_24bit->texnum, sizeof(mpic_t) - 8);
-	}
-	else
-	{
-		if (!(cb = (qpic_t *) FS_LoadZFile("gfx/conback.lmp")))
-			Sys_Error ("Couldn't load gfx/conback.lmp");
-
-		SwapPic (cb);
-
-		if (cb->width != 320 || cb->height != 200)
-		{
-			Z_Free(cb);
-			Sys_Error ("Draw_InitConback: conback.lmp size is not 320x200");
-		}
-
-		conback.width = cb->width;
-		conback.height = cb->height;
-		GL_LoadPicTexture ("conback", &conback, cb->data);
-
-		Z_Free(cb);
-	}
-
-	conback.width = vid.conwidth;
-	conback.height = vid.conheight;
-}
+#endif
 
 void Draw_SizeChanged()
 {
-	conback.width = vid.conwidth;
-	conback.height = vid.conheight;
 }
 
 static int Draw_LoadCharset(char *name)
@@ -578,17 +356,13 @@ void Draw_InitCharset(void)
 		Sys_Error("Draw_InitCharset: Couldn't load charset");
 }
 
-void Draw_CvarInit(void)
+void DrawImp_CvarInit(void)
 {
 	Cmd_AddCommand("loadcharset", Draw_LoadCharset_f);	
 
 	Cvar_SetCurrentGroup(CVAR_GROUP_CONSOLE);
-	Cvar_Register (&scr_conalpha);
 	Cvar_Register (&gl_smoothfont);
 	Cvar_Register (&gl_consolefont);	
-
-	Cvar_SetCurrentGroup(CVAR_GROUP_SCREEN);
-	Cvar_Register (&scr_menualpha);
 
 	Cvar_SetCurrentGroup(CVAR_GROUP_CROSSHAIR);
 	Cvar_Register (&gl_crosshairimage);	
@@ -599,14 +373,16 @@ void Draw_CvarInit(void)
 	GL_Texture_CvarInit();
 }
 
-void Draw_InitGL(void)
+void DrawImp_Init(void)
 {
 	int i;
+
+	// save a texture slot for translated picture
+	translate_texture = texture_extension_number++;
 
 	// load the console background and the charset by hand, because we need to write the version
 	// string into the background before turning it into a texture
 	Draw_InitCharset ();
-	Draw_InitConback ();
 
 	// Load the crosshair pics
 	for (i = 0; i < NUMCROSSHAIRS; i++)
@@ -616,24 +392,19 @@ void Draw_InitGL(void)
 		glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	}
 	customCrosshair_Init();		
-	// get the other pics we need
-	draw_backtile = Draw_CacheWadPic ("backtile");
 
 	drawgl_inited = 1;
 }
 
-void Draw_ShutdownGL()
+void DrawImp_Shutdown()
 {
+	if (crosshairpic)
+	{
+		Draw_FreePicture(crosshairpic);
+		crosshairpic = 0;
+	}
+
 	drawgl_inited = 0;
-}
-
-void Draw_Init(void)
-{
-	// save a texture slot for translated picture
-	translate_texture = texture_extension_number++;
-
-	// save slots for scraps
-	Scrap_Init();
 }
 
 __inline static void Draw_CharPoly(int x, int y, int num)
@@ -654,6 +425,7 @@ __inline static void Draw_CharPoly(int x, int y, int num)
 }
 
 static int textrenderingenabled;
+static int colouredtextrendering;
 
 #define NUMBUFFEREDTEXTVERTICES 64
 #if (NUMBUFFEREDTEXTVERTICES%4) != 0
@@ -662,7 +434,17 @@ static int textrenderingenabled;
 
 static float fontvertices[2*NUMBUFFEREDTEXTVERTICES] __attribute__((aligned(64)));
 static float fonttexcoords[2*NUMBUFFEREDTEXTVERTICES] __attribute__((aligned(64)));
+static unsigned int fontcolours[NUMBUFFEREDTEXTVERTICES] __attribute__((aligned(64)));
 static int fontindex;
+
+union
+{
+	unsigned char uc[4];
+	unsigned int ui;
+} fontcolour =
+{
+	{ 255, 255, 255, 255 }
+};
 
 static void Draw_CharPolyArray(int x, int y, int num)
 {
@@ -710,19 +492,78 @@ static void Draw_CharPolyArray(int x, int y, int num)
 	}
 }
 
+static void Draw_CharPolyColourArray(int x, int y, int num)
+{
+	int index;
+	float frow, fcol;
+
+	frow = (num >> 4) * 0.0625;
+	fcol = (num & 15) * 0.0625;
+
+	index = fontindex;
+
+	fontvertices[index++] = x;
+	fontvertices[index++] = y;
+
+	fontvertices[index++] = x + 8;
+	fontvertices[index++] = y;
+
+	fontvertices[index++] = x + 8;
+	fontvertices[index++] = y + 8;
+
+	fontvertices[index++] = x;
+	fontvertices[index++] = y + 8;
+
+	index = fontindex;
+
+	fonttexcoords[index++] = fcol;
+	fonttexcoords[index++] = frow;
+
+	fonttexcoords[index++] = fcol + 0.0625;
+	fonttexcoords[index++] = frow;
+
+	fonttexcoords[index++] = fcol + 0.0625;
+	fonttexcoords[index++] = frow + 0.03125;
+
+	fonttexcoords[index++] = fcol;
+	fonttexcoords[index++] = frow + 0.03125;
+
+	index = fontindex / 2;
+
+	fontcolours[index+0] = fontcolour.ui;
+	fontcolours[index+1] = fontcolour.ui;
+	fontcolours[index+2] = fontcolour.ui;
+	fontcolours[index+3] = fontcolour.ui;
+
+	fontindex += 8;
+
+	if (fontindex >= NUMBUFFEREDTEXTVERTICES*2)
+	{
+		glDrawArrays(GL_QUADS, 0, fontindex/2);
+		fontindex = 0;
+	}
+}
+
+void DrawImp_SetTextColor(int r, int g, int b)
+{
+	fontcolour.uc[0] = r|(r<<4);
+	fontcolour.uc[1] = g|(g<<4);
+	fontcolour.uc[2] = b|(b<<4);
+}
+
 //Draws one 8*8 graphics character with 0 being transparent.
 //It can be clipped to the top of the screen to allow the console to be smoothly scrolled off.
-void Draw_Character(int x, int y, int num)
+void DrawImp_Character(int x, int y, unsigned char num)
 {
+	if (textrenderingenabled)
+	{
+		if (colouredtextrendering)
+			Draw_CharPolyColourArray(x, y, num);
+		else
+			Draw_CharPolyArray(x, y, num);
 
-	if (y <= -8)
-		return;			// totally off screen
-
-	if (num == 32)
-		return;		// space
-
-	num &= 255;
-
+		return;
+	}
 
 	GL_Bind(char_texture);
 
@@ -759,246 +600,41 @@ void Draw_EndTextRendering()
 
 		glDisableClientState(GL_TEXTURE_COORD_ARRAY);
 		glDisableClientState(GL_VERTEX_ARRAY);
-	}
-}
 
-void Draw_String(int x, int y, const char *str)
-{
-	int num;
-
-	if (y <= -8)
-		return;			// totally off screen
-
-	if (!*str)
-		return;
-
-	Draw_BeginTextRendering();
-
-	while (*str) {	// stop rendering when out of characters		
-		if ((num = (unsigned char)(*str++)) != 32)	// skip spaces
-			Draw_CharPolyArray(x, y, num);
-
-		x += 8;
-	}
-
-	Draw_EndTextRendering();
-}
-
-void Draw_String_Length(int x, int y, const char *str, int len)
-{
-	int num;
-	int disabletextrendering;
-
-	if (y <= -8)
-		return;			// totally off screen
-
-	if (!*str)
-		return;
-
-	Draw_BeginTextRendering();
-
-	while(len--)
-	{
-		if ((num = (unsigned char)(*str++)) != 32)	// skip spaces
-			Draw_CharPolyArray(x, y, num);
-
-		x += 8;
-	}
-
-	Draw_EndTextRendering();
-}
-
-void Draw_Alt_String(int x, int y, const char *str)
-{
-	int num;
-
-	if (y <= -8)
-		return;			// totally off screen
-
-	if (!*str)
-		return;
-
-	GL_Bind(char_texture);
-
-	glBegin(GL_QUADS);
-
-	while (*str) {// stop rendering when out of characters
-		if ((num = *str++ | 128) != (32 | 128))	// skip spaces
-			Draw_CharPoly(x, y, num);
-
-		x += 8;
-	}
-
-	glEnd();
-}
-
-
-static int HexToInt(char c)
-{
-	if (isdigit(c))
-		return c - '0';
-	else if (c >= 'a' && c <= 'f')
-		return 10 + c - 'a';
-	else if (c >= 'A' && c <= 'F')
-		return 10 + c - 'A';
-	else
-		return -1;
-}
-
-void Draw_ColoredString (int x, int y, char *text, int red)
-{
-	int r, g, b, num;
-	qboolean white = true;
-
-	if (y <= -8)
-		return;			// totally off screen
-
-	if (!*text)
-		return;
-
-	GL_Bind(char_texture);
-
-	if (scr_coloredText.value)
-		glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-
-	glBegin(GL_QUADS);
-
-	for ( ; *text; text++)
-	{
-		if (*text == '&')
+		if (colouredtextrendering)
 		{
-			if (text[1] == 'c' && text[2] && text[3] && text[4])
-			{
-				r = HexToInt(text[2]);
-				g = HexToInt(text[3]);
-				b = HexToInt(text[4]);
-				if (r >= 0 && g >= 0 && b >= 0)
-				{
-					if (scr_coloredText.value)
-					{
-						glColor3f(r / 16.0, g / 16.0, b / 16.0);
-						white = false;
-					}
-					text += 4;
-				}
-				continue;
-			}
-			else if (text[1] == 'r')
-			{
-				if (!white)
-				{
-					glColor3ubv(color_white);
-					white = true;
-				}
-				text += 1;
-				continue;
-			}
+			glDisableClientState(GL_COLOR_ARRAY);
+			colouredtextrendering = 0;
 		}
-
-		num = *text & 255;
-		if (!scr_coloredText.value && red)
-			num |= 128;
-
-		if (num != 32 && num != (32 | 128))
-			Draw_CharPoly(x, y, num);
-
-		x += 8;
 	}
-
-	glEnd();
-
-	if (!white)
-		glColor3ubv(color_white);
-
-	if (scr_coloredText.value)
-		glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
 }
 
-
-void Draw_ColoredString_Length(int x, int y, char *text, int red, int len, unsigned short startcolour)
+void Draw_BeginColoredTextRendering()
 {
-	int r, g, b, num;
-	qboolean white;
-
-	if (y <= -8)
-		return;			// totally off screen
-
-	if (!*text)
-		return;
-
-	GL_Bind(char_texture);
-
-	if (scr_coloredText.value)
-		glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-
-	if (startcolour == 0x0fff)
+	if (!textrenderingenabled)
 	{
-		white = true;
-	}
-	else
-	{
-		glColor3f(((startcolour>>8)&0xf) / 16.0, ((startcolour>>4)&0xf) / 16.0, (startcolour&0xf) / 16.0);
-		white = false;
+		GL_Bind(char_texture);
+
+		glEnableClientState(GL_VERTEX_ARRAY);
+		glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+		glEnableClientState(GL_COLOR_ARRAY);
+		glVertexPointer(2, GL_FLOAT, 0, fontvertices);
+		glTexCoordPointer(2, GL_FLOAT, 0, fonttexcoords);
+		glColorPointer(4, GL_UNSIGNED_BYTE, 0, fontcolours);
+
+		fontindex = 0;
+
+		colouredtextrendering = 1;
 	}
 
-	glBegin(GL_QUADS);
-
-	while(len)
-	{
-		if (*text == '&')
-		{
-			if (len >= 5 && text[1] == 'c' && text[2] && text[3] && text[4])
-			{
-				r = HexToInt(text[2]);
-				g = HexToInt(text[3]);
-				b = HexToInt(text[4]);
-				if (r >= 0 && g >= 0 && b >= 0)
-				{
-					if (scr_coloredText.value)
-					{
-						glColor3f(r / 16.0, g / 16.0, b / 16.0);
-						white = false;
-					}
-					text += 5;
-					len -= 5;
-				}
-				continue;
-			}
-			else if (len >= 2 && text[1] == 'r')
-			{
-				if (!white)
-				{
-					glColor3ubv(color_white);
-					white = true;
-				}
-				text += 2;
-				len -= 2;
-				continue;
-			}
-		}
-
-		num = *text & 255;
-		if (!scr_coloredText.value && red)
-			num |= 128;
-
-		if (num != 32 && num != (32 | 128))
-			Draw_CharPoly(x, y, num);
-
-		x += 8;
-
-		text++;
-		len--;
-	}
-
-	glEnd();
-
-	if (!white)
-		glColor3ubv(color_white);
-
-	if (scr_coloredText.value)
-		glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+	textrenderingenabled++;
 }
 
+void Draw_EndColoredTextRendering()
+{
+	Draw_EndTextRendering();
+	fontcolour.ui = 0xffffffff;
+}
 
 void Draw_Crosshair(void)
 {
@@ -1035,33 +671,27 @@ void Draw_Crosshair(void)
 
 		if (customcrosshair_loaded & CROSSHAIR_IMAGE)
 		{
-			GL_Bind (crosshairpic.texnum);
-			ofs1 = 4 - 4.0 / crosshairpic.width;
-			ofs2 = 4 + 4.0 / crosshairpic.width;
-			sh = crosshairpic.sh;
-			sl = crosshairpic.sl;
-			th = crosshairpic.th;
-			tl = crosshairpic.tl;
+			GL_Bind(crosshairpic->texnum);
+			ofs1 = 4 - 4.0 / 16;
+			ofs2 = 4 + 4.0 / 16;
 		}
 		else
 		{
 			GL_Bind ((crosshair.value >= 2) ? crosshairtextures[(int) crosshair.value - 2] : crosshairtexture_txt);	
 			ofs1 = 3.5;
 			ofs2 = 4.5;
-			tl = sl = 0;
-			sh = th = 1;
 		}
 		ofs1 *= (vid.conwidth / 320) * bound(0, crosshairsize.value, 20);
 		ofs2 *= (vid.conwidth / 320) * bound(0, crosshairsize.value, 20);
 
 		glBegin(GL_QUADS);
-		glTexCoord2f(sl, tl);
+		glTexCoord2f(0.0, 0.0);
 		glVertex2f(x - ofs1, y - ofs1);
-		glTexCoord2f(sh, tl);
+		glTexCoord2f(1.0, 0.0);
 		glVertex2f(x + ofs2, y - ofs1);
-		glTexCoord2f(sh, th);
+		glTexCoord2f(1.0, 1.0);
 		glVertex2f(x + ofs2, y + ofs2);
-		glTexCoord2f(sl, th);
+		glTexCoord2f(0.0, 1.0);
 		glVertex2f(x - ofs1, y + ofs2);
 		glEnd();
 
@@ -1078,212 +708,6 @@ void Draw_Crosshair(void)
 	{
 		Draw_Character(scr_vrect.x + scr_vrect.width / 2 - 4 + cl_crossx.value, scr_vrect.y + scr_vrect.height / 2 - 4 + cl_crossy.value, '+');
 	}
-}
-
-void Draw_TextBox(int x, int y, int width, int lines)
-{
-	mpic_t *p;
-	int cx, cy, n;
-
-	// draw left side
-	cx = x;
-	cy = y;
-	p = Draw_CachePic("gfx/box_tl.lmp");
-	Draw_TransPic(cx, cy, p);
-	p = Draw_CachePic("gfx/box_ml.lmp");
-	for (n = 0; n < lines; n++)
-	{
-		cy += 8;
-		Draw_TransPic(cx, cy, p);
-	}
-	p = Draw_CachePic("gfx/box_bl.lmp");
-	Draw_TransPic(cx, cy+8, p);
-
-	// draw middle
-	cx += 8;
-	while (width > 0)
-	{
-		cy = y;
-		p = Draw_CachePic("gfx/box_tm.lmp");
-		Draw_TransPic(cx, cy, p);
-		p = Draw_CachePic("gfx/box_mm.lmp");
-		for (n = 0; n < lines; n++)
-		{
-			cy += 8;
-			if (n == 1)
-				p = Draw_CachePic("gfx/box_mm2.lmp");
-			Draw_TransPic(cx, cy, p);
-		}
-		p = Draw_CachePic("gfx/box_bm.lmp");
-		Draw_TransPic(cx, cy+8, p);
-		width -= 2;
-		cx += 16;
-	}
-
-	// draw right side
-	cy = y;
-	p = Draw_CachePic("gfx/box_tr.lmp");
-	Draw_TransPic (cx, cy, p);
-	p = Draw_CachePic("gfx/box_mr.lmp");
-	for (n = 0; n < lines; n++)
-	{
-		cy += 8;
-		Draw_TransPic(cx, cy, p);
-	}
-	p = Draw_CachePic("gfx/box_br.lmp");
-	Draw_TransPic(cx, cy+8, p);
-}
-
-void Draw_Pic(int x, int y, mpic_t *pic)
-{
-	if (scrap_dirty)
-		Scrap_Upload();
-	GL_Bind(pic->texnum);
-	glBegin(GL_QUADS);
-	glTexCoord2f(pic->sl, pic->tl);
-	glVertex2f(x, y);
-	glTexCoord2f(pic->sh, pic->tl);
-	glVertex2f(x + pic->width, y);
-	glTexCoord2f(pic->sh, pic->th);
-	glVertex2f(x + pic->width, y + pic->height);
-	glTexCoord2f(pic->sl, pic->th);
-	glVertex2f(x, y + pic->height);
-	glEnd();
-}
-
-void Draw_AlphaPic(int x, int y, mpic_t *pic, float alpha)
-{
-	if (scrap_dirty)
-		Scrap_Upload ();
-	glDisable(GL_ALPHA_TEST);
-	glEnable(GL_BLEND);
-//	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	glCullFace(GL_FRONT);
-	glColor4f(1, 1, 1, alpha);
-	GL_Bind(pic->texnum);
-	glBegin(GL_QUADS);
-	glTexCoord2f(pic->sl, pic->tl);
-	glVertex2f(x, y);
-	glTexCoord2f(pic->sh, pic->tl);
-	glVertex2f(x + pic->width, y);
-	glTexCoord2f(pic->sh, pic->th);
-	glVertex2f(x + pic->width, y + pic->height);
-	glTexCoord2f(pic->sl, pic->th);
-	glVertex2f(x, y + pic->height);
-	glEnd();
-	glColor3ubv(color_white);
-	glEnable(GL_ALPHA_TEST);
-	glDisable(GL_BLEND);
-}
-
-void Draw_SubPic(int x, int y, mpic_t *pic, int srcx, int srcy, int width, int height)
-{
-	float newsl, newtl, newsh, newth, oldglwidth, oldglheight;
-
-	if (scrap_dirty)
-		Scrap_Upload ();
-
-	oldglwidth = pic->sh - pic->sl;
-	oldglheight = pic->th - pic->tl;
-
-	newsl = pic->sl + (srcx * oldglwidth) / pic->width;
-	newsh = newsl + (width * oldglwidth) / pic->width;
-
-	newtl = pic->tl + (srcy * oldglheight) / pic->height;
-	newth = newtl + (height * oldglheight) / pic->height;
-
-	GL_Bind(pic->texnum);
-	glBegin(GL_QUADS);
-	glTexCoord2f(newsl, newtl);
-	glVertex2f(x, y);
-	glTexCoord2f(newsh, newtl);
-	glVertex2f(x + width, y);
-	glTexCoord2f(newsh, newth);
-	glVertex2f(x + width, y + height);
-	glTexCoord2f(newsl, newth);
-	glVertex2f(x, y + height);
-	glEnd();
-}
-
-void Draw_TransPic(int x, int y, mpic_t *pic)
-{
-	if (x < 0 || (unsigned) (x + pic->width) > vid.conwidth || y < 0 || (unsigned) (y + pic->height) > vid.conheight)
-		Sys_Error("Draw_TransPic: bad coordinates");
-		
-	Draw_Pic(x, y, pic);
-}
-
-//Only used for the player color selection menu
-void Draw_TransPicTranslate(int x, int y, mpic_t *pic, byte *translation)
-{
-	int v, u, c, p;
-	unsigned trans[64 * 64], *dest;
-	byte *src;
-
-	GL_Bind (translate_texture);
-
-	c = pic->width * pic->height;
-
-	dest = trans;
-	for (v = 0; v < 64; v++, dest += 64)
-	{
-		src = &menuplyr_pixels[ ((v * pic->height) >> 6) *pic->width];
-		for (u = 0; u < 64; u++)
-		{
-			p = src[(u * pic->width) >> 6];
-			dest[u] = (p == 255) ? p : d_8to24table[translation[p]];
-		}
-	}
-
-	glTexImage2D(GL_TEXTURE_2D, 0, gl_alpha_format, 64, 64, 0, GL_RGBA, GL_UNSIGNED_BYTE, trans);
-
-	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-	glBegin(GL_QUADS);
-	glTexCoord2f(0, 0);
-	glVertex2f(x, y);
-	glTexCoord2f(1, 0);
-	glVertex2f(x + pic->width, y);
-	glTexCoord2f(1, 1);
-	glVertex2f(x + pic->width, y + pic->height);
-	glTexCoord2f(0, 1);
-	glVertex2f(x, y + pic->height);
-	glEnd();
-}
-
-void Draw_ConsoleBackground(int lines)
-{
-	char ver[80];
-
-	if (SCR_NEED_CONSOLE_BACKGROUND)
-	{
-		Draw_Pic(0, lines - vid.conheight, &conback);
-	}
-	else
-	{
-		if (scr_conalpha.value)
-			Draw_AlphaPic (0, lines - vid.conheight, &conback, bound (0, scr_conalpha.value, 1));
-	}
-
-	sprintf(ver, "FodQuake %s", FODQUAKE_VERSION);
-	Draw_Alt_String(vid.conwidth - strlen(ver) * 8 - 8, lines - 10, ver);
-}
-
-//This repeats a 64 * 64 tile graphic to fill the screen around a sized down refresh window.
-void Draw_TileClear(int x, int y, int w, int h)
-{
-	GL_Bind(draw_backtile->texnum);
-	glBegin(GL_QUADS);
-	glTexCoord2f(x / 64.0, y / 64.0);
-	glVertex2f(x, y);
-	glTexCoord2f((x + w) / 64.0, y / 64.0);
-	glVertex2f(x + w, y);
-	glTexCoord2f((x + w) / 64.0, (y + h) / 64.0);
-	glVertex2f(x + w, y + h);
-	glTexCoord2f(x / 64.0, (y + h) / 64.0 );
-	glVertex2f(x, y + h);
-	glEnd();
 }
 
 void Draw_AlphaFill(int x, int y, int w, int h, int c, float alpha)
@@ -1366,6 +790,13 @@ void Draw_FadeScreen(void)
 	Sbar_Changed();
 }
 
+void Draw_SetSize(unsigned int width, unsigned int height)
+{
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	glOrtho(0, width, height, 0, -99999, 99999);
+}
+
 //=============================================================================
 
 void GL_Set2D(void)
@@ -1385,5 +816,338 @@ void GL_Set2D(void)
 	glEnable(GL_ALPHA_TEST);
 
 	glColor3ubv(color_white);
+}
+
+struct WadHeader
+{
+	unsigned int width;
+	unsigned short height;
+};
+
+struct LmpHeader
+{
+	unsigned int width;
+	unsigned int height;
+};
+
+static void *Draw_LoadWadPicture(const char *name, unsigned int *rwidth, unsigned int *rheight)
+{
+	struct WadHeader *header;
+	unsigned int width;
+	unsigned int height;
+	void *data;
+	void *newdata;
+
+	data = W_GetLumpName(name);
+
+	if (data) /* Always true, Quake sucks. */
+	{
+		header = data;
+
+		width = header->width;
+		height = header->height;
+
+		if (width < 32768 && height < 32768)
+		{
+			/* More memory allocs than needed, oh well... */
+			newdata = malloc(width * height);
+			if (newdata)
+			{
+				memcpy(newdata, data + 8, width * height);
+				*rwidth = width;
+				*rheight = height;
+				return newdata;
+			}
+		}
+	}
+
+	return 0;
+}
+
+static void *Draw_LoadLmpPicture(FILE *fh, unsigned int *rwidth, unsigned int *rheight)
+{
+	struct LmpHeader header;
+	void *data;
+	int r;
+	unsigned int width;
+	unsigned int height;
+	unsigned int size;
+
+	r = fread(&header, 1, sizeof(header), fh);
+	if (r == sizeof(header))
+	{
+		width = LittleLong(header.width);
+		height = LittleLong(header.height);
+
+		if (width < 32768 && height < 32768)
+		{
+			size = width * height;
+
+			data = malloc(size);
+			if (data)
+			{
+				r = fread(data, 1, size, fh);
+				if (r == size)
+				{
+					*rwidth = width;
+					*rheight = height;
+
+					return data;
+				}
+
+				free(data);
+			}
+		}
+	}
+
+	return 0;
+}
+
+static void *Draw_8to32(unsigned char *source, unsigned int width, unsigned int height, GLint *internalformat)
+{
+	unsigned int *dst;
+	int doalpha;
+	unsigned int i;
+
+	if (width >= 32768 || height >= 32768)
+		return 0;
+
+	dst = malloc(width*height*sizeof(*dst));
+	if (dst)
+	{
+		for(i=0;i<width*height;i++)
+		{
+			dst[i] = d_8to24table[source[i]];
+		}
+
+		*internalformat = 4;
+	}
+
+	return dst;
+}
+
+#warning Fixme
+#define ISPOT(x) (1)
+
+struct Picture *Draw_LoadPicture(const char *name, enum Draw_LoadPicture_Fallback fallback)
+{
+	char *newname;
+	char *newnameextension;
+	FILE *fh;
+	unsigned int namelen;
+	struct Picture *picture;
+	GLint internalformat;
+	unsigned int width;
+	unsigned int height;
+	void *data;
+	void *newdata;
+
+	data = 0;
+	newdata = 0;
+	picture = 0;
+	internalformat = 4;
+
+	if (strncmp(name, "wad:", 4) == 0)
+	{
+		namelen = strlen(name + 4);
+		newname = malloc(namelen + strlen("textures/wad/") + 1);
+		if (newname)
+		{
+			memcpy(newname, "textures/wad/", strlen("textures/wad/"));
+			memcpy(newname + strlen("textures/wad/"), name + 4, namelen);
+			newname[strlen("textures/wad/") + namelen] = 0;
+			picture = Draw_LoadPicture(newname, DRAW_LOADPICTURE_NOFALLBACK);
+			free(newname);
+			if (picture)
+				return picture;
+		}
+		newname = malloc(namelen + strlen("gfx/") + 1);
+		if (newname)
+		{
+			memcpy(newname, "gfx/", strlen("gfx/"));
+			memcpy(newname + strlen("gfx/"), name + 4, namelen);
+			newname[strlen("gfx/") + namelen] = 0;
+			picture = Draw_LoadPicture(newname, DRAW_LOADPICTURE_NOFALLBACK);
+			free(newname);
+			if (picture)
+				return picture;
+		}
+		data = Draw_LoadWadPicture(name + 4, &width, &height);
+	}
+	else
+	{
+		namelen = strlen(name);
+
+		newname = malloc(namelen + 4 + 1);
+		if (newname)
+		{
+			COM_StripExtension(name, newname);
+
+			newnameextension = newname + strlen(newname);
+
+			strcpy(newnameextension, ".tga");
+			newdata = Image_LoadTGA(0, newname, 0, 0, &width, &height);
+#if USE_PNG
+			if (!newdata)
+			{
+				strcpy(newnameextension, ".png");
+				newdata = Image_LoadPNG(0, newname, 0, 0, &width, &height);
+			}
+#endif
+
+			free(newname);
+		}
+
+		if (!newdata)
+		{
+			if (namelen > 4 && strcmp(name + namelen - 4, ".lmp") == 0)
+			{
+				FS_FOpenFile(name, &fh);
+				if (fh)
+				{
+					data = Draw_LoadLmpPicture(fh, &width, &height);
+
+					fclose(fh);
+				}
+			}
+		}
+	}
+
+	if (data)
+	{
+		newdata = Draw_8to32(data, width, height, &internalformat);
+
+		free(data);
+	}
+
+	if (newdata)
+	{
+		if (ISPOT(width) && ISPOT(height))
+		{
+			picture = malloc(sizeof(*picture));
+			if (picture)
+			{
+				picture->texnum = texture_extension_number++;
+				picture->invwidth = 1.0/width;
+				picture->invheight = 1.0/height;
+
+				GL_Bind(picture->texnum);
+				glTexImage2D(GL_TEXTURE_2D, 0, internalformat, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, newdata);
+
+				glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+				glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+			}
+		}
+
+		free(newdata);
+	}
+
+	if (picture)
+		return picture;
+
+#warning Fixme
+	if (fallback == DRAW_LOADPICTURE_DUMMYFALLBACK)
+		return 42;
+
+	return 0;
+}
+
+void Draw_FreePicture(struct Picture *picture)
+{
+	glDeleteTextures(1, &picture->texnum);
+
+	free(picture);
+}
+
+void Draw_DrawPicture(struct Picture *picture, int x, int y, unsigned int width, unsigned int height)
+{
+	float coords[4*2];
+	static const float texcoords[4*2] =
+	{
+		0, 0,
+		1, 0,
+		1, 1,
+		0, 1,
+	};
+
+	GL_Bind(picture->texnum);
+
+	coords[0*2 + 0] = x;
+	coords[0*2 + 1] = y;
+	coords[1*2 + 0] = x + width;
+	coords[1*2 + 1] = y;
+	coords[2*2 + 0] = x + width;
+	coords[2*2 + 1] = y + height;
+	coords[3*2 + 0] = x;
+	coords[3*2 + 1] = y + height;
+
+	glEnableClientState(GL_VERTEX_ARRAY);
+	glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+	glVertexPointer(2, GL_FLOAT, 0, coords);
+	glTexCoordPointer(2, GL_FLOAT, 0, texcoords);
+
+	glDrawArrays(GL_QUADS, 0, 4);
+
+	glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+	glDisableClientState(GL_VERTEX_ARRAY);
+}
+
+void Draw_DrawPictureAlpha(struct Picture *picture, int x, int y, unsigned int width, unsigned int height, float alpha)
+{
+	if (alpha < 0)
+		alpha = 0;
+
+	if (alpha > 1)
+		alpha = 1;
+
+	glDisable(GL_ALPHA_TEST);
+	glEnable(GL_BLEND);
+	glColor4f(1, 1, 1, alpha);
+	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+	Draw_DrawPicture(picture, x, y, width, height);
+
+	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+	glColor3ubv(color_white);
+	glDisable(GL_BLEND);
+	glEnable(GL_ALPHA_TEST);
+}
+
+void Draw_DrawSubPicture(struct Picture *picture, unsigned int sx, unsigned int sy, unsigned int swidth, unsigned int sheight, int x, int y, unsigned int width, unsigned int height)
+{
+	float coords[4*2];
+	float texcoords[4*2];
+
+	GL_Bind(picture->texnum);
+
+	coords[0*2 + 0] = x;
+	coords[0*2 + 1] = y;
+	coords[1*2 + 0] = x + width;
+	coords[1*2 + 1] = y;
+	coords[2*2 + 0] = x + width;
+	coords[2*2 + 1] = y + height;
+	coords[3*2 + 0] = x;
+	coords[3*2 + 1] = y + height;
+
+	texcoords[0*2 + 0] = (sx) * picture->invwidth;
+	texcoords[0*2 + 1] = (sy) * picture->invheight;
+	texcoords[1*2 + 0] = (sx + swidth) * picture->invwidth;
+	texcoords[1*2 + 1] = (sy) * picture->invheight;
+	texcoords[2*2 + 0] = (sx + swidth) * picture->invwidth;
+	texcoords[2*2 + 1] = (sy + sheight) * picture->invheight;
+	texcoords[3*2 + 0] = (sx) * picture->invwidth;
+	texcoords[3*2 + 1] = (sy + sheight) * picture->invheight;
+
+	glEnableClientState(GL_VERTEX_ARRAY);
+	glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+	glVertexPointer(2, GL_FLOAT, 0, coords);
+	glTexCoordPointer(2, GL_FLOAT, 0, texcoords);
+
+	glDrawArrays(GL_QUADS, 0, 4);
+
+	glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+	glDisableClientState(GL_VERTEX_ARRAY);
 }
 

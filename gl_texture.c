@@ -24,6 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "quakedef.h"
 #include "crc.h"
 #include "image.h"
+#include "filesystem.h"
 #include "gl_local.h"
 
 #include "config.h"
@@ -424,47 +425,6 @@ setup_gltexture:
 	return glt->texnum;
 }
 
-int GL_LoadPicTexture(char *name, mpic_t *pic, byte *data)
-{
-	int glwidth, glheight, i;
-	char fullname[MAX_QPATH] = "pic:";
-	byte *src, *dest, *buf;
-
-	Q_ROUND_POWER2(pic->width, glwidth);
-	Q_ROUND_POWER2(pic->height, glheight);
-
-	Q_strncpyz(fullname + 4, name, sizeof(fullname) - 4);
-	if (glwidth == pic->width && glheight == pic->height)
-	{
-		pic->texnum = GL_LoadTexture(fullname, glwidth, glheight, data, TEX_ALPHA, 1);
-		pic->sl = 0;
-		pic->sh = 1;
-		pic->tl = 0;
-		pic->th = 1;
-	}
-	else
-	{
-		buf = Q_Calloc(glwidth * glheight, 1);
-
-		src = data;
-		dest = buf;
-		for (i = 0; i < pic->height; i++)
-		{
-			memcpy(dest, src, pic->width);
-			src += pic->width;
-			dest += glwidth;
-		}
-		pic->texnum = GL_LoadTexture(fullname, glwidth, glheight, buf, TEX_ALPHA, 1);
-		pic->sl = 0;
-		pic->sh = (float) pic->width / glwidth;
-		pic->tl = 0;
-		pic->th = (float) pic->height / glheight;
-		free(buf);
-	}
-
-	return pic->texnum;
-}
-
 static struct gltexture *GL_FindTexture(const char *identifier)
 {
 	int i;
@@ -523,7 +483,7 @@ static qboolean CheckTextureLoaded(int mode)
 	return false;
 }
 
-byte *GL_LoadImagePixels(char *filename, int matchwidth, int matchheight, int mode)
+byte *GL_LoadImagePixels(char *filename, int matchwidth, int matchheight, int *imagewidth, int *imageheight, int mode)
 {
 	char basename[MAX_QPATH], name[MAX_QPATH];
 	byte *c, *data;
@@ -538,7 +498,7 @@ byte *GL_LoadImagePixels(char *filename, int matchwidth, int matchheight, int mo
 	if (FS_FOpenFile(name, &f) != -1)
 	{
 		CHECK_TEXTURE_ALREADY_LOADED;
-		if ((data = Image_LoadTGA(f, name, matchwidth, matchheight)))
+		if ((data = Image_LoadTGA(f, name, matchwidth, matchheight, imagewidth, imageheight)))
 			return data;
 	}
 
@@ -547,7 +507,7 @@ byte *GL_LoadImagePixels(char *filename, int matchwidth, int matchheight, int mo
 	if (FS_FOpenFile(name, &f) != -1)
 	{
 		CHECK_TEXTURE_ALREADY_LOADED;
-		if ((data = Image_LoadPNG(f, name, matchwidth, matchheight)))
+		if ((data = Image_LoadPNG(f, name, matchwidth, matchheight, imagewidth, imageheight)))
 			return data;
 	}
 #endif
@@ -604,6 +564,7 @@ int GL_LoadTextureImage(char *filename, char *identifier, int matchwidth, int ma
 	int texnum;
 	byte *data;
 	struct gltexture *gltexture;
+	int imagewidth, imageheight;
 
 	if (no24bit)
 		return 0;
@@ -613,13 +574,13 @@ int GL_LoadTextureImage(char *filename, char *identifier, int matchwidth, int ma
 
 	gltexture = current_texture = GL_FindTexture(identifier);
 
-	if (!(data = GL_LoadImagePixels(filename, matchwidth, matchheight, mode)))
+	if (!(data = GL_LoadImagePixels(filename, matchwidth, matchheight, &imagewidth, &imageheight, mode)))
 	{
 		texnum = (gltexture && !current_texture) ? gltexture->texnum : 0;
 	}
 	else
 	{
-		texnum = GL_LoadTexturePixels(data, identifier, image_width, image_height, mode);
+		texnum = GL_LoadTexturePixels(data, identifier, imagewidth, imageheight, mode);
 		free(data);
 	}
 
@@ -627,86 +588,23 @@ int GL_LoadTextureImage(char *filename, char *identifier, int matchwidth, int ma
 	return texnum;
 }
 
-mpic_t *GL_LoadPicImage(char *filename, char *id, int matchwidth, int matchheight, int mode)
-{
-	int width, height, i;
-	char identifier[MAX_QPATH] = "pic:";
-	byte *data, *src, *dest, *buf;
-	static mpic_t pic;
-
-	if (no24bit)
-		return NULL;
-
-	if (!(data = GL_LoadImagePixels(filename, matchwidth, matchheight, 0)))
-		return NULL;
-
-	pic.width = image_width;
-	pic.height = image_height;
-
-	if (mode & TEX_ALPHA)
-	{
-		mode &= ~TEX_ALPHA;
-		for (i = 0; i < image_width * image_height; i++)
-		{
-			if ( ( (((unsigned int *) data)[i] >> 24 ) & 0xFF ) < 255)
-			{
-				mode |= TEX_ALPHA;
-				break;
-			}
-		}
-	}
-
-	Q_ROUND_POWER2(pic.width, width);
-	Q_ROUND_POWER2(pic.height, height);
-
-	Q_strncpyz(identifier + 4, id ? id : filename, sizeof(identifier) - 4);
-	if (width == pic.width && height == pic.height)
-	{
-		pic.texnum = GL_LoadTexture(identifier, pic.width, pic.height, data, mode, 4);
-		pic.sl = 0;
-		pic.sh = 1;
-		pic.tl = 0;
-		pic.th = 1;
-	}
-	else
-	{
-		buf = Q_Calloc(width * height, 4);
-
-		src = data;
-		dest = buf;
-		for (i = 0; i < pic.height; i++)
-		{
-			memcpy(dest, src, pic.width * 4);
-			src += pic.width * 4;
-			dest += width * 4;
-		}
-		pic.texnum = GL_LoadTexture(identifier, width, height, buf, mode & ~TEX_MIPMAP, 4);
-		pic.sl = 0;
-		pic.sh = (float) pic.width / width;
-		pic.tl = 0;
-		pic.th = (float) pic.height / height;
-		free(buf);
-	}
-
-	free(data);
-	return &pic;
-}
-
 int GL_LoadCharsetImage(char *filename, char *identifier)
 {
 	int i, texnum, image_size;
 	byte *data, *buf, *dest, *src;
+	int imagewidth, imageheight;
 
 	if (no24bit)
 		return 0;
 
-	if (!(data = GL_LoadImagePixels(filename, 0, 0, 0)))
+	if (!(data = GL_LoadImagePixels(filename, 0, 0, &imagewidth, &imageheight, 0)))
 		return 0;
 
 	if (!identifier)
 		identifier = filename;
 
-	image_size = image_width * image_height;
+#warning Integer overflow vulnerability.
+	image_size = imagewidth * imageheight;
 
 	buf = dest = Q_Calloc(image_size * 2, 4); 
 	src = data;
@@ -717,7 +615,7 @@ int GL_LoadCharsetImage(char *filename, char *identifier)
 		dest += image_size >> 1;
 	}
 
-	texnum = GL_LoadTexture(identifier, image_width, image_height * 2, buf, TEX_ALPHA | TEX_NOCOMPRESS, 4);
+	texnum = GL_LoadTexture(identifier, imagewidth, imageheight * 2, buf, TEX_ALPHA | TEX_NOCOMPRESS, 4);
 
 	free(buf);
 	free(data);

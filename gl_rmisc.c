@@ -246,10 +246,8 @@ void R_TranslatePlayerSkin (int playernum)
 }
 
 
-void R_PreMapLoad(char *name)
+void R_PreMapLoad()
 {
-
-	Cvar_ForceSet (&mapname, name);
 	if (!dedicated)
 		lightmode = gl_lightmode.value == 0 ? 0 : 2;
 }

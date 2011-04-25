@@ -31,6 +31,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "d_local.h"
 #endif
 
+#include "menu.h"
+
 #ifndef CLIENTONLY
 #include "server.h"
 #endif
@@ -45,7 +47,6 @@ static void *display;
 
 static char *windowtitle;
 
-#ifdef GLQUAKE
 static void set_up_conwidth_conheight(void);
 
 static qboolean vid_conwidth_callback(cvar_t *var, char *value)
@@ -65,7 +66,6 @@ static qboolean vid_conheight_callback(cvar_t *var, char *value)
 
 	return false;
 }
-#endif
 
 static qboolean in_grab_windowed_mouse_callback(cvar_t *var, char *value)
 {
@@ -87,10 +87,8 @@ cvar_t vid_width = { "vid_width", "640", CVAR_ARCHIVE };
 cvar_t vid_height = { "vid_height", "480", CVAR_ARCHIVE };
 cvar_t vid_mode = { "vid_mode", "", CVAR_ARCHIVE };
 
-#ifdef GLQUAKE
 cvar_t vid_conwidth = { "vid_conwidth", "0", CVAR_ARCHIVE, vid_conwidth_callback };
 cvar_t vid_conheight = { "vid_conheight", "0", CVAR_ARCHIVE, vid_conheight_callback };
-#endif
 
 cvar_t in_grab_windowed_mouse = { "in_grab_windowed_mouse", "1", CVAR_ARCHIVE, in_grab_windowed_mouse_callback };
 
@@ -113,7 +111,6 @@ static void set_up_conwidth_conheight()
 		vid.displayheight = 240;
 	}
 
-#ifdef GLQUAKE
 	if (vid.displaywidth <= 640 || vid.displayheight < 400)
 	{
 		vid.conwidth = vid.displaywidth;
@@ -151,10 +148,6 @@ static void set_up_conwidth_conheight()
 	
 	if (vid.conheight > vid.displayheight)
 		vid.conheight = vid.displayheight;
-#else
-	vid.conwidth = vid.displaywidth;
-	vid.conheight = vid.displayheight;
-#endif
 
 	vid.recalc_refdef = 1;
 }
@@ -186,10 +179,6 @@ void VID_Restart(void)
 
 	if (!display)
 		return;
-
-#ifndef GLQUAKE
-	D_FlushCaches();
-#endif
 
 	VID_Close();
 #ifdef CLIENTONLY
@@ -227,10 +216,8 @@ void VID_CvarInit()
 	Cvar_Register(&vid_width);
 	Cvar_Register(&vid_height);
 	Cvar_Register(&vid_mode);
-#ifdef GLQUAKE
 	Cvar_Register(&vid_conwidth);
 	Cvar_Register(&vid_conheight);
-#endif
 
 	Cvar_SetCurrentGroup(CVAR_GROUP_INPUT_MOUSE);
 	Cvar_Register(&in_grab_windowed_mouse);
@@ -347,10 +334,12 @@ void VID_Open()
 
 			R_InitGL();
 			GL_Particles_TextureInit();
-			Draw_InitGL();
-			Sbar_Init();
 #endif
-			SCR_LoadTextures();
+
+			Draw_Init();
+			M_VidInit();
+			Sbar_Init();
+			SCR_Init();
 
 			return;
 		}
@@ -371,17 +360,17 @@ void VID_Close()
 {
 	Sys_Thread_LockMutex(display_mutex);
 
-#ifdef GLQUAKE
+	SCR_Shutdown();
 	Sbar_Shutdown();
-	Draw_ShutdownGL();
+	M_VidShutdown();
+	Draw_Shutdown();
+
+#ifndef GLQUAKE
+	D_FlushCaches();
 #endif
 
 	if (display)
 	{
-#ifdef GLQUAKE
-		GL_FlushPics();
-#endif
-
 		R_Shutdown();
 		Sys_Video_Close(display);
 

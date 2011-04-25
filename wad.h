@@ -65,13 +65,11 @@ typedef struct {
 	char		name[16];				// must be null terminated
 } lumpinfo_t;
 
-void W_LoadWadFile(char *filename);
+void W_LoadWadFile(const char *filename);
 void W_UnloadWadFile(void);
-void *W_GetLumpName (char *name);
+void *W_GetLumpName(const char *name);
 
-void SwapPic (qpic_t *pic);
-
-void WAD3_LoadTextureWadFile (char *filename);
+void WAD3_LoadTextureWadFile(const char *filename);
 byte *WAD3_LoadTexture(miptex_t *mt);
 
 #endif // _WAD_H

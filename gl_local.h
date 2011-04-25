@@ -266,9 +266,11 @@ extern lpMTexFUNC qglMultiTexCoord2f;
 extern lpSelTexFUNC qglActiveTexture;
 extern void (APIENTRY *qglClientActiveTexture)(GLenum);
 
+#ifndef __MACOSX__
 typedef ptrdiff_t GLsizeiptrARB;
 extern void (*qglBindBufferARB)(GLenum, GLuint);
 extern void (*qglBufferDataARB)(GLenum, GLsizeiptrARB, const GLvoid *, GLenum);
+#endif
 
 extern float gldepthmin, gldepthmax;
 extern byte color_white[4], color_black[4];

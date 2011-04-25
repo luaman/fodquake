@@ -31,6 +31,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "input.h"
 #include "keys.h"
 #include "gl_local.h"
+#include "in_macosx.h"
 
 struct display
 {
@@ -99,7 +100,9 @@ void *Sys_Video_Open(const char *mode, unsigned int width, unsigned int height, 
 							d->width = CGDisplayPixelsWide(kCGDirectMainDisplay);
 							d->height = CGDisplayPixelsHigh(kCGDirectMainDisplay);
 
-							return d;
+							d->inputdata = Sys_Input_Init();
+							if (d->inputdata)
+								return d;
 						}
 					}
 
@@ -109,6 +112,8 @@ void *Sys_Video_Open(const char *mode, unsigned int width, unsigned int height, 
 				CGLDestroyContext(d->context);
 			}
 		}
+
+		free(d);
 	}
 
 	return 0;
@@ -117,6 +122,8 @@ void *Sys_Video_Open(const char *mode, unsigned int width, unsigned int height, 
 void Sys_Video_Close(void *display)
 {
 	struct display *d = display;
+
+	Sys_Input_Shutdown(d->inputdata);
 
 	CGReleaseAllDisplays();
 
@@ -138,7 +145,6 @@ int Sys_Video_GetKeyEvent(void *display, keynum_t *keynum, qboolean *down)
 {
 	struct display *d = display;
 
-	return 0;
 	return Sys_Input_GetKeyEvent(d->inputdata, keynum, down);
 }
  
@@ -146,19 +152,6 @@ void Sys_Video_GetMouseMovement(void *display, int *mousex, int *mousey)
 {
 	struct display *d = display;
 
-#if 0
-	{
-		int32_t x, y;
-		CGGetLastMouseDelta(&x, &y);
-
-		printf("%d %d\n", x, y);
-	}
-#endif
-
-	*mousex = 0;
-	*mousey = 0;
-
-	return;
 	Sys_Input_GetMouseMovement(d->inputdata, mousex, mousey);
 }
 
@@ -224,6 +217,8 @@ void Sys_Video_Update(void *display, vrect_t *rects)
 void Sys_Video_GrabMouse(void *display, int dograb)
 {
 	struct display *d = display;
+
+	Sys_Input_GrabMouse(d->inputdata, dograb);
 }
 
 void Sys_Video_SetGamma(void *display, unsigned short *ramps)

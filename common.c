@@ -366,18 +366,15 @@ char *COM_SkipPath (char *pathname)
 }
 
 
-void COM_StripExtension (char *in, char *out) {
+void COM_StripExtension(char *in, char *out)
+{
 	char *dot;
 
-	if (!(dot = strrchr(in, '.')))
-	{
-		Q_strncpyz(out, in, strlen(in) + 1);
-		return;
-	}
-
-	while (*in && in != dot)
-		*out++ = *in++;
-	*out = 0;
+	dot = strrchr(in, '.');
+	if (dot)
+		strlcpy(out, in, dot-in+1);
+	else
+		strcpy(out, in);
 }
 
 

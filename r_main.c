@@ -286,8 +286,6 @@ int R_Init(void)
 
 					D_Init ();
 
-					Draw_Init();
-
 					return 1;
 				}
 
@@ -313,9 +311,8 @@ void R_Shutdown()
 	free(auxedges);
 }
 
-void R_PreMapLoad(char *name)
+void R_PreMapLoad()
 {
-	Cvar_ForceSet (&mapname, name);
 }
 
 void R_NewMap(void)

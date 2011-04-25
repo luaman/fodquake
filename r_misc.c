@@ -203,19 +203,19 @@ void R_NetGraph (void) {
 	int a, x, y, y2, w, i, lost;
 	char st[80];
 
-	if (vid.conwidth - 16 <= NET_TIMINGS)
-		w = vid.conwidth - 16;
+	if (vid.displaywidth - 16 <= NET_TIMINGS)
+		w = vid.displaywidth - 16;
 	else
 		w = NET_TIMINGS;
 
 	x =	0;
-	y = vid.conheight - sb_lines - 24 - (int)r_graphheight.value * 2 - 2;
+	y = vid.displayheight - sb_lines - 24 - (int)r_graphheight.value * 2 - 2;
 
 	if (r_netgraph.value != 2 && r_netgraph.value != 3)
 		Draw_TextBox (x, y, (w + 7) / 8, ((int)r_graphheight.value * 2 + 7) / 8 + 1);
 
 	y2 = y + 8;
-	y = vid.conheight - sb_lines - 8 - 2;
+	y = vid.displayheight - sb_lines - 8 - 2;
 
 	x = 8;
 	lost = CL_CalcNet();

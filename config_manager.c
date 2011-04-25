@@ -23,6 +23,7 @@ Foundation,	Inc., 59 Temple	Place -	Suite 330, Boston, MA  02111-1307, USA.
 #include <stdlib.h>
 
 #include "quakedef.h"
+#include "filesystem.h"
 #include "input.h"
 #include "utils.h"
 #include "teamplay.h"
@@ -75,21 +76,25 @@ cvar_t	cfg_backup			=	{"cfg_backup", "0"};
 /************************************ DUMP FUNCTIONS ************************************/
 
 #define BIND_ALIGN_COL 20
-void DumpBindings (FILE *f) {
+static void DumpBindings(FILE *f)
+{
 	int i, leftright;
 	char *string;
+	int stringlen;
 	qboolean printed = false;
 
-	for (i = 0; i < 256; i++) {
-		
+	for (i = 0; i < 256; i++)
+	{
 		leftright = Key_IsLeftRightSameBind(i) ? 1 : 0;
-		if (keybindings[i] || leftright) {
+		if (keybindings[i] || leftright)
+		{
 			printed = true;
 			string = Key_KeynumToString(i);
+			stringlen = BIND_ALIGN_COL - strlen(string) - 6;
 			if (i == ';')
-				fprintf (f, "bind  \";\"%*s\"%s\"\n", BIND_ALIGN_COL - strlen(string) - 6, "", keybindings[i]);
+				fprintf (f, "bind  \";\"%*s\"%s\"\n", stringlen, "", keybindings[i]);
 			else
-				fprintf (f, "bind  %s%*s\"%s\"\n", string, BIND_ALIGN_COL - strlen(string) - 6, "", keybindings[leftright ? i + 1 : i]);
+				fprintf (f, "bind  %s%*s\"%s\"\n", string, stringlen, "", keybindings[leftright ? i + 1 : i]);
 
 			if (leftright)
 				i += 2;
@@ -100,36 +105,40 @@ void DumpBindings (FILE *f) {
 }
 
 #define CONFIG_MAX_COL 60
-static void DumpVariables(FILE	*f)	{
+static void DumpVariables(FILE	*f)
+{
 	cvar_t *var, *sorted_vars[256];
 	cvar_group_t *group;
 	int count, i, col_size;
 	qboolean skip_userinfo = false;
 
-
-
-	for (col_size = 0,  var = cvar_vars; var; var = var->next) {
+	for (col_size = 0,  var = cvar_vars; var; var = var->next)
+	{
 		if ( !(
 			(var->flags & (CVAR_USER_CREATED | CVAR_ROM | CVAR_INIT)) ||
 			(var->group && (!strcmp(CVAR_GROUP_NO_GROUP, var->group->name) || !strcmp(CVAR_GROUP_SERVERINFO, var->group->name)) )
-		)) {
+		))
+		{
 			col_size = max(col_size, strlen(var->name));
 		}
 	}
 	col_size = min(col_size + 2, CONFIG_MAX_COL);
 
 
-	if (cfg_save_unchanged.value) {
+	if (cfg_save_unchanged.value)
+	{
 		fprintf(f, "//All variables (even those with default values) are listed below.\n");
 		fprintf(f, "//You can use \"cfg_save_unchanged 0\" to save only changed variables.\n\n");
-	} else {
+	}
+	else
+	{
 		fprintf(f, "//Only variables with non-default values are listed below.\n");
 		fprintf(f, "//You can use \"cfg_save_unchanged 1\" to save all variables.\n\n");
 	}
 
 
-	for (group = cvar_groups; group; group = group->next)  {
-
+	for (group = cvar_groups; group; group = group->next)
+	{
 		if (
 			!strcmp(CVAR_GROUP_NO_GROUP, group->name) || 
 			!strcmp(CVAR_GROUP_SERVERINFO, group->name) ||
@@ -139,16 +148,18 @@ static void DumpVariables(FILE	*f)	{
 
 		skip_userinfo = ((cfg_save_userinfo.value == 1) && !strcmp(CVAR_GROUP_USERINFO, group->name)) ? true : false;
 
-	
-		for (count = 0, var = group->head; var && count < 256; var = var->next_in_group) {
+		for (count = 0, var = group->head; var && count < 256; var = var->next_in_group)
+		{
 			if (skip_userinfo && (
 				!strcmp(var->name, "team") || !strcmp(var->name, "skin") || 
 				!strcmp(var->name, "spectator") ||!strcmp(var->name, "name") ||
 				!strcmp(var->name, "topcolor") || !strcmp(var->name, "bottomcolor")
 			))
 				continue;
-			if (!(var->flags & (CVAR_USER_CREATED |	CVAR_ROM | CVAR_INIT))) {
-				if (cfg_save_unchanged.value || strcmp(var->string, var->defaultvalue)) {
+			if (!(var->flags & (CVAR_USER_CREATED |	CVAR_ROM | CVAR_INIT)))
+			{
+				if (cfg_save_unchanged.value || strcmp(var->string, var->defaultvalue))
+				{
 					sorted_vars[count++] = var;
 				}
 			}
@@ -156,7 +167,6 @@ static void DumpVariables(FILE	*f)	{
 		if (!count)
 			continue;
 
-	
 		if (
 			strcmp(group->name, CVAR_GROUP_ITEM_NAMES) && 
 			strcmp(group->name, CVAR_GROUP_ITEM_NEED) && 
@@ -165,49 +175,49 @@ static void DumpVariables(FILE	*f)	{
 		)
 			qsort(sorted_vars, count, sizeof (cvar_t *), Cvar_CvarCompare);
 
-	
 		fprintf(f, "//%s\n", group->name);
 
-	
-		for (i = 0; i < count; i++) {
+		for (i = 0; i < count; i++)
+		{
 			var = sorted_vars[i];
-			if (cfg_save_unchanged.value || strcmp(var->string, var->defaultvalue)) {
-				fprintf(f, "%s%*s\"%s\"\n", var->name, col_size - strlen(var->name), "", var->string);
+			if (cfg_save_unchanged.value || strcmp(var->string, var->defaultvalue))
+			{
+				fprintf(f, "%s%*s\"%s\"\n", var->name, (int)(col_size - strlen(var->name)), "", var->string);
 			}
 		}
-	
+
 		fprintf(f, "\n");
-	}		
-	
+	}
 
-
-	for (count = 0, var = cvar_vars; var && count < 256; var = var->next) {
-		if (!var->group && !(var->flags & (CVAR_USER_CREATED | CVAR_ROM | CVAR_INIT))) {
-			if (cfg_save_unchanged.value || strcmp(var->string, var->defaultvalue)) {
+	for (count = 0, var = cvar_vars; var && count < 256; var = var->next)
+	{
+		if (!var->group && !(var->flags & (CVAR_USER_CREATED | CVAR_ROM | CVAR_INIT)))
+		{
+			if (cfg_save_unchanged.value || strcmp(var->string, var->defaultvalue))
+			{
 				sorted_vars[count++] = var;
 			}
 		}
 	}
-	if (count) {
-	
+	if (count)
+	{
 		qsort(sorted_vars, count, sizeof (cvar_t *), Cvar_CvarCompare);
 
-	
 		fprintf(f, "//Unsorted Variables\n");
 
-	
-		for (i = 0; i < count; i++) {
+		for (i = 0; i < count; i++)
+		{
 			var = sorted_vars[i];
-			fprintf(f, "%s%*s\"%s\"\n", var->name, col_size - strlen(var->name), "", var->string);
+			fprintf(f, "%s%*s\"%s\"\n", var->name, (int)(col_size - strlen(var->name)), "", var->string);
 		}
-	
+
 		fprintf(f, "\n");
 	}
 
-
-
-	for	(col_size = col_size - 2, count = 0, var = cvar_vars; var && count < 256; var = var->next)	{
-		if (var->flags & CVAR_USER_CREATED) {
+	for (col_size = col_size - 2, count = 0, var = cvar_vars; var && count < 256; var = var->next)
+	{
+		if (var->flags & CVAR_USER_CREATED)
+		{
 			sorted_vars[count++] = var;
 			col_size = max(col_size, strlen(var->name));
 		}
@@ -224,122 +234,136 @@ static void DumpVariables(FILE	*f)	{
 	fprintf(f, "//User Created Variables\n");
 
 
-	for (i = 0; i < count; i++) {
+	for (i = 0; i < count; i++)
+	{
 		var = sorted_vars[i];
 
-		fprintf	(f, "%s %s%*s\"%s\"\n", (var->flags & CVAR_USER_ARCHIVE) ? "seta" : "set ", var->name, col_size - strlen(var->name) - 5, "", var->string);
+		fprintf	(f, "%s %s%*s\"%s\"\n", (var->flags & CVAR_USER_ARCHIVE) ? "seta" : "set ", var->name, (int)(col_size - strlen(var->name) - 5), "", var->string);
 	}
 }
 
 #define MAX_ALIGN_COL 60
-static void DumpAliases(FILE *f) {
+static void DumpAliases(FILE *f)
+{
 	int maxlen, i, j, count, lonely_count, minus_index, minus_count;
 	cmd_alias_t	*b, *a, *sorted_aliases[512], *lonely_pluses[512];
 	qboolean partner, printed;
 
-	for (count = maxlen = 0, a = cmd_alias;	count < sizeof(sorted_aliases) && a; a = a->next) {
-		if (!(a->flags & (ALIAS_SERVER|ALIAS_TEMP))) {
+	for (count = maxlen = 0, a = cmd_alias;	count < sizeof(sorted_aliases) && a; a = a->next)
+	{
+		if (!(a->flags & (ALIAS_SERVER|ALIAS_TEMP)))
+		{
 			maxlen = max(maxlen, strlen(a->name));
 			count++;
 		}
 	}
 
-	if (!count) {
+	if (!count)
+	{
 		fprintf(f, "//no aliases\n");
 		return;
 	}
 
-	for (i = 0, a = cmd_alias; i < count; a = a->next) {
+	for (i = 0, a = cmd_alias; i < count; a = a->next)
+	{
 		if (!(a->flags & (ALIAS_SERVER|ALIAS_TEMP)))
 			sorted_aliases[i++] = a;
 	}
 
 	qsort(sorted_aliases, count, sizeof (cmd_alias_t *), Cmd_AliasCompare);
 
-
-
-	for (minus_index = -1, minus_count = i = 0; i < count; i++) {
+	for (minus_index = -1, minus_count = i = 0; i < count; i++)
+	{
 		a = sorted_aliases[i];
 
-		if (a->name[0] == '-') {
+		if (a->name[0] == '-')
+		{
 			if (minus_index == -1)
 				minus_index = i;
 			minus_count++;
-		} else if (a->name[0] != '+')
+		}
+		else if (a->name[0] != '+')
 			break;
 	}
 
 	printed = false;
 
-	for (lonely_count = i = 0; i < count; i++) {
+	for (lonely_count = i = 0; i < count; i++)
+	{
 		a = sorted_aliases[i];
 
 		if (a->name[0] != '+')
 			break;
 
-		for (partner = false, j = minus_index; j >= 0 && j < minus_index + minus_count; j++) {
+		for (partner = false, j = minus_index; j >= 0 && j < minus_index + minus_count; j++)
+		{
 			b = sorted_aliases[j];
 
-			if (!Q_strcasecmp(b->name + 1, a->name + 1)) {
-			
-				fprintf	(f, "alias %s%*s\"%s\"\n", a->name, maxlen + 3 - strlen(a->name), "", a->value);
-				fprintf	(f, "alias %s%*s\"%s\"\n", b->name, maxlen + 3 - strlen(b->name), "", b->value);
+			if (!Q_strcasecmp(b->name + 1, a->name + 1))
+			{
+				fprintf	(f, "alias %s%*s\"%s\"\n", a->name, (int)(maxlen + 3 - strlen(a->name)), "", a->value);
+				fprintf	(f, "alias %s%*s\"%s\"\n", b->name, (int)(maxlen + 3 - strlen(b->name)), "", b->value);
 				printed = partner = true;
 				break;
 			}
 		}
-	
+
 		if (!partner)
 			lonely_pluses[lonely_count++] = a;
 	}
 
-
-	for (i = 0; i < lonely_count; i++) {
+	for (i = 0; i < lonely_count; i++)
+	{
 		a = lonely_pluses[i];
-			
-		fprintf	(f, "alias %s%*s\"%s\"\n", a->name, maxlen + 3 - strlen(a->name), "", a->value);
+
+		fprintf	(f, "alias %s%*s\"%s\"\n", a->name, (int)(maxlen + 3 - strlen(a->name)), "", a->value);
 		printed = true;
 	}
 
-
-	for (i = minus_index; i >= 0 && i < minus_index + minus_count; i++) {
+	for (i = minus_index; i >= 0 && i < minus_index + minus_count; i++)
+	{
 		a = sorted_aliases[i];
 
-		for (partner = false, j = 0; j < minus_index; j++) {
+		for (partner = false, j = 0; j < minus_index; j++)
+		{
 			b = sorted_aliases[j];
 
-			if (!Q_strcasecmp(b->name + 1, a->name + 1)) {
-			
+			if (!Q_strcasecmp(b->name + 1, a->name + 1))
+			{
 				partner = true;
 				break;
 			}
 		}
-		if (!partner) {
-		
-			fprintf	(f, "alias %s%*s\"%s\"\n", a->name, maxlen + 3 - strlen(a->name), "", a->value);
+		if (!partner)
+		{
+			fprintf	(f, "alias %s%*s\"%s\"\n", a->name, (int)(maxlen + 3 - strlen(a->name)), "", a->value);
 			printed = true;
 		}
 	}
-	for (i = (minus_index == -1 ? 0 : minus_index + minus_count); i < count; i++) {
+	for (i = (minus_index == -1 ? 0 : minus_index + minus_count); i < count; i++)
+	{
 		a = sorted_aliases[i];
 
-		if (minus_index != -1 || a->name[0] != '+') {
+		if (minus_index != -1 || a->name[0] != '+')
+		{
 			if (printed)
 				fprintf(f, "\n");
 			printed = false;
-			fprintf	(f, "alias %s%*s\"%s\"\n", a->name, maxlen + 3 - strlen(a->name), "", a->value);
+			fprintf	(f, "alias %s%*s\"%s\"\n", a->name, (int)(maxlen + 3 - strlen(a->name)), "", a->value);
 		}
 	}
 }
 
-static void DumpPlusCommand(FILE *f, kbutton_t	*b,	const char *name) {
+static void DumpPlusCommand(FILE *f, kbutton_t	*b, const char *name)
+{
 	if (b->state & 1 && b->down[0] < 0)
 		fprintf(f, "+%s\n",	name);
 	else
 		fprintf(f, "-%s\n",	name);
 }
 
-static void DumpPlusCommands(FILE *f) {
+static void DumpPlusCommands(FILE *f)
+{
 	DumpPlusCommand(f, &in_up, "moveup");
 	DumpPlusCommand(f, &in_down, "movedown");
 	DumpPlusCommand(f, &in_left, "left");
@@ -358,20 +382,24 @@ static void DumpPlusCommands(FILE *f) {
 	fprintf(f, sb_showteamscores ? "+showteamscores\n" : "-showteamscores\n");
 }
 
-static void DumpColorForcing(FILE *f, char *name, int topcolor, int bottomcolor) {
-	if (topcolor < 0) {
+static void DumpColorForcing(FILE *f, char *name, int topcolor, int bottomcolor)
+{
+	if (topcolor < 0)
+	{
 		if (cfg_save_unchanged.value)
-			fprintf	(f,	"%s%*soff\n", name, 13 - strlen(name), "");
-	} else {
+			fprintf	(f,	"%s%*soff\n", name, (int)(13 - strlen(name)), "");
+	}
+	else
+	{
 		if (topcolor != bottomcolor)
-			fprintf	(f,	"%s%*s%i %i\n", name, 13 - strlen(name), "", topcolor, bottomcolor);
+			fprintf	(f,	"%s%*s%i %i\n", name, (int)(13 - strlen(name)), "", topcolor, bottomcolor);
 		else
-			fprintf	(f,	"%s%*s%i\n", name, 13 - strlen(name), "", topcolor);
+			fprintf	(f,	"%s%*s%i\n", name, (int)(13 - strlen(name)), "", topcolor);
 	}
 }
 
-static void DumpTeamplay(FILE *f) {
-
+static void DumpTeamplay(FILE *f)
+{
 	if (allskins[0])
 		fprintf(f, "allskins \"%s\"\n", allskins);
 
@@ -389,81 +417,92 @@ static void DumpTeamplay(FILE *f) {
 	TP_DumpTriggers(f);
 }
 
-void DumpMisc(FILE *f) {
-
+static void DumpMisc(FILE *f)
+{
 	DumpMapGroups(f);
 
 	fprintf(f, "\n");
 
-
-
-	if (cl.teamfortress) {
+	if (cl.teamfortress)
+	{
 		if (!Q_strcasecmp(Info_ValueForKey (cls.userinfo, "ec"), "on") || 
 			!Q_strcasecmp(Info_ValueForKey (cls.userinfo, "exec_class"), "on")
-		) {
+		)
+		{
 			fprintf(f, "setinfo ec on\n");
 		}
 		if (!Q_strcasecmp(Info_ValueForKey (cls.userinfo, "em"), "on") || 
 			!Q_strcasecmp(Info_ValueForKey (cls.userinfo, "exec_map"), "on")
-		) {
+		)
+		{
 			fprintf(f, "setinfo em on\n");
 		}
 	}
 }
 
-void DumpCmdLine(FILE *f) {
+static void DumpCmdLine(FILE *f)
+{
 	fprintf(f, "// %s\n", cl_cmdline.string);
 }
 
 /************************************ RESET FUNCTIONS ************************************/
 
-static void ResetVariables(int cvar_flags, qboolean userinfo) {
+static void ResetVariables(int cvar_flags, qboolean userinfo)
+{
 	cvar_t *var;
 	qboolean check_userinfos = false;
 
-	if (userinfo) {
+	if (userinfo)
+	{
 		if (!cfg_save_userinfo.value)
 			cvar_flags |= CVAR_USERINFO;
 		else if (userinfo && cfg_save_userinfo.value == 1)
 			check_userinfos = true;
 	}
 
-	for (var = cvar_vars; var; var = var->next) {
+	for (var = cvar_vars; var; var = var->next)
+	{
 		if (!(
 			(var->flags & (cvar_flags | CVAR_ROM | CVAR_INIT | CVAR_USER_CREATED)) ||
 			(var->group && !strcmp(var->group->name, CVAR_GROUP_NO_GROUP))
-		)) {
+		))
+		{
 			if (check_userinfos && (
 				!strcmp(var->name, "team") || !strcmp(var->name, "skin") || 
 				!strcmp(var->name, "spectator") ||!strcmp(var->name, "name") ||
 				!strcmp(var->name, "topcolor") || !strcmp(var->name, "bottomcolor")
 			))
-				continue;	
+				continue;
+
 			Cvar_ResetVar(var);
 		}
 	}
 }
 
-static void DeleteUserAliases(void)	{
+static void DeleteUserAliases(void)
+{
 	cmd_alias_t	*a;
 
-	for	(a = cmd_alias;	a; a = a->next)	{
+	for (a = cmd_alias; a; a = a->next)
+	{
 		if (!(a->flags & (ALIAS_SERVER|ALIAS_TEMP)))
 			Cmd_DeleteAlias(a->name);
 	}
 }
 
-static void DeleteUserVariables(void) {
+static void DeleteUserVariables(void)
+{
 	cvar_t *var;
 
-	for (var = cvar_vars; var; var = var->next) {
+	for (var = cvar_vars; var; var = var->next)
+	{
 		if (var->flags & CVAR_USER_CREATED)
 			Cvar_Delete(var->name);
 	}
-
 }
 
-static void ResetPlusCommands(void) {
+static void ResetPlusCommands(void)
+{
 	Cbuf_AddText("-moveup;-movedown\n");
 	Cbuf_AddText("-left;-right\n");
 	Cbuf_AddText("-forward;-back\n");
@@ -477,15 +516,17 @@ static void ResetPlusCommands(void) {
 	Cbuf_AddText("-showteamscores\n");
 }
 
-static void ResetTeamplayCommands(void) {
-	allskins[0]	= 0;
+static void ResetTeamplayCommands(void)
+{
+	allskins[0] = 0;
 	Cbuf_AddText("enemycolor off\nteamcolor	off\n");
 	Cbuf_AddText("filter clear\n");
 	TP_ResetAllTriggers();
 	Cbuf_AddText("tp_took default\ntp_pickup default\ntp_point default\n");
 }
 
-static void ResetMiscCommands(void) {
+static void ResetMiscCommands(void)
+{
 	Cbuf_AddText("mapgroup clear\n");
 
 	Info_RemoveKey(cls.userinfo, "ec");
@@ -498,17 +539,20 @@ static void ResetMiscCommands(void) {
 
 #define CONFIG_WIDTH 100
 
-static void Config_PrintBorder(FILE *f) {
+static void Config_PrintBorder(FILE *f)
+{
 	char buf[CONFIG_WIDTH + 1] = {0};
 
-	if (!buf[0]) {
+	if (!buf[0])
+	{
 		memset(buf, '/', CONFIG_WIDTH);
 		buf[CONFIG_WIDTH] = 0;
 	}
 	fprintf(f, "%s\n", buf);
 }
 
-static void Config_PrintLine(FILE *f, char *title, int width) {
+static void Config_PrintLine(FILE *f, char *title, int width)
+{
 	char buf[CONFIG_WIDTH + 1] = {0};
 	int title_len, i;
 
@@ -525,7 +569,8 @@ static void Config_PrintLine(FILE *f, char *title, int width) {
 	fprintf(f, "%s\n", buf);
 }
 
-static void Config_PrintHeading(FILE *f, char *title) {
+static void Config_PrintHeading(FILE *f, char *title)
+{
 	Config_PrintBorder(f);
 	Config_PrintLine(f, "", 2);
 	Config_PrintLine(f, title, 2);
@@ -534,7 +579,8 @@ static void Config_PrintHeading(FILE *f, char *title) {
 	fprintf(f, "\n\n");
 }
 
-static void Config_PrintPreamble(FILE *f) {
+static void Config_PrintPreamble(FILE *f)
+{
 	Config_PrintBorder(f);
 	Config_PrintBorder(f);
 	Config_PrintLine(f, "", 3);
@@ -551,16 +597,17 @@ static void Config_PrintPreamble(FILE *f) {
 
 /************************************ MAIN FUCTIONS	************************************/
 
-static void ResetConfigs(qboolean resetall)	{
+static void ResetConfigs(qboolean resetall)
+{
 	FILE *f;
 
 	ResetVariables(CVAR_SERVERINFO, !resetall);
 
-	DeleteUserAliases();					
+	DeleteUserAliases();
 
-	DeleteUserVariables();					
+	DeleteUserVariables();
 
-	Cbuf_AddText("unbindall\n");			
+	Cbuf_AddText("unbindall\n");
 
 	ResetPlusCommands();
 
@@ -571,21 +618,25 @@ static void ResetConfigs(qboolean resetall)	{
 
 	Cbuf_AddText ("cl_warncmd 0\n");
 	Cbuf_AddText ("exec default.cfg\n");
-	if (FS_FOpenFile("autoexec.cfg", &f) != -1) {
+	if (FS_FOpenFile("autoexec.cfg", &f) != -1)
+	{
 		Cbuf_AddText ("exec autoexec.cfg\n");
 		fclose(f);
 	}
 	Cbuf_AddText ("cl_warncmd 1\n");
 }
 
-void DumpConfig(char *name)	{
+static void DumpConfig(char *name)
+{
 	FILE	*f;
 	char	*outfile, *newlines = "\n\n\n\n";
 
 	outfile = va("%s/fodquake/configs/%s", com_basedir, name);
-	if (!(f	= fopen	(outfile, "w"))) {
+	if (!(f	= fopen	(outfile, "w")))
+	{
 		FS_CreatePath(outfile);
-		if (!(f	= fopen	(outfile, "w"))) {
+		if (!(f	= fopen	(outfile, "w")))
+		{
 			Com_Printf ("Couldn't write	%s.\n",	name);
 			return;
 		}
@@ -593,25 +644,29 @@ void DumpConfig(char *name)	{
 
 	Config_PrintPreamble(f);
 
-	if (cfg_save_cmdline.value) {
+	if (cfg_save_cmdline.value)
+	{
 		Config_PrintHeading(f, "C O M M A N D   L I N E");
 		DumpCmdLine(f);
 		fprintf(f, newlines);
 	}
 
-	if (cfg_save_cvars.value) {
+	if (cfg_save_cvars.value)
+	{
 		Config_PrintHeading(f, "V A R I A B L E S");
 		DumpVariables(f);
 		fprintf(f, newlines);
 	}
 
-	if (cfg_save_aliases.value) {
+	if (cfg_save_aliases.value)
+	{
 		Config_PrintHeading(f, "A L I A S E S");
 		DumpAliases(f);
 		fprintf(f, newlines);
 	}
 
-	if (cfg_save_cmds.value) {
+	if (cfg_save_cmds.value)
+	{
 		Config_PrintHeading(f, "T E A M P L A Y   C O M M A N D S");
 		DumpTeamplay(f);
 		fprintf(f, newlines);
@@ -628,7 +683,8 @@ void DumpConfig(char *name)	{
 		fprintf(f, newlines);
 	}
 
-	if (cfg_save_binds.value) {
+	if (cfg_save_binds.value)
+	{
 		Config_PrintHeading(f, "K E Y   B I N D I N G S");
 		DumpBindings(f);
 	}
@@ -638,11 +694,13 @@ void DumpConfig(char *name)	{
 
 /************************************ API ************************************/
 
-void SaveConfig_f(void)	{
+static void SaveConfig_f(void)
+{
 	char *filename, *filename_ext, *backupname_ext;
 	FILE *f;
 
-	if (Cmd_Argc() != 2) {
+	if (Cmd_Argc() != 2)
+	{
 		Com_Printf("Usage: %s <filename>\n", Cmd_Argv(0));
 		return;
 	}
@@ -650,15 +708,17 @@ void SaveConfig_f(void)	{
 	filename = COM_SkipPath(Cmd_Argv(1));
 	COM_ForceExtension(filename, ".cfg");
 
-
-	if (cfg_backup.value) {
+	if (cfg_backup.value)
+	{
 		filename_ext = va("%s/fodquake/configs/%s", com_basedir, filename);
-		if ((f = fopen(filename_ext, "r"))) {
+		if ((f = fopen(filename_ext, "r")))
+		{
 			fclose(f);
 			backupname_ext = Z_Malloc(strlen(filename_ext) + 4);
 			strcpy(backupname_ext, filename_ext);
 			strcat(backupname_ext, ".bak");
-			if ((f = fopen(backupname_ext, "r"))) {
+			if ((f = fopen(backupname_ext, "r")))
+			{
 				fclose(f);
 				remove(backupname_ext);
 			}
@@ -671,8 +731,10 @@ void SaveConfig_f(void)	{
 	Com_Printf("Saving configuration to %s\n", filename);
 }
 
-void ResetConfigs_f(void) {
-	if (Cmd_Argc() != 1) {
+static void ResetConfigs_f(void)
+{
+	if (Cmd_Argc() != 1)
+	{
 		Com_Printf("Usage: %s \n",	Cmd_Argv(0));
 		return;
 	}
@@ -680,17 +742,20 @@ void ResetConfigs_f(void) {
 	ResetConfigs(true);
 }
 
-void LoadConfig_f(void)	{
+void LoadConfig_f(void)
+{
 	FILE *f;
 	char *filename;
 
-	if (Cmd_Argc() != 2) {
+	if (Cmd_Argc() != 2)
+	{
 		Com_Printf("Usage: %s <filename>\n", Cmd_Argv(0));
 		return;
 	}
 	filename = COM_SkipPath(Cmd_Argv(1));
 	COM_ForceExtension(filename, ".cfg");
-	if (!(f = fopen(va("%s/fodquake/configs/%s", com_basedir, filename), "r"))) {
+	if (!(f = fopen(va("%s/fodquake/configs/%s", com_basedir, filename), "r")))
+	{
 		Com_Printf("Couldn't load config %s\n", filename);
 		return;
 	}

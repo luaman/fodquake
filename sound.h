@@ -80,7 +80,7 @@ struct SoundCard
 	void (*Submit)(struct SoundCard *, unsigned int count);
 	void (*Shutdown)(struct SoundCard *);
 
-	unsigned char *(*Lock)(struct SoundCard *);
+	void *(*Lock)(struct SoundCard *);
 	void (*Unlock)(struct SoundCard *);
 	void (*Restore)(struct SoundCard *);
 
@@ -89,7 +89,7 @@ struct SoundCard
 	int samplepos;           // in mono samples
 	int samplebits;
 	int speed;
-	unsigned char *buffer;
+	void *buffer;
 };
 
 typedef void (*SoundCvarInitFunc)(void);

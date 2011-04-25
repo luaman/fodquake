@@ -34,6 +34,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "version.h"
 #include "teamplay.h"
 #include "image.h"
+#include "wad.h"
 
 #include "movie.h"
 #include "logging.h"
@@ -1764,7 +1765,6 @@ void CL_Init (void)
 	cl_vidinitialised = 1;
 
 	Image_Init();
-	SCR_Init ();
 
 	S_Init ();
 
@@ -1778,12 +1778,8 @@ void CL_Init (void)
 		Sys_Error("CL_InitEnts() failed\n");
 
 	CL_InitTEnts ();
-#ifndef GLQUAKE
-	Sbar_Init ();
-#endif
 
 #warning If I want to keep compatibility with Win32 server browsers, I need to open a socket on port 27001 here.
-
 
 	MT_Init();
 	CL_Demo_Init();
@@ -1792,6 +1788,8 @@ void CL_Init (void)
 	MP3_Init();
 
 	Sleep_Init();
+
+	M_Init();
 }
 
 //============================================================================
@@ -2009,6 +2007,8 @@ void CL_Frame (double time)
 
 void CL_Shutdown (void)
 {
+	M_Shutdown();
+
 	CL_Disconnect();
 
 	CL_WriteConfiguration();

@@ -129,6 +129,7 @@ byte *Skin_Cache (skin_t *skin)
 	int y;
 	byte *pic, *out, *pix;
 	char name[MAX_OSPATH];
+	int imagewidth, imageheight;
 
 	if (cls.downloadtype == dl_skin)
 		return NULL;		// use base until downloaded
@@ -142,17 +143,17 @@ byte *Skin_Cache (skin_t *skin)
 
 	// load the pic from disk
 	Q_snprintfz (name, sizeof(name), "skins/%s.pcx", skin->name);
-	if (!(pic = Image_LoadPCX (NULL, name, 0, 0)) || image_width > 320 || image_height > 200)
+	if (!(pic = Image_LoadPCX(NULL, name, 0, 0, &imagewidth, &imageheight)) || imagewidth > 320 || imageheight > 200)
 	{
-		if (pic)
-			free (pic);
+		free(pic);
+
 		Com_Printf ("Couldn't load skin %s\n", name);
 
 		Q_snprintfz (name, sizeof(name), "skins/%s.pcx", baseskin.string);
-		if (!(pic = Image_LoadPCX (NULL, name, 0, 0)) || image_width > 320 || image_height > 200)
+		if (!(pic = Image_LoadPCX (NULL, name, 0, 0, &imagewidth, &imageheight)) || imagewidth > 320 || imageheight > 200)
 		{
-			if (pic)
-				free (pic);
+			free(pic);
+
 			skin->failedload = true;
 			return NULL;
 		}
@@ -164,8 +165,8 @@ byte *Skin_Cache (skin_t *skin)
 	skin->data = out;
 
 	memset (out, 0, 320 * 200);
-	for (y = 0; y < image_height; y++, pix += 320)
-		memcpy (pix, pic + y * image_width, image_width);
+	for (y = 0; y < imageheight; y++, pix += 320)
+		memcpy (pix, pic + y * imagewidth, imagewidth);
 
 	free (pic);
 	skin->failedload = false;

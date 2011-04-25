@@ -45,8 +45,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #define	IMAGE_MAX_DIMENSIONS	4096
 
-int image_width, image_height;
-
 cvar_t	image_png_compression_level = {"image_png_compression_level", "1"};
 cvar_t	image_jpeg_quality_level = {"image_jpeg_quality_level", "75"};
 
@@ -762,7 +760,7 @@ static void PNG_IO_user_flush_data(png_structp png_ptr)
 }
 
 
-byte *Image_LoadPNG (FILE *fin, char *filename, int matchwidth, int matchheight)
+byte *Image_LoadPNG (FILE *fin, char *filename, int matchwidth, int matchheight, int *imagewidth, int *imageheight)
 {
 	byte header[8], **rowpointers, *data;
 	png_structp png_ptr;
@@ -877,8 +875,8 @@ byte *Image_LoadPNG (FILE *fin, char *filename, int matchwidth, int matchheight)
 	qpng_destroy_read_struct(&png_ptr, &pnginfo, NULL);
 	free(rowpointers);
 	fclose(fin);
-	image_width = width;
-	image_height = height;
+	*imagewidth = width;
+	*imageheight = height;
 	return data;
 }
 
@@ -1076,11 +1074,12 @@ static unsigned short BuffLittleShort(const byte *buffer)
 	return (buffer[1] << 8) | buffer[0];
 }
 
-byte *Image_LoadTGA(FILE *fin, char *filename, int matchwidth, int matchheight)
+byte *Image_LoadTGA(FILE *fin, char *filename, int matchwidth, int matchheight, int *imagewidth, int *imageheight)
 {
 	TGAHeader_t header;
 	int i, x, y, bpp, alphabits, compressed, mytype, row_inc, runlen, readpixelcount;
 	byte *fileBuffer, *in, *out, *data, *enddata, rgba[4], palette[256 * 4];
+	int width, height;
 
 	if (!fin && FS_FOpenFile (filename, &fin) == -1)
 		return NULL;
@@ -1100,14 +1099,14 @@ byte *Image_LoadTGA(FILE *fin, char *filename, int matchwidth, int matchheight)
 	header.colormapSize = fileBuffer[7];
 	header.xOrigin = BuffLittleShort(fileBuffer + 8);
 	header.yOrigin = BuffLittleShort(fileBuffer + 10);
-	header.width = image_width = BuffLittleShort(fileBuffer + 12);
-	header.height = image_height = BuffLittleShort(fileBuffer + 14);
+	header.width = width = BuffLittleShort(fileBuffer + 12);
+	header.height = height = BuffLittleShort(fileBuffer + 14);
 	header.pixelSize = fileBuffer[16];
 	header.attributes = fileBuffer[17];
 
-	if (image_width > IMAGE_MAX_DIMENSIONS || image_height > IMAGE_MAX_DIMENSIONS || image_width <= 0 || image_height <= 0)
+	if (width > IMAGE_MAX_DIMENSIONS || height > IMAGE_MAX_DIMENSIONS || width <= 0 || height <= 0)
 		TGA_ERROR(NULL);
-	if ((matchwidth && image_width != matchwidth) || (matchheight && image_height != matchheight))
+	if ((matchwidth && width != matchwidth) || (matchheight && height != matchheight))
 		TGA_ERROR(NULL);
 
 	bpp = (header.pixelSize + 7) >> 3;
@@ -1165,7 +1164,8 @@ byte *Image_LoadTGA(FILE *fin, char *filename, int matchwidth, int matchheight)
 	if (header.attributes & 0x10)
 		TGA_ERROR("Unsupported TGA image %s: Pixel data spans right to left.\n");
 
-	data = Q_Malloc(image_width * image_height * 4);
+#warning Integer overflow vuln
+	data = Q_Malloc(width * height * 4);
 
 	// if bit 5 of attributes isn't set, the image has been stored from bottom to top
 	if ((header.attributes & 0x20))
@@ -1175,14 +1175,14 @@ byte *Image_LoadTGA(FILE *fin, char *filename, int matchwidth, int matchheight)
 	}
 	else
 	{
-		out = data + (image_height - 1) * image_width * 4;
-		row_inc = -image_width * 4 * 2;
+		out = data + (height - 1) * width * 4;
+		row_inc = -width * 4 * 2;
 	}
 
 	x = y = 0;
 	rgba[0] = rgba[1] = rgba[2] = rgba[3] = 255;
 
-	while (y < image_height)
+	while (y < height)
 	{
 		// decoder is mostly the same whether it's compressed or not
 		readpixelcount = runlen = 0x7FFFFFFF;
@@ -1195,7 +1195,7 @@ byte *Image_LoadTGA(FILE *fin, char *filename, int matchwidth, int matchheight)
 			runlen = 1 + (runlen & 0x7F);
 		}
 
-		while (runlen-- && y < image_height)
+		while (runlen-- && y < height)
 		{
 			if (readpixelcount > 0)
 			{
@@ -1232,7 +1232,7 @@ byte *Image_LoadTGA(FILE *fin, char *filename, int matchwidth, int matchheight)
 			}
 			for (i = 0; i < 4; i++)
 				*out++ = rgba[i];
-			if (++x == image_width)
+			if (++x == width)
 			{
 				// end of line, advance to next
 				x = 0;
@@ -1241,6 +1241,9 @@ byte *Image_LoadTGA(FILE *fin, char *filename, int matchwidth, int matchheight)
 			}
 		}
 	}
+
+	*imagewidth = width;
+	*imageheight = height;
 
 	free(fileBuffer);
 	return data;
@@ -1523,7 +1526,7 @@ typedef struct pcx_s
     byte			data;
 } pcx_t;
 
-byte *Image_LoadPCX (FILE *fin, char *filename, int matchwidth, int matchheight)
+byte *Image_LoadPCX (FILE *fin, char *filename, int matchwidth, int matchheight, int *imagewidth, int *imageheight)
 {
 	pcx_t *pcx;
 	byte *pcxbuf, *data, *out, *pix;
@@ -1634,8 +1637,8 @@ byte *Image_LoadPCX (FILE *fin, char *filename, int matchwidth, int matchheight)
 	}
 
 	free(pcxbuf);
-	image_width = width;
-	image_height = height;
+	*imagewidth = width;
+	*imageheight = height;
 	return data;
 }
 
