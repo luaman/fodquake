@@ -119,13 +119,13 @@ void GL_DrawParticle(particle_t *p)
 	pv[1] = p->org[1];
 	pv[2] = p->org[2];
 
-	pv[3] = p->org[0] + lup0 * scale;
-	pv[4] = p->org[1] + lup1 * scale;
-	pv[5] = p->org[2] + lup2 * scale;
+	pv[3] = p->org[0] + lup0;
+	pv[4] = p->org[1] + lup1;
+	pv[5] = p->org[2] + lup2;
 
-	pv[6] = p->org[0] + lright0 * scale;
-	pv[7] = p->org[1] + lright1 * scale;
-	pv[8] = p->org[2] + lright2 * scale;
+	pv[6] = p->org[0] + lright0;
+	pv[7] = p->org[1] + lright1;
+	pv[8] = p->org[2] + lright2;
 
 	pc = particlecolours + i;
 
