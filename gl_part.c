@@ -26,6 +26,19 @@ static const float particletexcoords[2*NUMBUFFEREDPARTVERTICES] __attribute__((a
 	0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1,
 };
 
+int particletexcoords_vbo_number;
+
+void GL_DrawParticleInit()
+{
+	if (gl_vbo)
+	{
+		particletexcoords_vbo_number = vbo_number++;
+		qglBindBufferARB(GL_ARRAY_BUFFER_ARB, particletexcoords_vbo_number);
+		qglBufferDataARB(GL_ARRAY_BUFFER_ARB, sizeof(particletexcoords), particletexcoords, GL_STATIC_DRAW_ARB);
+		qglBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
+	}
+}
+
 void GL_DrawParticleBegin()
 {
 	r_partscale = 0.004 * tan(r_refdef.fov_x * (M_PI / 180) * 0.5f);
@@ -41,7 +54,14 @@ void GL_DrawParticleBegin()
 	glEnableClientState(GL_TEXTURE_COORD_ARRAY);
 	glEnableClientState(GL_COLOR_ARRAY);
 	glVertexPointer(3, GL_FLOAT, 0, particlevertices);
-	glTexCoordPointer(2, GL_FLOAT, 0, particletexcoords);
+	if (gl_vbo)
+	{
+		qglBindBufferARB(GL_ARRAY_BUFFER_ARB, particletexcoords_vbo_number);
+		glTexCoordPointer(2, GL_FLOAT, 0, 0);
+		qglBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
+	}
+	else
+		glTexCoordPointer(2, GL_FLOAT, 0, particletexcoords);
 	glColorPointer(4, GL_UNSIGNED_BYTE, 0, particlecolours);
 
 	particleindex = 0;

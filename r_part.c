@@ -602,6 +602,8 @@ int R_InitParticles(void)
 		QMB_InitParticles();
 #endif
 
+		GL_DrawParticleInit();
+
 		return 1;
 	}
 
