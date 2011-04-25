@@ -23,6 +23,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "quakedef.h"
 
+#include "gl_local.h"
+
 /*
 =================================================================
 
@@ -291,6 +293,92 @@ static void BuildTris(aliashdr_t *pheader)
 	alltris += pheader->numtris;
 }
 
+static void MakeVBO(aliashdr_t *hdr)
+{
+	int *vertposes;
+	float *vboverts;
+	float *vbotexcoords;
+	unsigned short *vbotris;
+	unsigned short min;
+	unsigned short max;
+	int pose;
+	int vert;
+	int tri;
+	int i;
+
+	if (!gl_vbo)
+		return;
+
+	vboverts = malloc(hdr->numposes*hdr->numverts*3*sizeof(*vboverts));
+	if (vboverts)
+	{
+		vbotexcoords = malloc(hdr->numverts*2*sizeof(*vboverts));
+		if (vbotexcoords)
+		{
+			vbotris = malloc(hdr->numtris*3*sizeof(*vbotris));
+			if (vbotris)
+			{
+				vertposes = malloc(hdr->numposes*sizeof(*vertposes));
+				if (vertposes)
+				{
+					for(pose=0;pose<hdr->numposes;pose++)
+					{
+						for(vert=0;vert<hdr->numverts;vert++)
+						{
+							vboverts[pose*hdr->numverts*3+vert*3+0] = poseverts[pose][vert].v[0];
+							vboverts[pose*hdr->numverts*3+vert*3+1] = poseverts[pose][vert].v[1];
+							vboverts[pose*hdr->numverts*3+vert*3+2] = poseverts[pose][vert].v[2];
+						}
+					}
+
+					for(vert=0;vert<hdr->numverts;vert++)
+					{
+						vbotexcoords[vert*2+0] = (stverts[vert].s + 0.5) / hdr->skinwidth;
+						vbotexcoords[vert*2+1] = (stverts[vert].t + 0.5) / hdr->skinheight;
+					}
+
+					min = 65535;
+					max = 0;
+					for(tri=0;tri<hdr->numtris;tri++)
+					{
+						for(i=0;i<3;i++)
+						{
+							vbotris[tri*3+i] = triangles[tri].vertindex[i];
+
+							if (vbotris[tri*3+i] > max)
+								max = vbotris[tri*3+i];
+							else if (vbotris[tri*3+i] < min)
+								min = vbotris[tri*3+i];
+						}
+					}
+
+					hdr->indices = vbotris;
+					hdr->indexmin = min;
+					hdr->indexmax = max;
+
+					hdr->vert_vbo_number = vertposes;
+
+					for(i=0;i<hdr->numposes;i++)
+					{
+						hdr->vert_vbo_number[i] = vbo_number++;
+
+						qglBindBufferARB(GL_ARRAY_BUFFER_ARB, hdr->vert_vbo_number[i]);
+						qglBufferDataARB(GL_ARRAY_BUFFER_ARB, hdr->numverts*3*sizeof(*vboverts), vboverts + hdr->numverts*3*i, GL_STATIC_DRAW_ARB);
+					}
+
+					hdr->texcoord_vbo_number = vbo_number++;
+
+					qglBindBufferARB(GL_ARRAY_BUFFER_ARB, hdr->texcoord_vbo_number);
+					qglBufferDataARB(GL_ARRAY_BUFFER_ARB, hdr->numverts*2*sizeof(*vboverts), vbotexcoords, GL_STATIC_DRAW_ARB);
+
+					qglBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
+
+					return;
+				}
+			}
+		}
+	}
+}
 
 /*
 ================
@@ -309,6 +397,8 @@ void GL_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr)
 	// Tonik: don't cache anything, because it seems just as fast
 	// (if not faster) to rebuild the tris instead of loading them from disk
 	BuildTris(paliashdr);		// trifans or lists
+
+	MakeVBO(hdr);
 
 	// save the data out
 

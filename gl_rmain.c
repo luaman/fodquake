@@ -387,47 +387,74 @@ static void GL_DrawAliasFrame_NoLerp(aliashdr_t *paliashdr, int pose, qboolean m
 	if (r_modelalpha < 1)
 		glEnable(GL_BLEND);
 
-	while ((count = *order++))
+	if (gl_vbo)
 	{
-		if (count < 0)
+		if (mtex)
 		{
-			count = -count;
-			glBegin(GL_TRIANGLE_FAN);
+			qglBindBufferARB(GL_ARRAY_BUFFER_ARB, paliashdr->texcoord_vbo_number);
+
+			glTexCoordPointer(2, GL_FLOAT, 0, 0);
+			glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+
+			qglClientActiveTexture(1);
+			glTexCoordPointer(2, GL_FLOAT, 0, 0);
+			glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+
+			qglClientActiveTexture(0);
 		}
-		else if (count > 0)
+
+		qglBindBufferARB(GL_ARRAY_BUFFER_ARB, paliashdr->vert_vbo_number[pose]);
+		glVertexPointer(3, GL_FLOAT, 0, 0);
+		glEnableClientState(GL_VERTEX_ARRAY);
+
+		qglBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
+
+		glDrawRangeElements(GL_TRIANGLES, paliashdr->indexmin, paliashdr->indexmax, paliashdr->numtris*3, GL_UNSIGNED_SHORT, paliashdr->indices);
+	}
+	else
+	{
+		while ((count = *order++))
 		{
-			glBegin(GL_TRIANGLE_STRIP);
+			if (count < 0)
+			{
+				count = -count;
+				glBegin(GL_TRIANGLE_FAN);
+			}
+			else if (count > 0)
+			{
+				glBegin(GL_TRIANGLE_STRIP);
+			}
+
+			do
+			{
+				// texture coordinates come from the draw list
+				if (mtex)
+				{
+					qglMultiTexCoord2f (GL_TEXTURE0_ARB, ((float *) order)[0], ((float *) order)[1]);
+					qglMultiTexCoord2f (GL_TEXTURE1_ARB, ((float *) order)[0], ((float *) order)[1]);
+				}
+				else
+				{
+					glTexCoord2f (((float *) order)[0], ((float *) order)[1]);
+				}
+
+				order += 2;
+
+				l = (float)shadedots[verts->lightnormalindex] / 127.0;
+				l = (l * shadelight + ambientlight) / 256.0;
+				l = min(l , 1);
+				glColor4f (l, l, l, r_modelalpha);
+
+				v3[0] = verts->v[0];
+				v3[1] = verts->v[1];
+				v3[2] = verts->v[2];
+				glVertex3fv(v3);
+
+				verts++;
+			} while (--count);
+
+			glEnd();
 		}
-
-		do
-		{
-			// texture coordinates come from the draw list
-			if (mtex)
-			{
-				qglMultiTexCoord2f (GL_TEXTURE0_ARB, ((float *) order)[0], ((float *) order)[1]);
-				qglMultiTexCoord2f (GL_TEXTURE1_ARB, ((float *) order)[0], ((float *) order)[1]);
-			}
-			else
-			{
-				glTexCoord2f (((float *) order)[0], ((float *) order)[1]);
-			}
-
-			order += 2;
-
-			l = (float)shadedots[verts->lightnormalindex] / 127.0;
-			l = (l * shadelight + ambientlight) / 256.0;
-			l = min(l , 1);
-			glColor4f (l, l, l, r_modelalpha);
-
-			v3[0] = verts->v[0];
-			v3[1] = verts->v[1];
-			v3[2] = verts->v[2];
-			glVertex3fv(v3);
-
-			verts++;
-		} while (--count);
-
-		glEnd();
 	}
 
 	if (r_modelalpha < 1)
@@ -436,6 +463,11 @@ static void GL_DrawAliasFrame_NoLerp(aliashdr_t *paliashdr, int pose, qboolean m
 
 static void GL_DrawAliasFrame(aliashdr_t *paliashdr, int pose1, int pose2, qboolean mtex)
 {
+	if (r_framelerp == 1)
+		pose1 = pose2;
+	else if (r_framelerp == 0)
+		pose2 = pose1;
+
 	if (pose1 == pose2)
 		GL_DrawAliasFrame_NoLerp(paliashdr, pose1, mtex);
 	else

@@ -284,6 +284,13 @@ typedef struct {
 	int			flags;
 	float		size;
 
+	int *vert_vbo_number;
+	int texcoord_vbo_number;
+
+	unsigned short *indices;
+	unsigned short indexmin;
+	unsigned short indexmax;
+
 	int					numposes;
 	int					poseverts;
 	trivertx_t				*posedata;	// numposes*poseverts trivert_t
