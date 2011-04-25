@@ -67,8 +67,18 @@ void GL_DrawParticleEnd()
 
 void GL_DrawParticle(particle_t *p)
 {
+	float *pv;
+	unsigned int *pc;
 	unsigned char *at, theAlpha;
 	float dist, scale;
+	float *lup;
+	float lup0;
+	float lup1;
+	float lup2;
+	float *lright;
+	float lright0;
+	float lright1;
+	float lright2;
 	unsigned int i;
 	union
 	{
@@ -91,27 +101,39 @@ void GL_DrawParticle(particle_t *p)
 	col.uc[2] = at[2];
 	col.uc[3] = theAlpha;
 
-	i = particleindex * 3;
-
-	particlevertices[i + 0] = p->org[0];
-	particlevertices[i + 1] = p->org[1];
-	particlevertices[i + 2] = p->org[2];
-
-	particlevertices[i + 3] = p->org[0] + up[0] * scale;
-	particlevertices[i + 4] = p->org[1] + up[1] * scale;
-	particlevertices[i + 5] = p->org[2] + up[2] * scale;
-
-	particlevertices[i + 6] = p->org[0] + right[0] * scale;
-	particlevertices[i + 7] = p->org[1] + right[1] * scale;
-	particlevertices[i + 8] = p->org[2] + right[2] * scale;
-
 	i = particleindex;
 
-	particlecolours[i + 0] = col.ui;
-	particlecolours[i + 1] = col.ui;
-	particlecolours[i + 2] = col.ui;
+	pv = particlevertices + i * 3;
 
-	particleindex += 3;
+	lup = up;
+	lup0 = lup[0] * scale;
+	lup1 = lup[1] * scale;
+	lup2 = lup[2] * scale;
+
+	lright = right;
+	lright0 = lright[0] * scale;
+	lright1 = lright[1] * scale;
+	lright2 = lright[2] * scale;
+
+	pv[0] = p->org[0];
+	pv[1] = p->org[1];
+	pv[2] = p->org[2];
+
+	pv[3] = p->org[0] + lup0 * scale;
+	pv[4] = p->org[1] + lup1 * scale;
+	pv[5] = p->org[2] + lup2 * scale;
+
+	pv[6] = p->org[0] + lright0 * scale;
+	pv[7] = p->org[1] + lright1 * scale;
+	pv[8] = p->org[2] + lright2 * scale;
+
+	pc = particlecolours + i;
+
+	pc[0] = col.ui;
+	pc[1] = col.ui;
+	pc[2] = col.ui;
+
+	particleindex = i + 3;
 
 	if (particleindex == NUMBUFFEREDPARTVERTICES)
 	{
