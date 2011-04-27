@@ -287,9 +287,17 @@ typedef struct {
 	int *vert_vbo_number;
 	int texcoord_vbo_number;
 
+	unsigned int *colours;
+
 	unsigned short *indices;
 	unsigned short indexmin;
 	unsigned short indexmax;
+
+	unsigned short vbovertcount;
+
+	unsigned char **lnis;
+	unsigned char **lnimap;
+	unsigned char *lnicount;
 
 	int					numposes;
 	int					poseverts;

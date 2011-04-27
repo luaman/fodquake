@@ -377,6 +377,12 @@ static void GL_DrawAliasFrame_NoLerp(aliashdr_t *paliashdr, int pose, qboolean m
 	float l;
 	trivertx_t *verts;
 	vec3_t v3;
+	unsigned int i;
+	union
+	{
+		unsigned char uc[4];
+		unsigned int ui;
+	} col[256];
 
 	verts = paliashdr->posedata;
 
@@ -389,18 +395,34 @@ static void GL_DrawAliasFrame_NoLerp(aliashdr_t *paliashdr, int pose, qboolean m
 
 	if (gl_vbo)
 	{
+		for(i=0;i<paliashdr->lnicount[pose];i++)
+		{
+			l = (float)shadedots[verts[i].lightnormalindex] / 127.0;
+			l = (l * shadelight + ambientlight) / 256.0;
+			l = min(l , 1);
+
+			col[i].uc[0] = l*255;
+			col[i].uc[1] = l*255;
+			col[i].uc[2] = l*255;
+			col[i].uc[3] = r_modelalpha*255;
+		}
+
+		for(i=0;i<paliashdr->vbovertcount;i++)
+		{
+			paliashdr->colours[i] = col[paliashdr->lnimap[pose][i]].ui;
+		}
+
+		qglBindBufferARB(GL_ARRAY_BUFFER_ARB, paliashdr->texcoord_vbo_number);
+
+		qglClientActiveTexture(GL_TEXTURE0_ARB);
+		glTexCoordPointer(2, GL_FLOAT, 0, 0);
+		glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+
 		if (mtex)
 		{
-			qglBindBufferARB(GL_ARRAY_BUFFER_ARB, paliashdr->texcoord_vbo_number);
-
+			qglClientActiveTexture(GL_TEXTURE1_ARB);
 			glTexCoordPointer(2, GL_FLOAT, 0, 0);
 			glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-
-			qglClientActiveTexture(1);
-			glTexCoordPointer(2, GL_FLOAT, 0, 0);
-			glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-
-			qglClientActiveTexture(0);
 		}
 
 		qglBindBufferARB(GL_ARRAY_BUFFER_ARB, paliashdr->vert_vbo_number[pose]);
@@ -409,7 +431,23 @@ static void GL_DrawAliasFrame_NoLerp(aliashdr_t *paliashdr, int pose, qboolean m
 
 		qglBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
 
+		glColorPointer(4, GL_UNSIGNED_BYTE, 0, paliashdr->colours);
+		glEnableClientState(GL_COLOR_ARRAY);
+
 		glDrawRangeElements(GL_TRIANGLES, paliashdr->indexmin, paliashdr->indexmax, paliashdr->numtris*3, GL_UNSIGNED_SHORT, paliashdr->indices);
+
+		glDisableClientState(GL_COLOR_ARRAY);
+
+		if (mtex)
+		{
+			qglClientActiveTexture(GL_TEXTURE1_ARB);
+			glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+			qglClientActiveTexture(GL_TEXTURE0_ARB);
+		}
+
+		glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+
+		glDisableClientState(GL_VERTEX_ARRAY);
 	}
 	else
 	{

@@ -298,6 +298,9 @@ static void MakeVBO(aliashdr_t *hdr)
 	int *vertposes;
 	float *vboverts;
 	float *vbotexcoords;
+	float s;
+	float t;
+	unsigned int *colours;
 	unsigned short *vbotris;
 	unsigned short min;
 	unsigned short max;
@@ -305,79 +308,227 @@ static void MakeVBO(aliashdr_t *hdr)
 	int vert;
 	int tri;
 	int i;
+	int j;
+	char *backside;
+	unsigned int *collisionverts;
+	unsigned int *collisionmap;
+	unsigned int totalverts;
+	unsigned char **lnis;
+	unsigned char **lnimap;
+	unsigned char *lnicount;
+	unsigned char lnirevmap[256];
+	unsigned char lniused[256];
+	unsigned char uniquelnis;
 
 	if (!gl_vbo)
 		return;
 
-	vboverts = malloc(hdr->numposes*hdr->numverts*3*sizeof(*vboverts));
-	if (vboverts)
+	collisionverts = malloc(hdr->numverts*sizeof(*collisionverts));
+	collisionmap = malloc(hdr->numverts*sizeof(*collisionmap));
+	backside = malloc(hdr->numverts);
+
+	if (collisionverts && collisionmap && backside)
 	{
-		vbotexcoords = malloc(hdr->numverts*2*sizeof(*vboverts));
-		if (vbotexcoords)
+		char new;
+		unsigned int collisions;
+
+		collisions = 0;
+
+		memset(backside, 3, hdr->numverts);
+
+		for(tri=0;tri<hdr->numtris;tri++)
 		{
-			vbotris = malloc(hdr->numtris*3*sizeof(*vbotris));
-			if (vbotris)
+			for(i=0;i<3;i++)
 			{
-				vertposes = malloc(hdr->numposes*sizeof(*vertposes));
-				if (vertposes)
+				vert = triangles[tri].vertindex[i];
+				if (!triangles[tri].facesfront && stverts[vert].onseam)
+					new = 1;
+				else
+					new = 0;
+
+				if (backside[vert] == 3)
+					backside[vert] = new;
+				else if (backside[vert] != 2 && backside[vert] != new)
 				{
-					for(pose=0;pose<hdr->numposes;pose++)
-					{
-						for(vert=0;vert<hdr->numverts;vert++)
-						{
-							vboverts[pose*hdr->numverts*3+vert*3+0] = poseverts[pose][vert].v[0];
-							vboverts[pose*hdr->numverts*3+vert*3+1] = poseverts[pose][vert].v[1];
-							vboverts[pose*hdr->numverts*3+vert*3+2] = poseverts[pose][vert].v[2];
-						}
-					}
-
-					for(vert=0;vert<hdr->numverts;vert++)
-					{
-						vbotexcoords[vert*2+0] = (stverts[vert].s + 0.5) / hdr->skinwidth;
-						vbotexcoords[vert*2+1] = (stverts[vert].t + 0.5) / hdr->skinheight;
-					}
-
-					min = 65535;
-					max = 0;
-					for(tri=0;tri<hdr->numtris;tri++)
-					{
-						for(i=0;i<3;i++)
-						{
-							vbotris[tri*3+i] = triangles[tri].vertindex[i];
-
-							if (vbotris[tri*3+i] > max)
-								max = vbotris[tri*3+i];
-							else if (vbotris[tri*3+i] < min)
-								min = vbotris[tri*3+i];
-						}
-					}
-
-					hdr->indices = vbotris;
-					hdr->indexmin = min;
-					hdr->indexmax = max;
-
-					hdr->vert_vbo_number = vertposes;
-
-					for(i=0;i<hdr->numposes;i++)
-					{
-						hdr->vert_vbo_number[i] = vbo_number++;
-
-						qglBindBufferARB(GL_ARRAY_BUFFER_ARB, hdr->vert_vbo_number[i]);
-						qglBufferDataARB(GL_ARRAY_BUFFER_ARB, hdr->numverts*3*sizeof(*vboverts), vboverts + hdr->numverts*3*i, GL_STATIC_DRAW_ARB);
-					}
-
-					hdr->texcoord_vbo_number = vbo_number++;
-
-					qglBindBufferARB(GL_ARRAY_BUFFER_ARB, hdr->texcoord_vbo_number);
-					qglBufferDataARB(GL_ARRAY_BUFFER_ARB, hdr->numverts*2*sizeof(*vboverts), vbotexcoords, GL_STATIC_DRAW_ARB);
-
-					qglBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
-
-					return;
+					collisionverts[collisions] = vert;
+					collisionmap[vert] = hdr->numverts + collisions;
+					backside[vert] = 2;
+					collisions++;
 				}
 			}
 		}
+
+		totalverts = hdr->numverts + collisions;
+
+		lnis = malloc(hdr->numposes * sizeof(*lnis));
+		lnimap = malloc(hdr->numposes * sizeof(*lnimap));
+		lnicount = malloc(hdr->numposes * sizeof(*hdr->lnicount));
+
+		vboverts = malloc(hdr->numposes * totalverts * 3 * sizeof(*vboverts));
+		vbotexcoords = malloc(totalverts * 2 * sizeof(vbotexcoords));
+		vbotris = malloc(hdr->numtris*3*sizeof(*vbotris));
+		vertposes = malloc(hdr->numposes*sizeof(*vertposes));
+
+		colours = malloc(totalverts*sizeof(*hdr->colours));
+
+		for(pose=0;pose<hdr->numposes;pose++)
+		{
+			lnimap[pose] = malloc(totalverts * sizeof(**lnimap));
+		}
+
+		if (lnis && lnimap && lnicount && vboverts && vbotexcoords && vbotris && vertposes)
+		{
+			for(pose=0;pose<hdr->numposes;pose++)
+			{
+				memset(lniused, 0, sizeof(lniused));
+				memset(lnirevmap, 0, sizeof(lnirevmap));
+				uniquelnis = 0;
+				max = 0;
+				min = 255;
+
+				for(vert=0;vert<hdr->numverts;vert++)
+				{
+					if (poseverts[pose][vert].lightnormalindex < min)
+						min = poseverts[pose][vert].lightnormalindex;
+					if (poseverts[pose][vert].lightnormalindex > max)
+						max = poseverts[pose][vert].lightnormalindex;
+
+					if (!lniused[poseverts[pose][vert].lightnormalindex])
+					{
+						lniused[poseverts[pose][vert].lightnormalindex] = 1;
+						uniquelnis++;
+					}
+				}
+
+				lnis[pose] = malloc(uniquelnis * sizeof(**lnis));
+
+				for(i=0,j=0;i<256;i++)
+				{
+					if (lniused[i])
+					{
+						lnirevmap[i] = j;
+						lnis[pose][j++] = i;
+					}
+				}
+
+				for(vert=0;vert<hdr->numverts;vert++)
+				{
+					lnimap[pose][vert] = lnirevmap[poseverts[pose][vert].lightnormalindex];
+				}
+
+				for(;vert<totalverts;vert++)
+				{
+					lnimap[pose][vert] = lnirevmap[poseverts[pose][collisionverts[vert-hdr->numverts]].lightnormalindex];
+				}
+
+				lnicount[pose] = uniquelnis;
+			}
+
+			for(pose=0;pose<hdr->numposes;pose++)
+			{
+				for(vert=0;vert<hdr->numverts;vert++)
+				{
+					vboverts[pose*totalverts*3 + vert*3 + 0] = poseverts[pose][vert].v[0];
+					vboverts[pose*totalverts*3 + vert*3 + 1] = poseverts[pose][vert].v[1];
+					vboverts[pose*totalverts*3 + vert*3 + 2] = poseverts[pose][vert].v[2];
+				}
+
+				for(;vert<totalverts;vert++)
+				{
+					vboverts[pose*totalverts*3 + vert*3 + 0] = poseverts[pose][collisionverts[vert-hdr->numverts]].v[0];
+					vboverts[pose*totalverts*3 + vert*3 + 1] = poseverts[pose][collisionverts[vert-hdr->numverts]].v[1];
+					vboverts[pose*totalverts*3 + vert*3 + 2] = poseverts[pose][collisionverts[vert-hdr->numverts]].v[2];
+				}
+			}
+
+			for(vert=0;vert<hdr->numverts;vert++)
+			{
+				s = stverts[vert].s;
+				t = stverts[vert].t;
+				if (backside[vert] == 1)
+					s += hdr->skinwidth / 2;
+
+				vbotexcoords[vert*2+0] = (s + 0.5) / hdr->skinwidth;
+				vbotexcoords[vert*2+1] = (t + 0.5) / hdr->skinheight;
+			}
+
+			for(;vert<totalverts;vert++)
+			{
+				s = stverts[collisionverts[vert-hdr->numverts]].s;
+				t = stverts[collisionverts[vert-hdr->numverts]].t;
+				s += hdr->skinwidth / 2;
+
+				vbotexcoords[vert*2+0] = (s + 0.5) / hdr->skinwidth;
+				vbotexcoords[vert*2+1] = (t + 0.5) / hdr->skinheight;
+			}
+
+			min = 65535;
+			max = 0;
+			for(tri=0;tri<hdr->numtris;tri++)
+			{
+				for(i=0;i<3;i++)
+				{
+					vert = triangles[tri].vertindex[i];
+
+					if (!triangles[tri].facesfront && stverts[vert].onseam && backside[vert] != 1)
+						vert = collisionmap[vert];
+
+					vbotris[tri*3 + i] = vert;
+
+					if (vert > max)
+						max = vert;
+					if (vert < min)
+						min = vert;
+				}
+			}
+
+			hdr->colours = colours;
+
+			hdr->indices = vbotris;
+			hdr->indexmin = min;
+			hdr->indexmax = max;
+			vbotris = 0;
+
+			hdr->vbovertcount = totalverts;
+
+			hdr->lnis = lnis;
+			hdr->lnimap = lnimap;
+			hdr->lnicount = lnicount;
+			lnis = 0;
+			lnimap = 0;
+			lnicount = 0;
+
+			hdr->vert_vbo_number = vertposes;
+			vertposes = 0;
+
+			for(i=0;i<hdr->numposes;i++)
+			{
+				hdr->vert_vbo_number[i] = vbo_number++;
+
+				qglBindBufferARB(GL_ARRAY_BUFFER_ARB, hdr->vert_vbo_number[i]);
+				qglBufferDataARB(GL_ARRAY_BUFFER_ARB, totalverts*3*sizeof(*vboverts), vboverts + totalverts*3*i, GL_STATIC_DRAW_ARB);
+			}
+
+			hdr->texcoord_vbo_number = vbo_number++;
+
+			qglBindBufferARB(GL_ARRAY_BUFFER_ARB, hdr->texcoord_vbo_number);
+			qglBufferDataARB(GL_ARRAY_BUFFER_ARB, totalverts*2*sizeof(*vbotexcoords), vbotexcoords, GL_STATIC_DRAW_ARB);
+
+			qglBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
+		}
+
+		free(vertposes);
+		free(vbotris);
+		free(vbotexcoords);
+		free(vboverts);
+		free(lnicount);
+		free(lnimap);
+		free(lnis);
 	}
+
+	free(backside);
+	free(collisionmap);
+	free(collisionverts);
 }
 
 /*
