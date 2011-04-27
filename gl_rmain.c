@@ -397,7 +397,7 @@ static void GL_DrawAliasFrame_NoLerp(aliashdr_t *paliashdr, int pose, qboolean m
 	{
 		for(i=0;i<paliashdr->lnicount[pose];i++)
 		{
-			l = (float)shadedots[verts[i].lightnormalindex] / 127.0;
+			l = (float)shadedots[paliashdr->lnis[pose][i]] / 127.0;
 			l = (l * shadelight + ambientlight) / 256.0;
 			l = min(l , 1);
 
