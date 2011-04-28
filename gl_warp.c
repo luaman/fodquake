@@ -144,11 +144,10 @@ static void SubdividePolygon(msurface_t *warpface, int numverts, float *verts)
 void GL_SubdivideSurface(model_t *model, msurface_t *fa)
 {
 	vec3_t verts[64];
-	int numverts, i, lindex;
+	int i, lindex;
 	float *vec;
 
 	// convert edges back to a normal polygon
-	numverts = 0;
 	for (i = 0; i < fa->numedges; i++)
 	{
 		lindex = model->surfedges[fa->firstedge + i];
@@ -157,11 +156,10 @@ void GL_SubdivideSurface(model_t *model, msurface_t *fa)
 			vec = model->vertexes[model->edges[lindex].v[0]].position;
 		else
 			vec = model->vertexes[model->edges[-lindex].v[1]].position;
-		VectorCopy (vec, verts[numverts]);
-		numverts++;
+		VectorCopy (vec, verts[i]);
 	}
 
-	SubdividePolygon(fa, numverts, verts[0]);
+	SubdividePolygon(fa, fa->numedges, verts[0]);
 }
 
 
