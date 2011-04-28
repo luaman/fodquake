@@ -600,9 +600,9 @@ int R_InitParticles(void)
 	{
 #ifdef GLQUAKE
 		QMB_InitParticles();
-#endif
 
 		GL_DrawParticleInit();
+#endif
 
 		return 1;
 	}
