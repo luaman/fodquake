@@ -771,25 +771,22 @@ static void Sbar_DrawInventory (void)
 	// ammo counts
 	for (i = 0; i < 4; i++)
 	{
-		Q_snprintfz (num, sizeof(num), "%3i", cl.stats[STAT_SHELLS + i]);
+		snprintf(num, sizeof(num), "%3d", cl.stats[STAT_SHELLS + i]);
+		if (num[0] != ' ')
+			num[0] = 18 + num[0] - '0';
+		if (num[1] != ' ')
+			num[1] = 18 + num[1] - '0';
+		if (num[2] != ' ')
+			num[2] = 18 + num[2] - '0';
+
 		if (headsup)
 		{
 			Sbar_DrawSubPic(hudswap ? 0 : vid.conwidth - 42, -24 - (4 - i) * 11, sb_ibar, 3 + (i * 48), 0, 42, 11);
-			if (num[0] != ' ')
-				Draw_Character (hudswap ? 7: vid.conwidth - 35, vid.conheight - SBAR_HEIGHT - 24 - (4 - i) * 11, 18 + num[0] - '0');
-			if (num[1] != ' ')
-				Draw_Character (hudswap ? 15: vid.conwidth - 27, vid.conheight - SBAR_HEIGHT - 24 - (4 - i) * 11, 18 + num[1] - '0');
-			if (num[2] != ' ')
-				Draw_Character (hudswap ? 23: vid.conwidth - 19, vid.conheight - SBAR_HEIGHT - 24 - (4 - i) * 11, 18 + num[2] - '0');
+			Draw_String(hudswap ? 7: vid.conwidth - 35, vid.conheight - SBAR_HEIGHT - 24 - (4 - i) * 11, num);
 		}
 		else
 		{
-			if (num[0] != ' ')
-				Sbar_DrawCharacter ((6 * i + 1) * 8 - 2, -24, 18 + num[0] - '0');
-			if (num[1] != ' ')
-				Sbar_DrawCharacter ((6 * i + 2) * 8 - 2, -24, 18 + num[1] - '0');
-			if (num[2] != ' ')
-				Sbar_DrawCharacter ((6 * i + 3) * 8 - 2, -24, 18 + num[2] - '0');
+			Sbar_DrawString((6 * i + 1) * 8 - 2 + 4, -24, num);
 		}
 	}
 
@@ -833,23 +830,25 @@ static void Sbar_DrawInventory (void)
 
 static void Sbar_DrawFrags_DrawCell(int x, int y, int topcolor, int bottomcolor, int frags, int brackets)
 {
-	char num[4];
+	char num[6];
 
 	// draw background
 	Draw_Fill (sbar_xofs + x * 8 + 10, y, 28, 4, Sbar_ColorForMap (topcolor));
 	Draw_Fill (sbar_xofs + x * 8 + 10, y + 4, 28, 3, Sbar_ColorForMap (bottomcolor));
 
 	// draw number
-	Q_snprintfz (num, sizeof(num), "%3i", frags);
-
-	Sbar_DrawCharacter ((x + 1) * 8 , -24, num[0]);
-	Sbar_DrawCharacter ((x + 2) * 8 , -24, num[1]);
-	Sbar_DrawCharacter ((x + 3) * 8 , -24, num[2]);
-
 	if (brackets)
 	{
-		Sbar_DrawCharacter (x * 8 + 2, -24, 16);
-		Sbar_DrawCharacter ((x + 4) * 8 - 4, -24, 17);
+		snprintf(num, sizeof(num), "%c%3i%c", 1?16:' ', frags, 17);
+
+		Sbar_DrawString(x * 8 + 4, -24, num);
+		Sbar_DrawCharacter (x * 8 + 0, -24, 16);
+	}
+	else
+	{
+		snprintf(num, sizeof(num), "%3i", frags);
+
+		Sbar_DrawString((x + 1) * 8 + 4, -24, num);
 	}
 }
 
@@ -1459,11 +1458,11 @@ static void Sbar_DeathmatchOverlay()
 			if (cl.teamplay)
 			{
 				Q_strncpyz  (team, s->team, sizeof(team));
-				Q_snprintfz (scorerow, sizeof(scorerow), " %3i  %3i  %-4s %s", minutes, s->frags, team, name);
+				Q_snprintfz (scorerow, sizeof(scorerow), " %3i %c%3i%c  %-4s %s", minutes, s->frags, team, name);
 			}
 			else
 			{
-				Q_snprintfz (scorerow, sizeof(scorerow), " %3i  %3i  %s", minutes, s->frags, name);
+				Q_snprintfz (scorerow, sizeof(scorerow), " %3i %c%3i%c %s", minutes, k==mynum?16:' ', s->frags, k==mynum?17:' ', name);
 			}
 
 			Draw_String (x, y, scorerow);
@@ -1487,12 +1486,6 @@ static void Sbar_DeathmatchOverlay()
 					strcat (scorerow, va("  &c24F%2i ", playerstats[6]));
 
 				Draw_ColoredString(x + stats_xoffset - 9 * 8, y, scorerow, 0);
-			}
-
-			if (k == mynum)
-			{
-				Draw_Character (x + 40, y, 16);
-				Draw_Character (x + 40 + 32, y, 17);
 			}
 
 			y += skip;
@@ -1621,7 +1614,7 @@ static int Sbar_TeamOverlay(void)
 static void Sbar_MiniDeathmatchOverlay (void)
 {
 	int i, k, top, bottom, x, y, mynum, numlines;
-	char num[4 + 1], name[16 + 1], team[4 + 1];
+	char num[6 + 1], name[16 + 1], team[4 + 1];
 	player_info_t *s;
 	team_t *tm;
 
@@ -1681,17 +1674,9 @@ static void Sbar_MiniDeathmatchOverlay (void)
 		Draw_Fill (x, y + 4, 40, 4, Sbar_ColorForMap (bottom));
 
 		// draw number
-		Q_snprintfz (num, sizeof(num), "%3i", s->frags);
+		Q_snprintfz (num, sizeof(num), "%c%3i%c", k==mynum?16:' ', s->frags, k==mynum?17:' ');
 
-		Draw_Character (x + 8 , y, num[0]);
-		Draw_Character (x + 16, y, num[1]);
-		Draw_Character (x + 24, y, num[2]);
-
-		if (k == mynum)
-		{
-			Draw_Character (x, y, 16);
-			Draw_Character (x + 32, y, 17);
-		}
+		Draw_String(x, y, num);
 
 		// team
 		if (cl.teamplay)
