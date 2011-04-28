@@ -25,6 +25,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "quakedef.h"
 #include "gl_local.h"
+#include "gl_state.h"
 #include "version.h"
 #include "sbar.h"
 #include "wad.h"
@@ -577,9 +578,8 @@ void Draw_BeginTextRendering()
 	if (!textrenderingenabled)
 	{
 		GL_Bind(char_texture);
+		GL_SetArrays(FQ_GL_VERTEX_ARRAY | FQ_GL_TEXTURE_COORD_ARRAY);
 
-		glEnableClientState(GL_VERTEX_ARRAY);
-		glEnableClientState(GL_TEXTURE_COORD_ARRAY);
 		glVertexPointer(2, GL_FLOAT, 0, fontvertices);
 		glTexCoordPointer(2, GL_FLOAT, 0, fonttexcoords);
 
@@ -598,14 +598,8 @@ void Draw_EndTextRendering()
 		if (fontindex)
 			glDrawArrays(GL_QUADS, 0, fontindex/2);
 
-		glDisableClientState(GL_TEXTURE_COORD_ARRAY);
-		glDisableClientState(GL_VERTEX_ARRAY);
-
 		if (colouredtextrendering)
-		{
-			glDisableClientState(GL_COLOR_ARRAY);
 			colouredtextrendering = 0;
-		}
 	}
 }
 
@@ -614,10 +608,8 @@ void Draw_BeginColoredTextRendering()
 	if (!textrenderingenabled)
 	{
 		GL_Bind(char_texture);
+		GL_SetArrays(FQ_GL_VERTEX_ARRAY | FQ_GL_COLOR_ARRAY | FQ_GL_TEXTURE_COORD_ARRAY);
 
-		glEnableClientState(GL_VERTEX_ARRAY);
-		glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-		glEnableClientState(GL_COLOR_ARRAY);
 		glVertexPointer(2, GL_FLOAT, 0, fontvertices);
 		glTexCoordPointer(2, GL_FLOAT, 0, fonttexcoords);
 		glColorPointer(4, GL_UNSIGNED_BYTE, 0, fontcolours);
@@ -1081,15 +1073,11 @@ void Draw_DrawPicture(struct Picture *picture, int x, int y, unsigned int width,
 	coords[3*2 + 0] = x;
 	coords[3*2 + 1] = y + height;
 
-	glEnableClientState(GL_VERTEX_ARRAY);
-	glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+	GL_SetArrays(FQ_GL_VERTEX_ARRAY | FQ_GL_TEXTURE_COORD_ARRAY);
 	glVertexPointer(2, GL_FLOAT, 0, coords);
 	glTexCoordPointer(2, GL_FLOAT, 0, texcoords);
 
 	glDrawArrays(GL_QUADS, 0, 4);
-
-	glDisableClientState(GL_TEXTURE_COORD_ARRAY);
-	glDisableClientState(GL_VERTEX_ARRAY);
 }
 
 void Draw_DrawPictureAlpha(struct Picture *picture, int x, int y, unsigned int width, unsigned int height, float alpha)
@@ -1140,14 +1128,10 @@ void Draw_DrawSubPicture(struct Picture *picture, unsigned int sx, unsigned int 
 	texcoords[3*2 + 0] = (sx) * picture->invwidth;
 	texcoords[3*2 + 1] = (sy + sheight) * picture->invheight;
 
-	glEnableClientState(GL_VERTEX_ARRAY);
-	glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+	GL_SetArrays(FQ_GL_VERTEX_ARRAY | FQ_GL_TEXTURE_COORD_ARRAY);
 	glVertexPointer(2, GL_FLOAT, 0, coords);
 	glTexCoordPointer(2, GL_FLOAT, 0, texcoords);
 
 	glDrawArrays(GL_QUADS, 0, 4);
-
-	glDisableClientState(GL_TEXTURE_COORD_ARRAY);
-	glDisableClientState(GL_VERTEX_ARRAY);
 }
 
