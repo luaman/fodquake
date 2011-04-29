@@ -336,8 +336,7 @@ static void GL_DrawAliasFrame_Lerp(aliashdr_t *paliashdr, int pose1, int pose2, 
 
 	order = paliashdr->commands;
 
-	if (r_modelalpha < 1)
-		glEnable(GL_BLEND);
+	GL_SetAlphaTestBlend(0, r_modelalpha<1);
 
 	while ((count = *order++))
 	{
@@ -387,9 +386,6 @@ static void GL_DrawAliasFrame_Lerp(aliashdr_t *paliashdr, int pose1, int pose2, 
 
 		glEnd();
 	}
-
-	if (r_modelalpha < 1)
-		glDisable(GL_BLEND);
 }
 
 static void GL_DrawAliasFrame_NoLerp(aliashdr_t *paliashdr, int pose, qboolean mtex)
@@ -405,8 +401,7 @@ static void GL_DrawAliasFrame_NoLerp(aliashdr_t *paliashdr, int pose, qboolean m
 
 	order = paliashdr->commands;
 
-	if (r_modelalpha < 1)
-		glEnable(GL_BLEND);
+	GL_SetAlphaTestBlend(0, r_modelalpha<1);
 
 	while ((count = *order++))
 	{
@@ -450,9 +445,6 @@ static void GL_DrawAliasFrame_NoLerp(aliashdr_t *paliashdr, int pose, qboolean m
 
 		glEnd();
 	}
-
-	if (r_modelalpha < 1)
-		glDisable(GL_BLEND);
 }
 
 static void GL_DrawAliasFrame(aliashdr_t *paliashdr, int pose1, int pose2, qboolean mtex)
@@ -933,12 +925,10 @@ static void R_DrawAliasModel(entity_t *ent)
 		if (fb_texture)
 		{
 			glTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
-			glEnable (GL_ALPHA_TEST);
+			GL_SetAlphaTestBlend(1, 0);
 			GL_Bind (fb_texture);
 
 			R_SetupAliasFrame (oldframe, frame, paliashdr, false);
-
-			glDisable (GL_ALPHA_TEST);
 		}
 	}
 
@@ -962,8 +952,7 @@ void R_DrawEntitiesOnList(visentlist_t *vislist)
 	if (!r_drawentities.value || !vislist->count)
 		return;
 
-	if (vislist->alpha)
-		glEnable (GL_ALPHA_TEST);
+	GL_SetAlphaTestBlend(vislist->alpha, 0);
 
 	// draw sprites separately, because of alpha_test
 	for (i = 0; i < vislist->count; i++)
@@ -993,9 +982,6 @@ void R_DrawEntitiesOnList(visentlist_t *vislist)
 				break;
 		}
 	}
-
-	if (vislist->alpha)
-		glDisable (GL_ALPHA_TEST);
 }
 
 static void R_DrawViewModel(void)
@@ -1060,8 +1046,7 @@ void R_PolyBlend (void)
 	if (!v_blend[3])
 		return;
 
-	glDisable (GL_ALPHA_TEST);
-	glEnable (GL_BLEND);
+	GL_SetAlphaTestBlend(0, 1);
 	glDisable (GL_TEXTURE_2D);
 
 	glColor4fv (v_blend);
@@ -1073,9 +1058,7 @@ void R_PolyBlend (void)
 	glVertex2f (r_refdef.vrect.x, r_refdef.vrect.y + r_refdef.vrect.height);
 	glEnd ();
 
-	glDisable (GL_BLEND);
 	glEnable (GL_TEXTURE_2D);
-	glEnable (GL_ALPHA_TEST);
 
 	glColor3ubv (color_white);
 }
@@ -1093,8 +1076,8 @@ void R_BrightenScreen (void)
 	f = min (v_contrast.value, 3);
 	f = pow (f, vid_gamma);
 
+	GL_SetAlphaTestBlend(0, 1);
 	glDisable (GL_TEXTURE_2D);
-	glEnable (GL_BLEND);
 	glBlendFunc (GL_DST_COLOR, GL_ONE);
 	glBegin (GL_QUADS);
 	while (f > 1)
@@ -1112,7 +1095,6 @@ void R_BrightenScreen (void)
 	glEnd ();
 	glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glEnable (GL_TEXTURE_2D);
-	glDisable (GL_BLEND);
 	glColor3ubv (color_white);
 }
 
@@ -1260,8 +1242,7 @@ static void R_SetupGL (void)
 	else
 		glDisable(GL_CULL_FACE);
 
-	glDisable(GL_BLEND);
-	glDisable(GL_ALPHA_TEST);
+	GL_SetAlphaTestBlend(0, 0);
 	glEnable(GL_DEPTH_TEST);
 }
 

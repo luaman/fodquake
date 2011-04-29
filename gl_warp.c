@@ -220,6 +220,8 @@ void EmitWaterPolys(msurface_t *fa)
 
 	GL_DisableMultitexture();
 
+	GL_SetAlphaTestBlend(0, 0);
+
 	if (r_fastturb.value)
 	{
 		glDisable (GL_TEXTURE_2D);
@@ -233,7 +235,6 @@ void EmitWaterPolys(msurface_t *fa)
 	}
 	else
 	{
-		glDisable(GL_BLEND);
 		glTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 		GL_Bind (fa->texinfo->texture->gl_texturenum);
 		for (p = fa->warppolys; p; p = p->next)
@@ -363,7 +364,7 @@ void R_DrawSkyChain(void)
 			for (fa = skychain; fa; fa = fa->texturechain)
 				EmitSkyPolys (fa, false);
 
-			glEnable (GL_BLEND);
+			GL_SetAlphaTestBlend(0, 1);
 			GL_Bind (alphaskytexture);
 
 			speedscale = cl.time * 16;
@@ -371,8 +372,6 @@ void R_DrawSkyChain(void)
 
 			for (fa = skychain; fa; fa = fa->texturechain)
 				EmitSkyPolys (fa, false);
-
-			glDisable (GL_BLEND);
 		}
 	}
 	skychain = NULL;
@@ -777,8 +776,8 @@ void R_DrawSkyBox(void)
 
 	glDisable(GL_TEXTURE_2D);
 	glColorMask (GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
-	
-	glEnable(GL_BLEND);
+
+	GL_SetAlphaTestBlend(0, 1);
 	glBlendFunc(GL_ZERO, GL_ONE);
 
 	for (fa = skychain; fa; fa = fa->texturechain)
@@ -786,7 +785,6 @@ void R_DrawSkyBox(void)
 
 	glEnable (GL_TEXTURE_2D);
 	glColorMask (GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-	glDisable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	skychain = NULL;
@@ -820,7 +818,7 @@ void EmitCausticsPolys(void)
 	GL_Bind (underwatertexture);
 	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
 	glBlendFunc(GL_DST_COLOR, GL_SRC_COLOR);
-	glEnable(GL_BLEND);
+	GL_SetAlphaTestBlend(0, 1);
 
 	for (p = caustics_polys; p; p = p->caustics_chain)
 	{
@@ -837,7 +835,6 @@ void EmitCausticsPolys(void)
 
 	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	glDisable(GL_BLEND);
 
 	caustics_polys = NULL;
 }

@@ -33,7 +33,7 @@ void GL_DrawParticleBegin()
 
 	GL_Bind(particletexture);
 
-	glEnable(GL_BLEND);
+	GL_SetAlphaTestBlend(0, 1);
 	if (!gl_solidparticles.value)
 		glDepthMask (GL_FALSE);
 	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
@@ -54,7 +54,6 @@ void GL_DrawParticleEnd()
 	if (particleindex)
 		glDrawArrays(GL_TRIANGLES, 0, particleindex);
 
-	glDisable(GL_BLEND);
 	glDepthMask(GL_TRUE);
 	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
 	glColor3ubv(color_white);

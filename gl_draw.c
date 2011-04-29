@@ -578,6 +578,7 @@ void Draw_BeginTextRendering()
 	if (!textrenderingenabled)
 	{
 		GL_Bind(char_texture);
+		GL_SetAlphaTestBlend(1, 0);
 		GL_SetArrays(FQ_GL_VERTEX_ARRAY | FQ_GL_TEXTURE_COORD_ARRAY);
 
 		glVertexPointer(2, GL_FLOAT, 0, fontvertices);
@@ -608,6 +609,7 @@ void Draw_BeginColoredTextRendering()
 	if (!textrenderingenabled)
 	{
 		GL_Bind(char_texture);
+		GL_SetAlphaTestBlend(1, 0);
 		GL_SetArrays(FQ_GL_VERTEX_ARRAY | FQ_GL_COLOR_ARRAY | FQ_GL_TEXTURE_COORD_ARRAY);
 
 		glVertexPointer(2, GL_FLOAT, 0, fontvertices);
@@ -650,13 +652,13 @@ void Draw_Crosshair(void)
 
 		if (gl_crosshairalpha.value)
 		{
-			glDisable(GL_ALPHA_TEST);
-			glEnable (GL_BLEND);
+			GL_SetAlphaTestBlend(0, 1);
 			col[3] = bound(0, gl_crosshairalpha.value, 1) * 255;
 			glColor4ubv (col);
 		}
 		else
 		{
+			GL_SetAlphaTestBlend(0, 0);
 			glColor3ubv (col);
 		}
 
@@ -687,12 +689,6 @@ void Draw_Crosshair(void)
 		glVertex2f(x - ofs1, y + ofs2);
 		glEnd();
 
-		if (gl_crosshairalpha.value)
-		{
-			glDisable(GL_BLEND);
-			glEnable(GL_ALPHA_TEST);
-		}
-
 		glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
 		glColor3ubv(color_white);
 	}
@@ -710,10 +706,9 @@ void Draw_AlphaFill(int x, int y, int w, int h, int c, float alpha)
 		return;
 
 	glDisable(GL_TEXTURE_2D);
+	GL_SetAlphaTestBlend(0, alpha < 1);
 	if (alpha < 1)
 	{
-		glEnable(GL_BLEND);
-		glDisable(GL_ALPHA_TEST);
 		glColor4f(host_basepal[c * 3] / 255.0,  host_basepal[c * 3 + 1] / 255.0, host_basepal[c * 3 + 2] / 255.0, alpha);
 	}
 	else
@@ -729,11 +724,6 @@ void Draw_AlphaFill(int x, int y, int w, int h, int c, float alpha)
 	glEnd();
 
 	glEnable(GL_TEXTURE_2D);
-	if (alpha < 1)
-	{
-		glEnable(GL_ALPHA_TEST);
-		glDisable(GL_BLEND);
-	}
 	glColor3ubv(color_white);
 }
 
@@ -754,12 +744,12 @@ void Draw_FadeScreen(void)
 
 	if (alpha < 1)
 	{
-		glDisable(GL_ALPHA_TEST);
-		glEnable(GL_BLEND);
+		GL_SetAlphaTestBlend(0, 1);
 		glColor4f(0, 0, 0, alpha);
 	}
 	else
 	{
+		GL_SetAlphaTestBlend(0, 0);
 		glColor3f(0, 0, 0);
 	}
 	glDisable(GL_TEXTURE_2D);
@@ -771,11 +761,6 @@ void Draw_FadeScreen(void)
 	glVertex2f(0, vid.conheight);
 	glEnd();
 
-	if (alpha < 1)
-	{
-		glDisable(GL_BLEND);
-		glEnable(GL_ALPHA_TEST);
-	}
 	glColor3ubv(color_white);
 	glEnable(GL_TEXTURE_2D);
 
@@ -804,8 +789,6 @@ void GL_Set2D(void)
 
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_CULL_FACE);
-	glDisable(GL_BLEND);
-	glEnable(GL_ALPHA_TEST);
 
 	glColor3ubv(color_white);
 }
@@ -1088,8 +1071,7 @@ void Draw_DrawPictureAlpha(struct Picture *picture, int x, int y, unsigned int w
 	if (alpha > 1)
 		alpha = 1;
 
-	glDisable(GL_ALPHA_TEST);
-	glEnable(GL_BLEND);
+	GL_SetAlphaTestBlend(0, 1);
 	glColor4f(1, 1, 1, alpha);
 	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 
@@ -1099,8 +1081,6 @@ void Draw_DrawPictureAlpha(struct Picture *picture, int x, int y, unsigned int w
 
 	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
 	glColor3ubv(color_white);
-	glDisable(GL_BLEND);
-	glEnable(GL_ALPHA_TEST);
 }
 
 void Draw_DrawSubPicture(struct Picture *picture, unsigned int sx, unsigned int sy, unsigned int swidth, unsigned int sheight, int x, int y, unsigned int width, unsigned int height)

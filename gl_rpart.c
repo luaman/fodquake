@@ -26,6 +26,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "quakedef.h"
 #include "pmove.h"
 #include "gl_local.h"
+#include "gl_state.h"
 
 #define DEFAULT_NUM_PARTICLES				4096
 #define ABSOLUTE_MIN_PARTICLES				256
@@ -510,7 +511,7 @@ void QMB_DrawParticles (void) {
 	VectorNegate(billboard[3], billboard[1]);
 
 	glDepthMask(GL_FALSE);
-	glEnable(GL_BLEND);
+	GL_SetAlphaTestBlend(0, 1);
 	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 	glShadeModel(GL_SMOOTH);
 
@@ -610,7 +611,6 @@ void QMB_DrawParticles (void) {
 
 	glEnable(GL_TEXTURE_2D);
 	glDepthMask(GL_TRUE);
-	glDisable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
 }
