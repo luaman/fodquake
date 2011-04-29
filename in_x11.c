@@ -270,6 +270,8 @@ static void DoGrabMouse(struct inputdata *id)
 	if (id->mouse_grabbed)
 		return;
 
+	XSelectInput(id->x_disp, id->x_win, XINPUTFLAGS&(~PointerMotionMask));
+
 	if (in_dga_mouse.value)
 	{
 		grab_win = DefaultRootWindow(id->x_disp);
@@ -278,11 +280,8 @@ static void DoGrabMouse(struct inputdata *id)
 	{
 		grab_win = id->x_win;
 
-		XSelectInput(id->x_disp, id->x_win, XINPUTFLAGS&(~PointerMotionMask));
 		XWarpPointer(id->x_disp, None, id->x_win, 0, 0, 0, 0, id->windowwidth/2, id->windowheight/2);
 	}
-
-	XSelectInput(id->x_disp, id->x_win, XINPUTFLAGS);
 
 	XGrabPointer(id->x_disp, grab_win, True, PointerMotionMask | ButtonPressMask | ButtonReleaseMask, GrabModeAsync, GrabModeAsync, grab_win, None, CurrentTime);
 
@@ -299,6 +298,11 @@ static void DoGrabMouse(struct inputdata *id)
 		}
 	}
 
+	if (id->dga_mouse_enabled)
+		XSelectInput(id->x_disp, grab_win, PointerMotionMask);
+	else
+		XSelectInput(id->x_disp, id->x_win, XINPUTFLAGS);
+
 	id->mouse_grabbed = 1;
 }
 
@@ -309,6 +313,7 @@ static void DoUngrabMouse(struct inputdata *id)
 
 	if (id->dga_mouse_enabled)
 	{
+		XSelectInput(id->x_disp, DefaultRootWindow(id->x_disp), 0);
 		id->dga_mouse_enabled = 0;
 		XF86DGADirectVideo(id->x_disp, DefaultScreen(id->x_disp), 0);
 	}
