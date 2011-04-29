@@ -28,11 +28,35 @@ void GL_SetArrays(unsigned int arrays)
 
 		if ((diff & FQ_GL_TEXTURE_COORD_ARRAY))
 		{
+			qglClientActiveTexture(GL_TEXTURE0_ARB);
+
 			if ((arrays & FQ_GL_TEXTURE_COORD_ARRAY))
 				glEnableClientState(GL_TEXTURE_COORD_ARRAY);
 			else
 				glDisableClientState(GL_TEXTURE_COORD_ARRAY);
 		}
+
+		if ((diff & FQ_GL_TEXTURE_COORD_ARRAY_1))
+		{
+			qglClientActiveTexture(GL_TEXTURE1_ARB);
+
+			if ((arrays & FQ_GL_TEXTURE_COORD_ARRAY_1))
+				glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+			else
+				glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+		}
+
+		if ((diff & FQ_GL_TEXTURE_COORD_ARRAY_2))
+		{
+			qglClientActiveTexture(GL_TEXTURE2_ARB);
+
+			if ((arrays & FQ_GL_TEXTURE_COORD_ARRAY_2))
+				glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+			else
+				glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+		}
+
+		qglClientActiveTexture(GL_TEXTURE0_ARB);
 
 		old_arrays = arrays;
 	}
