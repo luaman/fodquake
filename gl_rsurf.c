@@ -25,6 +25,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "quakedef.h"
 #include "gl_local.h"
+#include "gl_state.h"
 
 #define	BLOCK_WIDTH		128
 #define	BLOCK_HEIGHT	128
@@ -882,6 +883,8 @@ static void DrawTextureChains (model_t *model)
 	int lightmapprevtexturenum;
 	unsigned int glindices[300];
 	unsigned int numglelements;
+	unsigned int basearrays;
+	unsigned int extraarrays;
 
 	qboolean render_lightmaps = false, render_caustics = false, render_details = false;
 	qboolean drawLumasGlowing, doMtex1, doMtex2;
@@ -926,7 +929,6 @@ static void DrawTextureChains (model_t *model)
 			qglBindBufferARB(GL_ARRAY_BUFFER_ARB, model->verttexcoords_vbo_number[0]);
 			qglClientActiveTexture(GL_TEXTURE0_ARB);
 			glTexCoordPointer(2, GL_FLOAT, 0, 0);
-			glEnableClientState(GL_TEXTURE_COORD_ARRAY);
 
 			qglBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
 		}
@@ -936,15 +938,15 @@ static void DrawTextureChains (model_t *model)
 
 			qglClientActiveTexture(GL_TEXTURE0_ARB);
 			glTexCoordPointer(2, GL_FLOAT, 0, model->verttexcoords[0]);
-			glEnableClientState(GL_TEXTURE_COORD_ARRAY);
 		}
 
-		glEnableClientState(GL_VERTEX_ARRAY);
+		basearrays = FQ_GL_VERTEX_ARRAY | FQ_GL_TEXTURE_COORD_ARRAY;
 	}
 
 	for (i = 0; i < model->numtextures; i++)
 	{
 		lightmapprevtexturenum = -1;
+		extraarrays = 0;
 
 		if (!model->textures[i] || (!model->textures[i]->texturechain[0] && !model->textures[i]->texturechain[1]))
 			continue;
@@ -966,6 +968,7 @@ static void DrawTextureChains (model_t *model)
 					doMtex1 = true;
 					GL_EnableTMU(GL_TEXTURE1_ARB);
 					GL_FB_TEXTURE = GL_TEXTURE1_ARB;
+					extraarrays |= FQ_GL_TEXTURE_COORD_ARRAY_1;
 					glTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_ADD);
 					GL_Bind (t->fb_texturenum);
 
@@ -976,6 +979,7 @@ static void DrawTextureChains (model_t *model)
 					{
 						doMtex2 = true;
 						GL_LIGHTMAP_TEXTURE = GL_TEXTURE2_ARB;
+						extraarrays |= FQ_GL_TEXTURE_COORD_ARRAY_2;
 						GL_EnableTMU(GL_LIGHTMAP_TEXTURE);
 						glTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, gl_invlightmaps ? GL_BLEND : GL_MODULATE);
 					}
@@ -997,6 +1001,7 @@ static void DrawTextureChains (model_t *model)
 				doMtex1 = true;
 				GL_EnableTMU(GL_TEXTURE1_ARB);
 				GL_LIGHTMAP_TEXTURE = GL_TEXTURE1_ARB;
+				extraarrays |= FQ_GL_TEXTURE_COORD_ARRAY_1;
 				glTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, gl_invlightmaps ? GL_BLEND : GL_MODULATE);
 
 				mtex_lightmaps = true;
@@ -1006,6 +1011,7 @@ static void DrawTextureChains (model_t *model)
 				{
 					doMtex2 = true;
 					GL_FB_TEXTURE = GL_TEXTURE2_ARB;
+					extraarrays |= FQ_GL_TEXTURE_COORD_ARRAY_2;
 					GL_EnableTMU(GL_FB_TEXTURE);
 					GL_Bind (t->fb_texturenum);
 					glTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, t->isLumaTexture ? GL_ADD : GL_DECAL);
@@ -1022,6 +1028,9 @@ static void DrawTextureChains (model_t *model)
 			doMtex1 = doMtex2 = mtex_lightmaps = mtex_fbs = false;
 		}
 
+		if (model->vertcoords)
+			GL_SetArrays(basearrays | extraarrays);
+
 		if (model->vertcoords && (mtex_fbs || mtex_lightmaps))
 		{
 			if (gl_vbo)
@@ -1031,7 +1040,6 @@ static void DrawTextureChains (model_t *model)
 					qglBindBufferARB(GL_ARRAY_BUFFER_ARB, model->verttexcoords_vbo_number[0]);
 					qglClientActiveTexture(GL_FB_TEXTURE);
 					glTexCoordPointer(2, GL_FLOAT, 0, 0);
-					glEnableClientState(GL_TEXTURE_COORD_ARRAY);
 				}
 
 				if (mtex_lightmaps)
@@ -1039,7 +1047,6 @@ static void DrawTextureChains (model_t *model)
 					qglBindBufferARB(GL_ARRAY_BUFFER_ARB, model->verttexcoords_vbo_number[1]);
 					qglClientActiveTexture(GL_LIGHTMAP_TEXTURE);
 					glTexCoordPointer(2, GL_FLOAT, 0, 0);
-					glEnableClientState(GL_TEXTURE_COORD_ARRAY);
 				}
 
 				qglBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
@@ -1050,14 +1057,12 @@ static void DrawTextureChains (model_t *model)
 				{
 					qglClientActiveTexture(GL_FB_TEXTURE);
 					glTexCoordPointer(2, GL_FLOAT, 0, model->verttexcoords[0]);
-					glEnableClientState(GL_TEXTURE_COORD_ARRAY);
 				}
 
 				if (mtex_lightmaps)
 				{
 					qglClientActiveTexture(GL_LIGHTMAP_TEXTURE);
 					glTexCoordPointer(2, GL_FLOAT, 0, model->verttexcoords[1]);
-					glEnableClientState(GL_TEXTURE_COORD_ARRAY);
 				}
 			}
 		}
@@ -1154,34 +1159,10 @@ static void DrawTextureChains (model_t *model)
 
 		FinishDraw(glindices, &numglelements);
 
-		if (model->vertcoords)
-		{
-			if (mtex_lightmaps)
-			{
-				qglClientActiveTexture(GL_LIGHTMAP_TEXTURE);
-				glDisableClientState(GL_TEXTURE_COORD_ARRAY);
-			}
-
-			if (mtex_fbs)
-			{
-				qglClientActiveTexture(GL_FB_TEXTURE);
-				GL_SelectTexture(GL_FB_TEXTURE);
-				glDisableClientState(GL_TEXTURE_COORD_ARRAY);
-			}
-		}
-
 		if (doMtex1)
 			GL_DisableTMU(GL_TEXTURE1_ARB);
 		if (doMtex2)
 			GL_DisableTMU(GL_TEXTURE2_ARB);
-	}
-
-	if (model->vertcoords)
-	{
-		glDisableClientState(GL_VERTEX_ARRAY);
-
-		qglClientActiveTexture(GL_TEXTURE0_ARB);
-		glDisableClientState(GL_TEXTURE_COORD_ARRAY);
 	}
 
 	if (gl_mtexable)
@@ -1264,9 +1245,7 @@ static void R_DrawFlat (model_t *model)
 			glTexCoordPointer(2, GL_FLOAT, 0, model->verttexcoords[1]);
 		}
 
-		glEnableClientState(GL_VERTEX_ARRAY);
-		glEnableClientState(GL_COLOR_ARRAY);
-		glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+		GL_SetArrays(FQ_GL_VERTEX_ARRAY | FQ_GL_COLOR_ARRAY | FQ_GL_TEXTURE_COORD_ARRAY);
 	}
 
 	numglelements = 0;
@@ -1305,12 +1284,6 @@ static void R_DrawFlat (model_t *model)
 	}
 
 	FinishDraw(glindices, &numglelements);
-
-	if (model->vertcoords)
-	{
-		glDisableClientState(GL_VERTEX_ARRAY);
-		glDisableClientState(GL_COLOR_ARRAY);
-	}
 
 	glColor3f(1.0f, 1.0f, 1.0f);
 }

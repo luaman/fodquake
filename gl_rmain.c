@@ -433,42 +433,31 @@ static void GL_DrawAliasFrame_NoLerp(aliashdr_t *paliashdr, int pose, qboolean m
 			paliashdr->colours[i] = col[paliashdr->lnimap[pose][i]].ui;
 		}
 
+		if (mtex)
+			GL_SetArrays(FQ_GL_VERTEX_ARRAY | FQ_GL_COLOR_ARRAY | FQ_GL_TEXTURE_COORD_ARRAY | FQ_GL_TEXTURE_COORD_ARRAY_2);
+		else
+			GL_SetArrays(FQ_GL_VERTEX_ARRAY | FQ_GL_COLOR_ARRAY | FQ_GL_TEXTURE_COORD_ARRAY);
+
 		qglBindBufferARB(GL_ARRAY_BUFFER_ARB, paliashdr->texcoord_vbo_number);
 
 		qglClientActiveTexture(GL_TEXTURE0_ARB);
 		glTexCoordPointer(2, GL_FLOAT, 0, 0);
-		glEnableClientState(GL_TEXTURE_COORD_ARRAY);
 
 		if (mtex)
 		{
 			qglClientActiveTexture(GL_TEXTURE1_ARB);
 			glTexCoordPointer(2, GL_FLOAT, 0, 0);
-			glEnableClientState(GL_TEXTURE_COORD_ARRAY);
 		}
 
 		qglBindBufferARB(GL_ARRAY_BUFFER_ARB, paliashdr->vert_vbo_number[pose]);
 		glVertexPointer(3, GL_FLOAT, 0, 0);
-		glEnableClientState(GL_VERTEX_ARRAY);
 
 		qglBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
-
 		glColorPointer(4, GL_UNSIGNED_BYTE, 0, paliashdr->colours);
-		glEnableClientState(GL_COLOR_ARRAY);
 
 		glDrawRangeElements(GL_TRIANGLES, paliashdr->indexmin, paliashdr->indexmax, paliashdr->numtris*3, GL_UNSIGNED_SHORT, paliashdr->indices);
 
-		glDisableClientState(GL_COLOR_ARRAY);
-
-		if (mtex)
-		{
-			qglClientActiveTexture(GL_TEXTURE1_ARB);
-			glDisableClientState(GL_TEXTURE_COORD_ARRAY);
-			qglClientActiveTexture(GL_TEXTURE0_ARB);
-		}
-
-		glDisableClientState(GL_TEXTURE_COORD_ARRAY);
-
-		glDisableClientState(GL_VERTEX_ARRAY);
+		qglClientActiveTexture(GL_TEXTURE0_ARB);
 	}
 	else
 	{
