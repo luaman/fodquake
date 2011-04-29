@@ -25,6 +25,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "quakedef.h"
 #include "gl_local.h"
+#include "gl_state.h"
 
 #include "utils.h"
 
@@ -144,11 +145,15 @@ static void SubdividePolygon(msurface_t *warpface, int numverts, float *verts)
 void GL_SubdivideSurface(model_t *model, msurface_t *fa)
 {
 	vec3_t verts[64];
-	int numverts, i, lindex;
+	int i, lindex;
 	float *vec;
 
+	/* Build simple verts for fastturb/fastsky */
+	fa->fastpolys = malloc(fa->numedges * 3 * sizeof(*fa->fastpolys));
+	if (fa->fastpolys == 0)
+		Sys_Error("GL_SubdivideSurface,: Out of memory\n");
+
 	// convert edges back to a normal polygon
-	numverts = 0;
 	for (i = 0; i < fa->numedges; i++)
 	{
 		lindex = model->surfedges[fa->firstedge + i];
@@ -157,11 +162,14 @@ void GL_SubdivideSurface(model_t *model, msurface_t *fa)
 			vec = model->vertexes[model->edges[lindex].v[0]].position;
 		else
 			vec = model->vertexes[model->edges[-lindex].v[1]].position;
-		VectorCopy (vec, verts[numverts]);
-		numverts++;
+		VectorCopy (vec, verts[i]);
+
+		fa->fastpolys[i*3+0] = vec[0];
+		fa->fastpolys[i*3+1] = vec[1];
+		fa->fastpolys[i*3+2] = vec[2];
 	}
 
-	SubdividePolygon(fa, numverts, verts[0]);
+	SubdividePolygon(fa, fa->numedges, verts[0]);
 }
 
 
@@ -198,17 +206,9 @@ __inline static float SINTABLE_APPROX(float time)
 
 static void EmitFlatPoly(msurface_t *fa)
 {
-	struct glwarppoly *p;
-	float *v;
-	int i;
-
-	for (p = fa->warppolys; p; p = p->next)
-	{
-		glBegin (GL_POLYGON);
-		for (i = 0, v = p->verts[0]; i < p->numverts; i++, v += WARPVERTEXSIZE)
-			glVertex3fv (v);
-		glEnd ();
-	}
+	GL_SetArrays(FQ_GL_VERTEX_ARRAY);
+	glVertexPointer(3, GL_FLOAT, 0, fa->fastpolys);
+	glDrawArrays(GL_POLYGON, 0, fa->numedges);
 }
 
 //Does a water warp on the pre-fragmented struct glwarppoly chain

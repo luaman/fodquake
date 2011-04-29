@@ -23,6 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "quakedef.h"
 #include "gl_local.h"
+#include "gl_state.h"
 #include "gl_warp.h"
 #include "gl_rsurf.h"
 #include "sound.h"
@@ -218,6 +219,10 @@ static mspriteframe_t *R_GetSpriteFrame (entity_t *currententity)
 static void R_DrawSpriteModel (entity_t *e)
 {
 	vec3_t point, right, up;
+	vec3_t pointup;
+	vec3_t pointdown;
+	float texcoords[2*4];
+	float coords[3*4];
 	mspriteframe_t *frame;
 	msprite_t *psprite;
 
@@ -250,30 +255,46 @@ static void R_DrawSpriteModel (entity_t *e)
 	}
 
 	GL_Bind(frame->gl_texturenum);
+	GL_SetArrays(FQ_GL_VERTEX_ARRAY | FQ_GL_TEXTURE_COORD_ARRAY);
 
-	glBegin (GL_QUADS);
+	texcoords[0 + 0] = 0;
+	texcoords[0 + 1] = 1;
 
-	glTexCoord2f (0, 1);
-	VectorMA (e->origin, frame->down, up, point);
-	VectorMA (point, frame->left, right, point);
-	glVertex3fv (point);
+	texcoords[2 + 0] = 0;
+	texcoords[2 + 1] = 0;
 
-	glTexCoord2f (0, 0);
-	VectorMA (e->origin, frame->up, up, point);
-	VectorMA (point, frame->left, right, point);
-	glVertex3fv (point);
+	texcoords[4 + 0] = 1;
+	texcoords[4 + 1] = 0;
 
-	glTexCoord2f (1, 0);
-	VectorMA (e->origin, frame->up, up, point);
-	VectorMA (point, frame->right, right, point);
-	glVertex3fv (point);
+	texcoords[6 + 0] = 1;
+	texcoords[6 + 1] = 1;
 
-	glTexCoord2f (1, 1);
-	VectorMA (e->origin, frame->down, up, point);
-	VectorMA (point, frame->right, right, point);
-	glVertex3fv (point);
+	VectorMA(e->origin, frame->down, up, pointdown);
+	VectorMA(e->origin, frame->up, up, pointup);
 
-	glEnd ();
+	VectorMA(pointdown, frame->left, right, point);
+	coords[0 + 0] = point[0];
+	coords[0 + 1] = point[1];
+	coords[0 + 2] = point[2];
+
+	VectorMA(pointup, frame->left, right, point);
+	coords[3 + 0] = point[0];
+	coords[3 + 1] = point[1];
+	coords[3 + 2] = point[2];
+
+	VectorMA(pointup, frame->right, right, point);
+	coords[6 + 0] = point[0];
+	coords[6 + 1] = point[1];
+	coords[6 + 2] = point[2];
+
+	VectorMA(pointdown, frame->right, right, point);
+	coords[9 + 0] = point[0];
+	coords[9 + 1] = point[1];
+	coords[9 + 2] = point[2];
+
+	glVertexPointer(3, GL_FLOAT, 0, coords);
+	glTexCoordPointer(2, GL_FLOAT, 0, texcoords);
+	glDrawArrays(GL_QUADS, 0, 4);
 }
 
 

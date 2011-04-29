@@ -2,6 +2,7 @@
 #include <math.h>
 
 #include "gl_local.h"
+#include "gl_state.h"
 
 #include "particles.h"
 
@@ -50,9 +51,7 @@ void GL_DrawParticleBegin()
 		glDepthMask (GL_FALSE);
 	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 
-	glEnableClientState(GL_VERTEX_ARRAY);
-	glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-	glEnableClientState(GL_COLOR_ARRAY);
+	GL_SetArrays(FQ_GL_VERTEX_ARRAY | FQ_GL_COLOR_ARRAY | FQ_GL_TEXTURE_COORD_ARRAY);
 	glVertexPointer(3, GL_FLOAT, 0, particlevertices);
 	if (gl_vbo)
 	{
@@ -74,10 +73,6 @@ void GL_DrawParticleEnd()
 {
 	if (particleindex)
 		glDrawArrays(GL_TRIANGLES, 0, particleindex);
-
-	glDisableClientState(GL_COLOR_ARRAY);
-	glDisableClientState(GL_TEXTURE_COORD_ARRAY);
-	glDisableClientState(GL_VERTEX_ARRAY);
 
 	glDisable(GL_BLEND);
 	glDepthMask(GL_TRUE);
