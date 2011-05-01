@@ -302,7 +302,6 @@ struct input_data
 	pthread_t thread;
 	pthread_mutex_t mouse_mutex;
 	pthread_mutex_t key_mutex;
-	pthread_cond_t cond;
 
 	CFRunLoopRef threadrunloop;
 
