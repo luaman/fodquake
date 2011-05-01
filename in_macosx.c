@@ -28,6 +28,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "keys.h"
 #include "in_macosx.h"
+#include "vid.h"
+#include "sys.h"
 
 #define NUMBUTTONEVENTS 32
 
@@ -302,7 +304,6 @@ struct input_data
 	pthread_t thread;
 	pthread_mutex_t mouse_mutex;
 	pthread_mutex_t key_mutex;
-	pthread_cond_t cond;
 
 	CFRunLoopRef threadrunloop;
 
@@ -465,6 +466,15 @@ struct input_data *Sys_Input_Init()
 		input->ignore_mouse = 1;
 		input->key_repeat_initial_delay = 500000;
 		input->key_repeat_delay = 100000;
+		
+		NXEventHandle handle = NXOpenEventStatus();
+		if (handle)
+		{
+			input->key_repeat_initial_delay = NXKeyRepeatThreshold(handle) * 1000000; 
+			input->key_repeat_delay = NXKeyRepeatInterval(handle) * 1000000;
+			
+			NXCloseEventStatus(handle);
+		}
 
 		if (pthread_mutex_init(&input->mouse_mutex, 0) == 0)
 		{
@@ -472,15 +482,6 @@ struct input_data *Sys_Input_Init()
 			{
 				if (pthread_create(&input->thread, 0, Sys_Input_Thread, input) == 0)
 				{
-					NXEventHandle handle = NXOpenEventStatus();
-					if (handle)
-					{
-						input->key_repeat_initial_delay = NXKeyRepeatThreshold(handle) * 1000000; 
-						input->key_repeat_delay = NXKeyRepeatInterval(handle) * 1000000;
-
-						NXCloseEventStatus(handle);
-					}
-					
 					return input;
 				}
 
