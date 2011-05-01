@@ -19,6 +19,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 
 #include <IOKit/hid/IOHIDLib.h>
+#include <IOKit/hidsystem/event_status_driver.h>
 
 #undef true
 #undef false
@@ -299,7 +300,8 @@ struct buttonevent
 struct input_data
 {
 	pthread_t thread;
-	pthread_mutex_t mutex;
+	pthread_mutex_t mouse_mutex;
+	pthread_mutex_t key_mutex;
 	pthread_cond_t cond;
 
 	CFRunLoopRef threadrunloop;
@@ -314,6 +316,12 @@ struct input_data
 	struct buttonevent buttonevents[NUMBUTTONEVENTS];
 	unsigned int buttoneventhead;
 	unsigned int buttoneventtail;
+    
+	unsigned char repeatkey;
+	unsigned long long nextrepeattime;
+	
+	int key_repeat_initial_delay;
+	int key_repeat_delay;
 };
 
 static void sequencepointkthx()
@@ -343,8 +351,6 @@ static void input_callback(void *context, IOReturn result, void *sender, IOHIDVa
 	uint32_t usage = IOHIDElementGetUsage(elem);
 	uint32_t val = IOHIDValueGetIntegerValue(value);
 
-	//Com_Printf("in -> usage:%u, val:%d, page:%d\n", usage, val, page);
-
 	if (page == kHIDPage_GenericDesktop)
 	{
 		if (input->ignore_mouse)
@@ -355,14 +361,14 @@ static void input_callback(void *context, IOReturn result, void *sender, IOHIDVa
 		switch (usage)
 		{
 			case kHIDUsage_GD_X:
-				pthread_mutex_lock(&input->mutex);
+				pthread_mutex_lock(&input->mouse_mutex);
 				input->mouse_x += val;
-				pthread_mutex_unlock(&input->mutex);
+				pthread_mutex_unlock(&input->mouse_mutex);
 				break;
 			case kHIDUsage_GD_Y:
-				pthread_mutex_lock(&input->mutex);
+				pthread_mutex_lock(&input->mouse_mutex);
 				input->mouse_y += val;
-				pthread_mutex_unlock(&input->mutex);
+				pthread_mutex_unlock(&input->mouse_mutex);
 				break;
 			case kHIDUsage_GD_Wheel:
 				if ((int32_t)val > 0)
@@ -397,6 +403,21 @@ static void input_callback(void *context, IOReturn result, void *sender, IOHIDVa
 		if (usage < sizeof(keytable))
 		{
 			add_to_event_queue(input, keytable[usage], val ? true : false);
+			
+			pthread_mutex_lock(&input->key_mutex);
+
+			if (val)
+			{
+				input->repeatkey = keytable[usage];
+				input->nextrepeattime = Sys_IntTime() + input->key_repeat_initial_delay;
+			}
+			else
+			{
+				input->repeatkey = 0;
+				input->nextrepeattime = 0;
+			}
+			
+			pthread_mutex_unlock(&input->key_mutex);
 		}
 	}
 }
@@ -442,15 +463,31 @@ struct input_data *Sys_Input_Init()
 		memset(input, 0, sizeof(struct input_data));
 
 		input->ignore_mouse = 1;
+		input->key_repeat_initial_delay = 500000;
+		input->key_repeat_delay = 100000;
 
-		if (pthread_mutex_init(&input->mutex, 0) == 0)
+		if (pthread_mutex_init(&input->mouse_mutex, 0) == 0)
 		{
-			if (pthread_create(&input->thread, 0, Sys_Input_Thread, input) == 0)
+			if (pthread_mutex_init(&input->key_mutex, 0) == 0)
 			{
-				return input;
+				if (pthread_create(&input->thread, 0, Sys_Input_Thread, input) == 0)
+				{
+					NXEventHandle handle = NXOpenEventStatus();
+					if (handle)
+					{
+						input->key_repeat_initial_delay = NXKeyRepeatThreshold(handle) * 1000000; 
+						input->key_repeat_delay = NXKeyRepeatInterval(handle) * 1000000;
+
+						NXCloseEventStatus(handle);
+					}
+					
+					return input;
+				}
+
+				pthread_mutex_destroy(&input->key_mutex);
 			}
 
-			pthread_mutex_destroy(&input->mutex);
+			pthread_mutex_destroy(&input->mouse_mutex);
 		}
 
 		free(input);
@@ -466,13 +503,29 @@ void Sys_Input_Shutdown(struct input_data *input)
 
 	pthread_join(input->thread, 0);
 
-	pthread_mutex_destroy(&input->mutex);
+	pthread_mutex_destroy(&input->mouse_mutex);
+	pthread_mutex_destroy(&input->key_mutex);
 
 	free(input);
 }
 
 int Sys_Input_GetKeyEvent(struct input_data *input, keynum_t *keynum, qboolean *down)
 {
+	pthread_mutex_lock(&input->key_mutex);
+	
+	if (input->repeatkey)
+	{
+		long long curtime = Sys_IntTime();
+
+		while (input->nextrepeattime <= curtime)
+		{
+			add_to_event_queue(input, input->repeatkey, true);
+			input->nextrepeattime += input->key_repeat_delay;
+		}
+	}
+	
+	pthread_mutex_unlock(&input->key_mutex);
+
 	if (input->buttoneventhead == input->buttoneventtail)
 	{
 		return 0;
@@ -490,7 +543,7 @@ int Sys_Input_GetKeyEvent(struct input_data *input, keynum_t *keynum, qboolean *
 
 void Sys_Input_GetMouseMovement(struct input_data *input, int *mouse_x, int *mouse_y)
 {
-	pthread_mutex_lock(&input->mutex);
+	pthread_mutex_lock(&input->mouse_mutex);
 
 	*mouse_x = input->mouse_x;
 	*mouse_y = input->mouse_y;
@@ -498,7 +551,7 @@ void Sys_Input_GetMouseMovement(struct input_data *input, int *mouse_x, int *mou
 	input->mouse_x = 0;
 	input->mouse_y = 0;
 
-	pthread_mutex_unlock(&input->mutex);
+	pthread_mutex_unlock(&input->mouse_mutex);
 }
 
 void Sys_Input_GrabMouse(struct input_data *input, int dograb)
