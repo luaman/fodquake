@@ -183,9 +183,9 @@ ifeq ($(OS), macosx)
 		vid_coregl.o \
 		in_macosx.o
 
-	OSGLLDFLAGS = -framework OpenGL -framework ApplicationServices -framework AudioUnit -framework CoreServices -framework IOKit
+	OSGLLDFLAGS = -framework OpenGL -framework ApplicationServices -framework AudioUnit -framework CoreServices -framework IOKit -L/opt/local/lib -lpng -ljpeg
 
-	OSCFLAGS = -D__MACOSX__
+	OSCFLAGS = -D__MACOSX__ -I/opt/local/include
 endif
 
 # CPU specific settings
