@@ -484,7 +484,11 @@ void FS_InitFilesystem(void)
 	if ((i = COM_CheckParm("-basedir")) && i < com_argc - 1)
 		Q_strncpyz(com_basedir, com_argv[i + 1], sizeof(com_basedir));
 	else
-		getcwd(com_basedir, sizeof(com_basedir) - 1);
+#ifdef __MACOSX__
+		snprintf(com_basedir, sizeof(com_basedir), "%s/.fodquake", getenv("HOME"));
+#else
+ 		getcwd(com_basedir, sizeof(com_basedir) - 1);
+#endif
 
 	for (i = 0; i < strlen(com_basedir); i++)
 		if (com_basedir[i] == '\\')
