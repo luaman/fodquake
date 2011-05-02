@@ -103,7 +103,6 @@ cvar_t	gl_clearColor = {"gl_clearColor", "0 0 0", 0, OnChange_gl_clearColor};
 cvar_t	gl_cull = {"gl_cull", "1"};
 cvar_t	gl_ztrick = {"gl_ztrick", "0"};
 cvar_t	gl_smoothmodels = {"gl_smoothmodels", "1"};
-cvar_t	gl_affinemodels = {"gl_affinemodels", "0"};
 cvar_t	gl_polyblend = {"gl_polyblend", "1"};
 cvar_t	gl_flashblend = {"gl_flashblend", "0"};
 cvar_t	gl_playermip = {"gl_playermip", "0"};
@@ -592,9 +591,6 @@ static void R_DrawAliasModelList2TMU(entity_t *ent, unsigned int entcount)
 	if (gl_smoothmodels.value)
 		glShadeModel (GL_SMOOTH);
 
-	if (gl_affinemodels.value)
-		glHint (GL_PERSPECTIVE_CORRECTION_HINT, GL_FASTEST);
-
 	c_alias_polys += paliashdr->numtris * entcount;
 	anim = (int) (cl.time * 10) & 3;
 
@@ -769,9 +765,6 @@ static void R_DrawAliasModelList2TMU(entity_t *ent, unsigned int entcount)
 	if (gl_smoothmodels.value)
 		glShadeModel (GL_FLAT);
 
-	if (gl_affinemodels.value)
-		glHint (GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
-
 	glColor3ubv (color_white);
 }
 
@@ -899,9 +892,6 @@ static void R_DrawAliasModel(entity_t *ent)
 	if (gl_smoothmodels.value)
 		glShadeModel (GL_SMOOTH);
 
-	if (gl_affinemodels.value)
-		glHint (GL_PERSPECTIVE_CORRECTION_HINT, GL_FASTEST);
-
 	if (fb_texture && gl_mtexable)
 	{
 		GL_Bind (texture);
@@ -934,9 +924,6 @@ static void R_DrawAliasModel(entity_t *ent)
 
 	if (gl_smoothmodels.value)
 		glShadeModel (GL_FLAT);
-
-	if (gl_affinemodels.value)
-		glHint (GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
 
 	glPopMatrix ();
 
@@ -1307,7 +1294,6 @@ void R_CvarInit(void)
 	Cvar_SetCurrentGroup(CVAR_GROUP_OPENGL);
 	Cvar_Register (&r_farclip);
 	Cvar_Register (&gl_smoothmodels);
-	Cvar_Register (&gl_affinemodels);
 	Cvar_Register (&gl_clear);
 	Cvar_Register (&gl_clearColor);
 	Cvar_Register (&gl_cull);
