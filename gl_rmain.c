@@ -1027,6 +1027,7 @@ static void R_DrawViewModel(void)
 void R_PolyBlend (void)
 {
 	extern cvar_t gl_hwblend;
+	float coords[4*2];
 
 	if (VID_HWGammaSupported() && gl_hwblend.value && !cl.teamfortress)
 		return;
@@ -1038,12 +1039,20 @@ void R_PolyBlend (void)
 
 	glColor4fv (v_blend);
 
-	glBegin (GL_QUADS);
-	glVertex2f (r_refdef.vrect.x, r_refdef.vrect.y);
-	glVertex2f (r_refdef.vrect.x + r_refdef.vrect.width, r_refdef.vrect.y);
-	glVertex2f (r_refdef.vrect.x + r_refdef.vrect.width, r_refdef.vrect.y + r_refdef.vrect.height);
-	glVertex2f (r_refdef.vrect.x, r_refdef.vrect.y + r_refdef.vrect.height);
-	glEnd ();
+	coords[0*2 + 0] = r_refdef.vrect.x;
+	coords[0*2 + 1] = r_refdef.vrect.y;
+	coords[1*2 + 0] = r_refdef.vrect.x + r_refdef.vrect.width;
+	coords[1*2 + 1] = r_refdef.vrect.y;
+	coords[2*2 + 0] = r_refdef.vrect.x + r_refdef.vrect.width;
+	coords[2*2 + 1] = r_refdef.vrect.y + r_refdef.vrect.height;
+	coords[3*2 + 0] = r_refdef.vrect.x;
+	coords[3*2 + 1] = r_refdef.vrect.y + r_refdef.vrect.height;
+
+	GL_SetArrays(FQ_GL_VERTEX_ARRAY);
+
+	glVertexPointer(2, GL_FLOAT, 0, coords);
+
+	glDrawArrays(GL_QUADS, 0, 4);
 
 	glEnable (GL_TEXTURE_2D);
 
@@ -1054,6 +1063,13 @@ void R_BrightenScreen (void)
 {
 	extern float vid_gamma;
 	float f;
+	float coords[4*2];
+	unsigned int colours[4];
+	union
+	{
+		unsigned char uc[4];
+		unsigned int ui;
+	} col;
 
 	if (VID_HWGammaSupported())
 		return;
@@ -1066,20 +1082,47 @@ void R_BrightenScreen (void)
 	GL_SetAlphaTestBlend(0, 1);
 	glDisable (GL_TEXTURE_2D);
 	glBlendFunc (GL_DST_COLOR, GL_ONE);
-	glBegin (GL_QUADS);
+
+	coords[0*2 + 0] = 0;
+	coords[0*2 + 1] = 0;
+	coords[1*2 + 0] = vid.conwidth;
+	coords[1*2 + 1] = 0;
+	coords[2*2 + 0] = vid.conwidth;
+	coords[2*2 + 1] = vid.conheight;
+	coords[3*2 + 0] = 0;
+	coords[3*2 + 1] = vid.conheight;
+
+	GL_SetArrays(FQ_GL_VERTEX_ARRAY | FQ_GL_TEXTURE_COORD_ARRAY);
+	glVertexPointer(2, GL_FLOAT, 0, coords);
+	glColorPointer(4, GL_UNSIGNED_BYTE, 0, colours);
+
+	if (f > 2)
+	{
+		colours[0] = 0xffffffff;
+		colours[1] = 0xffffffff;
+		colours[2] = 0xffffffff;
+		colours[3] = 0xffffffff;
+	}
+
 	while (f > 1)
 	{
-		if (f >= 2)
-			glColor3ubv (color_white);
-		else
-			glColor3f (f - 1, f - 1, f - 1);
-		glVertex2f (0, 0);
-		glVertex2f (vid.conwidth, 0);
-		glVertex2f (vid.conwidth, vid.conheight);
-		glVertex2f (0, vid.conheight);
+		if (f < 2)
+		{
+			col.uc[0] = (f - 1) * 255;
+			col.uc[1] = (f - 1) * 255;
+			col.uc[2] = (f - 1) * 255;
+			col.uc[3] = 255;
+
+			colours[0] = col.ui;
+			colours[1] = col.ui;
+			colours[2] = col.ui;
+			colours[3] = col.ui;
+		}
+
+		glDrawArrays(GL_QUADS, 0, 4);
+
 		f *= 0.5;
 	}
-	glEnd ();
 	glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glEnable (GL_TEXTURE_2D);
 	glColor3ubv (color_white);
