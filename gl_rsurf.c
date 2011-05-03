@@ -110,7 +110,7 @@ static void R_RenderFullbrights (void)
 		return;
 
 	glDepthMask (GL_FALSE);	// don't bother writing Z
-	glEnable(GL_ALPHA_TEST);
+	GL_SetAlphaTestBlend(1, 0);
 
 
 	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
@@ -125,7 +125,6 @@ static void R_RenderFullbrights (void)
 		fullbright_polys[i] = NULL;
 	}
 
-	glDisable(GL_ALPHA_TEST);
 	glDepthMask (GL_TRUE);
 
 	drawfullbrights = false;
@@ -140,7 +139,7 @@ static void R_RenderLumas (void)
 		return;
 
 	glDepthMask (GL_FALSE);	// don't bother writing Z
-	glEnable(GL_BLEND);
+	GL_SetAlphaTestBlend(0, 1);
 	glBlendFunc(GL_ONE, GL_ONE);
 
 	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
@@ -174,7 +173,7 @@ static void EmitDetailPolys (void)
 	GL_Bind(detailtexture);
 	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
 	glBlendFunc(GL_DST_COLOR, GL_SRC_COLOR);
-	glEnable(GL_BLEND);
+	GL_SetAlphaTestBlend(0, 1);
 
 	for (p = detail_polys; p; p = p->detail_chain)
 	{
@@ -190,7 +189,6 @@ static void EmitDetailPolys (void)
 
 	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	glDisable(GL_BLEND);
 
 	detail_polys = NULL;
 }
@@ -603,8 +601,7 @@ static void R_BlendLightmaps (void)
 	else
 		glBlendFunc (GL_ZERO, GL_SRC_COLOR);
 
-	if (!r_lightmap.value)
-		glEnable (GL_BLEND);
+	GL_SetAlphaTestBlend(0, !r_lightmap.value);
 
 	for (i = 0; i < MAX_LIGHTMAPS; i++)
 	{
@@ -626,7 +623,6 @@ static void R_BlendLightmaps (void)
 		}
 		lightmap_polys[i] = NULL;
 	}
-	glDisable (GL_BLEND);
 	glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glDepthMask (GL_TRUE);		// back to normal Z buffering
 }
@@ -734,9 +730,10 @@ void R_DrawWaterSurfaces (void)
 
 	wateralpha = cl.watervis ? bound(0, r_wateralpha.value, 1) : 1;
 
+	GL_SetAlphaTestBlend(0, wateralpha < 1);
+
 	if (wateralpha < 1.0)
 	{
-		glEnable (GL_BLEND);
 		glColor4f (1, 1, 1, wateralpha);
 		glTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 		if (wateralpha < 0.9)
@@ -757,7 +754,6 @@ void R_DrawWaterSurfaces (void)
 		glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
 
 		glColor3ubv (color_white);
-		glDisable (GL_BLEND);
 		if (wateralpha < 0.9)
 			glDepthMask (GL_TRUE);
 	}
@@ -774,7 +770,7 @@ static void R_DrawAlphaChain (void)
 	if (!alphachain)
 		return;
 
-	glEnable(GL_ALPHA_TEST);
+	GL_SetAlphaTestBlend(1, 0);
 
 	for (s = alphachain; s; s = s->texturechain)
 	{
@@ -819,7 +815,6 @@ static void R_DrawAlphaChain (void)
 
 	alphachain = NULL;
 
-	glDisable(GL_ALPHA_TEST);
 	GL_DisableMultitexture();
 }
 

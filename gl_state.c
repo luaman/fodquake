@@ -1,6 +1,32 @@
 #include "gl_local.h"
 #include "gl_state.h"
 
+void GL_SetAlphaTestBlend(int alphatest, int blend)
+{
+	static int old_alphatest = 2;
+	static int old_blend = 2;
+
+	if (alphatest != old_alphatest)
+	{
+		if (alphatest)
+			glEnable(GL_ALPHA_TEST);
+		else
+			glDisable(GL_ALPHA_TEST);
+
+		old_alphatest = alphatest;
+	}
+
+	if (blend != old_blend)
+	{
+		if (blend)
+			glEnable(GL_BLEND);
+		else
+			glDisable(GL_BLEND);
+
+		old_blend = blend;
+	}
+}
+
 void GL_SetArrays(unsigned int arrays)
 {
 	static unsigned int old_arrays;

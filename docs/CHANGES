@@ -41,6 +41,7 @@ Version 0.3
   playdemo, alias, etc) now have special tab completion functionality.
 - Rewrote the console handling code. It now uses less memory, can handle
   markups (such as colours) and context are relayout on console size change.
+- Removed the gl_affinemodels cvar.
 
 Version 0.2
 ===========

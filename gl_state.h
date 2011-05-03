@@ -5,5 +5,6 @@
 #define FQ_GL_TEXTURE_COORD_ARRAY_1 (1<<3)
 #define FQ_GL_TEXTURE_COORD_ARRAY_2 (1<<4)
 
+void GL_SetAlphaTestBlend(int alphatest, int blend);
 void GL_SetArrays(unsigned int arrays);
 

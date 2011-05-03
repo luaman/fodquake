@@ -25,6 +25,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "quakedef.h"
 #include "gl_local.h"
+#include "gl_state.h"
 
 #ifdef _WIN32
 #define qglGetProcAddress wglGetProcAddress
@@ -214,6 +215,8 @@ void GL_Init (void)
 	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
 
 	GL_CheckExtensions();
+
+	GL_SetArrays(0);
 }
 
 /************************************* VID GAMMA *************************************/

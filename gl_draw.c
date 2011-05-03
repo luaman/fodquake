@@ -410,19 +410,35 @@ void DrawImp_Shutdown()
 
 __inline static void Draw_CharPoly(int x, int y, int num)
 {
+	float coords[4*2];
+	float texcoords[4*2];
 	float frow, fcol;
 
 	frow = (num >> 4) * 0.0625;
 	fcol = (num & 15) * 0.0625;
 
-	glTexCoord2f (fcol, frow);
-	glVertex2f (x, y);
-	glTexCoord2f (fcol + 0.0625, frow);
-	glVertex2f (x + 8, y);
-	glTexCoord2f (fcol + 0.0625, frow + 0.03125);
-	glVertex2f (x + 8, y + 8);
-	glTexCoord2f (fcol, frow + 0.03125);
-	glVertex2f (x, y + 8);
+	coords[0*2 + 0] = x;
+	coords[0*2 + 1] = y;
+	coords[1*2 + 0] = x + 8;
+	coords[1*2 + 1] = y;
+	coords[2*2 + 0] = x + 8;
+	coords[2*2 + 1] = y + 8;
+	coords[3*2 + 0] = x;
+	coords[3*2 + 1] = y + 8;
+
+	texcoords[0*2 + 0] = fcol;
+	texcoords[0*2 + 1] = frow;
+	texcoords[1*2 + 0] = fcol + 0.0625;
+	texcoords[1*2 + 1] = frow;
+	texcoords[2*2 + 0] = fcol + 0.0625;
+	texcoords[2*2 + 1] = frow + 0.03125;
+	texcoords[3*2 + 0] = fcol;
+	texcoords[3*2 + 1] = frow + 0.03125;
+
+	GL_SetArrays(FQ_GL_VERTEX_ARRAY | FQ_GL_TEXTURE_COORD_ARRAY);
+	glVertexPointer(2, GL_FLOAT, 0, coords);
+	glTexCoordPointer(2, GL_FLOAT, 0, texcoords);
+	glDrawArrays(GL_QUADS, 0, 4);
 }
 
 static int textrenderingenabled;
@@ -568,9 +584,7 @@ void DrawImp_Character(int x, int y, unsigned char num)
 
 	GL_Bind(char_texture);
 
-	glBegin(GL_QUADS);
 	Draw_CharPoly(x, y, num);
-	glEnd();
 }
 
 void Draw_BeginTextRendering()
@@ -578,6 +592,7 @@ void Draw_BeginTextRendering()
 	if (!textrenderingenabled)
 	{
 		GL_Bind(char_texture);
+		GL_SetAlphaTestBlend(1, 0);
 		GL_SetArrays(FQ_GL_VERTEX_ARRAY | FQ_GL_TEXTURE_COORD_ARRAY);
 
 		glVertexPointer(2, GL_FLOAT, 0, fontvertices);
@@ -608,6 +623,7 @@ void Draw_BeginColoredTextRendering()
 	if (!textrenderingenabled)
 	{
 		GL_Bind(char_texture);
+		GL_SetAlphaTestBlend(1, 0);
 		GL_SetArrays(FQ_GL_VERTEX_ARRAY | FQ_GL_COLOR_ARRAY | FQ_GL_TEXTURE_COORD_ARRAY);
 
 		glVertexPointer(2, GL_FLOAT, 0, fontvertices);
@@ -633,6 +649,14 @@ void Draw_Crosshair(void)
 	float x, y, ofs1, ofs2, sh, th, sl, tl;
 	byte *col;
 	extern vrect_t scr_vrect;
+	float coords[4*2];
+	static const float texcoords[4*2] =
+	{
+		0, 0,
+		1, 0,
+		1, 1,
+		0, 1,
+	};
 
 	if ((crosshair.value >= 2 && crosshair.value <= NUMCROSSHAIRS + 1)
 	 || ((customcrosshair_loaded & CROSSHAIR_TXT) && crosshair.value == 1)
@@ -650,13 +674,13 @@ void Draw_Crosshair(void)
 
 		if (gl_crosshairalpha.value)
 		{
-			glDisable(GL_ALPHA_TEST);
-			glEnable (GL_BLEND);
+			GL_SetAlphaTestBlend(0, 1);
 			col[3] = bound(0, gl_crosshairalpha.value, 1) * 255;
 			glColor4ubv (col);
 		}
 		else
 		{
+			GL_SetAlphaTestBlend(0, 0);
 			glColor3ubv (col);
 		}
 
@@ -676,22 +700,19 @@ void Draw_Crosshair(void)
 		ofs1 *= (vid.conwidth / 320) * bound(0, crosshairsize.value, 20);
 		ofs2 *= (vid.conwidth / 320) * bound(0, crosshairsize.value, 20);
 
-		glBegin(GL_QUADS);
-		glTexCoord2f(0.0, 0.0);
-		glVertex2f(x - ofs1, y - ofs1);
-		glTexCoord2f(1.0, 0.0);
-		glVertex2f(x + ofs2, y - ofs1);
-		glTexCoord2f(1.0, 1.0);
-		glVertex2f(x + ofs2, y + ofs2);
-		glTexCoord2f(0.0, 1.0);
-		glVertex2f(x - ofs1, y + ofs2);
-		glEnd();
+		coords[0*2 + 0] = x - ofs1;
+		coords[0*2 + 1] = y - ofs1;
+		coords[2*2 + 0] = x + ofs2;
+		coords[2*2 + 1] = y - ofs1;
+		coords[4*2 + 0] = x + ofs2;
+		coords[4*2 + 1] = y + ofs2;
+		coords[6*2 + 0] = x - ofs1;
+		coords[6*2 + 1] = y + ofs2;
 
-		if (gl_crosshairalpha.value)
-		{
-			glDisable(GL_BLEND);
-			glEnable(GL_ALPHA_TEST);
-		}
+		GL_SetArrays(FQ_GL_VERTEX_ARRAY | FQ_GL_TEXTURE_COORD_ARRAY);
+		glVertexPointer(2, GL_FLOAT, 0, coords);
+		glTexCoordPointer(2, GL_FLOAT, 0, texcoords);
+		glDrawArrays(GL_QUADS, 0, 4);
 
 		glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
 		glColor3ubv(color_white);
@@ -705,15 +726,15 @@ void Draw_Crosshair(void)
 void Draw_AlphaFill(int x, int y, int w, int h, int c, float alpha)
 {
 	alpha = bound(0, alpha, 1);
+	float coords[4*2];
 
 	if (!alpha)
 		return;
 
 	glDisable(GL_TEXTURE_2D);
+	GL_SetAlphaTestBlend(0, alpha < 1);
 	if (alpha < 1)
 	{
-		glEnable(GL_BLEND);
-		glDisable(GL_ALPHA_TEST);
 		glColor4f(host_basepal[c * 3] / 255.0,  host_basepal[c * 3 + 1] / 255.0, host_basepal[c * 3 + 2] / 255.0, alpha);
 	}
 	else
@@ -721,19 +742,24 @@ void Draw_AlphaFill(int x, int y, int w, int h, int c, float alpha)
 		glColor3f(host_basepal[c * 3] / 255.0, host_basepal[c * 3 + 1] / 255.0, host_basepal[c * 3 + 2]  /255.0);
 	}
 
-	glBegin(GL_QUADS);
-	glVertex2f(x, y);
-	glVertex2f(x + w, y);
-	glVertex2f(x + w, y + h);
-	glVertex2f(x, y + h);
-	glEnd();
+	coords[0 + 0] = x;
+	coords[0 + 1] = y;
+
+	coords[2 + 0] = x + w;
+	coords[2 + 1] = y;
+
+	coords[4 + 0] = x + w;
+	coords[4 + 1] = y + h;
+
+	coords[6 + 0] = x;
+	coords[6 + 1] = y + h;
+
+	GL_SetArrays(FQ_GL_VERTEX_ARRAY);
+	glVertexPointer(2, GL_FLOAT, 0, coords);
+	glDrawArrays(GL_QUADS, 0, 4);
 
 	glEnable(GL_TEXTURE_2D);
-	if (alpha < 1)
-	{
-		glEnable(GL_ALPHA_TEST);
-		glDisable(GL_BLEND);
-	}
+
 	glColor3ubv(color_white);
 }
 
@@ -747,6 +773,7 @@ void Draw_Fill(int x, int y, int w, int h, int c)
 void Draw_FadeScreen(void)
 {
 	float alpha;
+	float coords[4*2];
 
 	alpha = bound(0, scr_menualpha.value, 1);
 	if (!alpha)
@@ -754,28 +781,32 @@ void Draw_FadeScreen(void)
 
 	if (alpha < 1)
 	{
-		glDisable(GL_ALPHA_TEST);
-		glEnable(GL_BLEND);
+		GL_SetAlphaTestBlend(0, 1);
 		glColor4f(0, 0, 0, alpha);
 	}
 	else
 	{
+		GL_SetAlphaTestBlend(0, 0);
 		glColor3f(0, 0, 0);
 	}
 	glDisable(GL_TEXTURE_2D);
 
-	glBegin(GL_QUADS);
-	glVertex2f(0, 0);
-	glVertex2f(vid.conwidth, 0);
-	glVertex2f(vid.conwidth, vid.conheight);
-	glVertex2f(0, vid.conheight);
-	glEnd();
+	coords[0 + 0] = 0;
+	coords[0 + 1] = 0;
 
-	if (alpha < 1)
-	{
-		glDisable(GL_BLEND);
-		glEnable(GL_ALPHA_TEST);
-	}
+	coords[2 + 0] = vid.conwidth;
+	coords[2 + 1] = 0;
+
+	coords[4 + 0] = vid.conwidth;
+	coords[4 + 1] = vid.conheight;
+
+	coords[6 + 0] = 0;
+	coords[6 + 1] = vid.conheight;
+
+	GL_SetArrays(FQ_GL_VERTEX_ARRAY);
+	glVertexPointer(2, GL_FLOAT, 0, coords);
+	glDrawArrays(GL_QUADS, 0, 4);
+
 	glColor3ubv(color_white);
 	glEnable(GL_TEXTURE_2D);
 
@@ -804,8 +835,6 @@ void GL_Set2D(void)
 
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_CULL_FACE);
-	glDisable(GL_BLEND);
-	glEnable(GL_ALPHA_TEST);
 
 	glColor3ubv(color_white);
 }
@@ -1082,25 +1111,46 @@ void Draw_DrawPicture(struct Picture *picture, int x, int y, unsigned int width,
 
 void Draw_DrawPictureAlpha(struct Picture *picture, int x, int y, unsigned int width, unsigned int height, float alpha)
 {
+	float coords[4*2];
+	static const float texcoords[4*2] =
+	{
+		0, 0,
+		1, 0,
+		1, 1,
+		0, 1,
+	};
+
 	if (alpha < 0)
 		alpha = 0;
 
 	if (alpha > 1)
 		alpha = 1;
 
-	glDisable(GL_ALPHA_TEST);
-	glEnable(GL_BLEND);
+	GL_SetAlphaTestBlend(0, 1);
 	glColor4f(1, 1, 1, alpha);
 	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-	Draw_DrawPicture(picture, x, y, width, height);
+	GL_Bind(picture->texnum);
+
+	coords[0*2 + 0] = x;
+	coords[0*2 + 1] = y;
+	coords[1*2 + 0] = x + width;
+	coords[1*2 + 1] = y;
+	coords[2*2 + 0] = x + width;
+	coords[2*2 + 1] = y + height;
+	coords[3*2 + 0] = x;
+	coords[3*2 + 1] = y + height;
+
+	GL_SetArrays(FQ_GL_VERTEX_ARRAY | FQ_GL_TEXTURE_COORD_ARRAY);
+	glVertexPointer(2, GL_FLOAT, 0, coords);
+	glTexCoordPointer(2, GL_FLOAT, 0, texcoords);
+
+	glDrawArrays(GL_QUADS, 0, 4);
 
 	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
 	glColor3ubv(color_white);
-	glDisable(GL_BLEND);
-	glEnable(GL_ALPHA_TEST);
 }
 
 void Draw_DrawSubPicture(struct Picture *picture, unsigned int sx, unsigned int sy, unsigned int swidth, unsigned int sheight, int x, int y, unsigned int width, unsigned int height)

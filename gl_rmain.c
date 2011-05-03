@@ -103,7 +103,6 @@ cvar_t	gl_clearColor = {"gl_clearColor", "0 0 0", 0, OnChange_gl_clearColor};
 cvar_t	gl_cull = {"gl_cull", "1"};
 cvar_t	gl_ztrick = {"gl_ztrick", "0"};
 cvar_t	gl_smoothmodels = {"gl_smoothmodels", "1"};
-cvar_t	gl_affinemodels = {"gl_affinemodels", "0"};
 cvar_t	gl_polyblend = {"gl_polyblend", "1"};
 cvar_t	gl_flashblend = {"gl_flashblend", "0"};
 cvar_t	gl_playermip = {"gl_playermip", "0"};
@@ -336,8 +335,7 @@ static void GL_DrawAliasFrame_Lerp(aliashdr_t *paliashdr, int pose1, int pose2, 
 
 	order = paliashdr->commands;
 
-	if (r_modelalpha < 1)
-		glEnable(GL_BLEND);
+	GL_SetAlphaTestBlend(0, r_modelalpha<1);
 
 	while ((count = *order++))
 	{
@@ -387,9 +385,6 @@ static void GL_DrawAliasFrame_Lerp(aliashdr_t *paliashdr, int pose1, int pose2, 
 
 		glEnd();
 	}
-
-	if (r_modelalpha < 1)
-		glDisable(GL_BLEND);
 }
 
 static void GL_DrawAliasFrame_NoLerp(aliashdr_t *paliashdr, int pose, qboolean mtex)
@@ -411,8 +406,7 @@ static void GL_DrawAliasFrame_NoLerp(aliashdr_t *paliashdr, int pose, qboolean m
 
 	order = paliashdr->commands;
 
-	if (r_modelalpha < 1)
-		glEnable(GL_BLEND);
+	GL_SetAlphaTestBlend(0, r_modelalpha<1);
 
 	if (gl_vbo)
 	{
@@ -504,9 +498,6 @@ static void GL_DrawAliasFrame_NoLerp(aliashdr_t *paliashdr, int pose, qboolean m
 			glEnd();
 		}
 	}
-
-	if (r_modelalpha < 1)
-		glDisable(GL_BLEND);
 }
 
 static void GL_DrawAliasFrame(aliashdr_t *paliashdr, int pose1, int pose2, qboolean mtex)
@@ -658,9 +649,6 @@ static void R_DrawAliasModelList2TMU(entity_t *ent, unsigned int entcount)
 
 	if (gl_smoothmodels.value)
 		glShadeModel (GL_SMOOTH);
-
-	if (gl_affinemodels.value)
-		glHint (GL_PERSPECTIVE_CORRECTION_HINT, GL_FASTEST);
 
 	c_alias_polys += paliashdr->numtris * entcount;
 	anim = (int) (cl.time * 10) & 3;
@@ -836,9 +824,6 @@ static void R_DrawAliasModelList2TMU(entity_t *ent, unsigned int entcount)
 	if (gl_smoothmodels.value)
 		glShadeModel (GL_FLAT);
 
-	if (gl_affinemodels.value)
-		glHint (GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
-
 	glColor3ubv (color_white);
 }
 
@@ -966,9 +951,6 @@ static void R_DrawAliasModel(entity_t *ent)
 	if (gl_smoothmodels.value)
 		glShadeModel (GL_SMOOTH);
 
-	if (gl_affinemodels.value)
-		glHint (GL_PERSPECTIVE_CORRECTION_HINT, GL_FASTEST);
-
 	if (fb_texture && gl_mtexable)
 	{
 		GL_Bind (texture);
@@ -992,20 +974,15 @@ static void R_DrawAliasModel(entity_t *ent)
 		if (fb_texture)
 		{
 			glTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
-			glEnable (GL_ALPHA_TEST);
+			GL_SetAlphaTestBlend(1, 0);
 			GL_Bind (fb_texture);
 
 			R_SetupAliasFrame (oldframe, frame, paliashdr, false);
-
-			glDisable (GL_ALPHA_TEST);
 		}
 	}
 
 	if (gl_smoothmodels.value)
 		glShadeModel (GL_FLAT);
-
-	if (gl_affinemodels.value)
-		glHint (GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
 
 	glPopMatrix ();
 
@@ -1021,8 +998,7 @@ void R_DrawEntitiesOnList(visentlist_t *vislist)
 	if (!r_drawentities.value || !vislist->count)
 		return;
 
-	if (vislist->alpha)
-		glEnable (GL_ALPHA_TEST);
+	GL_SetAlphaTestBlend(vislist->alpha, 0);
 
 	// draw sprites separately, because of alpha_test
 	for (i = 0; i < vislist->count; i++)
@@ -1052,9 +1028,6 @@ void R_DrawEntitiesOnList(visentlist_t *vislist)
 				break;
 		}
 	}
-
-	if (vislist->alpha)
-		glDisable (GL_ALPHA_TEST);
 }
 
 static void R_DrawViewModel(void)
@@ -1113,28 +1086,34 @@ static void R_DrawViewModel(void)
 void R_PolyBlend (void)
 {
 	extern cvar_t gl_hwblend;
+	float coords[4*2];
 
 	if (VID_HWGammaSupported() && gl_hwblend.value && !cl.teamfortress)
 		return;
 	if (!v_blend[3])
 		return;
 
-	glDisable (GL_ALPHA_TEST);
-	glEnable (GL_BLEND);
+	GL_SetAlphaTestBlend(0, 1);
 	glDisable (GL_TEXTURE_2D);
 
 	glColor4fv (v_blend);
 
-	glBegin (GL_QUADS);
-	glVertex2f (r_refdef.vrect.x, r_refdef.vrect.y);
-	glVertex2f (r_refdef.vrect.x + r_refdef.vrect.width, r_refdef.vrect.y);
-	glVertex2f (r_refdef.vrect.x + r_refdef.vrect.width, r_refdef.vrect.y + r_refdef.vrect.height);
-	glVertex2f (r_refdef.vrect.x, r_refdef.vrect.y + r_refdef.vrect.height);
-	glEnd ();
+	coords[0*2 + 0] = r_refdef.vrect.x;
+	coords[0*2 + 1] = r_refdef.vrect.y;
+	coords[1*2 + 0] = r_refdef.vrect.x + r_refdef.vrect.width;
+	coords[1*2 + 1] = r_refdef.vrect.y;
+	coords[2*2 + 0] = r_refdef.vrect.x + r_refdef.vrect.width;
+	coords[2*2 + 1] = r_refdef.vrect.y + r_refdef.vrect.height;
+	coords[3*2 + 0] = r_refdef.vrect.x;
+	coords[3*2 + 1] = r_refdef.vrect.y + r_refdef.vrect.height;
 
-	glDisable (GL_BLEND);
+	GL_SetArrays(FQ_GL_VERTEX_ARRAY);
+
+	glVertexPointer(2, GL_FLOAT, 0, coords);
+
+	glDrawArrays(GL_QUADS, 0, 4);
+
 	glEnable (GL_TEXTURE_2D);
-	glEnable (GL_ALPHA_TEST);
 
 	glColor3ubv (color_white);
 }
@@ -1143,6 +1122,13 @@ void R_BrightenScreen (void)
 {
 	extern float vid_gamma;
 	float f;
+	float coords[4*2];
+	unsigned int colours[4];
+	union
+	{
+		unsigned char uc[4];
+		unsigned int ui;
+	} col;
 
 	if (VID_HWGammaSupported())
 		return;
@@ -1152,26 +1138,52 @@ void R_BrightenScreen (void)
 	f = min (v_contrast.value, 3);
 	f = pow (f, vid_gamma);
 
+	GL_SetAlphaTestBlend(0, 1);
 	glDisable (GL_TEXTURE_2D);
-	glEnable (GL_BLEND);
 	glBlendFunc (GL_DST_COLOR, GL_ONE);
-	glBegin (GL_QUADS);
+
+	coords[0*2 + 0] = 0;
+	coords[0*2 + 1] = 0;
+	coords[1*2 + 0] = vid.conwidth;
+	coords[1*2 + 1] = 0;
+	coords[2*2 + 0] = vid.conwidth;
+	coords[2*2 + 1] = vid.conheight;
+	coords[3*2 + 0] = 0;
+	coords[3*2 + 1] = vid.conheight;
+
+	GL_SetArrays(FQ_GL_VERTEX_ARRAY | FQ_GL_TEXTURE_COORD_ARRAY);
+	glVertexPointer(2, GL_FLOAT, 0, coords);
+	glColorPointer(4, GL_UNSIGNED_BYTE, 0, colours);
+
+	if (f > 2)
+	{
+		colours[0] = 0xffffffff;
+		colours[1] = 0xffffffff;
+		colours[2] = 0xffffffff;
+		colours[3] = 0xffffffff;
+	}
+
 	while (f > 1)
 	{
-		if (f >= 2)
-			glColor3ubv (color_white);
-		else
-			glColor3f (f - 1, f - 1, f - 1);
-		glVertex2f (0, 0);
-		glVertex2f (vid.conwidth, 0);
-		glVertex2f (vid.conwidth, vid.conheight);
-		glVertex2f (0, vid.conheight);
+		if (f < 2)
+		{
+			col.uc[0] = (f - 1) * 255;
+			col.uc[1] = (f - 1) * 255;
+			col.uc[2] = (f - 1) * 255;
+			col.uc[3] = 255;
+
+			colours[0] = col.ui;
+			colours[1] = col.ui;
+			colours[2] = col.ui;
+			colours[3] = col.ui;
+		}
+
+		glDrawArrays(GL_QUADS, 0, 4);
+
 		f *= 0.5;
 	}
-	glEnd ();
 	glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glEnable (GL_TEXTURE_2D);
-	glDisable (GL_BLEND);
 	glColor3ubv (color_white);
 }
 
@@ -1319,8 +1331,7 @@ static void R_SetupGL (void)
 	else
 		glDisable(GL_CULL_FACE);
 
-	glDisable(GL_BLEND);
-	glDisable(GL_ALPHA_TEST);
+	GL_SetAlphaTestBlend(0, 0);
 	glEnable(GL_DEPTH_TEST);
 }
 
@@ -1385,7 +1396,6 @@ void R_CvarInit(void)
 	Cvar_SetCurrentGroup(CVAR_GROUP_OPENGL);
 	Cvar_Register (&r_farclip);
 	Cvar_Register (&gl_smoothmodels);
-	Cvar_Register (&gl_affinemodels);
 	Cvar_Register (&gl_clear);
 	Cvar_Register (&gl_clearColor);
 	Cvar_Register (&gl_cull);

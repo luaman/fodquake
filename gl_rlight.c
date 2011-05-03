@@ -22,6 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "quakedef.h"
 #include "gl_local.h"
+#include "gl_state.h"
 
 int	r_dlightframecount;
 
@@ -136,7 +137,7 @@ void R_RenderDlights (void) {
 	glDepthMask (GL_FALSE);
 	glDisable (GL_TEXTURE_2D);
 	glShadeModel (GL_SMOOTH);
-	glEnable (GL_BLEND);
+	GL_SetAlphaTestBlend(0, 1);
 	glBlendFunc (GL_ONE, GL_ONE);
 
 	l = cl_dlights;
@@ -150,7 +151,6 @@ void R_RenderDlights (void) {
 	}
 
 	glColor3ubv (color_white);
-	glDisable (GL_BLEND);
 	glEnable (GL_TEXTURE_2D);
 	glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glDepthMask (GL_TRUE);
