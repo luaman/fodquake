@@ -641,31 +641,31 @@ void DumpConfig(char *name)	{
 void SaveConfig_f(void)	{
 	char *filename, *filename_ext, *backupname_ext;
 	FILE *f;
-    static int call_count = 0;
+	static int call_count = 0;
 
 	if (Cmd_Argc() > 2) {
 		Com_Printf("Usage: %s <filename>\n", Cmd_Argv(0));
 		return;
 	}
 
-    if (Cmd_Argc() == 2)
-    {
-        filename = COM_SkipPath(Cmd_Argv(1));
-        COM_ForceExtension(filename, ".cfg");
-        call_count = 0;
-    }
-    else
-    {
-        if (call_count == 0)
-        {
-            Com_Printf("please call %s again to save your current setup as default\n",Cmd_Argv(0));
-            call_count++;
-            return;
-        }
+	if (Cmd_Argc() == 2)
+	{
+		filename = COM_SkipPath(Cmd_Argv(1));
+		COM_ForceExtension(filename, ".cfg");
+		call_count = 0;
+	}
+	else
+	{
+		if (call_count == 0)
+		{
+			Com_Printf("please call %s again to save your current setup as default\n",Cmd_Argv(0));
+			call_count++;
+			return;
+		}
 
-        filename = "default.cfg";
-        call_count = 0;
-    }
+		filename = "default.cfg";
+		call_count = 0;
+	}
 
 
 	if (cfg_backup.value) {
