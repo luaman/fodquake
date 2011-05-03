@@ -702,12 +702,12 @@ void Draw_Crosshair(void)
 
 		coords[0*2 + 0] = x - ofs1;
 		coords[0*2 + 1] = y - ofs1;
+		coords[1*2 + 0] = x + ofs2;
+		coords[1*2 + 1] = y - ofs1;
 		coords[2*2 + 0] = x + ofs2;
-		coords[2*2 + 1] = y - ofs1;
-		coords[4*2 + 0] = x + ofs2;
-		coords[4*2 + 1] = y + ofs2;
-		coords[6*2 + 0] = x - ofs1;
-		coords[6*2 + 1] = y + ofs2;
+		coords[2*2 + 1] = y + ofs2;
+		coords[3*2 + 0] = x - ofs1;
+		coords[3*2 + 1] = y + ofs2;
 
 		GL_SetArrays(FQ_GL_VERTEX_ARRAY | FQ_GL_TEXTURE_COORD_ARRAY);
 		glVertexPointer(2, GL_FLOAT, 0, coords);
