@@ -66,11 +66,12 @@ cvar_t	v_iroll_level = {"v_iroll_level", "0.1", 0, Change_v_idle};
 cvar_t	v_ipitch_level = {"v_ipitch_level", "0.3", 0, Change_v_idle};
 cvar_t	v_idlescale = {"v_idlescale", "0", 0, Change_v_idle};
 
-cvar_t	crosshair = {"crosshair", "2", CVAR_ARCHIVE};
-cvar_t	crosshaircolor = {"crosshaircolor", "79", CVAR_ARCHIVE};
-cvar_t	crosshairsize	= {"crosshairsize", "1"};
-cvar_t  cl_crossx = {"cl_crossx", "0", CVAR_ARCHIVE};
-cvar_t  cl_crossy = {"cl_crossy", "0", CVAR_ARCHIVE};
+static void PostChange_crosshairstuff(cvar_t *);
+cvar_t	crosshair = {"crosshair", "2", CVAR_ARCHIVE, 0, PostChange_crosshairstuff};
+cvar_t	crosshaircolor = {"crosshaircolor", "79", CVAR_ARCHIVE, 0, PostChange_crosshairstuff};
+cvar_t	crosshairsize	= {"crosshairsize", "1", 0, 0, PostChange_crosshairstuff};
+cvar_t  cl_crossx = {"cl_crossx", "0", CVAR_ARCHIVE, 0, PostChange_crosshairstuff};
+cvar_t  cl_crossy = {"cl_crossy", "0", CVAR_ARCHIVE, 0, PostChange_crosshairstuff};
 
 cvar_t  v_contentblend = {"v_contentblend", "1"};
 cvar_t	v_damagecshift = {"v_damagecshift", "0"};
@@ -93,6 +94,11 @@ static qboolean Change_v_idle(cvar_t *var, char *value)
 {
 	// Don't allow cheating in TF
 	return (cl.teamfortress && cls.state >= ca_connected &&	cbuf_current != &cbuf_svc);
+}
+
+static void PostChange_crosshairstuff(cvar_t *cvar)
+{
+	Draw_RecalcCrosshair();
 }
 
 float V_CalcRoll(vec3_t angles, vec3_t velocity)
