@@ -21,6 +21,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "quakedef.h"
 #include "gl_local.h"
+#include "gl_state.h"
 
 extern byte *draw_chars;   // 8 * 8 graphic characters
 
@@ -82,6 +83,14 @@ void R_NetGraph(void)
 	int a, x, i, y, lost;
 	char st[80];
 	unsigned ngraph_pixels[NET_GRAPHHEIGHT][NET_TIMINGS];
+	float coords[4*2];
+	static const float texcoords[4*2] =
+	{
+		0, 0,
+		1, 0,
+		1, 1,
+		0, 1,
+	};
 
 	x = 0;
 	lost = CL_CalcNet();
@@ -119,15 +128,18 @@ void R_NetGraph(void)
 	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-	glBegin(GL_QUADS);
-	glTexCoord2f(0, 0);
-	glVertex2f(x, y);
-	glTexCoord2f(1, 0);
-	glVertex2f(x + NET_TIMINGS, y);
-	glTexCoord2f(1, 1);
-	glVertex2f(x + NET_TIMINGS, y + NET_GRAPHHEIGHT);
-	glTexCoord2f(0, 1);
-	glVertex2f(x, y + NET_GRAPHHEIGHT);
-	glEnd();
+	coords[0*2 + 0] = x;
+	coords[0*2 + 1] = y;
+	coords[1*2 + 0] = x + NET_TIMINGS;
+	coords[1*2 + 1] = y;
+	coords[2*2 + 0] = x + NET_TIMINGS;
+	coords[2*2 + 1] = y + NET_GRAPHHEIGHT;
+	coords[3*2 + 0] = x;
+	coords[3*2 + 1] = y + NET_GRAPHHEIGHT;
+
+	GL_SetArrays(FQ_GL_VERTEX_ARRAY | FQ_GL_TEXTURE_COORD_ARRAY);
+	glVertexPointer(2, GL_FLOAT, 0, coords);
+	glTexCoordPointer(2, GL_FLOAT, 0, texcoords);
+	glDrawArrays(GL_QUADS, 0, 4);
 }
 
