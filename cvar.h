@@ -42,6 +42,7 @@ typedef struct cvar_s {
 	char	*string;
 	int		flags;
 	qboolean	(*OnChange)(struct cvar_s *var, char *value);
+	void (*PostChangeCallback)(struct cvar_s *);
 	float	value;
 	char	*defaultvalue;		
 	struct cvar_group_s *group;		

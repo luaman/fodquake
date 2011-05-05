@@ -230,6 +230,9 @@ void Cvar_Set (cvar_t *var, char *value)
 	if (var->flags & CVAR_USERINFO)
 		CL_UserinfoChanged (var->name, var->string);
 #endif
+
+	if (var->PostChangeCallback)
+		var->PostChangeCallback(var);
 }
 
 void Cvar_ForceSet (cvar_t *var, char *value)

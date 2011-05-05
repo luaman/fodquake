@@ -51,6 +51,7 @@ void Draw_Alt_String(int x, int y, const char *str);
 void Draw_ColoredString(int x, int y, char *str, int red);
 void Draw_ColoredString_Length(int x, int y, char *text, int red, int len, unsigned short startcolour);
 void Draw_Crosshair(void);
+void Draw_RecalcCrosshair(void);
 void Draw_TextBox(int x, int y, int width, int lines);
 
 
