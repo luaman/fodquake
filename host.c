@@ -272,6 +272,7 @@ void Host_Init(int argc, char **argv)
 			Cbuf_AddText ("exec autoexec.cfg\n");
 			fclose(f);
 		}
+		Cbuf_AddText("cfg_load default.cfg\n");
 		Cbuf_Execute();
 		Cmd_StuffCmds_f();		// process command line arguments
 		Cbuf_AddText("cl_warncmd 1\n");
