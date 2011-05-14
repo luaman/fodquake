@@ -186,6 +186,10 @@ ifeq ($(OS), macosx)
 	OSGLLDFLAGS = -framework OpenGL -framework ApplicationServices -framework AudioUnit -framework CoreServices -framework IOKit
 
 	OSCFLAGS = -D__MACOSX__
+
+	OSLDFLAGS = -lpng -ljpeg
+
+	THIRDPARTYLIBS=libpng libjpeg
 endif
 
 # CPU specific settings
