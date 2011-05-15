@@ -3,6 +3,7 @@ VPATH=../../../
 
 CC=gcc
 STRIP=strip
+AR=ar
 
 CFLAGS=-O2 -g -Wall -fno-strict-aliasing -DNETQW -I../thirdparty/include -L../thirdparty/lib $(OSCFLAGS) $(CPUCFLAGS) $(RENDERERCFLAGS)
 STRIPFLAGS=--strip-unneeded --remove-section=.comment
@@ -329,17 +330,17 @@ GLOBJS= \
 	vid_common_gl.o \
 	$(OSGLOBJS)
 
-all: thirdparty $(TARGETS) compilercheck
+all: $(TARGETS) compilercheck
 
 thirdparty:
 	mkdir -p objects/$(TARGETSYSTEM)/thirdparty
 	if [ ! -z "$(THIRDPARTYLIBS)" ]; then (cd objects/$(TARGETSYSTEM)/thirdparty; $(MAKE) -f $(VPATH)Makefile $(THIRDPARTYLIBS)); fi
 
-gl:
+gl: thirdparty
 	mkdir -p objects/$(TARGETSYSTEM)/gl
 	(cd objects/$(TARGETSYSTEM)/gl; $(MAKE) -f $(VPATH)Makefile fodquake-gl RENDERERCFLAGS=-DGLQUAKE)
 
-sw:
+sw: thirdparty
 	mkdir -p objects/$(TARGETSYSTEM)/sw
 	(cd objects/$(TARGETSYSTEM)/sw; $(MAKE) -f $(VPATH)Makefile fodquake-sw)
 
