@@ -184,11 +184,11 @@ ifeq ($(OS), macosx)
 		vid_cocoa.o \
 		in_macosx.o
 
-	OSGLLDFLAGS = -framework AppKit -framework OpenGL -framework ApplicationServices -framework AudioUnit -framework CoreServices -framework IOKit -L/opt/local/lib -lpng -ljpeg
+	OSGLLDFLAGS = -framework AppKit -framework OpenGL -framework ApplicationServices -framework AudioUnit -framework CoreServices -framework IOKit
 
 	OSCFLAGS = -D__MACOSX__
 
-	OSLDFLAGS = -lpng -ljpeg
+	OSLDFLAGS = -lpng -ljpeg -lz
 
 	THIRDPARTYLIBS=libpng libjpeg
 endif
