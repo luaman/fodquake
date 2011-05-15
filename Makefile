@@ -4,7 +4,7 @@ VPATH=../../../
 CC=gcc
 STRIP=strip
 
-CFLAGS=-O2 -g -Wall -fno-strict-aliasing -DNETQW $(OSCFLAGS) $(CPUCFLAGS) $(RENDERERCFLAGS)
+CFLAGS=-O2 -g -Wall -fno-strict-aliasing -DNETQW -I../thirdparty/include -L../thirdparty/lib $(OSCFLAGS) $(CPUCFLAGS) $(RENDERERCFLAGS)
 STRIPFLAGS=--strip-unneeded --remove-section=.comment
 
 TARGETSYSTEM:=$(shell $(CC) -dumpmachine)
@@ -185,7 +185,11 @@ ifeq ($(OS), macosx)
 
 	OSGLLDFLAGS = -framework AppKit -framework OpenGL -framework ApplicationServices -framework AudioUnit -framework CoreServices -framework IOKit -L/opt/local/lib -lpng -ljpeg
 
-	OSCFLAGS = -D__MACOSX__ -I/opt/local/include
+	OSCFLAGS = -D__MACOSX__
+
+	OSLDFLAGS = -lpng -ljpeg
+
+	THIRDPARTYLIBS=libpng libjpeg
 endif
 
 # CPU specific settings
@@ -325,7 +329,11 @@ GLOBJS= \
 	vid_common_gl.o \
 	$(OSGLOBJS)
 
-all: $(TARGETS) compilercheck
+all: thirdparty $(TARGETS) compilercheck
+
+thirdparty:
+	mkdir -p objects/$(TARGETSYSTEM)/thirdparty
+	if [ ! -z "$(THIRDPARTYLIBS)" ]; then (cd objects/$(TARGETSYSTEM)/thirdparty; $(MAKE) -f $(VPATH)Makefile $(THIRDPARTYLIBS)); fi
 
 gl:
 	mkdir -p objects/$(TARGETSYSTEM)/gl
@@ -338,6 +346,32 @@ sw:
 
 clean:
 	rm -rf objects
+
+libpng: libpng/libpng-1.2.44/.buildstamp
+
+libpng/libpng-1.2.44/.buildstamp:
+	rm -rf libpng
+	mkdir libpng
+	(cd libpng && tar -xf ../$(VPATH)/thirdparty/libpng-1.2.44-no-config.tar.gz)
+	(cd libpng/libpng-1.2.44 && cp scripts/makefile.gcc Makefile)
+	(cd libpng/libpng-1.2.44 && make AR_RC="$(AR) rcs" libpng.a)
+	mkdir -p include lib
+	cp libpng/libpng-1.2.44/*.h include
+	cp libpng/libpng-1.2.44/libpng.a lib
+	touch $@
+
+libjpeg: libjpeg/jpeg-8c/.buildstamp
+
+libjpeg/jpeg-8c/.buildstamp:
+	rm -rf libjpeg
+	mkdir libjpeg
+	(cd libjpeg && tar -xf ../$(VPATH)/thirdparty/jpegsrc.v8c.tar.gz)
+	cp libjpeg/jpeg-8c/jconfig.txt libjpeg/jpeg-8c/jconfig.h
+	(cd libjpeg/jpeg-8c && make -f makefile.ansi CFLAGS="-O2" AR="$(AR) rcs" AR2="touch" libjpeg.a)
+	mkdir -p include
+	cp libjpeg/jpeg-8c/jpeglib.h libjpeg/jpeg-8c/jconfig.h libjpeg/jpeg-8c/jmorecfg.h include
+	cp libjpeg/jpeg-8c/libjpeg.a lib
+	touch $@
 
 fodquake-sw: $(OBJS) $(SWOBJS)
 	$(CC) $(CFLAGS) $^ -lm $(OSLDFLAGS) $(OSSWLDFLAGS) -o $@.db
@@ -368,5 +402,5 @@ compilercheck:
 		echo ""; \
 	fi
 
-.PHONY: compilercheck
+.PHONY: compilercheck thirdparty
 

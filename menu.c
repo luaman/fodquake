@@ -1377,6 +1377,7 @@ void M_Fps_FastMode()
 	Cvar_SetValue(&r_fastsky, 1);
 	Cvar_SetValue(&r_rockettrail, 1);
 	Cvar_SetValue(&v_damagecshift, 0);
+	Cvar_SetValue(&v_bonusflash, 0);
 #ifdef GLQUAKE
 	Cvar_SetValue(&gl_flashblend, 1);
 	Cvar_SetValue(&r_dynamic, 0);
@@ -1405,6 +1406,7 @@ void M_Fps_HighQuality()
 	Cvar_SetValue(&r_fastsky, 0);
 	Cvar_SetValue(&r_rockettrail, 1);
 	Cvar_SetValue(&v_damagecshift, 1);
+	Cvar_SetValue(&v_bonusflash, 1);
 #ifdef GLQUAKE
 	Cvar_SetValue(&gl_flashblend, 0);
 	Cvar_SetValue(&r_dynamic, 1);
