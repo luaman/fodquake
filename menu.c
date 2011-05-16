@@ -2362,7 +2362,7 @@ static int mp3_cursor = 0;
 static int last_status;
 
 void MP3_Menu_DrawInfo(void);
-void M_Menu_MP3_Playlist_f(void);
+static void M_Menu_MP3_Playlist_f(void);
 
 static void M_MP3_Control_Draw()
 {

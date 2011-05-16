@@ -638,6 +638,10 @@ static void customCrosshair_Init(void)
 	customcrosshair_loaded = true;
 }
 
+void Draw_RecalcCrosshair()
+{
+}
+
 void Draw_Crosshair(void)
 {
 	int x, y, crosshair_val, row, col;
