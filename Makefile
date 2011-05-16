@@ -143,7 +143,9 @@ ifeq ($(OS), win32)
 	ifneq ($(shell $(CC) -dumpmachine | grep cygwin),)
 		OSCFLAGS+= -mno-cygwin
 	endif
-	OSLDFLAGS = -mwindows -lpng -lz
+	OSLDFLAGS = -mwindows -lpng -ljpeg -lz
+
+	THIRDPARTYLIBS=libz libpng libjpeg
 
 %.windowsicon: %.rc icons/%.ico
 	i586-mingw32msvc-windres -O coff $< $@
@@ -348,6 +350,19 @@ sw: thirdparty
 clean:
 	rm -rf objects
 
+libz: libz/zlib-1.2.5/.buildstamp
+
+libz/zlib-1.2.5/.buildstamp:
+	rm -rf libz
+	mkdir libz
+	(cd libz && tar -xf ../$(VPATH)/thirdparty/zlib-1.2.5.tar.gz)
+	cp $(VPATH)/thirdparty/zlib-Makefile libz/zlib-1.2.5/
+	(cd libz/zlib-1.2.5 && make -f zlib-Makefile libz.a)
+	mkdir -p include lib
+	cp libz/zlib-1.2.5/zconf.h libz/zlib-1.2.5/zlib.h include
+	cp libz/zlib-1.2.5/libz.a lib
+	touch $@
+
 libpng: libpng/libpng-1.2.44/.buildstamp
 
 libpng/libpng-1.2.44/.buildstamp:
@@ -355,7 +370,7 @@ libpng/libpng-1.2.44/.buildstamp:
 	mkdir libpng
 	(cd libpng && tar -xf ../$(VPATH)/thirdparty/libpng-1.2.44-no-config.tar.gz)
 	(cd libpng/libpng-1.2.44 && cp scripts/makefile.gcc Makefile)
-	(cd libpng/libpng-1.2.44 && make AR_RC="$(AR) rcs" libpng.a)
+	(cd libpng/libpng-1.2.44 && make AR_RC="$(AR) rcs" CFLAGS="-W -Wall -I../../include $(CRELEASE)" RANLIB=touch libpng.a)
 	mkdir -p include lib
 	cp libpng/libpng-1.2.44/*.h include
 	cp libpng/libpng-1.2.44/libpng.a lib
