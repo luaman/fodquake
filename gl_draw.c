@@ -50,6 +50,7 @@ extern cvar_t scr_menualpha;
 extern cvar_t crosshair, cl_crossx, cl_crossy, crosshaircolor, crosshairsize;
 extern cvar_t scr_coloredText;
 
+static void PostChange_crosshairstuff(cvar_t *);
 
 qboolean OnChange_gl_crosshairimage(cvar_t *, char *);
 cvar_t	gl_crosshairimage   = {"crosshairimage", "", 0, OnChange_gl_crosshairimage};
@@ -57,8 +58,7 @@ cvar_t	gl_crosshairimage   = {"crosshairimage", "", 0, OnChange_gl_crosshairimag
 qboolean OnChange_gl_consolefont (cvar_t *, char *);
 cvar_t	gl_consolefont		= {"gl_consolefont", "original", 0, OnChange_gl_consolefont};
 
-cvar_t	gl_crosshairalpha	= {"crosshairalpha", "1"};
-
+cvar_t	gl_crosshairalpha	= {"crosshairalpha", "1", 0, PostChange_crosshairstuff};
 
 qboolean OnChange_gl_smoothfont (cvar_t *var, char *string);
 cvar_t gl_smoothfont = {"gl_smoothfont", "0", 0, OnChange_gl_smoothfont};
@@ -186,20 +186,16 @@ static void Crosshair_LoadImage(const char *s)
 {
 	struct Picture *pic;
 
-	if (!s[0])
+	if (crosshairpic)
 	{
-		customcrosshair_loaded &= ~CROSSHAIR_IMAGE;
-		return;
+		Draw_FreePicture(crosshairpic);
+		crosshairpic = 0;
 	}
+
+	customcrosshair_loaded &= ~CROSSHAIR_IMAGE;
 
 	if (*s)
 	{
-		if (crosshairpic)
-		{
-			Draw_FreePicture(crosshairpic);
-			crosshairpic = 0;
-		}
-
 		pic = Draw_LoadPicture(va("crosshairs/%s", s), DRAW_LOADPICTURE_NOFALLBACK);
 		if (pic)
 		{
@@ -207,15 +203,12 @@ static void Crosshair_LoadImage(const char *s)
 			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 			crosshairpic = pic;
 			customcrosshair_loaded |= CROSSHAIR_IMAGE;
-
-			return;
 		}
-
-		Com_Printf("Couldn't load image %s\n", s);
+		else
+			Com_Printf("Couldn't load image %s\n", s);
 	}
 
-
-	customcrosshair_loaded &= ~CROSSHAIR_IMAGE;
+	Draw_RecalcCrosshair();
 }
 
 qboolean OnChange_gl_crosshairimage(cvar_t *v, char *s)
@@ -273,6 +266,7 @@ byte	menuplyr_pixels[4096];
 
 void Draw_SizeChanged()
 {
+	Draw_RecalcCrosshair();
 }
 
 static int Draw_LoadCharset(char *name)
@@ -393,6 +387,8 @@ void DrawImp_Init(void)
 		glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	}
 	customCrosshair_Init();		
+
+	Draw_RecalcCrosshair();
 
 	drawgl_inited = 1;
 }
@@ -644,74 +640,115 @@ void Draw_EndColoredTextRendering()
 	fontcolour.ui = 0xffffffff;
 }
 
+static int crosshairtexnum;
+static float crosshairvertices[2*4] __attribute__((aligned(32)));
+static float crosshairtexcoords[2*4] __attribute__((aligned(32)));
+static unsigned int crosshaircolours[4] __attribute__((aligned(16)));
+
+void Draw_RecalcCrosshair()
+{
+	float x, y;
+	float ofs1;
+	float ofs2;
+	unsigned char *c;
+	union
+	{
+		unsigned char uc[4];
+		unsigned int ui;
+	} col;
+	extern vrect_t scr_vrect;
+
+	x = scr_vrect.x + scr_vrect.width / 2 + cl_crossx.value;
+	y = scr_vrect.y + scr_vrect.height / 2 + cl_crossy.value;
+
+	c = StringToRGB(crosshaircolor.string);
+
+	col.uc[0] = c[0];
+	col.uc[1] = c[1];
+	col.uc[2] = c[2];
+	col.uc[3] = bound(0, gl_crosshairalpha.value, 1) * 255;
+
+	if (customcrosshair_loaded & CROSSHAIR_IMAGE)
+	{
+		crosshairtexnum = crosshairpic->texnum;
+		ofs1 = 4 - 4.0 / 16;
+		ofs2 = 4 + 4.0 / 16;
+	}
+	else
+	{
+		crosshairtexnum = (crosshair.value >= 2) ? crosshairtextures[(int) crosshair.value - 2] : crosshairtexture_txt;
+		ofs1 = 3.5;
+		ofs2 = 4.5;
+	}
+	ofs1 *= (vid.conwidth / 320) * bound(0, crosshairsize.value, 20);
+	ofs2 *= (vid.conwidth / 320) * bound(0, crosshairsize.value, 20);
+
+
+	crosshairvertices[0 + 0] = x - ofs1;
+	crosshairvertices[0 + 1] = y - ofs1;
+
+	crosshairvertices[2 + 0] = x + ofs2;
+	crosshairvertices[2 + 1] = y - ofs1;
+
+	crosshairvertices[4 + 0] = x + ofs2;
+	crosshairvertices[4 + 1] = y + ofs2;
+
+	crosshairvertices[6 + 0] = x - ofs1;
+	crosshairvertices[6 + 1] = y + ofs2;
+
+	crosshairtexcoords[0 + 0] = 0;
+	crosshairtexcoords[0 + 1] = 0;
+
+	crosshairtexcoords[2 + 0] = 1;
+	crosshairtexcoords[2 + 1] = 0;
+
+	crosshairtexcoords[4 + 0] = 1;
+	crosshairtexcoords[4 + 1] = 1;
+
+	crosshairtexcoords[6 + 0] = 0;
+	crosshairtexcoords[6 + 1] = 1;
+
+	crosshaircolours[0] = col.ui;
+	crosshaircolours[1] = col.ui;
+	crosshaircolours[2] = col.ui;
+	crosshaircolours[3] = col.ui;
+}
+
+static void PostChange_crosshairstuff(cvar_t *v)
+{
+	Draw_RecalcCrosshair();
+}
+
 void Draw_Crosshair(void)
 {
-	float x, y, ofs1, ofs2, sh, th, sl, tl;
-	byte *col;
 	extern vrect_t scr_vrect;
-	float coords[4*2];
-	static const float texcoords[4*2] =
-	{
-		0, 0,
-		1, 0,
-		1, 1,
-		0, 1,
-	};
 
 	if ((crosshair.value >= 2 && crosshair.value <= NUMCROSSHAIRS + 1)
 	 || ((customcrosshair_loaded & CROSSHAIR_TXT) && crosshair.value == 1)
 	 || (customcrosshair_loaded & CROSSHAIR_IMAGE))
 	{
-		x = scr_vrect.x + scr_vrect.width / 2 + cl_crossx.value; 
-		y = scr_vrect.y + scr_vrect.height / 2 + cl_crossy.value;
-
 		if (!gl_crosshairalpha.value)
 			return;
 
 		glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 
-		col = StringToRGB(crosshaircolor.string);
+		GL_Bind(crosshairtexnum);
 
-		if (gl_crosshairalpha.value)
+		if (gl_crosshairalpha.value < 1)
 		{
 			GL_SetAlphaTestBlend(0, 1);
-			col[3] = bound(0, gl_crosshairalpha.value, 1) * 255;
-			glColor4ubv (col);
 		}
 		else
 		{
-			GL_SetAlphaTestBlend(0, 0);
-			glColor3ubv (col);
+			GL_SetAlphaTestBlend(1, 0);
 		}
 
+		GL_SetArrays(FQ_GL_VERTEX_ARRAY | FQ_GL_COLOR_ARRAY | FQ_GL_TEXTURE_COORD_ARRAY);
 
-		if (customcrosshair_loaded & CROSSHAIR_IMAGE)
-		{
-			GL_Bind(crosshairpic->texnum);
-			ofs1 = 4 - 4.0 / 16;
-			ofs2 = 4 + 4.0 / 16;
-		}
-		else
-		{
-			GL_Bind ((crosshair.value >= 2) ? crosshairtextures[(int) crosshair.value - 2] : crosshairtexture_txt);	
-			ofs1 = 3.5;
-			ofs2 = 4.5;
-		}
-		ofs1 *= (vid.conwidth / 320) * bound(0, crosshairsize.value, 20);
-		ofs2 *= (vid.conwidth / 320) * bound(0, crosshairsize.value, 20);
+		glVertexPointer(2, GL_FLOAT, 0, crosshairvertices);
+		glColorPointer(4, GL_UNSIGNED_BYTE, 0, crosshaircolours);
+		glTexCoordPointer(2, GL_FLOAT, 0, crosshairtexcoords);
 
-		coords[0*2 + 0] = x - ofs1;
-		coords[0*2 + 1] = y - ofs1;
-		coords[2*2 + 0] = x + ofs2;
-		coords[2*2 + 1] = y - ofs1;
-		coords[4*2 + 0] = x + ofs2;
-		coords[4*2 + 1] = y + ofs2;
-		coords[6*2 + 0] = x - ofs1;
-		coords[6*2 + 1] = y + ofs2;
-
-		GL_SetArrays(FQ_GL_VERTEX_ARRAY | FQ_GL_TEXTURE_COORD_ARRAY);
-		glVertexPointer(2, GL_FLOAT, 0, coords);
-		glTexCoordPointer(2, GL_FLOAT, 0, texcoords);
 		glDrawArrays(GL_QUADS, 0, 4);
 
 		glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
