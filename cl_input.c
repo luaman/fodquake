@@ -31,6 +31,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "mouse.h"
 #include "ruleset.h"
 
+cvar_t cl_weaponfire = { "cl_weaponfire", "1" };
+cvar_t cl_weaponswitch = { "cl_weaponswitch", "2 1" };
+
+int cl_preselectedweapon;
+
 cvar_t	cl_nodelta = {"cl_nodelta","0"};
 cvar_t	cl_c2spps = {"cl_c2spps","0"};
 cvar_t	cl_c2sImpulseBackup = {"cl_c2sImpulseBackup","3"};
@@ -61,7 +66,8 @@ kbutton_t	in_lookup, in_lookdown, in_moveleft, in_moveright;
 kbutton_t	in_use, in_jump, in_attack;
 kbutton_t	in_up, in_down;
 
-int			in_impulse;
+static int in_impulse;
+static int in_otherimpulse;
 
 static int checkmovementruleset()
 {
@@ -163,12 +169,163 @@ static void IN_MoveleftUp(void) {if (checkmovementruleset()) KeyUp(&in_moveleft)
 static void IN_MoverightDown(void) {if (checkmovementruleset()) KeyDown(&in_moveright);}
 static void IN_MoverightUp(void) {if (checkmovementruleset()) KeyUp(&in_moveright);}
 
-static void IN_AttackDown(void) {KeyDown(&in_attack);}
-static void IN_AttackUp(void) {KeyUp(&in_attack);}
+static unsigned char idleweaponlist[8];
+
+static const unsigned short weaponindex[8] =
+{
+	IT_AXE,
+	IT_SHOTGUN,
+	IT_SUPER_SHOTGUN,
+	IT_NAILGUN,
+	IT_SUPER_NAILGUN,
+	IT_GRENADE_LAUNCHER,
+	IT_ROCKET_LAUNCHER,
+	IT_LIGHTNING
+};
+
+static const struct
+{
+	unsigned char statindex;
+	unsigned char minamount;
+} ammoindex[8] =
+{
+	{ STAT_SHELLS, 0 }, /* hah */
+	{ STAT_SHELLS, 1 },
+	{ STAT_SHELLS, 2 },
+	{ STAT_NAILS, 1 },
+	{ STAT_NAILS, 2 },
+	{ STAT_ROCKETS, 1 },
+	{ STAT_ROCKETS, 1 },
+	{ STAT_CELLS, 1 }
+};
+
+static int CheckWeaponAvailable(int index)
+{
+	if (index < 1 || index > 8)
+		return 0;
+
+	index--;
+
+	if ((cl.stats[STAT_ITEMS] & weaponindex[index]) && cl.stats[ammoindex[index].statindex] >= ammoindex[index].minamount)
+		return 1;
+
+	return 0;
+}
+
+static void WeaponFallback()
+{
+	int i;
+	int weapon;
+
+	weapon = 0;
+
+	for(i=0;i<sizeof(idleweaponlist)/sizeof(*idleweaponlist) && idleweaponlist[i];i++)
+	{
+		if (CheckWeaponAvailable(idleweaponlist[i]))
+		{
+			weapon = idleweaponlist[i];
+			break;
+		}
+	}
+
+	if (weapon)
+		in_otherimpulse = weapon;
+}
+
+static void IN_AttackDown(void)
+{
+	if (cl_preselectedweapon)
+		in_impulse = cl_preselectedweapon;
+
+	KeyDown(&in_attack);
+}
+
+static void IN_AttackUp(void)
+{
+	KeyUp(&in_attack);
+
+	if (cl_preselectedweapon)
+		WeaponFallback();
+}
 
 static void IN_UseDown(void) {KeyDown(&in_use);}
 static void IN_UseUp(void) {KeyUp(&in_use);}
 
+
+static void IN_WeaponDown()
+{
+	int idleindex;
+	int index;
+	int max;
+	int num;
+	int weapon;
+
+	if (Cmd_Argc() < 2)
+	{
+		Com_Printf("Usage: +weapon <weapon preference list>\n");
+		return;
+	}
+
+	idleindex = 0;
+	index = Cmd_Argc() - 1;
+	weapon = 0;
+
+	for(index=1,max=Cmd_Argc();index<max;index++)
+	{
+		num = Q_atoi(Cmd_Argv(index));
+
+		if (num < 0)
+		{
+			if (idleindex < sizeof(idleweaponlist)/sizeof(*idleweaponlist))
+				idleweaponlist[idleindex++] = -num;
+		}
+		else
+		{
+			if (!weapon)
+			{
+				if (CheckWeaponAvailable(num))
+					weapon = num;
+			}
+		}
+	}
+
+	if (!weapon)
+		return;
+
+	if (cl_weaponfire.value)
+		KeyDown(&in_attack);
+
+	if (idleindex == 0)
+	{
+		Cmd_TokenizeString(cl_weaponswitch.string);
+
+		for(index=0,max=Cmd_Argc();index<max;index++)
+		{
+			num = Q_atoi(Cmd_Argv(index));
+
+			if (idleindex < sizeof(idleweaponlist)/sizeof(*idleweaponlist))
+				idleweaponlist[idleindex++] = num;
+		}
+	}
+
+	if (idleindex < sizeof(idleweaponlist)/sizeof(*idleweaponlist))
+		idleweaponlist[idleindex] = 0;
+
+	if (cl_weaponfire.value)
+		in_impulse = weapon;
+	else
+		cl_preselectedweapon = weapon;
+}
+
+static void IN_WeaponUp()
+{
+	if (!cl_weaponfire.value)
+		return;
+
+	KeyUp(&in_attack);
+
+	WeaponFallback();
+}
 
 static void IN_JumpDown(void)
 {
@@ -199,63 +356,31 @@ static void IN_JumpUp(void)
 	KeyUp(&in_jump);
 }
 
-
-
 //Tonik void IN_Impulse (void) {in_impulse=Q_atoi(Cmd_Argv(1));}
 
 // Tonik -->
 static void IN_Impulse(void)
 {
-	int best, i, imp, items;
+	int best, i, imp;
 
 	in_impulse = Q_atoi(Cmd_Argv(1));
 
-	if (Cmd_Argc() <= 2)
-		return;
+	if (in_impulse >= 1 && in_impulse <= 8)
+		cl_preselectedweapon = 0;
 
-	items = cl.stats[STAT_ITEMS];
+	if (Cmd_Argc() <= 2)
+	{
+		return;
+	}
+
 	best = 0;
 
 	for (i = Cmd_Argc() - 1; i > 0; i--)
 	{
 		imp = Q_atoi(Cmd_Argv(i));
-		if (imp < 1 || imp > 8)
-			continue;
 
-		switch(imp)
-		{
-			case 1:
-				if (items & IT_AXE)
-					best = 1;
-				break;
-			case 2:
-				if (items & IT_SHOTGUN && cl.stats[STAT_SHELLS] >= 1)
-					best = 2;
-				break;
-			case 3:
-				if (items & IT_SUPER_SHOTGUN && cl.stats[STAT_SHELLS] >= 2)
-					best = 3;
-				break;
-			case 4:
-				if (items & IT_NAILGUN && cl.stats[STAT_NAILS] >= 1)
-					best = 4;
-				break;
-			case 5:
-				if (items & IT_SUPER_NAILGUN && cl.stats[STAT_NAILS] >= 2)
-					best = 5;
-				break;
-			case 6:
-				if (items & IT_GRENADE_LAUNCHER && cl.stats[STAT_ROCKETS] >= 1)
-					best = 6;
-				break;
-			case 7:
-				if (items & IT_ROCKET_LAUNCHER && cl.stats[STAT_ROCKETS] >= 1)
-					best = 7;
-				break;
-			case 8:
-				if (items & IT_LIGHTNING && cl.stats[STAT_CELLS] >= 1)
-					best = 8;
-		}
+		if (CheckWeaponAvailable(imp))
+			best = imp;
 	}
 
 	if (best)
@@ -371,8 +496,16 @@ void CL_FinishMove(usercmd_t *cmd)
 
 	VectorCopy(cl.viewangles, cmd->angles);
 
-	cmd->impulse = in_impulse;
-	in_impulse = 0;
+	if (in_impulse)
+	{
+		cmd->impulse = in_impulse;
+		in_impulse = 0;
+	}
+	else if (in_otherimpulse)
+	{
+		cmd->impulse = in_otherimpulse;
+		in_otherimpulse = 0;
+	}
 
 	// chop down so no extra bits are kept that the server wouldn't get
 	cmd->forwardmove = MakeShort(cmd->forwardmove);
@@ -557,10 +690,15 @@ void CL_CvarInitInput(void)
 	Cmd_AddCommand("-jump", IN_JumpUp);
 	Cmd_AddCommand("impulse", IN_Impulse);
 
+	Cmd_AddCommand("+weapon", IN_WeaponDown);
+	Cmd_AddCommand("-weapon", IN_WeaponUp);
 
 	Cmd_AddCommand("rotate", CL_Rotate_f);
 
 	Cvar_SetCurrentGroup(CVAR_GROUP_INPUT_KEYBOARD);
+
+	Cvar_Register(&cl_weaponswitch);
+	Cvar_Register(&cl_weaponfire);
 
 	Cvar_Register(&cl_smartjump);
 
