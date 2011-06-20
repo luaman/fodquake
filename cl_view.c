@@ -742,12 +742,14 @@ void V_AddViewWeapon(float bob)
 	vec3_t forward;
 	centity_t *cent;
 	extern cvar_t scr_fov;
+	extern int cl_preselectedweapon;
+	int weapon;
 
 	cent = &cl.viewent;
 	TP_ParseWeaponModel(cl.model_precache[cl.stats[STAT_WEAPON]]);
 
 	if (!cl_drawgun.value || (cl_drawgun.value == 2 && scr_fov.value > 90)
-		|| ((view_message->flags & (PF_GIB|PF_DEAD)))	
+		|| ((view_message->flags & (PF_GIB|PF_DEAD)))
 		|| cl.stats[STAT_ITEMS] & IT_INVISIBILITY || cl.stats[STAT_HEALTH] <= 0 || !Cam_DrawViewModel())
 	{
 		cent->current.modelindex = 0;	//no model
@@ -772,8 +774,12 @@ void V_AddViewWeapon(float bob)
 	else if (scr_viewsize.value == 80)
 		cent->current.origin[2] += 0.5;
 
+	if (cl_preselectedweapon)
+		weapon = cl_preselectedweapon + 15;
+	else
+		weapon = cl.stats[STAT_WEAPON];
 
-	if (cent->current.modelindex != cl.stats[STAT_WEAPON])
+	if (cent->current.modelindex != weapon)
 	{
 		cl.viewent.frametime = -1;
 	}
@@ -786,7 +792,7 @@ void V_AddViewWeapon(float bob)
 		}
 	}
 
-	cent->current.modelindex = cl.stats[STAT_WEAPON];
+	cent->current.modelindex = weapon;
 	cent->current.frame = view_message->weaponframe;
 }
 
