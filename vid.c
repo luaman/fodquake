@@ -90,7 +90,7 @@ cvar_t vid_mode = { "vid_mode", "", CVAR_ARCHIVE };
 cvar_t vid_conwidth = { "vid_conwidth", "0", CVAR_ARCHIVE, vid_conwidth_callback };
 cvar_t vid_conheight = { "vid_conheight", "0", CVAR_ARCHIVE, vid_conheight_callback };
 
-cvar_t in_grab_windowed_mouse = { "in_grab_windowed_mouse", "1", CVAR_ARCHIVE, in_grab_windowed_mouse_callback };
+cvar_t in_grab_windowed_mouse = { "in_grab_windowed_mouse", "0", CVAR_ARCHIVE, in_grab_windowed_mouse_callback };
 
 static unsigned char pal[768];
 

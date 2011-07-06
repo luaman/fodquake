@@ -244,6 +244,8 @@ void Draw_ColoredString_Length(int x, int y, char *text, int red, int len, unsig
 
 	Draw_BeginColoredTextRendering();
 
+	DrawImp_SetTextColor((startcolour>>8)&15, (startcolour>>4)&15, startcolour&15);
+
 	while(len)
 	{
 		if (*text == '&')

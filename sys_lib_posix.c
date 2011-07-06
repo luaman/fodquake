@@ -22,8 +22,22 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "sys_lib.h"
+
+struct
+{
+	const char *inname;
+	const char *libname;
+} libname_translation_table[] =
+{
+	{ "png12", "libpng12.so.0" },
+	{ "z", "libz.so.1" },
+	{ "jpeg", "libjpeg.so.62" },
+};
+
+#define LIBNAME_TRANSLATION_TABLE_SIZE (sizeof(libname_translation_table)/sizeof(*libname_translation_table))
 
 struct SysLib
 {
@@ -33,17 +47,21 @@ struct SysLib
 struct SysLib *Sys_Lib_Open(const char *libname)
 {
 	struct SysLib *lib;
-	char newname[256];
+	unsigned int i;
 
 	lib = malloc(sizeof(*lib));
 	if (lib)
 	{
-		snprintf(newname, sizeof(newname), "lib%s.so", libname);
-
-		lib->elf_handle = dlopen(newname, RTLD_NOW);
-		if (lib->elf_handle)
+		for(i=0;i<LIBNAME_TRANSLATION_TABLE_SIZE;i++)
 		{
-			return lib;
+			if (strcmp(libname_translation_table[i].inname, libname) == 0)
+			{
+				lib->elf_handle = dlopen(libname_translation_table[i].libname, RTLD_NOW);
+				if (lib->elf_handle)
+				{
+					return lib;
+				}
+			}
 		}
 
 		free(lib);
