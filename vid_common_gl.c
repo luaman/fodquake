@@ -56,6 +56,8 @@ qboolean gl_combine = false;
 
 qboolean gl_add_ext = false;
 
+qboolean gl_npot;
+
 qboolean gl_vbo = false;
 
 float gldepthmin, gldepthmax;
@@ -139,6 +141,7 @@ void GL_CheckExtensions (void)
 
 	gl_combine = CheckExtension("GL_ARB_texture_env_combine");
 	gl_add_ext = CheckExtension("GL_ARB_texture_env_add");
+	gl_npot = CheckExtension("GL_ARB_texture_non_power_of_two");
 	gl_vbo = CheckExtension("GL_ARB_vertex_buffer_object");
 	if (gl_vbo)
 	{

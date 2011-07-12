@@ -41,6 +41,8 @@ struct Picture
 	int texnum;
 	float invwidth;
 	float invheight;
+
+	float texcoords[4*2];
 };
 
 static unsigned char drawgl_inited;
@@ -962,22 +964,49 @@ static void *Draw_LoadLmpPicture(FILE *fh, unsigned int *rwidth, unsigned int *r
 	return 0;
 }
 
-static void *Draw_8to32(unsigned char *source, unsigned int width, unsigned int height, GLint *internalformat)
+static void *Draw_8to32(unsigned char *source, unsigned int width, unsigned int height, unsigned int dstmodulo, unsigned int dstheight, GLint *internalformat)
 {
 	unsigned int *dst;
+	unsigned int *ndst;
 	int doalpha;
 	unsigned int i;
+	unsigned int j;
 
 	if (width >= 32768 || height >= 32768)
 		return 0;
 
-	dst = malloc(width*height*sizeof(*dst));
+	dst = malloc(dstmodulo*dstheight*sizeof(*dst));
 	if (dst)
 	{
-		for(i=0;i<width*height;i++)
+		ndst = dst;
+
+		if (width != dstmodulo)
 		{
-			dst[i] = d_8to24table[source[i]];
+			for(j=0;j<height;j++)
+			{
+				for(i=0;i<width;i++)
+				{
+					ndst[i] = d_8to24table[source[i]];
+				}
+
+				ndst[i] = d_8to24table[source[i-1]];
+
+				source += width;
+				ndst += dstmodulo;
+			}
 		}
+		else
+		{
+			for(i=0;i<width*height;i++)
+			{
+				ndst[i] = d_8to24table[source[i]];
+			}
+
+			ndst += i;
+		}
+
+		if (height != dstheight)
+			memcpy(ndst, ndst - dstmodulo, dstmodulo * sizeof(*ndst));
 
 		*internalformat = 4;
 	}
@@ -985,8 +1014,8 @@ static void *Draw_8to32(unsigned char *source, unsigned int width, unsigned int 
 	return dst;
 }
 
-#warning Fixme
-#define ISPOT(x) (1)
+#define ISPOT(x) (((x) & -(x)) == (x))
+#define NPOT(x) ({ unsigned int v = (x); v--; v |= v >> 1; v |= v >> 2; v |= v >> 4; v |= v >> 8; v |= v >> 16; v++; v; })
 
 struct Picture *Draw_LoadPicture(const char *name, enum Draw_LoadPicture_Fallback fallback)
 {
@@ -998,6 +1027,8 @@ struct Picture *Draw_LoadPicture(const char *name, enum Draw_LoadPicture_Fallbac
 	GLint internalformat;
 	unsigned int width;
 	unsigned int height;
+	unsigned int glwidth;
+	unsigned int glheight;
 	void *data;
 	void *newdata;
 
@@ -1072,30 +1103,55 @@ struct Picture *Draw_LoadPicture(const char *name, enum Draw_LoadPicture_Fallbac
 		}
 	}
 
+	glwidth = width;
+	glheight = height;
+
 	if (data)
 	{
-		newdata = Draw_8to32(data, width, height, &internalformat);
+		if (!gl_npot && !ISPOT(width))
+			glwidth = NPOT(width);
+
+		if (!gl_npot && !ISPOT(height))
+			glheight = NPOT(height);
+
+		newdata = Draw_8to32(data, width, height, glwidth, glheight, &internalformat);
 
 		free(data);
+	}
+	else if (newdata)
+	{
 	}
 
 	if (newdata)
 	{
-		if (ISPOT(width) && ISPOT(height))
+		picture = malloc(sizeof(*picture));
+		if (picture)
 		{
-			picture = malloc(sizeof(*picture));
-			if (picture)
-			{
-				picture->texnum = texture_extension_number++;
-				picture->invwidth = 1.0/width;
-				picture->invheight = 1.0/height;
+			picture->texnum = texture_extension_number++;
+			picture->invwidth = 1.0/width/((double)glwidth/width);
+			picture->invheight = 1.0/height/((double)glheight/height);
 
-				GL_Bind(picture->texnum);
-				glTexImage2D(GL_TEXTURE_2D, 0, internalformat, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, newdata);
+			GL_Bind(picture->texnum);
+			glTexImage2D(GL_TEXTURE_2D, 0, internalformat, glwidth, glheight, 0, GL_RGBA, GL_UNSIGNED_BYTE, newdata);
 
-				glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-				glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-			}
+			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+
+			picture->texcoords[0] = 0;
+			picture->texcoords[1] = 0;
+
+			picture->texcoords[2] = (double)width/glwidth;
+			picture->texcoords[3] = 0;
+
+			picture->texcoords[4] = (double)width/glwidth;
+			picture->texcoords[5] = (double)height/glheight;
+
+			picture->texcoords[6] = 0;
+			picture->texcoords[7] = (double)height/glheight;
+
 		}
 
 		free(newdata);
@@ -1121,13 +1177,6 @@ void Draw_FreePicture(struct Picture *picture)
 void Draw_DrawPicture(struct Picture *picture, int x, int y, unsigned int width, unsigned int height)
 {
 	float coords[4*2];
-	static const float texcoords[4*2] =
-	{
-		0, 0,
-		1, 0,
-		1, 1,
-		0, 1,
-	};
 
 	GL_Bind(picture->texnum);
 
@@ -1142,7 +1191,7 @@ void Draw_DrawPicture(struct Picture *picture, int x, int y, unsigned int width,
 
 	GL_SetArrays(FQ_GL_VERTEX_ARRAY | FQ_GL_TEXTURE_COORD_ARRAY);
 	glVertexPointer(2, GL_FLOAT, 0, coords);
-	glTexCoordPointer(2, GL_FLOAT, 0, texcoords);
+	glTexCoordPointer(2, GL_FLOAT, 0, picture->texcoords);
 
 	glDrawArrays(GL_QUADS, 0, 4);
 }
@@ -1150,13 +1199,6 @@ void Draw_DrawPicture(struct Picture *picture, int x, int y, unsigned int width,
 void Draw_DrawPictureAlpha(struct Picture *picture, int x, int y, unsigned int width, unsigned int height, float alpha)
 {
 	float coords[4*2];
-	static const float texcoords[4*2] =
-	{
-		0, 0,
-		1, 0,
-		1, 1,
-		0, 1,
-	};
 
 	if (alpha < 0)
 		alpha = 0;
@@ -1183,7 +1225,7 @@ void Draw_DrawPictureAlpha(struct Picture *picture, int x, int y, unsigned int w
 
 	GL_SetArrays(FQ_GL_VERTEX_ARRAY | FQ_GL_TEXTURE_COORD_ARRAY);
 	glVertexPointer(2, GL_FLOAT, 0, coords);
-	glTexCoordPointer(2, GL_FLOAT, 0, texcoords);
+	glTexCoordPointer(2, GL_FLOAT, 0, picture->texcoords);
 
 	glDrawArrays(GL_QUADS, 0, 4);
 
