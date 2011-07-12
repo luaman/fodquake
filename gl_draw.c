@@ -762,8 +762,9 @@ void Draw_Crosshair(void)
 
 void Draw_AlphaFill(int x, int y, int w, int h, int c, float alpha)
 {
-	alpha = bound(0, alpha, 1);
 	float coords[4*2];
+
+	alpha = bound(0, alpha, 1);
 
 	if (!alpha)
 		return;
