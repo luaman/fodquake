@@ -593,6 +593,7 @@ void Draw_BeginTextRendering()
 		GL_SetAlphaTestBlend(1, 0);
 		GL_SetArrays(FQ_GL_VERTEX_ARRAY | FQ_GL_TEXTURE_COORD_ARRAY);
 
+		glColor3f(1, 1, 1);
 		glVertexPointer(2, GL_FLOAT, 0, fontvertices);
 		glTexCoordPointer(2, GL_FLOAT, 0, fonttexcoords);
 
@@ -623,6 +624,7 @@ void Draw_BeginColoredTextRendering()
 		GL_Bind(char_texture);
 		GL_SetAlphaTestBlend(1, 0);
 		GL_SetArrays(FQ_GL_VERTEX_ARRAY | FQ_GL_COLOR_ARRAY | FQ_GL_TEXTURE_COORD_ARRAY);
+		glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 
 		glVertexPointer(2, GL_FLOAT, 0, fontvertices);
 		glTexCoordPointer(2, GL_FLOAT, 0, fonttexcoords);
@@ -639,6 +641,7 @@ void Draw_BeginColoredTextRendering()
 void Draw_EndColoredTextRendering()
 {
 	Draw_EndTextRendering();
+	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
 	fontcolour.ui = 0xffffffff;
 }
 
@@ -1199,6 +1202,12 @@ void Draw_DrawPicture(struct Picture *picture, int x, int y, unsigned int width,
 void Draw_DrawPictureAlpha(struct Picture *picture, int x, int y, unsigned int width, unsigned int height, float alpha)
 {
 	float coords[4*2];
+	unsigned int colours[4];
+	union
+	{
+		unsigned char uc[4];
+		unsigned int ui;
+	} col;
 
 	if (alpha < 0)
 		alpha = 0;
@@ -1206,8 +1215,12 @@ void Draw_DrawPictureAlpha(struct Picture *picture, int x, int y, unsigned int w
 	if (alpha > 1)
 		alpha = 1;
 
+	col.uc[0] = 0xff;
+	col.uc[1] = 0xff;
+	col.uc[2] = 0xff;
+	col.uc[3] = alpha*255;
+
 	GL_SetAlphaTestBlend(0, 1);
-	glColor4f(1, 1, 1, alpha);
 	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -1223,14 +1236,19 @@ void Draw_DrawPictureAlpha(struct Picture *picture, int x, int y, unsigned int w
 	coords[3*2 + 0] = x;
 	coords[3*2 + 1] = y + height;
 
-	GL_SetArrays(FQ_GL_VERTEX_ARRAY | FQ_GL_TEXTURE_COORD_ARRAY);
+	colours[0] = col.ui;
+	colours[1] = col.ui;
+	colours[2] = col.ui;
+	colours[3] = col.ui;
+
+	GL_SetArrays(FQ_GL_VERTEX_ARRAY | FQ_GL_COLOR_ARRAY | FQ_GL_TEXTURE_COORD_ARRAY);
 	glVertexPointer(2, GL_FLOAT, 0, coords);
+	glColorPointer(4, GL_UNSIGNED_BYTE, 0, colours);
 	glTexCoordPointer(2, GL_FLOAT, 0, picture->texcoords);
 
 	glDrawArrays(GL_QUADS, 0, 4);
 
 	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
-	glColor3ubv(color_white);
 }
 
 void Draw_DrawSubPicture(struct Picture *picture, unsigned int sx, unsigned int sy, unsigned int swidth, unsigned int sheight, int x, int y, unsigned int width, unsigned int height)
@@ -1260,7 +1278,7 @@ void Draw_DrawSubPicture(struct Picture *picture, unsigned int sx, unsigned int 
 
 	GL_SetArrays(FQ_GL_VERTEX_ARRAY | FQ_GL_TEXTURE_COORD_ARRAY);
 	glVertexPointer(2, GL_FLOAT, 0, coords);
-	glTexCoordPointer(2, GL_FLOAT, 0, texcoords);
+	glTexCoordPointer(2, GL_FLOAT, 0, picture->texcoords);
 
 	glDrawArrays(GL_QUADS, 0, 4);
 }
