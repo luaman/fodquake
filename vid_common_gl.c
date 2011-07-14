@@ -34,6 +34,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #elif defined(__MACOSX__)
 #warning Fix this dummy.
 void *qglGetProcAddress(const char *p) { return 0; }
+#elif defined(AROS)
+#define qglGetProcAddress AROSMesaGetProcAddress
 #else
 #define GLX_GLXEXT_PROTOTYPES 1
 #include <GL/glx.h>
@@ -55,6 +57,8 @@ void (*qglBufferDataARB)(GLenum, GLsizeiptrARB, const GLvoid *, GLenum);
 qboolean gl_combine = false;
 
 qboolean gl_add_ext = false;
+
+qboolean gl_npot;
 
 qboolean gl_vbo = false;
 
@@ -139,6 +143,7 @@ void GL_CheckExtensions (void)
 
 	gl_combine = CheckExtension("GL_ARB_texture_env_combine");
 	gl_add_ext = CheckExtension("GL_ARB_texture_env_add");
+	gl_npot = CheckExtension("GL_ARB_texture_non_power_of_two");
 	gl_vbo = CheckExtension("GL_ARB_vertex_buffer_object");
 	if (gl_vbo)
 	{

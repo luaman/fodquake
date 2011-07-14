@@ -31,6 +31,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #else
 #include <GL/gl.h>
 #endif
+
+#ifdef AROS
+#include <proto/mesa.h>
+#endif
+
 #include "gl_texture.h"
 #include "gl_model.h"
 
@@ -270,7 +275,7 @@ extern float gldepthmin, gldepthmax;
 extern byte color_white[4], color_black[4];
 extern qboolean gl_mtexable;
 extern int gl_textureunits;
-extern qboolean gl_combine, gl_add_ext, gl_vbo;
+extern qboolean gl_combine, gl_add_ext, gl_npot, gl_vbo;
 
 extern int vbo_number;
 

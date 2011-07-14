@@ -21,7 +21,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <netinet/in.h>
 #include <netdb.h>
 #include <errno.h>
+
+#ifdef __MORPHOS__
 #include <sys/filio.h>
+#elif defined(AROS)
+#include <sys/ioctl.h>
+#endif
+
+#include <devices/timer.h>
 
 #include <proto/exec.h>
 #include <proto/socket.h>
@@ -39,6 +46,8 @@ struct SysSocket
 struct SysNetData
 {
 	struct Library *SocketBase;
+	struct MsgPort *timerport;
+	struct timerequest *timerrequest;
 };
 
 #define SocketBase netdata->SocketBase
@@ -53,7 +62,30 @@ struct SysNetData *Sys_Net_Init()
 		SocketBase = OpenLibrary("bsdsocket.library", 0);
 		if (SocketBase)
 		{
-			return netdata;
+			netdata->timerport = CreateMsgPort();
+			if (netdata->timerport)
+			{
+				netdata->timerrequest = (struct timerequest *)CreateIORequest(netdata->timerport, sizeof(*netdata->timerrequest));
+				if (netdata->timerrequest)
+				{
+					if (OpenDevice(TIMERNAME, UNIT_MICROHZ, (struct IORequest *)netdata->timerrequest, 0) == 0)
+					{
+						netdata->timerrequest->tr_node.io_Command = TR_ADDREQUEST;
+						netdata->timerrequest->tr_time.tv_secs = 1;
+						netdata->timerrequest->tr_time.tv_micro = 0;
+						SendIO((struct IORequest *)netdata->timerrequest);
+						AbortIO((struct IORequest *)netdata->timerrequest);
+
+						return netdata;
+					}
+
+					DeleteIORequest((struct IORequest *)netdata->timerrequest);
+				}
+
+				DeleteMsgPort(netdata->timerport);
+			}
+
+			CloseLibrary(SocketBase);
 		}
 
 		FreeVec(netdata);
@@ -64,6 +96,10 @@ struct SysNetData *Sys_Net_Init()
 
 void Sys_Net_Shutdown(struct SysNetData *netdata)
 {
+	WaitIO((struct IORequest *)netdata->timerrequest);
+	CloseDevice((struct IORequest *)netdata->timerrequest);
+	DeleteIORequest((struct IORequest *)netdata->timerrequest);
+	DeleteMsgPort(netdata->timerport);
 	CloseLibrary(SocketBase);
 	FreeVec(netdata);
 }
@@ -219,15 +255,27 @@ int Sys_Net_Receive(struct SysNetData *netdata, struct SysSocket *socket, void *
 
 void Sys_Net_Wait(struct SysNetData *netdata, struct SysSocket *socket, unsigned int timeout_us)
 {
-	struct timeval tv;
 	fd_set rfds;
+	ULONG sigmask;
+
+	WaitIO((struct IORequest *)netdata->timerrequest);
+
+	if (SetSignal(0, 0) & (1<<netdata->timerport->mp_SigBit))
+		Wait(1<<netdata->timerport->mp_SigBit);
 
 	FD_ZERO(&rfds);
 	FD_SET(socket->s, &rfds);
 
-	tv.tv_sec = timeout_us / 1000000;
-	tv.tv_usec = timeout_us % 1000000;
+	netdata->timerrequest->tr_node.io_Command = TR_ADDREQUEST;
+	netdata->timerrequest->tr_time.tv_secs = timeout_us / 1000000;
+	netdata->timerrequest->tr_time.tv_micro = timeout_us % 1000000;
 
-	WaitSelect(socket->s + 1, &rfds, 0, 0, &tv, 0);
+	SendIO((struct IORequest *)netdata->timerrequest);
+
+	sigmask = 1<<netdata->timerport->mp_SigBit;
+
+	WaitSelect(socket->s + 1, &rfds, 0, 0, 0, &sigmask);
+
+	AbortIO((struct IORequest *)netdata->timerrequest);
 }
 

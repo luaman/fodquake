@@ -114,7 +114,9 @@ extern spritedesc_t		r_spritedesc;
 extern zpointdesc_t		r_zpointdesc;
 extern polydesc_t		r_polydesc;
 
+#if 0
 extern vec3_t	r_pright, r_pup, r_ppn;
+#endif
 
 
 void D_Aff8Patch (void *pcolormap);

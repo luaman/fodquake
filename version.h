@@ -32,6 +32,8 @@
 #elif defined(GEKKO)
 /* Not entirely true, but close enough for now. */
 #define QW_PLATFORM     "Wii"
+#elif defined(AROS)
+#define QW_PLATFORM     "AROS"
 #endif
 
 #ifdef GLQUAKE
