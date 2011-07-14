@@ -1,10 +1,4 @@
-#import <AppKit/NSApplication.h>
-#import <AppKit/NSScreen.h>
-#import <AppKit/NSWindow.h>
-#import <AppKit/NSOpenGL.h>
-#import <AppKit/NSOpenGLView.h>
-#import <AppKit/NSCursor.h>
-#import <AppKit/NSEvent.h>
+#import <AppKit/AppKit.h>
 
 #undef true
 #undef false

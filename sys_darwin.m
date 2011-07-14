@@ -1,8 +1,9 @@
-#include <mach/mach_time.h>
+#import <AppKit/AppKit.h>
+#import <mach/mach_time.h>
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdarg.h>
+#import <stdio.h>
+#import <stdlib.h>
+#import <stdarg.h>
 
 static mach_timebase_info_data_t tbinfo;
 
@@ -55,6 +56,36 @@ void Sys_Error(char *error, ...)
 	fprintf(stderr, "Error: %s\n", string);
 
 	Host_Shutdown();
+	
+	if (NSApp == nil)
+	{
+		[NSApplication sharedApplication];
+	}
+	if (NSApp)
+	{
+		NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
+		if (pool)
+		{
+			NSString *user = [[NSString alloc] initWithCString:string encoding:NSASCIIStringEncoding];
+			if (user)
+			{
+				NSAlert *alert = [[NSAlert alloc] init];
+				if (alert)
+				{
+					[alert setMessageText:@"FodQuake error"];
+					[alert setInformativeText:user];
+					[alert runModal];
+					[alert release];
+				}
+				
+				[user release];
+			}
+			
+			[pool release];
+		}
+		
+		[NSApp release];
+	}
 
 	exit(1);
 }
