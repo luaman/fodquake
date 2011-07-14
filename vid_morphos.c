@@ -82,7 +82,9 @@ void *Sys_Video_Open(const char *mode, unsigned int width, unsigned int height, 
 					SA_Width, modeinfo.width,
 					SA_Height, modeinfo.height,
 					SA_Depth, 8,
+#ifndef AROS
 					SA_MonitorName, monitorname,
+#endif
 					SA_Quiet, TRUE,
 					TAG_DONE);
 			}
@@ -311,10 +313,17 @@ void Sys_Video_SetPalette(void *display, unsigned char *palette)
 
 	for (i = 0; i < 256; i++)
 	{
+#ifdef FOD_BIGENDIAN
 		d->pal[i * 4] = 0;
 		d->pal[i * 4 + 1] = palette[i * 3 + 0];
 		d->pal[i * 4 + 2] = palette[i * 3 + 1];
 		d->pal[i * 4 + 3] = palette[i * 3 + 2];
+#else
+		d->pal[i * 4] = palette[i * 3 + 2];
+		d->pal[i * 4 + 1] = palette[i * 3 + 1];
+		d->pal[i * 4 + 2] = palette[i * 3 + 0];
+		d->pal[i * 4 + 3] = 0;
+#endif
 	}
 }
 
