@@ -1030,8 +1030,8 @@ struct Picture *Draw_LoadPicture(const char *name, enum Draw_LoadPicture_Fallbac
 	GLint internalformat;
 	unsigned int width;
 	unsigned int height;
-	unsigned int glwidth;
-	unsigned int glheight;
+	unsigned int gltwidth;
+	unsigned int gltheight;
 	void *data;
 	void *newdata;
 
@@ -1106,18 +1106,18 @@ struct Picture *Draw_LoadPicture(const char *name, enum Draw_LoadPicture_Fallbac
 		}
 	}
 
-	glwidth = width;
-	glheight = height;
+	gltwidth = width;
+	gltheight = height;
 
 	if (data)
 	{
 		if (!gl_npot && !ISPOT(width))
-			glwidth = NPOT(width);
+			gltwidth = NPOT(width);
 
 		if (!gl_npot && !ISPOT(height))
-			glheight = NPOT(height);
+			gltheight = NPOT(height);
 
-		newdata = Draw_8to32(data, width, height, glwidth, glheight, &internalformat);
+		newdata = Draw_8to32(data, width, height, gltwidth, gltheight, &internalformat);
 
 		free(data);
 	}
@@ -1131,29 +1131,29 @@ struct Picture *Draw_LoadPicture(const char *name, enum Draw_LoadPicture_Fallbac
 		if (picture)
 		{
 			picture->texnum = texture_extension_number++;
-			picture->invwidth = 1.0/width/((double)glwidth/width);
-			picture->invheight = 1.0/height/((double)glheight/height);
+			picture->invwidth = 1.0/width/((double)gltwidth/width);
+			picture->invheight = 1.0/height/((double)gltheight/height);
 
 			GL_Bind(picture->texnum);
-			glTexImage2D(GL_TEXTURE_2D, 0, internalformat, glwidth, glheight, 0, GL_RGBA, GL_UNSIGNED_BYTE, newdata);
+			glTexImage2D(GL_TEXTURE_2D, 0, internalformat, gltwidth, gltheight, 0, GL_RGBA, GL_UNSIGNED_BYTE, newdata);
 
 			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
-			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
 			picture->texcoords[0] = 0;
 			picture->texcoords[1] = 0;
 
-			picture->texcoords[2] = (double)width/glwidth;
+			picture->texcoords[2] = (double)width/gltwidth;
 			picture->texcoords[3] = 0;
 
-			picture->texcoords[4] = (double)width/glwidth;
-			picture->texcoords[5] = (double)height/glheight;
+			picture->texcoords[4] = (double)width/gltwidth;
+			picture->texcoords[5] = (double)height/gltheight;
 
 			picture->texcoords[6] = 0;
-			picture->texcoords[7] = (double)height/glheight;
+			picture->texcoords[7] = (double)height/gltheight;
 
 		}
 
