@@ -32,6 +32,15 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "in_morphos.h"
 
+#ifdef AROS
+#include <devices/rawkeycodes.h>
+
+#define NM_WHEEL_UP RAWKEY_NM_WHEEL_UP
+#define NM_WHEEL_DOWN RAWKEY_NM_WHEEL_DOWN
+#define NM_BUTTON_FOURTH RAWKEY_NM_BUTTON_FOURTH
+#endif
+
+
 struct inputdata
 {
 	struct Screen *screen;
@@ -54,6 +63,12 @@ struct inputdata
 	int grabmouse;
 };
 
+#ifdef AROS
+static AROS_UFP2(struct InputEvent *, myinputhandler, AROS_UFHA(struct InputEvent *, moo, A0), AROS_UFHA(struct inputdata *, id, A1));
+#else
+static struct EmulLibEntry myinputhandler;
+#endif
+
 #ifndef SA_Displayed
 #define SA_Displayed (SA_Dummy + 101)
 #endif
@@ -62,184 +77,7 @@ extern struct IntuitionBase *IntuitionBase;
 
 #define DEBUGRING(x)
 
-void Sys_Input_Shutdown(void *inputdata)
-{
-	struct inputdata *id = inputdata;
-
-	if (id->inputopen)
-	{
-		id->inputreq->io_Data = (void *)&id->InputHandler;
-		id->inputreq->io_Command = IND_REMHANDLER;
-		DoIO((struct IORequest *)id->inputreq);
-
-		CloseDevice((struct IORequest *)id->inputreq);
-	}
-
-	if (id->inputreq)
-		DeleteIORequest(id->inputreq);
-
-	if (id->inputport)
-		DeleteMsgPort(id->inputport);
-
-	FreeVec(id);
-}
-
-void *Sys_Input_Init(struct Screen *screen, struct Window *window)
-{
-	struct inputdata *id;
-
-	id = AllocVec(sizeof(*id), MEMF_ANY);
-	if (id)
-	{
-		id->imsglow = id->imsghigh = id->mousebuf = id->mousex[0] = id->mousex[1] = id->mousex[2] = id->mousey[0] = id->mousey[1] = id->mousey[2] = 0;
-
-		id->grabmouse = 1;
-
-		id->screen = screen;
-		id->window = window;
-
-		id->upkey = -1;
-
-		id->inputport = CreateMsgPort();
-		if (id->inputport == 0)
-		{
-			Sys_Input_Shutdown(id);
-			Sys_Error("Unable to create message port");
-		}
-
-		id->inputreq = CreateIORequest(id->inputport, sizeof(*id->inputreq));
-		if (id->inputreq == 0)
-		{
-			Sys_Input_Shutdown(id);
-			Sys_Error("Unable to create IO request");
-		}
-
-		id->inputopen = !OpenDevice("input.device", 0, (struct IORequest *)id->inputreq, 0);
-		if (id->inputopen == 0)
-		{
-			Sys_Input_Shutdown(id);
-			Sys_Error("Unable to open input.device");
-		}
-
-		id->InputHandler.is_Node.ln_Type = NT_INTERRUPT;
-		id->InputHandler.is_Node.ln_Pri = 100;
-		id->InputHandler.is_Node.ln_Name = "FodQuake input handler";
-		id->InputHandler.is_Data = id;
-		id->InputHandler.is_Code = (void (*)())&myinputhandler;
-		id->inputreq->io_Data = (void *)&id->InputHandler;
-		id->inputreq->io_Command = IND_ADDHANDLER;
-		DoIO((struct IORequest *)id->inputreq);
-	}
-
-	return id;
-}
-
-int Sys_Input_GetKeyEvent(void *inputdata, keynum_t *keynum, qboolean *down)
-{
-	struct inputdata *id = inputdata;
-	int key;
-	qboolean dodown;
-	int i;
-
-	if (id->upkey != -1)
-	{
-		*keynum = id->upkey;
-		*down = false;
-		id->upkey = -1;
-		return 1;
-	}
-
-	key = 0;
-	dodown = 0;
-
-	if (id->imsglow != id->imsghigh)
-	{
-		i = id->imsglow;
-
-		DEBUGRING(dprintf("%d %d\n", i, id->imsghigh));
-		if (id->imsgs[i].ie_Class == IECLASS_NEWMOUSE)
-		{
-			if (id->imsgs[i].ie_Code == NM_WHEEL_UP)
-			{
-				key = K_MWHEELUP;
-			}
-			else if (id->imsgs[i].ie_Code == NM_WHEEL_DOWN)
-			{
-				key = K_MWHEELDOWN;
-			}
-
-			if (id->imsgs[i].ie_Code == NM_BUTTON_FOURTH)
-			{
-				key = K_MOUSE4;
-				dodown = true;
-			}
-			else if (id->imsgs[i].ie_Code == (NM_BUTTON_FOURTH | IECODE_UP_PREFIX))
-			{
-				key = K_MOUSE4;
-				dodown = false;
-			}
-
-			if (key)
-			{
-				id->upkey = key;
-				dodown = 1;
-			}
-		}
-		else if (id->imsgs[i].ie_Class == IECLASS_RAWKEY)
-		{
-			dodown = !(id->imsgs[i].ie_Code & IECODE_UP_PREFIX);
-			id->imsgs[i].ie_Code &= ~IECODE_UP_PREFIX;
-
-			if (id->imsgs[i].ie_Code <= 255)
-				key = keyconv[id->imsgs[i].ie_Code];
-
-			if (!key && developer.value)
-			{
-				Com_Printf("Unknown key %d\n", id->imsgs[i].ie_Code);
-			}
-		}
-		else if (id->imsgs[i].ie_Class == IECLASS_RAWMOUSE)
-		{
-			dodown = !(id->imsgs[i].ie_Code&IECODE_UP_PREFIX);
-			id->imsgs[i].ie_Code &= ~IECODE_UP_PREFIX;
-
-			if (id->imsgs[i].ie_Code == IECODE_LBUTTON)
-				key = K_MOUSE1;
-			else if (id->imsgs[i].ie_Code == IECODE_RBUTTON)
-				key = K_MOUSE2;
-			else if (id->imsgs[i].ie_Code == IECODE_MBUTTON)
-				key = K_MOUSE3;
-		}
-
-		id->imsglow++;
-		id->imsglow %= MAXIMSGS;
-	}
-
-	if (key)
-	{
-		*keynum = key;
-		*down = dodown;
-		return 1;
-	}
-
-	return 0;
-}
-
-void Sys_Input_GetMouseMovement(void *inputdata, int *mousex, int *mousey)
-{
-	struct inputdata *id = inputdata;
-	unsigned int mbuf;
-
-	mbuf = id->mousebuf;
-	id->mousebuf = (id->mousebuf+1)%3;
-
-	*mousex = id->mousex[mbuf];
-	*mousey = id->mousey[mbuf];
-	id->mousex[mbuf] = 0;
-	id->mousey[mbuf] = 0;
-}
-
-static char keyconv[] =
+static unsigned char keyconv[] =
 {
 	'`',			/* 0 */
 	'1',
@@ -503,17 +341,202 @@ static char keyconv[] =
 	0
 };
 
+void Sys_Input_Shutdown(void *inputdata)
+{
+	struct inputdata *id = inputdata;
+
+	if (id->inputopen)
+	{
+		id->inputreq->io_Data = (void *)&id->InputHandler;
+		id->inputreq->io_Command = IND_REMHANDLER;
+		DoIO((struct IORequest *)id->inputreq);
+
+		CloseDevice((struct IORequest *)id->inputreq);
+	}
+
+	if (id->inputreq)
+		DeleteIORequest(id->inputreq);
+
+	if (id->inputport)
+		DeleteMsgPort(id->inputport);
+
+	FreeVec(id);
+}
+
+void *Sys_Input_Init(struct Screen *screen, struct Window *window)
+{
+	struct inputdata *id;
+
+	id = AllocVec(sizeof(*id), MEMF_ANY);
+	if (id)
+	{
+		id->imsglow = id->imsghigh = id->mousebuf = id->mousex[0] = id->mousex[1] = id->mousex[2] = id->mousey[0] = id->mousey[1] = id->mousey[2] = 0;
+
+		id->grabmouse = 1;
+
+		id->screen = screen;
+		id->window = window;
+
+		id->upkey = -1;
+
+		id->inputport = CreateMsgPort();
+		if (id->inputport == 0)
+		{
+			Sys_Input_Shutdown(id);
+			Sys_Error("Unable to create message port");
+		}
+
+		id->inputreq = CreateIORequest(id->inputport, sizeof(*id->inputreq));
+		if (id->inputreq == 0)
+		{
+			Sys_Input_Shutdown(id);
+			Sys_Error("Unable to create IO request");
+		}
+
+		id->inputopen = !OpenDevice("input.device", 0, (struct IORequest *)id->inputreq, 0);
+		if (id->inputopen == 0)
+		{
+			Sys_Input_Shutdown(id);
+			Sys_Error("Unable to open input.device");
+		}
+
+		id->InputHandler.is_Node.ln_Type = NT_INTERRUPT;
+		id->InputHandler.is_Node.ln_Pri = 100;
+		id->InputHandler.is_Node.ln_Name = "FodQuake input handler";
+		id->InputHandler.is_Data = id;
+		id->InputHandler.is_Code = (void (*)())&myinputhandler;
+		id->inputreq->io_Data = (void *)&id->InputHandler;
+		id->inputreq->io_Command = IND_ADDHANDLER;
+		DoIO((struct IORequest *)id->inputreq);
+	}
+
+	return id;
+}
+
+int Sys_Input_GetKeyEvent(void *inputdata, keynum_t *keynum, qboolean *down)
+{
+	struct inputdata *id = inputdata;
+	int key;
+	qboolean dodown;
+	int i;
+
+	if (id->upkey != -1)
+	{
+		*keynum = id->upkey;
+		*down = false;
+		id->upkey = -1;
+		return 1;
+	}
+
+	key = 0;
+	dodown = 0;
+
+	if (id->imsglow != id->imsghigh)
+	{
+		i = id->imsglow;
+
+		DEBUGRING(dprintf("%d %d\n", i, id->imsghigh));
+		if (id->imsgs[i].ie_Class == IECLASS_NEWMOUSE)
+		{
+			if (id->imsgs[i].ie_Code == NM_WHEEL_UP)
+			{
+				key = K_MWHEELUP;
+			}
+			else if (id->imsgs[i].ie_Code == NM_WHEEL_DOWN)
+			{
+				key = K_MWHEELDOWN;
+			}
+
+			if (id->imsgs[i].ie_Code == NM_BUTTON_FOURTH)
+			{
+				key = K_MOUSE4;
+				dodown = true;
+			}
+			else if (id->imsgs[i].ie_Code == (NM_BUTTON_FOURTH | IECODE_UP_PREFIX))
+			{
+				key = K_MOUSE4;
+				dodown = false;
+			}
+
+			if (key)
+			{
+				id->upkey = key;
+				dodown = 1;
+			}
+		}
+		else if (id->imsgs[i].ie_Class == IECLASS_RAWKEY)
+		{
+			dodown = !(id->imsgs[i].ie_Code & IECODE_UP_PREFIX);
+			id->imsgs[i].ie_Code &= ~IECODE_UP_PREFIX;
+
+			if (id->imsgs[i].ie_Code <= 255)
+				key = keyconv[id->imsgs[i].ie_Code];
+
+			if (!key && developer.value)
+			{
+				Com_Printf("Unknown key %d\n", id->imsgs[i].ie_Code);
+			}
+		}
+		else if (id->imsgs[i].ie_Class == IECLASS_RAWMOUSE)
+		{
+			dodown = !(id->imsgs[i].ie_Code&IECODE_UP_PREFIX);
+			id->imsgs[i].ie_Code &= ~IECODE_UP_PREFIX;
+
+			if (id->imsgs[i].ie_Code == IECODE_LBUTTON)
+				key = K_MOUSE1;
+			else if (id->imsgs[i].ie_Code == IECODE_RBUTTON)
+				key = K_MOUSE2;
+			else if (id->imsgs[i].ie_Code == IECODE_MBUTTON)
+				key = K_MOUSE3;
+		}
+
+		id->imsglow++;
+		id->imsglow %= MAXIMSGS;
+	}
+
+	if (key)
+	{
+		*keynum = key;
+		*down = dodown;
+		return 1;
+	}
+
+	return 0;
+}
+
+void Sys_Input_GetMouseMovement(void *inputdata, int *mousex, int *mousey)
+{
+	struct inputdata *id = inputdata;
+	unsigned int mbuf;
+
+	mbuf = id->mousebuf;
+	id->mousebuf = (id->mousebuf+1)%3;
+
+	*mousex = id->mousex[mbuf];
+	*mousey = id->mousey[mbuf];
+	id->mousex[mbuf] = 0;
+	id->mousey[mbuf] = 0;
+}
+
+#ifndef AROS
 static struct InputEvent *myinputhandler_real(void);
 
 static struct EmulLibEntry myinputhandler =
 {
 	TRAP_LIB, 0, (void (*)(void))myinputhandler_real
 };
+#endif
 
+#ifdef AROS
+static AROS_UFH2(struct InputEvent *, myinputhandler, AROS_UFHA(struct InputEvent *, moo, A0), AROS_UFHA(struct inputdata *, id, A1))
+{
+	AROS_USERFUNC_INIT	
+#else
 static struct InputEvent *myinputhandler_real()
 {
 	struct InputEvent *moo = (struct InputEvent *)REG_A0;
 	struct inputdata *id = (struct inputdata *)REG_A1;
+#endif
 
 	struct InputEvent *coin;
 
@@ -526,9 +549,11 @@ static struct InputEvent *myinputhandler_real()
 
 	if (id->screen)
 	{
+#ifdef __MORPHOS__
 		if (IntuitionBase->LibNode.lib_Version > 50 || (IntuitionBase->LibNode.lib_Version == 50 && IntuitionBase->LibNode.lib_Revision >= 56))
 			GetAttr(SA_Displayed, id->screen, &screeninfront);
 		else
+#endif
 			screeninfront = id->screen == IntuitionBase->FirstScreen;
 	}
 	else
@@ -568,6 +593,10 @@ static struct InputEvent *myinputhandler_real()
 	} while (coin);
 
 	return moo;
+	
+#ifdef AROS
+	AROS_USERFUNC_EXIT
+#endif
 }
 
 void Sys_Input_GrabMouse(void *inputdata, int dograb)

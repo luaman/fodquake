@@ -19,9 +19,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #define MAXIMSGS 32
 
-extern char keyconv[];
-extern struct EmulLibEntry myinputhandler;
-
 void *Sys_Input_Init(struct Screen *screen, struct Window *window);
 void Sys_Input_Shutdown(void *inputdata);
 int Sys_Input_GetKeyEvent(void *inputdata, keynum_t *keynum, qboolean *down);
