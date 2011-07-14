@@ -21,7 +21,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <netinet/in.h>
 #include <netdb.h>
 #include <errno.h>
+
+#ifdef __MORPHOS__
 #include <sys/filio.h>
+#elif defined(AROS)
+#include <sys/ioctl.h>
+#endif
 
 #include <devices/timer.h>
 
@@ -254,6 +259,9 @@ void Sys_Net_Wait(struct SysNetData *netdata, struct SysSocket *socket, unsigned
 	ULONG sigmask;
 
 	WaitIO((struct IORequest *)netdata->timerrequest);
+
+	if (SetSignal(0, 0) & (1<<netdata->timerport->mp_SigBit))
+		Wait(1<<netdata->timerport->mp_SigBit);
 
 	FD_ZERO(&rfds);
 	FD_SET(socket->s, &rfds);
