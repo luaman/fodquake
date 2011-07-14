@@ -33,6 +33,27 @@ ifeq ($(OS), morphos)
 	OSGLOBJS=vid_mode_morphos.o vid_tinygl.o
 endif
 
+ifeq ($(OS), aros)
+	OSCFLAGS=
+	OSOBJS= \
+		sys_morphos.o \
+		net_amitcp.o \
+		thread_aros.o \
+		cd_morphos.o \
+		in_morphos.o \
+		sys_io_morphos.o \
+		sys_lib_null.o
+
+#		snd_morphos.o \
+
+	OSSWOBJS=vid_mode_morphos.o vid_morphos.o
+
+	OSGLOBJS=vid_mode_morphos.o vid_arosmesa.o
+	OSGLLDFLAGS=-lGL
+
+	THIRDPARTYLIBS=libz libpng libjpeg
+endif
+
 ifeq ($(OS), linux)
 	OSOBJS= \
 		sys_linux.o \

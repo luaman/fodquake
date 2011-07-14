@@ -34,6 +34,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #elif defined(__MACOSX__)
 #warning Fix this dummy.
 void *qglGetProcAddress(const char *p) { return 0; }
+#elif defined(AROS)
+#define qglGetProcAddress AROSMesaGetProcAddress
 #else
 #define GLX_GLXEXT_PROTOTYPES 1
 #include <GL/glx.h>
