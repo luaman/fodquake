@@ -1458,7 +1458,7 @@ static void Sbar_DeathmatchOverlay()
 			if (cl.teamplay)
 			{
 				Q_strncpyz  (team, s->team, sizeof(team));
-				Q_snprintfz (scorerow, sizeof(scorerow), " %3i %c%3i%c  %-4s %s", minutes, k==mynum?16:' ', s->frags, k==mynum?17:' ', team, name);
+				Q_snprintfz (scorerow, sizeof(scorerow), " %3i %c%3i%c %-4s %s", minutes, k==mynum?16:' ', s->frags, k==mynum?17:' ', team, name);
 			}
 			else
 			{
