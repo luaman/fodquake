@@ -128,6 +128,8 @@ void *Sys_Video_Open(const char *mode, unsigned int width, unsigned int height, 
 						AMA_Top, d->screen?0:d->window->BorderTop,
 						AMA_Width, width,
 						AMA_Height, height,
+						AMA_NoStencil, TRUE,
+						AMA_NoAccum, TRUE,
 						TAG_DONE);
 
 					if (d->mesacontext)
