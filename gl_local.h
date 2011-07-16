@@ -214,6 +214,9 @@ void R_InitOtherTextures(void);
 #define GL_COMBINE_RGB_EXT			0x8571
 #define GL_RGB_SCALE_EXT			0x8573
 
+//fuck windows
+#define GL_CLAMP_TO_EDGE 0x812F
+
 typedef void (APIENTRY *lpMTexFUNC) (GLenum, GLfloat, GLfloat);
 typedef void (APIENTRY *lpSelTexFUNC) (GLenum);
 
