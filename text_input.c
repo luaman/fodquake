@@ -49,7 +49,7 @@ struct input *Text_Input_Create(char *string, int size, int position, int duplic
 		}
 
 		input->string[0] = '\0';
-		strlcpy(input->string, string, sizeof(input->size));
+		strlcpy(input->string, string, input->size);
 
 		input->flag |= TI_DUPLICATED;		
 	}
@@ -116,6 +116,13 @@ void Text_Input_Handle_Key(struct input *input, int key)
 
 	if (key == K_DEL)
 	{
+
+		if (input->length == 0)
+			return;
+
+		if (input->position >= input->length)
+			return;
+
 		for (i=input->position; i<input->length; i++)
 			input->string[i] = input->string[i+1];
 
