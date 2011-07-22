@@ -1022,6 +1022,37 @@ void Weight_Enable_f(void)
 	weight_disable = 0;
 }
 
+void Weight_Set_f(void)
+{
+	cvar_t *cvar;
+	cmd_function_t *cmd_function;
+	cmd_alias_t *cmd_alias;
+
+	if (Cmd_Argc() != 3)
+	{
+		Com_Printf("Usage: %s [variable/command/alias] [weight].\n", Cmd_Argv(0));
+		return;
+	}
+
+	if ((cvar=Cvar_FindVar(Cmd_Argv(2))))
+	{
+		cvar->weight = atoi(Cmd_Argv(1));
+		return;
+	}
+
+	if ((cmd_function=Cmd_FindCommand(Cmd_Argv(2))))
+	{
+		cmd_function->weight = atoi(Cmd_Argv(1));
+		return;
+	}
+
+	if ((cmd_alias=Cmd_FindAlias(Cmd_Argv(2))))
+	{
+		cmd_alias->weight = atoi(Cmd_Argv(1));
+		return;
+	}
+}
+
 void Context_Sensitive_Tab_Completion_CvarInit(void)
 {
 	Command_Completion.name = "Command_Completion";
@@ -1036,46 +1067,14 @@ void Context_Sensitive_Tab_Completion_CvarInit(void)
 	Cvar_Register(&context_sensitive_tab_completion_ignore_alt_tab);
 	Cmd_AddCommand("weight_enable", Weight_Enable_f);
 	Cmd_AddCommand("weight_disable", Weight_Disable_f);
+	Cmd_AddCommand("weight_set", Weight_Set_f);
 }
 
 void Context_Weighting_Init(void)
 {
-	cvar_t *cvar;
-	cmd_function_t *cmd_function;
-	cmd_alias_t *cmd_alias;
-	FILE *f;
-	char buf[512];
-	int weight;
-
-	f = fopen("fodquake/weight_file", "r");
-
-	if (f == NULL)
-		return;
-
-	while (fscanf(f, "%i %s", &weight, &buf[0]) > 0)
-	{
-		if ((cvar=Cvar_FindVar(buf)))
-		{
-			cvar->weight = weight;
-			continue;
-		}
-
-		if ((cmd_function=Cmd_FindCommand(buf)))
-		{
-			cmd_function->weight = weight;
-			continue;
-		}
-
-		if ((cmd_alias=Cmd_FindAlias(buf)))
-		{
-			cmd_alias->weight = weight;
-			continue;
-		}
-	}
-
-	fclose(f);
-
-	weight_disable = 0;
+	Cbuf_AddText("weight_disable\n");
+	Cbuf_AddText("exec weight_file\n");
+	Cbuf_AddText("weight_enable\n");
 }
 
 void Context_Weighting_Shutdown(void)
@@ -1095,15 +1094,15 @@ void Context_Weighting_Shutdown(void)
 
 	for (cmd=cmd_functions; cmd; cmd=cmd->next)
 		if (cmd->weight > 0)
-			fprintf(f, "%i %s\n", cmd->weight, cmd->name);
+			fprintf(f, "weight_set %i %s\n", cmd->weight, cmd->name);
 
 	for (var=cvar_vars; var; var=var->next)
 		if (var->weight > 0)
-			fprintf(f, "%i %s\n", var->weight, var->name);
+			fprintf(f, "weight_set %i %s\n", var->weight, var->name);
 
 	for (alias=cmd_alias; alias; alias=alias->next)
 		if (alias->weight > 0)
-			fprintf(f, "%i %s\n", alias->weight, alias->name);
+			fprintf(f, "weight_set %i %s\n", alias->weight, alias->name);
 
 	fclose (f);
 }

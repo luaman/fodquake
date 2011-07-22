@@ -85,7 +85,7 @@ typedef struct cmd_function_s {
 	struct cmd_function_s	*next;
 	char					*name;
 	xcommand_t				function;
-	int weight;
+	int						weight;
 } cmd_function_t;
 
 void Cmd_Init(void);
