@@ -678,7 +678,7 @@ static int name_compare(const void *a, const void *b)
 static int match_compare(const void *a, const void *b)
 {
 	struct cva_s *x, *y;
-    int w1, w2;
+	int w1, w2;
 
 	if (a == NULL)
 		return -1;
@@ -689,7 +689,7 @@ static int match_compare(const void *a, const void *b)
 	x = (struct cva_s *)a;
 	y = (struct cva_s *)b;
 
-    switch (x->type)
+	switch (x->type)
 	{
 		case 0:
 			w1 = x->info.c->weight;
@@ -716,7 +716,7 @@ static int match_compare(const void *a, const void *b)
 			w2 = y->info.v->weight;
 			break;
 		default:
-            w2 = 0;
+			w2 = 0;
 	}
 
 
@@ -868,7 +868,7 @@ static int setup_command_completion_data(struct cst_info *self)
 				add = 0;
 				break;
 			}
-            match += s - cmd->name;
+			match += s - cmd->name;
 		}
 
 		if (add)
@@ -1014,12 +1014,12 @@ int weight_disable = 1;
 
 void Weight_Disable_f(void)
 {
-    weight_disable = 1;
+	weight_disable = 1;
 }
 
 void Weight_Enable_f(void)
 {
-    weight_disable = 0;
+	weight_disable = 0;
 }
 
 void Context_Sensitive_Tab_Completion_CvarInit(void)
@@ -1034,8 +1034,8 @@ void Context_Sensitive_Tab_Completion_CvarInit(void)
 	Cvar_Register(&context_sensitive_tab_completion_sorting_method);
 	Cvar_Register(&context_sensitive_tab_completion_show_results);
 	Cvar_Register(&context_sensitive_tab_completion_ignore_alt_tab);
-    Cmd_AddCommand("weight_enable", Weight_Enable_f);
-    Cmd_AddCommand("weight_disable", Weight_Disable_f);
+	Cmd_AddCommand("weight_enable", Weight_Enable_f);
+	Cmd_AddCommand("weight_disable", Weight_Disable_f);
 }
 
 void Context_Weighting_Init(void)
@@ -1043,39 +1043,39 @@ void Context_Weighting_Init(void)
 	cvar_t *cvar;
 	cmd_function_t *cmd_function;
 	cmd_alias_t *cmd_alias;
-    FILE *f;
-    char buf[512];
-    int weight;
+	FILE *f;
+	char buf[512];
+	int weight;
 
-    f = fopen("fodquake/weight_file", "r");
+	f = fopen("fodquake/weight_file", "r");
 
-    if (f == NULL)
-        return;
+	if (f == NULL)
+		return;
 
-    while (fscanf(f, "%i %s", &weight, &buf[0]) > 0)
-    {
-        if ((cvar=Cvar_FindVar(buf)))
-        {
-            cvar->weight = weight;
-            continue;
-        }
+	while (fscanf(f, "%i %s", &weight, &buf[0]) > 0)
+	{
+		if ((cvar=Cvar_FindVar(buf)))
+		{
+			cvar->weight = weight;
+			continue;
+		}
 
-        if ((cmd_function=Cmd_FindCommand(buf)))
-        {
-            cmd_function->weight = weight;
-            continue;
-        }
+		if ((cmd_function=Cmd_FindCommand(buf)))
+		{
+			cmd_function->weight = weight;
+			continue;
+		}
 
-        if ((cmd_alias=Cmd_FindAlias(buf)))
-        {
-            cmd_alias->weight = weight;
-            continue;
-        }
-    }
+		if ((cmd_alias=Cmd_FindAlias(buf)))
+		{
+			cmd_alias->weight = weight;
+			continue;
+		}
+	}
 
-    fclose(f);
+	fclose(f);
 
-    weight_disable = 0;
+	weight_disable = 0;
 }
 
 void Context_Weighting_Shutdown(void)
@@ -1086,25 +1086,25 @@ void Context_Weighting_Shutdown(void)
 	cmd_function_t *cmd;
 	cmd_alias_t *alias;
 	cvar_t *var;
-    FILE *f;
+	FILE *f;
 
-    f = fopen("fodquake/weight_file", "w");
+	f = fopen("fodquake/weight_file", "w");
 
-    if (f == NULL)
-        return;
+	if (f == NULL)
+		return;
 
 	for (cmd=cmd_functions; cmd; cmd=cmd->next)
-        if (cmd->weight > 0)
-            fprintf(f, "%i %s\n", cmd->weight, cmd->name);
+		if (cmd->weight > 0)
+			fprintf(f, "%i %s\n", cmd->weight, cmd->name);
 
 	for (var=cvar_vars; var; var=var->next)
-        if (var->weight > 0)
-            fprintf(f, "%i %s\n", var->weight, var->name);
+		if (var->weight > 0)
+			fprintf(f, "%i %s\n", var->weight, var->name);
 
 	for (alias=cmd_alias; alias; alias=alias->next)
-        if (alias->weight > 0)
-            fprintf(f, "%i %s\n", alias->weight, alias->name);
+		if (alias->weight > 0)
+			fprintf(f, "%i %s\n", alias->weight, alias->name);
 
-    fclose (f);
+	fclose (f);
 }
 
