@@ -45,6 +45,7 @@ typedef struct cvar_s {
 	void (*PostChangeCallback)(struct cvar_s *);
 	float	value;
 	char	*defaultvalue;		
+	int		weight;
 	struct cvar_group_s *group;		
 	struct cvar_s *next_in_group;	
 	struct cvar_s *hash_next;

@@ -4,7 +4,6 @@ struct cst_info
 {
 	char *name;
 	char input[INPUT_MAX];
-	int input_position;
 	int selection;
 	int direction;
 	int argument_start;
@@ -24,6 +23,7 @@ struct cst_info
 	int (*get_data)(struct cst_info *self, int remove);
 
 	int parser_behaviour;
+	struct input *new_input;
 };
 
 void CSTC_Add(char *name, int (*conditions)(void), int (*result)(struct cst_info *self, int *results, int get_result, int result_type, char **result), int (*get_data)(struct cst_info *self, int remove), int parser_behaviour);

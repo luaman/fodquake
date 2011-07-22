@@ -253,6 +253,7 @@ OBJS= \
 	host.o \
 	huffman.o \
 	image.o \
+	text_input.o \
 	keys.o \
 	linked_list.o \
 	match_tools.o \
