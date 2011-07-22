@@ -44,7 +44,7 @@ typedef struct cvar_s {
 	qboolean	(*OnChange)(struct cvar_s *var, char *value);
 	float	value;
 	char	*defaultvalue;		
-    int     weight;
+	int		weight;
 	struct cvar_group_s *group;		
 	struct cvar_s *next_in_group;	
 	struct cvar_s *hash_next;

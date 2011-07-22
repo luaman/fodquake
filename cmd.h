@@ -85,7 +85,7 @@ typedef struct cmd_function_s {
 	struct cmd_function_s	*next;
 	char					*name;
 	xcommand_t				function;
-    int weight;
+	int weight;
 } cmd_function_t;
 
 void Cmd_Init(void);
@@ -158,7 +158,7 @@ typedef struct cmd_alias_s {
 	char	name[MAX_ALIAS_NAME];
 	char	*value;
 	int		flags;
-    int     weight;
+	int		weight;
 } cmd_alias_t;
 
 qboolean Cmd_DeleteAlias (char *name);	// return true if successful
