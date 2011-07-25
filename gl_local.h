@@ -131,52 +131,7 @@ extern	int	playerfbtextures[MAX_CLIENTS];
 extern	int	skyboxtextures;
 extern	int underwatertexture, detailtexture;
 
-extern	cvar_t	r_drawentities;
-extern	cvar_t	r_drawflame;
-extern	cvar_t	r_speeds;
-extern	cvar_t	r_fullbright;
-extern	cvar_t	r_lightmap;
-extern	cvar_t	r_wateralpha;
-extern	cvar_t	r_dynamic;
-extern	cvar_t	r_novis;
-extern	cvar_t	r_netgraph;
-extern	cvar_t	r_fullbrightSkins;
-extern	cvar_t	r_fastsky;
-extern	cvar_t	r_skycolor;
-extern	cvar_t	r_farclip;
-
-extern	cvar_t	r_skyname;
-extern  cvar_t  gl_caustics;
-extern  cvar_t  gl_detail;
-
-extern	cvar_t	gl_subdivide_size;
-extern	cvar_t	gl_clear;
-extern	cvar_t	gl_cull;
-extern	cvar_t	gl_smoothmodels;
-extern	cvar_t	gl_polyblend;
-extern	cvar_t	gl_flashblend;
-extern	cvar_t	gl_nocolors;
-extern	cvar_t	gl_finish;
-extern	cvar_t	gl_fb_bmodels;
-extern	cvar_t	gl_fb_models;
-extern	cvar_t	gl_lightmode;
-extern  cvar_t  gl_solidparticles;
-extern	cvar_t	gl_playermip;
-
-
-extern  cvar_t gl_part_explosions;
-extern  cvar_t gl_part_trails;
-extern  cvar_t gl_part_spikes;
-extern  cvar_t gl_part_gunshots;
-extern  cvar_t gl_part_blood;
-extern  cvar_t gl_part_telesplash;
-extern  cvar_t gl_part_blobs;
-extern  cvar_t gl_part_lavasplash;
-extern	cvar_t gl_part_inferno;
-
-extern cvar_t gl_max_size, gl_scaleModelTextures, gl_scaleTurbTextures, gl_miptexLevel;
-extern cvar_t gl_externalTextures_world, gl_externalTextures_bmodels;
-
+#include "gl_cvars.h"
 
 extern	int		lightmode;		// set to gl_lightmode on mapchange
 
@@ -258,6 +213,9 @@ void R_InitOtherTextures(void);
 #define GL_COMBINE_EXT				0x8570
 #define GL_COMBINE_RGB_EXT			0x8571
 #define GL_RGB_SCALE_EXT			0x8573
+
+//fuck windows
+#define GL_CLAMP_TO_EDGE 0x812F
 
 typedef void (APIENTRY *lpMTexFUNC) (GLenum, GLfloat, GLfloat);
 typedef void (APIENTRY *lpSelTexFUNC) (GLenum);
