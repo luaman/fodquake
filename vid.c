@@ -70,7 +70,7 @@ static qboolean vid_conheight_callback(cvar_t *var, char *value)
 static qboolean in_grab_windowed_mouse_callback(cvar_t *var, char *value)
 {
 	if (display)
-		Sys_Video_GrabMouse(display, atoi(value));
+		Sys_Video_GrabMouse(display, Sys_Video_GetFullscreen(display) || atoi(value));
 
 	return false;
 }
@@ -321,7 +321,7 @@ void VID_Open()
 			if (windowtitle)
 				Sys_Video_SetWindowTitle(display, windowtitle);
 
-			Sys_Video_GrabMouse(display, in_grab_windowed_mouse.value);
+			Sys_Video_GrabMouse(display, Sys_Video_GetFullscreen(display) || in_grab_windowed_mouse.value);
 
 			R_Init();
 

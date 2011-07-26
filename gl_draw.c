@@ -581,6 +581,7 @@ void DrawImp_Character(int x, int y, unsigned char num)
 	}
 
 	GL_Bind(char_texture);
+	GL_SetAlphaTestBlend(1, 0);
 
 	Draw_CharPoly(x, y, num);
 }
@@ -1278,7 +1279,7 @@ void Draw_DrawSubPicture(struct Picture *picture, unsigned int sx, unsigned int 
 
 	GL_SetArrays(FQ_GL_VERTEX_ARRAY | FQ_GL_TEXTURE_COORD_ARRAY);
 	glVertexPointer(2, GL_FLOAT, 0, coords);
-	glTexCoordPointer(2, GL_FLOAT, 0, picture->texcoords);
+	glTexCoordPointer(2, GL_FLOAT, 0, texcoords);
 
 	glDrawArrays(GL_QUADS, 0, 4);
 }
