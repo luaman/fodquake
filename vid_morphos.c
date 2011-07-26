@@ -107,6 +107,7 @@ void *Sys_Video_Open(const char *mode, unsigned int width, unsigned int height, 
 
 				strlcpy(monitorname, "Dunno", sizeof(monitorname));
 
+#ifndef __AROS__
 				if (IntuitionBase->LibNode.lib_Version > 50 || (IntuitionBase->LibNode.lib_Version == 50 && IntuitionBase->LibNode.lib_Revision >= 53))
 				{
 					GetAttr(SA_MonitorName, d->screen, &p);
@@ -118,6 +119,7 @@ void *Sys_Video_Open(const char *mode, unsigned int width, unsigned int height, 
 							*p = 0;
 					}
 				}
+#endif
 
 				snprintf(d->used_mode, sizeof(d->used_mode), "%s,%d,%d,%d", monitorname, width, height, GetBitMapAttr(d->screen->RastPort.BitMap, BMA_DEPTH));
 			}
