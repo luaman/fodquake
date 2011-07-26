@@ -581,6 +581,7 @@ void DrawImp_Character(int x, int y, unsigned char num)
 	}
 
 	GL_Bind(char_texture);
+	GL_SetAlphaTestBlend(1, 0);
 
 	Draw_CharPoly(x, y, num);
 }
