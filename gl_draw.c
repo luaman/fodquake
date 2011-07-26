@@ -1278,7 +1278,7 @@ void Draw_DrawSubPicture(struct Picture *picture, unsigned int sx, unsigned int 
 
 	GL_SetArrays(FQ_GL_VERTEX_ARRAY | FQ_GL_TEXTURE_COORD_ARRAY);
 	glVertexPointer(2, GL_FLOAT, 0, coords);
-	glTexCoordPointer(2, GL_FLOAT, 0, picture->texcoords);
+	glTexCoordPointer(2, GL_FLOAT, 0, texcoords);
 
 	glDrawArrays(GL_QUADS, 0, 4);
 }
