@@ -131,7 +131,7 @@ void *Sys_Video_Open(const char *mode, unsigned int width, unsigned int height, 
 					width = d->screen->Width;
 					height = d->screen->Height;
 
-					strlcpy(monitorname, sizeof(monitorname), "Dunno");
+					strlcpy(monitorname, "Dunno", sizeof(monitorname));
 
 					if (IntuitionBase->LibNode.lib_Version > 50 || (IntuitionBase->LibNode.lib_Version == 50 && IntuitionBase->LibNode.lib_Revision >= 53))
 					{
