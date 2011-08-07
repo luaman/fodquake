@@ -45,7 +45,6 @@ int do_stdin = 1;
 
 
 cvar_t sys_nostdout = { "sys_nostdout", "0" };
-cvar_t sys_extrasleep = { "sys_extrasleep", "0" };
 
 
 void Sys_Printf(char *fmt, ...)
@@ -82,7 +81,6 @@ void Sys_CvarInit(void)
 	if (dedicated)
 	{
 		Cvar_Register(&sys_nostdout);
-		Cvar_Register(&sys_extrasleep);
 	}
 }
 
@@ -278,12 +276,6 @@ int main(int argc, char **argv)
 		oldtime = newtime;
 
 		Host_Frame(time);
-
-		if (dedicated)
-		{
-			if (sys_extrasleep.value)
-				usleep(sys_extrasleep.value);
-		}
 	}
 }
 

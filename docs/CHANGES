@@ -44,6 +44,7 @@ Version 0.3
 - Removed the gl_affinemodels cvar.
 - Added cl_weaponfire and cl_weaponswitch cvars, used in combination with the
   also added +weapon command.
+- Removed the sys_extrasleep cvar which has been obsolete since Fodquake 0.1.
 
 Version 0.2
 ===========

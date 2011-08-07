@@ -26,6 +26,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <proto/intuition.h>
 #include <proto/cybergraphics.h>
 
+#include <string.h>
+
 #include "quakedef.h"
 #include "input.h"
 #include "keys.h"
@@ -85,6 +87,7 @@ void *Sys_Video_Open(const char *mode, unsigned int width, unsigned int height, 
 	struct display *d;
 	struct modeinfo modeinfo;
 	char monitorname[128];
+	char *p;
 	int r;
 	int i;
 
@@ -128,7 +131,21 @@ void *Sys_Video_Open(const char *mode, unsigned int width, unsigned int height, 
 					width = d->screen->Width;
 					height = d->screen->Height;
 
-					snprintf(d->used_mode, sizeof(d->used_mode), "Dunno,%d,%d,42", width, height);
+					strlcpy(monitorname, "Dunno", sizeof(monitorname));
+
+					if (IntuitionBase->LibNode.lib_Version > 50 || (IntuitionBase->LibNode.lib_Version == 50 && IntuitionBase->LibNode.lib_Revision >= 53))
+					{
+						GetAttr(SA_MonitorName, d->screen, &p);
+						if (p)
+						{
+							strlcpy(monitorname, p, sizeof(monitorname));
+							p = strstr(monitorname, ".monitor");
+							if (p)
+								*p = 0;
+						}
+					}
+
+					snprintf(d->used_mode, sizeof(d->used_mode), "%s,%d,%d,%d", monitorname, width, height, GetBitMapAttr(d->screen->RastPort.BitMap, BMA_DEPTH));
 
 					if (d->gammaenabled)
 					{
