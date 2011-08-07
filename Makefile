@@ -201,17 +201,15 @@ ifeq ($(OS), macosx)
 		snd_coreaudio.o \
 		vid_mode_macosx.o \
 		clipboard_macosx.o \
-		cd_null.o
-
-	OSGLOBJS = \
+		cd_null.o \
 		vid_cocoa.o \
 		in_macosx.o
 
-	OSGLLDFLAGS = -framework AppKit -framework OpenGL -framework ApplicationServices -framework AudioUnit -framework CoreServices -framework IOKit
+	OSGLLDFLAGS = -framework OpenGL
 
 	OSCFLAGS = -D__MACOSX__
 
-	OSLDFLAGS = -lpng -ljpeg -lz
+	OSLDFLAGS = -framework AppKit -framework ApplicationServices -framework AudioUnit -framework CoreServices -framework IOKit -lpng -ljpeg -lz
 
 	THIRDPARTYLIBS=libpng libjpeg
 endif

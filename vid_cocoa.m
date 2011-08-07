@@ -3,12 +3,11 @@
 #undef true
 #undef false
 
-#include "quakedef.h"
-#include "input.h"
-#include "keys.h"
-#include "gl_local.h"
+#import "quakedef.h"
+#import "input.h"
+#import "keys.h"
+#import "gl_local.h"
 #import "in_macosx.h"
-//#import "vid.h"
 
 struct display {
 	NSAutoreleasePool *pool;
@@ -274,5 +273,13 @@ unsigned int Sys_Video_GetBytesPerRow(void *display)
 void *Sys_Video_GetBuffer(void *display)
 {
 	return NULL;
+}
+
+VID_LockBuffer()
+{
+}
+
+VID_UnlockBuffer()
+{
 }
 #endif
