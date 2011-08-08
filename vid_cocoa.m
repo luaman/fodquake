@@ -25,18 +25,6 @@ struct display {
 {
 	return YES;
 }
-@end
-
-@interface NSMyOpenGLView : NSOpenGLView
-{
-}
-@end
-
-@implementation NSMyOpenGLView 
-- (BOOL)acceptsFirstResponder
-{
-	return YES;
-}
 - (void)keyDown:(NSEvent*)event
 {
 }
@@ -50,18 +38,6 @@ void* Sys_Video_Open(const char *mode, unsigned int width, unsigned int height, 
 {
 	struct display *d;
 	NSWindow *window;
-	NSOpenGLPixelFormat *pixelformat;
-	NSOpenGLView *openglview;
-	GLint swapInterval = 1;
-	
-	NSOpenGLPixelFormatAttribute attributes[] =
-	{
-		NSOpenGLPFADoubleBuffer,
-		NSOpenGLPFAAccelerated,
-		NSOpenGLPFAColorSize, 24,
-		NSOpenGLPFADepthSize, 16,
-		0
-	};
 	
 	d = malloc(sizeof(struct display));
 	if (d)
@@ -97,30 +73,55 @@ void* Sys_Video_Open(const char *mode, unsigned int width, unsigned int height, 
 						[window center];
 					}
 					
-					pixelformat = [[NSOpenGLPixelFormat alloc] initWithAttributes:attributes];
-					if (pixelformat)
+					d->fullscreen = fullscreen ? true : false;
+					d->input = Sys_Input_Init();
+					if (d->input)
 					{
-						openglview = [[NSMyOpenGLView alloc] initWithFrame:[window frame] pixelFormat:pixelformat];
-						if (openglview)
+#ifdef GLQUAKE
+						NSOpenGLPixelFormat *pixelFormat;
+						NSOpenGLView *openglview;
+						GLint swapInterval = 1;
+						
+						NSOpenGLPixelFormatAttribute attributes[] =
 						{
-							[pixelformat release];
-							[window setContentView:openglview];
-							[[openglview openGLContext] setValues:&swapInterval forParameter:NSOpenGLCPSwapInterval];
-							
-							[window useOptimizedDrawing:YES];
-							[window makeKeyAndOrderFront:nil];
-							
-							d->fullscreen = fullscreen ? true : false;
-							d->input = Sys_Input_Init();
-							if (d->input)
+							NSOpenGLPFADoubleBuffer,
+							NSOpenGLPFAAccelerated,
+							NSOpenGLPFAColorSize, 24,
+							NSOpenGLPFADepthSize, 16,
+							0
+						};
+						
+						pixelFormat = [[NSOpenGLPixelFormat alloc] initWithAttributes:attributes];
+						if (pixelFormat)
+						{
+							openglview = [[NSOpenGLView alloc] initWithFrame:[window frame] pixelFormat:pixelFormat];
+							[pixelFormat release];
+							if (openglview)
+							{
+								[window setContentView:openglview];
+								[[openglview openGLContext] setValues:&swapInterval forParameter:NSOpenGLCPSwapInterval];
+
+								[window useOptimizedDrawing:YES];
+								[window makeKeyAndOrderFront:nil];
+								
+								return d;
+							}
+						}
+#else
+						NSBitmapImageRep *bitmapRep = [[NSBitmapImageRep alloc] initWithBitmapDataPlanes:NULL pixelsWide:width pixelsHigh:height bitsPerSample:8 samplesPerPixel:1 hasAlpha:NO isPlanar:NO colorSpaceName:NSCalibratedWhiteColorSpace bytesPerRow:0 bitsPerPixel:8];
+						if (bitmapRep)
+						{
+							NSGraphicsContext *context = [[NSGraphicsContext alloc] graphicsContextWithBitmapImageRep:bitmapRep];
+							if (context)
 							{
 								return d;
 							}
 							
-							[openglview release];
+							[bitmapRep release];
 						}
-						
-						[pixelformat release];
+#endif
+						Sys_Input_Shutdown(d->input);
+
 					}
 					
 					[window close];
@@ -275,11 +276,11 @@ void *Sys_Video_GetBuffer(void *display)
 	return NULL;
 }
 
-VID_LockBuffer()
+void VID_LockBuffer()
 {
 }
 
-VID_UnlockBuffer()
+void VID_UnlockBuffer()
 {
 }
 #endif
