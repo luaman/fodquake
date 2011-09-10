@@ -485,7 +485,7 @@ void FS_InitFilesystem(void)
 		Q_strncpyz(com_basedir, com_argv[i + 1], sizeof(com_basedir));
 	else
 #ifdef __MACOSX__
-		snprintf(com_basedir, sizeof(com_basedir), "%s/.fodquake", getenv("HOME"));
+		snprintf(com_basedir, sizeof(com_basedir), "%s/Library/Application\ Support/FodQuake", getenv("HOME"));
 #else
  		getcwd(com_basedir, sizeof(com_basedir) - 1);
 #endif
