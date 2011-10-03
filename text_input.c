@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include "qtypes.h"
 #include "keys.h"
+#include "strl.h"
 
 extern qboolean keydown[256];
 

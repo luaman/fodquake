@@ -998,7 +998,7 @@ int ServerScanner_DataUpdated(struct ServerScanner *serverscanner)
 const struct QWServer **ServerScanner_GetServers(struct ServerScanner *serverscanner, unsigned int *numservers)
 {
 	struct qwserverpriv *qwserver;
-	struct QWServer **servers;
+	const struct QWServer **servers;
 	unsigned int i;
 	unsigned int count;
 

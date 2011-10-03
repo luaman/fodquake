@@ -176,7 +176,7 @@ void TablePrint_End(struct TablePrint *tp)
 		Con_Print("Out of memory.\n");
 
 	for(i=0;i<tp->numitems;i++)
-		free(tp->array[i]);
+		free((void *)tp->array[i]);
 
 	free(tp->array);
 	free(tp);
