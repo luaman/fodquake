@@ -363,24 +363,22 @@ static void IN_Impulse(void)
 {
 	int best, i, imp;
 
-	in_impulse = Q_atoi(Cmd_Argv(1));
+	best = Q_atoi(Cmd_Argv(1));
 
-	if (in_impulse >= 1 && in_impulse <= 8)
+	if (best >= 1 && best <= 8)
 		cl_preselectedweapon = 0;
 
-	if (Cmd_Argc() <= 2)
+	if (Cmd_Argc() > 2)
 	{
-		return;
-	}
+		best = 0;
 
-	best = 0;
+		for (i = Cmd_Argc() - 1; i > 0; i--)
+		{
+			imp = Q_atoi(Cmd_Argv(i));
 
-	for (i = Cmd_Argc() - 1; i > 0; i--)
-	{
-		imp = Q_atoi(Cmd_Argv(i));
-
-		if (CheckWeaponAvailable(imp))
-			best = imp;
+			if (CheckWeaponAvailable(imp))
+				best = imp;
+		}
 	}
 
 	if (best)
