@@ -4,6 +4,7 @@
 #include "filesystem.h"
 #include "vid.h"
 #include "common.h"
+#include "sound.h"
 #include "wad.h"
 #include "draw.h"
 
@@ -648,7 +649,7 @@ void Draw_Crosshair(void)
 	extern cvar_t crosshair, cl_crossx, cl_crossy, crosshaircolor, crosshairsize;
 	extern vrect_t scr_vrect;
 	byte c = (byte) crosshaircolor.value;
-	qboolean *data;
+	const qboolean *data;
 
 	if (!crosshair.value)
 		return;

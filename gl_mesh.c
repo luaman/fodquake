@@ -209,6 +209,8 @@ static void BuildTris(aliashdr_t *pheader)
 	if (pheader->numtris > (sizeof(used)/sizeof(*used)))
 		Sys_Error("Sorry, a 'tard wrote this code.");
 
+	besttype = 0;
+
 	//
 	// build tristrips
 	//

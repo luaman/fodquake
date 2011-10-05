@@ -30,6 +30,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "movie.h"
 #include "mouse.h"
 #include "ruleset.h"
+#include "netqw.h"
 
 cvar_t cl_weaponfire = { "cl_weaponfire", "1" };
 cvar_t cl_weaponswitch = { "cl_weaponswitch", "2 1" };
@@ -41,6 +42,11 @@ cvar_t	cl_c2spps = {"cl_c2spps","0"};
 cvar_t	cl_c2sImpulseBackup = {"cl_c2sImpulseBackup","3"};
 
 cvar_t	cl_smartjump = {"cl_smartjump", "0"};
+
+static cvar_t	cl_upspeed = {"cl_upspeed","400"};
+static cvar_t	cl_forwardspeed = {"cl_forwardspeed","400",CVAR_ARCHIVE};
+static cvar_t	cl_backspeed = {"cl_backspeed","400",CVAR_ARCHIVE};
+static cvar_t	cl_sidespeed = {"cl_sidespeed","400",CVAR_ARCHIVE};
 
 
 /*
@@ -148,26 +154,83 @@ static void KeyUp(kbutton_t *b)
 	b->state &= ~1;		// now up
 }
 
-static void IN_UpDown(void) {KeyDown(&in_up);}
-static void IN_UpUp(void) {KeyUp(&in_up);}
-static void IN_DownDown(void) {KeyDown(&in_down);}
-static void IN_DownUp(void) {KeyUp(&in_down);}
+/*
+Does not return 0.25 if a key was pressed and released during the frame,
+0.5 if it was pressed and held
+0 if held then released, or
+1.0 if held for the entire time
+
+ - because that's just retarded.
+
+Returns 1 if a key is pressed, 0 otherwise.
+*/
+static float CL_KeyState(kbutton_t *key)
+{
+	float val;
+
+	val = !!key->state;
+
+	key->state &= 1;		// clear impulses
+
+	return val;
+}
+
+static void UpdateNetQWForwardSpeed()
+{
+	float speed;
+
+	if (cls.netqw)
+	{
+		speed = cl_forwardspeed.value * CL_KeyState(&in_forward) - cl_backspeed.value * CL_KeyState(&in_back);
+
+		NetQW_SetForwardSpeed(cls.netqw, speed);
+	}
+}
+
+static void UpdateNetQWSideSpeed()
+{
+	float speed;
+
+	if (cls.netqw)
+	{
+		speed = cl_sidespeed.value * CL_KeyState(&in_moveright) - cl_sidespeed.value * CL_KeyState(&in_moveleft);
+
+		NetQW_SetSideSpeed(cls.netqw, speed);
+	}
+}
+
+static void UpdateNetQWUpSpeed()
+{
+	float speed;
+
+	if (cls.netqw)
+	{
+		speed = cl_upspeed.value * CL_KeyState(&in_up) - cl_upspeed.value * CL_KeyState(&in_down);
+
+		NetQW_SetUpSpeed(cls.netqw, speed);
+	}
+}
+
+static void IN_UpDown(void) { KeyDown(&in_up); UpdateNetQWUpSpeed(); }
+static void IN_UpUp(void) { KeyUp(&in_up); UpdateNetQWUpSpeed(); }
+static void IN_DownDown(void) { KeyDown(&in_down); UpdateNetQWUpSpeed(); }
+static void IN_DownUp(void) { KeyUp(&in_down); UpdateNetQWUpSpeed(); }
 static void IN_LeftDown(void) {KeyDown(&in_left);}
 static void IN_LeftUp(void) {KeyUp(&in_left);}
 static void IN_RightDown(void) {KeyDown(&in_right);}
 static void IN_RightUp(void) {KeyUp(&in_right);}
-static void IN_ForwardDown(void) {if (checkmovementruleset()) KeyDown(&in_forward);}
-static void IN_ForwardUp(void) {if (checkmovementruleset()) KeyUp(&in_forward);}
-static void IN_BackDown(void) {if (checkmovementruleset()) KeyDown(&in_back);}
-static void IN_BackUp(void) {if (checkmovementruleset()) KeyUp(&in_back);}
+static void IN_ForwardDown(void) {if (checkmovementruleset()) { KeyDown(&in_forward); UpdateNetQWForwardSpeed(); }}
+static void IN_ForwardUp(void) {if (checkmovementruleset()) { KeyUp(&in_forward); UpdateNetQWForwardSpeed(); }}
+static void IN_BackDown(void) {if (checkmovementruleset()) { KeyDown(&in_back); UpdateNetQWForwardSpeed(); }}
+static void IN_BackUp(void) {if (checkmovementruleset()) { KeyUp(&in_back); UpdateNetQWForwardSpeed(); }}
 static void IN_LookupDown(void) {KeyDown(&in_lookup);}
 static void IN_LookupUp(void) {KeyUp(&in_lookup);}
 static void IN_LookdownDown(void) {KeyDown(&in_lookdown);}
 static void IN_LookdownUp(void) {KeyUp(&in_lookdown);}
-static void IN_MoveleftDown(void) {if (checkmovementruleset()) KeyDown(&in_moveleft);}
-static void IN_MoveleftUp(void) {if (checkmovementruleset()) KeyUp(&in_moveleft);}
-static void IN_MoverightDown(void) {if (checkmovementruleset()) KeyDown(&in_moveright);}
-static void IN_MoverightUp(void) {if (checkmovementruleset()) KeyUp(&in_moveright);}
+static void IN_MoveleftDown(void) {if (checkmovementruleset()) { KeyDown(&in_moveleft); UpdateNetQWSideSpeed(); }}
+static void IN_MoveleftUp(void) {if (checkmovementruleset()) { KeyUp(&in_moveleft); UpdateNetQWSideSpeed(); }}
+static void IN_MoverightDown(void) {if (checkmovementruleset()) { KeyDown(&in_moveright); UpdateNetQWSideSpeed(); }}
+static void IN_MoverightUp(void) {if (checkmovementruleset()) { KeyUp(&in_moveright); UpdateNetQWSideSpeed(); }}
 
 static unsigned char idleweaponlist[8];
 
@@ -229,7 +292,12 @@ static void WeaponFallback()
 	}
 
 	if (weapon)
-		in_otherimpulse = weapon;
+	{
+		if (cls.netqw)
+			NetQW_SetImpulse(cls.netqw, weapon);
+		else
+			in_otherimpulse = weapon;
+	}
 }
 
 static void IN_AttackDown(void)
@@ -238,6 +306,9 @@ static void IN_AttackDown(void)
 		in_impulse = cl_preselectedweapon;
 
 	KeyDown(&in_attack);
+
+	if (cls.netqw)
+		NetQW_ButtonDown(cls.netqw, 0, cl_preselectedweapon);
 }
 
 static void IN_AttackUp(void)
@@ -246,10 +317,26 @@ static void IN_AttackUp(void)
 
 	if (cl_preselectedweapon)
 		WeaponFallback();
+
+	if (cls.netqw)
+		NetQW_ButtonUp(cls.netqw, 0);
 }
 
-static void IN_UseDown(void) {KeyDown(&in_use);}
-static void IN_UseUp(void) {KeyUp(&in_use);}
+static void IN_UseDown(void)
+{
+	KeyDown(&in_use);
+
+	if (cls.netqw)
+		NetQW_ButtonDown(cls.netqw, 2, 0);
+}
+
+static void IN_UseUp(void)
+{
+	KeyUp(&in_use);
+
+	if (cls.netqw)
+		NetQW_ButtonUp(cls.netqw, 2);
+}
 
 
 static void IN_WeaponDown()
@@ -292,9 +379,6 @@ static void IN_WeaponDown()
 	if (!weapon)
 		return;
 
-	if (cl_weaponfire.value)
-		KeyDown(&in_attack);
-
 	if (idleindex == 0)
 	{
 		Cmd_TokenizeString(cl_weaponswitch.string);
@@ -312,7 +396,14 @@ static void IN_WeaponDown()
 		idleweaponlist[idleindex] = 0;
 
 	if (cl_weaponfire.value)
-		in_impulse = weapon;
+	{
+		KeyDown(&in_attack);
+
+		if (cls.netqw)
+			NetQW_ButtonDown(cls.netqw, 0, weapon);
+		else
+			in_impulse = weapon;
+	}
 	else
 		cl_preselectedweapon = weapon;
 }
@@ -323,6 +414,9 @@ static void IN_WeaponUp()
 		return;
 
 	KeyUp(&in_attack);
+
+	if (cls.netqw)
+		NetQW_ButtonUp(cls.netqw, 0);
 
 	WeaponFallback();
 }
@@ -345,6 +439,9 @@ static void IN_JumpDown(void)
 	}
 	else
 	{
+		if (cls.netqw)
+			NetQW_ButtonDown(cls.netqw, 1, 0);
+
 		KeyDown(&in_jump);
 	}
 }
@@ -354,6 +451,9 @@ static void IN_JumpUp(void)
 	if (cl_smartjump.value)
 		KeyUp(&in_up);
 	KeyUp(&in_jump);
+
+	if (cls.netqw)
+		NetQW_ButtonUp(cls.netqw, 1);
 }
 
 //Tonik void IN_Impulse (void) {in_impulse=Q_atoi(Cmd_Argv(1));}
@@ -363,58 +463,35 @@ static void IN_Impulse(void)
 {
 	int best, i, imp;
 
-	in_impulse = Q_atoi(Cmd_Argv(1));
+	best = Q_atoi(Cmd_Argv(1));
 
-	if (in_impulse >= 1 && in_impulse <= 8)
+	if (best >= 1 && best <= 8)
 		cl_preselectedweapon = 0;
 
-	if (Cmd_Argc() <= 2)
+	if (Cmd_Argc() > 2)
 	{
-		return;
-	}
+		best = 0;
 
-	best = 0;
+		for (i = Cmd_Argc() - 1; i > 0; i--)
+		{
+			imp = Q_atoi(Cmd_Argv(i));
 
-	for (i = Cmd_Argc() - 1; i > 0; i--)
-	{
-		imp = Q_atoi(Cmd_Argv(i));
-
-		if (CheckWeaponAvailable(imp))
-			best = imp;
+			if (CheckWeaponAvailable(imp))
+				best = imp;
+		}
 	}
 
 	if (best)
-		in_impulse = best;
+	{
+		if (cls.netqw)
+			NetQW_SetImpulse(cls.netqw, best);
+		else
+			in_impulse = best;
+	}
 }
 // <-- Tonik
 
-/*
-Does not return 0.25 if a key was pressed and released during the frame,
-0.5 if it was pressed and held
-0 if held then released, or
-1.0 if held for the entire time
-
- - because that's just retarded.
-
-Returns 1 if a key is pressed, 0 otherwise.
-*/
-static float CL_KeyState(kbutton_t *key)
-{
-	float val;
-
-	val = !!key->state;
-
-	key->state &= 1;		// clear impulses
-
-	return val;
-}
-
 //==========================================================================
-
-static cvar_t	cl_upspeed = {"cl_upspeed","400"};
-static cvar_t	cl_forwardspeed = {"cl_forwardspeed","400",CVAR_ARCHIVE};
-static cvar_t	cl_backspeed = {"cl_backspeed","400",CVAR_ARCHIVE};
-static cvar_t	cl_sidespeed = {"cl_sidespeed","400",CVAR_ARCHIVE};
 
 static void CL_Rotate_f(void)
 {

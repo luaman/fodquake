@@ -40,6 +40,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "config.h"
 
 #include "server_browser.h"
+#include "context_sensitive_tab.h"
 
 #ifdef GLQUAKE
 #include "gl_local.h"

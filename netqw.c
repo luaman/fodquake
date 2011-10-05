@@ -120,6 +120,13 @@ struct NetQW
 	int send_tmove;
 	int movement_locked;
 	unsigned char tmove_buffer[6];
+	float forwardspeed;
+	float sidespeed;
+	float upspeed;
+	unsigned char oncebuttons;
+	unsigned char currentbuttons;
+	unsigned char priorityimpulse;
+	unsigned char normalimpulse;
 	unsigned int lag;
 	int lag_ezcheat;
 	struct ReliableBuffer *reliablebufferhead;
@@ -230,6 +237,7 @@ void NetQW_GenerateFrames(struct NetQW *netqw)
 	usercmd_t hej;
 	unsigned int framenum;
 	unsigned long long curtime;
+	int i;
 
 	curtime = Sys_IntTime();
 
@@ -244,9 +252,29 @@ void NetQW_GenerateFrames(struct NetQW *netqw)
 		netqw->movetimecounter += netqw->microsecondsperframe;
 
 		memset(&hej, 0, sizeof(hej));
-#warning "Because I'm bored"
-		CL_BaseMove(&hej);
-		CL_FinishMove(&hej);
+
+#warning I should MakeShort() here... Maybe...
+		hej.forwardmove = netqw->forwardspeed;
+		hej.sidemove = netqw->sidespeed;
+		hej.upmove = netqw->upspeed;
+
+		hej.buttons = netqw->oncebuttons | netqw->currentbuttons;
+		netqw->oncebuttons = 0;
+
+		if (netqw->priorityimpulse)
+		{
+			hej.impulse = netqw->priorityimpulse;
+			netqw->priorityimpulse = 0;
+		}
+		else if (netqw->normalimpulse)
+		{
+			hej.impulse = netqw->normalimpulse;
+			netqw->normalimpulse = 0;
+		}
+
+		for (i = 0; i < 3; i++)
+			hej.angles[i] = (Q_rint(hej.angles[i] * 65536.0 / 360.0) & 65535) * (360.0 / 65536.0);
+
 		hej.msec = netqw->movetimecounter/1000;
 		netqw->movetimecounter %= 1000;
 		Mouse_GetViewAngles(hej.angles);
@@ -1015,6 +1043,14 @@ struct NetQW *NetQW_Create(const char *hoststring, const char *userinfo, unsigne
 		netqw->send_tmove = 0;
 		netqw->movement_locked = 0;
 
+		netqw->forwardspeed = 0;
+		netqw->sidespeed = 0;
+		netqw->upspeed = 0;
+		netqw->oncebuttons = 0;
+		netqw->currentbuttons = 0;
+		netqw->priorityimpulse = 0;
+		netqw->normalimpulse = 0;
+
 		netqw->lag = 0;
 		netqw->lag_ezcheat = 0;
 
@@ -1319,5 +1355,52 @@ void NetQW_SetLagEzcheat(struct NetQW *netqw, int enabled)
 unsigned long long NetQW_GetTimeSinceLastPacketFromServer(struct NetQW *netqw)
 {
 	return Sys_IntTime() - netqw->lastserverpackettime;
+}
+
+void NetQW_SetForwardSpeed(struct NetQW *netqw, float value)
+{
+	netqw->forwardspeed = value;
+}
+
+void NetQW_SetSideSpeed(struct NetQW *netqw, float value)
+{
+	netqw->sidespeed = value;
+}
+
+void NetQW_SetUpSpeed(struct NetQW *netqw, float value)
+{
+	netqw->upspeed = value;
+}
+
+void NetQW_ButtonDown(struct NetQW *netqw, int button, int impulse)
+{
+	if (button < 0 || button > 2)
+		return;
+
+	Sys_Thread_LockMutex(netqw->mutex);
+	if (impulse)
+		netqw->priorityimpulse = impulse;
+
+	netqw->oncebuttons |= (1<<button);
+	Sys_Thread_UnlockMutex(netqw->mutex);
+
+	netqw->currentbuttons |= (1<<button);
+}
+
+void NetQW_ButtonUp(struct NetQW *netqw, int button)
+{
+	if (button < 0 || button > 2)
+		return;
+
+	netqw->currentbuttons &= ~(1<<button);
+}
+
+void NetQW_SetImpulse(struct NetQW *netqw, int impulse)
+{
+	Sys_Thread_LockMutex(netqw->mutex);
+
+	netqw->normalimpulse = impulse;
+
+	Sys_Thread_UnlockMutex(netqw->mutex);
 }
 
