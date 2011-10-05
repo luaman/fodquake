@@ -5,6 +5,11 @@
 #import <stdlib.h>
 #import <stdarg.h>
 
+#undef true
+#undef false
+
+#import "common.h"
+
 static mach_timebase_info_data_t tbinfo;
 
 static unsigned int secbase;
