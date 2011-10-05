@@ -45,6 +45,7 @@ struct alsa_private
 
 	snd_pcm_sframes_t (*snd_pcm_avail_update)(snd_pcm_t *pcm);
 	int (*snd_pcm_close)(snd_pcm_t *pcm);
+	int (*snd_pcm_drop)(snd_pcm_t *pcm);
 	int (*snd_pcm_open)(snd_pcm_t **pcm, const char *name, snd_pcm_stream_t stream, int mode);
 	int (*snd_pcm_recover)(snd_pcm_t *pcm, int err, int silent);
 	int (*snd_pcm_set_params)(snd_pcm_t *pcm, snd_pcm_format_t format, snd_pcm_access_t access, unsigned int channels, unsigned int rate, int soft_resample, unsigned int latency);
@@ -158,6 +159,7 @@ static void alsa_shutdown(struct SoundCard *sc)
 
 	p = sc->driverprivate;
 
+	p->snd_pcm_drop(p->pcmhandle);
 	p->snd_pcm_close(p->pcmhandle);
 
 	dlclose(p->alsasharedobject);
@@ -188,6 +190,7 @@ static qboolean alsa_initso(struct alsa_private *p)
 	{
 		p->snd_pcm_avail_update = dlsym(p->alsasharedobject, "snd_pcm_avail_update");
 		p->snd_pcm_close = dlsym(p->alsasharedobject, "snd_pcm_close");
+		p->snd_pcm_drop = dlsym(p->alsasharedobject, "snd_pcm_drop");
 		p->snd_pcm_open = dlsym(p->alsasharedobject, "snd_pcm_open");
 		p->snd_pcm_recover = dlsym(p->alsasharedobject, "snd_pcm_recover");
 		p->snd_pcm_set_params = dlsym(p->alsasharedobject, "snd_pcm_set_params");
@@ -197,6 +200,7 @@ static qboolean alsa_initso(struct alsa_private *p)
 
 		if (p->snd_pcm_avail_update
 		 && p->snd_pcm_close
+		 && p->snd_pcm_drop
 		 && p->snd_pcm_open
 		 && p->snd_pcm_recover
 		 && p->snd_pcm_set_params
