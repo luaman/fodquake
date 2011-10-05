@@ -123,6 +123,7 @@ void D_Aff8Patch (void *pcolormap);
 void D_DisableBackBufferAccess (void);
 void D_PolysetDraw (void);
 void D_PolysetDrawFinalVerts (finalvert_t *fv, int numverts);
+void D_DrawParticleBegin(void);
 void D_DrawParticle (particle_t *pparticle);
 void D_DrawSprite (void);
 void D_DrawSurfaces (void);
