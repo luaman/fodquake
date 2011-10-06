@@ -252,6 +252,7 @@ static void CL_WriteStartupData (void)
 	sizebuf_t buf;
 	char buf_data[MAX_MSGLEN * 2], *s, *s2;
 	int n, i, j, seq = 1;
+	struct static_entity *sent;
 	entity_t *ent;
 	entity_state_t *es, blankes;
 	player_info_t *player;
@@ -362,9 +363,10 @@ static void CL_WriteStartupData (void)
 	}
 
 	// spawnstatic
-	for (i = 0; i < cl.num_statics; i++)
+	sent = cl.first_static;
+	while(sent)
 	{
-		ent = cl_static_entities + i;
+		ent = &sent->ent;
 
 		MSG_WriteByte (&buf, svc_spawnstatic);
 
@@ -390,6 +392,8 @@ static void CL_WriteStartupData (void)
 			CL_WriteStartupDemoMessage (&buf, seq++);
 			SZ_Clear (&buf);
 		}
+
+		sent = sent->next;
 	}
 
 	// static sounds are skipped in demos, life is hard

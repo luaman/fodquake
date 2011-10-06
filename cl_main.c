@@ -157,7 +157,6 @@ clientState_t		cl;
 
 centity_t		cl_entities[CL_MAX_EDICTS];
 efrag_t			cl_efrags[MAX_EFRAGS];
-entity_t		cl_static_entities[MAX_STATIC_ENTITIES];
 lightstyle_t	cl_lightstyle[MAX_LIGHTSTYLES];
 dlight_t		cl_dlights[MAX_DLIGHTS];
 
@@ -1064,6 +1063,8 @@ void CL_ClearState (void) {
 
 	CL_ClearTEnts ();
 	CL_ClearScene ();
+
+	CL_FreeStatics();
 
 	// wipe the entire cl structure
 	memset (&cl, 0, sizeof(cl));

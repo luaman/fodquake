@@ -183,7 +183,11 @@ typedef struct {
 	char	map[MAX_STYLESTRING];
 } lightstyle_t;
 
-
+struct static_entity
+{
+	struct static_entity *next;
+	entity_t ent;
+};
 
 #define	MAX_EFRAGS		512
 
@@ -363,7 +367,8 @@ typedef struct {
 	// refresh related state
 	struct model_s	*worldmodel;	// cl_entitites[0].model
 	struct efrag_s	*free_efrags;
-	int				num_statics;	// stored top down in cl_entities
+	struct static_entity *first_static;
+	struct static_entity *last_static;
 
 	int			cdtrack;		// cd audio
 
@@ -445,13 +450,11 @@ extern cvar_t r_rockettrail;
 extern cvar_t r_grenadetrail;
 extern cvar_t r_powerupglow;
 
-#define	MAX_STATIC_ENTITIES	128			// torches, etc
 #define	CL_MAX_EDICTS		768			// FIXME: ouch! ouch! ouch!
 
 // FIXME, allocate dynamically
 extern	centity_t		cl_entities[CL_MAX_EDICTS];
 extern	efrag_t			cl_efrags[MAX_EFRAGS];
-extern	entity_t		cl_static_entities[MAX_STATIC_ENTITIES];
 extern	lightstyle_t	cl_lightstyle[MAX_LIGHTSTYLES];
 extern	dlight_t		cl_dlights[MAX_DLIGHTS];
 
@@ -510,6 +513,8 @@ void CL_StopUpload(void);
 void CL_ParseClientdata (void);	
 
 void CL_RequestNextFTEDownloadChunk(sizebuf_t *buf);
+
+void CL_FreeStatics(void);
 
 // cl_tent.c
 void CL_InitTEnts (void);
