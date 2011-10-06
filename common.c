@@ -371,10 +371,18 @@ void COM_StripExtension(char *in, char *out)
 	char *dot;
 
 	dot = strrchr(in, '.');
-	if (dot)
-		strlcpy(out, in, dot-in+1);
+	if (in == out)
+	{
+		if (dot)
+			*dot = 0;
+	}
 	else
-		strcpy(out, in);
+	{
+		if (dot)
+			strlcpy(out, in, dot-in+1);
+		else
+			strcpy(out, in);
+	}
 }
 
 
