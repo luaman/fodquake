@@ -463,6 +463,8 @@ extern byte		*host_colormap;
 
 //=============================================================================
 
+void CL_InitCommands(void);
+
 // cl_main
 void CL_UserinfoChanged(char *key, char *string);
 void CL_CvarInit(void);

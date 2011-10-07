@@ -233,7 +233,7 @@ static qboolean net_lag_ezcheat_callback(cvar_t *var, char *string)
 	return false;
 }
 
-void CL_InitClientVersionInfo();
+static void CL_InitClientVersionInfo(void);
 
 enum
 {
@@ -1617,8 +1617,6 @@ void huff_save_f(void)
 }
 #endif
 
-void CL_InitCommands(void);
-
 void CL_CvarInit(void)
 {
 	extern cvar_t baseskin, noskins;
@@ -1758,7 +1756,7 @@ void CL_CvarInit(void)
 	Cmd_AddCommand("toggleconsole", ToggleConsole_f);
 }
 
-void CL_InitClientVersionInfo()
+static void CL_InitClientVersionInfo()
 {
 	Info_RemoveKey(cls.userinfo, "*FuhQuake");
 	Info_RemoveKey(cls.userinfo, "*client");
