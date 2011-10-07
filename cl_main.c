@@ -107,11 +107,11 @@ cvar_t	cl_confirmquit = {"cl_confirmquit", "1", CVAR_INIT};
 cvar_t	default_fov = {"default_fov", "0"};
 cvar_t	qizmo_dir = {"qizmo_dir", "qizmo"};
 
-cvar_t cl_floodprot			= {"cl_floodprot", "0"};		
-cvar_t cl_fp_messages		= {"cl_fp_messages", "4"};		
-cvar_t cl_fp_persecond		= {"cl_fp_persecond", "4"};		
-cvar_t cl_cmdline			= {"cl_cmdline", "", CVAR_ROM};	
-cvar_t cl_useproxy			= {"cl_useproxy", "0"};			
+cvar_t cl_floodprot			= {"cl_floodprot", "0"};
+cvar_t cl_fp_messages		= {"cl_fp_messages", "4"};
+cvar_t cl_fp_persecond		= {"cl_fp_persecond", "4"};
+cvar_t cl_cmdline			= {"cl_cmdline", "", CVAR_ROM};
+cvar_t cl_useproxy			= {"cl_useproxy", "0"};
 
 cvar_t net_maxfps = { "net_maxfps", "0", 0, net_maxfps_callback };
 static cvar_t net_lag = { "net_lag", "0", 0, net_lag_callback };
@@ -120,7 +120,7 @@ static cvar_t net_lag_ezcheat = { "net_lag_ezcheat", "0", 0, net_lag_ezcheat_cal
 cvar_t cl_imitate_client = { "cl_imitate_client", "none", 0, cl_imitate_client_callback };
 cvar_t cl_imitate_os = { "cl_imitate_os", "none", 0, cl_imitate_os_callback };
 
-cvar_t cl_model_bobbing		= {"cl_model_bobbing", "1"};	
+cvar_t cl_model_bobbing		= {"cl_model_bobbing", "1"};
 cvar_t cl_nolerp			= {"cl_nolerp", "1"};
 
 cvar_t r_rocketlight			= {"r_rocketLight", "1"};
@@ -759,49 +759,58 @@ char pmodel_name[] = "pmodel";
 
 //============================================================================
 
-char *CL_Macro_ConnectionType(void) {
+char *CL_Macro_ConnectionType(void)
+{
 	char *s;
 	static char macrobuf[16];
 
 	s = (cls.state < ca_connected) ? "disconnected" : cl.spectator ? "spectator" : "player";
 	Q_strncpyz(macrobuf, s, sizeof(macrobuf));
+
 	return macrobuf;
 }
 
-char *CL_Macro_Demoplayback(void) {
+char *CL_Macro_Demoplayback(void)
+{
 	char *s;
 	static char macrobuf[16];
 
 	s = cls.mvdplayback ? "mvdplayback" : cls.demoplayback ? "qwdplayback" : "0";
 	Q_strncpyz(macrobuf, s, sizeof(macrobuf));
+
 	return macrobuf;
 }
 
-char *CL_Macro_Serverstatus(void) {
+char *CL_Macro_Serverstatus(void)
+{
 	char *s;
 	static char macrobuf[16];
 
 	s = (cls.state < ca_connected) ? "disconnected" : cl.standby ? "standby" : "normal";
 	Q_strncpyz(macrobuf, s, sizeof(macrobuf));
+
 	return macrobuf;
 }
 
-int CL_ClientState (void) {
+int CL_ClientState(void)
+{
 	return cls.state;
 }
 
-void CL_MakeActive(void) {
+void CL_MakeActive(void)
+{
 	cls.state = ca_active;
-	if (cls.demoplayback) {
+	if (cls.demoplayback)
+	{
 		host_skipframe = true;
-		demostarttime = cls.demotime;		
+		demostarttime = cls.demotime;
 	}
 
 	if (!cls.demoplayback)
 		VID_SetCaption (va("FodQuake: %s", cls.servername));
 
-	Con_ClearNotify ();
-	TP_ExecTrigger ("f_spawn");
+	Con_ClearNotify();
+	TP_ExecTrigger("f_spawn");
 }
 
 //Cvar system calls this when a CVAR_USERINFO cvar changes
@@ -838,7 +847,8 @@ void CL_UserinfoChanged(char *key, char *string)
 }
 
 //called by CL_Connect_f and CL_CheckResend
-static void CL_SendConnectPacket(void) {
+static void CL_SendConnectPacket(void)
+{
 	char data[2048];
 	int i;
 
@@ -939,19 +949,24 @@ static void CL_BeginServerConnect(void)
 #endif
 }
 
-void CL_Connect_f (void) {
+void CL_Connect_f(void)
+{
 	qboolean proxy;
 
-	if (Cmd_Argc() != 2) {
-		Com_Printf ("Usage: %s <server>\n", Cmd_Argv(0));
+	if (Cmd_Argc() != 2)
+	{
+		Com_Printf("Usage: %s <server>\n", Cmd_Argv(0));
 		return;
 	}
 
 	proxy = cl_useproxy.value && CL_ConnectedToProxy();
 
-	if (proxy) {
+	if (proxy)
+	{
 		Cbuf_AddText(va("say ,connect %s", Cmd_Argv(1)));
-	} else {
+	}
+	else
+	{
 		Host_EndGame();
 		Q_strncpyz(cls.servername, Cmd_Argv (1), sizeof(cls.servername));
 		CL_BeginServerConnect();
@@ -961,28 +976,33 @@ void CL_Connect_f (void) {
 
 
 
-qboolean CL_ConnectedToProxy(void) {
+qboolean CL_ConnectedToProxy(void)
+{
 	cmd_alias_t *alias = NULL;
-	char **s, *qizmo_aliases[] = {	"ezcomp", "ezcomp2", "ezcomp3", 
-									"f_sens", "f_fps", "f_tj", "f_ta", NULL};
+	char **s, *qizmo_aliases[] = {	"ezcomp", "ezcomp2", "ezcomp3", "f_sens", "f_fps", "f_tj", "f_ta", NULL};
 
 	if (cls.state < ca_active)
 		return false;
-	for (s = qizmo_aliases; *s; s++) {
+
+	for (s = qizmo_aliases; *s; s++)
+	{
 		if (!(alias = Cmd_FindAlias(*s)) || !(alias->flags & ALIAS_SERVER))
 			return false;
 	}
+
 	return true;
 }
 
-void CL_Join_f (void) {
+void CL_Join_f(void)
+{
 	qboolean proxy;
 
 	proxy = cl_useproxy.value && CL_ConnectedToProxy();
 
-	if (Cmd_Argc() > 2) {
+	if (Cmd_Argc() > 2)
+	{
 		Com_Printf ("Usage: %s [server]\n", Cmd_Argv(0));
-		return; 
+		return;
 	}
 
 	Cvar_Set(&spectator, "");
@@ -993,14 +1013,16 @@ void CL_Join_f (void) {
 		Cbuf_AddText(va("%s\n", proxy ? "say ,reconnect" : "reconnect"));
 }
 
-void CL_Observe_f (void) {
+void CL_Observe_f(void)
+{
 	qboolean proxy;
 
 	proxy = cl_useproxy.value && CL_ConnectedToProxy();
 
-	if (Cmd_Argc() > 2) {
-		Com_Printf ("Usage: %s [server]\n", Cmd_Argv(0));
-		return; 
+	if (Cmd_Argc() > 2)
+	{
+		Com_Printf("Usage: %s [server]\n", Cmd_Argv(0));
+		return;
 	}
 
 	if (!spectator.string[0] || !strcmp(spectator.string, "0"))
@@ -1011,7 +1033,6 @@ void CL_Observe_f (void) {
 	else
 		Cbuf_AddText(va("%s\n", proxy ? "say ,reconnect" : "reconnect"));
 }
-
 
 
 void CL_DNS_f()
@@ -1049,33 +1070,33 @@ void CL_DNS_f()
 }
 
 
-
-void CL_ClearState (void) {
+void CL_ClearState(void)
+{
 	int i;
 	extern float scr_centertime_off;
 
-	S_StopAllSounds (true);
+	S_StopAllSounds(true);
 
-	Com_DPrintf ("Clearing memory\n");
+	Com_DPrintf("Clearing memory\n");
 
 	if (!com_serveractive)
 		Host_ClearMemory();
 
-	CL_ClearTEnts ();
-	CL_ClearScene ();
+	CL_ClearTEnts();
+	CL_ClearScene();
 
 	CL_FreeStatics();
 
 	// wipe the entire cl structure
-	memset (&cl, 0, sizeof(cl));
+	memset(&cl, 0, sizeof(cl));
 
-	SZ_Clear (&cls.netchan.message);
+	SZ_Clear(&cls.netchan.message);
 
 	// clear other arrays
-	memset (cl_efrags, 0, sizeof(cl_efrags));
-	memset (cl_dlights, 0, sizeof(cl_dlights));
-	memset (cl_lightstyle, 0, sizeof(cl_lightstyle));
-	memset (cl_entities, 0, sizeof(cl_entities));
+	memset(cl_efrags, 0, sizeof(cl_efrags));
+	memset(cl_dlights, 0, sizeof(cl_dlights));
+	memset(cl_lightstyle, 0, sizeof(cl_lightstyle));
+	memset(cl_entities, 0, sizeof(cl_entities));
 
 	// make sure no centerprint messages are left from previous level
 	scr_centertime_off = 0;
@@ -1084,12 +1105,14 @@ void CL_ClearState (void) {
 	cl.free_efrags = cl_efrags;
 	for (i = 0; i < MAX_EFRAGS - 1; i++)
 		cl.free_efrags[i].entnext = &cl.free_efrags[i + 1];
+
 	cl.free_efrags[i].entnext = NULL;
 }
 
 //Sends a disconnect message to the server
 //This is also called on Host_Error, so it shouldn't cause any errors
-void CL_Disconnect (void) {
+void CL_Disconnect(void)
+{
 	byte final[10];
 
 	connect_time = 0;
@@ -1099,21 +1122,24 @@ void CL_Disconnect (void) {
 	VID_SetCaption("FodQuake");
 
 	// stop sounds (especially looping!)
-	S_StopAllSounds (true);
+	S_StopAllSounds(true);
 
-	MT_Disconnect();	
+	MT_Disconnect();
 
 	if (cls.demorecording && cls.state != ca_disconnected)
 		CL_Stop_f();
 
-	if (cls.demoplayback) {
+	if (cls.demoplayback)
+	{
 		CL_StopPlayback();
-	} else if (cls.state != ca_disconnected) {
+	}
+	else if (cls.state != ca_disconnected)
+	{
 		final[0] = clc_stringcmd;
-		strcpy (final + 1, "drop");
-		Netchan_Transmit (&cls.netchan, 6, final);
-		Netchan_Transmit (&cls.netchan, 6, final);
-		Netchan_Transmit (&cls.netchan, 6, final);
+		strcpy(final + 1, "drop");
+		Netchan_Transmit(&cls.netchan, 6, final);
+		Netchan_Transmit(&cls.netchan, 6, final);
+		Netchan_Transmit(&cls.netchan, 6, final);
 	}
 
 	memset(&cls.netchan, 0, sizeof(cls.netchan));
@@ -1131,13 +1157,14 @@ void CL_Disconnect (void) {
 
 	Cam_Reset();
 
-	if (cls.download) {
+	if (cls.download)
+	{
 		fclose(cls.download);
 		cls.download = NULL;
 	}
 
 	CL_StopUpload();
-	DeleteServerAliases();	
+	DeleteServerAliases();
 
 	/* Restore the rate if it has been overridden by the server */
 	if (strcmp(Info_ValueForKey(cls.userinfo, "rate"), rate.string) != 0)
@@ -1146,13 +1173,15 @@ void CL_Disconnect (void) {
 	}
 }
 
-void CL_Disconnect_f (void) {
+void CL_Disconnect_f(void)
+{
 	cl.intermission = 0;
 	Host_EndGame();
 }
 
 //The server is changing levels
-void CL_Reconnect_f (void) {
+void CL_Reconnect_f(void)
+{
 	if (cls.download)  // don't change when downloading
 		return;
 
@@ -1180,7 +1209,7 @@ void CL_Reconnect_f (void) {
 
 	if (!*cls.servername)
 	{
-		Com_Printf ("No server to reconnect to.\n");
+		Com_Printf("No server to reconnect to.\n");
 		return;
 	}
 
@@ -1195,9 +1224,9 @@ void CL_ConnectionlessPacket(void)
 	char *s, cmdtext[2048];
 
 	MSG_BeginReading(&cl_net_message);
-	MSG_ReadLong ();        // skip the -1
+	MSG_ReadLong();        // skip the -1
 
-	c = MSG_ReadByte ();
+	c = MSG_ReadByte();
 
 	if (msg_badread)
 		return;			// runt packet
@@ -1208,8 +1237,10 @@ void CL_ConnectionlessPacket(void)
 	case S2C_CHALLENGE:
 		if (!NET_CompareAdr(&cl_net_from, &cls.server_adr))
 			return;
+
 		Com_Printf("%s: challenge\n", NET_AdrToString(&cl_net_from));
 		cls.challenge = atoi(MSG_ReadString());
+
 		while(1)
 		{
 			unsigned int extension;
@@ -1243,25 +1274,32 @@ void CL_ConnectionlessPacket(void)
 #endif
 		}
 		CL_SendConnectPacket();
+
 		break;
+
 	case S2C_CONNECTION:
 		if (!NET_CompareAdr(&cl_net_from, &cls.server_adr))
 			return;
+
 		if (!com_serveractive || developer.value)
 			Com_Printf("%s: connection\n", NET_AdrToString(&cl_net_from));
 
-		if (cls.state >= ca_connected) {
+		if (cls.state >= ca_connected)
+		{
 			if (!cls.demoplayback)
 				Com_Printf("Dup connect received.  Ignored.\n");
 			break;
 		}
+
 		Netchan_Setup(NS_CLIENT, &cls.netchan, cl_net_from, cls.qport);
 		MSG_WriteChar (&cls.netchan.message, clc_stringcmd);
 		MSG_WriteString (&cls.netchan.message, "new");
 		cls.state = ca_connected;
 		if (!com_serveractive || developer.value)
 			Com_Printf("Connected.\n");
+
 		allowremotecmd = false; // localid required now for remote cmds
+
 		break;
 #endif
 
@@ -1269,7 +1307,8 @@ void CL_ConnectionlessPacket(void)
 	case A2C_CLIENT_COMMAND:	// remote command from gui front end
 		Com_Printf ("%s: client command\n", NET_AdrToString(&cl_net_from));
 
-		if (!NET_IsLocalAddress(&cl_net_from)) {
+		if (!NET_IsLocalAddress(&cl_net_from))
+		{
 			Com_Printf ("Command packet from remote host.  Ignored.\n");
 			return;
 		}
@@ -1279,36 +1318,44 @@ void CL_ConnectionlessPacket(void)
 		SetForegroundWindow (mainwindow);
 #endif
 #endif
-		s = MSG_ReadString ();
-		Q_strncpyz (cmdtext, s, sizeof(cmdtext));
-		s = MSG_ReadString ();
+		s = MSG_ReadString();
+		Q_strncpyz(cmdtext, s, sizeof(cmdtext));
+		s = MSG_ReadString();
 
 		while (*s && isspace(*s))
 			s++;
+
 		while (*s && isspace(s[strlen(s) - 1]))
 			s[strlen(s) - 1] = 0;
 
-		if (!allowremotecmd && (!*localid.string || strcmp(localid.string, s))) {
-			if (!*localid.string) {
-				Com_Printf ("===========================\n");
-				Com_Printf ("Command packet received from local host, but no "
+		if (!allowremotecmd && (!*localid.string || strcmp(localid.string, s)))
+		{
+			if (!*localid.string)
+			{
+				Com_Printf("===========================\n");
+				Com_Printf("Command packet received from local host, but no "
 					"localid has been set.  You may need to upgrade your server "
 					"browser.\n");
-				Com_Printf ("===========================\n");
-			} else {
-				Com_Printf ("===========================\n");
-				Com_Printf ("Invalid localid on command packet received from local host. "
+				Com_Printf("===========================\n");
+			}
+			else
+			{
+				Com_Printf("===========================\n");
+				Com_Printf("Invalid localid on command packet received from local host. "
 					"\n|%s| != |%s|\n"
 					"You may need to reload your server browser and FuhQuake.\n",
 					s, localid.string);
-				Com_Printf ("===========================\n");
+				Com_Printf("===========================\n");
 				Cvar_Set(&localid, "");
 			}
-		} else {
-			Cbuf_AddText (cmdtext);
-			Cbuf_AddText ("\n");
+		}
+		else
+		{
+			Cbuf_AddText(cmdtext);
+			Cbuf_AddText("\n");
 			allowremotecmd = false;
 		}
+
 		break;
 
 	case A2C_PRINT:		// print command from somewhere
@@ -1317,11 +1364,13 @@ void CL_ConnectionlessPacket(void)
 		break;
 
 	case svc_disconnect:
-		if (cls.demoplayback) {
+		if (cls.demoplayback)
+		{
 			Com_Printf("\n======== End of demo ========\n\n");
 			Host_EndGame();
 			Host_Abort();
 		}
+
 		break;
 	}
 }
@@ -1349,9 +1398,10 @@ void CL_DoNetQWStuff()
 #endif
 
 //Handles playback of demos, on top of NET_ code
-qboolean CL_GetMessage (void) {
+qboolean CL_GetMessage(void)
+{
 #ifdef _WIN32
-	CL_CheckQizmoCompletion ();
+	CL_CheckQizmoCompletion();
 #endif
 
 	if (cls.demoplayback)
@@ -1418,21 +1468,27 @@ void CL_ReadPackets(void)
 	}
 #endif
 
-	while (CL_GetMessage()) {
+	while (CL_GetMessage())
+	{
 		// remote command packet
-		if (*(int *)cl_net_message.data == -1)	{
-			CL_ConnectionlessPacket ();
+		if (*(int *)cl_net_message.data == -1)
+		{
+			CL_ConnectionlessPacket();
 			continue;
 		}
 
-		if (cl_net_message.cursize < 8 && !cls.mvdplayback) {	
+		if (cl_net_message.cursize < 8 && !cls.mvdplayback)
+		{
 			Com_DPrintf ("%s: Runt packet\n", NET_AdrToString(&cl_net_from));
 			continue;
 		}
 
-		if (cls.mvdplayback) {		
+		if (cls.mvdplayback)
+		{
 			MSG_BeginReading(&cl_net_message);
-		} else {
+		}
+		else
+		{
 #ifdef NETQW
 			MSG_BeginReading(&cl_net_message);
 			cls.netchan.incoming_sequence = MSG_ReadLong() & 0x7fffffff;
@@ -1442,13 +1498,16 @@ void CL_ReadPackets(void)
 				continue;			// wasn't accepted for some reason
 #endif
 		}
+
 		CL_ParseServerMessage ();
 	}
 
 #ifndef NETQW
 	// check timeout
-	if (!cls.demoplayback && cls.state >= ca_connected ) {
-		if (curtime - cls.netchan.last_received > (cl_timeout.value > 0 ? cl_timeout.value : 60)) {
+	if (!cls.demoplayback && cls.state >= ca_connected)
+	{
+		if (curtime - cls.netchan.last_received > (cl_timeout.value > 0 ? cl_timeout.value : 60))
+		{
 			Com_Printf("\nServer connection timed out.\n");
 			Host_EndGame();
 			return;
@@ -1458,10 +1517,13 @@ void CL_ReadPackets(void)
 }
 
 #ifndef NETQW
-void CL_SendToServer (void) {
+void CL_SendToServer(void)
+{
 	// when recording demos, request new ping times every cl_demoPingInterval.value seconds
-	if (cls.demorecording && !cls.demoplayback && cls.state == ca_active && cl_demoPingInterval.value > 0) {
-		if (cls.realtime - cl.last_ping_request > cl_demoPingInterval.value) {
+	if (cls.demorecording && !cls.demoplayback && cls.state == ca_active && cl_demoPingInterval.value > 0)
+	{
+		if (cls.realtime - cl.last_ping_request > cl_demoPingInterval.value)
+		{
 			cl.last_ping_request = cls.realtime;
 			MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
 			SZ_Print (&cls.netchan.message, "pings");
@@ -1502,26 +1564,32 @@ void ToggleConsole_f(void)
 
 //=============================================================================
 
-void CL_SaveArgv(int argc, char **argv) {
+void CL_SaveArgv(int argc, char **argv)
+{
 	char saved_args[512];
 	int i, total_length, length;
 	qboolean first = true;
 
 	length = total_length = saved_args[0] = 0;
-	for (i = 0; i < argc; i++){
+	for (i = 0; i < argc; i++)
+	{
 		if (!argv[i][0])
 			continue;
-		if (!first && total_length + 1 < sizeof(saved_args)) {
+
+		if (!first && total_length + 1 < sizeof(saved_args))
+		{
 			strcat(saved_args, " ");
 			total_length++;
 		}
 		first = false;
 		length = strlen(argv[i]);
-		if (total_length + length < sizeof(saved_args)) {
+		if (total_length + length < sizeof(saved_args))
+		{
 			strcat(saved_args, argv[i]);
 			total_length += length;
 		}
 	}
+
 	Cvar_ForceSet(&cl_cmdline, saved_args);
 }
 
@@ -1549,111 +1617,111 @@ void huff_save_f(void)
 }
 #endif
 
-void CL_InitCommands (void);
+void CL_InitCommands(void);
 
 void CL_CvarInit(void)
 {
 	extern cvar_t baseskin, noskins;
 
 	Cvar_SetCurrentGroup(CVAR_GROUP_CHAT);
-	Cvar_Register (&cl_parseWhiteText);
-	Cvar_Register (&cl_chatsound);
+	Cvar_Register(&cl_parseWhiteText);
+	Cvar_Register(&cl_chatsound);
 
-	Cvar_Register (&cl_floodprot);
-	Cvar_Register (&cl_fp_messages );
-	Cvar_Register (&cl_fp_persecond);
+	Cvar_Register(&cl_floodprot);
+	Cvar_Register(&cl_fp_messages );
+	Cvar_Register(&cl_fp_persecond);
 
 
 	Cvar_SetCurrentGroup(CVAR_GROUP_SCREEN);
 	Cvar_Register (&cl_shownet);
 
 	Cvar_SetCurrentGroup(CVAR_GROUP_SBAR);
-	Cvar_Register (&cl_sbar);
-	Cvar_Register (&cl_hudswap);
+	Cvar_Register(&cl_sbar);
+	Cvar_Register(&cl_hudswap);
 
 	Cvar_SetCurrentGroup(CVAR_GROUP_VIEWMODEL);
-	Cvar_Register (&cl_filterdrawviewmodel);
+	Cvar_Register(&cl_filterdrawviewmodel);
 
 	Cvar_SetCurrentGroup(CVAR_GROUP_EYECANDY);
-	Cvar_Register (&cl_model_bobbing);
-	Cvar_Register (&cl_nolerp);
-	Cvar_Register (&cl_maxfps);
-	Cvar_Register (&cl_deadbodyfilter);
-	Cvar_Register (&cl_gibfilter);
-	Cvar_Register (&cl_muzzleflash);
-	Cvar_Register (&cl_rocket2grenade);
-	Cvar_Register (&r_explosiontype);
-	Cvar_Register (&r_lightflicker);
-	Cvar_Register (&r_rockettrail);
-	Cvar_Register (&r_grenadetrail);
-	Cvar_Register (&r_powerupglow);
-	Cvar_Register (&r_rocketlight);
-	Cvar_Register (&r_explosionlight);
-	Cvar_Register (&r_rocketlightcolor);
-	Cvar_Register (&r_explosionlightcolor);
-	Cvar_Register (&r_flagcolor);
-	Cvar_Register (&cl_trueLightning);
+	Cvar_Register(&cl_model_bobbing);
+	Cvar_Register(&cl_nolerp);
+	Cvar_Register(&cl_maxfps);
+	Cvar_Register(&cl_deadbodyfilter);
+	Cvar_Register(&cl_gibfilter);
+	Cvar_Register(&cl_muzzleflash);
+	Cvar_Register(&cl_rocket2grenade);
+	Cvar_Register(&r_explosiontype);
+	Cvar_Register(&r_lightflicker);
+	Cvar_Register(&r_rockettrail);
+	Cvar_Register(&r_grenadetrail);
+	Cvar_Register(&r_powerupglow);
+	Cvar_Register(&r_rocketlight);
+	Cvar_Register(&r_explosionlight);
+	Cvar_Register(&r_rocketlightcolor);
+	Cvar_Register(&r_explosionlightcolor);
+	Cvar_Register(&r_flagcolor);
+	Cvar_Register(&cl_trueLightning);
 
 	Cvar_SetCurrentGroup(CVAR_GROUP_SKIN);
-	Cvar_Register (&noskins);
-	Cvar_Register (&baseskin);
+	Cvar_Register(&noskins);
+	Cvar_Register(&baseskin);
 
 	Cvar_SetCurrentGroup(CVAR_GROUP_DEMO);
-	Cvar_Register (&cl_demospeed);
-	Cvar_Register (&cl_demoPingInterval);
-	Cvar_Register (&qizmo_dir);
+	Cvar_Register(&cl_demospeed);
+	Cvar_Register(&cl_demoPingInterval);
+	Cvar_Register(&qizmo_dir);
 
 	Cvar_SetCurrentGroup(CVAR_GROUP_SOUND);
-	Cvar_Register (&cl_staticsounds);
+	Cvar_Register(&cl_staticsounds);
 
 	Cvar_SetCurrentGroup(CVAR_GROUP_USERINFO);
-	Cvar_Register (&team);
-	Cvar_Register (&spectator);
-	Cvar_Register (&skin);
-	Cvar_Register (&rate);
-	Cvar_Register (&noaim);
-	Cvar_Register (&name);
-	Cvar_Register (&msg);
-	Cvar_Register (&topcolor);
-	Cvar_Register (&bottomcolor);
-	Cvar_Register (&w_switch);
-	Cvar_Register (&b_switch);
+	Cvar_Register(&team);
+	Cvar_Register(&spectator);
+	Cvar_Register(&skin);
+	Cvar_Register(&rate);
+	Cvar_Register(&noaim);
+	Cvar_Register(&name);
+	Cvar_Register(&msg);
+	Cvar_Register(&topcolor);
+	Cvar_Register(&bottomcolor);
+	Cvar_Register(&w_switch);
+	Cvar_Register(&b_switch);
 
 	Cvar_SetCurrentGroup(CVAR_GROUP_VIEW);
-	Cvar_Register (&default_fov);
+	Cvar_Register(&default_fov);
 
 	Cvar_SetCurrentGroup(CVAR_GROUP_NETWORK);
-	Cvar_Register (&cl_predictPlayers);
-	Cvar_Register (&cl_solidPlayers);
-	Cvar_Register (&cl_oldPL);
-	Cvar_Register (&cl_timeout);
-	Cvar_Register (&cl_useproxy);
+	Cvar_Register(&cl_predictPlayers);
+	Cvar_Register(&cl_solidPlayers);
+	Cvar_Register(&cl_oldPL);
+	Cvar_Register(&cl_timeout);
+	Cvar_Register(&cl_useproxy);
 
 	Cvar_Register(&net_maxfps);
 	Cvar_Register(&net_lag);
 	Cvar_Register(&net_lag_ezcheat);
 
 	Cvar_SetCurrentGroup(CVAR_GROUP_CONSOLE);
-	Cvar_Register (&con_clearnotify);
+	Cvar_Register(&con_clearnotify);
 
 	Cvar_SetCurrentGroup(CVAR_GROUP_NO_GROUP);
-	Cvar_Register (&password);
-	Cvar_Register (&rcon_password);
-	Cvar_Register (&rcon_address);
-	Cvar_Register (&localid);
-	Cvar_Register (&cl_warncmd);
-	Cvar_Register (&cl_cmdline);
+	Cvar_Register(&password);
+	Cvar_Register(&rcon_password);
+	Cvar_Register(&rcon_address);
+	Cvar_Register(&localid);
+	Cvar_Register(&cl_warncmd);
+	Cvar_Register(&cl_cmdline);
 
 	Cvar_ResetCurrentGroup();
 
-	Cvar_Register (&cl_confirmquit);
+	Cvar_Register(&cl_confirmquit);
 
 	Cvar_Register(&cl_imitate_client);
 	Cvar_Register(&cl_imitate_os);
 
 	Cvar_Register(&r_drawflat_enable);
 
-	Cmd_AddLegacyCommand ("demotimescale", "cl_demospeed");
+	Cmd_AddLegacyCommand("demotimescale", "cl_demospeed");
 
 	CL_InitCommands();
 
@@ -1662,32 +1730,32 @@ void CL_CvarInit(void)
 	Cmd_AddCommand("huff_save", huff_save_f);
 #endif
 
-	Cmd_AddCommand ("r_drawflat", R_DrawFlat_f);
-	Cmd_AddCommand ("r_drawflat_shoot", R_DrawFlatShoot_f);
-	Cmd_AddCommand ("r_drawflat_shoot_unset", R_DrawFlatShootUnset_f);
-	Cmd_AddCommand ("r_drawflat_set", R_DrawFlat_Set_f);
-	Cmd_AddCommand ("r_drawflat_unset", R_DrawFlat_Unset_f);
-	Cmd_AddCommand ("r_drawflat_writeconfig", R_DrawFlat_Write_Config);
+	Cmd_AddCommand("r_drawflat", R_DrawFlat_f);
+	Cmd_AddCommand("r_drawflat_shoot", R_DrawFlatShoot_f);
+	Cmd_AddCommand("r_drawflat_shoot_unset", R_DrawFlatShootUnset_f);
+	Cmd_AddCommand("r_drawflat_set", R_DrawFlat_Set_f);
+	Cmd_AddCommand("r_drawflat_unset", R_DrawFlat_Unset_f);
+	Cmd_AddCommand("r_drawflat_writeconfig", R_DrawFlat_Write_Config);
 
-	Cmd_AddCommand ("r_drawflat_walls", R_DrawFlat_Walls_f);
-	Cmd_AddCommand ("r_drawflat_slopes", R_DrawFlat_Slopes_f);
-	Cmd_AddCommand ("r_drawflat_floors_ceilings", R_DrawFlat_Floors_Ceilings_f);
+	Cmd_AddCommand("r_drawflat_walls", R_DrawFlat_Walls_f);
+	Cmd_AddCommand("r_drawflat_slopes", R_DrawFlat_Slopes_f);
+	Cmd_AddCommand("r_drawflat_floors_ceilings", R_DrawFlat_Floors_Ceilings_f);
 
-	Cmd_AddCommand ("disconnect", CL_Disconnect_f);
-	Cmd_AddCommand ("connect", CL_Connect_f);
+	Cmd_AddCommand("disconnect", CL_Disconnect_f);
+	Cmd_AddCommand("connect", CL_Connect_f);
 
-	Cmd_AddCommand ("join", CL_Join_f);
-	Cmd_AddCommand ("observe", CL_Observe_f);
+	Cmd_AddCommand("join", CL_Join_f);
+	Cmd_AddCommand("observe", CL_Observe_f);
 
-	Cmd_AddCommand ("dns", CL_DNS_f);
+	Cmd_AddCommand("dns", CL_DNS_f);
 
-	Cmd_AddCommand ("reconnect", CL_Reconnect_f);
+	Cmd_AddCommand("reconnect", CL_Reconnect_f);
 
 	Cmd_AddMacro("connectiontype", CL_Macro_ConnectionType);
 	Cmd_AddMacro("demoplayback", CL_Macro_Demoplayback);
 	Cmd_AddMacro("matchstatus", CL_Macro_Serverstatus);
 
-	Cmd_AddCommand ("toggleconsole", ToggleConsole_f);
+	Cmd_AddCommand("toggleconsole", ToggleConsole_f);
 }
 
 void CL_InitClientVersionInfo()
@@ -1725,46 +1793,46 @@ void CL_Init (void)
 
 	cls.state = ca_disconnected;
 
-	strcpy (cls.gamedirfile, com_gamedirfile);
-	strcpy (cls.gamedir, com_gamedir);
+	strcpy(cls.gamedirfile, com_gamedirfile);
+	strcpy(cls.gamedir, com_gamedir);
 
-	W_LoadWadFile ("gfx.wad");
+	W_LoadWadFile("gfx.wad");
 
-	FChecks_Init();				
+	FChecks_Init();
 
 	host_basepal = (byte *) FS_LoadMallocFile("gfx/palette.lmp");
 	if (!host_basepal)
-		Sys_Error ("Couldn't load gfx/palette.lmp");		
+		Sys_Error("Couldn't load gfx/palette.lmp");
 	FMod_CheckModel("gfx/palette.lmp", host_basepal, com_filesize);
 
 	host_colormap = (byte *) FS_LoadMallocFile ("gfx/colormap.lmp");
 	if (!host_colormap)
-		Sys_Error ("Couldn't load gfx/colormap.lmp");
-	FMod_CheckModel("gfx/colormap.lmp", host_colormap, com_filesize); 
+		Sys_Error("Couldn't load gfx/colormap.lmp");
+	FMod_CheckModel("gfx/colormap.lmp", host_colormap, com_filesize);
 
 	Sys_mkdir(va("%s/qw", com_basedir));
-	Sys_mkdir(va("%s/fodquake", com_basedir));	
+	Sys_mkdir(va("%s/fodquake", com_basedir));
 
-	Key_Init ();
-	V_Init ();
- 
+	Key_Init();
+	V_Init();
+
 	VID_Init(host_basepal);
 	cl_vidinitialised = 1;
 
 	Image_Init();
 
-	S_Init ();
+	S_Init();
 
-	CDAudio_Init ();
+	CDAudio_Init();
 
-	Info_SetValueForStarKey (cls.userinfo, "*z_ext", va("%i", SUPPORTED_EXTENSIONS), MAX_SERVERINFO_STRING);
+	Info_SetValueForStarKey(cls.userinfo, "*z_ext", va("%i", SUPPORTED_EXTENSIONS), MAX_SERVERINFO_STRING);
 
 	CL_InitClientVersionInfo();
 
 	if (!CL_InitEnts())
 		Sys_Error("CL_InitEnts() failed\n");
 
-	CL_InitTEnts ();
+	CL_InitTEnts();
 
 #warning If I want to keep compatibility with Win32 server browsers, I need to open a socket on port 27001 here.
 
@@ -1781,13 +1849,14 @@ void CL_Init (void)
 
 //============================================================================
 
-void CL_BeginLocalConnection (void) {
-	S_StopAllSounds (true);
+void CL_BeginLocalConnection(void)
+{
+	S_StopAllSounds(true);
 
 	// make sure we're not connected to an external server,
 	// and demo playback is stopped
 	if (!com_serveractive)
-		CL_Disconnect ();
+		CL_Disconnect();
 
 	cl.worldmodel = NULL;
 
@@ -1795,26 +1864,30 @@ void CL_BeginLocalConnection (void) {
 		cls.state = ca_connected;
 }
 
-static double CL_MinFrameTime (void) {
+static double CL_MinFrameTime(void)
+{
 	double fps, fpscap;
 
 	if (cls.timedemo || Movie_IsCapturing())
 		return 0;
 
-	if (cls.demoplayback) {
+	if (cls.demoplayback)
+	{
 		if (!cl_maxfps.value)
 			return 0;
-		fps = max (30.0, cl_maxfps.value);
-	} else {
+		fps = max(30.0, cl_maxfps.value);
+	}
+	else
+	{
 #ifdef NETQW
 #warning This needs updating for in sync net/video.
 		if (!cl_maxfps.value)
 			return 0;
-		fps = max (30.0, cl_maxfps.value);
+		fps = max(30.0, cl_maxfps.value);
 #else
-		fpscap = cl.maxfps ? max (30.0, cl.maxfps) : 72;
+		fpscap = cl.maxfps ? max(30.0, cl.maxfps) : 72;
 
-		fps = cl_maxfps.value ? bound (30.0, cl_maxfps.value, fpscap) : com_serveractive ? fpscap : bound (30.0, rate.value / 80.0, fpscap);
+		fps = cl_maxfps.value ? bound(30.0, cl_maxfps.value, fpscap) : com_serveractive ? fpscap : bound(30.0, rate.value / 80.0, fpscap);
 #endif
 	}
 
@@ -1983,7 +2056,7 @@ void CL_Frame (double time)
 	MP3_Frame();
 	MT_Frame();
 
-	if (Movie_IsCapturing())		
+	if (Movie_IsCapturing())
 		Movie_FinishFrame();
 
 	cls.framecount++;
