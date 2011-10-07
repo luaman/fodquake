@@ -1053,30 +1053,64 @@ void CL_ParseBaseline (entity_state_t *es)
 	}
 }
 
-//Static entities are non-interactive world objects like torches
-void CL_ParseStatic (void)
+void CL_FreeStatics()
 {
+	struct static_entity *sent, *next;
+
+	sent = cl.first_static;
+	while(sent)
+	{
+		next = sent->next;
+		free(sent);
+		sent = next;
+	}
+
+	cl.first_static = 0;
+	cl.last_static = 0;
+}
+
+//Static entities are non-interactive world objects like torches
+static int CL_ParseStatic (void)
+{
+	struct static_entity *sent;
 	entity_t *ent;
 	entity_state_t es;
 
-	CL_ParseBaseline (&es);
+	sent = malloc(sizeof(*sent));
+	if (sent)
+	{
+		memset(sent, 0, sizeof(*sent));
+		CL_ParseBaseline (&es);
 
-	if (cl.num_statics >= MAX_STATIC_ENTITIES)
-		Host_Error ("Too many static entities");
-	ent = &cl_static_entities[cl.num_statics];
-	cl.num_statics++;
+		ent = &sent->ent;
 
-	// copy it to the current state
+		// copy it to the current state
 
-	ent->model = cl.model_precache[es.modelindex];
-	ent->frame = es.frame;
-	ent->colormap = vid.colormap;
-	ent->skinnum = es.skinnum;
+		ent->model = cl.model_precache[es.modelindex];
+		ent->frame = es.frame;
+		ent->colormap = vid.colormap;
+		ent->skinnum = es.skinnum;
 
-	VectorCopy (es.origin, ent->origin);
-	VectorCopy (es.angles, ent->angles);
+		VectorCopy (es.origin, ent->origin);
+		VectorCopy (es.angles, ent->angles);
 
-	R_AddEfrags (ent);
+		R_AddEfrags (ent);
+
+		if (cl.first_static == 0)
+		{
+			cl.first_static = sent;
+			cl.last_static = sent;
+		}
+		else
+		{
+			cl.last_static->next = sent;
+			cl.last_static = sent;
+		}
+
+		return 1;
+	}
+
+	return 0;
 }
 
 void CL_ParseStaticSound (void)
@@ -1821,7 +1855,9 @@ void CL_ParseServerMessage (void)
 			break;
 
 		case svc_spawnstatic:
-			CL_ParseStatic ();
+			if (!CL_ParseStatic())
+				Host_Error ("CL_ParseServerMessage: CL_ParseStatic() failed");
+
 			break;
 
 		case svc_temp_entity:
