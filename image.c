@@ -735,7 +735,7 @@ static qboolean PNG_LoadLibrary(void)
 	}
 
 	fprintf(stderr, "Unable to open libpng - PNG image loading and saving will be disabled\n");
-	Con_Print("Unable to open libpng - PNG image loading and saving will be disabled\n");
+	Com_Printf("Unable to open libpng - PNG image loading and saving will be disabled\n");
 
 	return false;
 }
@@ -1364,7 +1364,7 @@ static qboolean JPEG_LoadLibrary(void)
 	}
 
 	fprintf(stderr, "Unable to open libpng - PNG image loading and saving will be disabled\n");
-	Con_Print("Unable to open libpng - PNG image loading and saving will be disabled\n");
+	Com_Printf("Unable to open libpng - PNG image loading and saving will be disabled\n");
 
 	return false;
 }
