@@ -637,7 +637,7 @@ static void DumpConfig(char *name)
 		FS_CreatePath(outfile);
 		if (!(f	= fopen	(outfile, "w")))
 		{
-			Com_Printf ("Couldn't write	%s.\n",	name);
+			Com_ErrorPrintf("Couldn't write \"%s\".\n", name);
 			return;
 		}
 	}
