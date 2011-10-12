@@ -379,6 +379,8 @@ static qboolean CL_OpenDownloadFile()
 	if (cls.download)
 		return true;
 
+	Com_ErrorPrintf("Failed to open output file \"%s\" for writing.\n", name);
+
 	return false;
 }
 
