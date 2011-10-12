@@ -282,6 +282,7 @@ byte COM_BlockSequenceCRCByte (byte *base, int length, int sequence);
 void Com_BeginRedirect(void (*RedirectedPrint) (char *));
 void Com_EndRedirect (void);
 void Com_Printf(const char *fmt, ...);
+void Com_ErrorPrintf(const char *fmt, ...);
 void Com_DPrintf(const char *fmt, ...);
 
 //============================================================================
