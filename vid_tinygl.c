@@ -23,6 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <cybergraphx/cybergraphics.h>
 
 #include <proto/exec.h>
+#include <proto/graphics.h>
 #include <proto/intuition.h>
 #include <proto/cybergraphics.h>
 
