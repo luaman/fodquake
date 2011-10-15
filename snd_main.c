@@ -158,6 +158,7 @@ static void S_InitDriver()
 				if(Q_strcasecmp(s_driver.string, "auto") != 0)
 					if(Q_strcasecmp(sounddrivers[i].name, s_driver.string) != 0)
 						continue;
+
 				bzero(soundcard, sizeof(*soundcard));
 				rc = (*sounddrivers[i].init)(soundcard, rate, 2, 16);
 				if (rc)
@@ -177,7 +178,7 @@ static void S_InitDriver()
 
 	if (!rc)
 	{
-		Com_Printf("Unable to initialise sound output.\n");
+		Com_ErrorPrintf("Unable to initialise sound output.\n");
 		if(Q_strcasecmp(s_driver.string, "auto") != 0)
 			Com_Printf("WARNING: You have specified a custom s_driver which may be the cause of failure. Try setting it to \"auto\"\n");
 		free(soundcard);
