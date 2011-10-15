@@ -23,6 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <stdlib.h>
 
 #include "quakedef.h"
+#include "sys_io.h"
 #include "menu.h"
 #include "teamplay.h"
 #include "version.h"
@@ -347,7 +348,7 @@ void CL_Download_f (void)
 		if ((q = strchr(p, '/')) != NULL)
 		{
 			*q = 0;
-			Sys_mkdir(cls.downloadname);
+			Sys_IO_Create_Directory(cls.downloadname);
 			*q = '/';
 			p = q + 1;
 		}

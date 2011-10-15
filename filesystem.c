@@ -23,6 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <unistd.h>
 
 #include "common.h"
+#include "sys_io.h"
 #include "filesystem.h"
 #include "draw.h"
 
@@ -132,7 +133,7 @@ void FS_CreatePath(char *path)
 #endif
 			save = *s;
 			*s = 0;
-			Sys_mkdir(path);
+			Sys_IO_Create_Directory(path);
 			*s = save;
 		}
 	}

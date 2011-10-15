@@ -266,17 +266,6 @@ void Sys_SleepTime(unsigned int usec)
 	}
 }
 
-void Sys_mkdir(char *path)
-{
-	BPTR lock;
-
-	lock = CreateDir(path);
-	if (lock)
-	{
-		UnLock(lock);
-	}
-}
-
 int main(int argc, char **argv)
 {
 	double time, oldtime, newtime;
