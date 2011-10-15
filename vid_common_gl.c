@@ -30,6 +30,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifdef _WIN32
 #define qglGetProcAddress wglGetProcAddress
 #elif defined(__MORPHOS__)
+#include "vid_tinygl.h"
 #define qglGetProcAddress tglGetProcAddress
 #elif defined(__MACOSX__)
 #warning Fix this dummy.

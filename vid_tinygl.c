@@ -33,6 +33,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "keys.h"
 #include "gl_local.h"
 #include "in_morphos.h"
+#include "vid_tinygl.h"
 #include "vid_mode_morphos.h"
 
 #ifndef SA_GammaControl
@@ -411,7 +412,7 @@ void myglActiveTextureARB(GLenum unit)
 	GLActiveTextureARB(__tglContext, unit);
 }
 
-void *tglGetProcAddress(char *s)
+void *tglGetProcAddress(const char *s)
 {
 	if (strcmp(s, "glMultiTexCoord2fARB") == 0)
 		return (void *)myglMultiTexCoord2fARB;
