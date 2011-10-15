@@ -570,7 +570,7 @@ static struct InputEvent *myinputhandler_real()
 		{
 			if ((id->imsghigh > id->imsglow && !(id->imsghigh == MAXIMSGS - 1 && id->imsglow == 0)) || (id->imsghigh < id->imsglow && id->imsghigh != id->imsglow - 1) || id->imsglow == id->imsghigh)
 			{
-				memcpy(&id->imsgs[id->imsghigh], coin, sizeof(id->imsgs[0]));
+				CopyMem(coin, &id->imsgs[id->imsghigh], sizeof(id->imsgs[0]));
 				id->imsghigh++;
 				id->imsghigh %= MAXIMSGS;
 			}
