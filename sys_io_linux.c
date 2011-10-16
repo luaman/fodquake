@@ -9,7 +9,7 @@
 #include "dirent.h"
 #include "sys/stat.h"
 
-void Sys_mkdir(char *path)
+void Sys_IO_Create_Directory(const char *path)
 {
 	mkdir(path, 0777);
 }

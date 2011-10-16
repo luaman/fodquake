@@ -23,6 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <string.h>
 
 #include "quakedef.h"
+#include "sys_io.h"
 #include "teamplay.h"
 #include "utils.h"
 #include "logging.h"
@@ -1122,7 +1123,7 @@ void MT_CvarInit(void)
 
 void MT_Init(void)
 {
-	Sys_mkdir(va("%s/fodquake/temp", com_basedir));
+	Sys_IO_Create_Directory(va("%s/fodquake/temp", com_basedir));
 
 	MT_ClearClientState();
 

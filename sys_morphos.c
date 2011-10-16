@@ -21,6 +21,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include <proto/exec.h>
 #include <proto/dos.h>
+#include <proto/random.h>
 
 #include <stdarg.h>
 #include <stdio.h>
@@ -28,6 +29,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include <sys/time.h>
 #include <time.h>
+#include <unistd.h>
 
 #include <signal.h>
 
@@ -115,6 +117,11 @@ void Sys_Printf(char *fmt, ...)
 char *Sys_ConsoleInput()
 {
 	return 0;
+}
+
+void Sys_MicroSleep(unsigned int microseconds)
+{
+	usleep(microseconds);
 }
 
 static int secbase;
@@ -266,15 +273,14 @@ void Sys_SleepTime(unsigned int usec)
 	}
 }
 
-void Sys_mkdir(char *path)
+void Sys_RandomBytes(void *target, unsigned int numbytes)
 {
-	BPTR lock;
+	unsigned char *t;
 
-	lock = CreateDir(path);
-	if (lock)
-	{
-		UnLock(lock);
-	}
+	t = target;
+
+	while(numbytes--)
+		*t++ = RandomByte();
 }
 
 int main(int argc, char **argv)

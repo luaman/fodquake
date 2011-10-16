@@ -29,6 +29,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "serverscanner.h"
 #include "readablechars.h"
 #include "server_browser_qtv.h"
+#include "utils.h"
 
 static void SB_AddMacros(void);
 
@@ -714,7 +715,7 @@ static int check_player_name(char *name, const struct QWServer *server)
 			player_uncolored = remove_colors(server->players[i].name , strlen(server->players[i].name));
 			if (player_uncolored == NULL)
 				continue;
-			if (strcasestr(player_uncolored, player))
+			if (Util_strcasestr(player_uncolored, player))
 			{
 				free(player_uncolored);
 				return 1;
@@ -730,7 +731,7 @@ static int check_player_name(char *name, const struct QWServer *server)
 			player_uncolored = remove_colors(server->spectators[i].name , strlen(server->spectators[i].name));
 			if (player_uncolored == NULL)
 				continue;
-			if (strcasestr(player_uncolored, player))
+			if (Util_strcasestr(player_uncolored, player))
 			{
 				free(player_uncolored);
 				return 1;

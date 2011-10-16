@@ -1044,6 +1044,34 @@ void Com_Printf(const char *fmt, ...)
 	Sys_Thread_UnlockMutex(com_mutex);
 }
 
+void Com_ErrorPrintf(const char *fmt, ...)
+{
+	va_list argptr;
+	char msg[MAXPRINTMSG];
+	
+	va_start(argptr, fmt);
+	vsnprintf(msg, sizeof(msg), fmt, argptr);
+	va_end(argptr);
+
+	Sys_Thread_LockMutex(com_mutex);
+
+	if (rd_print)
+	{
+		// add to redirected message
+		rd_print(msg);
+		return;
+	}
+
+	// also echo to debugging console
+	Sys_Printf("Error: %s", msg);
+
+	// write it to the scrollable buffer
+	Con_Print("&cf00Error: ");
+	Con_Print(msg);
+
+	Sys_Thread_UnlockMutex(com_mutex);
+}
+
 //A Com_Printf that only shows up if the "developer" cvar is set
 void Com_DPrintf(const char *fmt, ...)
 {

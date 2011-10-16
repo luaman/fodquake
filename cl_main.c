@@ -24,6 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <stdlib.h>
 
 #include "quakedef.h"
+#include "sys_io.h"
 #include "filesystem.h"
 #include "cdaudio.h"
 #include "input.h"
@@ -1808,8 +1809,8 @@ void CL_Init (void)
 		Sys_Error("Couldn't load gfx/colormap.lmp");
 	FMod_CheckModel("gfx/colormap.lmp", host_colormap, com_filesize);
 
-	Sys_mkdir(va("%s/qw", com_basedir));
-	Sys_mkdir(va("%s/fodquake", com_basedir));
+	Sys_IO_Create_Directory(va("%s/qw", com_basedir));
+	Sys_IO_Create_Directory(va("%s/fodquake", com_basedir));
 
 	Key_Init();
 	V_Init();

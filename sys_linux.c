@@ -43,9 +43,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 qboolean stdin_ready;
 int do_stdin = 1;
 
+static int randomfd;
 
 cvar_t sys_nostdout = { "sys_nostdout", "0" };
-
 
 void Sys_Printf(char *fmt, ...)
 {
@@ -119,6 +119,11 @@ int Sys_FileTime(char *path)
 }
 
 static unsigned int secbase;
+
+void Sys_MicroSleep(unsigned int microseconds)
+{
+	usleep(microseconds);
+}
 
 #if LINUX_DOES_NOT_SUCK /* haha, good joke! */
 double Sys_DoubleTime(void)
@@ -244,6 +249,10 @@ int main(int argc, char **argv)
 	dedicated = COM_CheckParm("-dedicated");
 #endif
 
+	randomfd = open("/dev/urandom", O_RDONLY);
+	if (randomfd == -1)
+		Sys_Error("Unable to open /dev/urandom");
+
 	if (!dedicated)
 	{
 		signal(SIGFPE, SIG_IGN);
@@ -289,5 +298,22 @@ void Sys_MakeCodeWriteable(unsigned long startaddr, unsigned long length)
 	r = mprotect((char *)addr, length + startaddr - addr + psize, 7);
 	if (r < 0)
 		Sys_Error("Protection change failed");
+}
+
+void Sys_RandomBytes(void *target, unsigned int numbytes)
+{
+	ssize_t s;
+
+	while(numbytes)
+	{
+		s = read(randomfd, target, numbytes);
+		if (s < 0)
+		{
+			Sys_Error("Linux sucks");
+		}
+
+		numbytes -= s;
+		target += s;
+	}
 }
 
