@@ -26,6 +26,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "resource.h"
 #include "in_dinput8.h"
 #include "strl.h"
+#include "vid_mode_win32.h"
 
 struct display
 {

@@ -21,6 +21,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include <stdio.h>
 
+#include "vid_mode_win32.h"
+
 typedef struct vrect_s vrect_t;
 typedef enum keynum keynum_t;
 #include "sys_video.h"
