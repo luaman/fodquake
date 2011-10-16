@@ -543,8 +543,3 @@ int WINAPI WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
 	return TRUE;	/* return success of application */
 }
 
-void usleep(unsigned int usec)
-{
-	Sleep((usec+999)/1000);
-}
-
