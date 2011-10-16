@@ -11,7 +11,7 @@
 #import "common.h"
 
 static mach_timebase_info_data_t tbinfo;
-
+static int randomfd;
 static unsigned int secbase;
 
 static unsigned long long monotonictime()
@@ -29,6 +29,28 @@ static unsigned long long monotonictime()
 double Sys_DoubleTime(void)
 {
 	return (double)monotonictime() / 1000000000.0;
+}
+
+void Sys_MicroSleep(unsigned int microseconds)
+{
+        usleep(microseconds);
+}
+
+void Sys_RandomBytes(void *target, unsigned int numbytes)
+{
+        ssize_t s;
+
+        while(numbytes)
+        {
+                s = read(randomfd, target, numbytes);
+                if (s < 0)
+                {
+                        Sys_Error("Linux sucks");
+                }
+
+                numbytes -= s;
+                target += s;
+        }
 }
 
 unsigned long long Sys_IntTime()
@@ -110,6 +132,11 @@ int main(int argc, char **argv)
 	mach_timebase_info(&tbinfo);
 
 	COM_InitArgv(argc, argv);
+
+	randomfd = open("/dev/urandom", O_RDONLY);
+        if (randomfd == -1)
+                Sys_Error("Unable to open /dev/urandom");
+
 	Host_Init(argc, argv);
 
 	oldtime = Sys_DoubleTime();
