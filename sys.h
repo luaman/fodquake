@@ -21,6 +21,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 void Sys_MicroSleep(unsigned int microseconds);
 
+void Sys_RandomBytes(void *target, unsigned int numbytes);
+
 // file IO
 int	Sys_FileTime (char *path);
 

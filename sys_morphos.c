@@ -21,6 +21,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include <proto/exec.h>
 #include <proto/dos.h>
+#include <proto/random.h>
 
 #include <stdarg.h>
 #include <stdio.h>
@@ -28,6 +29,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include <sys/time.h>
 #include <time.h>
+#include <unistd.h>
 
 #include <signal.h>
 
@@ -269,6 +271,16 @@ void Sys_SleepTime(unsigned int usec)
 		SetTaskPri(FindTask(0), oldpri);
 		curstate = 0;
 	}
+}
+
+void Sys_RandomBytes(void *target, unsigned int numbytes)
+{
+	unsigned char *t;
+
+	t = target;
+
+	while(numbytes--)
+		*t++ = RandomByte();
 }
 
 int main(int argc, char **argv)

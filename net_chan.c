@@ -115,14 +115,9 @@ static void Huff_DecompressPacketSizebuf(struct HuffContext *huffcontext, sizebu
 
 void Netchan_CvarInit(void)
 {
-	int port;
+	unsigned short port;
 
-	// pick a port value that should be nice and random
-#ifdef _WIN32
-	port = ((int) (timeGetTime() * 1000) * time(NULL)) & 0xffff;
-#else
-	port = ((int) (getpid() + getuid() * 1000) * time(NULL)) & 0xffff;
-#endif
+	Sys_RandomBytes(&port, sizeof(port));
 
 	Cvar_SetCurrentGroup(CVAR_GROUP_SCREEN);
 	Cvar_Register (&showpackets);

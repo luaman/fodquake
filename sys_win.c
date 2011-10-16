@@ -53,6 +53,9 @@ static HANDLE	qwclsemaphore;
 static HANDLE	tevent;
 static HANDLE	hinput, houtput;
 
+static HANDLE AdvAPIHandle;
+static BOOL (*RtlGenRandom)(PVOID, ULONG);
+
 void MaskExceptions(void);
 void Sys_PopFPCW(void);
 void Sys_PushFPCW_SetHigh(void);
@@ -184,6 +187,9 @@ void Sys_Printf(char *fmt, ...)
 
 void Sys_Quit(void)
 {
+	if (AdvAPIHandle)
+		FreeLibrary(AdvAPIHandle);
+
 	if (tevent)
 		CloseHandle(tevent);
 
@@ -529,7 +535,7 @@ static void SleepUntilInput(int time)
 	MsgWaitForMultipleObjects(1, &tevent, FALSE, time, QS_ALLINPUT);
 }
 
-HINSTANCE	global_hInstance;
+HINSTANCE global_hInstance;
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
@@ -554,6 +560,18 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		SetConsoleTitle("fqds");
 		hinput = GetStdHandle(STD_INPUT_HANDLE);
 		houtput = GetStdHandle(STD_OUTPUT_HANDLE);
+	}
+
+	AdvAPIHandle = LoadLibrary("Advapi32.dll");
+	if (AdvAPIHandle == 0)
+	{
+		Sys_Error("Couldn't open Advapi32.dll");
+	}
+
+	RtlGenRandom = (void *)GetProcAddress(AdvAPIHandle, "SystemFunction036");
+	if (RtlGenRandom == 0)
+	{
+		Sys_Error("Unable to locate the symbol SystemFunction036 in Advapi32.dll");
 	}
 
 	tevent = CreateEvent(NULL, FALSE, FALSE, NULL);
@@ -581,5 +599,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	}
 
 	return TRUE;	/* return success of application */
+}
+
+void Sys_RandomBytes(void *target, unsigned int numbytes)
+{
+	RtlGenRandom(target, numbytes);
 }
 
