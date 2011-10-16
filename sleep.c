@@ -26,12 +26,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "common.h"
 #include "sleep.h"
 
-#ifdef _WIN32
-#include <windows.h>
-
-#define usleep(x) Sleep(((x)+999)/1000)
-#endif
-
 static unsigned int sleep_granularity;
 
 #define NUMSAMPLES 50
