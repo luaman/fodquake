@@ -159,7 +159,7 @@ static void S_InitDriver()
 					if(Q_strcasecmp(sounddrivers[i].name, s_driver.string) != 0)
 						continue;
 
-				bzero(soundcard, sizeof(*soundcard));
+				memset(soundcard, 0, sizeof(*soundcard));
 				rc = (*sounddrivers[i].init)(soundcard, rate, 2, 16);
 				if (rc)
 				{

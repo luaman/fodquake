@@ -453,7 +453,7 @@ static void GL_FlushTextures()
 
 	glDeleteTextures(numgltextures, textures);
 
-	bzero(gltextures, sizeof(gltextures));
+	memset(gltextures, 0, sizeof(gltextures));
 	numgltextures = 0;
 }
 
