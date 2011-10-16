@@ -19,11 +19,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 // sys.h -- non-portable functions
 
-#ifdef _WIN32
-#define Sys_MSleep(x) Sleep(x)
-#else
-#define Sys_MSleep(x) usleep((x) * 1000)
-#endif
+void Sys_MicroSleep(unsigned int microseconds);
 
 // file IO
 int	Sys_FileTime (char *path);

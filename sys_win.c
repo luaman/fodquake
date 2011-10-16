@@ -206,6 +206,11 @@ void Sys_InitDoubleTime(void)
 		starttime = timeGetTime();
 }
 
+void Sys_MicroSleep(unsigned int microseconds)
+{
+	Sleep((microseconds+999)/1000);
+}
+
 double Sys_DoubleTime(void)
 {
 	__int64 pcount;

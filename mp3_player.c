@@ -379,7 +379,7 @@ void MP3_Execute_f(void) {
 		return;
 	}
 	for (i = 0; i < 6; i++) {
-		Sys_MSleep(50);
+		Sys_MicroSleep(50000);
 		if (MP3_IsPlayerRunning()) {
 			Com_Printf("XMMS is now running\n");
 			return;

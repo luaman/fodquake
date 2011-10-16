@@ -117,6 +117,11 @@ char *Sys_ConsoleInput()
 	return 0;
 }
 
+void Sys_MicroSleep(unsigned int microseconds)
+{
+	usleep(microseconds);
+}
+
 static int secbase;
 
 double Sys_DoubleTime()

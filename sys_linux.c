@@ -120,6 +120,11 @@ int Sys_FileTime(char *path)
 
 static unsigned int secbase;
 
+void Sys_MicroSleep(unsigned int microseconds)
+{
+	usleep(microseconds);
+}
+
 #if LINUX_DOES_NOT_SUCK /* haha, good joke! */
 double Sys_DoubleTime(void)
 {
