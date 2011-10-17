@@ -21,7 +21,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include <proto/exec.h>
 #include <proto/dos.h>
+#ifndef AROS
 #include <proto/random.h>
+#endif
 
 #include <stdarg.h>
 #include <stdio.h>
@@ -273,6 +275,13 @@ void Sys_SleepTime(unsigned int usec)
 	}
 }
 
+#ifdef AROS
+#warning Fix this.
+void Sys_RandomBytes(void *target, unsigned int numbytes)
+{
+	Sys_Error("Sys_RandomBytes() is not implemented on AROS");
+}
+#else
 void Sys_RandomBytes(void *target, unsigned int numbytes)
 {
 	unsigned char *t;
@@ -282,6 +291,7 @@ void Sys_RandomBytes(void *target, unsigned int numbytes)
 	while(numbytes--)
 		*t++ = RandomByte();
 }
+#endif
 
 int main(int argc, char **argv)
 {
