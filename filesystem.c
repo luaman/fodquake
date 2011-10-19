@@ -371,11 +371,37 @@ static void FS_AddGameDirectory(char *dir)
 	char pakfile[MAX_OSPATH], *p;
 	int error;
 
-	if ((p = strrchr(dir, '/')) != NULL)
-		strcpy(com_gamedirfile, ++p);
-	else
-		strcpy(com_gamedirfile, p);
+	if (strlen(dir) + 1 >= sizeof(com_gamedir))
+	{
+		Sys_Error("Game directory path too long\n");
+		return;
+	}
+
+	p = strrchr(dir, '/');
+	if (p == 0)
+		return;
+
+	if (strlen(p) + 1 >= sizeof(com_gamedirfile))
+	{
+		Sys_Error("Game directory path too long\n");
+		return;
+	}
+
+	strcpy(com_gamedirfile, p + 1);
 	strcpy(com_gamedir, dir);
+
+	search = com_searchpaths;
+	while(search)
+	{
+		if (strcmp(search->filename, dir) == 0)
+			break;
+
+		search = search->next;
+	}
+
+	/* Path already exists */
+	if (search)
+		return;
 
 	// add the directory to the search path
 	search = malloc(sizeof(*search));
@@ -415,6 +441,7 @@ static void FS_AddGameDirectory(char *dir)
 		}
 
 		FS_FreeSearchPaths(firstsearch);
+		com_searchpaths = 0;
 	}
 
 	Sys_Error("FS_AddGameDirectory: Failed to add \"%s\"\n", dir);
@@ -424,9 +451,6 @@ static void FS_AddGameDirectory(char *dir)
 void FS_SetGamedir(const char *dir)
 {
 	struct searchpath *search;
-	int i;
-	struct pack *pak;
-	char pakfile[MAX_OSPATH];
 
 	if (strstr(dir, "..") || strstr(dir, "/") || strstr(dir, "\\") || strstr(dir, ":"))
 	{
@@ -436,7 +460,6 @@ void FS_SetGamedir(const char *dir)
 
 	if (!strcmp(com_gamedirfile, dir))
 		return;		// still the same
-	Q_strncpyz(com_gamedirfile, dir, sizeof(com_gamedirfile));
 
 	// free up any current game dir info
 	if (com_searchpaths != com_base_searchpaths)
@@ -451,29 +474,7 @@ void FS_SetGamedir(const char *dir)
 		com_searchpaths = com_base_searchpaths;
 	}
 
-	Q_snprintfz(com_gamedir, sizeof(com_gamedir), "%s/%s", com_basedir, dir);
-
-	if (!strcmp(dir, "id1") || !strcmp(dir, "qw") || !strcmp(dir, "fodquake"))
-		return;
-
-	// add the directory to the search path
-	search = Q_Malloc(sizeof(*search));
-	strcpy(search->filename, com_gamedir);
-	search->pack = NULL;
-	search->next = com_searchpaths;
-	com_searchpaths = search;
-
-	// add any pak files in the format pak0.pak pak1.pak, ...
-	for (i = 0;; i++)
-	{
-		Q_snprintfz(pakfile, sizeof(pakfile), "%s/pak%i.pak", com_gamedir, i);
-		if (!(pak = FS_LoadPackFile(pakfile)))
-			break;
-		search = malloc(sizeof(*search));
-		search->pack = pak;
-		search->next = com_searchpaths;
-		com_searchpaths = search;
-	}
+	FS_AddGameDirectory(va("%s/%s", com_basedir, dir));
 }
 
 void FS_InitFilesystem(void)
