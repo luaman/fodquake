@@ -626,10 +626,10 @@ const char *Sys_GetUserDataPath(void)
 	res = SHGetFolderPathA(NULL, CSIDL_PERSONAL|CSIDL_FLAG_CREATE, NULL, 0, path);
 	if (res == S_OK)
 	{
-		ret = malloc(strlen(path) + 1);
+		ret = malloc(strlen(path) + strlen("\\Fodquake") + 1);
 		if (ret)
 		{
-			strcpy(ret, path);
+			sprintf(ret, "%s\\Fodquake", path);
 		}
 	}
 
