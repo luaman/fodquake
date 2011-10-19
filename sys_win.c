@@ -20,6 +20,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // sys_win.c
 
 #include <windows.h>
+#include <shlobj.h>
 
 #include "quakedef.h"
 #include "resource.h"
@@ -585,5 +586,79 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 void Sys_RandomBytes(void *target, unsigned int numbytes)
 {
 	RtlGenRandom(target, numbytes);
+}
+
+const char *Sys_GetRODataPath(void)
+{
+	char path[MAX_PATH];
+	DWORD r;
+	char *ret;
+	char *p;
+
+	ret = 0;
+
+	r = GetModuleFileName(0, path, sizeof(path));
+	if (r < sizeof(path))
+	{
+		p = strrchr(path, '\\');
+		if (p)
+		{
+			ret = malloc(p - path + 1);
+			if (ret)
+			{
+				memcpy(ret, path, p - path);
+				ret[p - path] = 0;
+			}
+		}
+	}
+
+	return ret;
+}
+
+const char *Sys_GetUserDataPath(void)
+{
+	char path[MAX_PATH];
+	HRESULT res;
+	char *ret;
+
+	ret = 0;
+
+	res = SHGetFolderPathA(NULL, CSIDL_PERSONAL|CSIDL_FLAG_CREATE, NULL, 0, path);
+	if (res == S_OK)
+	{
+		ret = malloc(strlen(path) + 1);
+		if (ret)
+		{
+			strcpy(ret, path);
+		}
+	}
+
+	return ret;
+}
+
+const char *Sys_GetLegacyDataPath(void)
+{
+	char path[MAX_PATH];
+	DWORD r;
+	char *ret;
+
+	ret = 0;
+
+	r = GetCurrentDirectoryA(sizeof(path), path);
+	if (r < sizeof(path))
+	{
+		ret = malloc(strlen(path) + 1);
+		if (ret)
+		{
+			strcpy(ret, path);
+		}
+	}
+
+	return ret;
+}
+
+void Sys_FreePathString(const char *p)
+{
+	free((void *)p);
 }
 
