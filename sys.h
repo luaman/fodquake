@@ -51,5 +51,11 @@ void Sys_SetFPCW (void);
 void Sys_CvarInit(void);
 void Sys_Init (void);
 
+const char *Sys_GetRODataPath(void);
+const char *Sys_GetUserDataPath(void);
+const char *Sys_GetLegacyDataPath(void);
+
+void Sys_FreePathString(const char *);
+
 #include "sys_video.h"
 

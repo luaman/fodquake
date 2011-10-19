@@ -19,5 +19,8 @@ int Sys_Read_Dir(char *dir, char *subdir, int *gcount, struct directory_entry_te
 
 void Sys_IO_Create_Directory(const char *path);
 
+int Sys_IO_Path_Exists(const char *path);
+int Sys_IO_Path_Writable(const char *path);
+
 #endif /* SYS_IO_H */
 
