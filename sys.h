@@ -23,9 +23,6 @@ void Sys_MicroSleep(unsigned int microseconds);
 
 void Sys_RandomBytes(void *target, unsigned int numbytes);
 
-// file IO
-int	Sys_FileTime (char *path);
-
 // memory protection
 void Sys_MakeCodeWriteable (unsigned long startaddr, unsigned long length);
 

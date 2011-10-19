@@ -110,17 +110,6 @@ void Sys_Error(char *error, ...)
 	exit(1);
 }
 
-//returns -1 if not present
-int Sys_FileTime(char *path)
-{
-	struct stat buf;
-
-	if (stat(path, &buf) == -1)
-		return -1;
-
-	return buf.st_mtime;
-}
-
 static unsigned int secbase;
 
 void Sys_MicroSleep(unsigned int microseconds)
