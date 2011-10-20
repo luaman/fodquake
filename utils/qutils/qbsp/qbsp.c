@@ -136,25 +136,6 @@ winding_t *BaseWindingForPlane (plane_t *p)
 }
 
 
-
-/*
-==================
-CopyWinding
-==================
-*/
-winding_t	*CopyWinding (winding_t *w)
-{
-	int			size;
-	winding_t	*c;
-	
-	size = (int)((winding_t *)0)->points[w->numpoints];
-	c = malloc (size);
-	memcpy (c, w, size);
-	return c;
-}
-
-
-
 /*
 ==================
 CheckWinding
