@@ -39,11 +39,6 @@ typedef unsigned char byte;
 // the dec offsetof macro doesn't work very well...
 #define myoffsetof(type,identifier) ((size_t)&((type *)0)->identifier)
 
-
-// set these before calling CheckParm
-extern int myargc;
-extern char **myargv;
-
 char *strupr (char *in);
 char *strlower (char *in);
 int Q_strncasecmp (char *s1, char *s2, int n);
@@ -63,7 +58,6 @@ char *ExpandPath (char *path);
 double I_FloatTime (void);
 
 void	Error (char *error, ...);
-int		CheckParm (char *check);
 
 FILE	*SafeOpenWrite (char *filename);
 FILE	*SafeOpenRead (char *filename);
@@ -81,8 +75,6 @@ void 	StripExtension (char *path);
 void 	ExtractFilePath (char *path, char *dest);
 void 	ExtractFileBase (char *path, char *dest);
 void	ExtractFileExtension (char *path, char *dest);
-
-int 	ParseNum (char *str);
 
 short	BigShort (short l);
 short	LittleShort (short l);

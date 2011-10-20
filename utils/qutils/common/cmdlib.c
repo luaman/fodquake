@@ -33,10 +33,6 @@
 
 #define PATHSEPERATOR   '/'
 
-// set these before calling CheckParm
-int myargc;
-char **myargv;
-
 char		com_token[1024];
 qboolean	com_eof;
 
@@ -340,29 +336,6 @@ char *strlower (char *start)
 
 
 /*
-=================
-CheckParm
-
-Checks for the given parameter in the program's command line arguments
-Returns the argument number (1 to argc-1) or 0 if not present
-=================
-*/
-int CheckParm (char *check)
-{
-	int             i;
-
-	for (i = 1;i<myargc;i++)
-	{
-		if ( !Q_strcasecmp(check, myargv[i]) )
-			return i;
-	}
-
-	return 0;
-}
-
-
-
-/*
 ================
 filelength
 ================
@@ -577,49 +550,6 @@ void ExtractFileExtension (char *path, char *dest)
 
 	strcpy (dest,src);
 }
-
-
-/*
-==============
-ParseNum / ParseHex
-==============
-*/
-int ParseHex (char *hex)
-{
-	char    *str;
-	int    num;
-
-	num = 0;
-	str = hex;
-
-	while (*str)
-	{
-		num <<= 4;
-		if (*str >= '0' && *str <= '9')
-			num += *str-'0';
-		else if (*str >= 'a' && *str <= 'f')
-			num += 10 + *str-'a';
-		else if (*str >= 'A' && *str <= 'F')
-			num += 10 + *str-'A';
-		else
-			Error ("Bad hex number: %s",hex);
-		str++;
-	}
-
-	return num;
-}
-
-
-int ParseNum (char *str)
-{
-	if (str[0] == '$')
-		return ParseHex (str+1);
-	if (str[0] == '0' && str[1] == 'x')
-		return ParseHex (str+2);
-	return atol (str);
-}
-
-
 
 /*
 ============================================================================
