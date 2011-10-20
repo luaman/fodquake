@@ -912,6 +912,7 @@ void Cmd_AddCommand (char *cmd_name, xcommand_t function)
 	cmd_functions = cmd;
 	cmd->hash_next = cmd_hash_array[key];
 	cmd_hash_array[key] = cmd;
+	cmd->weight = 0;
 }
 
 qboolean Cmd_Exists (char *cmd_name)
