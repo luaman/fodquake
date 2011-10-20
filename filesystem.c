@@ -432,6 +432,7 @@ static void FS_AddGameDirectory_NoReally(const char *dir)
 				free(search);
 				break;
 			}
+			strlcpy(search->filename, pakfile, sizeof(search->filename));
 			search->pack = pak;
 			search->next = firstsearch;
 			firstsearch = search;
