@@ -126,22 +126,6 @@ char *ExpandPath (char *path)
 	return full;
 }
 
-char *ExpandPathAndArchive (char *path)
-{
-	char	*expanded;
-	char	archivename[1024];
-
-	expanded = ExpandPath (path);
-
-	if (archive)
-	{
-		sprintf (archivename, "%s/%s", archivedir, path);
-		CopyFile (expanded, archivename);
-	}
-	return expanded;
-}
-
-
 char *copystring(char *s)
 {
 	char	*b;
@@ -205,25 +189,6 @@ void Q_mkdir (char *path)
 	if (errno != EEXIST)
 		Error ("mkdir %s: %s",path, strerror(errno));
 }
-
-/*
-============
-FileTime
-
-returns -1 if not present
-============
-*/
-int	FileTime (char *path)
-{
-	struct	stat	buf;
-	
-	if (stat (path,&buf) == -1)
-		return -1;
-	
-	return buf.st_mtime;
-}
-
-
 
 /*
 ==============
@@ -845,42 +810,3 @@ unsigned short CRC_Value(unsigned short crcvalue)
 }
 //=============================================================================
 
-/*
-============
-CreatePath
-============
-*/
-void	CreatePath (char *path)
-{
-	char	*ofs, c;
-	
-	for (ofs = path+1 ; *ofs ; ofs++)
-	{
-		c = *ofs;
-		if (c == '/' || c == '\\')
-		{	// create the directory
-			*ofs = 0;
-			Q_mkdir (path);
-			*ofs = c;
-		}
-	}
-}
-
-
-/*
-============
-CopyFile
-
-  Used to archive source files
-============
-*/
-void CopyFile (char *from, char *to)
-{
-	void	*buffer;
-	int		length;
-
-	length = LoadFile (from, &buffer);
-	CreatePath (to);
-	SaveFile (to, buffer, length);
-	free (buffer);
-}
