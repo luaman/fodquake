@@ -112,6 +112,8 @@ void CalcAmbientSounds (void)
 				surf = &dfaces[dmarksurfaces[hit->firstmarksurface + k]];
 				info = &texinfo[surf->texinfo];
 				ofs = ((dmiptexlump_t *)dtexdata)->dataofs[info->miptex];
+				if ((ofs & (1<<31)))
+					ofs &= ~(1<<31);
 				miptex = (miptex_t *)(&dtexdata[ofs]);
 
 				if ( !Q_strncasecmp (miptex->name, "*water", 6) )

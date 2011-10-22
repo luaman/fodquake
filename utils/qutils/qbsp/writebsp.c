@@ -19,6 +19,7 @@
 
 
 #include "bsp5.h"
+#include "idtextures.h"
 
 
 int		headclipnode;
@@ -463,11 +464,14 @@ WriteMiptex
 void WriteMiptex (void)
 {
 	int		i, len;
+	int j;
 	byte	*data;
+	unsigned int *ldata;
 	dmiptexlump_t	*l;
 	char	*path;
 	char	fullpath[1024];
 
+#if 0
 	path = ValueForKey (&entities[0], "_wad");
 	if (!path || !path[0])
 	{
@@ -483,7 +487,8 @@ void WriteMiptex (void)
 	sprintf (fullpath, "%s/%s", gamedir, path);
 
 	TEX_InitFromWad (fullpath);
-	
+#endif
+
 	AddAnimatingTextures ();
 
 	l = (dmiptexlump_t *)dtexdata;
@@ -493,10 +498,41 @@ void WriteMiptex (void)
 	{
 		l->dataofs[i] = data - (byte *)l;
 		len = LoadLump (miptex[i], data);
+		if (!len)
+		{
+#if 0
+			l->dataofs[i] = -1;	// didn't find the texture
+#else
+			l->dataofs[i] = (data - (byte *)l) | (1<<31);
+			strncpy((char *)data, miptex[i], 16);
+			data[15] = 0;
+			for(j=0;data[j];j++)
+			{
+				data[j] = tolower(data[j]);
+			}
+
+			for(j=0;idtextures[j].name;j++)
+			{
+				if (strcmp((char *)data, idtextures[j].name) == 0)
+					break;
+			}
+
+			if (!idtextures[j].name)
+			{
+				Error("Couldn't get dimensions for texture \"%s\"", data);
+			}
+
+			ldata = (unsigned int *)(data + 16);
+			ldata[0] = LittleLong(idtextures[j].width);
+			ldata[1] = LittleLong(idtextures[j].height);
+
+			len = 24;
+#endif
+		}
+
 		if (data + len - dtexdata >= MAX_MAP_MIPTEX)
 			Error ("Textures exceeded MAX_MAP_MIPTEX");
-		if (!len)
-			l->dataofs[i] = -1;	// didn't find the texture
+
 		data += len;
 	}
 
