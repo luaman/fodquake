@@ -3,7 +3,7 @@ CC=gcc
 RANLIB=ranlib
 
 ARFLAGS=rc
-CFLAGS=-Wall -O3 -fno-strict-aliasing
+CFLAGS=-g -Wall -O3 -fno-strict-aliasing
 
 OBJS = \
 	bspfile.o \
@@ -16,12 +16,14 @@ OBJS = \
 	trilib.o \
 	wadlib.o
 
-all: libcommon.a
+all:
+	mkdir -p objects
+	(cd objects && $(MAKE) -f ../Makefile libcommon.a VPATH=../)
 
 libcommon.a: $(OBJS)
 	$(AR) $(ARFLAGS) $@ $(OBJS)
 	$(RANLIB) $@
 
 clean:
-	rm -f *.o libcommon.a
+	rm -rf objects
 

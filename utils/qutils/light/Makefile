@@ -1,7 +1,7 @@
 CC=gcc
 STRIP=strip
 
-CFLAGS=-g -Wall -O3 -fno-strict-aliasing -I../common
+CFLAGS=-g -Wall -O3 -fno-strict-aliasing -I$(VPATH)../common
 STRIPFLAGS=--strip-unneeded --remove-section=.comment
 
 OBJS = \
@@ -11,12 +11,14 @@ OBJS = \
 	threads.o \
 	trace.o
 
-all: light
+all:
+	mkdir -p objects
+	(cd objects && $(MAKE) -f ../Makefile light VPATH=../)
 
 light: $(OBJS)
-	$(CC) $(CFLAGS) -L../common $(OBJS) -o $@.db -lcommon -lm
+	$(CC) $(CFLAGS) -L$(VPATH)../common/objects $(OBJS) -o $@.db -lcommon -lm
 	$(STRIP) $(STRIPFLAGS) $@.db -o $@
 
 clean:
-	rm -f light light.db *.o
+	rm -rf objects
 
