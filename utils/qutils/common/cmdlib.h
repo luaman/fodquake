@@ -51,7 +51,6 @@ void	Q_mkdir (char *path);
 
 extern	char		qdir[1024];
 extern	char		gamedir[1024];
-void SetQdirFromPath (char *path);
 char *ExpandPath (char *path);
 
 

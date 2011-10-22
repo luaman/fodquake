@@ -75,42 +75,6 @@ gamedir will hold qdir + the game directory (id1, id2, etc)
 char		qdir[1024];
 char		gamedir[1024];
 
-void SetQdirFromPath (char *path)
-{
-	char	temp[1024];
-	char	*c;
-
-	if (!(path[0] == '/' || path[0] == '\\' || path[1] == ':'))
-	{	// path is partial
-		Q_getwd (temp);
-		strcat (temp, path);
-		path = temp;
-	}
-
-	// search for "quake" in path
-
-	for (c=path ; *c ; c++)
-		if (!Q_strncasecmp (c, "quake", 5))
-		{
-			strncpy (qdir, path, c+6-path);
-			printf ("qdir: %s\n", qdir);
-			c += 6;
-			while (*c)
-			{
-				if (*c == '/' || *c == '\\')
-				{
-					strncpy (gamedir, path, c+1-path);
-					printf ("gamedir: %s\n", gamedir);
-					return;
-				}
-				c++;
-			}
-			Error ("No gamedir in %s", path);
-			return;
-		}
-	Error ("SeetQdirFromPath: no 'quake' in %s", path);
-}
-
 char *ExpandPath (char *path)
 {
 	static char full[1024];
