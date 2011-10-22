@@ -569,7 +569,7 @@ static void Mod_LoadTextures(model_t *model, lump_t *l)
 
 		if (model->isworldmodel && model->bspversion != HL_BSPVERSION && ISSKYTEX(tx->name))
 		{
-			R_InitSky (mt);
+			R_InitSky(((void *)mt) + mt->offsets[0]);
 			continue;
 		}
 
