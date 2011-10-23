@@ -137,6 +137,12 @@ static char sb_player_filter_entry[512];
 static int sb_player_filter_entry_position = 0;
 static double sb_player_filter_blink_time = 0;
 
+// text filter
+static int sb_text_filter = 0;
+static char sb_text_filter_entry[512];
+static int sb_text_filter_entry_position = 0;
+static double sb_text_filter_blink_time = 0;
+
 static int sb_server_insert_selected_box;
 static char sb_server_insert_ip[512];
 static int sb_server_insert_ip_position;
@@ -185,6 +191,7 @@ struct tab
 	struct server **servers;
 	int *server_index;
 	char *player_filter;
+	char *text_filter;
 	struct linked_list *filters;
 	int friends;
 	struct sb_friend **friend_links;
@@ -492,6 +499,7 @@ static void sb_del_tab(struct tab *tab)
 	free(tab->name);
 	free(tab->column_types);
 	free(tab->player_filter);
+	free(tab->text_filter);
 	free(tab->server_index);
 	free(tab);
 }
@@ -746,6 +754,25 @@ static int check_player(struct tab *tab, const struct QWServer *server)
 	return check_player_name(tab->player_filter, server);
 }
 
+static int check_text_hm(char *text, const struct QWServer *server)
+{
+	if (server->hostname)
+		if (Util_strcasestr(server->hostname, text))
+			return 1;
+	if (server->map)
+		if (Util_strcasestr(server->map, text))
+			return 1;
+	if (server->gamedir)
+		if (Util_strcasestr(server->gamedir, text))
+			return 1;
+	return 0;
+}
+
+static int check_text (struct tab *tab, const struct QWServer *server)
+{
+	return check_text_hm (tab->text_filter, server);
+}
+
 static int hostname_compare(const void *a, const void *b);
 
 static int player_count_compare(const void *a, const void *b)
@@ -953,6 +980,8 @@ static void update_tab(struct tab *tab)
 		cf = Check_Server_Against_Filter;
 	else if (tab->player_filter)
 		cf = check_player;
+	else if (tab->text_filter)
+		cf = check_text;
 	else
 		cf = stubby;
 
@@ -1283,6 +1312,40 @@ void SB_Key(int key)
 				return;
 		}
 
+		if (sb_text_filter == 1)
+		{
+			tab->changed = 1;
+			update = 0;
+			if (key == K_ESCAPE)
+			{
+				sb_text_filter = 0;
+				return;
+			}
+
+			if (key == K_ENTER)
+				sb_text_filter = 0;
+
+			handle_textbox(key, sb_text_filter_entry, &sb_text_filter_entry_position, sizeof(sb_text_filter_entry));
+			if (tab->text_filter)
+			{
+				free(tab->text_filter);
+				tab->text_filter = NULL;
+				update = 1;
+			}
+			if (strlen(sb_text_filter_entry) > 0)
+			{
+				tab->text_filter = strdup(sb_text_filter_entry);
+				if (tab->text_filter == NULL)
+					Com_Printf("warning: strdup failed in \"%s\", line: %s.\n", __func__, __LINE__);
+				update_tab(tab);
+			}
+			if (update)
+				update_tab(tab);
+
+			if (key != K_UPARROW && key != K_DOWNARROW && key != K_ENTER)
+				return;
+		}
+
 		if (sb_server_insert == 1)
 		{
 			SB_Server_Insert_Handler(key);
@@ -1418,6 +1481,12 @@ void SB_Key(int key)
 		if (key == 'f' && keydown[K_CTRL])
 		{
 			sb_player_filter = 1;
+			return;
+		}
+
+		if (key == '/')
+		{
+			sb_text_filter = 1;
 			return;
 		}
 
@@ -1901,6 +1970,7 @@ static void SB_Draw_Server(void)
 	struct tab *tab;
 	const char *hostname, *map;
 	char string[512];
+	char *s;
 	int position;
 	char *friend_name;
 	const struct QWPlayer **sorted_players;
@@ -1939,31 +2009,32 @@ static void SB_Draw_Server(void)
 	}
 	Draw_ColoredString(8, 16, string, 0);
 
-	if (sb_player_filter == 1 || tab->player_filter)
+	if (sb_player_filter == 1 || sb_text_filter == 1)
 	{
-		snprintf(string, 512, "Server: %*i/%*i - player_filter: ", sb_server_count_width, tab->sb_position + 1, sb_server_count_width, tab->server_count);
+		snprintf(string, 512, "Server: %*i/%*i - %s: ", sb_server_count_width, tab->sb_position + 1, sb_server_count_width, tab->server_count, sb_text_filter ? "text search" : "player search");
 		i = strlen(string);
 		Draw_String(8, 8,string);
 		x = 1;
-		if (tab->player_filter)
+		if (tab->player_filter || tab->text_filter)
 		{
-			x = strlen(tab->player_filter);
+			s = tab->text_filter ? tab->text_filter : tab->player_filter;
+			x = strlen(s);
 			if (x == 0)
 				x = 1;
 			else 
 				x += 1;
 
-			if (sb_player_filter == 1)
+			if (sb_player_filter == 1 || sb_text_filter == 1)
 				Draw_Fill(8 + i *8, 8, x * 8, 8, 55);
-			Draw_String(8 + i *8, 8, tab->player_filter);
+			Draw_String(8 + i *8, 8, s);
 		}
 		else
 		{
-			if (sb_player_filter == 1)
+			if (sb_player_filter == 1 | sb_text_filter == 1)
 			Draw_Fill(8 + i *8, 8, x * 8, 8, 55);
 		}
 
-		if (sb_player_filter == 1)
+		if (sb_player_filter == 1 && sb_text_filter == 0)
 		{
 			if (sb_player_filter_blink_time < cls.realtime)
 				Draw_Character(8 + i *8 + sb_player_filter_entry_position *8, 8, 11);
@@ -1971,6 +2042,17 @@ static void SB_Draw_Server(void)
 			if (sb_player_filter_blink_time + 0.2f < cls.realtime)
 				sb_player_filter_blink_time = cls.realtime + 0.2f;
 		}
+
+		if (sb_text_filter == 1)
+		{
+			if (sb_text_filter_blink_time < cls.realtime)
+				Draw_Character(8 + i *8 + sb_text_filter_entry_position *8, 8, 11);
+
+			if (sb_text_filter_blink_time + 0.2f < cls.realtime)
+				sb_text_filter_blink_time = cls.realtime + 0.2f;
+		}
+
+
 	}
 	else
 		Draw_String(8, 8,va("Server: %*i/%*i ", sb_server_count_width, tab->sb_position + 1, sb_server_count_width, tab->server_count));

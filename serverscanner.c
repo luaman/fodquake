@@ -225,6 +225,8 @@ static void ServerScanner_Thread_ParseQWServerReply(struct ServerScanner *server
 			qwserver->pub.map = strdup(value);
 		else if (strcmp(key, "hostname") == 0)
 			qwserver->pub.hostname = strdup(value);
+		else if (strcmp(key, "gamedir") == 0)
+			qwserver->pub.gamedir = strdup(value);
 	}
 
 	if (!p)
