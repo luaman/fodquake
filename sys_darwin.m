@@ -12,7 +12,6 @@
 
 static mach_timebase_info_data_t tbinfo;
 static int randomfd;
-static unsigned int secbase;
 
 static unsigned long long monotonictime()
 {
@@ -56,6 +55,47 @@ void Sys_RandomBytes(void *target, unsigned int numbytes)
 unsigned long long Sys_IntTime()
 {
 	return monotonictime() / 1000;
+}
+
+const char *Sys_GetRODataPath(void)
+{
+	char *ret = NULL;
+	
+	ret = malloc([[[NSBundle mainBundle] resourcePath] length] + 1);
+	if (ret)
+	{
+		sprintf(ret, "%s", [[[NSBundle mainBundle] resourcePath] UTF8String]);
+	}
+	
+	return ret;
+}
+
+const char *Sys_GetUserDataPath(void)
+{
+	char *ret = NULL;
+	char *home;
+	
+	home = getenv("HOME");
+	if (home)
+	{
+		ret = malloc(strlen(home) + strlen("/Library/Application Support/FodQuake") + 1);
+		if (ret)
+		{
+			sprintf(ret, "%s/Library/Application Support/FodQuake", home);
+		}
+	}
+	
+	return ret;
+}
+
+const char *Sys_GetLegacyDataPath(void)
+{
+	return NULL;
+}
+
+void Sys_FreePathString(const char *x)
+{
+	free((void*)x);
 }
 
 char *Sys_ConsoleInput(void)
