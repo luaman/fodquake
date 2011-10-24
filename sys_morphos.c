@@ -28,6 +28,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include <sys/time.h>
 #include <time.h>
@@ -319,3 +320,57 @@ int main(int argc, char **argv)
 
 	return 0;
 }
+
+static const char *Sys_ResolvePath(const char *path)
+{
+	BPTR lock;
+	char buf[1024];
+	char *ret;
+
+	ret = 0;
+
+	lock = Lock(path, ACCESS_READ);
+	if (lock)
+	{
+		if (NameFromLock(lock, buf, sizeof(buf)))
+		{
+			ret = AllocVec(strlen(buf) + 1, MEMF_ANY);
+			if (ret)
+			{
+				strcpy(ret, buf);
+			}
+		}
+
+		UnLock(lock);
+	}
+
+	return ret;
+}
+
+const char *Sys_GetRODataPath(void)
+{
+	return Sys_ResolvePath("PROGDIR:");
+}
+
+const char *Sys_GetUserDataPath(void)
+{
+	return 0;
+}
+
+const char *Sys_GetLegacyDataPath(void)
+{
+	char buf[1024];
+
+	if (GetCurrentDirName(buf, sizeof(buf)))
+	{
+		return Sys_ResolvePath(buf);
+	}
+
+	return 0;
+}
+
+void Sys_FreePathString(const char *p)
+{
+	FreeVec((void *)p);
+}
+

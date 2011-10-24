@@ -23,9 +23,6 @@ void Sys_MicroSleep(unsigned int microseconds);
 
 void Sys_RandomBytes(void *target, unsigned int numbytes);
 
-// file IO
-int	Sys_FileTime (char *path);
-
 // memory protection
 void Sys_MakeCodeWriteable (unsigned long startaddr, unsigned long length);
 
@@ -50,6 +47,12 @@ void Sys_SetFPCW (void);
 
 void Sys_CvarInit(void);
 void Sys_Init (void);
+
+const char *Sys_GetRODataPath(void);
+const char *Sys_GetUserDataPath(void);
+const char *Sys_GetLegacyDataPath(void);
+
+void Sys_FreePathString(const char *);
 
 #include "sys_video.h"
 

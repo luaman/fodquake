@@ -290,14 +290,14 @@ static qboolean alsa_init(struct SoundCard *sc, int rate, int channels, int bits
 	ret = alsa_init_internal(sc, snd_alsa_device.string, rate, channels, bits);
 	if (ret == 0 && strcmp(snd_alsa_device.string, "default") != 0)
 	{
-		Com_Printf("Opening \"%s\" failed, trying \"default\"\n", snd_alsa_device.string);
+		Com_Printf("ALSA: Opening \"%s\" failed, trying \"default\"\n", snd_alsa_device.string);
 
 		prevattempt = "default";
 		ret = alsa_init_internal(sc, "default", rate, channels, bits);
         }
 	if (ret == 0 && strcmp(snd_alsa_device.string, "hw") != 0)
 	{
-		Com_Printf("Opening \"%s\" failed, trying \"hw\"\n", prevattempt);
+		Com_Printf("ALSA: Opening \"%s\" failed, trying \"hw\"\n", prevattempt);
 
 		ret = alsa_init_internal(sc, "hw", rate, channels, bits);
         }

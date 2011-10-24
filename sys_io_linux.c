@@ -2,7 +2,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <ctype.h>
-#include <math.h>
+#include <unistd.h>
 
 #include "sys_io.h"
 
@@ -96,5 +96,15 @@ int Sys_Read_Dir(char *dir, char *subdir, int *gcount, struct directory_entry_te
 		*gcount = *gcount + count;
 
 	return 0;
+}
+
+int Sys_IO_Path_Exists(const char *path)
+{
+	return access(path, F_OK) == 0;
+}
+
+int Sys_IO_Path_Writable(const char *path)
+{
+	return access(path, W_OK) == 0;
 }
 

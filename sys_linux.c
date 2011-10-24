@@ -17,6 +17,8 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */
+#define _GNU_SOURCE
+
 #include <unistd.h>
 #include <signal.h>
 #include <stdlib.h>
@@ -36,6 +38,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <sys/wait.h>
 #include <sys/mman.h>
 #include <errno.h>
+#include <pwd.h>
 
 #include "quakedef.h"
 #include "sys_error_gtk.h"
@@ -105,17 +108,6 @@ void Sys_Error(char *error, ...)
 	Sys_Error_GTK_DisplayError(string);
 
 	exit(1);
-}
-
-//returns -1 if not present
-int Sys_FileTime(char *path)
-{
-	struct stat buf;
-
-	if (stat(path, &buf) == -1)
-		return -1;
-
-	return buf.st_mtime;
 }
 
 static unsigned int secbase;
@@ -315,5 +307,55 @@ void Sys_RandomBytes(void *target, unsigned int numbytes)
 		numbytes -= s;
 		target += s;
 	}
+}
+
+const char *Sys_GetRODataPath(void)
+{
+	return 0;
+}
+
+const char *Sys_GetUserDataPath(void)
+{
+	/* Seriously, whoever the fuck came up with the getpwuid_r() interface
+	 * is a fucking moron. Seriously. */
+
+	struct passwd pwd;
+	struct passwd *pwd2;
+	void *buf;
+	long bufsize;
+	char *ret;
+
+	ret = 0;
+
+	bufsize = sysconf(_SC_GETPW_R_SIZE_MAX);
+	if (bufsize > 0 && bufsize < 16777216)
+	{
+		buf = malloc(bufsize);
+		if (buf)
+		{
+			if (getpwuid_r(getuid(), &pwd, buf, bufsize, &pwd2) == 0)
+			{
+				ret = malloc(strlen(pwd2->pw_dir) + strlen("/.fodquake") + 1);
+				if (ret)
+				{
+					sprintf(ret, "%s/.fodquake", pwd2->pw_dir);
+				}
+			}
+
+			free(buf);
+		}
+	}
+
+	return ret;
+}
+
+const char *Sys_GetLegacyDataPath(void)
+{
+	return get_current_dir_name();
+}
+
+void Sys_FreePathString(const char *x)
+{
+	free((void *)x);
 }
 

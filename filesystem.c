@@ -26,6 +26,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "sys_io.h"
 #include "filesystem.h"
 #include "draw.h"
+#include "strl.h"
 
 // in memory
 struct packfile
@@ -361,8 +362,10 @@ static void FS_FreeSearchPaths(struct searchpath *searchpaths)
 	}
 }
 
+static const char *fs_basedirs[5];
+
 //Sets com_gamedir, adds the directory to the head of the path, then loads and adds pak1.pak pak2.pak ... 
-static void FS_AddGameDirectory(char *dir)
+static void FS_AddGameDirectory_NoReally(const char *dir)
 {
 	int i;
 	struct searchpath *firstsearch;
@@ -371,11 +374,37 @@ static void FS_AddGameDirectory(char *dir)
 	char pakfile[MAX_OSPATH], *p;
 	int error;
 
-	if ((p = strrchr(dir, '/')) != NULL)
-		strcpy(com_gamedirfile, ++p);
-	else
-		strcpy(com_gamedirfile, p);
+	if (strlen(dir) + 1 >= sizeof(com_gamedir))
+	{
+		Sys_Error("Game directory path too long\n");
+		return;
+	}
+
+	p = strrchr(dir, '/');
+	if (p == 0)
+		return;
+
+	if (strlen(p) + 1 >= sizeof(com_gamedirfile))
+	{
+		Sys_Error("Game directory path too long\n");
+		return;
+	}
+
+	strcpy(com_gamedirfile, p + 1);
 	strcpy(com_gamedir, dir);
+
+	search = com_searchpaths;
+	while(search)
+	{
+		if (strcmp(search->filename, dir) == 0)
+			break;
+
+		search = search->next;
+	}
+
+	/* Path already exists */
+	if (search)
+		return;
 
 	// add the directory to the search path
 	search = malloc(sizeof(*search));
@@ -403,6 +432,7 @@ static void FS_AddGameDirectory(char *dir)
 				free(search);
 				break;
 			}
+			strlcpy(search->filename, pakfile, sizeof(search->filename));
 			search->pack = pak;
 			search->next = firstsearch;
 			firstsearch = search;
@@ -415,18 +445,29 @@ static void FS_AddGameDirectory(char *dir)
 		}
 
 		FS_FreeSearchPaths(firstsearch);
+		com_searchpaths = 0;
 	}
 
 	Sys_Error("FS_AddGameDirectory: Failed to add \"%s\"\n", dir);
+}
+
+static void FS_AddGameDirectory(const char *dir)
+{
+	unsigned int i;
+
+	i = 0;
+
+	while(fs_basedirs[i])
+	{
+		FS_AddGameDirectory_NoReally(va("%s/%s", fs_basedirs[i], dir));
+		i++;
+	}
 }
 
 //Sets the gamedir and path to a different directory.
 void FS_SetGamedir(const char *dir)
 {
 	struct searchpath *search;
-	int i;
-	struct pack *pak;
-	char pakfile[MAX_OSPATH];
 
 	if (strstr(dir, "..") || strstr(dir, "/") || strstr(dir, "\\") || strstr(dir, ":"))
 	{
@@ -436,7 +477,6 @@ void FS_SetGamedir(const char *dir)
 
 	if (!strcmp(com_gamedirfile, dir))
 		return;		// still the same
-	Q_strncpyz(com_gamedirfile, dir, sizeof(com_gamedirfile));
 
 	// free up any current game dir info
 	if (com_searchpaths != com_base_searchpaths)
@@ -451,58 +491,128 @@ void FS_SetGamedir(const char *dir)
 		com_searchpaths = com_base_searchpaths;
 	}
 
-	Q_snprintfz(com_gamedir, sizeof(com_gamedir), "%s/%s", com_basedir, dir);
+	FS_AddGameDirectory(dir);
+}
 
-	if (!strcmp(dir, "id1") || !strcmp(dir, "qw") || !strcmp(dir, "fodquake"))
-		return;
+const char *ro_data_path;
+const char *user_data_path;
+const char *legacy_data_path;
 
-	// add the directory to the search path
-	search = Q_Malloc(sizeof(*search));
-	strcpy(search->filename, com_gamedir);
-	search->pack = NULL;
-	search->next = com_searchpaths;
-	com_searchpaths = search;
+static int FS_CheckSubpathExist(const char *path, const char *subpath)
+{
+	char *p;
+	int ret;
 
-	// add any pak files in the format pak0.pak pak1.pak, ...
-	for (i = 0;; i++)
-	{
-		Q_snprintfz(pakfile, sizeof(pakfile), "%s/pak%i.pak", com_gamedir, i);
-		if (!(pak = FS_LoadPackFile(pakfile)))
-			break;
-		search = malloc(sizeof(*search));
-		search->pack = pak;
-		search->next = com_searchpaths;
-		com_searchpaths = search;
-	}
+	p = malloc(strlen(path) + 1 + strlen(subpath) + 1);
+	if (p == 0)
+		Sys_Error("Cry, cry");
+
+	sprintf(p, "%s/%s", path, subpath);
+
+	ret = Sys_IO_Path_Exists(p);
+
+	free(p);
+
+	return ret;
 }
 
 void FS_InitFilesystem(void)
 {
 	int i;
+	int preferlegacy;
+	int legacywritable;
+	int userwritable;
+	unsigned int dircount;
 
-	// -basedir <path>
-	// Overrides the system supplied base directory (under id1)
+	ro_data_path = Sys_GetRODataPath();
+	user_data_path = Sys_GetUserDataPath();
+	legacy_data_path = Sys_GetLegacyDataPath();
+
+	preferlegacy = 0;
+	legacywritable = 0;
+
+	if (legacy_data_path)
+	{
+		if (Sys_IO_Path_Exists(legacy_data_path) && (FS_CheckSubpathExist(legacy_data_path, "id1") || FS_CheckSubpathExist(legacy_data_path, "fodquake") || FS_CheckSubpathExist(legacy_data_path, "qw")))
+		{
+			legacywritable = Sys_IO_Path_Writable(legacy_data_path);
+			if (legacywritable)
+			{
+				preferlegacy = FS_CheckSubpathExist(legacy_data_path, "fodquake/temp"); /* That directory is created by MT_Init() */
+			}
+		}
+		else
+		{
+			Sys_FreePathString(legacy_data_path);
+			legacy_data_path = 0;
+		}
+	}
+
+	userwritable = 0;
+
+	if (user_data_path)
+	{
+		Sys_IO_Create_Directory(user_data_path);
+
+		if (Sys_IO_Path_Exists(user_data_path))
+		{
+			userwritable = Sys_IO_Path_Writable(user_data_path);
+		}
+		else
+		{
+			Sys_FreePathString(user_data_path);
+			user_data_path = 0;
+		}
+	}
+
+	if (!legacywritable && !userwritable)
+	{
+		Sys_Error("Nowhere to write data. Check that either \"%s\" or \"%s\" is writable.\n", legacy_data_path?legacy_data_path:"<none>", user_data_path?user_data_path:"<none>");
+	}
+
+	dircount = 0;
+
+	if (ro_data_path)
+	{
+		fs_basedirs[dircount++] = ro_data_path;
+	}
+
+	if (user_data_path && preferlegacy)
+	{
+		fs_basedirs[dircount++] = user_data_path;
+	}
+
+	if (legacy_data_path)
+	{
+		fs_basedirs[dircount++] = legacy_data_path;
+	}
+
+	if (user_data_path && !preferlegacy)
+	{
+		fs_basedirs[dircount++] = user_data_path;
+	}
+
 	if ((i = COM_CheckParm("-basedir")) && i < com_argc - 1)
-		Q_strncpyz(com_basedir, com_argv[i + 1], sizeof(com_basedir));
-	else
-#ifdef __MACOSX__
-		snprintf(com_basedir, sizeof(com_basedir), "%s/Library/Application\ Support/FodQuake", getenv("HOME"));
-#else
- 		getcwd(com_basedir, sizeof(com_basedir) - 1);
-#endif
+	{
+#warning Create a Sys_ function for converting paths.
+		for (i = 0; i < strlen(com_basedir); i++)
+			if (com_basedir[i] == '\\')
+				com_basedir[i] = '/';
 
-	for (i = 0; i < strlen(com_basedir); i++)
-		if (com_basedir[i] == '\\')
-			com_basedir[i] = '/';
+		fs_basedirs[dircount++] = user_data_path;
+	}
+
+	strlcpy(com_basedir, fs_basedirs[dircount - 1], sizeof(com_basedir));
+
+	fs_basedirs[dircount] = 0;
+
+	FS_AddGameDirectory("id1");
+	FS_AddGameDirectory("fodquake");
+	FS_AddGameDirectory("qw");
 
 	i = strlen(com_basedir) - 1;
 	if (i >= 0 && com_basedir[i] == '/')
 		com_basedir[i] = 0;
-
-	// start up with id1 by default
-	FS_AddGameDirectory(va("%s/id1", com_basedir));
-	FS_AddGameDirectory(va("%s/fodquake", com_basedir));
-	FS_AddGameDirectory(va("%s/qw", com_basedir));
 
 	// any set gamedirs will be freed up to here
 	com_base_searchpaths = com_searchpaths;
@@ -518,6 +628,15 @@ void FS_ShutdownFilesystem(void)
 {
 	FS_FreeSearchPaths(com_searchpaths);
 	com_searchpaths = 0;
+
+	if (ro_data_path)
+		Sys_FreePathString(ro_data_path);
+
+	if (user_data_path)
+		Sys_FreePathString(user_data_path);
+
+	if (legacy_data_path)
+		Sys_FreePathString(legacy_data_path);
 }
 
 static void FS_Path_f(void)
