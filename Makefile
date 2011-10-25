@@ -212,6 +212,9 @@ ifeq ($(OS), macosx)
 	OSLDFLAGS = -framework AppKit -framework ApplicationServices -framework AudioUnit -framework CoreServices -framework IOKit -lpng -ljpeg -lz
 
 	THIRDPARTYLIBS=libpng libjpeg
+
+%.o: %.m
+	$(CC) $(CFLAGS) -c $< -o $@
 endif
 
 # CPU specific settings
