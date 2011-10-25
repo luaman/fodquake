@@ -20,7 +20,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include <string.h>
 #include <ctype.h>
-#include <assert.h>
 
 #include "quakedef.h"
 #include "keys.h"
@@ -1195,9 +1194,6 @@ void Key_Event(int key, qboolean down)
 			case key_serverbrowser:
 				SB_Key(key);
 				break;
-
-			default:
-				assert(!"Bad key_dest");
 		}
 
 		return;
@@ -1290,9 +1286,6 @@ void Key_Event(int key, qboolean down)
 		case key_serverbrowser:
 			SB_Key(key);
 			break;
-
-		default:
-			assert(!"Bad key_dest");
 	}
 }
 
