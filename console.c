@@ -213,6 +213,9 @@ static int Con_ExpandMaxLines()
 			lastline = (lastline - firstline) % maxlines;
 			firstline = 0;
 
+			free(lines);
+			free(linestartcolours);
+
 			lines = newlines;
 			linestartcolours = newlinestartcolours;
 			maxlines *= 2;
