@@ -21,7 +21,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include <string.h>
 #include <stdlib.h>
-#include <assert.h>
 
 #include "quakedef.h"
 #include "common.h"
@@ -760,7 +759,9 @@ static qboolean Cmd_LegacyCommand (void)
 	// build new command string
 	Q_snprintfz(text, sizeof(text), "%s %s", cmd->newname, Cmd_Args());
 
-	assert (!recursive);
+	if (recursive)
+		Sys_Error("Cmd_LegacyCommand: Called recursively");
+
 	recursive = true;
 	Cmd_ExecuteString (text);
 	recursive = false;
@@ -879,9 +880,6 @@ void Cmd_AddCommand (char *cmd_name, xcommand_t function)
 	{
 		printf("Command \"%s\" registered too late\n", cmd_name);
 	}
-
-	if (host_initialized)	// because hunk allocation would get stomped
-		assert (!"Cmd_AddCommand after host_initialized");
 
 	// fail if the command is a variable name
 	if (Cvar_FindVar(cmd_name))
@@ -1506,9 +1504,6 @@ void Cmd_If_f (void)
 int Cmd_CheckParm (char *parm)
 {
 	int i, c;
-
-	if (!parm)
-		assert(!"Cmd_CheckParm: NULL");
 
 	c = Cmd_Argc();
 	for (i = 1; i < c; i++)
