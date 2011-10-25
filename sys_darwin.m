@@ -61,7 +61,7 @@ const char *Sys_GetRODataPath(void)
 {
 	char *ret = NULL;
 	
-	ret = malloc([[[NSBundle mainBundle] resourcePath] length] + 1);
+	ret = malloc([[[NSBundle mainBundle] resourcePath] lengthOfBytesUsingEncoding:NSUTF8StringEncoding] + 1);
 	if (ret)
 	{
 		sprintf(ret, "%s", [[[NSBundle mainBundle] resourcePath] UTF8String]);
@@ -73,15 +73,14 @@ const char *Sys_GetRODataPath(void)
 const char *Sys_GetUserDataPath(void)
 {
 	char *ret = NULL;
-	char *home;
+	NSString *home = NSHomeDirectory();
 	
-	home = getenv("HOME");
 	if (home)
 	{
-		ret = malloc(strlen(home) + strlen("/Library/Application Support/FodQuake") + 1);
+		ret = malloc([home lengthOfBytesUsingEncoding:NSUTF8StringEncoding] + strlen("/Library/Application Support/FodQuake") + 1);
 		if (ret)
 		{
-			sprintf(ret, "%s/Library/Application Support/FodQuake", home);
+			sprintf(ret, "%s/Library/Application Support/FodQuake", [home UTF8String]);
 		}
 	}
 	
