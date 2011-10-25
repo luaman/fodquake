@@ -17,7 +17,6 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */
-#define _GNU_SOURCE
 
 #include <unistd.h>
 #include <signal.h>
@@ -351,7 +350,14 @@ const char *Sys_GetUserDataPath(void)
 
 const char *Sys_GetLegacyDataPath(void)
 {
-	return get_current_dir_name();
+	char buf[1024];
+
+	if (getcwd(buf, sizeof(buf)))
+	{
+		return strdup(buf);
+	}
+
+	return 0;
 }
 
 void Sys_FreePathString(const char *x)
