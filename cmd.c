@@ -634,7 +634,7 @@ qboolean Cmd_DeleteAlias (char *name)
 		prev = a;
 	}
 
-	assert(!"Cmd_DeleteAlias: alias list broken");
+	Sys_Error("Cmd_DeleteAlias: alias list broken");
 	return false;	// shut up compiler
 }
 
@@ -1013,29 +1013,27 @@ int Cmd_CommandCompare (const void *p1, const void *p2)
 void Cmd_CmdList_f (void)
 {
 	cmd_function_t *cmd;
-	int	i;
-	static int count;
-	static qboolean sorted = false;
-	static cmd_function_t *sorted_cmds[512];
+	int i;
+	int count;
+	cmd_function_t **sorted_cmds;
 
-#define MAX_SORTED_CMDS (sizeof(sorted_cmds) / sizeof(sorted_cmds[0]))
+	for (cmd = cmd_functions, count = 0; cmd; cmd = cmd->next, count++);
 
-	if (!sorted)
-	{
-		for (cmd = cmd_functions, count = 0; cmd && count < MAX_SORTED_CMDS; cmd = cmd->next, count++)
-			sorted_cmds[count] = cmd;
+	sorted_cmds = malloc(count * sizeof(*sorted_cmds));
+	if (sorted_cmds == 0)
+		Com_ErrorPrintf("cmdlist: out of memory\n");
 
-		qsort(sorted_cmds, count, sizeof (cmd_function_t *), Cmd_CommandCompare);
-		sorted = true;
-	}
+	for (cmd = cmd_functions, count = 0; cmd; cmd = cmd->next, count++)
+		sorted_cmds[count] = cmd;
 
-	if (count == MAX_SORTED_CMDS)
-		assert(!"count == MAX_SORTED_CMDS");
+	qsort(sorted_cmds, count, sizeof (cmd_function_t *), Cmd_CommandCompare);
 
 	for (i = 0; i < count; i++)
 		Com_Printf ("%s\n", sorted_cmds[i]->name);
 
 	Com_Printf ("------------\n%d commands\n", count);
+
+	free(sorted_cmds);
 }
 
 
