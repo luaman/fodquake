@@ -21,7 +21,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include <stdlib.h>
 #include <string.h>
-#include <assert.h>
 #include <math.h>
 #include <time.h>
 
@@ -1436,7 +1435,7 @@ static char *SShot_ExtForFormat(int format) {
 	case IMAGE_JPEG: return ".jpg";
 	case IMAGE_PNG: return ".png";
 	}
-	assert(!"SShot_ExtForFormat: unknown format");
+	Sys_Error("SShot_ExtForFormat: unknown format");
 	return "err";
 }
 
