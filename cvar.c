@@ -21,7 +21,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include <string.h>
 #include <stdlib.h>
-#include <assert.h>
 
 #include "common.h"
 #include "quakedef.h"
@@ -496,22 +495,19 @@ void Cvar_CvarList_f (void)
 {
 	cvar_t *var;
 	int i;
-	static int count;
-	static qboolean sorted = false;
-	static cvar_t *sorted_cvars[512];
+	int count;
+	cvar_t **sorted_cvars;
 
-#define MAX_SORTED_CVARS (sizeof(sorted_cvars) / sizeof(sorted_cvars[0]))
+	for (var = cvar_vars, count = 0; var; var = var->next, count++);
 
-	if (!sorted)
-	{
-		for (var = cvar_vars, count = 0; var && count < MAX_SORTED_CVARS; var = var->next, count++)
-			sorted_cvars[count] = var;
-		qsort(sorted_cvars, count, sizeof (cvar_t *), Cvar_CvarCompare);
-		sorted = true;
-	}
+	sorted_cvars = malloc(count * sizeof(*sorted_cvars));
+	if (sorted_cvars == 0)
+		Com_ErrorPrintf("cvarlist: out of memory\n");
 
-	if (count == MAX_SORTED_CVARS)
-		assert(!"count == MAX_SORTED_CVARS");
+	for (var = cvar_vars, count = 0; var; var = var->next, count++)
+		sorted_cvars[count] = var;
+
+	qsort(sorted_cvars, count, sizeof (cvar_t *), Cvar_CvarCompare);
 
 	for (i = 0; i < count; i++)
 	{
@@ -524,6 +520,8 @@ void Cvar_CvarList_f (void)
 	}
 
 	Com_Printf ("-------------\n%d variables\n", count);
+
+	free(sorted_cvars);
 }
 
 cvar_t *Cvar_Create(char *name, char *string, int cvarflags)
@@ -599,7 +597,7 @@ qboolean Cvar_Delete(char *name)
 		prev = var;
 	}
 
-	assert(!"Cvar list broken");
+	Sys_Error("Cvar list broken");
 	return false;
 }
 
