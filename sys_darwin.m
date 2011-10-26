@@ -77,10 +77,10 @@ const char *Sys_GetUserDataPath(void)
 	
 	if (home)
 	{
-		ret = malloc([home lengthOfBytesUsingEncoding:NSUTF8StringEncoding] + strlen("/Library/Application Support/FodQuake") + 1);
+		ret = malloc([home lengthOfBytesUsingEncoding:NSUTF8StringEncoding] + strlen("/Library/Application Support/Fodquake") + 1);
 		if (ret)
 		{
-			sprintf(ret, "%s/Library/Application Support/FodQuake", [home UTF8String]);
+			sprintf(ret, "%s/Library/Application Support/Fodquake", [home UTF8String]);
 		}
 	}
 	
@@ -138,7 +138,7 @@ void Sys_Error(char *error, ...)
 				NSAlert *alert = [[NSAlert alloc] init];
 				if (alert)
 				{
-					[alert setMessageText:@"FodQuake error"];
+					[alert setMessageText:@"Fodquake error"];
 					[alert setInformativeText:user];
 					[alert runModal];
 					[alert release];

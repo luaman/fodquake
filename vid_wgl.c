@@ -163,7 +163,7 @@ static LONG WINAPI MainWndProc (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 			break;
 
 		case WM_CLOSE:
-			if (MessageBox (d->window, "Are you sure you want to quit?", "FodQuake : Confirm Exit",
+			if (MessageBox (d->window, "Are you sure you want to quit?", "Fodquake : Confirm Exit",
 						MB_YESNO | MB_SETFOREGROUND | MB_ICONQUESTION) == IDYES)
 			{
 				Host_Quit ();
@@ -390,7 +390,7 @@ void *Sys_Video_Open(const char *mode, unsigned int width, unsigned int height, 
 			wc.hCursor       = LoadCursor (NULL,IDC_ARROW);
 			wc.hbrBackground = NULL;
 			wc.lpszMenuName  = 0;
-			wc.lpszClassName = "FodQuake";
+			wc.lpszClassName = "Fodquake";
 
 			RegisterClass (&wc);	//assume that any failures are due to it still being registered
 							//we'll fail on the create instead.
@@ -424,8 +424,8 @@ void *Sys_Video_Open(const char *mode, unsigned int width, unsigned int height, 
 			// Create the DIB window
 			d->window = CreateWindowEx (
 				 ExWindowStyle,
-				 "FodQuake",
-				 "FodQuake",
+				 "Fodquake",
+				 "Fodquake",
 				 WindowStyle,
 				 rect.left, rect.top,
 				 rect.right - rect.left,

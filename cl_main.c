@@ -256,7 +256,7 @@ static char *validclientnames[] =
 
 char *fversion_clientnames[] =
 {
-	"FodQuake version "FODQUAKE_VERSION,
+	"Fodquake version "FODQUAKE_VERSION,
 	"ezQuake version 1144",
 	"ezQuake version 1517",
 	"ezQuake 1.8.2 stable (build 2029)",
@@ -808,7 +808,7 @@ void CL_MakeActive(void)
 	}
 
 	if (!cls.demoplayback)
-		VID_SetCaption (va("FodQuake: %s", cls.servername));
+		VID_SetCaption (va("Fodquake: %s", cls.servername));
 
 	Con_ClearNotify();
 	TP_ExecTrigger("f_spawn");
@@ -1120,7 +1120,7 @@ void CL_Disconnect(void)
 	cl.teamfortress = false;
 	cls.ftexsupported = 0;
 
-	VID_SetCaption("FodQuake");
+	VID_SetCaption("Fodquake");
 
 	// stop sounds (especially looping!)
 	S_StopAllSounds(true);
@@ -1761,7 +1761,7 @@ static void CL_InitClientVersionInfo()
 {
 	Info_RemoveKey(cls.userinfo, "*FuhQuake");
 	Info_RemoveKey(cls.userinfo, "*client");
-	Info_RemoveKey(cls.userinfo, "*FodQuake");
+	Info_RemoveKey(cls.userinfo, "*Fodquake");
 
 	if (imitatedclientnum == CLIENT_EZQUAKE_1144)
 	{
@@ -1780,7 +1780,7 @@ static void CL_InitClientVersionInfo()
 	 	Info_SetValueForStarKey (cls.userinfo, "*FuhQuake", "0.31", MAX_INFO_STRING);
 	}
 	else
-	 	Info_SetValueForStarKey (cls.userinfo, "*FodQuake", FODQUAKE_VERSION, MAX_INFO_STRING);
+		Info_SetValueForStarKey (cls.userinfo, "*Fodquake", FODQUAKE_VERSION, MAX_INFO_STRING);
 }
 
 void CL_Init (void)

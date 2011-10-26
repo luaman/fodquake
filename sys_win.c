@@ -396,7 +396,7 @@ void Sys_Init_(void)
 		Sys_Error("Couldn't get OS info");
 
 	if ((vinfo.dwMajorVersion < 5) || (vinfo.dwPlatformId == VER_PLATFORM_WIN32s))
-		Sys_Error("FodQuake requires at least Windows 2000");
+		Sys_Error("Fodquake requires at least Windows 2000");
 }
 
 /********************************* CLIPBOARD *********************************/

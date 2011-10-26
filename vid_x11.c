@@ -506,7 +506,7 @@ void *Sys_Video_Open(const char *mode, unsigned int width, unsigned int height, 
 			d->x_win = XCreateWindow(d->x_disp, XRootWindow(d->x_disp, d->x_visinfo->screen), 0, 0,	// x, y
 					      d->width, d->height, 0,	// borderwidth
 					      d->x_visinfo->depth, InputOutput, d->x_vis, attribmask, &attribs);
-			XStoreName(d->x_disp, d->x_win, "FodQuake");
+			XStoreName(d->x_disp, d->x_win, "Fodquake");
 
 			if (d->x_visinfo->class != TrueColor)
 				XFreeColormap(d->x_disp, tmpcmap);

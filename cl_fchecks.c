@@ -49,7 +49,7 @@ void FChecks_FServerResponse (void) {
 	if (adr.addr.ipv4.port == 0)
 		adr.addr.ipv4.port = BigShort (PORT_SERVER);
 
-	Cbuf_AddText(va("say FodQuake f_server response: %s\n", NET_AdrToString(&adr)));
+	Cbuf_AddText(va("say Fodquake f_server response: %s\n", NET_AdrToString(&adr)));
 }
 
 void FChecks_SkinsResponse(float fbskins) {
@@ -114,7 +114,7 @@ qboolean FChecks_CheckFRulesetRequest (char *s) {
 		return false;
 
 	if (Util_F_Match(s, "f_ruleset"))	{
-		Cbuf_AddText(va("say FodQuake Ruleset: %s\n", Ruleset_GetName()));
+		Cbuf_AddText(va("say Fodquake Ruleset: %s\n", Ruleset_GetName()));
 		f_ruleset_reply_time = cls.realtime;
 		return true;
 	}

@@ -311,7 +311,7 @@ void Host_Init(int argc, char **argv)
 
 	Com_Printf("Exe: "__TIME__" "__DATE__"\n");
 
-	Com_Printf("\nFodQuake version %s\n\n", VersionString());
+	Com_Printf("\nFodquake version %s\n\n", VersionString());
 
 	if (dedicated)
 	{

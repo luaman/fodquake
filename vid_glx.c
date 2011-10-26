@@ -446,7 +446,7 @@ void *Sys_Video_Open(const char *mode, unsigned int width, unsigned int height, 
 
 				d->x_win = XCreateWindow(d->x_disp, root, 0, 0, width, height,0, visinfo->depth, InputOutput, visinfo->visual, mask, &attr);
 
-				XStoreName(d->x_disp, d->x_win, "FodQuake");
+				XStoreName(d->x_disp, d->x_win, "Fodquake");
 
 				XDefineCursor(d->x_disp, d->x_win, CreateNullCursor(d->x_disp, d->x_win));
 

@@ -402,7 +402,7 @@ void *Sys_Input_Init(struct Screen *screen, struct Window *window)
 
 		id->InputHandler.is_Node.ln_Type = NT_INTERRUPT;
 		id->InputHandler.is_Node.ln_Pri = 100;
-		id->InputHandler.is_Node.ln_Name = "FodQuake input handler";
+		id->InputHandler.is_Node.ln_Name = "Fodquake input handler";
 		id->InputHandler.is_Data = id;
 		id->InputHandler.is_Code = (void (*)())&myinputhandler;
 		id->inputreq->io_Data = (void *)&id->InputHandler;
@@ -576,7 +576,7 @@ static struct InputEvent *myinputhandler_real()
 			}
 			else
 			{
-				DEBUGRING(kprintf("FodQuake: message dropped, imsglow = %d, imsghigh = %d\n", id->imsglow, id->imsghigh));
+				DEBUGRING(kprintf("Fodquake: message dropped, imsglow = %d, imsghigh = %d\n", id->imsglow, id->imsghigh));
 			}
 		}
 

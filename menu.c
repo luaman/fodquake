@@ -3957,7 +3957,7 @@ static void M_Quit_Draw()
 {
 	static char *quitmsg[] =
 	{
-		"0FodQuake "FODQUAKE_VERSION,
+		"0Fodquake "FODQUAKE_VERSION,
 		"0",
 		"1Programming:",
 		"0Florian Zwoch",
@@ -3973,7 +3973,7 @@ static void M_Quit_Draw()
 		"0ZQuake by Anton Garilov",
 		"0Quakeworld by Id Software",
 		"0",
-		"1Press 'y' to exit FodQuake",
+		"1Press 'y' to exit Fodquake",
 		NULL
 	};
 	char **p;

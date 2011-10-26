@@ -3,13 +3,13 @@
 <plist version="1.0">
 <dict>
   <key>CFBundleGetInfoString</key>
-  <string>FodQuake</string>
+  <string>Fodquake</string>
   <key>CFBundleExecutable</key>
   <string>fodquake-gl</string>
   <key>CFBundleIdentifier</key>
   <string>net.foduake.www</string>
   <key>CFBundleName</key>
-  <string>FodQuake</string>
+  <string>Fodquake</string>
   <key>CFBundleIconFile</key>
   <string>fodquake-gl.icns</string>
   <key>CFBundleShortVersionString</key>
