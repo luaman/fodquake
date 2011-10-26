@@ -61,10 +61,10 @@ const char *Sys_GetRODataPath(void)
 {
 	char *ret = NULL;
 	
-	ret = malloc([[[NSBundle mainBundle] resourcePath] lengthOfBytesUsingEncoding:NSUTF8StringEncoding] + 1);
+	ret = malloc([[[NSBundle mainBundle] resourcePath] lengthOfBytesUsingEncoding:NSUTF8StringEncoding] + strlen("/data") + 1);
 	if (ret)
 	{
-		sprintf(ret, "%s", [[[NSBundle mainBundle] resourcePath] UTF8String]);
+		sprintf(ret, "%s/data", [[[NSBundle mainBundle] resourcePath] UTF8String]);
 	}
 	
 	return ret;
