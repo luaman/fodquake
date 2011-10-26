@@ -215,6 +215,9 @@ static void ServerScanner_Thread_ParseQWServerReply(struct ServerScanner *server
 		printf("%s = %s\n", key, value);
 #endif
 
+		if (*key == '*')
+			key++;
+
 		if (strcmp(key, "maxclients") == 0)
 			qwserver->pub.maxclients = strtoul(value, 0, 0);
 		else if (strcmp(key, "maxspectators") == 0)
