@@ -9,10 +9,12 @@
 #import "gl_local.h"
 #import "in_macosx.h"
 
-struct display {
+struct display
+{
 	NSAutoreleasePool *pool;
 	qboolean fullscreen;
 	struct input_data *input;
+	NSWindow *window;
 };
 
 @interface NSMyWindow : NSWindow
@@ -37,7 +39,6 @@ void Sys_Video_CvarInit(void)
 void* Sys_Video_Open(const char *mode, unsigned int width, unsigned int height, int fullscreen, unsigned char *palette)
 {
 	struct display *d;
-	NSWindow *window;
 	
 	d = malloc(sizeof(struct display));
 	if (d)
@@ -55,22 +56,22 @@ void* Sys_Video_Open(const char *mode, unsigned int width, unsigned int height, 
 			{
 				if (fullscreen)
 				{
-					window = [[NSMyWindow alloc] initWithContentRect:[[NSScreen mainScreen] frame] styleMask:NSBorderlessWindowMask backing:NSBackingStoreBuffered defer:YES];
+					d->window = [[NSMyWindow alloc] initWithContentRect:[[NSScreen mainScreen] frame] styleMask:NSBorderlessWindowMask backing:NSBackingStoreBuffered defer:YES];
 				}
 				else
 				{
-					window = [[NSMyWindow alloc] initWithContentRect:NSMakeRect(0, 0, width, height) styleMask:NSTitledWindowMask | NSClosableWindowMask | NSMiniaturizableWindowMask backing:NSBackingStoreBuffered defer:YES];
+					d->window = [[NSMyWindow alloc] initWithContentRect:NSMakeRect(0, 0, width, height) styleMask:NSTitledWindowMask | NSClosableWindowMask | NSMiniaturizableWindowMask backing:NSBackingStoreBuffered defer:YES];
 				}
 				
-				if (window)
+				if (d->window)
 				{
 					if (fullscreen)
 					{
-						[window setLevel:NSMainMenuWindowLevel + 1];
+						[d->window setLevel:NSMainMenuWindowLevel + 1];
 					}
 					else
 					{
-						[window center];
+						[d->window center];
 					}
 					
 					d->fullscreen = fullscreen ? true : false;
@@ -94,15 +95,15 @@ void* Sys_Video_Open(const char *mode, unsigned int width, unsigned int height, 
 						pixelFormat = [[NSOpenGLPixelFormat alloc] initWithAttributes:attributes];
 						if (pixelFormat)
 						{
-							openglview = [[NSOpenGLView alloc] initWithFrame:[window frame] pixelFormat:pixelFormat];
+							openglview = [[NSOpenGLView alloc] initWithFrame:[d->window frame] pixelFormat:pixelFormat];
 							[pixelFormat release];
 							if (openglview)
 							{
-								[window setContentView:openglview];
+								[d->window setContentView:openglview];
 								[[openglview openGLContext] setValues:&swapInterval forParameter:NSOpenGLCPSwapInterval];
 
-								[window useOptimizedDrawing:YES];
-								[window makeKeyAndOrderFront:nil];
+								[d->window useOptimizedDrawing:YES];
+								[d->window makeKeyAndOrderFront:nil];
 								
 								return d;
 							}
@@ -124,7 +125,7 @@ void* Sys_Video_Open(const char *mode, unsigned int width, unsigned int height, 
 
 					}
 					
-					[window close];
+					[d->window close];
 				}
 				
 				[d->pool release];
@@ -145,8 +146,8 @@ void Sys_Video_Close(void *display)
 	
 	Sys_Input_Shutdown(d->input);
 	
-	[[[NSApp keyWindow] contentView] release];
-	[[NSApp keyWindow] close];
+	[[d->window contentView] release];
+	[d->window close];
 	
 	[d->pool release];
 	
@@ -160,7 +161,9 @@ unsigned int Sys_Video_GetNumBuffers(void *display)
 
 void Sys_Video_Update(void *display, vrect_t *rects)
 {
-	[[[[NSApp keyWindow] contentView] openGLContext] flushBuffer];
+	struct display *d = (struct display*)display;
+
+	[[[d->window contentView] openGLContext] flushBuffer];
 }
 
 int Sys_Video_GetKeyEvent(void *display, keynum_t *keynum, qboolean *down)
@@ -197,17 +200,23 @@ void Sys_Video_GrabMouse(void *display, int dograb)
 
 void Sys_Video_SetWindowTitle(void *display, const char *text)
 {
-	[[NSApp keyWindow] setTitle:[NSString stringWithCString:text encoding:[NSString defaultCStringEncoding]]];
+	struct display *d = (struct display*)display;
+
+	[d->window setTitle:[NSString stringWithCString:text encoding:[NSString defaultCStringEncoding]]];
 }
 
 unsigned int Sys_Video_GetWidth(void *display)
 {
-	return [[NSApp keyWindow] frame].size.width;
+	struct display *d = (struct display*)display;
+
+	return [d->window frame].size.width;
 }
 
 unsigned int Sys_Video_GetHeight(void *display)
 {
-	return [[NSApp keyWindow] frame].size.height;
+	struct display *d = (struct display*)display;
+
+	return [d->window frame].size.height;
 }
 
 qboolean Sys_Video_GetFullscreen(void *display)
@@ -230,12 +239,13 @@ int Sys_Video_FocusChanged(void *display)
 #ifdef GLQUAKE
 void Sys_Video_BeginFrame(void *display, unsigned int *x, unsigned int *y, unsigned int *width, unsigned int *height)
 {
+	struct display *d = (struct display*)display;
 	NSEvent *event;
 	
 	*x = 0;
 	*y = 0;
-	*width = [[NSApp keyWindow] frame].size.width;
-	*height = [[NSApp keyWindow] frame].size.height;
+	*width = [d->window frame].size.width;
+	*height = [d->window frame].size.height;
 	
 	while ((event = [NSApp nextEventMatchingMask:NSAnyEventMask untilDate:nil inMode:NSEventTrackingRunLoopMode dequeue:YES]))
 	{
