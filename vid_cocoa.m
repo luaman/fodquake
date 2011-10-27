@@ -170,6 +170,15 @@ int Sys_Video_GetKeyEvent(void *display, keynum_t *keynum, qboolean *down)
 {
 	struct display *d = (struct display*)display;
 	
+	if ([d->window isKeyWindow] == FALSE)
+	{
+		while (Sys_Input_GetKeyEvent(d->input, keynum, down))
+		{
+		}
+		
+		return 0;
+	}
+	
 	return Sys_Input_GetKeyEvent(d->input, keynum, down);
 }
 
