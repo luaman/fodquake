@@ -3961,6 +3961,7 @@ static void M_Quit_Draw()
 		"0",
 		"1Programming:",
 		"0Florian Zwoch",
+		"0Jonny Tornbom",
 		"0Juergen Legler",
 		"0Mark Olsen",
 		"0Morten Bojsen-Hansen",
