@@ -50,8 +50,8 @@ extern cvar_group_t *cvar_groups;
 extern cmd_alias_t *cmd_alias;
 extern cvar_t *cvar_vars;
 
-extern kbutton_t	in_left, in_right, in_forward, in_back;
-extern kbutton_t	in_lookup, in_lookdown,	in_moveleft, in_moveright;
+extern kbutton_t	in_forward, in_back;
+extern kbutton_t	in_moveleft, in_moveright;
 extern kbutton_t	in_use, in_jump, in_attack, in_up,	in_down;
 
 extern qboolean		sb_showscores, sb_showteamscores;
@@ -366,12 +366,8 @@ static void DumpPlusCommands(FILE *f)
 {
 	DumpPlusCommand(f, &in_up, "moveup");
 	DumpPlusCommand(f, &in_down, "movedown");
-	DumpPlusCommand(f, &in_left, "left");
-	DumpPlusCommand(f, &in_right, "right");
 	DumpPlusCommand(f, &in_forward,	"forward");
 	DumpPlusCommand(f, &in_back, "back");
-	DumpPlusCommand(f, &in_lookup, "lookup");
-	DumpPlusCommand(f, &in_lookdown, "lookdown");
 	DumpPlusCommand(f, &in_moveleft, "moveleft");
 	DumpPlusCommand(f, &in_moveright, "moveright");
 	DumpPlusCommand(f, &in_attack, "attack");

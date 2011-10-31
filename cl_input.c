@@ -67,8 +67,8 @@ state bit 1 is edge triggered on the up to down transition
 ===============================================================================
 */
 
-kbutton_t	in_left, in_right, in_forward, in_back;
-kbutton_t	in_lookup, in_lookdown, in_moveleft, in_moveright;
+kbutton_t	in_forward, in_back;
+kbutton_t	in_moveleft, in_moveright;
 kbutton_t	in_use, in_jump, in_attack;
 kbutton_t	in_up, in_down;
 
@@ -215,18 +215,10 @@ static void IN_UpDown(void) { KeyDown(&in_up); UpdateNetQWUpSpeed(); }
 static void IN_UpUp(void) { KeyUp(&in_up); UpdateNetQWUpSpeed(); }
 static void IN_DownDown(void) { KeyDown(&in_down); UpdateNetQWUpSpeed(); }
 static void IN_DownUp(void) { KeyUp(&in_down); UpdateNetQWUpSpeed(); }
-static void IN_LeftDown(void) {KeyDown(&in_left);}
-static void IN_LeftUp(void) {KeyUp(&in_left);}
-static void IN_RightDown(void) {KeyDown(&in_right);}
-static void IN_RightUp(void) {KeyUp(&in_right);}
 static void IN_ForwardDown(void) {if (checkmovementruleset()) { KeyDown(&in_forward); UpdateNetQWForwardSpeed(); }}
 static void IN_ForwardUp(void) {if (checkmovementruleset()) { KeyUp(&in_forward); UpdateNetQWForwardSpeed(); }}
 static void IN_BackDown(void) {if (checkmovementruleset()) { KeyDown(&in_back); UpdateNetQWForwardSpeed(); }}
 static void IN_BackUp(void) {if (checkmovementruleset()) { KeyUp(&in_back); UpdateNetQWForwardSpeed(); }}
-static void IN_LookupDown(void) {KeyDown(&in_lookup);}
-static void IN_LookupUp(void) {KeyUp(&in_lookup);}
-static void IN_LookdownDown(void) {KeyDown(&in_lookdown);}
-static void IN_LookdownUp(void) {KeyUp(&in_lookdown);}
 static void IN_MoveleftDown(void) {if (checkmovementruleset()) { KeyDown(&in_moveleft); UpdateNetQWSideSpeed(); }}
 static void IN_MoveleftUp(void) {if (checkmovementruleset()) { KeyUp(&in_moveleft); UpdateNetQWSideSpeed(); }}
 static void IN_MoverightDown(void) {if (checkmovementruleset()) { KeyDown(&in_moveright); UpdateNetQWSideSpeed(); }}
@@ -743,18 +735,10 @@ void CL_CvarInitInput(void)
 	Cmd_AddCommand("-moveup",IN_UpUp);
 	Cmd_AddCommand("+movedown",IN_DownDown);
 	Cmd_AddCommand("-movedown",IN_DownUp);
-	Cmd_AddCommand("+left",IN_LeftDown);
-	Cmd_AddCommand("-left",IN_LeftUp);
-	Cmd_AddCommand("+right",IN_RightDown);
-	Cmd_AddCommand("-right",IN_RightUp);
 	Cmd_AddCommand("+forward",IN_ForwardDown);
 	Cmd_AddCommand("-forward",IN_ForwardUp);
 	Cmd_AddCommand("+back",IN_BackDown);
 	Cmd_AddCommand("-back",IN_BackUp);
-	Cmd_AddCommand("+lookup", IN_LookupDown);
-	Cmd_AddCommand("-lookup", IN_LookupUp);
-	Cmd_AddCommand("+lookdown", IN_LookdownDown);
-	Cmd_AddCommand("-lookdown", IN_LookdownUp);
 	Cmd_AddCommand("+moveleft", IN_MoveleftDown);
 	Cmd_AddCommand("-moveleft", IN_MoveleftUp);
 	Cmd_AddCommand("+moveright", IN_MoverightDown);
