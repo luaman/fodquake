@@ -34,8 +34,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "vid_tinygl.h"
 #define qglGetProcAddress tglGetProcAddress
 #elif defined(__MACOSX__)
-#warning Fix this dummy.
-void *qglGetProcAddress(const char *p) { return 0; }
+void *qglGetProcAddress(const char *p);
 #elif defined(AROS)
 #define qglGetProcAddress AROSMesaGetProcAddress
 #else

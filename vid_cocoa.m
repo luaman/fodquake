@@ -303,3 +303,26 @@ void VID_UnlockBuffer()
 {
 }
 #endif
+
+#ifdef GLQUAKE
+void *qglGetProcAddress(const char *p)
+{
+	void *ret;
+
+	ret = 0;
+
+	if (strcmp(p, "glMultiTexCoord2fARB") == 0)
+		ret = glMultiTexCoord2f;
+	else if (strcmp(p, "glActiveTextureARB") == 0)
+		ret = glActiveTexture;
+	else if (strcmp(p, "glBindBufferARB") == 0)
+		ret = glBindBuffer;
+	else if (strcmp(p, "glBufferDataARB") == 0)
+		ret = glBufferData;
+	else
+		Sys_Error("Unknown OpenGL function \"%s\"\n", p);
+
+	return ret;
+}
+#endif
+
