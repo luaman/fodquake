@@ -3960,6 +3960,7 @@ static void M_Quit_Draw()
 		"0Fodquake "FODQUAKE_VERSION,
 		"0",
 		"1Programming:",
+		"0David Walton",
 		"0Florian Zwoch",
 		"0Jonny Tornbom",
 		"0Juergen Legler",
