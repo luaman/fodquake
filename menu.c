@@ -3981,7 +3981,7 @@ static void M_Quit_Draw()
 	char **p;
 	int x, y;
 
-	M_DrawTextBox (0, 12, 38, 19);
+	M_DrawTextBox (0, 11, 38, 21);
 	y = 24;
 	for (p = quitmsg; *p; p++, y += 8)
 	{
