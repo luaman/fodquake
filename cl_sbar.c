@@ -731,6 +731,7 @@ static void Sbar_DrawInventory (void)
 	char num[6];
 	float time;
 	qboolean headsup, hudswap;
+	extern int cl_preselectedweapon;
 
 	headsup = !(cl_sbar.value || scr_viewsize.value < 100);
 	hudswap = cl_hudswap.value; // Get that nasty float out :)
@@ -748,7 +749,7 @@ static void Sbar_DrawInventory (void)
 			if (flashon < 0)
 				flashon = 0;
 			if (flashon >= 10)
-				flashon = (cl.stats[STAT_ACTIVEWEAPON] == (IT_SHOTGUN << i) ) ? 1 : 0;
+				flashon = (cl_preselectedweapon == i + 2 || (!cl_preselectedweapon && cl.stats[STAT_ACTIVEWEAPON] == (IT_SHOTGUN << i) ) ) ? 1 : 0;
 			else
 				flashon = (flashon % 5) + 2;
 
@@ -1033,6 +1034,7 @@ static void Sbar_DrawCompact(void)
 	int i, align, old_sbar_xofs;
 	static char *weapons[7] = {"sg", "bs", "ng", "sn", "gl", "rl", "lg"};
 	char str[4];
+	extern int cl_preselectedweapon;
 
 	if (cl_sbar.value || scr_viewsize.value < 100)
 		Sbar_DrawPic(0, 0, sb_sbar, 320, 24);
@@ -1062,7 +1064,9 @@ static void Sbar_DrawCompact(void)
 	{
 		if (cl.stats[STAT_ITEMS] & (IT_SHOTGUN << i))
 		{
-			if (cl.stats[STAT_ACTIVEWEAPON] == (IT_SHOTGUN << i))
+			if (cl_preselectedweapon == i + 2)
+				Sbar_DrawAltString(166 + 5 * 4 * i, 14, weapons[i]);
+			else if (!cl_preselectedweapon && cl.stats[STAT_ACTIVEWEAPON] == (IT_SHOTGUN << i))
 				Sbar_DrawAltString(166 + 5 * 4 * i, 14, weapons[i]);
 			else
 				Sbar_DrawString(166 + 5 * 4 * i, 14, weapons[i]);
