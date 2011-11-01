@@ -405,6 +405,8 @@ typedef struct {
 	interpolate_t	int_projectiles[MAX_PROJECTILES];
 
 	int			protoversion;
+
+	int weapon_to_model_index[8];
 } clientState_t;
 
 extern	clientState_t	cl;

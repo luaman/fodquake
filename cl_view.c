@@ -774,8 +774,8 @@ void V_AddViewWeapon(float bob)
 	else if (scr_viewsize.value == 80)
 		cent->current.origin[2] += 0.5;
 
-	if (cl_preselectedweapon)
-		weapon = cl_preselectedweapon + 15;
+	if (cl_preselectedweapon && cl_preselectedweapon >= 1 && cl_preselectedweapon <= 8 && cl.weapon_to_model_index[cl_preselectedweapon-1])
+		weapon = cl.weapon_to_model_index[cl_preselectedweapon-1];
 	else
 		weapon = cl.stats[STAT_WEAPON];
 

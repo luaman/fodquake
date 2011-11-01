@@ -266,6 +266,26 @@ void Model_NextDownload (void)
 
 		cl.model_precache[i] = Mod_ForName(cl.model_name[i], false);
 
+		if (strncmp(cl.model_name[i], "progs/v_", 8) == 0)
+		{
+			if (strcmp(cl.model_name[i] + 8, "axe.mdl") == 0)
+				cl.weapon_to_model_index[0] = i;
+			else if (strcmp(cl.model_name[i] + 8, "shot.mdl") == 0)
+				cl.weapon_to_model_index[1] = i;
+			else if (strcmp(cl.model_name[i] + 8, "shot2.mdl") == 0)
+				cl.weapon_to_model_index[2] = i;
+			else if (strcmp(cl.model_name[i] + 8, "nail.mdl") == 0)
+				cl.weapon_to_model_index[3] = i;
+			else if (strcmp(cl.model_name[i] + 8, "nail2.mdl") == 0)
+				cl.weapon_to_model_index[4] = i;
+			else if (strcmp(cl.model_name[i] + 8, "rock.mdl") == 0)
+				cl.weapon_to_model_index[5] = i;
+			else if (strcmp(cl.model_name[i] + 8, "rock2.mdl") == 0)
+				cl.weapon_to_model_index[6] = i;
+			else if (strcmp(cl.model_name[i] + 8, "light.mdl") == 0)
+				cl.weapon_to_model_index[7] = i;
+		}
+
 		if (!cl.model_precache[i])
 		{
 			Com_Printf("\nThe required model file '%s' could not be found or downloaded.\n\n", cl.model_name[i]);
