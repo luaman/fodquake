@@ -7,7 +7,7 @@
   <key>CFBundleExecutable</key>
   <string>fodquake-gl</string>
   <key>CFBundleIdentifier</key>
-  <string>net.foduake.www</string>
+  <string>net.fodquake.www</string>
   <key>CFBundleName</key>
   <string>Fodquake</string>
   <key>CFBundleIconFile</key>
