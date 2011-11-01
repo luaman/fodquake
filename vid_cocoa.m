@@ -237,14 +237,14 @@ unsigned int Sys_Video_GetWidth(void *display)
 {
 	struct display *d = (struct display*)display;
 
-	return [d->window frame].size.width;
+	return d->width;
 }
 
 unsigned int Sys_Video_GetHeight(void *display)
 {
 	struct display *d = (struct display*)display;
 
-	return [d->window frame].size.height;
+	return d->height;
 }
 
 qboolean Sys_Video_GetFullscreen(void *display)
