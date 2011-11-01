@@ -15,6 +15,8 @@ struct display
 	qboolean fullscreen;
 	struct input_data *input;
 	NSWindow *window;
+	unsigned int width;
+	unsigned int height;
 };
 
 @interface NSMyWindow : NSWindow
@@ -95,7 +97,24 @@ void* Sys_Video_Open(const char *mode, unsigned int width, unsigned int height, 
 						pixelFormat = [[NSOpenGLPixelFormat alloc] initWithAttributes:attributes];
 						if (pixelFormat)
 						{
-							openglview = [[NSOpenGLView alloc] initWithFrame:[d->window frame] pixelFormat:pixelFormat];
+							NSRect rect;
+
+							if (fullscreen)
+							{
+								rect = [d->window frame];
+							}
+							else
+							{
+								rect.origin.x = 0;
+								rect.origin.y = [d->window frame].size.height - height;
+								rect.size.width = width;
+								rect.size.height = height;
+							}
+
+							d->width = rect.size.width;
+							d->height = rect.size.height;
+
+							openglview = [[NSOpenGLView alloc] initWithFrame:rect pixelFormat:pixelFormat];
 							[pixelFormat release];
 							if (openglview)
 							{
@@ -253,8 +272,8 @@ void Sys_Video_BeginFrame(void *display, unsigned int *x, unsigned int *y, unsig
 	
 	*x = 0;
 	*y = 0;
-	*width = [d->window frame].size.width;
-	*height = [d->window frame].size.height;
+	*width = d->width;
+	*height = d->height;
 	
 	while ((event = [NSApp nextEventMatchingMask:NSAnyEventMask untilDate:nil inMode:NSEventTrackingRunLoopMode dequeue:YES]))
 	{
