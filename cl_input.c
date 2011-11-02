@@ -368,7 +368,7 @@ static void IN_WeaponDown()
 		}
 	}
 
-	if (!weapon)
+	if (!weapon && (!cl_weaponfire.value || (cl.stats[STAT_HEALTH] > 0 && !cl.intermission)))
 		return;
 
 	if (idleindex == 0)
