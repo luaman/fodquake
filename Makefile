@@ -168,7 +168,15 @@ ifeq ($(OS), win32)
 
 	THIRDPARTYLIBS=libz libpng libjpeg
 
-%.windowsicon: %.rc icons/%.ico
+%.ico: icons/%-16x16.png icons/%-32x32.png icons/%-48x48.png icons/%-64x64.png
+	for i in $^; \
+	do \
+		pngtopnm $$i >tmpimg | pnmquant 256 tmpimg >`echo $$i | sed "s,.*/,,"`; rm tmpimg; \
+	done
+
+	ppmtowinicon -output $@ `echo $^ | sed "s,.*/,,g"`
+
+%.windowsicon: %.rc %.ico
 	i586-mingw32msvc-windres -O coff $< $@
 endif
 
