@@ -1062,7 +1062,7 @@ static void M_Options_ResetToDefaults()
 
 static void M_Options_SaveConfiguration()
 {
-	Cbuf_AddText("cfg_save config.cfg\n");
+	Cbuf_AddText("cfg_save default.cfg\n");
 }
 
 static void M_Options_Draw()
