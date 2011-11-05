@@ -475,6 +475,14 @@ void *Sys_Video_Open(const char *mode, unsigned int width, unsigned int height, 
 					d->utterly_fucktastically_broken_driver = 1;
 				}
 
+				if (strstr(glGetString(GL_VERSION), "Mesa") == 0 && CheckExtension("GLX_SGI_swap_control"))
+				{
+					int (*SwapIntervalSGI)(int);
+					SwapIntervalSGI = (void *)glXGetProcAddressARB("glXSwapIntervalSGI");
+					if (SwapIntervalSGI)
+						SwapIntervalSGI(0);
+				}
+
 				InitSig(); // trap evil signals
 
 				InitHWGamma(d);
