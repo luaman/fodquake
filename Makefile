@@ -280,6 +280,7 @@ OBJS= \
 	pr_edict.o \
 	pr_exec.o \
 	pr_cmds.o \
+	qstring.o \
 	r_draw.o \
 	r_part.o \
 	readablechars.o \
