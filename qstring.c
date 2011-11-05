@@ -29,8 +29,8 @@ int Q_strncasecmp(const char *s1, const char *s2, unsigned int n)
 	char c1;
 	char c2;
 
-	c1 = 0;
-	c2 = 0;
+	c1 = 1;
+	c2 = 1;
 
 	while(n-- && c1 && c1 == c2)
 	{
