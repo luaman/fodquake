@@ -63,7 +63,7 @@ ifeq ($(OS), linux)
 		cd_linux.o \
 		snd_oss.o \
 		snd_alsa2.o \
-		sys_io_linux.o \
+		sys_io_posix.o \
 		sys_lib_posix.o
 
 	OSCFLAGS=-DBUILD_STRL
@@ -84,7 +84,7 @@ ifeq ($(OS), freebsd)
 		thread_posix.o \
 		cd_null.o \
 		snd_oss.o \
-		sys_io_linux.o \
+		sys_io_posix.o \
 		sys_lib_posix.o
 
 	OSCFLAGS=-I/usr/local/include
@@ -202,7 +202,7 @@ ifeq ($(OS), macosx)
 
 	OSOBJS = \
 		sys_darwin.o \
-		sys_io_linux.o \
+		sys_io_posix.o \
 		sys_lib_null.o \
 		thread_posix.o \
 		net_posix.o \
