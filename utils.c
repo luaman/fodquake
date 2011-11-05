@@ -582,7 +582,7 @@ static int dir_entry_compare(const void *a, const void *b)
 
 	if (x->type == y->type)
 	{
-		return strcasecmp(x->name, y->name);
+		return Q_strcasecmp(x->name, y->name);
 	}
 	else if (x->type == et_file && y->type == et_dir)
 		return 1;

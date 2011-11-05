@@ -708,7 +708,7 @@ static qboolean cl_imitate_client_callback(cvar_t *var, char *string)
 
 	for(i=0;i<NUMVALIDCLIENTNAMES;i++)
 	{
-		if (strcasecmp(validclientnames[i], string) == 0)
+		if (Q_strcasecmp(validclientnames[i], string) == 0)
 			break;
 	}
 
@@ -721,7 +721,7 @@ static qboolean cl_imitate_client_callback(cvar_t *var, char *string)
 		return true;
 	}
 
-	if (strcasecmp(string, validclientnames[imitatedclientnum]) == 0)
+	if (Q_strcasecmp(string, validclientnames[imitatedclientnum]) == 0)
 		return false;
 
 	imitatedclientnum = i;
@@ -737,7 +737,7 @@ static qboolean cl_imitate_os_callback(cvar_t *var, char *string)
 
 	for(i=0;i<NUMVALIDOSNAMES;i++)
 	{
-		if (strcasecmp(validosnames[i], string) == 0)
+		if (Q_strcasecmp(validosnames[i], string) == 0)
 			break;
 	}
 
