@@ -310,6 +310,7 @@ struct input_data
 	IOHIDManagerRef hid_manager;
 
 	int ignore_mouse;
+	qboolean fn_key_active;
 
 	int mouse_x;
 	int mouse_y;
@@ -334,6 +335,14 @@ static void add_to_event_queue(struct input_data *input, keynum_t key, qboolean 
 	if ((input->buttoneventhead + 1) % NUMBUTTONEVENTS == input->buttoneventtail)
 	{
 		return;
+	}
+	
+	if (input->fn_key_active && down)
+	{
+		if (key >= K_F1 && key <= K_F12)
+		{
+			return;
+		}
 	}
 
 	input->buttonevents[input->buttoneventhead].key = key;
@@ -408,7 +417,7 @@ static void input_callback(void *context, IOReturn result, void *sender, IOHIDVa
 			pthread_mutex_lock(&input->key_mutex);
 
 			if (val)
-			{
+			{				
 				input->repeatkey = keytable[usage];
 				input->nextrepeattime = Sys_IntTime() + input->key_repeat_initial_delay;
 			}
@@ -419,6 +428,13 @@ static void input_callback(void *context, IOReturn result, void *sender, IOHIDVa
 			}
 			
 			pthread_mutex_unlock(&input->key_mutex);
+		}
+	}
+	else if (page == 0xFF)
+	{
+		if (usage == kHIDUsage_KeyboardErrorUndefined)
+		{
+			input->fn_key_active = value ? true : false;
 		}
 	}
 }
