@@ -423,11 +423,11 @@ static void IN_JumpDown(void)
 	 && cl.waterlevel >= 2
 	 && (!cl.teamfortress || !(in_forward.state & 1)))
 	{
-		KeyDown(&in_up);
+		IN_UpDown();
 	}
 	else if (condition && cl.spectator && Cam_TrackNum() == -1)
 	{
-		KeyDown(&in_up);
+		IN_UpDown();
 	}
 	else
 	{
@@ -441,7 +441,8 @@ static void IN_JumpDown(void)
 static void IN_JumpUp(void)
 {
 	if (cl_smartjump.value)
-		KeyUp(&in_up);
+		IN_UpUp();
+
 	KeyUp(&in_jump);
 
 	if (cls.netqw)
