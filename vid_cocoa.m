@@ -104,6 +104,7 @@ void* Sys_Video_Open(const char *mode, unsigned int width, unsigned int height, 
 						NSOpenGLPixelFormat *pixelFormat;
 						NSOpenGLView *openglview;
 						GLint swapInterval = vid_vsync.value;
+						NSNumber *num;
 						
 						NSOpenGLPixelFormatAttribute attributes[] =
 						{
@@ -113,6 +114,10 @@ void* Sys_Video_Open(const char *mode, unsigned int width, unsigned int height, 
 							NSOpenGLPFADepthSize, 16,
 							0
 						};
+						
+						num = [[[NSUserDefaults standardUserDefaults] persistentDomainForName:NSGlobalDomain] objectForKey:@"com.apple.keyboard.fnState"];
+						
+						Sys_Input_SetFnKeyBehavior(d->input, [num intValue]);
 						
 						pixelFormat = [[NSOpenGLPixelFormat alloc] initWithAttributes:attributes];
 						if (pixelFormat)

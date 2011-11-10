@@ -311,6 +311,7 @@ struct input_data
 
 	int ignore_mouse;
 	qboolean fn_key_active;
+	int fn_key_behavior;
 
 	int mouse_x;
 	int mouse_y;
@@ -336,8 +337,8 @@ static void add_to_event_queue(struct input_data *input, keynum_t key, qboolean 
 	{
 		return;
 	}
-	
-	if (input->fn_key_active && down)
+
+	if ((input->fn_key_behavior && input->fn_key_active) || (!input->fn_key_behavior && !input->fn_key_active))
 	{
 		if (key >= K_F1 && key <= K_F12)
 		{
@@ -434,7 +435,7 @@ static void input_callback(void *context, IOReturn result, void *sender, IOHIDVa
 	{
 		if (usage == kHIDUsage_KeyboardErrorUndefined)
 		{
-			input->fn_key_active = value ? true : false;
+			input->fn_key_active = val ? true : false;
 		}
 	}
 }
@@ -583,3 +584,7 @@ void Sys_Input_GrabMouse(struct input_data *input, int dograb)
 	}
 }
 
+void Sys_Input_SetFnKeyBehavior(struct input_data *input, int behavior)
+{
+	input->fn_key_behavior = behavior;
+}
