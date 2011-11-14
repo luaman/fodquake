@@ -50,7 +50,6 @@ static cvar_t	sys_highpriority = {"sys_highpriority", "0", 0, OnChange_sys_highp
 
 static cvar_t	sys_yieldcpu = {"sys_yieldcpu", "0"};
 
-static HANDLE	qwclsemaphore;
 static HANDLE	tevent;
 static HANDLE	hinput, houtput;
 
@@ -139,9 +138,6 @@ void Sys_Error(char *error, ...)
 
 	MessageBox(NULL, text, "Error", 0 /* MB_OK */ );
 
-	if (qwclsemaphore)
-		CloseHandle(qwclsemaphore);
-
 	exit(1);
 }
 
@@ -174,9 +170,6 @@ void Sys_Quit(void)
 
 	if (tevent)
 		CloseHandle(tevent);
-
-	if (qwclsemaphore)
-		CloseHandle(qwclsemaphore);
 
 	if (dedicated)
 		FreeConsole();
@@ -364,24 +357,6 @@ void Sys_Init(void)
 void Sys_Init_(void)
 {
 	OSVERSIONINFO vinfo;
-
-	// allocate a named semaphore on the client so the front end can tell if it is alive
-	if (!dedicated)	{
-		// mutex will fail if semaphore already exists
-		qwclsemaphore = CreateMutex(
-			NULL,		//Security attributes
-			0,			//owner
-			"qwcl");	//Semaphore name/
-		if (!qwclsemaphore)
-			Sys_Error("QWCL is already running on this system");
-		CloseHandle(qwclsemaphore);
-
-		qwclsemaphore = CreateSemaphore(
-			NULL,		//Security attributes
-			0,			//Initial count
-			1,			//Maximum count
-			"qwcl");	//Semaphore name
-	}
 
 #if 0
 	MaskExceptions();
