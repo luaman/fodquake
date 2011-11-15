@@ -494,6 +494,10 @@ void NET_ServerConfig (qboolean enable)
 {
 	int i, port;
 
+#warning :(
+	if (!netdata)
+		return;
+
 	if (enable)
 	{
 		if (netdata->sockets[NS_SERVER] == 0)
