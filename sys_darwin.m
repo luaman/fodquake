@@ -172,6 +172,11 @@ int main(int argc, char **argv)
 
 	COM_InitArgv(argc, argv);
 
+/* Because Apple's Mac OS X 10.6 headers don't have this... */
+#ifndef NSAppKitVersionNumber10_5
+#define NSAppKitVersionNumber10_5 949
+#endif
+
 	if (NSAppKitVersionNumber < NSAppKitVersionNumber10_5)
 		Sys_Error("Fodquake requires Mac OS X 10.5 or higher");
 	
