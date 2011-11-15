@@ -1362,7 +1362,7 @@ static void JPEG_FreeLibrary(void)
 #define qjpeg_CreateCompress jpeg_CreateCompress
 #define qjpeg_write_scanlines jpeg_write_scanlines
 
-#elif defined __MACOSX__
+#elif defined __MACOSX__ || defined _WIN32
 
 static int jpeg_handle = 0;
 
