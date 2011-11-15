@@ -418,7 +418,7 @@ static void input_callback(void *context, IOReturn result, void *sender, IOHIDVa
 			pthread_mutex_lock(&input->key_mutex);
 
 			if (val)
-			{				
+			{
 				input->repeatkey = keytable[usage];
 				input->nextrepeattime = Sys_IntTime() + input->key_repeat_initial_delay;
 			}
