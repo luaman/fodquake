@@ -34,8 +34,28 @@ struct display
 }
 @end
 
+#ifdef GLQUAKE
+static qboolean vid_vsync_callback(cvar_t *var, char *value)
+{
+	var->value = Q_atof(value);
+	GLint swapInterval = var->value;
+	
+	if (NSApp)
+	{
+		[[[[NSApp keyWindow] contentView] openGLContext] setValues:&swapInterval forParameter:NSOpenGLCPSwapInterval];
+	}
+	
+	return false;
+}
+
+cvar_t vid_vsync = {"vid_vsync", "1", 0, vid_vsync_callback};
+#endif
+
 void Sys_Video_CvarInit(void)
 {
+#ifdef GLQUAKE
+	Cvar_Register(&vid_vsync);
+#endif
 }
 
 void* Sys_Video_Open(const char *mode, unsigned int width, unsigned int height, int fullscreen, unsigned char *palette)
@@ -83,7 +103,8 @@ void* Sys_Video_Open(const char *mode, unsigned int width, unsigned int height, 
 #ifdef GLQUAKE
 						NSOpenGLPixelFormat *pixelFormat;
 						NSOpenGLView *openglview;
-						GLint swapInterval = 1;
+						GLint swapInterval = vid_vsync.value;
+						NSNumber *num;
 						
 						NSOpenGLPixelFormatAttribute attributes[] =
 						{
@@ -93,6 +114,10 @@ void* Sys_Video_Open(const char *mode, unsigned int width, unsigned int height, 
 							NSOpenGLPFADepthSize, 16,
 							0
 						};
+						
+						num = [[[NSUserDefaults standardUserDefaults] persistentDomainForName:NSGlobalDomain] objectForKey:@"com.apple.keyboard.fnState"];
+						
+						Sys_Input_SetFnKeyBehavior(d->input, [num intValue]);
 						
 						pixelFormat = [[NSOpenGLPixelFormat alloc] initWithAttributes:attributes];
 						if (pixelFormat)
@@ -299,6 +324,26 @@ qboolean Sys_Video_HWGammaSupported(void *display)
 {
 	return true;
 }
+
+void *qglGetProcAddress(const char *p)
+{
+	void *ret;
+	
+	ret = 0;
+	
+	if (strcmp(p, "glMultiTexCoord2fARB") == 0)
+		ret = glMultiTexCoord2f;
+	else if (strcmp(p, "glActiveTextureARB") == 0)
+		ret = glActiveTexture;
+	else if (strcmp(p, "glBindBufferARB") == 0)
+		ret = glBindBuffer;
+	else if (strcmp(p, "glBufferDataARB") == 0)
+		ret = glBufferData;
+	else
+		Sys_Error("Unknown OpenGL function \"%s\"\n", p);
+	
+	return ret;
+}
 #else
 void Sys_Video_SetPalette(void *display, unsigned char *palette)
 {
@@ -322,26 +367,3 @@ void VID_UnlockBuffer()
 {
 }
 #endif
-
-#ifdef GLQUAKE
-void *qglGetProcAddress(const char *p)
-{
-	void *ret;
-
-	ret = 0;
-
-	if (strcmp(p, "glMultiTexCoord2fARB") == 0)
-		ret = glMultiTexCoord2f;
-	else if (strcmp(p, "glActiveTextureARB") == 0)
-		ret = glActiveTexture;
-	else if (strcmp(p, "glBindBufferARB") == 0)
-		ret = glBindBuffer;
-	else if (strcmp(p, "glBufferDataARB") == 0)
-		ret = glBufferData;
-	else
-		Sys_Error("Unknown OpenGL function \"%s\"\n", p);
-
-	return ret;
-}
-#endif
-

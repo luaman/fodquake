@@ -172,6 +172,9 @@ int main(int argc, char **argv)
 
 	COM_InitArgv(argc, argv);
 
+	if (NSAppKitVersionNumber < NSAppKitVersionNumber10_5)
+		Sys_Error("Fodquake requires Mac OS X 10.5 or higher");
+	
 	randomfd = open("/dev/urandom", O_RDONLY);
         if (randomfd == -1)
                 Sys_Error("Unable to open /dev/urandom");
