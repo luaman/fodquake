@@ -189,7 +189,10 @@ static LONG WINAPI MainWndProc (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 					if (ChangeDisplaySettings(&d->gdevmode, CDS_FULLSCREEN) != DISP_CHANGE_SUCCESSFUL)
 						Com_ErrorPrintf("Unable to reset fullscreen mode\n");
 					else
-						SetWindowPos(d->window, HWND_TOP, 0, 0, 0, 0, SWP_DRAWFRAME | SWP_NOMOVE | SWP_NOSIZE | SWP_SHOWWINDOW | SWP_NOCOPYBITS);
+					{
+						ShowWindow (d->window, SW_SHOWNORMAL);
+						MoveWindow(d->window, 0, 0, d->width, d->height, false);
+					}
 
 					if (d->gammaworks)
 					{
