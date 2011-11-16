@@ -214,6 +214,10 @@ void R_InitOtherTextures(void);
 #define GL_COMBINE_RGB_EXT			0x8571
 #define GL_RGB_SCALE_EXT			0x8573
 
+/* GL_ARB_vertex_buffer_object */
+#define GL_ARRAY_BUFFER_ARB                             0x8892
+#define GL_STATIC_DRAW_ARB                              0x88E4
+
 //fuck windows
 #define GL_CLAMP_TO_EDGE 0x812F
 
