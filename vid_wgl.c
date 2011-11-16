@@ -43,6 +43,8 @@ struct display
 
 	char mode[256];
 
+	DEVMODE gdevmode;
+
 	int gammaworks;
 	unsigned short currentgammaramps[3][256];
 	unsigned short originalgammaramps[3][256];
@@ -175,6 +177,8 @@ static LONG WINAPI MainWndProc (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 			{
 				if (wParam == WA_INACTIVE)
 				{
+					ChangeDisplaySettings (NULL, 0);
+
 					if (d->gammaworks)
 					{
 						SetDeviceGammaRamp(d->dc, d->originalgammaramps);
@@ -182,13 +186,16 @@ static LONG WINAPI MainWndProc (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 				}
 				else
 				{
+					if (ChangeDisplaySettings(&d->gdevmode, CDS_FULLSCREEN) != DISP_CHANGE_SUCCESSFUL)
+						Com_ErrorPrintf("Unable to reset fullscreen mode\n");
+
 					if (d->gammaworks)
 					{
 						SetDeviceGammaRamp(d->dc, d->currentgammaramps);
 					}
 				}
 			}
-			d->windowactive  = wParam != WA_INACTIVE;
+			d->windowactive = wParam != WA_INACTIVE;
 			d->focuschanged = 1;
 			break;
 
@@ -333,22 +340,19 @@ void *Sys_Video_Open(const char *mode, unsigned int width, unsigned int height, 
 
 		if (fullscreen)	//first step is to set up the video res that we want
 		{
-			DEVMODE gdevmode;
-			memset(&gdevmode, 0, sizeof(gdevmode));
-
-			if (mode == 0 || *mode == 0 || !modeline_to_devmode(mode, &gdevmode))
+			if (mode == 0 || *mode == 0 || !modeline_to_devmode(mode, &d->gdevmode))
 			{
-				EnumDisplaySettings(0, ENUM_CURRENT_SETTINGS, &gdevmode);
+				EnumDisplaySettings(0, ENUM_CURRENT_SETTINGS, &d->gdevmode);
 
-				snprintf(d->mode, sizeof(d->mode), "%d,%d,%d,%d,%d", gdevmode.dmPelsWidth, gdevmode.dmPelsHeight, gdevmode.dmBitsPerPel, gdevmode.dmDisplayFlags, gdevmode.dmDisplayFrequency);
+				snprintf(d->mode, sizeof(d->mode), "%d,%d,%d,%d,%d", d->gdevmode.dmPelsWidth, d->gdevmode.dmPelsHeight, d->gdevmode.dmBitsPerPel, d->gdevmode.dmDisplayFlags, d->gdevmode.dmDisplayFrequency);
 			}
 			else
 				strlcpy(d->mode, mode, sizeof(d->mode));
 
-			gdevmode.dmFields = DM_BITSPERPEL | DM_PELSWIDTH | DM_PELSHEIGHT | DM_DISPLAYFREQUENCY;
-			gdevmode.dmSize = sizeof (gdevmode);
+			d->gdevmode.dmFields = DM_BITSPERPEL | DM_PELSWIDTH | DM_PELSHEIGHT | DM_DISPLAYFREQUENCY;
+			d->gdevmode.dmSize = sizeof(d->gdevmode);
 
-			if (ChangeDisplaySettings (&gdevmode, CDS_FULLSCREEN) != DISP_CHANGE_SUCCESSFUL)
+			if (ChangeDisplaySettings(&d->gdevmode, CDS_FULLSCREEN) != DISP_CHANGE_SUCCESSFUL)
 			{
 				Com_Printf ("Couldn't set fullscreen DIB mode\n");
 
@@ -356,8 +360,8 @@ void *Sys_Video_Open(const char *mode, unsigned int width, unsigned int height, 
 			}
 			else
 			{
-				width = gdevmode.dmPelsWidth;
-				height = gdevmode.dmPelsHeight;
+				width = d->gdevmode.dmPelsWidth;
+				height = d->gdevmode.dmPelsHeight;
 			}
 		}
 
