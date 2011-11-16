@@ -116,7 +116,7 @@ cvar_t	r_maxedges = {"r_maxedges", "0"};
 cvar_t	r_numedges = {"r_numedges", "0"};
 cvar_t	r_aliastransbase = {"r_aliastransbase", "200"};
 cvar_t	r_aliastransadj = {"r_aliastransadj", "100"};
-cvar_t	r_fullbrightSkins = {"r_fullbrightSkins", "0"};
+cvar_t	r_fullbrightSkins = {"r_fullbrightSkins", "1"};
 cvar_t	r_fastturb = {"r_fastturb", "0"};
 cvar_t  r_max_size_1 = {"r_max_size_1", "0"};
 
