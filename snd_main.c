@@ -91,6 +91,7 @@ SoundCvarInitFunc WaveOut_CvarInit;
 SoundCvarInitFunc DS7_CvarInit;
 SoundCvarInitFunc ALSA_CvarInit;
 SoundCvarInitFunc CoreAudio_CvarInit;
+SoundCvarInitFunc PulseAudio_CvarInit;
 
 SoundInitFunc AHI_Init;
 SoundInitFunc OSS_Init;
@@ -98,12 +99,14 @@ SoundInitFunc WaveOut_Init;
 SoundInitFunc DS7_Init;
 SoundInitFunc ALSA_Init;
 SoundInitFunc CoreAudio_Init;
+SoundInitFunc PulseAudio_Init;
 
 const static struct SoundDriver sounddrivers[] =
 {
 	{ "AHI", &AHI_Init, &AHI_CvarInit },
 	{ "OSS", &OSS_Init, &OSS_CvarInit },
 	{ "ALSA", &ALSA_Init, &ALSA_CvarInit },
+	{ "PulseAudio", &PulseAudio_Init, &PulseAudio_CvarInit },
 	{ "DS7", &DS7_Init, &DS7_CvarInit },
 	{ "WaveOut", &WaveOut_Init, &WaveOut_CvarInit },
 	{ "CoreAudio", &CoreAudio_Init, &CoreAudio_CvarInit },
