@@ -19,7 +19,7 @@ struct display
 	unsigned int height;
 };
 
-@interface NSMyWindow : NSWindow
+@interface NSMyWindow : NSWindow <NSApplicationDelegate>
 {
 }
 @end
@@ -31,6 +31,20 @@ struct display
 }
 - (void)keyDown:(NSEvent*)event
 {
+}
+- (void)applicationDidBecomeActive:(NSNotification*)notification
+{
+	if ([self level] == NSMainMenuWindowLevel + 1)
+	{
+		[self deminiaturize:nil];
+	}
+}
+- (void)applicationDidResignActive:(NSNotification*)notification
+{
+	if ([self level] == NSMainMenuWindowLevel + 1)
+	{
+		[self miniaturize:nil];
+	}
 }
 @end
 
@@ -148,6 +162,7 @@ void* Sys_Video_Open(const char *mode, unsigned int width, unsigned int height, 
 
 								[d->window useOptimizedDrawing:YES];
 								[d->window makeKeyAndOrderFront:nil];
+								[NSApp setDelegate:d->window];
 								
 								return d;
 							}
