@@ -63,6 +63,7 @@ ifeq ($(OS), linux)
 		cd_linux.o \
 		snd_oss.o \
 		snd_alsa2.o \
+		snd_pulseaudio.o \
 		sys_io_posix.o \
 		sys_lib_posix.o
 
