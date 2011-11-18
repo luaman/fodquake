@@ -98,10 +98,10 @@ static void Sys_Error_GTK_DisplayError_Real(const char *error)
 	gulong (*dyn_g_signal_connect_data)(gpointer instance, const gchar *detailed_signal, GCallback c_handler, gpointer data, GClosureNotify destroy_data, GConnectFlags connect_flags);
 	void (*dyn_g_object_unref)(gpointer object);
 
-	gtk = dlopen("libgtk-x11-2.0.so", RTLD_NOW);
+	gtk = dlopen("libgtk-x11-2.0.so.0", RTLD_NOW);
 	if (gtk)
 	{
-		gobject = dlopen("libgobject-2.0.so", RTLD_NOW);
+		gobject = dlopen("libgobject-2.0.so.0", RTLD_NOW);
 		if (gobject)
 		{
 			dyn_gtk_init = dlsym(gtk, "gtk_init");
