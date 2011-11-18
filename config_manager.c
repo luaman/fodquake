@@ -500,9 +500,7 @@ static void DeleteUserVariables(void)
 static void ResetPlusCommands(void)
 {
 	Cbuf_AddText("-moveup;-movedown\n");
-	Cbuf_AddText("-left;-right\n");
 	Cbuf_AddText("-forward;-back\n");
-	Cbuf_AddText("-lookup;-lookdown\n");
 	Cbuf_AddText("-moveleft;-moveright\n");
 	Cbuf_AddText("-attack\n");
 	Cbuf_AddText("-use\n");
