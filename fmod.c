@@ -100,6 +100,7 @@ static float fmod_warn_time = 0;
 void FMod_CheckModel(char *name, void *buf, int len)
 {
 	int i;
+	int j;
 	qboolean modified;
 	struct md5 md5;
 	unsigned char out[16];
@@ -116,13 +117,15 @@ void FMod_CheckModel(char *name, void *buf, int len)
 	md5_process(&md5, buf, len);
 	md5_done(&md5, out);
 
-	while(i < CHECKEDFILESCOUNT && Q_strcasecmp(name, CheckedFiles[i].name) == 0)
+	j = i;
+
+	while(j < CHECKEDFILESCOUNT && Q_strcasecmp(name, CheckedFiles[j].name) == 0)
 	{
-		modified = memcmp(out, CheckedFiles[i].md5sum, 16);
+		modified = memcmp(out, CheckedFiles[j].md5sum, 16);
 		if (!modified)
 			break;
 
-		i++;
+		j++;
 	}
 
 	if (CheckedFiles[i].checked && !CheckedFiles[i].modified && modified)
