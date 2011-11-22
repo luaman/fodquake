@@ -503,7 +503,7 @@ static void Mod_LoadTextures(model_t *model, lump_t *l)
 			for (j = 0; j < MIPLEVELS; j++)
 				mt->offsets[j] = LittleLong (mt->offsets[j]);
 
-			skydata = ((void *)mt) + mt->offsets[j];
+			skydata = ((void *)mt) + mt->offsets[0];
 		}
 		else
 			skydata = 0;
