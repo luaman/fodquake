@@ -19,7 +19,7 @@ struct display
 	unsigned int height;
 };
 
-@interface NSMyWindow : NSWindow <NSApplicationDelegate>
+@interface NSMyWindow : NSWindow
 {
 }
 @end
