@@ -12,6 +12,7 @@
 
 static mach_timebase_info_data_t tbinfo;
 static int randomfd;
+static NSAutoreleasePool *pool;
 
 static unsigned long long monotonictime()
 {
@@ -44,7 +45,7 @@ void Sys_RandomBytes(void *target, unsigned int numbytes)
                 s = read(randomfd, target, numbytes);
                 if (s < 0)
                 {
-                        Sys_Error("Linux sucks");
+                        Sys_Error("Could not read from randomfd");
                 }
 
                 numbytes -= s;
@@ -123,13 +124,8 @@ void Sys_Error(char *error, ...)
 
 	Host_Shutdown();
 	
-	if (NSApp == nil)
-	{
-		[NSApplication sharedApplication];
-	}
 	if (NSApp)
 	{
-		NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
 		if (pool)
 		{
 			NSString *user = [[NSString alloc] initWithCString:string encoding:NSASCIIStringEncoding];
@@ -167,6 +163,14 @@ void Sys_Init(void)
 int main(int argc, char **argv)
 {
 	double time, oldtime, newtime;
+	
+	[NSApplication sharedApplication];
+	if (NSApp == nil)
+		Sys_Error("Error init shared application");
+	
+	pool = [[NSAutoreleasePool alloc] init];
+	if (pool == nil)
+		Sys_Error("Error creating auto release pool");
 
 	mach_timebase_info(&tbinfo);
 
@@ -181,8 +185,8 @@ int main(int argc, char **argv)
 		Sys_Error("Fodquake requires Mac OS X 10.5 or higher");
 	
 	randomfd = open("/dev/urandom", O_RDONLY);
-        if (randomfd == -1)
-                Sys_Error("Unable to open /dev/urandom");
+	if (randomfd == -1)
+		Sys_Error("Unable to open /dev/urandom");
 
 	Host_Init(argc, argv);
 

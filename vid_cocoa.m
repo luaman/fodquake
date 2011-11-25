@@ -11,7 +11,6 @@
 
 struct display
 {
-	NSAutoreleasePool *pool;
 	qboolean fullscreen;
 	struct input_data *input;
 	NSWindow *window;
@@ -81,116 +80,101 @@ void* Sys_Video_Open(const char *mode, unsigned int width, unsigned int height, 
 	{
 		memset(d, 0, sizeof(struct display));
 		
-		if (NSApp == nil)
+		if (fullscreen)
 		{
-			[NSApplication sharedApplication];
+			d->window = [[NSMyWindow alloc] initWithContentRect:[[NSScreen mainScreen] frame] styleMask:NSBorderlessWindowMask backing:NSBackingStoreBuffered defer:YES];
 		}
-		if (NSApp)
+		else
 		{
-			d->pool = [[NSAutoreleasePool alloc] init];
-			if (d->pool)
+			d->window = [[NSMyWindow alloc] initWithContentRect:NSMakeRect(0, 0, width, height) styleMask:NSTitledWindowMask | NSClosableWindowMask | NSMiniaturizableWindowMask backing:NSBackingStoreBuffered defer:YES];
+		}
+		
+		if (d->window)
+		{
+			if (fullscreen)
 			{
-				if (fullscreen)
-				{
-					d->window = [[NSMyWindow alloc] initWithContentRect:[[NSScreen mainScreen] frame] styleMask:NSBorderlessWindowMask backing:NSBackingStoreBuffered defer:YES];
-				}
-				else
-				{
-					d->window = [[NSMyWindow alloc] initWithContentRect:NSMakeRect(0, 0, width, height) styleMask:NSTitledWindowMask | NSClosableWindowMask | NSMiniaturizableWindowMask backing:NSBackingStoreBuffered defer:YES];
-				}
+				[d->window setLevel:NSMainMenuWindowLevel + 1];
+			}
+			else
+			{
+				[d->window center];
+			}
+			
+			d->fullscreen = fullscreen ? true : false;
+			d->input = Sys_Input_Init();
+			if (d->input)
+			{
+#ifdef GLQUAKE
+				NSOpenGLPixelFormat *pixelFormat;
+				NSOpenGLView *openglview;
+				GLint swapInterval = vid_vsync.value;
+				NSNumber *num;
 				
-				if (d->window)
+				NSOpenGLPixelFormatAttribute attributes[] =
 				{
+					NSOpenGLPFADoubleBuffer,
+					NSOpenGLPFAAccelerated,
+					NSOpenGLPFAColorSize, 24,
+					NSOpenGLPFADepthSize, 16,
+					0
+				};
+				
+				num = [[[NSUserDefaults standardUserDefaults] persistentDomainForName:NSGlobalDomain] objectForKey:@"com.apple.keyboard.fnState"];
+				
+				Sys_Input_SetFnKeyBehavior(d->input, [num intValue]);
+				
+				pixelFormat = [[NSOpenGLPixelFormat alloc] initWithAttributes:attributes];
+				if (pixelFormat)
+				{
+					NSRect rect;
+
 					if (fullscreen)
 					{
-						[d->window setLevel:NSMainMenuWindowLevel + 1];
+						rect = [d->window frame];
 					}
 					else
 					{
-						[d->window center];
+						rect.origin.x = 0;
+						rect.origin.y = [d->window frame].size.height - height;
+						rect.size.width = width;
+						rect.size.height = height;
 					}
-					
-					d->fullscreen = fullscreen ? true : false;
-					d->input = Sys_Input_Init();
-					if (d->input)
+
+					d->width = rect.size.width;
+					d->height = rect.size.height;
+
+					openglview = [[NSOpenGLView alloc] initWithFrame:rect pixelFormat:pixelFormat];
+					[pixelFormat release];
+					if (openglview)
 					{
-#ifdef GLQUAKE
-						NSOpenGLPixelFormat *pixelFormat;
-						NSOpenGLView *openglview;
-						GLint swapInterval = vid_vsync.value;
-						NSNumber *num;
-						
-						NSOpenGLPixelFormatAttribute attributes[] =
-						{
-							NSOpenGLPFADoubleBuffer,
-							NSOpenGLPFAAccelerated,
-							NSOpenGLPFAColorSize, 24,
-							NSOpenGLPFADepthSize, 16,
-							0
-						};
-						
-						num = [[[NSUserDefaults standardUserDefaults] persistentDomainForName:NSGlobalDomain] objectForKey:@"com.apple.keyboard.fnState"];
-						
-						Sys_Input_SetFnKeyBehavior(d->input, [num intValue]);
-						
-						pixelFormat = [[NSOpenGLPixelFormat alloc] initWithAttributes:attributes];
-						if (pixelFormat)
-						{
-							NSRect rect;
+						[d->window setContentView:openglview];
+						[[openglview openGLContext] setValues:&swapInterval forParameter:NSOpenGLCPSwapInterval];
 
-							if (fullscreen)
-							{
-								rect = [d->window frame];
-							}
-							else
-							{
-								rect.origin.x = 0;
-								rect.origin.y = [d->window frame].size.height - height;
-								rect.size.width = width;
-								rect.size.height = height;
-							}
-
-							d->width = rect.size.width;
-							d->height = rect.size.height;
-
-							openglview = [[NSOpenGLView alloc] initWithFrame:rect pixelFormat:pixelFormat];
-							[pixelFormat release];
-							if (openglview)
-							{
-								[d->window setContentView:openglview];
-								[[openglview openGLContext] setValues:&swapInterval forParameter:NSOpenGLCPSwapInterval];
-
-								[d->window useOptimizedDrawing:YES];
-								[d->window makeKeyAndOrderFront:nil];
-								[NSApp setDelegate:d->window];
-								
-								return d;
-							}
-						}
+						[d->window useOptimizedDrawing:YES];
+						[d->window makeKeyAndOrderFront:nil];
+						[NSApp setDelegate:d->window];
+						
+						return d;
+					}
+				}
 #else
-						NSBitmapImageRep *bitmapRep = [[NSBitmapImageRep alloc] initWithBitmapDataPlanes:NULL pixelsWide:width pixelsHigh:height bitsPerSample:8 samplesPerPixel:1 hasAlpha:NO isPlanar:NO colorSpaceName:NSCalibratedWhiteColorSpace bytesPerRow:0 bitsPerPixel:8];
-						if (bitmapRep)
-						{
-							NSGraphicsContext *context = [[NSGraphicsContext alloc] graphicsContextWithBitmapImageRep:bitmapRep];
-							if (context)
-							{
-								return d;
-							}
-							
-							[bitmapRep release];
-						}
-#endif
-						Sys_Input_Shutdown(d->input);
-
+				NSBitmapImageRep *bitmapRep = [[NSBitmapImageRep alloc] initWithBitmapDataPlanes:NULL pixelsWide:width pixelsHigh:height bitsPerSample:8 samplesPerPixel:1 hasAlpha:NO isPlanar:NO colorSpaceName:NSCalibratedWhiteColorSpace bytesPerRow:0 bitsPerPixel:8];
+				if (bitmapRep)
+				{
+					NSGraphicsContext *context = [[NSGraphicsContext alloc] graphicsContextWithBitmapImageRep:bitmapRep];
+					if (context)
+					{
+						return d;
 					}
 					
-					[d->window close];
+					[bitmapRep release];
 				}
-				
-				[d->pool release];
+#endif
+				Sys_Input_Shutdown(d->input);
+
 			}
 			
-			[NSApp release];
+			[d->window close];
 		}
 		
 		free(d);
@@ -207,8 +191,6 @@ void Sys_Video_Close(void *display)
 	
 	[[d->window contentView] release];
 	[d->window close];
-	
-	[d->pool release];
 	
 	free(d);
 }
