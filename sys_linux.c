@@ -327,6 +327,9 @@ const char *Sys_GetUserDataPath(void)
 	ret = 0;
 
 	bufsize = sysconf(_SC_GETPW_R_SIZE_MAX);
+	if (bufsize == -1) /* FreeBSD... */
+		bufsize = 16384;
+
 	if (bufsize > 0 && bufsize < 16777216)
 	{
 		buf = malloc(bufsize);
