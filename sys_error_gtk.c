@@ -83,6 +83,7 @@ static void Sys_Error_GTK_DisplayError_Real(const char *error)
 	void (*dyn_gtk_text_buffer_insert_at_cursor)(GtkTextBuffer *buffer, const gchar *text, gint len);
 
 	GtkWidget *(*dyn_gtk_text_view_new_with_buffer)(GtkTextBuffer *buffer);
+	void (*dyn_gtk_text_view_set_editable)(GtkTextView *text_view, gboolean setting);
 
 	void (*dyn_gtk_container_add)(GtkContainer *container, GtkWidget *widget);
 	void (*dyn_gtk_container_set_border_width)(GtkContainer *container, guint border_width);
@@ -116,6 +117,7 @@ static void Sys_Error_GTK_DisplayError_Real(const char *error)
 			dyn_gtk_text_buffer_new = dlsym(gtk, "gtk_text_buffer_new");
 			dyn_gtk_text_buffer_insert_at_cursor = dlsym(gtk, "gtk_text_buffer_insert_at_cursor");
 			dyn_gtk_text_view_new_with_buffer = dlsym(gtk, "gtk_text_view_new_with_buffer");
+			dyn_gtk_text_view_set_editable = dlsym(gtk, "gtk_text_view_set_editable");
 			dyn_gtk_container_add = dlsym(gtk, "gtk_container_add");
 			dyn_gtk_container_set_border_width = dlsym(gtk, "gtk_container_set_border_width");
 			dyn_gtk_vbox_new = dlsym(gtk, "gtk_vbox_new");
@@ -176,6 +178,8 @@ static void Sys_Error_GTK_DisplayError_Real(const char *error)
 								text = dyn_gtk_text_view_new_with_buffer(text_buffer);
 								if (text)
 								{
+									dyn_gtk_text_view_set_editable(GTK_TEXT_VIEW(text), 0);
+
 									button = dyn_gtk_button_new_with_label("OK");
 									if (button)
 									{
