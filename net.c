@@ -599,7 +599,7 @@ void NET_Init(void)
 void NET_Shutdown (void)
 {
 	if (netdata == 0)
-		Sys_Error("NET_Shutdown() called twice\n");
+		return;
 
 	if (netdata->sockets[NS_CLIENT])
 		Sys_Net_DeleteSocket(netdata->sysnetdata, netdata->sockets[NS_CLIENT]);

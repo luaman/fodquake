@@ -185,6 +185,9 @@ int Mouse_Init()
 
 void Mouse_Shutdown()
 {
+	if (!mouse_global)
+		return;
+
 	Sys_Thread_DeleteMutex(mouse_global->mutex);
 	free(mouse_global);
 	mouse_global = 0;
