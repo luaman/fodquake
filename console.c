@@ -122,7 +122,7 @@ static unsigned int Con_BufferColouredStringLength(unsigned int offset)
 	if (offset + len > consize)
 	{
 		if (stitchbuffer)
-			return Colored_String_Length(stitchbuffer);
+			return Colored_String_Length(stitchbuffer + strlen(stitchbuffer) - len);
 
 		return 0;
 	}
@@ -141,7 +141,7 @@ static unsigned int Con_BufferColouredStringLengthOffset(unsigned int offset, un
 	if (offset + len > consize)
 	{
 		if (stitchbuffer)
-			return Colored_String_Offset(stitchbuffer, maxlen, lastcolour);
+			return Colored_String_Offset(stitchbuffer + strlen(stitchbuffer) - len, maxlen, lastcolour);
 
 		return len;
 	}
