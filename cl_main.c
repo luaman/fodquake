@@ -54,6 +54,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #endif
 #include "strl.h"
 #include "ruleset.h"
+#include "tokenize_string.h"
 
 #ifndef GLQUAKE
 #include "d_local.h"
@@ -70,7 +71,11 @@ static qboolean net_lag_ezcheat_callback(cvar_t *var, char *string);
 static qboolean cl_imitate_client_callback(cvar_t *var, char *string);
 static qboolean cl_imitate_os_callback(cvar_t *var, char *string);
 
+static void R_Draw_Flat(float x_lower_limit, float x_upper_limit, float y_lower_limit, float y_upper_limit, float z_lower_limit, float z_upper_limit, float r, float g, float b, qboolean unset);
 static qboolean r_drawflat_enable_callback(cvar_t *var, char *string);
+static qboolean r_drawflat_walls_callback(cvar_t *var, char *string);
+static qboolean r_drawflat_floors_ceilings_callback(cvar_t *var, char *string);
+static qboolean r_drawflat_slopes_callback(cvar_t *var, char *string);
 
 cvar_t	rcon_password = {"rcon_password", ""};
 cvar_t	rcon_address = {"rcon_address", ""};
@@ -135,6 +140,9 @@ cvar_t r_rockettrail			= {"r_rocketTrail", "1"};
 cvar_t r_grenadetrail			= {"r_grenadeTrail", "1"};
 cvar_t r_powerupglow			= {"r_powerupGlow", "1"};
 cvar_t r_drawflat_enable		= {"r_drawflat_enable", "0", 0, r_drawflat_enable_callback };
+cvar_t r_drawflat_walls = {"r_drawflat_walls", "off", 0, r_drawflat_walls_callback};
+cvar_t r_drawflat_floors_ceilings = {"r_drawflat_floors_ceilings", "off", 0, r_drawflat_floors_ceilings_callback};
+cvar_t r_drawflat_slopes= {"r_drawflat_slopes", "off", 0, r_drawflat_slopes_callback};
 
 // info mirrors
 cvar_t	password = {"password", "", CVAR_USERINFO};
@@ -160,6 +168,9 @@ centity_t		cl_entities[CL_MAX_EDICTS];
 efrag_t			cl_efrags[MAX_EFRAGS];
 lightstyle_t	cl_lightstyle[MAX_LIGHTSTYLES];
 dlight_t		cl_dlights[MAX_DLIGHTS];
+
+// draw flat globals
+static float draw_flat[3][3];
 
 // refresh list
 #ifdef GLQUAKE
@@ -323,6 +334,151 @@ static qboolean r_drawflat_enable_callback(cvar_t *var, char *string)
 	return false;
 }
 
+static qboolean r_drawflat_walls_callback(cvar_t *var, char *string)
+{
+	struct tokenized_string *ts;
+	float r, g, b;
+
+	ts = Tokenize_String(string);
+	if (!ts)
+		return true;
+
+	if (ts->count != 1 && ts->count != 3)
+	{
+		Com_Printf("usage: %s [r] [g] [b] or off, colors should be in the range of 0 to 1.\n", var->name);
+		Tokenize_String_Delete(ts);
+		return true;
+	}
+
+	if (ts->count == 1)
+	{
+		if (strcmp(ts->tokens[0], "off") != 0)
+		{
+			Com_Printf("usage: %s [r] [g] [b] or off, colors should be in the range of 0 to 1.\n", var->name);
+			Tokenize_String_Delete(ts);
+			return true;
+		}
+		R_Draw_Flat(-1, 1, -1, 1, 0, 0, 0, 0, 0, true);
+		Tokenize_String_Delete(ts);
+		return false;
+	}
+
+	if (ts->count == 3)
+	{
+		r = bound(0, atof(ts->tokens[0]), 1);
+		g = bound(0, atof(ts->tokens[1]), 1);
+		b = bound(0, atof(ts->tokens[2]), 1);
+
+		draw_flat[0][0] = r;
+		draw_flat[0][1] = g;
+		draw_flat[0][2] = b;
+
+		R_Draw_Flat(-1, 1, -1, 1, 0, 0, r, g, b, false);
+		Tokenize_String_Delete(ts);
+		return false;
+	}
+
+	return true;
+}
+
+static qboolean r_drawflat_floors_ceilings_callback(cvar_t *var, char *string)
+{
+	struct tokenized_string *ts;
+	float r, g, b;
+
+	ts = Tokenize_String(string);
+	if (!ts)
+		return true;
+
+	if (ts->count != 1 && ts->count != 3)
+	{
+		Com_Printf("usage: %s [r] [g] [b] or off, colors should be in the range of 0 to 1.\n", var->name);
+		Tokenize_String_Delete(ts);
+		return true;
+	}
+
+	if (ts->count == 1)
+	{
+		if (strcmp(ts->tokens[0], "off") != 0)
+		{
+			Com_Printf("usage: %s [r] [g] [b] or off, colors should be in the range of 0 to 1.\n", var->name);
+			Tokenize_String_Delete(ts);
+			return true;
+		}
+		R_Draw_Flat(-1, 1, -1, 1, -1, -1, 0, 0, 0, true);
+		R_Draw_Flat(-1, 1, -1, 1, 1, 1, 0, 0, 0, true);
+		Tokenize_String_Delete(ts);
+		return false;
+	}
+
+	if (ts->count == 3)
+	{
+		r = bound(0, atof(ts->tokens[0]), 1);
+		g = bound(0, atof(ts->tokens[1]), 1);
+		b = bound(0, atof(ts->tokens[2]), 1);
+
+		draw_flat[1][0] = r;
+		draw_flat[1][1] = g;
+		draw_flat[1][2] = b;
+
+		R_Draw_Flat(-1, 1, -1, 1, -1, -1, r, g, b, true);
+		R_Draw_Flat(-1, 1, -1, 1, 1, 1, r, g, b, true);
+		Tokenize_String_Delete(ts);
+		return false;
+	}
+
+	return true;
+}
+
+static qboolean r_drawflat_slopes_callback(cvar_t *var, char *string)
+{
+	struct tokenized_string *ts;
+	float r, g, b;
+
+	ts = Tokenize_String(string);
+	if (!ts)
+		return true;
+
+	if (ts->count != 1 && ts->count != 3)
+	{
+		Com_Printf("usage: %s [r] [g] [b] or off, colors should be in the range of 0 to 1.\n", var->name);
+		Tokenize_String_Delete(ts);
+		return true;
+	}
+
+	if (ts->count == 1)
+	{
+		if (strcmp(ts->tokens[0], "off") != 0)
+		{
+			Com_Printf("usage: %s [r] [g] [b] or off, colors should be in the range of 0 to 1.\n", var->name);
+			Tokenize_String_Delete(ts);
+			return true;
+		}
+		R_Draw_Flat(-1, 1, -1, 1, -0.99999f, -0.00001f, 0, 0, 0, true);
+		R_Draw_Flat(-1, 1, -1, 1, 0.00001f, 0.99999f, 0, 0, 0, true);
+		Tokenize_String_Delete(ts);
+		return false;
+	}
+
+	if (ts->count == 3)
+	{
+		r = bound(0, atof(ts->tokens[0]), 1);
+		g = bound(0, atof(ts->tokens[1]), 1);
+		b = bound(0, atof(ts->tokens[2]), 1);
+
+		draw_flat[2][0] = r;
+		draw_flat[2][1] = g;
+		draw_flat[2][2] = b;
+
+		R_Draw_Flat(-1, 1, -1, 1, -0.99999f, -0.00001f, r, g, b, false);
+		R_Draw_Flat(-1, 1, -1, 1, 0.00001f, 0.99999f, r, g, b, false);
+		Tokenize_String_Delete(ts);
+		return false;
+	}
+
+	return true;
+}
+
 static void R_DrawFlat_UpdateSWSurface(msurface_t *surface)
 {
 #ifndef GLQUAKE
@@ -471,7 +627,7 @@ static void R_DrawFlatShootUnset_f(void)
 }
 
 
-static void R_Draw_Flat(float x_lower_limit, float x_upper_limit, float y_lower_limit, float y_upper_limit, float z_lower_limit, float z_upper_limit, float r, float g, float b)
+static void R_Draw_Flat(float x_lower_limit, float x_upper_limit, float y_lower_limit, float y_upper_limit, float z_lower_limit, float z_upper_limit, float r, float g, float b, qboolean unset)
 {
 	model_t *model;
 	vec3_t	vec;
@@ -490,10 +646,17 @@ static void R_Draw_Flat(float x_lower_limit, float x_upper_limit, float y_lower_
 		 && vec[1] <= y_upper_limit && vec[1] >= y_lower_limit
 		 && vec[0] <= x_upper_limit && vec[0] >= x_lower_limit)
 		{
-			model->surfaces[i].is_drawflat = 1;
-			model->surfaces[i].color[0] = r;
-			model->surfaces[i].color[1] = g;
-			model->surfaces[i].color[2] = b;
+			if (unset == true)
+			{
+				model->surfaces[i].is_drawflat = 0;
+			}
+			else
+			{
+				model->surfaces[i].is_drawflat = 1;
+				model->surfaces[i].color[0] = r;
+				model->surfaces[i].color[1] = g;
+				model->surfaces[i].color[2] = b;
+			}
 
 			R_DrawFlat_UpdateSWSurface(&model->surfaces[i]);
 		}
@@ -522,57 +685,7 @@ static void R_DrawFlat_f(void)
 	color[1] = bound(0, atof(Cmd_Argv(8)), 1);
 	color[2] = bound(0, atof(Cmd_Argv(9)), 1);
 
-	R_Draw_Flat(limit[0], limit[1], limit[2], limit[3], limit[4], limit[5], color[0], color[1], color[2]);
-}
-
-static void R_DrawFlat_Walls_f(void)
-{
-	float r, g, b;
-
-	if (Cmd_Argc() != 4)
-	{
-		Com_Printf("Usage: r_drawflat_walls [r] [g] [b], colors should be in the range of 0 to 1.\n");
-		return;
-	}
-	r = bound(0, atof(Cmd_Argv(1)), 1);
-	g = bound(0, atof(Cmd_Argv(2)), 1);
-	b = bound(0, atof(Cmd_Argv(3)), 1);
-
-	R_Draw_Flat(-1, 1, -1, 1, 0, 0, r, g, b);
-}
-
-static void R_DrawFlat_Slopes_f(void)
-{
-	float r, g, b;
-
-	if (Cmd_Argc() != 4)
-	{
-		Com_Printf("Usage: r_drawflat_slopes [r] [g] [b], colors should be in the range of 0 to 1.\n");
-		return;
-	}
-	r = bound(0, atof(Cmd_Argv(1)), 1);
-	g = bound(0, atof(Cmd_Argv(2)), 1);
-	b = bound(0, atof(Cmd_Argv(3)), 1);
-
-	R_Draw_Flat(-1, 1, -1, 1, -0.999999, -0.00001, r, g, b);
-	R_Draw_Flat(-1, 1, -1, 1, 0.000001, 0.999999, r, g, b);
-}
-
-static void R_DrawFlat_Floors_Ceilings_f(void)
-{
-	float r, g, b;
-
-	if (Cmd_Argc() != 4)
-	{
-		Com_Printf("Usage: r_drawflat_floors_ceilings [r] [g] [b], colors should be in the range of 0 to 1.\n");
-		return;
-	}
-	r = bound(0, atof(Cmd_Argv(1)), 1);
-	g = bound(0, atof(Cmd_Argv(2)), 1);
-	b = bound(0, atof(Cmd_Argv(3)), 1);
-
-	R_Draw_Flat(-1, 1, -1, 1, -1, -1, r, g, b);
-	R_Draw_Flat(-1, 1, -1, 1, 1, 1, r, g, b);
+	R_Draw_Flat(limit[0], limit[1], limit[2], limit[3], limit[4], limit[5], color[0], color[1], color[2], true);
 }
 
 static void R_DrawFlat_Set_f(void)
@@ -690,13 +803,28 @@ static void R_DrawFlat_Write_Config(void)
 
 void R_DrawFlat_NewMap (void)
 {
-	if (r_drawflat_enable.value == 1)
+	if (r_drawflat_enable.value != 1)
+		return;
+
+	if (strcmp(r_drawflat_walls.string, "off") != 0)
 	{
-		Cbuf_AddText(va("exec %s.dfcfg\n", mapname.string));
+		R_Draw_Flat(-1, 1, -1, 1, 0, 0, draw_flat[0][0], draw_flat[0][1], draw_flat[0][2], false);
 	}
+
+	if (strcmp(r_drawflat_floors_ceilings.string, "off") != 0)
+	{
+		R_Draw_Flat(-1, 1, -1, 1, -1, -1, draw_flat[1][0], draw_flat[1][1], draw_flat[1][2], false);
+		R_Draw_Flat(-1, 1, -1, 1, 1, 1, draw_flat[1][0], draw_flat[1][1], draw_flat[1][2], false);
+	}
+
+	if (strcmp(r_drawflat_slopes.string, "off") != 0)
+	{
+		R_Draw_Flat(-1, 1, -1, 1, -0.99999f, -0.00001f, draw_flat[2][0], draw_flat[2][1], draw_flat[2][2], false);
+		R_Draw_Flat(-1, 1, -1, 1, 0.00001f, 0.99999f, draw_flat[2][0], draw_flat[2][1], draw_flat[2][2], false);
+	}
+
+	Cbuf_AddText(va("exec %s.dfcfg\n", mapname.string));
 }
-
-
 
 
 #define NUMVALIDCLIENTNAMES (sizeof(validclientnames)/sizeof(*validclientnames))
@@ -1719,6 +1847,9 @@ void CL_CvarInit(void)
 	Cvar_Register(&cl_imitate_os);
 
 	Cvar_Register(&r_drawflat_enable);
+	Cvar_Register(&r_drawflat_floors_ceilings);
+	Cvar_Register(&r_drawflat_slopes);
+	Cvar_Register(&r_drawflat_walls);
 
 	Cmd_AddLegacyCommand("demotimescale", "cl_demospeed");
 
@@ -1735,10 +1866,6 @@ void CL_CvarInit(void)
 	Cmd_AddCommand("r_drawflat_set", R_DrawFlat_Set_f);
 	Cmd_AddCommand("r_drawflat_unset", R_DrawFlat_Unset_f);
 	Cmd_AddCommand("r_drawflat_writeconfig", R_DrawFlat_Write_Config);
-
-	Cmd_AddCommand("r_drawflat_walls", R_DrawFlat_Walls_f);
-	Cmd_AddCommand("r_drawflat_slopes", R_DrawFlat_Slopes_f);
-	Cmd_AddCommand("r_drawflat_floors_ceilings", R_DrawFlat_Floors_Ceilings_f);
 
 	Cmd_AddCommand("disconnect", CL_Disconnect_f);
 	Cmd_AddCommand("connect", CL_Connect_f);

@@ -203,7 +203,10 @@ void VID_Restart(void)
 	}
 
 	if (cl.model_precache[1])
+	{
 		R_NewMap();
+		R_DrawFlat_NewMap();
+	}
 
 	Skin_Reload();
 }
