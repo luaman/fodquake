@@ -254,6 +254,8 @@ void Sys_Video_GetMouseMovement(void *display, int *mousex, int *mousey)
 void Sys_Video_GrabMouse(void *display, int dograb)
 {
 	struct display *d = display;
+
+	Sys_Input_GrabMouse(d->inputdata, dograb);
 }
 
 qboolean Sys_Video_HWGammaSupported(void *display)

@@ -49,6 +49,8 @@ struct InputData
 	int doreacquiremouse;
 	int doreacquirekeyboard;
 
+	int mousegrabbed;
+
 	int mousex;
 	int mousey;
 
@@ -318,11 +320,12 @@ struct InputData *Sys_Input_Init(HWND window)
 										{
 											InitializeCriticalSection(&id->mutex);
 
-											id->di8mouse->lpVtbl->Acquire(id->di8mouse);
 											id->di8keyboard->lpVtbl->Acquire(id->di8keyboard);
 
 											id->doreacquiremouse = 0;
 											id->doreacquirekeyboard = 0;
+
+											id->mousegrabbed = 0;
 
 											id->mousex = 0;
 											id->mousey = 0;
@@ -412,71 +415,74 @@ static void pollstuff(struct InputData *inputdata)
 
 	EnterCriticalSection(&inputdata->mutex);
 
-	elements = DINPUTNUMEVENTS;
-	res = inputdata->di8mouse->lpVtbl->GetDeviceData(inputdata->di8mouse, sizeof(*events), events, &elements, 0);
-	if (res != DI_OK)
+	if (inputdata->mousegrabbed)
 	{
+		elements = DINPUTNUMEVENTS;
+		res = inputdata->di8mouse->lpVtbl->GetDeviceData(inputdata->di8mouse, sizeof(*events), events, &elements, 0);
+		if (res != DI_OK)
+		{
 #warning Should release all pressed buttons here.
 
-		inputdata->doreacquiremouse = 1;
-	}
-	else
-	{
-		for(i=0;i<elements;i++)
+			inputdata->doreacquiremouse = 1;
+		}
+		else
 		{
-			switch(events[i].dwOfs)
+			for(i=0;i<elements;i++)
 			{
-				case DIMOFS_X:
-					inputdata->mousex += events[i].dwData;
-					break;
-				case DIMOFS_Y:
-					inputdata->mousey += events[i].dwData;
-					break;
+				switch(events[i].dwOfs)
+				{
+					case DIMOFS_X:
+						inputdata->mousex += events[i].dwData;
+						break;
+					case DIMOFS_Y:
+						inputdata->mousey += events[i].dwData;
+						break;
 
-				case DIMOFS_Z:
-					if ((int)events[i].dwData > 0)
-					{
-						queuekey(inputdata, K_MWHEELUP, 1);
-						queuekey(inputdata, K_MWHEELUP, 0);
-					}
-					else
-					{
-						queuekey(inputdata, K_MWHEELDOWN, 1);
-						queuekey(inputdata, K_MWHEELDOWN, 0);
-					}
-					break;
+					case DIMOFS_Z:
+						if ((int)events[i].dwData > 0)
+						{
+							queuekey(inputdata, K_MWHEELUP, 1);
+							queuekey(inputdata, K_MWHEELUP, 0);
+						}
+						else
+						{
+							queuekey(inputdata, K_MWHEELDOWN, 1);
+							queuekey(inputdata, K_MWHEELDOWN, 0);
+						}
+						break;
 
-				case DIMOFS_BUTTON0:
-					queuekey(inputdata, K_MOUSE1, !!(events[i].dwData&0x80));
-					break;
+					case DIMOFS_BUTTON0:
+						queuekey(inputdata, K_MOUSE1, !!(events[i].dwData&0x80));
+						break;
 
-				case DIMOFS_BUTTON1:
-					queuekey(inputdata, K_MOUSE2, !!(events[i].dwData&0x80));
-					break;
+					case DIMOFS_BUTTON1:
+						queuekey(inputdata, K_MOUSE2, !!(events[i].dwData&0x80));
+						break;
 
-				case DIMOFS_BUTTON2:
-					queuekey(inputdata, K_MOUSE3, !!(events[i].dwData&0x80));
-					break;
+					case DIMOFS_BUTTON2:
+						queuekey(inputdata, K_MOUSE3, !!(events[i].dwData&0x80));
+						break;
 
-				case DIMOFS_BUTTON3:
-					queuekey(inputdata, K_MOUSE4, !!(events[i].dwData&0x80));
-					break;
+					case DIMOFS_BUTTON3:
+						queuekey(inputdata, K_MOUSE4, !!(events[i].dwData&0x80));
+						break;
 
-				case DIMOFS_BUTTON4:
-					queuekey(inputdata, K_MOUSE5, !!(events[i].dwData&0x80));
-					break;
+					case DIMOFS_BUTTON4:
+						queuekey(inputdata, K_MOUSE5, !!(events[i].dwData&0x80));
+						break;
 
-				case DIMOFS_BUTTON5:
-					queuekey(inputdata, K_MOUSE6, !!(events[i].dwData&0x80));
-					break;
+					case DIMOFS_BUTTON5:
+						queuekey(inputdata, K_MOUSE6, !!(events[i].dwData&0x80));
+						break;
 
-				case DIMOFS_BUTTON6:
-					queuekey(inputdata, K_MOUSE7, !!(events[i].dwData&0x80));
-					break;
+					case DIMOFS_BUTTON6:
+						queuekey(inputdata, K_MOUSE7, !!(events[i].dwData&0x80));
+						break;
 
-				case DIMOFS_BUTTON7:
-					queuekey(inputdata, K_MOUSE8, !!(events[i].dwData&0x80));
-					break;
+					case DIMOFS_BUTTON7:
+						queuekey(inputdata, K_MOUSE8, !!(events[i].dwData&0x80));
+						break;
+				}
 			}
 		}
 	}
@@ -562,6 +568,22 @@ void Sys_Input_GetMouseMovement(struct InputData *inputdata, int *mousex, int *m
 
 void Sys_Input_GrabMouse(struct InputData *inputdata, int dograb)
 {
+	EnterCriticalSection(&inputdata->mutex);
+
+	if (dograb && !inputdata->mousegrabbed)
+	{
+		inputdata->di8mouse->lpVtbl->Acquire(inputdata->di8mouse);
+		inputdata->mousegrabbed = 1;
+		inputdata->doreacquiremouse = 0;
+	}
+	else if (!dograb && inputdata->mousegrabbed)
+	{
+		inputdata->di8mouse->lpVtbl->Unacquire(inputdata->di8mouse);
+		inputdata->mousegrabbed = 0;
+		inputdata->doreacquiremouse = 0;
+	}
+
+	LeaveCriticalSection(&inputdata->mutex);
 }
 
 void Sys_Input_ClearRepeat(struct InputData *inputdata)
