@@ -391,7 +391,7 @@ libz/zlib-1.2.5/.buildstamp:
 	mkdir libz
 	(cd libz && tar -xf ../$(VPATH)/thirdparty/zlib-1.2.5.tar.gz)
 	cp $(VPATH)/thirdparty/zlib-Makefile libz/zlib-1.2.5/
-	(cd libz/zlib-1.2.5 && make -f zlib-Makefile libz.a)
+	(cd libz/zlib-1.2.5 && $(MAKE) -f zlib-Makefile libz.a CC="$(CC)")
 	mkdir -p include lib
 	cp libz/zlib-1.2.5/zconf.h libz/zlib-1.2.5/zlib.h include
 	cp libz/zlib-1.2.5/libz.a lib
@@ -404,7 +404,7 @@ libpng/libpng-1.2.46/.buildstamp:
 	mkdir libpng
 	(cd libpng && tar -xf ../$(VPATH)/thirdparty/libpng-1.2.46-no-config.tar.gz)
 	(cd libpng/libpng-1.2.46 && cp scripts/makefile.gcc Makefile)
-	(cd libpng/libpng-1.2.46 && make AR_RC="$(AR) rcs" CFLAGS="-W -Wall -I../../include $(CRELEASE)" RANLIB=touch libpng.a)
+	(cd libpng/libpng-1.2.46 && $(MAKE) CC="$(CC)" AR_RC="$(AR) rcs" CFLAGS="-W -Wall -I../../include $(CRELEASE)" RANLIB=touch libpng.a)
 	mkdir -p include lib
 	cp libpng/libpng-1.2.46/*.h include
 	cp libpng/libpng-1.2.46/libpng.a lib
@@ -417,7 +417,7 @@ libjpeg/jpeg-8c/.buildstamp:
 	mkdir libjpeg
 	(cd libjpeg && tar -xf ../$(VPATH)/thirdparty/jpegsrc.v8c.tar.gz)
 	cp libjpeg/jpeg-8c/jconfig.txt libjpeg/jpeg-8c/jconfig.h
-	(cd libjpeg/jpeg-8c && make -f makefile.ansi CFLAGS="-O2" AR="$(AR) rcs" AR2="touch" libjpeg.a)
+	(cd libjpeg/jpeg-8c && $(MAKE) -f makefile.ansi CC="$(CC)" CFLAGS="-O2" AR="$(AR) rcs" AR2="touch" libjpeg.a)
 	mkdir -p include
 	cp libjpeg/jpeg-8c/jpeglib.h libjpeg/jpeg-8c/jconfig.h libjpeg/jpeg-8c/jmorecfg.h include
 	cp libjpeg/jpeg-8c/libjpeg.a lib
