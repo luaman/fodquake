@@ -968,6 +968,41 @@ static void *Draw_LoadLmpPicture(FILE *fh, unsigned int *rwidth, unsigned int *r
 	return 0;
 }
 
+static void *Draw_32to32(unsigned int *source, unsigned int width, unsigned int height, unsigned int dstmodulo, unsigned int dstheight)
+{
+	unsigned int *dst;
+	unsigned int i;
+
+	if (width == 0 || height == 0 || dstmodulo == 0 || dstheight == 0)
+		return 0;
+
+	if (width >= 32768 || height >= 32768 || dstmodulo >= 32768 || dstheight >= 32768)
+		return 0;
+
+	dst = malloc(dstmodulo*dstheight*sizeof(*dst));
+	if (dst)
+	{
+		if (width != dstmodulo)
+		{
+			for(i=0;i<dstheight;i++)
+			{
+				memcpy(dst + i * dstmodulo, source + i * width, width * sizeof(*dst));
+			}
+		}
+		else
+		{
+			memcpy(dst, source, width * height * sizeof(*dst));
+		}
+
+		if (height != dstheight)
+			memcpy(dst + height * dstmodulo, dst + (height - 1) * dstmodulo, dstmodulo * sizeof(*dst));
+
+		return dst;
+	}
+
+	return 0;
+}
+
 static void *Draw_8to32(unsigned char *source, unsigned int width, unsigned int height, unsigned int dstmodulo, unsigned int dstheight, GLint *internalformat)
 {
 	unsigned int *dst;
@@ -976,7 +1011,10 @@ static void *Draw_8to32(unsigned char *source, unsigned int width, unsigned int 
 	unsigned int i;
 	unsigned int j;
 
-	if (width >= 32768 || height >= 32768)
+	if (width == 0 || height == 0 || dstmodulo == 0 || dstheight == 0)
+		return 0;
+
+	if (width >= 32768 || height >= 32768 || dstmodulo >= 32768 || dstheight >= 32768)
 		return 0;
 
 	dst = malloc(dstmodulo*dstheight*sizeof(*dst));
@@ -1035,6 +1073,7 @@ struct Picture *Draw_LoadPicture(const char *name, enum Draw_LoadPicture_Fallbac
 	unsigned int gltheight;
 	void *data;
 	void *newdata;
+	void *newnewdata;
 
 	data = 0;
 	newdata = 0;
@@ -1124,6 +1163,20 @@ struct Picture *Draw_LoadPicture(const char *name, enum Draw_LoadPicture_Fallbac
 	}
 	else if (newdata)
 	{
+		if (!gl_npot && (!ISPOT(width) || !ISPOT(height)))
+		{
+			if (!ISPOT(width))
+				gltwidth = NPOT(width);
+
+			if (!ISPOT(height))
+				gltheight = NPOT(height);
+
+			newnewdata = Draw_32to32(newdata, width, height, gltwidth, gltheight);
+
+			free(newdata);
+
+			newdata = newnewdata;
+		}
 	}
 
 	if (newdata)
