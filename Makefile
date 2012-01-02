@@ -172,7 +172,7 @@ ifeq ($(OS), win32)
 %.ico: icons/%-16x16.png icons/%-32x32.png icons/%-48x48.png icons/%-64x64.png
 	for i in $^; \
 	do \
-		pngtopnm $$i >tmpimg | ppmquant 256 tmpimg >`echo $$i | sed "s,.*/,,"`; rm tmpimg; \
+		pngtopnm $$i >tmpimg && ppmquant 256 tmpimg >`echo $$i | sed "s,.*/,,"`; rm tmpimg; \
 		pngtopnm -alpha $$i >`echo $$i | sed "s,.*/,,"`_alpha; \
 	done
 
