@@ -17,13 +17,14 @@ static NSAutoreleasePool *pool;
 static unsigned long long monotonictime()
 {
 	unsigned long long curtime;
+	unsigned long long ret;
 
 	curtime = mach_absolute_time();
 
-	curtime *= tbinfo.numer;
-	curtime /= tbinfo.denom;
+	ret = (curtime/tbinfo.denom)*tbinfo.numer;
+	ret += ((curtime%tbinfo.denom)*tbinfo.numer)/tbinfo.denom;
 
-	return curtime;
+	return ret;
 }
 
 double Sys_DoubleTime(void)
