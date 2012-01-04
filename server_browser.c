@@ -72,31 +72,31 @@ struct sb_search_info
 
 static struct sb_search_info sb_search_info;
 
-cvar_t sb_masterserver = {"sb_masterserver", "qwmaster.fodquake.net:27000 master.quakeservers.net:27000 satan.idsoftware.com:27000"};
-cvar_t sb_player_drawing = {"sb_player_drawing", "1"};
-cvar_t sb_refresh_on_activate = {"sb_refresh_on_activate", "1"};
+static cvar_t sb_masterserver = {"sb_masterserver", "qwmaster.fodquake.net:27000 master.quakeservers.net:27000 satan.idsoftware.com:27000"};
+static cvar_t sb_player_drawing = {"sb_player_drawing", "1"};
+static cvar_t sb_refresh_on_activate = {"sb_refresh_on_activate", "1"};
 
-cvar_t sb_refresh_on_search = {"sb_refresh_on_search", "1"};
-cvar_t sb_search_show_players = {"sb_search_show_players", "1"};
-cvar_t sb_search_display_string = {"sb_search_display_string", "pmhc"};
-cvar_t sb_search_show_spectators = {"sb_search_show_spectators", "1"};
+static cvar_t sb_refresh_on_search = {"sb_refresh_on_search", "1"};
+static cvar_t sb_search_show_players = {"sb_search_show_players", "1"};
+static cvar_t sb_search_display_string = {"sb_search_display_string", "pmhc"};
+static cvar_t sb_search_show_spectators = {"sb_search_show_spectators", "1"};
 
-cvar_t sb_refresh_interval = {"sb_refresh_interval", "180"};
+static cvar_t sb_refresh_interval = {"sb_refresh_interval", "180"};
 
-cvar_t sb_color_bg = {"sb_color_bg", "1"};
-cvar_t sb_color_bg_free = {"sb_color_bg_free", "55"};
-cvar_t sb_color_bg_full = {"sb_color_bg_full", "70"};
-cvar_t sb_color_bg_empty = {"sb_color_bg_empty", "1"};
-cvar_t sb_color_bg_specable = {"sb_color_bg_specable", "88"};
-cvar_t sb_qtv_proxy = {"sb_qtv_proxy", "qtv.fodquake.net:27599"};
-cvar_t sb_qtv_lookup = {"sb_qtv_lookup", "qtv.fodquake.net:12000"};
-cvar_t sb_qtv_connect_timeout = {"sb_qtv_connect_timeout", "2"};
+static cvar_t sb_color_bg = {"sb_color_bg", "1"};
+static cvar_t sb_color_bg_free = {"sb_color_bg_free", "55"};
+static cvar_t sb_color_bg_full = {"sb_color_bg_full", "70"};
+static cvar_t sb_color_bg_empty = {"sb_color_bg_empty", "1"};
+static cvar_t sb_color_bg_specable = {"sb_color_bg_specable", "88"};
+static cvar_t sb_qtv_proxy = {"sb_qtv_proxy", "qtv.fodquake.net:27599"};
+static cvar_t sb_qtv_lookup = {"sb_qtv_lookup", "qtv.fodquake.net:12000"};
+static cvar_t sb_qtv_connect_timeout = {"sb_qtv_connect_timeout", "2"};
 
-cvar_t sb_highlight_sort_column = {"sb_highlight_sort_column", "1"};
-cvar_t sb_highlight_sort_column_color = {"sb_highlight_sort_column_color", "70"};
-cvar_t sb_highlight_sort_column_alpha = {"sb_highlight_sort_column_alpha", "0.5"};
+static cvar_t sb_highlight_sort_column = {"sb_highlight_sort_column", "1"};
+static cvar_t sb_highlight_sort_column_color = {"sb_highlight_sort_column_color", "70"};
+static cvar_t sb_highlight_sort_column_alpha = {"sb_highlight_sort_column_alpha", "0.5"};
 
-char sb_macro_buf[512];
+static char sb_macro_buf[512];
 
 static struct qtvr *qtvr;
 
