@@ -984,7 +984,7 @@ static void *Draw_32to32(unsigned int *source, unsigned int width, unsigned int 
 	{
 		if (width != dstmodulo)
 		{
-			for(i=0;i<dstheight;i++)
+			for(i=0;i<height;i++)
 			{
 				memcpy(dst + i * dstmodulo, source + i * width, width * sizeof(*dst));
 			}
