@@ -421,8 +421,8 @@ static qboolean r_drawflat_floors_ceilings_callback(cvar_t *var, char *string)
 		draw_flat[1][1] = g;
 		draw_flat[1][2] = b;
 
-		R_Draw_Flat(-1, 1, -1, 1, -1, -1, r, g, b, true);
-		R_Draw_Flat(-1, 1, -1, 1, 1, 1, r, g, b, true);
+		R_Draw_Flat(-1, 1, -1, 1, -1, -1, r, g, b, false);
+		R_Draw_Flat(-1, 1, -1, 1, 1, 1, r, g, b, false);
 		Tokenize_String_Delete(ts);
 		return false;
 	}
