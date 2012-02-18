@@ -30,19 +30,23 @@ struct display
 }
 - (void)keyDown:(NSEvent*)event
 {
+	if ([event type] == NSKeyDown && [event keyCode] == 46 && [event modifierFlags] & NSCommandKeyMask)
+	{
+		[self miniaturize:nil];
+	}
 }
 - (void)applicationDidBecomeActive:(NSNotification*)notification
 {
-	if ([self level] == NSMainMenuWindowLevel + 1)
+	if ([self level] == NSNormalWindowLevel - 1)
 	{
-		[self deminiaturize:nil];
+		[self setLevel:NSMainMenuWindowLevel + 1];
 	}
 }
 - (void)applicationDidResignActive:(NSNotification*)notification
 {
 	if ([self level] == NSMainMenuWindowLevel + 1)
 	{
-		[self miniaturize:nil];
+		[self setLevel:NSNormalWindowLevel - 1];
 	}
 }
 @end
