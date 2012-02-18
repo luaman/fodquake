@@ -310,6 +310,8 @@ struct input_data
 	IOHIDManagerRef hid_manager;
 
 	int ignore_mouse;
+	qboolean left_cmd_key_active;
+	qboolean right_cmd_key_active;
 	qboolean fn_key_active;
 	int fn_key_behavior;
 
@@ -405,12 +407,28 @@ static void input_callback(void *context, IOReturn result, void *sender, IOHIDVa
 		}
 
 		if (usage < 1 || usage > 10)
+		{
 			usage = 10;
+		}
 
 		add_to_event_queue(input, K_MOUSE1 + usage - 1, val ? true : false);
 	}
 	else if (page == kHIDPage_KeyboardOrKeypad)
 	{
+		if (usage == kHIDUsage_KeyboardLeftGUI)
+		{
+			input->left_cmd_key_active = val ? true : false;
+		}
+		else if (usage == kHIDUsage_KeyboardRightGUI)
+		{
+			input->right_cmd_key_active = val ? true : false;
+		}
+		
+		if (input->left_cmd_key_active || input->right_cmd_key_active)
+		{
+			return;
+		}
+		
 		if (usage < sizeof(keytable))
 		{
 			add_to_event_queue(input, keytable[usage], val ? true : false);
