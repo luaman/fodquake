@@ -37,6 +37,11 @@ struct display
 }
 - (void)applicationDidBecomeActive:(NSNotification*)notification
 {
+	if ([self isMiniaturized] == TRUE)
+	{
+		[self deminiaturize:nil];
+	}
+	
 	if ([self level] == NSNormalWindowLevel - 1)
 	{
 		[self setLevel:NSMainMenuWindowLevel + 1];
