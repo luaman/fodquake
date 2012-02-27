@@ -20,10 +20,16 @@ struct display
 
 @interface NSMyWindow : NSWindow
 {
+	struct display *d;
 }
+- (void)setDisplayStructPointer:(struct display*)display;
 @end
 
 @implementation NSMyWindow
+- (void)setDisplayStructPointer:(struct display*)display
+{
+	d = display;
+}
 - (BOOL)canBecomeKeyWindow
 {
 	return YES;
@@ -37,22 +43,25 @@ struct display
 }
 - (void)applicationDidBecomeActive:(NSNotification*)notification
 {
-	if ([self isMiniaturized] == TRUE)
-	{
-		[self deminiaturize:nil];
-	}
-	
-	if ([self level] == NSNormalWindowLevel - 1)
+	if (d->fullscreen)
 	{
 		[self setLevel:NSMainMenuWindowLevel + 1];
 	}
 }
 - (void)applicationDidResignActive:(NSNotification*)notification
 {
-	if ([self level] == NSMainMenuWindowLevel + 1)
+	if (d->fullscreen)
 	{
 		[self setLevel:NSNormalWindowLevel - 1];
 	}
+}
+- (void)windowDidMiniaturize:(NSNotification*)notification
+{
+	Sys_Video_GrabMouse(d, 0);
+}
+- (void)windowDidDeminiaturize:(NSNotification*)notification
+{
+	Sys_Video_GrabMouse(d, 1);
 }
 @end
 
@@ -109,6 +118,8 @@ void* Sys_Video_Open(const char *mode, unsigned int width, unsigned int height, 
 				[d->window center];
 			}
 			
+			[((NSMyWindow*)d->window) setDisplayStructPointer:d];
+			
 			d->fullscreen = fullscreen ? true : false;
 			d->input = Sys_Input_Init();
 			if (d->input)
@@ -161,6 +172,7 @@ void* Sys_Video_Open(const char *mode, unsigned int width, unsigned int height, 
 
 						[d->window useOptimizedDrawing:YES];
 						[d->window makeKeyAndOrderFront:nil];
+						[d->window setDelegate:d->window];
 						[NSApp setDelegate:d->window];
 						
 						return d;
