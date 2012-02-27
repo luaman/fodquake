@@ -63,7 +63,11 @@ struct display
 }
 - (void)windowDidDeminiaturize:(NSNotification*)notification
 {
-	if (d->fullscreen == false && in_grab_windowed_mouse.value == 1)
+	if (d->fullscreen)
+	{
+		Sys_Video_GrabMouse(d, 1);
+	}
+	else if (in_grab_windowed_mouse.value == 1)
 	{
 		Sys_Video_GrabMouse(d, 1);
 	}
