@@ -9,6 +9,8 @@
 #import "gl_local.h"
 #import "in_macosx.h"
 
+extern cvar_t in_grab_windowed_mouse;
+
 struct display
 {
 	qboolean fullscreen;
@@ -61,7 +63,10 @@ struct display
 }
 - (void)windowDidDeminiaturize:(NSNotification*)notification
 {
-	Sys_Video_GrabMouse(d, 1);
+	if (d->fullscreen == false && in_grab_windowed_mouse.value == 1)
+	{
+		Sys_Video_GrabMouse(d, 1);
+	}
 }
 @end
 
