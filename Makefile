@@ -397,17 +397,17 @@ libz/zlib-1.2.5/.buildstamp:
 	cp libz/zlib-1.2.5/libz.a lib
 	touch $@
 
-libpng: libpng/libpng-1.2.46/.buildstamp
+libpng: libpng/libpng-1.2.47/.buildstamp
 
-libpng/libpng-1.2.46/.buildstamp:
+libpng/libpng-1.2.47/.buildstamp:
 	rm -rf libpng
 	mkdir libpng
-	(cd libpng && tar -xf ../$(VPATH)/thirdparty/libpng-1.2.46-no-config.tar.gz)
-	(cd libpng/libpng-1.2.46 && cp scripts/makefile.gcc Makefile)
-	(cd libpng/libpng-1.2.46 && $(MAKE) CC="$(CC)" AR_RC="$(AR) rcs" CFLAGS="-W -Wall -I../../include $(CRELEASE)" RANLIB=touch libpng.a)
+	(cd libpng && tar -xf ../$(VPATH)/thirdparty/libpng-1.2.47-no-config.tar.gz)
+	(cd libpng/libpng-1.2.47 && cp scripts/makefile.gcc Makefile)
+	(cd libpng/libpng-1.2.47 && $(MAKE) CC="$(CC)" AR_RC="$(AR) rcs" CFLAGS="-W -Wall -I../../include $(CRELEASE)" RANLIB=touch libpng.a)
 	mkdir -p include lib
-	cp libpng/libpng-1.2.46/*.h include
-	cp libpng/libpng-1.2.46/libpng.a lib
+	cp libpng/libpng-1.2.47/*.h include
+	cp libpng/libpng-1.2.47/libpng.a lib
 	touch $@
 
 libjpeg: libjpeg/jpeg-8c/.buildstamp
