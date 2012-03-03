@@ -694,12 +694,15 @@ static void R_DrawFlat_Set_f(void)
 	float r, g, b;
 	int surface;
 
-	if (!cl.worldmodel)
-		return;
-
 	if (Cmd_Argc() != 5)
 	{
 		Com_Printf("Usage: r_drawflat_set [surface] [r] [g] [b], colors should be in range of 0 to 1\n");
+		return;
+	}
+
+	if (!cl.worldmodel)
+	{
+		Com_Printf("No map loaded, can't set surface color\n");
 		return;
 	}
 
