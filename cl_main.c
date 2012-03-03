@@ -500,12 +500,15 @@ static void R_DrawFlatShoot_f(void)
 	int e, x, i;
 	float color[3];
 
-	if (!cl.worldmodel)
-		return;
-
 	if (Cmd_Argc() != 4)
 	{
 		Com_Printf("Usage: r_drawflat_shoot [r] [g] [b], colors should be in range of 0 to 1\n");
+		return;
+	}
+
+	if (!cl.worldmodel)
+	{
+		Com_Printf("No map loaded, can't set surface color\n");
 		return;
 	}
 
@@ -577,7 +580,10 @@ static void R_DrawFlatShootUnset_f(void)
 	int e, x, i;
 
 	if (!cl.worldmodel)
+	{
+		Com_Printf("No map loaded, can't set surface color\n");
 		return;
+	}
 
 	model = cl.worldmodel;
 	AngleVectors(r_refdef.viewangles, vec1, NULL, NULL);
@@ -671,7 +677,7 @@ static void R_DrawFlat_f(void)
 
 	if (Cmd_Argc() != 10)
 	{
-		Com_Printf("Usage: r_drawflat [x_lower_limit] [y_upper_limit] [y_lower_limit] [y_upper_limit] [z_lower_limit] [z_upper_limit] [r] [g] [b], limits go from -1 to 1, colors should be in the range of 0 to 1.\n");
+		Com_Printf("Usage: r_drawflat [x_lower_limit] [x_upper_limit] [y_lower_limit] [y_upper_limit] [z_lower_limit] [z_upper_limit] [r] [g] [b], limits go from -1 to 1, colors should be in the range of 0 to 1.\n");
 		return;
 	}
 
@@ -694,12 +700,15 @@ static void R_DrawFlat_Set_f(void)
 	float r, g, b;
 	int surface;
 
-	if (!cl.worldmodel)
-		return;
-
 	if (Cmd_Argc() != 5)
 	{
 		Com_Printf("Usage: r_drawflat_set [surface] [r] [g] [b], colors should be in range of 0 to 1\n");
+		return;
+	}
+
+	if (!cl.worldmodel)
+	{
+		Com_Printf("No map loaded, can't set surface color\n");
 		return;
 	}
 
