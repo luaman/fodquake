@@ -38,9 +38,9 @@ struct display
 }
 - (void)keyDown:(NSEvent*)event
 {
-	if ([event type] == NSKeyDown && [event keyCode] == 46 && [event modifierFlags] & NSCommandKeyMask)
+	if ([event keyCode] == 4 && [event modifierFlags] & NSCommandKeyMask)
 	{
-		[self miniaturize:nil];
+		[NSApp hide:nil];
 	}
 }
 - (void)applicationDidBecomeActive:(NSNotification*)notification
@@ -57,19 +57,17 @@ struct display
 		[self setLevel:NSNormalWindowLevel - 1];
 	}
 }
-- (void)windowDidMiniaturize:(NSNotification*)notification
+- (void)applicationDidUnhide:(NSNotification*)notification
 {
-	Sys_Video_GrabMouse(d, 0);
-}
-- (void)windowDidDeminiaturize:(NSNotification*)notification
-{
+	CGPoint point = { -1.0, -1.0 };
+	
 	if (d->fullscreen)
 	{
-		Sys_Video_GrabMouse(d, 1);
+		CGWarpMouseCursorPosition(point);
 	}
 	else if (in_grab_windowed_mouse.value == 1)
 	{
-		Sys_Video_GrabMouse(d, 1);
+		CGWarpMouseCursorPosition(point);
 	}
 }
 @end
@@ -181,7 +179,6 @@ void* Sys_Video_Open(const char *mode, unsigned int width, unsigned int height, 
 
 						[d->window useOptimizedDrawing:YES];
 						[d->window makeKeyAndOrderFront:nil];
-						[d->window setDelegate:d->window];
 						[NSApp setDelegate:d->window];
 						
 						return d;
