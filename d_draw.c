@@ -216,6 +216,16 @@ void Draw_FreePicture(struct Picture *picture)
 	free(picture);
 }
 
+unsigned int Draw_GetPictureWidth(struct Picture *picture)
+{
+	return picture->width;
+}
+
+unsigned int Draw_GetPictureHeight(struct Picture *picture)
+{
+	return picture->height;
+}
+
 static void Draw_DrawPictureNonScaled(struct Picture *picture, unsigned int srcx, unsigned int srcy, unsigned int srcwidth, unsigned int srcheight, int x, int y)
 {
 	unsigned int width;

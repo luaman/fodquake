@@ -39,6 +39,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 struct Picture
 {
 	int texnum;
+	unsigned int width;
+	unsigned int height;
 	float invwidth;
 	float invheight;
 
@@ -1185,6 +1187,8 @@ struct Picture *Draw_LoadPicture(const char *name, enum Draw_LoadPicture_Fallbac
 		if (picture)
 		{
 			picture->texnum = texture_extension_number++;
+			picture->width = width;
+			picture->height = height;
 			picture->invwidth = 1.0/width/((double)gltwidth/width);
 			picture->invheight = 1.0/height/((double)gltheight/height);
 
@@ -1229,6 +1233,16 @@ void Draw_FreePicture(struct Picture *picture)
 	glDeleteTextures(1, &picture->texnum);
 
 	free(picture);
+}
+
+unsigned int Draw_GetPictureWidth(struct Picture *picture)
+{
+	return picture->width;
+}
+
+unsigned int Draw_GetPictureHeight(struct Picture *picture)
+{
+	return picture->height;
 }
 
 void Draw_DrawPicture(struct Picture *picture, int x, int y, unsigned int width, unsigned int height)
