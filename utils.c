@@ -92,10 +92,21 @@ int Util_Extend_Filename(char *filename, char **ext)
 {
 	char extendedname[1024], **s;
 	int i, offset;
+	unsigned int maxextlen;
 	FILE *f;
 
-	Q_strncpyz(extendedname, filename, sizeof(extendedname));
-	offset = strlen(extendedname);
+	maxextlen = 0;
+	for(s=ext;*s;s++)
+	{
+		if (strlen(s) > maxextlen)
+			maxextlen = strlen(s);
+	}
+
+	i = snprintf(extendedname, sizeof(extendedname), "%s/%s", com_basedir, filename);
+	if (i + 5 + maxextlen >= sizeof(extendedname))
+		return -1;
+
+	offset = i;
 
 	i = -1;
 	while(1)
