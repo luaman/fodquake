@@ -102,7 +102,11 @@ int Util_Extend_Filename(char *filename, char **ext)
 			maxextlen = strlen(s);
 	}
 
-	i = snprintf(extendedname, sizeof(extendedname), "%s/%s", com_basedir, filename);
+	if (filename[0] == '/')
+		i = snprintf(extendedname, sizeof(extendedname), "%s", filename);
+	else
+		i = snprintf(extendedname, sizeof(extendedname), "%s/%s", com_basedir, filename);
+
 	if (i + 5 + maxextlen >= sizeof(extendedname))
 		return -1;
 
