@@ -348,9 +348,9 @@ static void Sbar_DrawPic(int x, int y, struct Picture *pic, int width, int heigh
 }
 
 //JACK: Draws a portion of the picture in the status bar.
-static void Sbar_DrawSubPic(int x, int y, struct Picture *pic, int srcx, int srcy, int width, int height)
+static void Sbar_DrawSubPicNormalised(int x, int y, int width, int height, struct Picture *pic, float srcx, float srcy, float srcwidth, float srcheight)
 {
-	Draw_DrawSubPicture(pic, srcx, srcy, width, height, x, y + (vid.conheight - SBAR_HEIGHT), width, height);
+	Draw_DrawSubPicture(pic, srcx, srcy, srcwidth, srcheight, x, y + (vid.conheight - SBAR_HEIGHT), width, height);
 }
 
 static void Sbar_DrawTransPic(int x, int y, struct Picture *pic, int width, int height)
@@ -756,8 +756,7 @@ static void Sbar_DrawInventory (void)
 			if (headsup)
 			{
 				if (i || vid.conheight > 200)
-					Sbar_DrawSubPic (hudswap ? 0 : vid.conwidth - 24,-68 - (7 - i) * 16 , sb_weapons[flashon][i], 0, 0, 24, 16);
-
+					Sbar_DrawPic(hudswap ? 0 : vid.conwidth - 24,-68 - (7 - i) * 16, sb_weapons[flashon][i], 24, 16);
 			}
 			else
 			{
@@ -782,7 +781,7 @@ static void Sbar_DrawInventory (void)
 
 		if (headsup)
 		{
-			Sbar_DrawSubPic(hudswap ? 0 : vid.conwidth - 42, -24 - (4 - i) * 11, sb_ibar, 3 + (i * 48), 0, 42, 11);
+			Sbar_DrawSubPicNormalised(hudswap ? 0 : vid.conwidth - 42, -24 - (4 - i) * 11, 42, 11, sb_ibar, ((double)(3 + (i * 48)))/320, 0, 42.0/320, 11.0/24);
 			Draw_String(hudswap ? 7: vid.conwidth - 35, vid.conheight - SBAR_HEIGHT - 24 - (4 - i) * 11, num);
 		}
 		else
