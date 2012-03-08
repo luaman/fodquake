@@ -37,7 +37,7 @@ cvar_t	context_sensitive_tab_completion_ignore_alt_tab = {"context_sensitive_tab
 cvar_t	context_sensitive_tab_completion_background_color = {"context_sensitive_tab_completion_background_color", "4"};
 cvar_t	context_sensitive_tab_completion_inputbox_color = {"context_sensitive_tab_completion_inputbox_color", "4"};
 cvar_t	context_sensitive_tab_completion_selected_color = {"context_sensitive_tab_completion_selected_color", "40"};
-cvar_t	context_sensitive_tab_completion_insert_backslash = {"context_sensitive_tab_completion_insert_backslash", "1"};
+cvar_t	context_sensitive_tab_completion_insert_slash = {"context_sensitive_tab_completion_insert_slash", "1"};
 
 static void cleanup_cst(struct cst_info *info)
 {
@@ -133,7 +133,7 @@ static void insert_result(struct cst_info *self, char *ptr)
 	if (self->insert_space)
 		snprintf(new_keyline, MAXCMDLINE, "%*.*s %s %s", self->argument_start, self->argument_start, key_lines[edit_line], result, key_lines[edit_line] + self->argument_start + self->argument_length);
 	else
-		if (context_sensitive_tab_completion_insert_backslash.value == 1 && self->argument_start == 1 && key_lines[edit_line][1] != '/')
+		if (context_sensitive_tab_completion_insert_slash.value == 1 && self->argument_start == 1 && key_lines[edit_line][1] != '/')
 			snprintf(new_keyline, MAXCMDLINE, "%*.*s/%s %s", self->argument_start, self->argument_start, key_lines[edit_line], result, key_lines[edit_line] + self->argument_start + self->argument_length);
 		else
 			snprintf(new_keyline, MAXCMDLINE, "%*.*s%s %s", self->argument_start, self->argument_start, key_lines[edit_line], result, key_lines[edit_line] + self->argument_start + self->argument_length);
@@ -1054,7 +1054,7 @@ void Context_Sensitive_Tab_Completion_CvarInit(void)
 	Cvar_Register(&context_sensitive_tab_completion_background_color);
 	Cvar_Register(&context_sensitive_tab_completion_selected_color);
 	Cvar_Register(&context_sensitive_tab_completion_inputbox_color);
-	Cvar_Register(&context_sensitive_tab_completion_insert_backslash);
+	Cvar_Register(&context_sensitive_tab_completion_insert_slash);
 	Cmd_AddCommand("weight_enable", Weight_Enable_f);
 	Cmd_AddCommand("weight_disable", Weight_Disable_f);
 	Cmd_AddCommand("weight_set", Weight_Set_f);
