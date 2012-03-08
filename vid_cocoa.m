@@ -262,6 +262,8 @@ void Sys_Video_Update(void *display, vrect_t *rects)
 			dst += 3;
 		}
 	}
+
+	[[d->window contentView] lockFocus];	
 	
 	img = [[NSBitmapImageRep alloc]
 			  initWithBitmapDataPlanes:&d->ptr
@@ -277,6 +279,8 @@ void Sys_Video_Update(void *display, vrect_t *rects)
 	
 	[img draw];
 	[img release];
+	
+	[[d->window contentView] unlockFocus];
 	
 	[d->window flushWindow];
 #endif
