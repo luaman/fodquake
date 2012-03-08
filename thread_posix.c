@@ -62,7 +62,42 @@ void Sys_Thread_DeleteThread(struct SysThread *thread)
 
 int Sys_Thread_SetThreadPriority(struct SysThread *thread, enum SysThreadPriority priority)
 {
-	fprintf(stderr, "%s: stub\n", __func__);
+	struct sched_param sp;
+	int policy;
+	int prev;
+
+	pthread_attr_getschedparam(thread->thread, &sp);
+	pthread_attr_getschedpolicy(thread->thread, &policy);
+
+	prev = sp.sched_priority;
+
+	switch(priority)
+	{
+		case SYSTHREAD_PRIORITY_LOW:
+			sp.sched_priority = sched_get_priority_min(policy);
+			break;
+
+		case SYSTHREAD_PRIORITY_HIGH:
+			sp.sched_priority = sched_get_priority_max(policy);
+			break;
+
+		default:
+			fprintf(stderr, "%s: priority %d, stub\n", __func__, priority);
+			return 1;
+
+		// default:
+		// 	sp.sched_priority = THREAD_PRIORITY_NORMAL;
+		// 	break;
+	}
+
+	if(pthread_setschedparam(thread->thread, policy, &sp) == -1)
+	{
+		fprintf(stderr, "%s: failed to change priority.\n", __func__);
+	}
+	else
+	{
+		fprintf(stderr, "%s: changed priority: old=%d new=%d\n", __func__, prev, sp.sched_priority);
+	}
 
 	return 0;
 }
