@@ -34,6 +34,10 @@ cvar_t	context_sensitive_tab_completion_close_on_tab = {"context_sensitive_tab_c
 cvar_t	context_sensitive_tab_completion_sorting_method = {"context_sensitive_tab_completion_sorting_method", "1"};
 cvar_t	context_sensitive_tab_completion_show_results = {"context_sensitive_tab_completion_show_results", "1"};
 cvar_t	context_sensitive_tab_completion_ignore_alt_tab = {"context_sensitive_tab_completion_ignore_alt_tab", "1"};
+cvar_t	context_sensitive_tab_completion_background_color = {"context_sensitive_tab_completion_background_color", "4"};
+cvar_t	context_sensitive_tab_completion_inputbox_color = {"context_sensitive_tab_completion_inputbox_color", "4"};
+cvar_t	context_sensitive_tab_completion_selected_color = {"context_sensitive_tab_completion_selected_color", "40"};
+cvar_t	context_sensitive_tab_completion_insert_slash = {"context_sensitive_tab_completion_insert_slash", "1"};
 
 static void cleanup_cst(struct cst_info *info)
 {
@@ -129,7 +133,10 @@ static void insert_result(struct cst_info *self, char *ptr)
 	if (self->insert_space)
 		snprintf(new_keyline, MAXCMDLINE, "%*.*s %s %s", self->argument_start, self->argument_start, key_lines[edit_line], result, key_lines[edit_line] + self->argument_start + self->argument_length);
 	else
-		snprintf(new_keyline, MAXCMDLINE, "%*.*s%s %s", self->argument_start, self->argument_start, key_lines[edit_line], result, key_lines[edit_line] + self->argument_start + self->argument_length);
+		if (context_sensitive_tab_completion_insert_slash.value == 1 && self->argument_start == 1 && key_lines[edit_line][1] != '/')
+			snprintf(new_keyline, MAXCMDLINE, "%*.*s/%s %s", self->argument_start, self->argument_start, key_lines[edit_line], result, key_lines[edit_line] + self->argument_start + self->argument_length);
+		else
+			snprintf(new_keyline, MAXCMDLINE, "%*.*s%s %s", self->argument_start, self->argument_start, key_lines[edit_line], result, key_lines[edit_line] + self->argument_start + self->argument_length);
 	memcpy(key_lines[edit_line], new_keyline, MAXCMDLINE);
 
 	key_linepos = self->argument_start + strlen(result);
@@ -243,7 +250,7 @@ static void CSTC_Draw(struct cst_info *self, int y_offset)
 	else
 		offset = y_offset - 14;
 
-	Draw_Fill(0, offset , vid.conwidth, 10, 4);
+	Draw_Fill(0, offset , vid.conwidth, 10, context_sensitive_tab_completion_inputbox_color.value);
 	Draw_String(8, offset, self->input);
 	Draw_String(8 + self->new_input->position * 8 , offset + 2, "_");
 
@@ -282,9 +289,9 @@ static void CSTC_Draw(struct cst_info *self, int y_offset)
 		if (self->result(self, NULL, i + result_offset, 1, &ptr))
 			break;
 		if (i + result_offset == self->selection)
-			Draw_Fill(0, offset + i * 8 * self->direction, vid.conwidth, 8, 40);
+			Draw_Fill(0, offset + i * 8 * self->direction, vid.conwidth, 8, context_sensitive_tab_completion_selected_color.value);
 		else
-			Draw_Fill(0, offset + i * 8 * self->direction, vid.conwidth, 8, 4);
+			Draw_Fill(0, offset + i * 8 * self->direction, vid.conwidth, 8, context_sensitive_tab_completion_background_color.value);
 
 		Draw_String(32, offset + i * 8 * self->direction, ptr);
 	}
@@ -594,7 +601,6 @@ static int setup_current_command(void)
 
 int Context_Sensitive_Tab_Completion(void)
 {
-
 	if (context_sensitive_tab_completion_ignore_alt_tab.value == 1)
 		if (keydown[K_ALT])
 			return 0;
@@ -602,11 +608,8 @@ int Context_Sensitive_Tab_Completion(void)
 	if (setup_current_command())
 	{
 		context_sensitive_tab_completion_active = 1;
-	//	Com_Printf("Context sensitive active for %s\n", cst_info->name);
 		return 1;
 	}
-
-	//Com_Printf("Context sensitive not active\n");
 
 	return 0;
 }
@@ -718,8 +721,6 @@ static int match_compare(const void *a, const void *b)
 			w2 = 0;
 	}
 
-
-
 	return x->match - y->match + w2 *2 - w1 *2;
 }
 
@@ -748,7 +749,7 @@ static int setup_command_completion_data(struct cst_info *self)
 	for (cmd=cmd_functions; cmd; cmd=cmd->next)
 	{
 		add = 1;
-		if (self->tokenized_input->count == 1)
+		if (self->tokenized_input->count == 1 && 0)
 		{
 			if (strcmp(cmd->name, self->tokenized_input->tokens[0]) == 0)
 			{
@@ -777,7 +778,7 @@ static int setup_command_completion_data(struct cst_info *self)
 	for (alias=cmd_alias; alias; alias=alias->next)
 	{
 		add = 1;
-		if (self->tokenized_input->count == 1)
+		if (self->tokenized_input->count == 1 && 0)
 		{
 			if (strcmp(alias->name, self->tokenized_input->tokens[0]) == 0)
 			{
@@ -807,7 +808,7 @@ static int setup_command_completion_data(struct cst_info *self)
 	{
 		add = 1;
 
-		if (self->tokenized_input->count == 1)
+		if (self->tokenized_input->count == 1 && 0)
 		{
 			if (strcmp(var->name, self->tokenized_input->tokens[0]) == 0)
 			{
@@ -842,19 +843,6 @@ static int setup_command_completion_data(struct cst_info *self)
 		return -1;
 
 	cd = self->data;
-
-	/*
-
-	tlen = calloc(self->tokenized_input->count, sizeof(int));
-	if (tlen == NULL)
-	{
-		free(self->data);
-		return -1;
-	}
-
-	for (i =0; i<self->tokenized_input->count; i++)
-		tlen[i] = strlen(self->tokenized_input->tokens[i]);
-		*/
 
 	for (cmd=cmd_functions; cmd; cmd=cmd->next)
 	{
@@ -1063,6 +1051,10 @@ void Context_Sensitive_Tab_Completion_CvarInit(void)
 	Cvar_Register(&context_sensitive_tab_completion_sorting_method);
 	Cvar_Register(&context_sensitive_tab_completion_show_results);
 	Cvar_Register(&context_sensitive_tab_completion_ignore_alt_tab);
+	Cvar_Register(&context_sensitive_tab_completion_background_color);
+	Cvar_Register(&context_sensitive_tab_completion_selected_color);
+	Cvar_Register(&context_sensitive_tab_completion_inputbox_color);
+	Cvar_Register(&context_sensitive_tab_completion_insert_slash);
 	Cmd_AddCommand("weight_enable", Weight_Enable_f);
 	Cmd_AddCommand("weight_disable", Weight_Disable_f);
 	Cmd_AddCommand("weight_set", Weight_Set_f);
