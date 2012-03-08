@@ -594,7 +594,6 @@ static int setup_current_command(void)
 
 int Context_Sensitive_Tab_Completion(void)
 {
-
 	if (context_sensitive_tab_completion_ignore_alt_tab.value == 1)
 		if (keydown[K_ALT])
 			return 0;
@@ -602,11 +601,8 @@ int Context_Sensitive_Tab_Completion(void)
 	if (setup_current_command())
 	{
 		context_sensitive_tab_completion_active = 1;
-	//	Com_Printf("Context sensitive active for %s\n", cst_info->name);
 		return 1;
 	}
-
-	//Com_Printf("Context sensitive not active\n");
 
 	return 0;
 }
@@ -718,8 +714,6 @@ static int match_compare(const void *a, const void *b)
 			w2 = 0;
 	}
 
-
-
 	return x->match - y->match + w2 *2 - w1 *2;
 }
 
@@ -748,7 +742,7 @@ static int setup_command_completion_data(struct cst_info *self)
 	for (cmd=cmd_functions; cmd; cmd=cmd->next)
 	{
 		add = 1;
-		if (self->tokenized_input->count == 1)
+		if (self->tokenized_input->count == 1 && 0)
 		{
 			if (strcmp(cmd->name, self->tokenized_input->tokens[0]) == 0)
 			{
@@ -777,7 +771,7 @@ static int setup_command_completion_data(struct cst_info *self)
 	for (alias=cmd_alias; alias; alias=alias->next)
 	{
 		add = 1;
-		if (self->tokenized_input->count == 1)
+		if (self->tokenized_input->count == 1 && 0)
 		{
 			if (strcmp(alias->name, self->tokenized_input->tokens[0]) == 0)
 			{
@@ -807,7 +801,7 @@ static int setup_command_completion_data(struct cst_info *self)
 	{
 		add = 1;
 
-		if (self->tokenized_input->count == 1)
+		if (self->tokenized_input->count == 1 && 0)
 		{
 			if (strcmp(var->name, self->tokenized_input->tokens[0]) == 0)
 			{
@@ -842,19 +836,6 @@ static int setup_command_completion_data(struct cst_info *self)
 		return -1;
 
 	cd = self->data;
-
-	/*
-
-	tlen = calloc(self->tokenized_input->count, sizeof(int));
-	if (tlen == NULL)
-	{
-		free(self->data);
-		return -1;
-	}
-
-	for (i =0; i<self->tokenized_input->count; i++)
-		tlen[i] = strlen(self->tokenized_input->tokens[i]);
-		*/
 
 	for (cmd=cmd_functions; cmd; cmd=cmd->next)
 	{
