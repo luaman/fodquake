@@ -34,6 +34,9 @@ cvar_t	context_sensitive_tab_completion_close_on_tab = {"context_sensitive_tab_c
 cvar_t	context_sensitive_tab_completion_sorting_method = {"context_sensitive_tab_completion_sorting_method", "1"};
 cvar_t	context_sensitive_tab_completion_show_results = {"context_sensitive_tab_completion_show_results", "1"};
 cvar_t	context_sensitive_tab_completion_ignore_alt_tab = {"context_sensitive_tab_completion_ignore_alt_tab", "1"};
+cvar_t	context_sensitive_tab_completion_background_color = {"context_sensitive_tab_background_color", "4"};
+cvar_t	context_sensitive_tab_completion_inputbox_color = {"context_sensitive_tab_completion_inputbox_color", "4"};
+cvar_t	context_sensitive_tab_completion_selected_color = {"context_sensitive_tab_selected_color", "40"};
 
 static void cleanup_cst(struct cst_info *info)
 {
@@ -243,7 +246,7 @@ static void CSTC_Draw(struct cst_info *self, int y_offset)
 	else
 		offset = y_offset - 14;
 
-	Draw_Fill(0, offset , vid.conwidth, 10, 4);
+	Draw_Fill(0, offset , vid.conwidth, 10, context_sensitive_tab_completion_inputbox_color.value);
 	Draw_String(8, offset, self->input);
 	Draw_String(8 + self->new_input->position * 8 , offset + 2, "_");
 
@@ -282,9 +285,9 @@ static void CSTC_Draw(struct cst_info *self, int y_offset)
 		if (self->result(self, NULL, i + result_offset, 1, &ptr))
 			break;
 		if (i + result_offset == self->selection)
-			Draw_Fill(0, offset + i * 8 * self->direction, vid.conwidth, 8, 40);
+			Draw_Fill(0, offset + i * 8 * self->direction, vid.conwidth, 8, context_sensitive_tab_completion_selected_color.value);
 		else
-			Draw_Fill(0, offset + i * 8 * self->direction, vid.conwidth, 8, 4);
+			Draw_Fill(0, offset + i * 8 * self->direction, vid.conwidth, 8, context_sensitive_tab_completion_background_color.value);
 
 		Draw_String(32, offset + i * 8 * self->direction, ptr);
 	}
@@ -1044,6 +1047,9 @@ void Context_Sensitive_Tab_Completion_CvarInit(void)
 	Cvar_Register(&context_sensitive_tab_completion_sorting_method);
 	Cvar_Register(&context_sensitive_tab_completion_show_results);
 	Cvar_Register(&context_sensitive_tab_completion_ignore_alt_tab);
+	Cvar_Register(&context_sensitive_tab_completion_background_color);
+	Cvar_Register(&context_sensitive_tab_completion_selected_color);
+	Cvar_Register(&context_sensitive_tab_completion_inputbox_color);
 	Cmd_AddCommand("weight_enable", Weight_Enable_f);
 	Cmd_AddCommand("weight_disable", Weight_Disable_f);
 	Cmd_AddCommand("weight_set", Weight_Set_f);
