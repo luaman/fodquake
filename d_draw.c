@@ -410,7 +410,7 @@ void Draw_DrawPictureAlpha(struct Picture *picture, int x, int y, unsigned int w
 	Draw_DrawPicture(picture, x, y, width, height);
 }
 
-void Draw_DrawSubPicture(struct Picture *picture, unsigned int sx, unsigned int sy, unsigned int swidth, unsigned int sheight, int x, int y, unsigned int width, unsigned int height)
+static void Draw_DrawSubPictureAbsolute(struct Picture *picture, unsigned int sx, unsigned int sy, unsigned int swidth, unsigned int sheight, int x, int y, unsigned int width, unsigned int height)
 {
 	int displayx;
 	int displayy;
@@ -430,6 +430,11 @@ void Draw_DrawSubPicture(struct Picture *picture, unsigned int sx, unsigned int 
 	{
 		Draw_DrawPictureScaled(picture, sx, sy, swidth, sheight, displayx, displayy, displaywidth, displayheight);
 	}
+}
+
+void Draw_DrawSubPicture(struct Picture *picture, float sx, float sy, float swidth, float sheight, int x, int y, unsigned int width, unsigned int height)
+{
+	Draw_DrawSubPictureAbsolute(picture, sx * picture->width, sy * picture->height, swidth * picture->width, sheight * picture->height, x, y, width, height);
 }
 
 void Draw_Fill(int x, int y, int width, int height, int c)

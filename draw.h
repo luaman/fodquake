@@ -61,7 +61,7 @@ unsigned int Draw_GetPictureWidth(struct Picture *);
 unsigned int Draw_GetPictureHeight(struct Picture *);
 void Draw_DrawPicture(struct Picture *, int x, int y, unsigned int width, unsigned int height);
 void Draw_DrawPictureAlpha(struct Picture *picture, int x, int y, unsigned int width, unsigned int height, float alpha);
-void Draw_DrawSubPicture(struct Picture *picture, unsigned int sx, unsigned int sy, unsigned int swidth, unsigned int sheight, int x, int y, unsigned int width, unsigned int height);
+void Draw_DrawSubPicture(struct Picture *picture, float sx, float sy, float swidth, float sheight, int x, int y, unsigned int width, unsigned int height);
 
 
 

@@ -383,7 +383,7 @@ void Draw_TileClear(int x, int y, int width, int height)
 			if (tilewidth > dstwidth)
 				tilewidth = dstwidth;
 
-			Draw_DrawSubPicture(backtilepic, xoffset, yoffset, tilewidth, tileheight, dstx, dsty, tilewidth, tileheight);
+			Draw_DrawSubPicture(backtilepic, ((double)xoffset)/64, ((double)yoffset)/64, ((double)tilewidth/64), ((double)tileheight)/64, dstx, dsty, tilewidth, tileheight);
 
 			dstx += tilewidth;
 			dstwidth -= tilewidth;
