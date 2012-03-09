@@ -186,10 +186,10 @@ void* Sys_Video_Open(const char *mode, unsigned int width, unsigned int height, 
 					}
 				}
 #else
-				d->ptr = malloc(width * height * 3);
+				d->ptr = (unsigned char*)malloc(d->width * d->height * 3);
 				if (d->ptr)
 				{					
-					d->buf = (unsigned char*)malloc(width * height);
+					d->buf = (unsigned char*)malloc(d->width * d->height);
 					if (d->buf)
 					{
 						[d->window useOptimizedDrawing:YES];
