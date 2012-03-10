@@ -20,7 +20,7 @@ struct display
 	unsigned int height;
 	
 #ifndef GLQUAKE
-	unsigned char *ptr;
+	unsigned char *rgb_buf;
 	unsigned char *buf;
 	unsigned char palette[256][3];
 #endif
@@ -186,8 +186,8 @@ void* Sys_Video_Open(const char *mode, unsigned int width, unsigned int height, 
 					}
 				}
 #else
-				d->ptr = (unsigned char*)malloc(d->width * d->height * 3);
-				if (d->ptr)
+				d->rgb_buf = (unsigned char*)malloc(d->width * d->height * 3);
+				if (d->rgb_buf)
 				{					
 					d->buf = (unsigned char*)malloc(d->width * d->height);
 					if (d->buf)
@@ -199,7 +199,7 @@ void* Sys_Video_Open(const char *mode, unsigned int width, unsigned int height, 
 						return d;
 					}
 					
-					free(d->ptr);
+					free(d->rgb_buf);
 				}
 #endif
 				Sys_Input_Shutdown(d->input);
@@ -225,7 +225,7 @@ void Sys_Video_Close(void *display)
 	[d->window close];
 	
 #ifndef GLQUAKE
-	free(d->ptr);
+	free(d->rgb_buf);
 	free(d->buf);
 #endif
 	
@@ -247,7 +247,7 @@ void Sys_Video_Update(void *display, vrect_t *rects)
 #else	
 	int i, j;
 	unsigned char *src = d->buf;	
-	unsigned char *dst = d->ptr;
+	unsigned char *dst = d->rgb_buf;
 	NSBitmapImageRep *img;
 	
 	for (i = 0; i < d->height; i++)
@@ -266,7 +266,7 @@ void Sys_Video_Update(void *display, vrect_t *rects)
 	[[d->window contentView] lockFocus];	
 	
 	img = [[NSBitmapImageRep alloc]
-			  initWithBitmapDataPlanes:&d->ptr
+			  initWithBitmapDataPlanes:&d->rgb_buf
 			  pixelsWide:d->width 
 			  pixelsHigh:d->height
 			  bitsPerSample:8 
