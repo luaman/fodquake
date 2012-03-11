@@ -14,10 +14,12 @@ struct cst_commands
 {
 	struct cst_commands *next;
 	char *name;
+	struct tokenized_string *commands;
 	int (*conditions)(void);
 	int (*result)(struct cst_info *self, int *results, int get_result, int result_type, char **result);
 	int (*get_data)(struct cst_info *self, int remove);
 	int parser_behaviour;
+	int flags;
 };
 
 struct cst_commands Command_Completion;
@@ -47,6 +49,9 @@ static void cleanup_cst(struct cst_info *info)
 	if (info->tokenized_input)
 		Tokenize_String_Delete(info->tokenized_input);
 
+	if (info->commands)
+		Tokenize_String_Delete(info->commands);
+
 	if (info->get_data)
 		info->get_data(info, 1);
 
@@ -68,7 +73,7 @@ static void CSTC_Cleanup(struct cst_info *self)
 	cleanup_cst(self);
 }
 
-void CSTC_Add(char *name, int (*conditions)(void), int (*result)(struct cst_info *self, int *results, int get_result, int result_type, char **result), int (*get_data)(struct cst_info *self, int remove), int parser_behaviour)
+void CSTC_Add(char *name, int (*conditions)(void), int (*result)(struct cst_info *self, int *results, int get_result, int result_type, char **result), int (*get_data)(struct cst_info *self, int remove), int parser_behaviour, int flags)
 {
 	struct cst_commands *command, *cc;
 	char *in;
@@ -103,6 +108,7 @@ void CSTC_Add(char *name, int (*conditions)(void), int (*result)(struct cst_info
 	command->result = result;
 	command->get_data = get_data;
 	command->parser_behaviour = parser_behaviour;
+	command->flags = flags;
 }
 
 static void Tokenize_Input(struct cst_info *self)
@@ -232,10 +238,12 @@ void Context_Sensitive_Tab_Completion_Key(int key)
 		return;
 	}
 
-	Text_Input_Handle_Key(cst_info->new_input, key);
-	
-	Tokenize_Input(cst_info);
-	cst_info->result(cst_info, &cst_info->results, 0, 0, NULL);
+	if (!(cst_info->flags & CSTC_NO_INPUT))
+	{
+		Text_Input_Handle_Key(cst_info->new_input, key);
+		Tokenize_Input(cst_info);
+		cst_info->result(cst_info, &cst_info->results, 0, 0, NULL);
+	}
 	return;
 }
 
@@ -250,11 +258,13 @@ static void CSTC_Draw(struct cst_info *self, int y_offset)
 	else
 		offset = y_offset - 14;
 
-	Draw_Fill(0, offset , vid.conwidth, 10, context_sensitive_tab_completion_inputbox_color.value);
-	Draw_String(8, offset, self->input);
-	Draw_String(8 + self->new_input->position * 8 , offset + 2, "_");
-
-	offset += 8 * self->direction;
+	if (!(self->flags & CSTC_NO_INPUT))
+	{
+		Draw_Fill(0, offset , vid.conwidth, 10, context_sensitive_tab_completion_inputbox_color.value);
+		Draw_String(8, offset, self->input);
+		Draw_String(8 + self->new_input->position * 8 , offset + 2, "_");
+		offset += 8 * self->direction;
+	}
 
 	if (self->direction == -1)
 		rows = offset / 8;
@@ -521,9 +531,7 @@ void read_info_new (char *string, int position, char **cmd_begin, int *cmd_len, 
 	printf("%*s%s\n", arg_start - string + 1, " ", "^");
 	printf("%*s%s\n", arg_stop - string + 1, " ", "^");
 	*/
-
 }
-
 
 static void setup_completion(struct cst_commands *cc, struct cst_info *c, int arg_start, int arg_len, int insert_space)
 {
@@ -533,6 +541,8 @@ static void setup_completion(struct cst_commands *cc, struct cst_info *c, int ar
 	memset(c, 0, sizeof(struct cst_info));
 
 	c->name = cc->name;
+	if (cc->flags & CSTC_MULTI_COMMAND)
+		commands = Tokenize_String(cc->name);
 	c->result = cc->result;
 	c->get_data = cc->get_data;
 	snprintf(c->input, sizeof(c->input), "%.*s", arg_len, key_lines[edit_line] + arg_start);
@@ -547,12 +557,12 @@ static void setup_completion(struct cst_commands *cc, struct cst_info *c, int ar
 	c->result(c, &c->results, 0, 0, NULL);
 	c->insert_space = insert_space;
 	c->parser_behaviour = cc->parser_behaviour;
-
+	c->flags = cc->flags;
 }
 
 static int setup_current_command(void)
 {
-	int cmd_len, arg_len, cursor_on_command, isinvalid;
+	int cmd_len, arg_len, cursor_on_command, isinvalid, i, dobreak;
 	char *cmd_start, *arg_start;
 	struct cst_commands *c;
 		
@@ -572,29 +582,50 @@ static int setup_current_command(void)
 
 		c = commands;
 
+		dobreak = 0;
 		while (c)
 		{
-			if (cmd_len == strlen(c->name) && strncasecmp(c->name, cmd_start, cmd_len) == 0)
+			if (c->flags & CSTC_MULTI_COMMAND)
 			{
-				if (c->conditions)
-					if (c->conditions() == 0)
-						return 0;
-
-				if (arg_start - key_lines[edit_line] - 1 == 0)
-					setup_completion(c, cst_info, cmd_start + cmd_len - key_lines[edit_line], arg_len, 1);
-				else
+				for (i=0; i<c->commands->count; i++)
 				{
-					if (c->parser_behaviour == 0)
-						setup_completion(c, cst_info, arg_start - key_lines[edit_line], arg_len, 0);
-					else
+					if (cmd_len == strlen(c->commands->tokens[i]) && strncasecmp(c->commands->tokens[i], cmd_start, cmd_len))
 					{
-						setup_completion(c, cst_info, cmd_start + cmd_len - key_lines[edit_line] + 1,  (arg_start - cmd_start) + arg_len-1, 0);
+						dobreak = 1;
+						break;
 					}
 				}
-				return 1;
 			}
+			else
+			{
+				if (cmd_len == strlen(c->name) && strncasecmp(c->name, cmd_start, cmd_len))
+					break;
+			}
+
+			if (dobreak)
+				break;
 			c = c->next;
 		}
+
+		if (c)
+		{
+			if (c->conditions)
+				if (c->conditions() == 0)
+					return 0;
+			if (arg_start - key_lines[edit_line] - 1 == 0)
+				setup_completion(c, cst_info, cmd_start + cmd_len - key_lines[edit_line], arg_len, 1);
+			else
+			{
+				if (c->parser_behaviour == 0)
+					setup_completion(c, cst_info, arg_start - key_lines[edit_line], arg_len, 0);
+				else
+				{
+					setup_completion(c, cst_info, cmd_start + cmd_len - key_lines[edit_line] + 1,  (arg_start - cmd_start) + arg_len-1, 0);
+				}
+			}
+			return 1;
+		}
+
 	}
 	return 0;
 }

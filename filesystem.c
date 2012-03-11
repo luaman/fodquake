@@ -777,14 +777,16 @@ static int cstc_skins_condition(void)
 
 void FS_Init()
 {
-	CSTC_Add("enemyskin", &cstc_skins_condition, &cstc_skins_get_results, &cstc_skins_get_data, 0);
-	CSTC_Add("enemyquadskin", &cstc_skins_condition, &cstc_skins_get_results, &cstc_skins_get_data, 0);
-	CSTC_Add("enemypentskin", &cstc_skins_condition, &cstc_skins_get_results, &cstc_skins_get_data, 0);
-	CSTC_Add("enemybothskin", &cstc_skins_condition, &cstc_skins_get_results, &cstc_skins_get_data, 0);
-	CSTC_Add("teamskin", &cstc_skins_condition, &cstc_skins_get_results, &cstc_skins_get_data, 0);
-	CSTC_Add("teamquadskin", &cstc_skins_condition, &cstc_skins_get_results, &cstc_skins_get_data, 0);
-	CSTC_Add("teampentskin", &cstc_skins_condition, &cstc_skins_get_results, &cstc_skins_get_data, 0);
-	CSTC_Add("teambothskin", &cstc_skins_condition, &cstc_skins_get_results, &cstc_skins_get_data, 0);
+	CSTC_Add("enemyskin enemyquadskin enemypentskin enemybothskin teamskin teamquadskin teampentskin teambothskin", &cstc_skins_condition, &cstc_skins_get_results, &cstc_skins_get_data, 0, CSTC_MULTI_COMMAND);
+	/*
+	CSTC_Add("enemyquadskin", &cstc_skins_condition, &cstc_skins_get_results, &cstc_skins_get_data, 0, 0);
+	CSTC_Add("enemypentskin", &cstc_skins_condition, &cstc_skins_get_results, &cstc_skins_get_data, 0, 0);
+	CSTC_Add("enemybothskin", &cstc_skins_condition, &cstc_skins_get_results, &cstc_skins_get_data, 0, 0);
+	CSTC_Add("teamskin", &cstc_skins_condition, &cstc_skins_get_results, &cstc_skins_get_data, 0, 0);
+	CSTC_Add("teamquadskin", &cstc_skins_condition, &cstc_skins_get_results, &cstc_skins_get_data, 0, 0);
+	CSTC_Add("teampentskin", &cstc_skins_condition, &cstc_skins_get_results, &cstc_skins_get_data, 0, 0);
+	CSTC_Add("teambothskin", &cstc_skins_condition, &cstc_skins_get_results, &cstc_skins_get_data, 0, 0);
+	*/
 	Cmd_AddCommand("path", FS_Path_f);
 }
 
