@@ -176,7 +176,10 @@ void Context_Sensitive_Tab_Completion_Key(int key)
 	if (context_sensitive_tab_completion_active == 0)
 		return;
 
-	i = cst_info->results;
+	if (cst_info->flags & CSTC_COLOR_SELECTOR)
+		i = 256;
+	else
+		i = cst_info->results;
 
 	if (key == K_ESCAPE)
 	{
@@ -191,30 +194,104 @@ void Context_Sensitive_Tab_Completion_Key(int key)
 		return;
 	}
 
-	if (key == K_UPARROW)
+	if (cst_info->flags & CSTC_COLOR_SELECTOR)
 	{
-		if (cst_info->direction == 1)
-			cst_info->selection--;
-		else
-			cst_info->selection++;
-		if (cst_info->selection < 0)
-			cst_info->selection = i-1;
-		if (cst_info->selection >= i)
-			cst_info->selection = 0;
-		return;
-	}
+		if (key == K_LEFTARROW)
+		{
+			if (cst_info->direction == 1)
+				cst_info->selection++;
+			else
+				cst_info->selection--;
+			if (cst_info->selection < 0)
+				cst_info->selection = i-1;
+			if (cst_info->selection >= i)
+				cst_info->selection = 0;
+			return;
+		}
 
-	if (key == K_DOWNARROW)
+		if (key == K_RIGHTARROW)
+		{
+			if (cst_info->direction == 1)
+				cst_info->selection--;
+			else
+				cst_info->selection++;
+			if (cst_info->selection < 0)
+				cst_info->selection = i-1;
+			if (cst_info->selection >= i)
+				cst_info->selection = 0;
+			return;
+		}
+
+		if (key == K_UPARROW)
+		{
+			if (cst_info->direction == 1)
+				cst_info->selection -= 16;
+			else
+				cst_info->selection += 16;
+
+			if (cst_info->selection < 0)
+				cst_info->selection = i-1;
+			if (cst_info->selection >= i)
+				cst_info->selection = 0;
+			return;
+		}
+
+		if (key == K_DOWNARROW)
+		{
+			if (cst_info->direction == 1)
+				cst_info->selection += 16;
+			else
+				cst_info->selection -= 16;
+			if (cst_info->selection < 0)
+				cst_info->selection = i-1;
+			if (cst_info->selection >= i)
+				cst_info->selection = 0;
+			return;
+		}
+
+		if (cst_info->flags & CSTC_PLAYER_COLOR_SELECTOR)
+		{
+			if (key == '1')
+			{
+				cst_info->color[0] = cst_info->selection;
+				return;
+			}
+
+			if (key == '2')
+			{
+				cst_info->color[1] = cst_info->selection;
+				return;
+			}
+
+		}
+	}
+	else
 	{
-		if (cst_info->direction == 1)
-			cst_info->selection++;
-		else
-			cst_info->selection--;
-		if (cst_info->selection < 0)
-			cst_info->selection = i-1;
-		if (cst_info->selection >= i)
-			cst_info->selection = 0;
-		return;
+		if (key == K_UPARROW)
+		{
+			if (cst_info->direction == 1)
+				cst_info->selection--;
+			else
+				cst_info->selection++;
+			if (cst_info->selection < 0)
+				cst_info->selection = i-1;
+			if (cst_info->selection >= i)
+				cst_info->selection = 0;
+			return;
+		}
+
+		if (key == K_DOWNARROW)
+		{
+			if (cst_info->direction == 1)
+				cst_info->selection++;
+			else
+				cst_info->selection--;
+			if (cst_info->selection < 0)
+				cst_info->selection = i-1;
+			if (cst_info->selection >= i)
+				cst_info->selection = 0;
+			return;
+		}
 	}
 
 	if (key == K_TAB)
@@ -237,7 +314,7 @@ void Context_Sensitive_Tab_Completion_Key(int key)
 		return;
 	}
 
-	if (!(cst_info->flags & CSTC_NO_INPUT))
+	if (!(cst_info->flags & CSTC_NO_INPUT) && !(cst_info->flags & CSTC_COLOR_SELECTOR))
 	{
 		Text_Input_Handle_Key(cst_info->new_input, key);
 		Tokenize_Input(cst_info);
@@ -248,7 +325,7 @@ void Context_Sensitive_Tab_Completion_Key(int key)
 
 static void CSTC_Draw(struct cst_info *self, int y_offset)
 {
-	int i, result_offset, offset, rows, sup, sdown;
+	int i, result_offset, offset, rows, sup, sdown, x, y, pos_x, pos_y, sp_x[3], sp_y[3];
 	char *ptr;
 	char buf[128];
 
@@ -257,7 +334,7 @@ static void CSTC_Draw(struct cst_info *self, int y_offset)
 	else
 		offset = y_offset - 14;
 
-	if (!(self->flags & CSTC_NO_INPUT))
+	if (!(self->flags & CSTC_NO_INPUT) && !(self->flags & CSTC_COLOR_SELECTOR))
 	{
 		Draw_Fill(0, offset , vid.conwidth, 10, context_sensitive_tab_completion_inputbox_color.value);
 		Draw_String(8, offset, self->input);
@@ -293,32 +370,73 @@ static void CSTC_Draw(struct cst_info *self, int y_offset)
 		}
 	}
 
-	for (i=0, ptr = NULL; i<rows; i++)
+	if (self->flags & CSTC_COLOR_SELECTOR)
 	{
-		if (self->result(self, NULL, i + result_offset, 1, &ptr))
-			break;
-		if (i + result_offset == self->selection)
-			Draw_Fill(0, offset + i * 8 * self->direction, vid.conwidth, 8, context_sensitive_tab_completion_selected_color.value);
-		else
-			Draw_Fill(0, offset + i * 8 * self->direction, vid.conwidth, 8, context_sensitive_tab_completion_background_color.value);
+		for (x=0; x<16; x++)
+		{
+			for (y=0; y<16; y++)
+			{
+				pos_x = vid.displaywidth/4 - 8 * 8;
+				pos_x += x *8;
+				pos_y = offset + y * 8 * self->direction;
+				Draw_Fill(pos_x, pos_y, 8, 8, x + y * 16);
+				if (self->flags & CSTC_PLAYER_COLOR_SELECTOR)
+				{
+					if (self->color[0] == x + y * 16)
+					{
+						sp_x[0] = pos_x;
+						sp_y[0] = pos_y;
+					}
+					if (self->color[1] == x + y * 16)
+					{
+						sp_x[1] = pos_x;
+						sp_y[1] = pos_y;
+					}
+				}
+				if (self->selection == x + y * 16)
+				{
+					sp_x[2] = pos_x;
+					sp_y[2] = pos_y;
+				}
+			}
+		}
+		if (self->flags & CSTC_PLAYER_COLOR_SELECTOR)
+		{
+			Draw_String(sp_x[0] , sp_y[0] , "1");
+			Draw_String(sp_x[1]  , sp_y[1] , "2");
+		}
 
-		Draw_String(32, offset + i * 8 * self->direction, ptr);
+		Draw_String(sp_x[2]  , sp_y[2] , "x");
 	}
-
-	if (sup)
+	else
 	{
-		Draw_String(8, offset + (rows - 1) * 8 * self->direction, "^");
-	}
+		for (i=0, ptr = NULL; i<rows; i++)
+		{
+			if (self->result(self, NULL, i + result_offset, 1, &ptr))
+				break;
+			if (i + result_offset == self->selection)
+				Draw_Fill(0, offset + i * 8 * self->direction, vid.conwidth, 8, context_sensitive_tab_completion_selected_color.value);
+			else
+				Draw_Fill(0, offset + i * 8 * self->direction, vid.conwidth, 8, context_sensitive_tab_completion_background_color.value);
 
-	if (sdown)
-	{
-		Draw_String(8, offset + 8 * self->direction, "v");
-	}
+			Draw_String(32, offset + i * 8 * self->direction, ptr);
+		}
 
-	if (rows < self->results && context_sensitive_tab_completion_show_results.value == 1)
-	{
-		sprintf(buf, "showing %i of %i results", rows, self->results);
-		Draw_String(vid.conwidth - strlen(buf) * 8, offset, buf);
+		if (sup)
+		{
+			Draw_String(8, offset + (rows - 1) * 8 * self->direction, "^");
+		}
+
+		if (sdown)
+		{
+			Draw_String(8, offset + 8 * self->direction, "v");
+		}
+
+		if (rows < self->results && context_sensitive_tab_completion_show_results.value == 1)
+		{
+			sprintf(buf, "showing %i of %i results", rows, self->results);
+			Draw_String(vid.conwidth - strlen(buf) * 8, offset, buf);
+		}
 	}
 }
 
@@ -577,10 +695,9 @@ static int setup_current_command(void)
 
 	if (cmd_start && arg_start)
 	{
-
 		c = commands;
-
 		dobreak = 0;
+
 		while (c)
 		{
 			if (c->flags & CSTC_MULTI_COMMAND)
@@ -623,7 +740,6 @@ static int setup_current_command(void)
 			}
 			return 1;
 		}
-
 	}
 	return 0;
 }
@@ -1069,6 +1185,28 @@ void Weight_Set_f(void)
 	}
 }
 
+static int Player_Color_Selector_Result(struct cst_info *self, int *results, int get_result, int result_type, char **result)
+{
+	if (result)
+	{
+		*result = va("%i %i", self->color[0], self->color[1]);
+		return 0;
+	}
+
+	return 1;
+}
+
+static int Color_Selector_Result(struct cst_info *self, int *results, int get_result, int result_type, char **result)
+{
+	if (result)
+	{
+		*result = va("%i", get_result);
+		return 0;
+	}
+
+	return 1;
+}
+
 void Context_Sensitive_Tab_Completion_CvarInit(void)
 {
 	Command_Completion.name = "Command_Completion";
@@ -1087,6 +1225,8 @@ void Context_Sensitive_Tab_Completion_CvarInit(void)
 	Cmd_AddCommand("weight_enable", Weight_Enable_f);
 	Cmd_AddCommand("weight_disable", Weight_Disable_f);
 	Cmd_AddCommand("weight_set", Weight_Set_f);
+	CSTC_Add("enemycolor teamcolor", NULL, &Player_Color_Selector_Result, NULL, 0, CSTC_COLOR_SELECTOR | CSTC_PLAYER_COLOR_SELECTOR | CSTC_MULTI_COMMAND);
+	CSTC_Add("context_sensitive_tab_completion_inputbox_color context_sensitive_tab_completion_selected_color context_sensitive_tab_completion_background_color sb_color_bg sb_color_bg_empty sb_color_bg_free sb_color_bg_specable sb_color_bg_full sb_highlight_sort_column_color topcolor bottomcolor r_skycolor", NULL, &Color_Selector_Result, NULL, 0, CSTC_COLOR_SELECTOR | CSTC_MULTI_COMMAND);
 }
 
 void Context_Weighting_Init(void)

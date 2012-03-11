@@ -1,6 +1,7 @@
-#define CSTC_NO_INPUT			( 1 << 0)
-#define CSTC_COLOR_SELECTOR		( 1 << 1)
-#define CSTC_MULTI_COMMAND		( 1 << 2)
+#define CSTC_NO_INPUT					( 1 << 0)
+#define CSTC_COLOR_SELECTOR				( 1 << 1)
+#define CSTC_PLAYER_COLOR_SELECTOR		( 1 << 2)
+#define CSTC_MULTI_COMMAND				( 1 << 3)
 
 #define INPUT_MAX 512
 struct cst_info
@@ -18,6 +19,7 @@ struct cst_info
 	int flags;
 
 	// internal use of result and get_data
+	int color[2];
 	qboolean *checked;
 	int initialized;
 	int count;
