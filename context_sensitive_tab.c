@@ -49,9 +49,6 @@ static void cleanup_cst(struct cst_info *info)
 	if (info->tokenized_input)
 		Tokenize_String_Delete(info->tokenized_input);
 
-	if (info->commands)
-		Tokenize_String_Delete(info->commands);
-
 	if (info->get_data)
 		info->get_data(info, 1);
 
@@ -109,6 +106,8 @@ void CSTC_Add(char *name, int (*conditions)(void), int (*result)(struct cst_info
 	command->get_data = get_data;
 	command->parser_behaviour = parser_behaviour;
 	command->flags = flags;
+	if (flags & CSTC_MULTI_COMMAND)
+		command->commands = Tokenize_String(command->name);
 }
 
 static void Tokenize_Input(struct cst_info *self)
@@ -541,8 +540,7 @@ static void setup_completion(struct cst_commands *cc, struct cst_info *c, int ar
 	memset(c, 0, sizeof(struct cst_info));
 
 	c->name = cc->name;
-	if (cc->flags & CSTC_MULTI_COMMAND)
-		commands = Tokenize_String(cc->name);
+	c->commands = cc->commands;
 	c->result = cc->result;
 	c->get_data = cc->get_data;
 	snprintf(c->input, sizeof(c->input), "%.*s", arg_len, key_lines[edit_line] + arg_start);
@@ -589,7 +587,7 @@ static int setup_current_command(void)
 			{
 				for (i=0; i<c->commands->count; i++)
 				{
-					if (cmd_len == strlen(c->commands->tokens[i]) && strncasecmp(c->commands->tokens[i], cmd_start, cmd_len))
+					if (cmd_len == strlen(c->commands->tokens[i]) && strncasecmp(c->commands->tokens[i], cmd_start, cmd_len) == 0)
 					{
 						dobreak = 1;
 						break;
@@ -598,7 +596,7 @@ static int setup_current_command(void)
 			}
 			else
 			{
-				if (cmd_len == strlen(c->name) && strncasecmp(c->name, cmd_start, cmd_len))
+				if (cmd_len == strlen(c->name) && strncasecmp(c->name, cmd_start, cmd_len) == 0)
 					break;
 			}
 
