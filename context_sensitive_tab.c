@@ -198,10 +198,7 @@ void Context_Sensitive_Tab_Completion_Key(int key)
 	{
 		if (key == K_LEFTARROW)
 		{
-			if (cst_info->direction == 1)
-				cst_info->selection++;
-			else
-				cst_info->selection--;
+			cst_info->selection--;
 			if (cst_info->selection < 0)
 				cst_info->selection = i-1;
 			if (cst_info->selection >= i)
@@ -211,10 +208,7 @@ void Context_Sensitive_Tab_Completion_Key(int key)
 
 		if (key == K_RIGHTARROW)
 		{
-			if (cst_info->direction == 1)
-				cst_info->selection--;
-			else
-				cst_info->selection++;
+			cst_info->selection++;
 			if (cst_info->selection < 0)
 				cst_info->selection = i-1;
 			if (cst_info->selection >= i)
