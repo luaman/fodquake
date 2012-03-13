@@ -266,16 +266,16 @@ void Sys_Video_Update(void *display, vrect_t *rects)
 	[[d->window contentView] lockFocus];	
 	
 	img = [[NSBitmapImageRep alloc]
-			  initWithBitmapDataPlanes:&d->rgb_buf
-			  pixelsWide:d->width 
-			  pixelsHigh:d->height
-			  bitsPerSample:8 
-			  samplesPerPixel:3 
-			  hasAlpha:NO 
-			  isPlanar:NO 
-			  colorSpaceName:@"NSCalibratedRGBColorSpace" 
-			  bytesPerRow:0 
-			  bitsPerPixel:0];
+		   initWithBitmapDataPlanes:&d->rgb_buf
+		   pixelsWide:d->width
+		   pixelsHigh:d->height
+		   bitsPerSample:8
+		   samplesPerPixel:3
+		   hasAlpha:NO
+		   isPlanar:NO
+		   colorSpaceName:@"NSCalibratedRGBColorSpace"
+		   bytesPerRow:d->width * 3;
+		   bitsPerPixel:0];
 	
 	[img draw];
 	[img release];
