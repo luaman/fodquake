@@ -188,12 +188,9 @@ static void Skin_UncacheAll()
 	int i;
 
 	for (i = 0; i < numskins; i++)
-	{
-		if (skins[i].data)
-			free(skins[i].data);
-	}
-	numskins = 0;
+		free(skins[i].data);
 
+	numskins = 0;
 }
 
 void Skin_NextDownload(void)
@@ -283,13 +280,7 @@ void Skin_Reload()
 	player_info_t *sc;
 	int i;
 
-	for(i=0;i<numskins;i++)
-	{
-		if (skins[i].data)
-			free(skins[i].data);
-	}
-			
-	numskins = 0;
+	Skin_UncacheAll();
 
 	for(i=0;i<MAX_CLIENTS;i++)
 	{
