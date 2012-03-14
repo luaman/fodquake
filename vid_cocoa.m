@@ -22,6 +22,7 @@ struct display
 #ifndef GLQUAKE
 	unsigned char *rgb_buf;
 	unsigned char *buf;
+	unsigned int rowbytes;
 	unsigned char palette[256][3];
 #endif
 };
@@ -186,11 +187,34 @@ void* Sys_Video_Open(const char *mode, unsigned int width, unsigned int height, 
 					}
 				}
 #else
-				d->rgb_buf = (unsigned char*)malloc(d->width * d->height * 3);
-				if (d->rgb_buf)
-				{					
-					d->buf = (unsigned char*)malloc(d->width * d->height);
-					if (d->buf)
+				d->buf = (unsigned char*)malloc(d->width * d->height);
+				if (d->buf)
+				{
+					NSBitmapImageRep *img = [[NSBitmapImageRep alloc]
+						initWithBitmapDataPlanes:&d->buf
+						pixelsWide:d->width
+						pixelsHigh:d->height
+						bitsPerSample:8
+						samplesPerPixel:3
+						hasAlpha:NO
+						isPlanar:NO
+						colorSpaceName:@"NSDeviceRGBColorSpace"
+						bytesPerRow:0
+						bitsPerPixel:0];
+					
+					if (img)
+					{
+						d->rowbytes = [img bytesPerRow];
+						
+						[img release];
+					}
+					else
+					{
+						d->rowbytes = d->width * 3;
+					}
+					
+					d->rgb_buf = (unsigned char*)malloc(d->rowbytes * d->height);
+					if (d->rgb_buf)				
 					{
 						[d->window useOptimizedDrawing:YES];
 						[d->window makeKeyAndOrderFront:nil];
@@ -199,7 +223,7 @@ void* Sys_Video_Open(const char *mode, unsigned int width, unsigned int height, 
 						return d;
 					}
 					
-					free(d->rgb_buf);
+					free(d->buf);
 				}
 #endif
 				Sys_Input_Shutdown(d->input);
@@ -261,21 +285,23 @@ void Sys_Video_Update(void *display, vrect_t *rects)
 			src++;
 			dst += 3;
 		}
+		
+		dst += d->rowbytes - d->width * 3;
 	}
 
 	[[d->window contentView] lockFocus];	
 	
 	img = [[NSBitmapImageRep alloc]
-		   initWithBitmapDataPlanes:&d->rgb_buf
-		   pixelsWide:d->width
-		   pixelsHigh:d->height
-		   bitsPerSample:8
-		   samplesPerPixel:3
-		   hasAlpha:NO
-		   isPlanar:NO
-		   colorSpaceName:@"NSCalibratedRGBColorSpace"
-		   bytesPerRow:d->width * 3;
-		   bitsPerPixel:0];
+		initWithBitmapDataPlanes:&d->rgb_buf
+		pixelsWide:d->width
+		pixelsHigh:d->height
+		bitsPerSample:8
+		samplesPerPixel:3
+		hasAlpha:NO
+		isPlanar:NO
+		colorSpaceName:@"NSDeviceRGBColorSpace"
+		bytesPerRow:0
+		bitsPerPixel:0];
 	
 	[img draw];
 	[img release];
