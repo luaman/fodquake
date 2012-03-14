@@ -28,24 +28,28 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "netqw.h"
 #endif
 
-cvar_t	baseskin = {"baseskin", "base"};
-cvar_t	noskins = {"noskins", "0"};
+cvar_t baseskin = {"baseskin", "base"};
+cvar_t noskins = {"noskins", "0"};
 
-char	allskins[MAX_OSPATH];
+char allskins[MAX_OSPATH];
 
 #define	MAX_CACHED_SKINS	128
-skin_t	skins[MAX_CACHED_SKINS];
+skin_t skins[MAX_CACHED_SKINS];
 
-int		numskins;
+int numskins;
 
-char *Skin_FindName (player_info_t *sc) {
+char *Skin_FindName(player_info_t *sc)
+{
 	int tracknum;
 	char *s;
 	static char name[MAX_OSPATH];
 
-	if (allskins[0]) {
+	if (allskins[0])
+	{
 		Q_strncpyz(name, allskins, sizeof(name));
-	} else {
+	}
+	else
+	{
 		s = Info_ValueForKey(sc->userinfo, "skin");
 		if (s && s[0])
 			Q_strncpyz(name, s, sizeof(name));
@@ -58,7 +62,8 @@ char *Skin_FindName (player_info_t *sc) {
 	else if (!cl.spectator)
 		skinforcing_team = cl.players[cl.playernum].team;
 
-	if (!cl.teamfortress && !(cl.fpd & FPD_NO_FORCE_SKIN)) {
+	if (!cl.teamfortress && !(cl.fpd & FPD_NO_FORCE_SKIN))
+	{
 		char *skinname = NULL;
 		player_state_t *state;
 		qboolean teammate;
@@ -94,7 +99,8 @@ char *Skin_FindName (player_info_t *sc) {
 }
 
 //Determines the best skin for the given scoreboard slot, and sets scoreboard->skin
-void Skin_Find (player_info_t *sc) {
+void Skin_Find(player_info_t *sc)
+{
 	skin_t *skin;
 	int i;
 	char name[MAX_OSPATH];
@@ -102,15 +108,18 @@ void Skin_Find (player_info_t *sc) {
 	Q_strncpyz(name, Skin_FindName(sc), sizeof(name));
 	COM_StripExtension(name, name);
 
-	for (i = 0; i < numskins; i++) {
-		if (!strcmp(name, skins[i].name)) {
+	for (i = 0; i < numskins; i++)
+	{
+		if (!strcmp(name, skins[i].name))
+		{
 			sc->skin = &skins[i];
 			Skin_Cache(sc->skin);
 			return;
 		}
 	}
 
-	if (numskins == MAX_CACHED_SKINS) {	// ran out of spots, so flush everything
+	if (numskins == MAX_CACHED_SKINS)	// ran out of spots, so flush everything
+	{
 		Skin_Skins_f();
 		return;
 	}
@@ -124,7 +133,7 @@ void Skin_Find (player_info_t *sc) {
 }
 
 //Returns a pointer to the skin bitmap, or NULL to use the default
-byte *Skin_Cache (skin_t *skin)
+byte *Skin_Cache(skin_t *skin)
 {
 	int y;
 	byte *pic, *out, *pix;
@@ -142,14 +151,14 @@ byte *Skin_Cache (skin_t *skin)
 		return skin->data;
 
 	// load the pic from disk
-	Q_snprintfz (name, sizeof(name), "skins/%s.pcx", skin->name);
+	Q_snprintfz(name, sizeof(name), "skins/%s.pcx", skin->name);
 	if (!(pic = Image_LoadPCX(NULL, name, 0, 0, &imagewidth, &imageheight)) || imagewidth > 320 || imageheight > 200)
 	{
 		free(pic);
 
-		Com_Printf ("Couldn't load skin %s\n", name);
+		Com_Printf("Couldn't load skin %s\n", name);
 
-		Q_snprintfz (name, sizeof(name), "skins/%s.pcx", baseskin.string);
+		Q_snprintfz(name, sizeof(name), "skins/%s.pcx", baseskin.string);
 		if (!(pic = Image_LoadPCX (NULL, name, 0, 0, &imagewidth, &imageheight)) || imagewidth > 320 || imageheight > 200)
 		{
 			free(pic);
@@ -164,11 +173,11 @@ byte *Skin_Cache (skin_t *skin)
 
 	skin->data = out;
 
-	memset (out, 0, 320 * 200);
+	memset(out, 0, 320 * 200);
 	for (y = 0; y < imageheight; y++, pix += 320)
-		memcpy (pix, pic + y * imagewidth, imagewidth);
+		memcpy(pix, pic + y * imagewidth, imagewidth);
 
-	free (pic);
+	free(pic);
 	skin->failedload = false;
 
 	return out;
@@ -179,12 +188,9 @@ static void Skin_UncacheAll()
 	int i;
 
 	for (i = 0; i < numskins; i++)
-	{
-		if (skins[i].data)
-			free(skins[i].data);
-	}
-	numskins = 0;
+		free(skins[i].data);
 
+	numskins = 0;
 }
 
 void Skin_NextDownload(void)
@@ -236,14 +242,15 @@ void Skin_NextDownload(void)
 				NetQW_AppendReliableBuffer(cls.netqw, buf, i + 1);
 		}
 #else
-		MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
-		MSG_WriteString (&cls.netchan.message, va("begin %i", cl.servercount));
+		MSG_WriteByte(&cls.netchan.message, clc_stringcmd);
+		MSG_WriteString(&cls.netchan.message, va("begin %i", cl.servercount));
 #endif
 	}
 }
 
 //Refind all skins, downloading if needed.
-void Skin_Skins_f (void) {
+void Skin_Skins_f(void)
+{
 	Skin_UncacheAll();
 
 	cls.downloadnumber = 0;
@@ -252,16 +259,19 @@ void Skin_Skins_f (void) {
 }
 
 //Sets all skins to one specific one
-void Skin_AllSkins_f (void) {
-	if (Cmd_Argc() == 1) {
+void Skin_AllSkins_f(void)
+{
+	if (Cmd_Argc() == 1)
+	{
 		Com_Printf("allskins set to \"%s\"\n", allskins);
 		return;
 	}
-	if (Cmd_Argc() != 2) {
+	if (Cmd_Argc() != 2)
+	{
 		Com_Printf("Usage: %s [skin]\n", Cmd_Argv(0));
 		return;
 	}
-	Q_strncpyz (allskins, Cmd_Argv(1), sizeof(allskins));
+	Q_strncpyz(allskins, Cmd_Argv(1), sizeof(allskins));
 	Skin_Skins_f();
 }
 
@@ -270,13 +280,7 @@ void Skin_Reload()
 	player_info_t *sc;
 	int i;
 
-	for(i=0;i<numskins;i++)
-	{
-		if (skins[i].data)
-			free(skins[i].data);
-	}
-			
-	numskins = 0;
+	Skin_UncacheAll();
 
 	for(i=0;i<MAX_CLIENTS;i++)
 	{
