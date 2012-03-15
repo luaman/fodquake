@@ -636,7 +636,9 @@ void V_UpdatePalette(qboolean force_update)
 	VID_SetPalette(current_pal);
 }
 
-unsigned char V_LookUpColour(float r, float g, float b)
+#endif	// !GLQUAKE
+
+static unsigned char V_LookUpColourInternal(float r, float g, float b, unsigned int maxindex)
 {
 	double bestdistance;
 	double distance;
@@ -650,7 +652,7 @@ unsigned char V_LookUpColour(float r, float g, float b)
 	g = g * 255 + 0.5;
 	b = b * 255 + 0.5;
 
-	for(i=0;i<256;i++)
+	for(i=0;i<maxindex;i++)
 	{
 		distance = sqrt(pow(r-host_basepal[i*3+0], 2) + pow(g-host_basepal[i*3+1], 2) + pow(b-host_basepal[i*3+2], 2));
 		if (distance < bestdistance)
@@ -663,7 +665,15 @@ unsigned char V_LookUpColour(float r, float g, float b)
 	return bestfit;
 }
 
-#endif	// !GLQUAKE
+unsigned char V_LookUpColour(float r, float g, float b)
+{
+	return V_LookUpColourInternal(r, g, b, 256);
+}
+
+unsigned char V_LookUpColourNoFullbright(float r, float g, float b)
+{
+	return V_LookUpColourInternal(r, g, b, 224);
+}
 
 /*
 ==============================================================================
