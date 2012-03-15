@@ -770,6 +770,76 @@ struct directory_list *Util_Dir_Read(char *dir, int recursive, int remove_dirs, 
 	return dlist;
 }
 
+int ParseColourDescription(const char *source, float *rgb)
+{
+	unsigned int i;
+	char *desc;
+	char descarray[64];
+	char tempstr[64];
+	char *p;
+	char *endptr;
+
+	for(i=0;source[i] && source[i] != ' ' && i+1 < sizeof(descarray);i++)
+	{
+		if (source[i] >= 'A' && source[i] <= 'Z')
+			descarray[i] = 'a' + (source[i] - 'A');
+		else
+			descarray[i] = source[i];
+	}
+
+	descarray[i] = 0;
+
+	desc = descarray;
+
+	if (desc[0] == 'r'
+	 && desc[1] == 'g'
+	 && desc[2] == 'b'
+	 && desc[3] == ':')
+	{
+		desc += 4;
+
+		if ((p = strchr(desc, ',')) && p != desc)
+		{
+			memcpy(tempstr, desc, p-desc);
+			tempstr[p-desc] = 0;
+
+			rgb[0] = strtod(tempstr, &endptr);
+			if (endptr == tempstr + (p - desc))
+			{
+				desc = p + 1;
+
+				if ((p = strchr(desc, ',')) && p != desc)
+				{
+					memcpy(tempstr, desc, p-desc);
+					tempstr[p-desc] = 0;
+
+					rgb[1] = strtod(tempstr, &endptr);
+					if (endptr == tempstr + (p - desc))
+					{
+						desc = p + 1;
+
+						p = desc + strlen(desc);
+
+						if (p != desc)
+						{
+							memcpy(tempstr, desc, p-desc);
+							tempstr[p-desc] = 0;
+
+							rgb[2] = strtod(tempstr, &endptr);
+							if (endptr == tempstr + (p - desc))
+							{
+								return 1;
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	return 0;
+}
+
 int Colored_String_Length(char *string)
 {
         char *ptr;

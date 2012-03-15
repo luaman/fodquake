@@ -27,6 +27,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifdef NETQW
 #include "netqw.h"
 #endif
+#include "utils.h"
 
 cvar_t baseskin = {"baseskin", "base"};
 cvar_t noskins = {"noskins", "0"};
@@ -139,6 +140,8 @@ byte *Skin_Cache(skin_t *skin)
 	byte *pic, *out, *pix;
 	char name[MAX_OSPATH];
 	int imagewidth, imageheight;
+	float rgb[3];
+	unsigned char clearvalue;
 
 	if (cls.downloadtype == dl_skin)
 		return NULL;		// use base until downloaded
@@ -150,21 +153,33 @@ byte *Skin_Cache(skin_t *skin)
 	if (skin->data)
 		return skin->data;
 
-	// load the pic from disk
-	Q_snprintfz(name, sizeof(name), "skins/%s.pcx", skin->name);
-	if (!(pic = Image_LoadPCX(NULL, name, 0, 0, &imagewidth, &imageheight)) || imagewidth > 320 || imageheight > 200)
+	if (ParseColourDescription(skin->name, rgb))
 	{
-		free(pic);
+		clearvalue = V_LookUpColourNoFullbright(rgb[0], rgb[1], rgb[2]);
+		imagewidth = 0;
+		imageheight = 0;
+		pic = 0;
+	}
+	else
+	{
+		clearvalue = 0;
 
-		Com_Printf("Couldn't load skin %s\n", name);
-
-		Q_snprintfz(name, sizeof(name), "skins/%s.pcx", baseskin.string);
-		if (!(pic = Image_LoadPCX (NULL, name, 0, 0, &imagewidth, &imageheight)) || imagewidth > 320 || imageheight > 200)
+		// load the pic from disk
+		Q_snprintfz(name, sizeof(name), "skins/%s.pcx", skin->name);
+		if (!(pic = Image_LoadPCX(NULL, name, 0, 0, &imagewidth, &imageheight)) || imagewidth > 320 || imageheight > 200)
 		{
 			free(pic);
 
-			skin->failedload = true;
-			return NULL;
+			Com_Printf("Couldn't load skin %s\n", name);
+
+			Q_snprintfz(name, sizeof(name), "skins/%s.pcx", baseskin.string);
+			if (!(pic = Image_LoadPCX (NULL, name, 0, 0, &imagewidth, &imageheight)) || imagewidth > 320 || imageheight > 200)
+			{
+				free(pic);
+
+				skin->failedload = true;
+				return NULL;
+			}
 		}
 	}
 
@@ -173,9 +188,12 @@ byte *Skin_Cache(skin_t *skin)
 
 	skin->data = out;
 
-	memset(out, 0, 320 * 200);
-	for (y = 0; y < imageheight; y++, pix += 320)
-		memcpy(pix, pic + y * imagewidth, imagewidth);
+	memset(out, clearvalue, 320 * 200);
+	if (imagewidth && imageheight)
+	{
+		for (y = 0; y < imageheight; y++, pix += 320)
+			memcpy(pix, pic + y * imagewidth, imagewidth);
+	}
 
 	free(pic);
 	skin->failedload = false;
