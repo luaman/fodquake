@@ -756,11 +756,11 @@ static void Sbar_DrawInventory (void)
 			if (headsup)
 			{
 				if (i || vid.conheight > 200)
-					Sbar_DrawPic(hudswap ? 0 : vid.conwidth - 24,-68 - (7 - i) * 16, sb_weapons[flashon][i], 24, 16);
+					Sbar_DrawPic((hudswap ? 0 : vid.conwidth - 24) - sbar_xofs,-68 - (7 - i) * 16, sb_weapons[flashon][i], 24, 16);
 			}
 			else
 			{
-				Sbar_DrawPic(i * 24, -16, sb_weapons[flashon][i], i==6?48:24, 16);
+				Sbar_DrawPic(i * 24 - sbar_xofs, -16, sb_weapons[flashon][i], i==6?48:24, 16);
 			}
 
 			if (flashon > 1)
