@@ -5,13 +5,13 @@
   <key>CFBundleGetInfoString</key>
   <string>Fodquake</string>
   <key>CFBundleExecutable</key>
-  <string>fodquake-gl</string>
+  <string>fodquake-FODQUAKERENDERER</string>
   <key>CFBundleIdentifier</key>
   <string>net.fodquake.www</string>
   <key>CFBundleName</key>
   <string>Fodquake</string>
   <key>CFBundleIconFile</key>
-  <string>fodquake-gl.icns</string>
+  <string>fodquake-FODQUAKERENDERER.icns</string>
   <key>CFBundleShortVersionString</key>
   <string>0.01</string>
   <key>CFBundleInfoDictionaryVersion</key>
