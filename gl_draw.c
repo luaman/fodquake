@@ -39,8 +39,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 struct Picture
 {
 	int texnum;
-	float invwidth;
-	float invheight;
+	unsigned int width;
+	unsigned int height;
+	float glwidthscale;
+	float glheightscale;
 
 	float texcoords[4*2];
 };
@@ -1185,8 +1187,10 @@ struct Picture *Draw_LoadPicture(const char *name, enum Draw_LoadPicture_Fallbac
 		if (picture)
 		{
 			picture->texnum = texture_extension_number++;
-			picture->invwidth = 1.0/width/((double)gltwidth/width);
-			picture->invheight = 1.0/height/((double)gltheight/height);
+			picture->width = width;
+			picture->height = height;
+			picture->glwidthscale = ((double)width)/gltwidth;
+			picture->glheightscale = ((double)height)/gltheight;
 
 			GL_Bind(picture->texnum);
 			glTexImage2D(GL_TEXTURE_2D, 0, internalformat, gltwidth, gltheight, 0, GL_RGBA, GL_UNSIGNED_BYTE, newdata);
@@ -1229,6 +1233,16 @@ void Draw_FreePicture(struct Picture *picture)
 	glDeleteTextures(1, &picture->texnum);
 
 	free(picture);
+}
+
+unsigned int Draw_GetPictureWidth(struct Picture *picture)
+{
+	return picture->width;
+}
+
+unsigned int Draw_GetPictureHeight(struct Picture *picture)
+{
+	return picture->height;
 }
 
 void Draw_DrawPicture(struct Picture *picture, int x, int y, unsigned int width, unsigned int height)
@@ -1305,7 +1319,7 @@ void Draw_DrawPictureAlpha(struct Picture *picture, int x, int y, unsigned int w
 	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
 }
 
-void Draw_DrawSubPicture(struct Picture *picture, unsigned int sx, unsigned int sy, unsigned int swidth, unsigned int sheight, int x, int y, unsigned int width, unsigned int height)
+void Draw_DrawSubPicture(struct Picture *picture, float sx, float sy, float swidth, float sheight, int x, int y, unsigned int width, unsigned int height)
 {
 	float coords[4*2];
 	float texcoords[4*2];
@@ -1321,14 +1335,14 @@ void Draw_DrawSubPicture(struct Picture *picture, unsigned int sx, unsigned int 
 	coords[3*2 + 0] = x;
 	coords[3*2 + 1] = y + height;
 
-	texcoords[0*2 + 0] = (sx) * picture->invwidth;
-	texcoords[0*2 + 1] = (sy) * picture->invheight;
-	texcoords[1*2 + 0] = (sx + swidth) * picture->invwidth;
-	texcoords[1*2 + 1] = (sy) * picture->invheight;
-	texcoords[2*2 + 0] = (sx + swidth) * picture->invwidth;
-	texcoords[2*2 + 1] = (sy + sheight) * picture->invheight;
-	texcoords[3*2 + 0] = (sx) * picture->invwidth;
-	texcoords[3*2 + 1] = (sy + sheight) * picture->invheight;
+	texcoords[0*2 + 0] = (sx) * picture->glwidthscale;
+	texcoords[0*2 + 1] = (sy) * picture->glheightscale;
+	texcoords[1*2 + 0] = (sx + swidth) * picture->glwidthscale;
+	texcoords[1*2 + 1] = (sy) * picture->glheightscale;
+	texcoords[2*2 + 0] = (sx + swidth) * picture->glwidthscale;
+	texcoords[2*2 + 1] = (sy + sheight) * picture->glheightscale;
+	texcoords[3*2 + 0] = (sx) * picture->glwidthscale;
+	texcoords[3*2 + 1] = (sy + sheight) * picture->glheightscale;
 
 	GL_SetArrays(FQ_GL_VERTEX_ARRAY | FQ_GL_TEXTURE_COORD_ARRAY);
 	glVertexPointer(2, GL_FLOAT, 0, coords);

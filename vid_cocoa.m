@@ -18,6 +18,13 @@ struct display
 	NSWindow *window;
 	unsigned int width;
 	unsigned int height;
+	
+#ifndef GLQUAKE
+	unsigned char *rgb_buf;
+	unsigned char *buf;
+	unsigned int rowbytes;
+	unsigned char palette[256][3];
+#endif
 };
 
 @interface NSMyWindow : NSWindow
@@ -116,26 +123,42 @@ void* Sys_Video_Open(const char *mode, unsigned int width, unsigned int height, 
 		
 		if (d->window)
 		{
+			NSRect rect;
+			
+			[((NSMyWindow*)d->window) setDisplayStructPointer:d];
+			
 			if (fullscreen)
 			{
+				rect = [d->window frame];
+				
+				d->fullscreen = true;
+				
 				[d->window setLevel:NSMainMenuWindowLevel + 1];
 			}
 			else
 			{
+				rect.origin.x = 0;
+				rect.origin.y = [d->window frame].size.height - height;
+				rect.size.width = width;
+				rect.size.height = height;
+				
+				d->fullscreen = false;
+				
 				[d->window center];
 			}
 			
-			[((NSMyWindow*)d->window) setDisplayStructPointer:d];
+			d->width = rect.size.width;
+			d->height = rect.size.height;
 			
-			d->fullscreen = fullscreen ? true : false;
 			d->input = Sys_Input_Init();
 			if (d->input)
 			{
+				Sys_Input_SetFnKeyBehavior(d->input, [[[[NSUserDefaults standardUserDefaults] persistentDomainForName:NSGlobalDomain] objectForKey:@"com.apple.keyboard.fnState"] intValue]);
+				
 #ifdef GLQUAKE
 				NSOpenGLPixelFormat *pixelFormat;
 				NSOpenGLView *openglview;
 				GLint swapInterval = vid_vsync.value;
-				NSNumber *num;
 				
 				NSOpenGLPixelFormatAttribute attributes[] =
 				{
@@ -146,30 +169,9 @@ void* Sys_Video_Open(const char *mode, unsigned int width, unsigned int height, 
 					0
 				};
 				
-				num = [[[NSUserDefaults standardUserDefaults] persistentDomainForName:NSGlobalDomain] objectForKey:@"com.apple.keyboard.fnState"];
-				
-				Sys_Input_SetFnKeyBehavior(d->input, [num intValue]);
-				
 				pixelFormat = [[NSOpenGLPixelFormat alloc] initWithAttributes:attributes];
 				if (pixelFormat)
 				{
-					NSRect rect;
-
-					if (fullscreen)
-					{
-						rect = [d->window frame];
-					}
-					else
-					{
-						rect.origin.x = 0;
-						rect.origin.y = [d->window frame].size.height - height;
-						rect.size.width = width;
-						rect.size.height = height;
-					}
-
-					d->width = rect.size.width;
-					d->height = rect.size.height;
-
 					openglview = [[NSOpenGLView alloc] initWithFrame:rect pixelFormat:pixelFormat];
 					[pixelFormat release];
 					if (openglview)
@@ -185,16 +187,43 @@ void* Sys_Video_Open(const char *mode, unsigned int width, unsigned int height, 
 					}
 				}
 #else
-				NSBitmapImageRep *bitmapRep = [[NSBitmapImageRep alloc] initWithBitmapDataPlanes:NULL pixelsWide:width pixelsHigh:height bitsPerSample:8 samplesPerPixel:1 hasAlpha:NO isPlanar:NO colorSpaceName:NSCalibratedWhiteColorSpace bytesPerRow:0 bitsPerPixel:8];
-				if (bitmapRep)
+				d->buf = (unsigned char*)malloc(d->width * d->height);
+				if (d->buf)
 				{
-					NSGraphicsContext *context = [[NSGraphicsContext alloc] graphicsContextWithBitmapImageRep:bitmapRep];
-					if (context)
+					NSBitmapImageRep *img = [[NSBitmapImageRep alloc]
+						initWithBitmapDataPlanes:&d->buf
+						pixelsWide:d->width
+						pixelsHigh:d->height
+						bitsPerSample:8
+						samplesPerPixel:3
+						hasAlpha:NO
+						isPlanar:NO
+						colorSpaceName:@"NSDeviceRGBColorSpace"
+						bytesPerRow:0
+						bitsPerPixel:0];
+					
+					if (img)
 					{
+						d->rowbytes = [img bytesPerRow];
+						
+						[img release];
+					}
+					else
+					{
+						d->rowbytes = d->width * 3;
+					}
+					
+					d->rgb_buf = (unsigned char*)malloc(d->rowbytes * d->height);
+					if (d->rgb_buf)				
+					{
+						[d->window useOptimizedDrawing:YES];
+						[d->window makeKeyAndOrderFront:nil];
+						[NSApp setDelegate:d->window];
+						
 						return d;
 					}
 					
-					[bitmapRep release];
+					free(d->buf);
 				}
 #endif
 				Sys_Input_Shutdown(d->input);
@@ -219,6 +248,11 @@ void Sys_Video_Close(void *display)
 	[[d->window contentView] release];
 	[d->window close];
 	
+#ifndef GLQUAKE
+	free(d->rgb_buf);
+	free(d->buf);
+#endif
+	
 	free(d);
 }
 
@@ -230,8 +264,58 @@ unsigned int Sys_Video_GetNumBuffers(void *display)
 void Sys_Video_Update(void *display, vrect_t *rects)
 {
 	struct display *d = (struct display*)display;
+	NSEvent *event;
 
+#ifdef GLQUAKE
 	[[[d->window contentView] openGLContext] flushBuffer];
+#else	
+	int i, j;
+	unsigned char *src = d->buf;	
+	unsigned char *dst = d->rgb_buf;
+	NSBitmapImageRep *img;
+	
+	for (i = 0; i < d->height; i++)
+	{
+		for (j = 0; j < d->width; j++)
+		{
+			dst[0] = d->palette[src[0]][0];
+			dst[1] = d->palette[src[0]][1];
+			dst[2] = d->palette[src[0]][2];
+			
+			src++;
+			dst += 3;
+		}
+		
+		dst += d->rowbytes - d->width * 3;
+	}
+
+	[[d->window contentView] lockFocus];	
+	
+	img = [[NSBitmapImageRep alloc]
+		initWithBitmapDataPlanes:&d->rgb_buf
+		pixelsWide:d->width
+		pixelsHigh:d->height
+		bitsPerSample:8
+		samplesPerPixel:3
+		hasAlpha:NO
+		isPlanar:NO
+		colorSpaceName:@"NSDeviceRGBColorSpace"
+		bytesPerRow:0
+		bitsPerPixel:0];
+	
+	[img draw];
+	[img release];
+	
+	[[d->window contentView] unlockFocus];
+	
+	[d->window flushWindow];
+#endif
+	
+	while ((event = [NSApp nextEventMatchingMask:NSAnyEventMask untilDate:nil inMode:NSEventTrackingRunLoopMode dequeue:YES]))
+	{
+		[NSApp sendEvent:event];
+		[NSApp updateWindows];
+	}
 }
 
 int Sys_Video_GetKeyEvent(void *display, keynum_t *keynum, qboolean *down)
@@ -317,18 +401,11 @@ int Sys_Video_FocusChanged(void *display)
 void Sys_Video_BeginFrame(void *display, unsigned int *x, unsigned int *y, unsigned int *width, unsigned int *height)
 {
 	struct display *d = (struct display*)display;
-	NSEvent *event;
 	
 	*x = 0;
 	*y = 0;
 	*width = d->width;
 	*height = d->height;
-	
-	while ((event = [NSApp nextEventMatchingMask:NSAnyEventMask untilDate:nil inMode:NSEventTrackingRunLoopMode dequeue:YES]))
-	{
-		[NSApp sendEvent:event];
-		[NSApp updateWindows];
-	}
 }
 
 void Sys_Video_SetGamma(void *display, unsigned short *ramps)
@@ -371,16 +448,23 @@ void *qglGetProcAddress(const char *p)
 #else
 void Sys_Video_SetPalette(void *display, unsigned char *palette)
 {
+	struct display *d = (struct display*)display;
+	
+	memcpy(d->palette, palette, sizeof(d->palette));
 }
 
 unsigned int Sys_Video_GetBytesPerRow(void *display)
 {
-	return 0;
+	struct display *d = (struct display*)display;
+	
+	return d->width;
 }
 
 void *Sys_Video_GetBuffer(void *display)
 {
-	return NULL;
+	struct display *d = (struct display*)display;
+	
+	return d->buf;
 }
 
 void VID_LockBuffer()

@@ -24,6 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <string.h>
 #include <stdlib.h>
 #include <time.h>
+#include <locale.h>
 
 #include "quakedef.h"
 #include "pmove.h"
@@ -123,6 +124,8 @@ void Host_Error(char *error, ...)
 //memsize is the recommended amount of memory to use for hunk
 static void Host_InitMemory()
 {
+	setlocale(LC_NUMERIC, "C");
+
 	Memory_Init();
 }
 

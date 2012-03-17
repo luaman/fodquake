@@ -92,10 +92,25 @@ int Util_Extend_Filename(char *filename, char **ext)
 {
 	char extendedname[1024], **s;
 	int i, offset;
+	unsigned int maxextlen;
 	FILE *f;
 
-	Q_strncpyz(extendedname, filename, sizeof(extendedname));
-	offset = strlen(extendedname);
+	maxextlen = 0;
+	for(s=ext;*s;s++)
+	{
+		if (strlen(s) > maxextlen)
+			maxextlen = strlen(s);
+	}
+
+	if (filename[0] == '/')
+		i = snprintf(extendedname, sizeof(extendedname), "%s", filename);
+	else
+		i = snprintf(extendedname, sizeof(extendedname), "%s/%s", com_basedir, filename);
+
+	if (i + 5 + maxextlen >= sizeof(extendedname))
+		return -1;
+
+	offset = i;
 
 	i = -1;
 	while(1)
@@ -753,6 +768,76 @@ struct directory_list *Util_Dir_Read(char *dir, int recursive, int remove_dirs, 
 	dlist->entry_count = count;
 
 	return dlist;
+}
+
+int ParseColourDescription(const char *source, float *rgb)
+{
+	unsigned int i;
+	char *desc;
+	char descarray[64];
+	char tempstr[64];
+	char *p;
+	char *endptr;
+
+	for(i=0;source[i] && source[i] != ' ' && i+1 < sizeof(descarray);i++)
+	{
+		if (source[i] >= 'A' && source[i] <= 'Z')
+			descarray[i] = 'a' + (source[i] - 'A');
+		else
+			descarray[i] = source[i];
+	}
+
+	descarray[i] = 0;
+
+	desc = descarray;
+
+	if (desc[0] == 'r'
+	 && desc[1] == 'g'
+	 && desc[2] == 'b'
+	 && desc[3] == ':')
+	{
+		desc += 4;
+
+		if ((p = strchr(desc, ',')) && p != desc)
+		{
+			memcpy(tempstr, desc, p-desc);
+			tempstr[p-desc] = 0;
+
+			rgb[0] = strtod(tempstr, &endptr);
+			if (endptr == tempstr + (p - desc))
+			{
+				desc = p + 1;
+
+				if ((p = strchr(desc, ',')) && p != desc)
+				{
+					memcpy(tempstr, desc, p-desc);
+					tempstr[p-desc] = 0;
+
+					rgb[1] = strtod(tempstr, &endptr);
+					if (endptr == tempstr + (p - desc))
+					{
+						desc = p + 1;
+
+						p = desc + strlen(desc);
+
+						if (p != desc)
+						{
+							memcpy(tempstr, desc, p-desc);
+							tempstr[p-desc] = 0;
+
+							rgb[2] = strtod(tempstr, &endptr);
+							if (endptr == tempstr + (p - desc))
+							{
+								return 1;
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	return 0;
 }
 
 int Colored_String_Length(char *string)
