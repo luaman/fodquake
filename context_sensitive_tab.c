@@ -187,6 +187,9 @@ void Context_Sensitive_Tab_Completion_Key(int key)
 
 	if (key == K_ESCAPE)
 	{
+		if (cst_info->flags & CSTC_SLIDER)
+			if (cst_info->variable)
+				Cvar_Set(cst_info->variable, va("%f", cst_info->slider_original_value));
 		CSTC_Cleanup(cst_info);
 		return;
 	}
@@ -213,6 +216,8 @@ void Context_Sensitive_Tab_Completion_Key(int key)
 			cst_info->slider_value += 0.1;
 
 		cst_info->slider_value = bound(0, cst_info->slider_value, 1);
+		if (cst_info->variable)
+			Cvar_Set(cst_info->variable, va("%f", cst_info->slider_value));
 		return;
 	}
 
@@ -709,9 +714,14 @@ static void setup_completion(struct cst_commands *cc, struct cst_info *c, int ar
 static void setup_slider(struct cst_info *c)
 {
 	if (c->variable)
+	{
 		c->slider_value = bound(0, c->variable->value, 1);
+		c->slider_original_value = c->variable->value;
+	}
 	else
-		c->slider_value = 0;
+	{
+		c->slider_original_value = c->slider_value = 0;
+	}
 }
 
 static int setup_current_command(void)
