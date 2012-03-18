@@ -44,6 +44,9 @@ cvar_t	context_sensitive_tab_completion_slider_no_offset = {"context_sensitive_t
 cvar_t	context_sensitive_tab_completion_slider_border_color = {"context_sensitive_tab_completion_slider_border_color", "0"};
 cvar_t	context_sensitive_tab_completion_slider_background_color = {"context_sensitive_tab_completion_slider_background_color", "4"};
 cvar_t	context_sensitive_tab_completion_slider_color = {"context_sensitive_tab_completion_slider_color", "10"};
+cvar_t	context_sensitive_tab_completion_slider_variables = {"context_sensitive_tab_completion_slider_variables", "gl_gamma gl_contrast volume"};
+cvar_t	context_sensitive_tab_completion_player_color_variables = {"context_sensitive_tab_completion_player_color_variables", "teamcolor enemycolor"};
+cvar_t	context_sensitive_tab_completion_color_variables = {"context_sensitive_tab_completion_color_variables", "context_sensitive_tab_completion_inputbox_color context_sensitive_tab_completion_selected_color context_sensitive_tab_completion_background_color sb_color_bg sb_color_bg_empty sb_color_bg_free sb_color_bg_specable sb_color_bg_full sb_highlight_sort_column_color topcolor bottomcolor r_skycolor context_sensitive_tab_completion_slider_border_color context_sensitive_tab_completion_slider_background_color context_sensitive_tab_completion_slider_color"};
 
 static void cleanup_cst(struct cst_info *info)
 {
@@ -67,6 +70,9 @@ static struct cst_info cst_info_static;
 static struct cst_info *cst_info = &cst_info_static;
 
 static struct cst_commands *commands;
+static struct cst_commands CC_Slider;
+static struct cst_commands CC_Player_Color;
+static struct cst_commands CC_Color;
 
 static void CSTC_Cleanup(struct cst_info *self)
 {
@@ -756,6 +762,8 @@ static int setup_current_command(void)
 	struct cst_commands *c;
 	cvar_t *var;
 	char new_keyline[MAXCMDLINE];
+	struct tokenized_string *ts;
+	qboolean cvar_setup;
 
 	read_info_new(key_lines[edit_line] + 1, key_linepos, &cmd_start, &cmd_len, &arg_start, &arg_len, &cursor_on_command, &isinvalid);
 
@@ -799,6 +807,134 @@ static int setup_current_command(void)
 			if (dobreak)
 				break;
 			c = c->next;
+		}
+
+		// check user set variables
+		if (!c)
+		{
+			// slider
+			cvar_setup = false;
+			ts = Tokenize_String(context_sensitive_tab_completion_slider_variables.string);
+			if (ts)
+			{
+				if (ts->count)
+				{
+					name = NULL;
+					for (i=0; i<ts->count;i++)
+					{
+						if (strncasecmp(ts->tokens[i], cmd_start, cmd_len) == 0)
+						{
+							name = ts->tokens[i];
+							break;
+						}
+					}
+
+					if (name)
+					{
+
+						cvar_setup = true;
+						c = &CC_Slider;
+						if (arg_start - key_lines[edit_line] - 1 == 0)
+							setup_completion(c, cst_info, cmd_start + cmd_len - key_lines[edit_line], arg_len, 1);
+						else
+						{
+							if (c->parser_behaviour == 0)
+								setup_completion(c, cst_info, arg_start - key_lines[edit_line], arg_len, 0);
+							else
+							{
+								setup_completion(c, cst_info, cmd_start + cmd_len - key_lines[edit_line] + 1,  (arg_start - cmd_start) + arg_len-1, 0);
+							}
+						}
+
+						cst_info->variable = Cvar_FindVar(name);
+						setup_slider(cst_info);
+					}
+				}
+				Tokenize_String_Delete(ts);
+				if (cvar_setup)
+					return 1;
+			}
+
+			// player_color
+			cvar_setup = false;
+			ts = Tokenize_String(context_sensitive_tab_completion_player_color_variables.string);
+			if (ts)
+			{
+				if (ts->count)
+				{
+					name = NULL;
+					for (i=0; i<ts->count;i++)
+					{
+						if (strncasecmp(ts->tokens[i], cmd_start, cmd_len) == 0)
+						{
+							name = ts->tokens[i];
+							break;
+						}
+					}
+
+					if (name)
+					{
+						cvar_setup = true;
+						c = &CC_Player_Color;
+						if (arg_start - key_lines[edit_line] - 1 == 0)
+							setup_completion(c, cst_info, cmd_start + cmd_len - key_lines[edit_line], arg_len, 1);
+						else
+						{
+							if (c->parser_behaviour == 0)
+								setup_completion(c, cst_info, arg_start - key_lines[edit_line], arg_len, 0);
+							else
+							{
+								setup_completion(c, cst_info, cmd_start + cmd_len - key_lines[edit_line] + 1,  (arg_start - cmd_start) + arg_len-1, 0);
+							}
+						}
+					}
+				}
+				Tokenize_String_Delete(ts);
+				if (cvar_setup)
+					return 1;
+			}
+
+			// 
+			cvar_setup = false;
+			ts = Tokenize_String(context_sensitive_tab_completion_color_variables.string);
+			if (ts)
+			{
+				if (ts->count)
+				{
+					name = NULL;
+					for (i=0; i<ts->count;i++)
+					{
+						if (strncasecmp(ts->tokens[i], cmd_start, cmd_len) == 0)
+						{
+							name = ts->tokens[i];
+							break;
+						}
+					}
+
+					if (name)
+					{
+						cvar_setup = true;
+						c = &CC_Color;
+						if (arg_start - key_lines[edit_line] - 1 == 0)
+							setup_completion(c, cst_info, cmd_start + cmd_len - key_lines[edit_line], arg_len, 1);
+						else
+						{
+							if (c->parser_behaviour == 0)
+								setup_completion(c, cst_info, arg_start - key_lines[edit_line], arg_len, 0);
+							else
+							{
+								setup_completion(c, cst_info, cmd_start + cmd_len - key_lines[edit_line] + 1,  (arg_start - cmd_start) + arg_len-1, 0);
+							}
+						}
+					}
+				}
+				Tokenize_String_Delete(ts);
+				if (cvar_setup)
+					return 1;
+			}
+
+
+
 		}
 
 		if (c)
@@ -1328,13 +1464,20 @@ void Context_Sensitive_Tab_Completion_CvarInit(void)
 	Cvar_Register(&context_sensitive_tab_completion_slider_no_offset);
 	Cvar_Register(&context_sensitive_tab_completion_slider_border_color);
 	Cvar_Register(&context_sensitive_tab_completion_slider_background_color);
-	Cvar_Register(&context_sensitive_tab_completion_slider_color);
+	Cvar_Register(&context_sensitive_tab_completion_slider_variables);
+	Cvar_Register(&context_sensitive_tab_completion_player_color_variables);
 	Cmd_AddCommand("weight_enable", Weight_Enable_f);
 	Cmd_AddCommand("weight_disable", Weight_Disable_f);
 	Cmd_AddCommand("weight_set", Weight_Set_f);
-	CSTC_Add("enemycolor teamcolor", NULL, &Player_Color_Selector_Result, NULL, 0, CSTC_PLAYER_COLOR_SELECTOR | CSTC_MULTI_COMMAND | CSTC_NO_INPUT);
-	CSTC_Add("context_sensitive_tab_completion_inputbox_color context_sensitive_tab_completion_selected_color context_sensitive_tab_completion_background_color sb_color_bg sb_color_bg_empty sb_color_bg_free sb_color_bg_specable sb_color_bg_full sb_highlight_sort_column_color topcolor bottomcolor r_skycolor context_sensitive_tab_completion_slider_border_color context_sensitive_tab_completion_slider_background_color context_sensitive_tab_completion_slider_color", NULL, &Color_Selector_Result, NULL, 0, CSTC_COLOR_SELECTOR | CSTC_MULTI_COMMAND);
-	CSTC_Add("volume gl_gamma", NULL, &Slider_Result, NULL, 0, CSTC_SLIDER | CSTC_NO_INPUT | CSTC_MULTI_COMMAND);
+//	CSTC_Add("enemycolor teamcolor", NULL, &Player_Color_Selector_Result, NULL, 0, CSTC_PLAYER_COLOR_SELECTOR | CSTC_MULTI_COMMAND | CSTC_NO_INPUT);
+//	CSTC_Add("context_sensitive_tab_completion_inputbox_color context_sensitive_tab_completion_selected_color context_sensitive_tab_completion_background_color sb_color_bg sb_color_bg_empty sb_color_bg_free sb_color_bg_specable sb_color_bg_full sb_highlight_sort_column_color topcolor bottomcolor r_skycolor context_sensitive_tab_completion_slider_border_color context_sensitive_tab_completion_slider_background_color context_sensitive_tab_completion_slider_color", NULL, &Color_Selector_Result, NULL, 0, CSTC_COLOR_SELECTOR | CSTC_MULTI_COMMAND);
+//	CSTC_Add("volume gl_gamma", NULL, &Slider_Result, NULL, 0, CSTC_SLIDER | CSTC_NO_INPUT | CSTC_MULTI_COMMAND);
+	CC_Slider.result = &Slider_Result;
+	CC_Slider.flags = CSTC_SLIDER | CSTC_NO_INPUT;
+	CC_Player_Color.result = &Player_Color_Selector_Result;
+	CC_Player_Color.flags = CSTC_PLAYER_COLOR_SELECTOR | CSTC_NO_INPUT;
+	CC_Color.result = &Color_Selector_Result;
+	CC_Color.flags = CSTC_COLOR_SELECTOR | CSTC_NO_INPUT;
 }
 
 void Context_Weighting_Init(void)
