@@ -173,6 +173,14 @@ static void cstc_insert_only_find(struct cst_info *self)
 	CSTC_Cleanup(self);
 }
 
+static int valid_color(int i)
+{
+	if (i < 8)
+		return i * 16 + 15;
+	else
+		return i *16;
+}
+
 void Context_Sensitive_Tab_Completion_Key(int key)
 {
 	int i;
@@ -271,21 +279,27 @@ void Context_Sensitive_Tab_Completion_Key(int key)
 
 			return;
 		}
-
-		if (cst_info->flags & CSTC_PLAYER_COLOR_SELECTOR)
+	}
+	else if (cst_info->flags & CSTC_PLAYER_COLOR_SELECTOR)
+	{
+		if (key == K_SPACE)
 		{
-			if (key == '1')
-			{
-				cst_info->color[0] = cst_info->selection;
-				return;
-			}
+			cst_info->color[cst_info->count] = cst_info->selection;
+			return;
+		}
 
-			if (key == '2')
-			{
-				cst_info->color[1] = cst_info->selection;
-				return;
-			}
+		if (key == K_UPARROW || key == K_DOWNARROW)
+		{
+			cst_info->count += 1 * (cst_info->direction == 1 ? 1 : -1) * (key == K_UPARROW ? -1 : 1);
+			cst_info->count = bound(0, cst_info->count, 1);
+			return;
+		}
 
+		if (key == K_LEFTARROW || key == K_RIGHTARROW)
+		{
+			cst_info->selection += 1 * key == K_LEFTARROW ? -1 : 1;
+			cst_info->selection = bound(0, cst_info->selection, 13);
+			return;
 		}
 	}
 	else
@@ -403,19 +417,6 @@ static void CSTC_Draw(struct cst_info *self, int y_offset)
 				pos_x += x *8;
 				pos_y = offset + y * 8 * self->direction;
 				Draw_Fill(pos_x, pos_y, 8, 8, x + y * 16);
-				if (self->flags & CSTC_PLAYER_COLOR_SELECTOR)
-				{
-					if (self->color[0] == x + y * 16)
-					{
-						sp_x[0] = pos_x;
-						sp_y[0] = pos_y;
-					}
-					if (self->color[1] == x + y * 16)
-					{
-						sp_x[1] = pos_x;
-						sp_y[1] = pos_y;
-					}
-				}
 				if (self->selection == x + y * 16)
 				{
 					sp_x[2] = pos_x;
@@ -423,13 +424,31 @@ static void CSTC_Draw(struct cst_info *self, int y_offset)
 				}
 			}
 		}
-		if (self->flags & CSTC_PLAYER_COLOR_SELECTOR)
-		{
-			Draw_String(sp_x[0] , sp_y[0] , "1");
-			Draw_String(sp_x[1]  , sp_y[1] , "2");
-		}
-
 		Draw_String(sp_x[2]  , sp_y[2] , "x");
+	}
+	else if (self->flags & CSTC_PLAYER_COLOR_SELECTOR)
+	{
+		pos_x = vid.displaywidth/4 - 8 * 8;
+		pos_y = offset;
+		Draw_String(pos_x, pos_y, self->direction > 0 ? "top" : "bottom");
+		Draw_String(pos_x, pos_y + 8 * self->direction, self->direction > 0 ? "bottom" : "top");
+		pos_x = 6 * 8 + 4;
+		for (y=0; y<2; y++)
+		{
+			for (x=0; x<13; x++)
+			{
+				if (x<8)
+					i = x * 16 + 15;
+				else
+					i = x * 16;
+				Draw_Fill(pos_x + x *8, pos_y + y * 8 * self->direction, 8, 8, i);
+				if (y == 0 && x == self->color[0])
+					Draw_String(pos_x + x *8, pos_y + y * 8 * self->direction, "o");
+				if (y == 1 && x == self->color[1])
+					Draw_String(pos_x + x *8, pos_y + y * 8 * self->direction, "o");
+			}
+		}
+		Draw_String(pos_x + self->selection * 8, pos_y + self->count * self->direction * 8, "x");
 	}
 	else if (self->flags & CSTC_SLIDER)
 	{
@@ -1294,7 +1313,7 @@ void Context_Sensitive_Tab_Completion_CvarInit(void)
 	Cmd_AddCommand("weight_enable", Weight_Enable_f);
 	Cmd_AddCommand("weight_disable", Weight_Disable_f);
 	Cmd_AddCommand("weight_set", Weight_Set_f);
-	CSTC_Add("enemycolor teamcolor", NULL, &Player_Color_Selector_Result, NULL, 0, CSTC_COLOR_SELECTOR | CSTC_PLAYER_COLOR_SELECTOR | CSTC_MULTI_COMMAND);
+	CSTC_Add("enemycolor teamcolor", NULL, &Player_Color_Selector_Result, NULL, 0, CSTC_PLAYER_COLOR_SELECTOR | CSTC_MULTI_COMMAND | CSTC_NO_INPUT);
 	CSTC_Add("context_sensitive_tab_completion_inputbox_color context_sensitive_tab_completion_selected_color context_sensitive_tab_completion_background_color sb_color_bg sb_color_bg_empty sb_color_bg_free sb_color_bg_specable sb_color_bg_full sb_highlight_sort_column_color topcolor bottomcolor r_skycolor context_sensitive_tab_completion_slider_border_color context_sensitive_tab_completion_slider_background_color context_sensitive_tab_completion_slider_color", NULL, &Color_Selector_Result, NULL, 0, CSTC_COLOR_SELECTOR | CSTC_MULTI_COMMAND);
 	CSTC_Add("volume", NULL, &Slider_Result, NULL, 0, CSTC_SLIDER | CSTC_NO_INPUT);
 }
@@ -1334,5 +1353,10 @@ void Context_Weighting_Shutdown(void)
 			fprintf(f, "weight_set %i %s\n", alias->weight, alias->name);
 
 	fclose (f);
+}
+
+void CSTC_Console_Close(void)
+{
+	CSTC_Cleanup(cst_info);
 }
 
