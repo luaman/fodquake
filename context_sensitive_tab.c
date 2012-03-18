@@ -754,7 +754,9 @@ static int setup_current_command(void)
 	int cmd_len, arg_len, cursor_on_command, isinvalid, i, dobreak;
 	char *cmd_start, *arg_start, *name;
 	struct cst_commands *c;
-		
+	cvar_t *var;
+	char new_keyline[MAXCMDLINE];
+
 	read_info_new(key_lines[edit_line] + 1, key_linepos, &cmd_start, &cmd_len, &arg_start, &arg_len, &cursor_on_command, &isinvalid);
 
 	if (isinvalid)
@@ -820,6 +822,17 @@ static int setup_current_command(void)
 			if (cst_info->flags & CSTC_SLIDER)
 				setup_slider(cst_info);
 			return 1;
+		}
+		else
+		{
+			snprintf(new_keyline, MAXCMDLINE, "%*.*s", cmd_len, cmd_len, cmd_start);
+			var = Cvar_FindVar(new_keyline);
+			if (var)
+			{
+				snprintf(new_keyline, MAXCMDLINE, "%s\"%s\"", key_lines[edit_line], var->string);
+				key_linepos = strlen(new_keyline);
+				memcpy(key_lines[edit_line], new_keyline, MAXCMDLINE);
+			}
 		}
 	}
 	return 0;
