@@ -224,9 +224,9 @@ void Context_Sensitive_Tab_Completion_Key(int key)
 				cst_info->selection += 16;
 
 			if (cst_info->selection < 0)
-				cst_info->selection = i-1;
+				cst_info->selection = i + cst_info->selection;
 			if (cst_info->selection >= i)
-				cst_info->selection = 0;
+				cst_info->selection = cst_info->selection - i;
 			return;
 		}
 
@@ -236,10 +236,12 @@ void Context_Sensitive_Tab_Completion_Key(int key)
 				cst_info->selection += 16;
 			else
 				cst_info->selection -= 16;
+
 			if (cst_info->selection < 0)
-				cst_info->selection = i-1;
+				cst_info->selection = i + cst_info->selection;
 			if (cst_info->selection >= i)
-				cst_info->selection = 0;
+				cst_info->selection = cst_info->selection - i;
+
 			return;
 		}
 
