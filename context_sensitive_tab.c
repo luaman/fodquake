@@ -72,6 +72,7 @@ static void CSTC_Cleanup(struct cst_info *self)
 {
 	context_sensitive_tab_completion_active = 0;
 	cleanup_cst(self);
+	memset(self, 0, sizeof(struct cst_info));
 }
 
 void CSTC_Add(char *name, int (*conditions)(void), int (*result)(struct cst_info *self, int *results, int get_result, int result_type, char **result), int (*get_data)(struct cst_info *self, int remove), int parser_behaviour, int flags)
@@ -1315,7 +1316,7 @@ void Context_Sensitive_Tab_Completion_CvarInit(void)
 	Cmd_AddCommand("weight_set", Weight_Set_f);
 	CSTC_Add("enemycolor teamcolor", NULL, &Player_Color_Selector_Result, NULL, 0, CSTC_PLAYER_COLOR_SELECTOR | CSTC_MULTI_COMMAND | CSTC_NO_INPUT);
 	CSTC_Add("context_sensitive_tab_completion_inputbox_color context_sensitive_tab_completion_selected_color context_sensitive_tab_completion_background_color sb_color_bg sb_color_bg_empty sb_color_bg_free sb_color_bg_specable sb_color_bg_full sb_highlight_sort_column_color topcolor bottomcolor r_skycolor context_sensitive_tab_completion_slider_border_color context_sensitive_tab_completion_slider_background_color context_sensitive_tab_completion_slider_color", NULL, &Color_Selector_Result, NULL, 0, CSTC_COLOR_SELECTOR | CSTC_MULTI_COMMAND);
-	CSTC_Add("volume", NULL, &Slider_Result, NULL, 0, CSTC_SLIDER | CSTC_NO_INPUT);
+	CSTC_Add("volume gl_gamma", NULL, &Slider_Result, NULL, 0, CSTC_SLIDER | CSTC_NO_INPUT | CSTC_MULTI_COMMAND);
 }
 
 void Context_Weighting_Init(void)
