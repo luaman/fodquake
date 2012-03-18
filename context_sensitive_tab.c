@@ -40,6 +40,10 @@ cvar_t	context_sensitive_tab_completion_background_color = {"context_sensitive_t
 cvar_t	context_sensitive_tab_completion_inputbox_color = {"context_sensitive_tab_completion_inputbox_color", "4"};
 cvar_t	context_sensitive_tab_completion_selected_color = {"context_sensitive_tab_completion_selected_color", "40"};
 cvar_t	context_sensitive_tab_completion_insert_slash = {"context_sensitive_tab_completion_insert_slash", "1"};
+cvar_t	context_sensitive_tab_completion_slider_no_offset = {"context_sensitive_tab_completion_slider_no_offset", "1"};
+cvar_t	context_sensitive_tab_completion_slider_border_color = {"context_sensitive_tab_completion_slider_border_color", "0"};
+cvar_t	context_sensitive_tab_completion_slider_background_color = {"context_sensitive_tab_completion_slider_background_color", "4"};
+cvar_t	context_sensitive_tab_completion_slider_color = {"context_sensitive_tab_completion_slider_color", "10"};
 
 static void cleanup_cst(struct cst_info *info)
 {
@@ -191,6 +195,24 @@ void Context_Sensitive_Tab_Completion_Key(int key)
 	{
 		insert_result(cst_info, NULL);
 		CSTC_Cleanup(cst_info);
+		return;
+	}
+
+	if (cst_info->flags & CSTC_SLIDER)
+	{
+		if (key == K_LEFTARROW)
+			cst_info->slider_value -= 0.01;
+
+		if (key == K_RIGHTARROW)
+			cst_info->slider_value += 0.01;
+
+		if (key == K_DOWNARROW)
+			cst_info->slider_value -= 0.1;
+
+		if (key == K_UPARROW)
+			cst_info->slider_value += 0.1;
+
+		cst_info->slider_value = bound(0, cst_info->slider_value, 1);
 		return;
 	}
 
@@ -403,6 +425,18 @@ static void CSTC_Draw(struct cst_info *self, int y_offset)
 		}
 
 		Draw_String(sp_x[2]  , sp_y[2] , "x");
+	}
+	else if (self->flags & CSTC_SLIDER)
+	{
+		pos_x = self->argument_start * 8 + 16;
+		if (context_sensitive_tab_completion_slider_no_offset.value)
+			pos_y = offset - self->direction * 8;
+		else 
+			pos_y = offset;
+		Draw_Fill(pos_x, pos_y, 8*8 + 2, 8, context_sensitive_tab_completion_slider_border_color.value);
+		Draw_Fill(pos_x+1, pos_y+1, 8*8, 8, context_sensitive_tab_completion_slider_background_color.value);
+		Draw_Fill(pos_x+1, pos_y+1, 8*8 * self->slider_value,8, context_sensitive_tab_completion_slider_color.value);
+		Draw_String(pos_x , pos_y, va("%f", self->slider_value));
 	}
 	else
 	{
@@ -672,10 +706,18 @@ static void setup_completion(struct cst_commands *cc, struct cst_info *c, int ar
 	c->flags = cc->flags;
 }
 
+static void setup_slider(struct cst_info *c)
+{
+	if (c->variable)
+		c->slider_value = bound(0, c->variable->value, 1);
+	else
+		c->slider_value = 0;
+}
+
 static int setup_current_command(void)
 {
 	int cmd_len, arg_len, cursor_on_command, isinvalid, i, dobreak;
-	char *cmd_start, *arg_start;
+	char *cmd_start, *arg_start, *name;
 	struct cst_commands *c;
 		
 	read_info_new(key_lines[edit_line] + 1, key_linepos, &cmd_start, &cmd_len, &arg_start, &arg_len, &cursor_on_command, &isinvalid);
@@ -703,6 +745,7 @@ static int setup_current_command(void)
 					if (cmd_len == strlen(c->commands->tokens[i]) && strncasecmp(c->commands->tokens[i], cmd_start, cmd_len) == 0)
 					{
 						dobreak = 1;
+						name = c->commands->tokens[i];
 						break;
 					}
 				}
@@ -710,7 +753,10 @@ static int setup_current_command(void)
 			else
 			{
 				if (cmd_len == strlen(c->name) && strncasecmp(c->name, cmd_start, cmd_len) == 0)
+				{
+					name = c->name;
 					break;
+				}
 			}
 
 			if (dobreak)
@@ -734,6 +780,10 @@ static int setup_current_command(void)
 					setup_completion(c, cst_info, cmd_start + cmd_len - key_lines[edit_line] + 1,  (arg_start - cmd_start) + arg_len-1, 0);
 				}
 			}
+			cst_info->function = Cmd_FindCommand(name);
+			cst_info->variable = Cvar_FindVar(name);
+			if (cst_info->flags & CSTC_SLIDER)
+				setup_slider(cst_info);
 			return 1;
 		}
 	}
@@ -1199,7 +1249,16 @@ static int Color_Selector_Result(struct cst_info *self, int *results, int get_re
 		*result = va("%i", get_result);
 		return 0;
 	}
+	return 1;
+}
 
+static int Slider_Result(struct cst_info *self, int *results, int get_result, int result_type, char **result)
+{
+	if (result)
+	{
+		*result = va("%f", self->slider_value);
+		return 0;
+	}
 	return 1;
 }
 
@@ -1218,11 +1277,16 @@ void Context_Sensitive_Tab_Completion_CvarInit(void)
 	Cvar_Register(&context_sensitive_tab_completion_selected_color);
 	Cvar_Register(&context_sensitive_tab_completion_inputbox_color);
 	Cvar_Register(&context_sensitive_tab_completion_insert_slash);
+	Cvar_Register(&context_sensitive_tab_completion_slider_no_offset);
+	Cvar_Register(&context_sensitive_tab_completion_slider_border_color);
+	Cvar_Register(&context_sensitive_tab_completion_slider_background_color);
+	Cvar_Register(&context_sensitive_tab_completion_slider_color);
 	Cmd_AddCommand("weight_enable", Weight_Enable_f);
 	Cmd_AddCommand("weight_disable", Weight_Disable_f);
 	Cmd_AddCommand("weight_set", Weight_Set_f);
 	CSTC_Add("enemycolor teamcolor", NULL, &Player_Color_Selector_Result, NULL, 0, CSTC_COLOR_SELECTOR | CSTC_PLAYER_COLOR_SELECTOR | CSTC_MULTI_COMMAND);
-	CSTC_Add("context_sensitive_tab_completion_inputbox_color context_sensitive_tab_completion_selected_color context_sensitive_tab_completion_background_color sb_color_bg sb_color_bg_empty sb_color_bg_free sb_color_bg_specable sb_color_bg_full sb_highlight_sort_column_color topcolor bottomcolor r_skycolor", NULL, &Color_Selector_Result, NULL, 0, CSTC_COLOR_SELECTOR | CSTC_MULTI_COMMAND);
+	CSTC_Add("context_sensitive_tab_completion_inputbox_color context_sensitive_tab_completion_selected_color context_sensitive_tab_completion_background_color sb_color_bg sb_color_bg_empty sb_color_bg_free sb_color_bg_specable sb_color_bg_full sb_highlight_sort_column_color topcolor bottomcolor r_skycolor context_sensitive_tab_completion_slider_border_color context_sensitive_tab_completion_slider_background_color context_sensitive_tab_completion_slider_color", NULL, &Color_Selector_Result, NULL, 0, CSTC_COLOR_SELECTOR | CSTC_MULTI_COMMAND);
+	CSTC_Add("volume", NULL, &Slider_Result, NULL, 0, CSTC_SLIDER | CSTC_NO_INPUT);
 }
 
 void Context_Weighting_Init(void)

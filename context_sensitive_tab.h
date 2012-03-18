@@ -2,6 +2,7 @@
 #define CSTC_COLOR_SELECTOR				( 1 << 1)
 #define CSTC_PLAYER_COLOR_SELECTOR		( 1 << 2)
 #define CSTC_MULTI_COMMAND				( 1 << 3)
+#define CSTC_SLIDER						( 1 << 4)
 
 #define INPUT_MAX 512
 struct cst_info
@@ -18,7 +19,11 @@ struct cst_info
 	struct tokenized_string *tokenized_input;
 	int flags;
 
+	cmd_function_t *function;
+	cvar_t *variable;
+
 	// internal use of result and get_data
+	float slider_value;
 	int color[2];
 	qboolean *checked;
 	int initialized;
