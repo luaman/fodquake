@@ -762,7 +762,7 @@ static int setup_current_command(void)
 	struct cst_commands *c;
 	cvar_t *var;
 	char new_keyline[MAXCMDLINE];
-	struct tokenized_string *ts;
+	struct tokenized_string *ts, *var_ts;
 	qboolean cvar_setup;
 
 	read_info_new(key_lines[edit_line] + 1, key_linepos, &cmd_start, &cmd_len, &arg_start, &arg_len, &cursor_on_command, &isinvalid);
@@ -831,7 +831,6 @@ static int setup_current_command(void)
 
 					if (name)
 					{
-
 						cvar_setup = true;
 						c = &CC_Slider;
 						if (arg_start - key_lines[edit_line] - 1 == 0)
@@ -876,6 +875,7 @@ static int setup_current_command(void)
 					{
 						cvar_setup = true;
 						c = &CC_Player_Color;
+						var = Cvar_FindVar(name);
 						if (arg_start - key_lines[edit_line] - 1 == 0)
 							setup_completion(c, cst_info, cmd_start + cmd_len - key_lines[edit_line], arg_len, 1);
 						else
@@ -887,6 +887,24 @@ static int setup_current_command(void)
 								setup_completion(c, cst_info, cmd_start + cmd_len - key_lines[edit_line] + 1,  (arg_start - cmd_start) + arg_len-1, 0);
 							}
 						}
+
+						if (var)
+						{
+							var_ts = Tokenize_String(var->string);
+							if (var_ts)
+							{
+								if (var_ts->count == 1)
+								{
+									cst_info->color[0] = cst_info->color[1] = atof(var_ts->tokens[0]);
+								}
+								else if (var_ts->count == 2)
+								{
+									cst_info->color[0] = atof(var_ts->tokens[0]);
+									cst_info->color[1] = atof(var_ts->tokens[1]);
+								}
+								Tokenize_String_Delete(var_ts);
+							}
+						}
 					}
 				}
 				Tokenize_String_Delete(ts);
@@ -894,7 +912,7 @@ static int setup_current_command(void)
 					return 1;
 			}
 
-			// 
+			// color selector
 			cvar_setup = false;
 			ts = Tokenize_String(context_sensitive_tab_completion_color_variables.string);
 			if (ts)
@@ -915,6 +933,7 @@ static int setup_current_command(void)
 					{
 						cvar_setup = true;
 						c = &CC_Color;
+						var = Cvar_FindVar(name);
 						if (arg_start - key_lines[edit_line] - 1 == 0)
 							setup_completion(c, cst_info, cmd_start + cmd_len - key_lines[edit_line], arg_len, 1);
 						else
@@ -926,6 +945,8 @@ static int setup_current_command(void)
 								setup_completion(c, cst_info, cmd_start + cmd_len - key_lines[edit_line] + 1,  (arg_start - cmd_start) + arg_len-1, 0);
 							}
 						}
+						if (var)
+							cst_info->selection = var->value;
 					}
 				}
 				Tokenize_String_Delete(ts);
