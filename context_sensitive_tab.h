@@ -23,7 +23,7 @@ struct cst_info
 	cvar_t *variable;
 
 	// internal use of result and get_data
-	float slider_value, slider_original_value;
+	double slider_value, slider_original_value;
 	int color[2];
 	qboolean *checked;
 	int initialized;
