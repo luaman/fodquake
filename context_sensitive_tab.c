@@ -414,7 +414,9 @@ static void CSTC_Draw(struct cst_info *self, int y_offset)
 		{
 			for (y=0; y<16; y++)
 			{
-				pos_x = vid.displaywidth/4 - 8 * 8;
+				pos_x = self->argument_start * 8 + 16;
+				if (pos_x > vid.displaywidth/2)
+					pos_x -= 16 *8;
 				pos_x += x *8;
 				pos_y = offset + y * 8 * self->direction;
 				Draw_Fill(pos_x, pos_y, 8, 8, x + y * 16);
@@ -429,11 +431,14 @@ static void CSTC_Draw(struct cst_info *self, int y_offset)
 	}
 	else if (self->flags & CSTC_PLAYER_COLOR_SELECTOR)
 	{
-		pos_x = vid.displaywidth/4 - 8 * 8;
+		pos_x = self->argument_start * 8 + 16;
+		if (pos_x > vid.displaywidth/2)
+			pos_x -= 16 *8 + 4;
 		pos_y = offset;
+		Draw_Fill(pos_x - 2, pos_y + 8 * self->direction - 2, 6 * 8 + 4 + 4, 16 + 4, 0);
 		Draw_String(pos_x, pos_y, self->direction > 0 ? "top" : "bottom");
 		Draw_String(pos_x, pos_y + 8 * self->direction, self->direction > 0 ? "bottom" : "top");
-		pos_x = 6 * 8 + 4;
+		pos_x += 6 * 8 + 4;
 		for (y=0; y<2; y++)
 		{
 			for (x=0; x<13; x++)
