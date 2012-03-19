@@ -239,7 +239,7 @@ void Context_Sensitive_Tab_Completion_Key(int key)
 	if (key == K_ENTER)
 	{
 		insert_result(cst_info, NULL);
-		if (CSTC_Execute_On_Enter(cst_info->real_name) && !keydown[K_CTRL])
+		if ((CSTC_Execute_On_Enter(cst_info->real_name) || cst_info->flags & CSTC_EXECUTE) && !keydown[K_CTRL])
 			execute = true;
 		CSTC_Cleanup(cst_info);
 		if (execute)
@@ -1528,15 +1528,12 @@ void Context_Sensitive_Tab_Completion_CvarInit(void)
 	Cmd_AddCommand("weight_enable", Weight_Enable_f);
 	Cmd_AddCommand("weight_disable", Weight_Disable_f);
 	Cmd_AddCommand("weight_set", Weight_Set_f);
-//	CSTC_Add("enemycolor teamcolor", NULL, &Player_Color_Selector_Result, NULL, 0, CSTC_PLAYER_COLOR_SELECTOR | CSTC_MULTI_COMMAND | CSTC_NO_INPUT);
-//	CSTC_Add("context_sensitive_tab_completion_inputbox_color context_sensitive_tab_completion_selected_color context_sensitive_tab_completion_background_color sb_color_bg sb_color_bg_empty sb_color_bg_free sb_color_bg_specable sb_color_bg_full sb_highlight_sort_column_color topcolor bottomcolor r_skycolor context_sensitive_tab_completion_slider_border_color context_sensitive_tab_completion_slider_background_color context_sensitive_tab_completion_slider_color", NULL, &Color_Selector_Result, NULL, 0, CSTC_COLOR_SELECTOR | CSTC_MULTI_COMMAND);
-//	CSTC_Add("volume gl_gamma", NULL, &Slider_Result, NULL, 0, CSTC_SLIDER | CSTC_NO_INPUT | CSTC_MULTI_COMMAND);
 	CC_Slider.result = &Slider_Result;
-	CC_Slider.flags = CSTC_SLIDER | CSTC_NO_INPUT;
+	CC_Slider.flags = CSTC_SLIDER | CSTC_NO_INPUT | CSTC_EXECUTE;
 	CC_Player_Color.result = &Player_Color_Selector_Result;
-	CC_Player_Color.flags = CSTC_PLAYER_COLOR_SELECTOR | CSTC_NO_INPUT;
+	CC_Player_Color.flags = CSTC_PLAYER_COLOR_SELECTOR | CSTC_NO_INPUT | CSTC_EXECUTE;
 	CC_Color.result = &Color_Selector_Result;
-	CC_Color.flags = CSTC_COLOR_SELECTOR | CSTC_NO_INPUT;
+	CC_Color.flags = CSTC_COLOR_SELECTOR | CSTC_NO_INPUT | CSTC_EXECUTE;
 }
 
 void Context_Weighting_Init(void)

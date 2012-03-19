@@ -3,6 +3,7 @@
 #define CSTC_PLAYER_COLOR_SELECTOR		( 1 << 2)
 #define CSTC_MULTI_COMMAND				( 1 << 3)
 #define CSTC_SLIDER						( 1 << 4)
+#define CSTC_EXECUTE					( 1 << 5)
 
 #define INPUT_MAX 512
 struct cst_info

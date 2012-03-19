@@ -1557,8 +1557,7 @@ void CL_CvarDemoInit(void)
 	Cvar_Register(&demo_dir);
 	Cvar_ResetCurrentGroup();
 
-	CSTC_Add("playdemo", NULL, &cstc_playdemo_get_results, &cstc_playdemo_data, 0, 0);
-	CSTC_Add("timedemo", NULL, &cstc_playdemo_get_results, &cstc_playdemo_data, 0, 0);
+	CSTC_Add("playdemo timedemo", NULL, &cstc_playdemo_get_results, &cstc_playdemo_data, 0, CSTC_MULTI_COMMAND | CSTC_EXECUTE);
 
 }
 

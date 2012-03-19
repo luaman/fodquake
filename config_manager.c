@@ -894,7 +894,6 @@ void ConfigManager_CvarInit(void)
 
 	Cvar_ResetCurrentGroup();
 
-	CSTC_Add("cfg_load", NULL, &cstc_cfg_load_get_results, &cstc_cfg_load_get_data, 0, 0);
-	CSTC_Add("cfg_save", NULL, &cstc_cfg_load_get_results, &cstc_cfg_load_get_data, 0, 0);
+	CSTC_Add("cfg_load cfg_save", NULL, &cstc_cfg_load_get_results, &cstc_cfg_load_get_data, 0, CSTC_MULTI_COMMAND | CSTC_EXECUTE);
 }
 
