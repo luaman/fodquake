@@ -27,11 +27,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include <math.h>
 #include <string.h>
+#include <stdlib.h>
 
 #include "quakedef.h"
 #include "pmove.h"
 #include "sbar.h"
-#include "teamplay.h"	
+#include "teamplay.h"
 #include "utils.h"
 #include "mouse.h"
 #ifdef NETQW
@@ -40,6 +41,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "context_sensitive_tab.h"
 #include "tokenize_string.h"
+#include "strl.h"
 
 static vec3_t desired_position; // where the camera wants to be
 static qboolean locked = false;
@@ -537,14 +539,16 @@ static int track_check_player(struct cst_info *self, player_info_t *player)
 {
 	char uncpn[64];
 	int i;
+	char *s;
 
 	if (!self || !player)
 		return 0;
 	if (player->name[0] == '\0' || player->spectator == 1)
 		return 0;
 
-#warning The return value from Util_Remove_Colors() is never freed. Also snprintf() is a bit overkill when what you really want is strlcpy().
-	snprintf(uncpn, 64, "%s",  Util_Remove_Colors(player->name, strlen(player->name)));
+	s = Util_Remove_Colors(player->name, strlen(player->name));
+	strlcpy(uncpn, s, 64);
+	free(s);
 
 	for (i=0; i<self->tokenized_input->count; i++)
 	{
@@ -555,7 +559,7 @@ static int track_check_player(struct cst_info *self, player_info_t *player)
 	}
 
 	return 1;
-}	
+}
 
 static int cstc_track_results(struct cst_info *self, int *results, int get_result, int result_type, char **result)
 {
