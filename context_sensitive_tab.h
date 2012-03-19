@@ -8,6 +8,7 @@
 struct cst_info
 {
 	char *name;
+	char real_name[INPUT_MAX];	//for multicmd stuff
 	struct tokenized_string *commands;
 	char input[INPUT_MAX];
 	int selection;

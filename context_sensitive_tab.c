@@ -47,6 +47,7 @@ cvar_t	context_sensitive_tab_completion_slider_color = {"context_sensitive_tab_c
 cvar_t	context_sensitive_tab_completion_slider_variables = {"context_sensitive_tab_completion_slider_variables", "gl_gamma gl_contrast volume"};
 cvar_t	context_sensitive_tab_completion_player_color_variables = {"context_sensitive_tab_completion_player_color_variables", "teamcolor enemycolor"};
 cvar_t	context_sensitive_tab_completion_color_variables = {"context_sensitive_tab_completion_color_variables", "context_sensitive_tab_completion_inputbox_color context_sensitive_tab_completion_selected_color context_sensitive_tab_completion_background_color sb_color_bg sb_color_bg_empty sb_color_bg_free sb_color_bg_specable sb_color_bg_full sb_highlight_sort_column_color topcolor bottomcolor r_skycolor context_sensitive_tab_completion_slider_border_color context_sensitive_tab_completion_slider_background_color context_sensitive_tab_completion_slider_color"};
+cvar_t	context_sensitive_tab_completion_execute_on_enter = {"context_sensitive_tab_completion_execute_on_enter", "quit sb_activate"};
 
 static void cleanup_cst(struct cst_info *info)
 {
@@ -79,6 +80,28 @@ static void CSTC_Cleanup(struct cst_info *self)
 	context_sensitive_tab_completion_active = 0;
 	cleanup_cst(self);
 	memset(self, 0, sizeof(struct cst_info));
+}
+
+qboolean CSTC_Execute_On_Enter(char *cmd)
+{
+	struct tokenized_string *ts;
+	qboolean rval = false;
+	int i;
+
+	ts = Tokenize_String(context_sensitive_tab_completion_execute_on_enter.string);
+	if (ts)
+	{
+		for (i=0; i<ts->count; i++)
+		{
+			if (strcmp(cmd, ts->tokens[i]) == 0)
+			{
+				rval = true;
+				break;
+			}
+		}
+		Tokenize_String_Delete(ts);
+	}
+	return rval;
 }
 
 void CSTC_Add(char *name, int (*conditions)(void), int (*result)(struct cst_info *self, int *results, int get_result, int result_type, char **result), int (*get_data)(struct cst_info *self, int remove), int parser_behaviour, int flags)
@@ -177,6 +200,8 @@ void CSTC_Insert_And_Close(void)
 static void cstc_insert_only_find(struct cst_info *self)
 {
 	insert_result(self, NULL);
+	if (CSTC_Execute_On_Enter(self->real_name))
+		Cbuf_AddText("\n");
 	CSTC_Cleanup(self);
 }
 
@@ -188,9 +213,11 @@ static int valid_color(int i)
 		return i *16;
 }
 
+void Key_Console (int key);
 void Context_Sensitive_Tab_Completion_Key(int key)
 {
 	int i;
+	qboolean execute = false;
 
 	if (context_sensitive_tab_completion_active == 0)
 		return;
@@ -212,7 +239,11 @@ void Context_Sensitive_Tab_Completion_Key(int key)
 	if (key == K_ENTER)
 	{
 		insert_result(cst_info, NULL);
+		if (CSTC_Execute_On_Enter(cst_info->real_name) && !keydown[K_CTRL])
+			execute = true;
 		CSTC_Cleanup(cst_info);
+		if (execute)
+			Key_Console(K_ENTER); //there might be a better way to do this :P
 		return;
 	}
 
@@ -791,6 +822,7 @@ static int setup_current_command(void)
 					{
 						dobreak = 1;
 						name = c->commands->tokens[i];
+						snprintf(cst_info->real_name, INPUT_MAX, "%*.*s", cmd_len, cmd_len, cmd_start);
 						break;
 					}
 				}
@@ -800,6 +832,7 @@ static int setup_current_command(void)
 				if (cmd_len == strlen(c->name) && strncasecmp(c->name, cmd_start, cmd_len) == 0)
 				{
 					name = c->name;
+					snprintf(cst_info->real_name, INPUT_MAX, "%*.*s", cmd_len, cmd_len, cmd_start);
 					break;
 				}
 			}
@@ -847,6 +880,7 @@ static int setup_current_command(void)
 
 						cst_info->variable = Cvar_FindVar(name);
 						setup_slider(cst_info);
+						snprintf(cst_info->real_name, INPUT_MAX, "%*.*s", cmd_len, cmd_len, cmd_start);
 					}
 				}
 				Tokenize_String_Delete(ts);
@@ -905,6 +939,7 @@ static int setup_current_command(void)
 								Tokenize_String_Delete(var_ts);
 							}
 						}
+						snprintf(cst_info->real_name, INPUT_MAX, "%*.*s", cmd_len, cmd_len, cmd_start);
 					}
 				}
 				Tokenize_String_Delete(ts);
@@ -947,15 +982,13 @@ static int setup_current_command(void)
 						}
 						if (var)
 							cst_info->selection = var->value;
+						snprintf(cst_info->real_name, INPUT_MAX, "%*.*s", cmd_len, cmd_len, cmd_start);
 					}
 				}
 				Tokenize_String_Delete(ts);
 				if (cvar_setup)
 					return 1;
 			}
-
-
-
 		}
 
 		if (c)
@@ -976,6 +1009,7 @@ static int setup_current_command(void)
 			}
 			cst_info->function = Cmd_FindCommand(name);
 			cst_info->variable = Cvar_FindVar(name);
+			snprintf(cst_info->real_name, INPUT_MAX, "%*.*s", cmd_len, cmd_len, cmd_start);
 			if (cst_info->flags & CSTC_SLIDER)
 				setup_slider(cst_info);
 			return 1;
@@ -1376,7 +1410,10 @@ static int Command_Completion_Result(struct cst_info *self, int *results, int ge
 	}
 
 	if (result_type == 0)
+	{
 		*result = va("%s", res);
+		snprintf(self->real_name, INPUT_MAX, "%s", res);
+	}
 	else
 		*result = res;
 
@@ -1487,6 +1524,7 @@ void Context_Sensitive_Tab_Completion_CvarInit(void)
 	Cvar_Register(&context_sensitive_tab_completion_slider_background_color);
 	Cvar_Register(&context_sensitive_tab_completion_slider_variables);
 	Cvar_Register(&context_sensitive_tab_completion_player_color_variables);
+	Cvar_Register(&context_sensitive_tab_completion_execute_on_enter);
 	Cmd_AddCommand("weight_enable", Weight_Enable_f);
 	Cmd_AddCommand("weight_disable", Weight_Disable_f);
 	Cmd_AddCommand("weight_set", Weight_Set_f);
