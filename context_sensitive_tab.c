@@ -45,9 +45,10 @@ cvar_t	context_sensitive_tab_completion_slider_border_color = {"context_sensitiv
 cvar_t	context_sensitive_tab_completion_slider_background_color = {"context_sensitive_tab_completion_slider_background_color", "4"};
 cvar_t	context_sensitive_tab_completion_slider_color = {"context_sensitive_tab_completion_slider_color", "10"};
 cvar_t	context_sensitive_tab_completion_slider_variables = {"context_sensitive_tab_completion_slider_variables", "gl_gamma gl_contrast volume"};
-cvar_t	context_sensitive_tab_completion_player_color_variables = {"context_sensitive_tab_completion_player_color_variables", "teamcolor enemycolor color"};
-cvar_t	context_sensitive_tab_completion_color_variables = {"context_sensitive_tab_completion_color_variables", "context_sensitive_tab_completion_inputbox_color context_sensitive_tab_completion_selected_color context_sensitive_tab_completion_background_color sb_color_bg sb_color_bg_empty sb_color_bg_free sb_color_bg_specable sb_color_bg_full sb_highlight_sort_column_color topcolor bottomcolor r_skycolor context_sensitive_tab_completion_slider_border_color context_sensitive_tab_completion_slider_background_color context_sensitive_tab_completion_slider_color"};
 cvar_t	context_sensitive_tab_completion_execute_on_enter = {"context_sensitive_tab_completion_execute_on_enter", "quit sb_activate"};
+
+char *context_sensitive_tab_completion_color_variables = "context_sensitive_tab_completion_inputbox_color context_sensitive_tab_completion_selected_color context_sensitive_tab_completion_background_color sb_color_bg sb_color_bg_empty sb_color_bg_free sb_color_bg_specable sb_color_bg_full sb_highlight_sort_column_color topcolor bottomcolor r_skycolor context_sensitive_tab_completion_slider_border_color context_sensitive_tab_completion_slider_background_color context_sensitive_tab_completion_slider_color";
+char *context_sensitive_tab_completion_player_color_variables = "teamcolor enemycolor color";
 
 static void cleanup_cst(struct cst_info *info)
 {
@@ -890,7 +891,7 @@ static int setup_current_command(void)
 
 			// player_color
 			cvar_setup = false;
-			ts = Tokenize_String(context_sensitive_tab_completion_player_color_variables.string);
+			ts = Tokenize_String(context_sensitive_tab_completion_player_color_variables);
 			if (ts)
 			{
 				if (ts->count)
@@ -949,7 +950,7 @@ static int setup_current_command(void)
 
 			// color selector
 			cvar_setup = false;
-			ts = Tokenize_String(context_sensitive_tab_completion_color_variables.string);
+			ts = Tokenize_String(context_sensitive_tab_completion_color_variables);
 			if (ts)
 			{
 				if (ts->count)
@@ -1523,7 +1524,6 @@ void Context_Sensitive_Tab_Completion_CvarInit(void)
 	Cvar_Register(&context_sensitive_tab_completion_slider_border_color);
 	Cvar_Register(&context_sensitive_tab_completion_slider_background_color);
 	Cvar_Register(&context_sensitive_tab_completion_slider_variables);
-	Cvar_Register(&context_sensitive_tab_completion_player_color_variables);
 	Cvar_Register(&context_sensitive_tab_completion_execute_on_enter);
 	Cmd_AddCommand("weight_enable", Weight_Enable_f);
 	Cmd_AddCommand("weight_disable", Weight_Disable_f);
