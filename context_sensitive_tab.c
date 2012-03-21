@@ -170,26 +170,23 @@ static void insert_result(struct cst_info *self, char *ptr)
 		if (cst_info->result(cst_info, NULL, cst_info->selection, 0, &result))
 			return;
 
-	if (self->insert_space)
-		snprintf(new_keyline, MAXCMDLINE, "%*.*s%s %s", self->argument_start, self->argument_start, key_lines[edit_line], result, key_lines[edit_line] + self->argument_start + self->argument_length);
-	else
-		if (context_sensitive_tab_completion_insert_slash.value == 1 && self->argument_start == 1 && key_lines[edit_line][1] != '/')
-			snprintf(new_keyline, MAXCMDLINE, "%*.*s/%s %s", self->argument_start, self->argument_start, key_lines[edit_line], result, key_lines[edit_line] + self->argument_start + self->argument_length);
-		else
-			snprintf(new_keyline, MAXCMDLINE, "%*.*s%s %s", self->argument_start, self->argument_start, key_lines[edit_line], result, key_lines[edit_line] + self->argument_start + self->argument_length);
+	snprintf(new_keyline, MAXCMDLINE,
+			"%*.*s%s%s %s%s",
+			self->argument_start, self->argument_start, key_lines[edit_line],
+			(context_sensitive_tab_completion_insert_slash.value == 1 && self->argument_start == 1 && key_lines[edit_line][1] != '/') ? "/" : " ",
+			result,
+			self->insert_space ? " " : "",
+			strlen(key_lines[edit_line]) < (self->argument_start + self->argument_length) ? "" : key_lines[edit_line] + self->argument_start + self->argument_length);
+
 	memcpy(key_lines[edit_line], new_keyline, MAXCMDLINE);
-
 	key_linepos = self->argument_start + strlen(result);
-
+	key_linepos++;
 	if (self->insert_space)
 		key_linepos++;
-
-	key_linepos++;
 
 	if (key_linepos >= MAXCMDLINE)
 		key_linepos = MAXCMDLINE - 1;
 
-#warning You need to clamp key_linepos here (it can otherwise overflow)
 }
 
 void CSTC_Insert_And_Close(void)
