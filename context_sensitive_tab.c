@@ -1250,7 +1250,7 @@ static int setup_command_completion_data(struct cst_info *self)
 		{
 			for (i=0; i<self->tokenized_input->count; i++)
 			{
-				if (strstr(cmd->name, self->tokenized_input->tokens[i]) == NULL)
+				if (Util_strcasestr(cmd->name, self->tokenized_input->tokens[i]) == NULL)
 				{
 					add = 0;
 					break;
@@ -1279,7 +1279,7 @@ static int setup_command_completion_data(struct cst_info *self)
 		{
 			for (i=0; i<self->tokenized_input->count; i++)
 			{
-				if (strstr(alias->name, self->tokenized_input->tokens[i]) == NULL)
+				if (Util_strcasestr(alias->name, self->tokenized_input->tokens[i]) == NULL)
 				{
 					add = 0;
 					break;
@@ -1310,7 +1310,7 @@ static int setup_command_completion_data(struct cst_info *self)
 			for (i=0; i<self->tokenized_input->count; i++)
 			{
 			
-				if (strstr(var->name, self->tokenized_input->tokens[i]) == NULL)
+				if (Util_strcasestr(var->name, self->tokenized_input->tokens[i]) == NULL)
 				{
 					add = 0;
 					break;
@@ -1336,7 +1336,7 @@ static int setup_command_completion_data(struct cst_info *self)
 		match = 0;
 		for (i=0; i<self->tokenized_input->count; i++)
 		{
-			if ((s = strstr(cmd->name, self->tokenized_input->tokens[i])) == NULL)
+			if ((s = Util_strcasestr(cmd->name, self->tokenized_input->tokens[i])) == NULL)
 			{
 				add = 0;
 				break;
@@ -1359,7 +1359,7 @@ static int setup_command_completion_data(struct cst_info *self)
 		add = 1;
 		for (i=0; i<self->tokenized_input->count; i++)
 		{
-			if ((s = strstr(alias->name, self->tokenized_input->tokens[i])) == NULL)
+			if ((s = Util_strcasestr(alias->name, self->tokenized_input->tokens[i])) == NULL)
 			{
 				add = 0;
 				break;
@@ -1382,7 +1382,7 @@ static int setup_command_completion_data(struct cst_info *self)
 		add = 1;
 		for (i=0; i<self->tokenized_input->count; i++)
 		{
-			if ((s = strstr(var->name, self->tokenized_input->tokens[i])) == NULL)
+			if ((s = Util_strcasestr(var->name, self->tokenized_input->tokens[i])) == NULL)
 			{
 				add = 0;
 				break;
