@@ -33,7 +33,7 @@ int context_sensitive_tab_completion_active = 0;
 
 cvar_t	context_sensitive_tab_completion = {"context_sensitive_tab_completion", "1"};
 cvar_t	context_sensitive_tab_completion_close_on_tab = {"context_sensitive_tab_completion_close_on_tab", "1"};
-cvar_t	context_sensitive_tab_completion_sorting_method = {"context_sensitive_tab_completion_sorting_method", "1"};
+cvar_t	context_sensitive_tab_completion_sorting_method = {"context_sensitive_tab_completion_sorting_method", "2"};
 cvar_t	context_sensitive_tab_completion_show_results = {"context_sensitive_tab_completion_show_results", "1"};
 cvar_t	context_sensitive_tab_completion_ignore_alt_tab = {"context_sensitive_tab_completion_ignore_alt_tab", "1"};
 cvar_t	context_sensitive_tab_completion_background_color = {"context_sensitive_tab_completion_background_color", "4"};
@@ -1108,6 +1108,61 @@ static int name_compare(const void *a, const void *b)
 	return(strcasecmp(na, nb));
 }
 
+static int new_compare(const void *a, const void *b)
+{
+	struct cva_s *x, *y;
+	char *na, *nb;
+	int w1, w2;
+
+	if (a == NULL)
+		return -1;
+
+	if (b == NULL)
+		return -1;
+
+	x = (struct cva_s *)a;
+	y = (struct cva_s *)b;
+
+	switch (x->type)
+	{
+		case 0:
+			na = x->info.c->name;
+			w1 = x->info.c->weight;
+			break;
+		case 1:
+			na = x->info.a->name;
+			w1 = x->info.a->weight;
+			break;
+		case 2:
+			na = x->info.v->name;
+			w1 = x->info.v->weight;
+			break;
+		default:
+			return -1;
+	}
+
+	switch (y->type)
+	{
+		case 0:
+			nb = y->info.c->name;
+			w2 = y->info.c->weight;
+			break;
+		case 1:
+			nb = y->info.a->name;
+			w2 = y->info.a->weight;
+			break;
+		case 2:
+			nb = y->info.v->name;
+			w2 = y->info.v->weight;
+			break;
+		default:
+			return -1;
+	}
+
+	return(strcasecmp(na, nb) + (x->match - y->match) +  (w2 - w1));
+}
+
+
 static int match_compare(const void *a, const void *b)
 {
 	struct cva_s *x, *y;
@@ -1347,6 +1402,8 @@ static int setup_command_completion_data(struct cst_info *self)
 
 	if (context_sensitive_tab_completion_sorting_method.value == 1)
 		qsort(self->data, count, sizeof(struct cva_s), &match_compare);
+	else if (context_sensitive_tab_completion_sorting_method.value == 2)
+		qsort(self->data, count, sizeof(struct cva_s), &new_compare);
 	else
 		qsort(self->data, count, sizeof(struct cva_s), &name_compare);
 
