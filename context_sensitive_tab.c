@@ -171,7 +171,7 @@ static void insert_result(struct cst_info *self, char *ptr)
 			return;
 
 	if (self->insert_space)
-		snprintf(new_keyline, MAXCMDLINE, "%*.*s %s %s", self->argument_start, self->argument_start, key_lines[edit_line], result, key_lines[edit_line] + self->argument_start + self->argument_length);
+		snprintf(new_keyline, MAXCMDLINE, "%*.*s%s %s", self->argument_start, self->argument_start, key_lines[edit_line], result, key_lines[edit_line] + self->argument_start + self->argument_length);
 	else
 		if (context_sensitive_tab_completion_insert_slash.value == 1 && self->argument_start == 1 && key_lines[edit_line][1] != '/')
 			snprintf(new_keyline, MAXCMDLINE, "%*.*s/%s %s", self->argument_start, self->argument_start, key_lines[edit_line], result, key_lines[edit_line] + self->argument_start + self->argument_length);
@@ -804,7 +804,7 @@ static int setup_current_command(void)
 
 	if (cursor_on_command || key_lines[edit_line] + key_linepos == cmd_start + cmd_len)
 	{
-		setup_completion(&Command_Completion, cst_info, cmd_start - key_lines[edit_line], cmd_len, 0);
+		setup_completion(&Command_Completion, cst_info, cmd_start - key_lines[edit_line], cmd_len, 1);
 		return 1;
 	}
 
@@ -1635,3 +1635,19 @@ void CSTC_Console_Close(void)
 	CSTC_Cleanup(cst_info);
 }
 
+void CSTC_Shutdown(void)
+{
+	struct cst_commands *c, *cc;
+
+	c = commands;
+	while (c)
+	{
+		cc = c->next;
+		if (c->name)
+			free(c->name);
+		if (c->commands)
+			Tokenize_String_Delete(c->commands);
+		free(c);
+		c = cc;
+	}
+}
