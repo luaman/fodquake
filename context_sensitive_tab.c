@@ -186,7 +186,6 @@ static void insert_result(struct cst_info *self, char *ptr)
 
 	if (key_linepos >= MAXCMDLINE)
 		key_linepos = MAXCMDLINE - 1;
-
 }
 
 void CSTC_Insert_And_Close(void)
@@ -853,7 +852,7 @@ static int setup_current_command(void)
 					name = NULL;
 					for (i=0; i<ts->count;i++)
 					{
-						if (strncasecmp(ts->tokens[i], cmd_start, cmd_len) == 0)
+						if (strlen(ts->tokens[i]) == cmd_len && strncasecmp(ts->tokens[i], cmd_start, cmd_len) == 0)
 						{
 							name = ts->tokens[i];
 							break;
@@ -896,7 +895,7 @@ static int setup_current_command(void)
 					name = NULL;
 					for (i=0; i<ts->count;i++)
 					{
-						if (strncasecmp(ts->tokens[i], cmd_start, cmd_len) == 0)
+						if (strlen(ts->tokens[i]) == cmd_len && strncasecmp(ts->tokens[i], cmd_start, cmd_len) == 0)
 						{
 							name = ts->tokens[i];
 							break;
@@ -955,7 +954,7 @@ static int setup_current_command(void)
 					name = NULL;
 					for (i=0; i<ts->count;i++)
 					{
-						if (strncasecmp(ts->tokens[i], cmd_start, cmd_len) == 0)
+						if (strlen(ts->tokens[i]) == cmd_len && strncasecmp(ts->tokens[i], cmd_start, cmd_len) == 0)
 						{
 							name = ts->tokens[i];
 							break;
