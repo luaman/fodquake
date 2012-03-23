@@ -3958,6 +3958,7 @@ static void M_Quit_Draw()
 		"1Programming:",
 		"0David Walton",
 		"0Florian Zwoch",
+		"0Jacek Piszczek",
 		"0Jonny Tornbom",
 		"0Juergen Legler",
 		"0Mark Olsen",
