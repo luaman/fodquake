@@ -163,6 +163,7 @@ static void insert_result(struct cst_info *self, char *ptr)
 {
 	char *result;
 	char new_keyline[MAXCMDLINE];
+	int i;
 
 	if (ptr)
 		result = ptr;
@@ -171,12 +172,13 @@ static void insert_result(struct cst_info *self, char *ptr)
 			return;
 
 	snprintf(new_keyline, MAXCMDLINE,
-			"%*.*s%s%s%s%s",
+			"%*.*s%s%s%s%s%s",
 			self->argument_start, self->argument_start, key_lines[edit_line],
 			(context_sensitive_tab_completion_insert_slash.value == 1 && self->argument_start == 1 && key_lines[edit_line][1] != '/') ? "/" : "",
 			self->flags & CSTC_COMMAND  ? "" : " ",
 			result,
-			self->flags & CSTC_COMMAND  ? " " : ""
+			self->flags & CSTC_COMMAND  ? " " : "",
+			key_lines[edit_line] + self->argument_start + self->argument_length
 			);
 
 	memcpy(key_lines[edit_line], new_keyline, MAXCMDLINE);
@@ -185,6 +187,10 @@ static void insert_result(struct cst_info *self, char *ptr)
 	key_linepos++;
 	if (self->flags & CSTC_COMMAND)
 		key_linepos++;
+
+	i = strlen(key_lines[edit_line]);
+	if (key_linepos > i)
+		key_linepos = i;
 
 	if (key_linepos >= MAXCMDLINE)
 		key_linepos = MAXCMDLINE - 1;
