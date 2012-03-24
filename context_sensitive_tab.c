@@ -176,7 +176,6 @@ static void insert_result(struct cst_info *self, char *ptr)
 		if (key_lines[edit_line][self->argument_start - 1] == ' ')
 			isspace = true;
 
-	Com_Printf("\"%c\" \"%s\"\n", key_lines[edit_line][self->argument_start], result);
 	snprintf(new_keyline, MAXCMDLINE,
 			"%*.*s%s%s%s%s%s",
 			self->argument_start, self->argument_start, key_lines[edit_line],
