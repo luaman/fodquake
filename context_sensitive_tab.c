@@ -164,6 +164,7 @@ static void insert_result(struct cst_info *self, char *ptr)
 	char *result;
 	char new_keyline[MAXCMDLINE];
 	int i;
+	qboolean isspace = false;
 
 	if (ptr)
 		result = ptr;
@@ -171,11 +172,16 @@ static void insert_result(struct cst_info *self, char *ptr)
 		if (cst_info->result(cst_info, NULL, cst_info->selection, 0, &result))
 			return;
 
+	if (self->argument_start > 0)
+		if (key_lines[edit_line][self->argument_start - 1] == ' ')
+			isspace = true;
+
+	Com_Printf("\"%c\" \"%s\"\n", key_lines[edit_line][self->argument_start], result);
 	snprintf(new_keyline, MAXCMDLINE,
 			"%*.*s%s%s%s%s%s",
 			self->argument_start, self->argument_start, key_lines[edit_line],
 			(context_sensitive_tab_completion_insert_slash.value == 1 && self->argument_start == 1 && key_lines[edit_line][1] != '/') ? "/" : "",
-			self->flags & CSTC_COMMAND  ? "" : " ",
+			(self->flags & CSTC_COMMAND || isspace) ? "" : " ",
 			result,
 			self->flags & CSTC_COMMAND  ? " " : "",
 			key_lines[edit_line] + self->argument_start + self->argument_length
@@ -566,7 +572,7 @@ void Context_Sensitive_Tab_Completion_Draw(void)
 	CSTC_Draw(cst_info, scr_conlines);
 }
 
-static void getarg(const char *s, char **start, char **end, char **next)
+static void getarg(const char *s, char **start, char **end, char **next, qboolean cmd)
 {
 	char endchar;
 
@@ -579,7 +585,10 @@ static void getarg(const char *s, char **start, char **end, char **next)
 		s++;
 	}
 	else
-		endchar = ' ';
+		if (cmd)
+			endchar = ' ';
+		else
+			endchar = ';';
 
 	*start = (char *)s;
 
@@ -603,6 +612,7 @@ void read_info_new (char *string, int position, char **cmd_begin, int *cmd_len, 
 	int docontinue;
 	int dobreak;
 	int isinvalid;
+	qboolean cmd = true;
 
 	docontinue = 0;
 	dobreak = 0;
@@ -641,7 +651,7 @@ void read_info_new (char *string, int position, char **cmd_begin, int *cmd_len, 
 
 		while(*s)
 		{
-			getarg(s, start, stop, &next);
+			getarg(s, start, stop, &next, cmd);
 
 #if 0
 			printf("'%s' '%s'\n", cmd_start, cmd_stop);
@@ -689,6 +699,7 @@ void read_info_new (char *string, int position, char **cmd_begin, int *cmd_len, 
 
 			start = &arg_start;
 			stop = &arg_stop;
+			cmd = false;
 		}
 
 		if (docontinue)
