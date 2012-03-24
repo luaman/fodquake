@@ -171,17 +171,19 @@ static void insert_result(struct cst_info *self, char *ptr)
 			return;
 
 	snprintf(new_keyline, MAXCMDLINE,
-			"%*.*s%s%s %s%s",
+			"%*.*s%s%s%s%s",
 			self->argument_start, self->argument_start, key_lines[edit_line],
-			(context_sensitive_tab_completion_insert_slash.value == 1 && self->argument_start == 1 && key_lines[edit_line][1] != '/') ? "/" : " ",
+			(context_sensitive_tab_completion_insert_slash.value == 1 && self->argument_start == 1 && key_lines[edit_line][1] != '/') ? "/" : "",
+			self->flags & CSTC_COMMAND  ? "" : " ",
 			result,
-			self->insert_space ? " " : "",
-			strlen(key_lines[edit_line]) < (self->argument_start + self->argument_length) ? "" : key_lines[edit_line] + self->argument_start + self->argument_length);
+			self->flags & CSTC_COMMAND  ? " " : ""
+			);
 
 	memcpy(key_lines[edit_line], new_keyline, MAXCMDLINE);
 	key_linepos = self->argument_start + strlen(result);
+
 	key_linepos++;
-	if (self->insert_space)
+	if (self->flags & CSTC_COMMAND)
 		key_linepos++;
 
 	if (key_linepos >= MAXCMDLINE)
@@ -1564,6 +1566,7 @@ void Context_Sensitive_Tab_Completion_CvarInit(void)
 	Command_Completion.result = &Command_Completion_Result;
 	Command_Completion.get_data = &Command_Completion_Get_Data;
 	Command_Completion.conditions = NULL;
+	Command_Completion.flags = CSTC_COMMAND;
 	Cvar_Register(&context_sensitive_tab_completion);
 	Cvar_Register(&context_sensitive_tab_completion_close_on_tab);
 	Cvar_Register(&context_sensitive_tab_completion_sorting_method);
@@ -1585,6 +1588,7 @@ void Context_Sensitive_Tab_Completion_CvarInit(void)
 	CC_Slider.flags = CSTC_SLIDER | CSTC_NO_INPUT | CSTC_EXECUTE;
 	CC_Player_Color.result = &Player_Color_Selector_Result;
 	CC_Player_Color.flags = CSTC_PLAYER_COLOR_SELECTOR | CSTC_NO_INPUT | CSTC_EXECUTE;
+
 	CC_Color.result = &Color_Selector_Result;
 	CC_Color.flags = CSTC_COLOR_SELECTOR | CSTC_NO_INPUT | CSTC_EXECUTE;
 }
