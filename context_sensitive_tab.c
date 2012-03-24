@@ -176,6 +176,8 @@ static void insert_result(struct cst_info *self, char *ptr)
 		if (key_lines[edit_line][self->argument_start - 1] == ' ')
 			isspace = true;
 
+	i = strlen(key_lines[edit_line] + self->argument_start + self->argument_length);
+
 	snprintf(new_keyline, MAXCMDLINE,
 			"%*.*s%s%s%s%s%s",
 			self->argument_start, self->argument_start, key_lines[edit_line],
@@ -183,7 +185,7 @@ static void insert_result(struct cst_info *self, char *ptr)
 			(self->flags & CSTC_COMMAND || isspace) ? "" : " ",
 			result,
 			self->flags & CSTC_COMMAND  ? " " : "",
-			key_lines[edit_line] + self->argument_start + self->argument_length
+			(i == 0 && !(self->flags & CSTC_COMMAND)) ? " " : key_lines[edit_line] + self->argument_start + self->argument_length
 			);
 
 	memcpy(key_lines[edit_line], new_keyline, MAXCMDLINE);
