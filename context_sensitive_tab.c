@@ -18,7 +18,6 @@ struct cst_commands
 	int (*conditions)(void);
 	int (*result)(struct cst_info *self, int *results, int get_result, int result_type, char **result);
 	int (*get_data)(struct cst_info *self, int remove);
-	int parser_behaviour;
 	int flags;
 };
 
@@ -105,7 +104,7 @@ qboolean CSTC_Execute_On_Enter(char *cmd)
 	return rval;
 }
 
-void CSTC_Add(char *name, int (*conditions)(void), int (*result)(struct cst_info *self, int *results, int get_result, int result_type, char **result), int (*get_data)(struct cst_info *self, int remove), int parser_behaviour, int flags)
+void CSTC_Add(char *name, int (*conditions)(void), int (*result)(struct cst_info *self, int *results, int get_result, int result_type, char **result), int (*get_data)(struct cst_info *self, int remove), int flags)
 {
 	struct cst_commands *command, *cc;
 	char *in;
@@ -139,7 +138,6 @@ void CSTC_Add(char *name, int (*conditions)(void), int (*result)(struct cst_info
 	command->conditions = conditions;
 	command->result = result;
 	command->get_data = get_data;
-	command->parser_behaviour = parser_behaviour;
 	command->flags = flags;
 	if (flags & CSTC_MULTI_COMMAND)
 		command->commands = Tokenize_String(command->name);
@@ -164,7 +162,6 @@ static void insert_result(struct cst_info *self, char *ptr)
 	char *result;
 	char new_keyline[MAXCMDLINE];
 	int i;
-	qboolean isspace = false;
 
 	if (ptr)
 		result = ptr;
@@ -172,20 +169,13 @@ static void insert_result(struct cst_info *self, char *ptr)
 		if (cst_info->result(cst_info, NULL, cst_info->selection, 0, &result))
 			return;
 
-	if (self->argument_start > 0)
-		if (key_lines[edit_line][self->argument_start - 1] == ' ')
-			isspace = true;
-
-	i = strlen(key_lines[edit_line] + self->argument_start + self->argument_length);
-
 	snprintf(new_keyline, MAXCMDLINE,
-			"%*.*s%s%s%s%s%s",
-			self->argument_start, self->argument_start, key_lines[edit_line],
+			"%*.*s%s%s%s%s ",
+			self->command_start, self->command_start, key_lines[edit_line],
 			(context_sensitive_tab_completion_insert_slash.value == 1 && self->argument_start == 1 && key_lines[edit_line][1] != '/') ? "/" : "",
-			(self->flags & CSTC_COMMAND || isspace) ? "" : " ",
-			result,
-			self->flags & CSTC_COMMAND  ? " " : "",
-			(i == 0 && !(self->flags & CSTC_COMMAND)) ? " " : key_lines[edit_line] + self->argument_start + self->argument_length
+			self->flags & CSTC_COMMAND ? "" : self->real_name,
+			self->flags & CSTC_COMMAND ? "" : " ",
+			result
 			);
 
 	memcpy(key_lines[edit_line], new_keyline, MAXCMDLINE);
@@ -764,7 +754,7 @@ void read_info_new (char *string, int position, char **cmd_begin, int *cmd_len, 
 	*/
 }
 
-static void setup_completion(struct cst_commands *cc, struct cst_info *c, int arg_start, int arg_len, int insert_space)
+static void setup_completion(struct cst_commands *cc, struct cst_info *c, int arg_start, int arg_len, int cmd_start, int cmd_len)
 {
 	if (c == NULL || cc == NULL)
 		return;
@@ -782,11 +772,11 @@ static void setup_completion(struct cst_commands *cc, struct cst_info *c, int ar
 	Tokenize_Input(c);
 	c->argument_start = arg_start;
 	c->argument_length = arg_len;
+	c->command_start = cmd_start;
+	c->command_length = cmd_len;
 	if (c->get_data)
 		c->get_data(c, 0);
 	c->result(c, &c->results, 0, 0, NULL);
-	c->insert_space = insert_space;
-	c->parser_behaviour = cc->parser_behaviour;
 	c->flags = cc->flags;
 }
 
@@ -807,9 +797,10 @@ static int setup_current_command(void)
 {
 	int cmd_len, arg_len, cursor_on_command, isinvalid, i, dobreak;
 	char *cmd_start, *arg_start, *name;
+	int cmd_istart, arg_istart;
 	struct cst_commands *c;
 	cvar_t *var;
-	char new_keyline[MAXCMDLINE];
+	char new_keyline[MAXCMDLINE], *cs;
 	struct tokenized_string *ts, *var_ts;
 	qboolean cvar_setup;
 
@@ -818,9 +809,20 @@ static int setup_current_command(void)
 	if (isinvalid)
 		return 0;
 
+	cs = key_lines[edit_line];
+
+	cmd_istart = cmd_start - key_lines[edit_line];
+	if (arg_start)
+		arg_istart = arg_start - key_lines[edit_line];
+	else
+		arg_istart = cmd_istart + cmd_len;
+
+	if (arg_istart < cmd_istart)
+		arg_istart = cmd_istart + cmd_len;
+
 	if (cursor_on_command || key_lines[edit_line] + key_linepos == cmd_start + cmd_len)
 	{
-		setup_completion(&Command_Completion, cst_info, cmd_start - key_lines[edit_line], cmd_len, 1);
+		setup_completion(&Command_Completion, cst_info, cmd_istart , cmd_len, cmd_istart, cmd_len);
 		return 1;
 	}
 
@@ -883,17 +885,7 @@ static int setup_current_command(void)
 					{
 						cvar_setup = true;
 						c = &CC_Slider;
-						if (arg_start - key_lines[edit_line] - 1 == 0)
-							setup_completion(c, cst_info, cmd_start + cmd_len - key_lines[edit_line], arg_len, 1);
-						else
-						{
-							if (c->parser_behaviour == 0)
-								setup_completion(c, cst_info, arg_start - key_lines[edit_line], arg_len, 0);
-							else
-							{
-								setup_completion(c, cst_info, cmd_start + cmd_len - key_lines[edit_line] + 1,  (arg_start - cmd_start) + arg_len-1, 0);
-							}
-						}
+						setup_completion(c, cst_info, arg_istart ,arg_len, cmd_istart, cmd_len);
 
 						cst_info->variable = Cvar_FindVar(name);
 						setup_slider(cst_info);
@@ -927,17 +919,7 @@ static int setup_current_command(void)
 						cvar_setup = true;
 						c = &CC_Player_Color;
 						var = Cvar_FindVar(name);
-						if (arg_start - key_lines[edit_line] - 1 == 0)
-							setup_completion(c, cst_info, cmd_start + cmd_len - key_lines[edit_line], arg_len, 1);
-						else
-						{
-							if (c->parser_behaviour == 0)
-								setup_completion(c, cst_info, arg_start - key_lines[edit_line], arg_len, 0);
-							else
-							{
-								setup_completion(c, cst_info, cmd_start + cmd_len - key_lines[edit_line] + 1,  (arg_start - cmd_start) + arg_len-1, 0);
-							}
-						}
+						setup_completion(c, cst_info, arg_istart ,arg_len, cmd_istart, cmd_len);
 
 						if (var)
 						{
@@ -986,17 +968,7 @@ static int setup_current_command(void)
 						cvar_setup = true;
 						c = &CC_Color;
 						var = Cvar_FindVar(name);
-						if (arg_start - key_lines[edit_line] - 1 == 0)
-							setup_completion(c, cst_info, cmd_start + cmd_len - key_lines[edit_line], arg_len, 1);
-						else
-						{
-							if (c->parser_behaviour == 0)
-								setup_completion(c, cst_info, arg_start - key_lines[edit_line], arg_len, 0);
-							else
-							{
-								setup_completion(c, cst_info, cmd_start + cmd_len - key_lines[edit_line] + 1,  (arg_start - cmd_start) + arg_len-1, 0);
-							}
-						}
+						setup_completion(c, cst_info, arg_istart ,arg_len, cmd_istart, cmd_len);
 						if (var)
 							cst_info->selection = var->value;
 						snprintf(cst_info->real_name, INPUT_MAX, "%*.*s", cmd_len, cmd_len, cmd_start);
@@ -1013,17 +985,7 @@ static int setup_current_command(void)
 			if (c->conditions)
 				if (c->conditions() == 0)
 					return 0;
-			if (arg_start - key_lines[edit_line] - 1 == 0)
-				setup_completion(c, cst_info, cmd_start + cmd_len - key_lines[edit_line], arg_len, 1);
-			else
-			{
-				if (c->parser_behaviour == 0)
-					setup_completion(c, cst_info, arg_start - key_lines[edit_line], arg_len, 0);
-				else
-				{
-					setup_completion(c, cst_info, cmd_start + cmd_len - key_lines[edit_line] + 1,  (arg_start - cmd_start) + arg_len-1, 0);
-				}
-			}
+			setup_completion(c, cst_info, arg_istart ,arg_len, cmd_istart, cmd_len);
 			cst_info->function = Cmd_FindCommand(name);
 			cst_info->variable = Cvar_FindVar(name);
 			snprintf(cst_info->real_name, INPUT_MAX, "%*.*s", cmd_len, cmd_len, cmd_start);
