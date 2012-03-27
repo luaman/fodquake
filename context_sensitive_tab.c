@@ -402,7 +402,7 @@ void Context_Sensitive_Tab_Completion_Key(int key)
 
 static void CSTC_Draw(struct cst_info *self, int y_offset)
 {
-	int i, result_offset, offset, rows, sup, sdown, x, y, pos_x, pos_y, sp_x[3], sp_y[3];
+	int i, result_offset, offset, rows, sup, sdown, x, y, pos_x, pos_y, sp_x, sp_y;
 	char *ptr;
 	char buf[128];
 
@@ -449,6 +449,7 @@ static void CSTC_Draw(struct cst_info *self, int y_offset)
 
 	if (self->flags & CSTC_COLOR_SELECTOR)
 	{
+		sp_x = sp_y = 0;
 		for (x=0; x<16; x++)
 		{
 			for (y=0; y<16; y++)
@@ -461,12 +462,12 @@ static void CSTC_Draw(struct cst_info *self, int y_offset)
 				Draw_Fill(pos_x, pos_y, 8, 8, x + y * 16);
 				if (self->selection == x + y * 16)
 				{
-					sp_x[2] = pos_x;
-					sp_y[2] = pos_y;
+					sp_x = pos_x;
+					sp_y = pos_y;
 				}
 			}
 		}
-		Draw_String(sp_x[2]  , sp_y[2] , "x");
+		Draw_String(sp_x, sp_y, "x");
 	}
 	else if (self->flags & CSTC_PLAYER_COLOR_SELECTOR)
 	{
