@@ -762,9 +762,13 @@ static int cstc_skins_condition(void)
 
 	data = Util_Dir_Read(va("%s/qw/skins/", com_basedir), 1, 1, skins_endings);
 
+	if (data == NULL)
+		return 0;
+
 	if (data->entry_count == 0)
 	{
 		Com_Printf(va("no skins found in \"%s/qw/skins/\".\n", com_basedir));
+		Util_Dir_Delete(data);
 		i = 0;
 	}
 	else
@@ -777,14 +781,7 @@ static int cstc_skins_condition(void)
 
 void FS_Init()
 {
-	CSTC_Add("enemyskin", &cstc_skins_condition, &cstc_skins_get_results, &cstc_skins_get_data, 0);
-	CSTC_Add("enemyquadskin", &cstc_skins_condition, &cstc_skins_get_results, &cstc_skins_get_data, 0);
-	CSTC_Add("enemypentskin", &cstc_skins_condition, &cstc_skins_get_results, &cstc_skins_get_data, 0);
-	CSTC_Add("enemybothskin", &cstc_skins_condition, &cstc_skins_get_results, &cstc_skins_get_data, 0);
-	CSTC_Add("teamskin", &cstc_skins_condition, &cstc_skins_get_results, &cstc_skins_get_data, 0);
-	CSTC_Add("teamquadskin", &cstc_skins_condition, &cstc_skins_get_results, &cstc_skins_get_data, 0);
-	CSTC_Add("teampentskin", &cstc_skins_condition, &cstc_skins_get_results, &cstc_skins_get_data, 0);
-	CSTC_Add("teambothskin", &cstc_skins_condition, &cstc_skins_get_results, &cstc_skins_get_data, 0);
+	CSTC_Add("enemyskin enemyquadskin enemypentskin enemybothskin teamskin teamquadskin teampentskin teambothskin", &cstc_skins_condition, &cstc_skins_get_results, &cstc_skins_get_data, CSTC_MULTI_COMMAND| CSTC_NO_INPUT| CSTC_EXECUTE);
 	Cmd_AddCommand("path", FS_Path_f);
 }
 

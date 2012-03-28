@@ -55,6 +55,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "strl.h"
 #include "ruleset.h"
 #include "tokenize_string.h"
+#include "context_sensitive_tab.h"
 
 #ifndef GLQUAKE
 #include "d_local.h"
@@ -1695,6 +1696,8 @@ void ToggleConsole_f(void)
 	{
 		key_dest = key_console;
 	}
+
+	CSTC_Console_Close();
 
 	if (con_clearnotify.value)
 		Con_ClearNotify();
