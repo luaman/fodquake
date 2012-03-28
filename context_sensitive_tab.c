@@ -169,7 +169,7 @@ static void insert_result(struct cst_info *self, char *ptr)
 		if (cst_info->result(cst_info, NULL, cst_info->selection, 0, &result))
 			return;
 
-	snprintf(new_keyline, MAXCMDLINE,
+	snprintf(new_keyline, sizeof(new_keyline),
 			"%*.*s%s%s%s%s ",
 			self->command_start, self->command_start, key_lines[edit_line],
 			(context_sensitive_tab_completion_insert_slash.value == 1 && self->argument_start == 1 && key_lines[edit_line][1] != '/') ? "/" : "",
@@ -842,7 +842,7 @@ static int setup_current_command(void)
 					{
 						dobreak = 1;
 						name = c->commands->tokens[i];
-						snprintf(cst_info->real_name, INPUT_MAX, "%*.*s", cmd_len, cmd_len, cmd_start);
+						snprintf(cst_info->real_name, sizeof(cst_info->real_name), "%*.*s", cmd_len, cmd_len, cmd_start);
 						break;
 					}
 				}
@@ -852,7 +852,7 @@ static int setup_current_command(void)
 				if (cmd_len == strlen(c->name) && strncasecmp(c->name, cmd_start, cmd_len) == 0)
 				{
 					name = c->name;
-					snprintf(cst_info->real_name, INPUT_MAX, "%*.*s", cmd_len, cmd_len, cmd_start);
+					snprintf(cst_info->real_name, sizeof(cst_info->real_name), "%*.*s", cmd_len, cmd_len, cmd_start);
 					break;
 				}
 			}
@@ -890,7 +890,7 @@ static int setup_current_command(void)
 
 						cst_info->variable = Cvar_FindVar(name);
 						setup_slider(cst_info);
-						snprintf(cst_info->real_name, INPUT_MAX, "%*.*s", cmd_len, cmd_len, cmd_start);
+						snprintf(cst_info->real_name, sizeof(cst_info->real_name), "%*.*s", cmd_len, cmd_len, cmd_start);
 					}
 				}
 				Tokenize_String_Delete(ts);
@@ -939,7 +939,7 @@ static int setup_current_command(void)
 								Tokenize_String_Delete(var_ts);
 							}
 						}
-						snprintf(cst_info->real_name, INPUT_MAX, "%*.*s", cmd_len, cmd_len, cmd_start);
+						snprintf(cst_info->real_name, sizeof(cst_info->real_name), "%*.*s", cmd_len, cmd_len, cmd_start);
 					}
 				}
 				Tokenize_String_Delete(ts);
@@ -972,7 +972,7 @@ static int setup_current_command(void)
 						setup_completion(c, cst_info, arg_istart ,arg_len, cmd_istart, cmd_len);
 						if (var)
 							cst_info->selection = var->value;
-						snprintf(cst_info->real_name, INPUT_MAX, "%*.*s", cmd_len, cmd_len, cmd_start);
+						snprintf(cst_info->real_name, sizeof(cst_info->real_name), "%*.*s", cmd_len, cmd_len, cmd_start);
 					}
 				}
 				Tokenize_String_Delete(ts);
@@ -989,18 +989,18 @@ static int setup_current_command(void)
 			setup_completion(c, cst_info, arg_istart ,arg_len, cmd_istart, cmd_len);
 			cst_info->function = Cmd_FindCommand(name);
 			cst_info->variable = Cvar_FindVar(name);
-			snprintf(cst_info->real_name, INPUT_MAX, "%*.*s", cmd_len, cmd_len, cmd_start);
+			snprintf(cst_info->real_name, sizeof(cst_info->real_name), "%*.*s", cmd_len, cmd_len, cmd_start);
 			if (cst_info->flags & CSTC_SLIDER)
 				setup_slider(cst_info);
 			return 1;
 		}
 		else
 		{
-			snprintf(new_keyline, MAXCMDLINE, "%*.*s", cmd_len, cmd_len, cmd_start);
+			snprintf(new_keyline, sizeof(new_keyline), "%*.*s", cmd_len, cmd_len, cmd_start);
 			var = Cvar_FindVar(new_keyline);
 			if (var)
 			{
-				snprintf(new_keyline, MAXCMDLINE, "%s\"%s\"", key_lines[edit_line], var->string);
+				snprintf(new_keyline, sizeof(new_keyline), "%s\"%s\"", key_lines[edit_line], var->string);
 				key_linepos = strlen(new_keyline);
 				memcpy(key_lines[edit_line], new_keyline, MAXCMDLINE);
 			}
@@ -1449,7 +1449,7 @@ static int Command_Completion_Result(struct cst_info *self, int *results, int ge
 	if (result_type == 0)
 	{
 		*result = va("%s", res);
-		snprintf(self->real_name, INPUT_MAX, "%s", res);
+		snprintf(self->real_name, sizeof(self->real_name), "%s", res);
 	}
 	else
 		*result = res;
