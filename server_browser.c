@@ -30,6 +30,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "readablechars.h"
 #include "server_browser_qtv.h"
 #include "utils.h"
+#include "tokenize_string.h"
+#include "context_sensitive_tab.h"
 
 static void SB_AddMacros(void);
 
@@ -2821,7 +2823,89 @@ void SB_Tab_Layout_f(void)
 	update_tab(tab);
 }
 
+static qboolean cstc_connect_check(struct QWServer *server, struct tokenized_string *ts)
+{
+	int i;
 
+	if (server->status == QWSS_FAILED)
+		return false;
+
+	if (server->numplayers > 0)
+	{
+		for (i=0; i<ts->count; i++)
+			if (Util_strcasestr(server->hostname, ts->tokens[i]) == NULL)
+				return false;
+	}
+	else
+		return false;
+
+	return true;
+}
+
+static int cstc_connect_get_results(struct cst_info *self, int *results, int get_result, int result_type, char **result)
+{
+	int count, i;
+	struct QWServer *server;
+
+	if (!self)
+		return 1;
+
+	if (self->initialized == 0 || results)
+	{
+		if (self->checked)
+			free(self->checked);
+		self->checked = calloc(sb_qw_server_count, sizeof(qboolean));
+		if (self->checked == NULL)
+			return 1;
+
+		for (i=0, count=0; i<sb_qw_server_count; i++)
+		{
+			if (cstc_connect_check(sb_qw_server[i], self->tokenized_input))
+			{
+				self->checked[i] = true;
+				count++;
+			}
+		}
+
+		if (results)
+			*results = count;
+		self->initialized = 1;
+		return 0;
+	}
+
+	if (result == NULL)
+		return 0;
+
+	for (i=0, count=-1; i<sb_qw_server_count; i++)
+	{
+		if (self->checked[i] == true)
+			count++;
+
+		if (count == get_result)
+		{
+			server = sb_qw_server[i];
+			if (result_type == 0)
+				*result = va("%s", NET_AdrToString(&server->addr));
+			else
+				*result = va("%s %i/%i", server->hostname, server->numplayers, server->maxclients);
+			return 0;
+		}
+	}
+	return 1;
+}
+
+static int cstc_connect_get_data(struct cst_info *self, int remove)
+{
+	/*sb_qw_server[];*/
+	return 0;
+}
+
+static int cstc_connect_condition(void)
+{
+	if (sb_qw_server_count <= 0)
+		return 0;
+	return 1;
+}
 
 void SB_CvarInit(void)
 {
@@ -2852,6 +2936,8 @@ void SB_CvarInit(void)
 	Cvar_Register(&sb_highlight_sort_column);
 	Cvar_Register(&sb_highlight_sort_column_color);
 	Cvar_Register(&sb_highlight_sort_column_alpha);
+
+	CSTC_Add("connect", &cstc_connect_condition, &cstc_connect_get_results, &cstc_connect_get_data, CSTC_EXECUTE);
 }
 
 void Dump_SB_Config(FILE *f)
