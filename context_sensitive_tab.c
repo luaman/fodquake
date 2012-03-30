@@ -32,6 +32,7 @@ extern char key_lines[32][MAXCMDLINE];
 int context_sensitive_tab_completion_active = 0;
 
 cvar_t	context_sensitive_tab_completion = {"context_sensitive_tab_completion", "1"};
+cvar_t	context_sensitive_tab_completion_color_coded_types = {"context_sensitive_tab_completion_color_coded_types", "1"};
 cvar_t	context_sensitive_tab_completion_close_on_tab = {"context_sensitive_tab_completion_close_on_tab", "1"};
 cvar_t	context_sensitive_tab_completion_sorting_method = {"context_sensitive_tab_completion_sorting_method", "2"};
 cvar_t	context_sensitive_tab_completion_show_results = {"context_sensitive_tab_completion_show_results", "1"};
@@ -557,7 +558,7 @@ static void CSTC_Draw(struct cst_info *self, int y_offset)
 				Draw_Fill(0, offset + i * 8 * self->direction, vid.conwidth, 8, context_sensitive_tab_completion_background_color.value);
 
 			if (ptr)
-				Draw_String(32, offset + i * 8 * self->direction, ptr);
+				Draw_ColoredString(32, offset + i * 8 * self->direction, ptr, 0);
 		}
 
 		if (sup)
@@ -1440,6 +1441,7 @@ static int Command_Completion_Result(struct cst_info *self, int *results, int ge
 	int count;
 	struct cva_s *cc;
 	char *res;
+	char *t;
 
 	if (self == NULL)
 		return 1;
@@ -1480,12 +1482,15 @@ static int Command_Completion_Result(struct cst_info *self, int *results, int ge
 	{
 		case 0:
 			res = cc[get_result].info.c->name;
+			t = "&cf55";
 			break;
 		case 1:
 			res = cc[get_result].info.a->name;
+			t = "&c5f5";
 			break;
 		case 2:
 			res = cc[get_result].info.v->name;
+			t = "&cff5";
 			break;
 		default:
 			*result = NULL;
@@ -1498,7 +1503,9 @@ static int Command_Completion_Result(struct cst_info *self, int *results, int ge
 		snprintf(self->real_name, sizeof(self->real_name), "%s", res);
 	}
 	else
-		*result = res;
+	{
+		*result = va("%s%s", context_sensitive_tab_completion_color_coded_types.value ? t : "",res);
+	}
 
 	return 0;
 }
@@ -1595,6 +1602,7 @@ void Context_Sensitive_Tab_Completion_CvarInit(void)
 	Command_Completion.conditions = NULL;
 	Command_Completion.flags = CSTC_COMMAND;
 	Cvar_Register(&context_sensitive_tab_completion);
+	Cvar_Register(&context_sensitive_tab_completion_color_coded_types);
 	Cvar_Register(&context_sensitive_tab_completion_close_on_tab);
 	Cvar_Register(&context_sensitive_tab_completion_sorting_method);
 	Cvar_Register(&context_sensitive_tab_completion_show_results);
