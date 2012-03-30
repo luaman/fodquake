@@ -1441,7 +1441,7 @@ static int Command_Completion_Result(struct cst_info *self, int *results, int ge
 	int count;
 	struct cva_s *cc;
 	char *res;
-	char *t;
+	char *t, *s;
 
 	if (self == NULL)
 		return 1;
@@ -1478,6 +1478,7 @@ static int Command_Completion_Result(struct cst_info *self, int *results, int ge
 
 	cc = self->data;
 
+	s = NULL;
 	switch (cc[get_result].type)
 	{
 		case 0:
@@ -1487,10 +1488,12 @@ static int Command_Completion_Result(struct cst_info *self, int *results, int ge
 		case 1:
 			res = cc[get_result].info.a->name;
 			t = "&c5f5";
+			s = cc[get_result].info.a->value;
 			break;
 		case 2:
 			res = cc[get_result].info.v->name;
 			t = "&cff5";
+			s = cc[get_result].info.v->string;
 			break;
 		default:
 			*result = NULL;
@@ -1504,7 +1507,7 @@ static int Command_Completion_Result(struct cst_info *self, int *results, int ge
 	}
 	else
 	{
-		*result = va("%s%s%s", context_sensitive_tab_completion_color_coded_types.value ? t : "",res, cc[get_result].type == 2 ? va("%s -> %s", context_sensitive_tab_completion_color_coded_types.value ? "&cfff" : "",  cc[get_result].info.v->string): "");
+		*result = va("%s%s%s", context_sensitive_tab_completion_color_coded_types.value ? t : "",res, s ? va("%s -> %s", context_sensitive_tab_completion_color_coded_types.value ? "&cfff" : "",  s): "");
 	}
 
 	return 0;
