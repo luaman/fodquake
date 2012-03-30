@@ -41,6 +41,7 @@ cvar_t	context_sensitive_tab_completion_background_color = {"context_sensitive_t
 cvar_t	context_sensitive_tab_completion_tooltip_color = {"context_sensitive_tab_completion_tooltip_color", "14"};
 cvar_t	context_sensitive_tab_completion_inputbox_color = {"context_sensitive_tab_completion_inputbox_color", "4"};
 cvar_t	context_sensitive_tab_completion_selected_color = {"context_sensitive_tab_completion_selected_color", "40"};
+cvar_t	context_sensitive_tab_completion_highlight_color = {"context_sensitive_tab_completion_highlight_color", "186"};
 cvar_t	context_sensitive_tab_completion_insert_slash = {"context_sensitive_tab_completion_insert_slash", "1"};
 cvar_t	context_sensitive_tab_completion_slider_no_offset = {"context_sensitive_tab_completion_slider_no_offset", "1"};
 cvar_t	context_sensitive_tab_completion_slider_border_color = {"context_sensitive_tab_completion_slider_border_color", "0"};
@@ -49,7 +50,7 @@ cvar_t	context_sensitive_tab_completion_slider_color = {"context_sensitive_tab_c
 cvar_t	context_sensitive_tab_completion_slider_variables = {"context_sensitive_tab_completion_slider_variables", "gl_gamma gl_contrast volume"};
 cvar_t	context_sensitive_tab_completion_execute_on_enter = {"context_sensitive_tab_completion_execute_on_enter", "quit sb_activate"};
 
-char *context_sensitive_tab_completion_color_variables = "context_sensitive_tab_completion_inputbox_color context_sensitive_tab_completion_selected_color context_sensitive_tab_completion_background_color sb_color_bg sb_color_bg_empty sb_color_bg_free sb_color_bg_specable sb_color_bg_full sb_highlight_sort_column_color topcolor bottomcolor r_skycolor context_sensitive_tab_completion_slider_border_color context_sensitive_tab_completion_slider_background_color context_sensitive_tab_completion_slider_color context_sensitive_tab_completion_tooltip_color";
+char *context_sensitive_tab_completion_color_variables = "context_sensitive_tab_completion_inputbox_color context_sensitive_tab_completion_selected_color context_sensitive_tab_completion_background_color sb_color_bg sb_color_bg_empty sb_color_bg_free sb_color_bg_specable sb_color_bg_full sb_highlight_sort_column_color topcolor bottomcolor r_skycolor context_sensitive_tab_completion_slider_border_color context_sensitive_tab_completion_slider_background_color context_sensitive_tab_completion_slider_color context_sensitive_tab_completion_tooltip_color context_sensitive_tab_completion_highlight_color";
 char *context_sensitive_tab_completion_player_color_variables = "teamcolor enemycolor color";
 
 char *cstc_slider_tooltip = "arrow up/down will add/remove 0.1, arrow left/right will add/remove 0.01";
@@ -440,8 +441,8 @@ void Context_Sensitive_Tab_Completion_Key(int key)
 
 static void CSTC_Draw(struct cst_info *self, int y_offset)
 {
-	int i, result_offset, offset, rows, sup, sdown, x, y, pos_x, pos_y, sp_x, sp_y;
-	char *ptr;
+	int i, j, result_offset, offset, rows, sup, sdown, x, y, pos_x, pos_y, sp_x, sp_y;
+	char *ptr, *ptr_result, *s;
 	char buf[128];
 
 	if (self->direction == -1)
@@ -552,10 +553,27 @@ static void CSTC_Draw(struct cst_info *self, int y_offset)
 		{
 			if (self->result(self, NULL, i + result_offset, 1, &ptr))
 				break;
+			if (self->flags & CSTC_COMMAND)
+				self->result(self, NULL, i + result_offset, 0, &ptr_result);
+
 			if (i + result_offset == self->selection)
 				Draw_Fill(0, offset + i * 8 * self->direction, vid.conwidth, 8, context_sensitive_tab_completion_selected_color.value);
 			else
 				Draw_Fill(0, offset + i * 8 * self->direction, vid.conwidth, 8, context_sensitive_tab_completion_background_color.value);
+
+			if (self->flags & CSTC_COMMAND && ptr_result)
+			{
+				for (j=0; j<self->tokenized_input->count; j++)
+				{
+					s = Util_strcasestr(ptr_result, self->tokenized_input->tokens[j]);
+					if (s)
+					{
+						x = s - ptr_result;
+						Draw_Fill(32 + x * 8, offset + i * 8 * self->direction, strlen(self->tokenized_input->tokens[j]) * 8, 8, context_sensitive_tab_completion_highlight_color.value);
+					}
+				}
+			}
+
 
 			if (ptr)
 				Draw_ColoredString(32, offset + i * 8 * self->direction, ptr, 0);
@@ -1614,6 +1632,7 @@ void Context_Sensitive_Tab_Completion_CvarInit(void)
 	Cvar_Register(&context_sensitive_tab_completion_selected_color);
 	Cvar_Register(&context_sensitive_tab_completion_inputbox_color);
 	Cvar_Register(&context_sensitive_tab_completion_tooltip_color);
+	Cvar_Register(&context_sensitive_tab_completion_highlight_color);
 	Cvar_Register(&context_sensitive_tab_completion_insert_slash);
 	Cvar_Register(&context_sensitive_tab_completion_slider_no_offset);
 	Cvar_Register(&context_sensitive_tab_completion_slider_border_color);
