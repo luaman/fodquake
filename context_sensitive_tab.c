@@ -1283,90 +1283,48 @@ static int setup_command_completion_data(struct cst_info *self)
 	for (cmd=cmd_functions; cmd; cmd=cmd->next)
 	{
 		add = 1;
-		if (self->tokenized_input->count == 1 && 0)
+		for (i=0; i<self->tokenized_input->count; i++)
 		{
-			if (strcmp(cmd->name, self->tokenized_input->tokens[0]) == 0)
+			if (Util_strcasestr(cmd->name, self->tokenized_input->tokens[i]) == NULL)
 			{
-				cd = self->data = calloc(1, sizeof(struct cva_s));
-				if (cd == NULL)
-					return -1;
-				cd->type = 0;
-				cd->info.c = cmd;
-				return 1;
+				add = 0;
+				break;
 			}
 		}
-		{
-			for (i=0; i<self->tokenized_input->count; i++)
-			{
-				if (Util_strcasestr(cmd->name, self->tokenized_input->tokens[i]) == NULL)
-				{
-					add = 0;
-					break;
-				}
-			}
-			if (add)
-				count++;
-		}
+		if (add)
+			count++;
 	}
 
 	for (alias=cmd_alias; alias; alias=alias->next)
 	{
 		add = 1;
-		if (self->tokenized_input->count == 1 && 0)
+		for (i=0; i<self->tokenized_input->count; i++)
 		{
-			if (strcmp(alias->name, self->tokenized_input->tokens[0]) == 0)
+			if (Util_strcasestr(alias->name, self->tokenized_input->tokens[i]) == NULL)
 			{
-				cd = self->data = calloc(1, sizeof(struct cva_s));
-				if (cd == NULL)
-					return -1;
-				cd->type = 1;
-				cd->info.a = alias;
-				return 1;
+				add = 0;
+				break;
 			}
 		}
-		{
-			for (i=0; i<self->tokenized_input->count; i++)
-			{
-				if (Util_strcasestr(alias->name, self->tokenized_input->tokens[i]) == NULL)
-				{
-					add = 0;
-					break;
-				}
-			}
-			if (add)
-				count++;
-		}
+		if (add)
+			count++;
 	}
 
 	for (var=cvar_vars; var; var=var->next)
 	{
 		add = 1;
 
-		if (self->tokenized_input->count == 1 && 0)
+		for (i=0; i<self->tokenized_input->count; i++)
 		{
-			if (strcmp(var->name, self->tokenized_input->tokens[0]) == 0)
+
+			if (Util_strcasestr(var->name, self->tokenized_input->tokens[i]) == NULL)
 			{
-				cd = self->data = calloc(1, sizeof(struct cva_s));
-				if (cd == NULL)
-					return -1;
-				cd->type = 2;
-				cd->info.v = var;
-				return 1;
+				add = 0;
+				break;
 			}
 		}
-		{
-			for (i=0; i<self->tokenized_input->count; i++)
-			{
-			
-				if (Util_strcasestr(var->name, self->tokenized_input->tokens[i]) == NULL)
-				{
-					add = 0;
-					break;
-				}
-			}
-			if (add)
-				count++;
-		}
+		if (add)
+			count++;
 	}
 
 	if (count == 0)
