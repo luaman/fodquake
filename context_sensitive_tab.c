@@ -32,6 +32,7 @@ extern char key_lines[32][MAXCMDLINE];
 int context_sensitive_tab_completion_active = 0;
 
 cvar_t	context_sensitive_tab_completion = {"context_sensitive_tab_completion", "1"};
+cvar_t	context_sensitive_tab_completion_command_only_on_ctrl_tab = {"context_sensitive_tab_completion_command_only_on_ctrl_tab", "1"};
 cvar_t	context_sensitive_tab_completion_color_coded_types = {"context_sensitive_tab_completion_color_coded_types", "1"};
 cvar_t	context_sensitive_tab_completion_close_on_tab = {"context_sensitive_tab_completion_close_on_tab", "1"};
 cvar_t	context_sensitive_tab_completion_sorting_method = {"context_sensitive_tab_completion_sorting_method", "2"};
@@ -888,8 +889,11 @@ static int setup_current_command(void)
 
 	if (cursor_on_command || key_lines[edit_line] + key_linepos == cmd_start + cmd_len)
 	{
-		setup_completion(&Command_Completion, cst_info, cmd_istart , cmd_len, cmd_istart, cmd_len);
-		return 1;
+		if ((context_sensitive_tab_completion_command_only_on_ctrl_tab.value == 1 && keydown[K_CTRL]) || context_sensitive_tab_completion_command_only_on_ctrl_tab.value == 0)
+		{
+			setup_completion(&Command_Completion, cst_info, cmd_istart , cmd_len, cmd_istart, cmd_len);
+			return 1;
+		}
 	}
 
 	if (cmd_start && arg_start)
@@ -1623,6 +1627,7 @@ void Context_Sensitive_Tab_Completion_CvarInit(void)
 	Command_Completion.conditions = NULL;
 	Command_Completion.flags = CSTC_COMMAND;
 	Cvar_Register(&context_sensitive_tab_completion);
+	Cvar_Register(&context_sensitive_tab_completion_command_only_on_ctrl_tab);
 	Cvar_Register(&context_sensitive_tab_completion_color_coded_types);
 	Cvar_Register(&context_sensitive_tab_completion_close_on_tab);
 	Cvar_Register(&context_sensitive_tab_completion_sorting_method);
