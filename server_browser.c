@@ -2851,8 +2851,13 @@ static int cstc_connect_get_results(struct cst_info *self, int *results, int get
 	if (!self)
 		return 1;
 
-	if (self->initialized == 0 || results || self->changed)
+
+	if (serverscanner && ServerScanner_DataUpdated(serverscanner))
 	{
+		if (sb_qw_server)
+			ServerScanner_FreeServers(serverscanner, sb_qw_server);
+		sb_qw_server = ServerScanner_GetServers(serverscanner, &sb_qw_server_count);
+
 		if (self->checked)
 			free(self->checked);
 		self->checked = calloc(sb_qw_server_count, sizeof(qboolean));
@@ -2876,7 +2881,6 @@ static int cstc_connect_get_results(struct cst_info *self, int *results, int get
 			*results = count;
 		self->initialized = 1;
 		self->changed = false;
-		return 0;
 	}
 
 	if (result == NULL)
@@ -2893,7 +2897,7 @@ static int cstc_connect_get_results(struct cst_info *self, int *results, int get
 			if (result_type == cstc_rt_real)
 				*result = va("%s", NET_AdrToString(&server->addr));
 			else
-				*result = va("%*s %3i/%3i %s", self->count, server->map ? server->map : "", server->numplayers, server->maxclients, server->hostname ? sever->hostname : "");
+				*result = va("%*s %3i/%3i %s", self->count, server->map ? server->map : "", server->numplayers, server->maxclients, server->hostname ? server->hostname : "");
 			return 0;
 		}
 	}
@@ -2908,8 +2912,13 @@ static int cstc_connect_get_data(struct cst_info *self, int remove)
 
 static int cstc_connect_condition(void)
 {
-	if (sb_qw_server_count <= 0)
+	if (sb_qw_server == NULL)
+	{
+		SB_Refresh();
+		if (serverscanner)
+			return 1;
 		return 0;
+	}
 	return 1;
 }
 
