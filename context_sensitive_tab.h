@@ -48,6 +48,13 @@ struct cst_info
 	struct input *new_input;
 };
 
+enum cstc_result_type
+{
+	cstc_rt_real,
+	cstc_rt_draw,
+	cstc_rt_highlight
+};
+
 void CSTC_Add(char *name, int (*conditions)(void), int (*result)(struct cst_info *self, int *results, int get_result, int result_type, char **result), int (*get_data)(struct cst_info *self, int remove), int flags, char *tooltip);
 void CSTC_Insert_And_Close(void);
 void Context_Sensitive_Tab_Completion_CvarInit(void);

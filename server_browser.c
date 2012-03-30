@@ -2831,10 +2831,10 @@ static qboolean cstc_connect_check(struct cst_info *self, struct QWServer *serve
 	if (server->status == QWSS_FAILED)
 		return false;
 
-	if (server->numplayers > 0 && self->toggleables[0])
+	if (server->numplayers > 0 || self->toggleables[0])
 	{
 		for (i=0; i<ts->count; i++)
-			if (Util_strcasestr(server->hostname, ts->tokens[i]) == NULL)
+			if (Util_strcasestr(va("%s %3i/%3i %s", server->map ? server->map : "", server->numplayers, server->maxclients, server->hostname ? server->hostname : "") , ts->tokens[i]) == NULL)
 				return false;
 	}
 	else
@@ -2859,11 +2859,15 @@ static int cstc_connect_get_results(struct cst_info *self, int *results, int get
 		if (self->checked == NULL)
 			return 1;
 
+		self->count = 0;
 		for (i=0, count=0; i<sb_qw_server_count; i++)
 		{
 			if (cstc_connect_check(self, sb_qw_server[i], self->tokenized_input))
 			{
 				self->checked[i] = true;
+				if (sb_qw_server[i]->map)
+					if (self->count < strlen(sb_qw_server[i]->map))
+						self->count = strlen(sb_qw_server[i]->map);
 				count++;
 			}
 		}
@@ -2886,10 +2890,10 @@ static int cstc_connect_get_results(struct cst_info *self, int *results, int get
 		if (count == get_result)
 		{
 			server = sb_qw_server[i];
-			if (result_type == 0)
+			if (result_type == cstc_rt_real)
 				*result = va("%s", NET_AdrToString(&server->addr));
 			else
-				*result = va("%s %i/%i", server->hostname, server->numplayers, server->maxclients);
+				*result = va("%*s %3i/%3i %s", self->count, server->map ? server->map : "", server->numplayers, server->maxclients, server->hostname ? sever->hostname : "");
 			return 0;
 		}
 	}
@@ -2939,7 +2943,7 @@ void SB_CvarInit(void)
 	Cvar_Register(&sb_highlight_sort_column_color);
 	Cvar_Register(&sb_highlight_sort_column_alpha);
 
-	CSTC_Add("connect", &cstc_connect_condition, &cstc_connect_get_results, &cstc_connect_get_data, CSTC_EXECUTE, "arrow up/down to navigate, ctrl+1 to toggle showing empty servers");
+	CSTC_Add("connect", &cstc_connect_condition, &cstc_connect_get_results, &cstc_connect_get_data, CSTC_EXECUTE | CSTC_HIGLIGHT_INPUT, "arrow up/down to navigate, ctrl+1 to toggle showing empty servers");
 }
 
 void Dump_SB_Config(FILE *f)

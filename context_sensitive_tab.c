@@ -552,10 +552,10 @@ static void CSTC_Draw(struct cst_info *self, int y_offset)
 	{
 		for (i=0, ptr = NULL; i<rows; i++)
 		{
-			if (self->result(self, NULL, i + result_offset, 1, &ptr))
+			if (self->result(self, NULL, i + result_offset, cstc_rt_draw, &ptr))
 				break;
 			if (self->flags & CSTC_COMMAND || self->flags & CSTC_HIGLIGHT_INPUT)
-				self->result(self, NULL, i + result_offset, 0, &ptr_result);
+				self->result(self, NULL, i + result_offset, cstc_rt_highlight, &ptr_result);
 
 			if (i + result_offset == self->selection)
 				Draw_Fill(0, offset + i * 8 * self->direction, vid.conwidth, 8, context_sensitive_tab_completion_selected_color.value);
