@@ -1504,7 +1504,7 @@ static int Command_Completion_Result(struct cst_info *self, int *results, int ge
 	}
 	else
 	{
-		*result = va("%s%s", context_sensitive_tab_completion_color_coded_types.value ? t : "",res);
+		*result = va("%s%s%s", context_sensitive_tab_completion_color_coded_types.value ? t : "",res, cc[get_result].type == 2 ? va("%s -> %s", context_sensitive_tab_completion_color_coded_types.value ? "&cfff" : "",  cc[get_result].info.v->string): "");
 	}
 
 	return 0;
