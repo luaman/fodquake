@@ -781,7 +781,7 @@ static int cstc_skins_condition(void)
 
 void FS_Init()
 {
-	CSTC_Add("enemyskin enemyquadskin enemypentskin enemybothskin teamskin teamquadskin teampentskin teambothskin", &cstc_skins_condition, &cstc_skins_get_results, &cstc_skins_get_data, CSTC_MULTI_COMMAND| CSTC_NO_INPUT| CSTC_EXECUTE);
+	CSTC_Add("enemyskin enemyquadskin enemypentskin enemybothskin teamskin teamquadskin teampentskin teambothskin", &cstc_skins_condition, &cstc_skins_get_results, &cstc_skins_get_data, CSTC_MULTI_COMMAND| CSTC_NO_INPUT| CSTC_EXECUTE, "arrow up/down to navigate");
 	Cmd_AddCommand("path", FS_Path_f);
 }
 

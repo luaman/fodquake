@@ -19,6 +19,7 @@ struct cst_commands
 	int (*result)(struct cst_info *self, int *results, int get_result, int result_type, char **result);
 	int (*get_data)(struct cst_info *self, int remove);
 	int flags;
+	char *tooltip;
 };
 
 struct cst_commands Command_Completion;
@@ -36,6 +37,7 @@ cvar_t	context_sensitive_tab_completion_sorting_method = {"context_sensitive_tab
 cvar_t	context_sensitive_tab_completion_show_results = {"context_sensitive_tab_completion_show_results", "1"};
 cvar_t	context_sensitive_tab_completion_ignore_alt_tab = {"context_sensitive_tab_completion_ignore_alt_tab", "1"};
 cvar_t	context_sensitive_tab_completion_background_color = {"context_sensitive_tab_completion_background_color", "4"};
+cvar_t	context_sensitive_tab_completion_tooltip_color = {"context_sensitive_tab_completion_tooltip_color", "14"};
 cvar_t	context_sensitive_tab_completion_inputbox_color = {"context_sensitive_tab_completion_inputbox_color", "4"};
 cvar_t	context_sensitive_tab_completion_selected_color = {"context_sensitive_tab_completion_selected_color", "40"};
 cvar_t	context_sensitive_tab_completion_insert_slash = {"context_sensitive_tab_completion_insert_slash", "1"};
@@ -46,8 +48,12 @@ cvar_t	context_sensitive_tab_completion_slider_color = {"context_sensitive_tab_c
 cvar_t	context_sensitive_tab_completion_slider_variables = {"context_sensitive_tab_completion_slider_variables", "gl_gamma gl_contrast volume"};
 cvar_t	context_sensitive_tab_completion_execute_on_enter = {"context_sensitive_tab_completion_execute_on_enter", "quit sb_activate"};
 
-char *context_sensitive_tab_completion_color_variables = "context_sensitive_tab_completion_inputbox_color context_sensitive_tab_completion_selected_color context_sensitive_tab_completion_background_color sb_color_bg sb_color_bg_empty sb_color_bg_free sb_color_bg_specable sb_color_bg_full sb_highlight_sort_column_color topcolor bottomcolor r_skycolor context_sensitive_tab_completion_slider_border_color context_sensitive_tab_completion_slider_background_color context_sensitive_tab_completion_slider_color";
+char *context_sensitive_tab_completion_color_variables = "context_sensitive_tab_completion_inputbox_color context_sensitive_tab_completion_selected_color context_sensitive_tab_completion_background_color sb_color_bg sb_color_bg_empty sb_color_bg_free sb_color_bg_specable sb_color_bg_full sb_highlight_sort_column_color topcolor bottomcolor r_skycolor context_sensitive_tab_completion_slider_border_color context_sensitive_tab_completion_slider_background_color context_sensitive_tab_completion_slider_color context_sensitive_tab_completion_tooltip_color";
 char *context_sensitive_tab_completion_player_color_variables = "teamcolor enemycolor color";
+
+char *cstc_slider_tooltip = "arrow up/down will add/remove 0.1, arrow left/right will add/remove 0.01";
+char *cstc_player_color_tooltip = "arrow keys to navigate, space to select the color, enter to finalize";
+char *cstc_color_tooltip = "arror keys to navigate, enter to select";
 
 static void cleanup_cst(struct cst_info *info)
 {
@@ -104,7 +110,7 @@ qboolean CSTC_Execute_On_Enter(char *cmd)
 	return rval;
 }
 
-void CSTC_Add(char *name, int (*conditions)(void), int (*result)(struct cst_info *self, int *results, int get_result, int result_type, char **result), int (*get_data)(struct cst_info *self, int remove), int flags)
+void CSTC_Add(char *name, int (*conditions)(void), int (*result)(struct cst_info *self, int *results, int get_result, int result_type, char **result), int (*get_data)(struct cst_info *self, int remove), int flags, char *tooltip)
 {
 	struct cst_commands *command, *cc;
 	char *in;
@@ -141,6 +147,7 @@ void CSTC_Add(char *name, int (*conditions)(void), int (*result)(struct cst_info
 	command->flags = flags;
 	if (flags & CSTC_MULTI_COMMAND)
 		command->commands = Tokenize_String(command->name);
+	command->tooltip = tooltip;
 }
 
 static void Tokenize_Input(struct cst_info *self)
@@ -224,6 +231,17 @@ void Context_Sensitive_Tab_Completion_Key(int key)
 	if (context_sensitive_tab_completion_active == 0)
 		return;
 
+	//toggle tooltip
+	if (keydown[K_CTRL] && key == 'h')
+	{
+		cst_info->tooltip_show = !cst_info->tooltip_show;
+		return;
+	}
+
+	// hide tooltip if any other key is pressed
+	if (cst_info->tooltip_show)
+		cst_info->tooltip_show = false;
+
 	if (cst_info->flags & CSTC_COLOR_SELECTOR)
 		i = 256;
 	else
@@ -237,6 +255,24 @@ void Context_Sensitive_Tab_Completion_Key(int key)
 		CSTC_Cleanup(cst_info);
 		return;
 	}
+
+	// wanted to use F1->F12 here
+	if (keydown[K_CTRL] && key >= '0' && key <= '9')
+	{
+		i = key - '0';
+		i--;
+		if (i<0)
+			i+=10;
+		cst_info->toggleables[i] = !cst_info->toggleables[i];
+		cst_info->changed = true;
+		if (!(cst_info->flags & CSTC_NO_INPUT) && !(cst_info->flags & CSTC_COLOR_SELECTOR))
+		{
+			cst_info->result(cst_info, &cst_info->results, 0, 0, NULL);
+			cst_info->selection = 0;
+		}
+		return;
+	}
+
 
 	if (key == K_ENTER)
 	{
@@ -391,6 +427,7 @@ void Context_Sensitive_Tab_Completion_Key(int key)
 		return;
 	}
 
+
 	if (!(cst_info->flags & CSTC_NO_INPUT) && !(cst_info->flags & CSTC_COLOR_SELECTOR))
 	{
 		Text_Input_Handle_Key(cst_info->new_input, key);
@@ -519,7 +556,8 @@ static void CSTC_Draw(struct cst_info *self, int y_offset)
 			else
 				Draw_Fill(0, offset + i * 8 * self->direction, vid.conwidth, 8, context_sensitive_tab_completion_background_color.value);
 
-			Draw_String(32, offset + i * 8 * self->direction, ptr);
+			if (ptr)
+				Draw_String(32, offset + i * 8 * self->direction, ptr);
 		}
 
 		if (sup)
@@ -538,6 +576,13 @@ static void CSTC_Draw(struct cst_info *self, int y_offset)
 			Draw_String(vid.conwidth - strlen(buf) * 8, offset, buf);
 		}
 	}
+
+	if (self->tooltip_show && self->tooltip)
+	{
+		Draw_Fill(0, offset , vid.conwidth, 8, context_sensitive_tab_completion_tooltip_color.value);
+		Draw_String(0, offset , va("help: %s", self->tooltip));
+	}
+
 }
 
 void Context_Sensitive_Tab_Completion_Draw(void)
@@ -779,6 +824,7 @@ static void setup_completion(struct cst_commands *cc, struct cst_info *c, int ar
 		c->get_data(c, 0);
 	c->result(c, &c->results, 0, 0, NULL);
 	c->flags = cc->flags;
+	c->tooltip = cc->tooltip;
 }
 
 static void setup_slider(struct cst_info *c)
@@ -1556,6 +1602,7 @@ void Context_Sensitive_Tab_Completion_CvarInit(void)
 	Cvar_Register(&context_sensitive_tab_completion_background_color);
 	Cvar_Register(&context_sensitive_tab_completion_selected_color);
 	Cvar_Register(&context_sensitive_tab_completion_inputbox_color);
+	Cvar_Register(&context_sensitive_tab_completion_tooltip_color);
 	Cvar_Register(&context_sensitive_tab_completion_insert_slash);
 	Cvar_Register(&context_sensitive_tab_completion_slider_no_offset);
 	Cvar_Register(&context_sensitive_tab_completion_slider_border_color);
@@ -1567,11 +1614,14 @@ void Context_Sensitive_Tab_Completion_CvarInit(void)
 	Cmd_AddCommand("weight_set", Weight_Set_f);
 	CC_Slider.result = &Slider_Result;
 	CC_Slider.flags = CSTC_SLIDER | CSTC_NO_INPUT | CSTC_EXECUTE;
+	CC_Slider.tooltip = cstc_slider_tooltip;
 	CC_Player_Color.result = &Player_Color_Selector_Result;
 	CC_Player_Color.flags = CSTC_PLAYER_COLOR_SELECTOR | CSTC_NO_INPUT | CSTC_EXECUTE;
+	CC_Player_Color.tooltip = &cstc_player_color_tooltip;
 
 	CC_Color.result = &Color_Selector_Result;
 	CC_Color.flags = CSTC_COLOR_SELECTOR | CSTC_NO_INPUT | CSTC_EXECUTE;
+	CC_Color.tooltip = cstc_color_tooltip;
 }
 
 void Context_Weighting_Init(void)

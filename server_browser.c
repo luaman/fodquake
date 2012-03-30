@@ -2823,14 +2823,15 @@ void SB_Tab_Layout_f(void)
 	update_tab(tab);
 }
 
-static qboolean cstc_connect_check(struct QWServer *server, struct tokenized_string *ts)
+static qboolean cstc_connect_check(struct cst_info *self, struct QWServer *server, struct tokenized_string *ts)
 {
 	int i;
+	extern cvar_t context_sensitive_tab_completion_connect_show_empty;
 
 	if (server->status == QWSS_FAILED)
 		return false;
 
-	if (server->numplayers > 0)
+	if (server->numplayers > 0 && self->toggleables[0])
 	{
 		for (i=0; i<ts->count; i++)
 			if (Util_strcasestr(server->hostname, ts->tokens[i]) == NULL)
@@ -2850,7 +2851,7 @@ static int cstc_connect_get_results(struct cst_info *self, int *results, int get
 	if (!self)
 		return 1;
 
-	if (self->initialized == 0 || results)
+	if (self->initialized == 0 || results || self->changed)
 	{
 		if (self->checked)
 			free(self->checked);
@@ -2860,7 +2861,7 @@ static int cstc_connect_get_results(struct cst_info *self, int *results, int get
 
 		for (i=0, count=0; i<sb_qw_server_count; i++)
 		{
-			if (cstc_connect_check(sb_qw_server[i], self->tokenized_input))
+			if (cstc_connect_check(self, sb_qw_server[i], self->tokenized_input))
 			{
 				self->checked[i] = true;
 				count++;
@@ -2870,6 +2871,7 @@ static int cstc_connect_get_results(struct cst_info *self, int *results, int get
 		if (results)
 			*results = count;
 		self->initialized = 1;
+		self->changed = false;
 		return 0;
 	}
 
@@ -2937,7 +2939,7 @@ void SB_CvarInit(void)
 	Cvar_Register(&sb_highlight_sort_column_color);
 	Cvar_Register(&sb_highlight_sort_column_alpha);
 
-	CSTC_Add("connect", &cstc_connect_condition, &cstc_connect_get_results, &cstc_connect_get_data, CSTC_EXECUTE);
+	CSTC_Add("connect", &cstc_connect_condition, &cstc_connect_get_results, &cstc_connect_get_data, CSTC_EXECUTE, "arrow up/down to navigate, ctrl+1 to toggle showing empty servers");
 }
 
 void Dump_SB_Config(FILE *f)

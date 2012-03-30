@@ -1684,8 +1684,8 @@ void Cmd_Init (void)
 	Cmd_AddCommand("if", Cmd_If_f);
 	Cmd_AddCommand("macrolist", Cmd_MacroList_f);
 
-	CSTC_Add("alias", NULL, &cstc_alias_get_results, NULL, 0);
-	CSTC_Add("exec", NULL, &cstc_exec_get_results, &cstc_exec_get_data, CSTC_EXECUTE);
+	CSTC_Add("alias", NULL, &cstc_alias_get_results, NULL, 0, "arrow up/down to navigate");
+	CSTC_Add("exec", NULL, &cstc_exec_get_results, &cstc_exec_get_data, CSTC_EXECUTE, "arrow up/down to navigate");
 }
 
 void Cmd_Shutdown()

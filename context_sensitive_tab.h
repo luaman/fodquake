@@ -23,6 +23,11 @@ struct cst_info
 	int insert_space;
 	struct tokenized_string *tokenized_input;
 	int flags;
+	char *tooltip;
+	qboolean tooltip_show;
+	qboolean changed;
+
+	qboolean toggleables[12]; //what a shitty name... F1->F12
 
 	cmd_function_t *function;
 	cvar_t *variable;
@@ -42,7 +47,7 @@ struct cst_info
 	struct input *new_input;
 };
 
-void CSTC_Add(char *name, int (*conditions)(void), int (*result)(struct cst_info *self, int *results, int get_result, int result_type, char **result), int (*get_data)(struct cst_info *self, int remove), int flags);
+void CSTC_Add(char *name, int (*conditions)(void), int (*result)(struct cst_info *self, int *results, int get_result, int result_type, char **result), int (*get_data)(struct cst_info *self, int remove), int flags, char *tooltip);
 void CSTC_Insert_And_Close(void);
 void Context_Sensitive_Tab_Completion_CvarInit(void);
 void Context_Weighting_Init(void);
