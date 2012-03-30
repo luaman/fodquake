@@ -5,6 +5,7 @@
 #define CSTC_SLIDER						( 1 << 4)
 #define CSTC_EXECUTE					( 1 << 5)
 #define CSTC_COMMAND					( 1 << 6)
+#define CSTC_HIGLIGHT_INPUT				( 1 << 7)
 
 #define INPUT_MAX 512
 struct cst_info

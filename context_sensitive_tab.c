@@ -554,7 +554,7 @@ static void CSTC_Draw(struct cst_info *self, int y_offset)
 		{
 			if (self->result(self, NULL, i + result_offset, 1, &ptr))
 				break;
-			if (self->flags & CSTC_COMMAND)
+			if (self->flags & CSTC_COMMAND || self->flags & CSTC_HIGLIGHT_INPUT)
 				self->result(self, NULL, i + result_offset, 0, &ptr_result);
 
 			if (i + result_offset == self->selection)
@@ -562,7 +562,7 @@ static void CSTC_Draw(struct cst_info *self, int y_offset)
 			else
 				Draw_Fill(0, offset + i * 8 * self->direction, vid.conwidth, 8, context_sensitive_tab_completion_background_color.value);
 
-			if (self->flags & CSTC_COMMAND && ptr_result)
+			if ((self->flags & CSTC_COMMAND || self->flags & CSTC_HIGLIGHT_INPUT) && ptr_result)
 			{
 				for (j=0; j<self->tokenized_input->count; j++)
 				{
@@ -574,7 +574,6 @@ static void CSTC_Draw(struct cst_info *self, int y_offset)
 					}
 				}
 			}
-
 
 			if (ptr)
 				Draw_ColoredString(32, offset + i * 8 * self->direction, ptr, 0);
