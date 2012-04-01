@@ -407,25 +407,9 @@ void Context_Sensitive_Tab_Completion_Key(int key)
 	}
 	else
 	{
-		if (key == K_UPARROW)
+		if (key == K_UPARROW || key == K_DOWNARROW)
 		{
-			if (cst_info->direction == 1)
-				cst_info->selection--;
-			else
-				cst_info->selection++;
-			if (cst_info->selection < 0)
-				cst_info->selection = i-1;
-			if (cst_info->selection >= i)
-				cst_info->selection = 0;
-			return;
-		}
-
-		if (key == K_DOWNARROW)
-		{
-			if (cst_info->direction == 1)
-				cst_info->selection++;
-			else
-				cst_info->selection--;
+			cst_info->selection += (keydown[K_CTRL] ? 5 : 1) * (cst_info->direction == 1 ? 1 : -1) * (key == K_UPARROW ? -1 : 1);
 			if (cst_info->selection < 0)
 				cst_info->selection = i-1;
 			if (cst_info->selection >= i)
@@ -439,21 +423,20 @@ void Context_Sensitive_Tab_Completion_Key(int key)
 		if (context_sensitive_tab_completion_close_on_tab.value == 1)
 		{
 			CSTC_Cleanup(cst_info);
+			return;
 		}
+
+		if (cst_info->direction == 1)
+			cst_info->selection++;
 		else
-		{
-			if (cst_info->direction == 1)
-				cst_info->selection++;
-			else
-				cst_info->selection--;
-			if (cst_info->selection < 0)
-				cst_info->selection = i-1;
-			if (cst_info->selection >= i)
-				cst_info->selection = 0;
-		}
+			cst_info->selection--;
+		if (cst_info->selection < 0)
+			cst_info->selection = i-1;
+		if (cst_info->selection >= i)
+			cst_info->selection = 0;
+
 		return;
 	}
-
 
 	if (!(cst_info->flags & CSTC_NO_INPUT) && !(cst_info->flags & CSTC_COLOR_SELECTOR))
 	{
@@ -627,9 +610,6 @@ static void CSTC_Draw(struct cst_info *self, int y_offset)
 		Draw_Fill(0, offset , vid.conwidth, 8, context_sensitive_tab_completion_tooltip_color.value);
 		Draw_String(0, offset , va("help: %s", self->tooltip));
 	}
-
-
-
 }
 
 void Context_Sensitive_Tab_Completion_Draw(void)
