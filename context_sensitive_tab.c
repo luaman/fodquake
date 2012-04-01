@@ -118,7 +118,7 @@ static void CSTC_Cleanup(struct cst_info *self)
 
 static void CSTC_Draw_Picture(int x, int y, int width, int height, enum CSTC_Pictures pic)
 {
-	int index_x, index_y, iw, ih;
+	int index_x, index_y;
 	float sx, sy;
 
 	if (cstc_pictures == NULL)
@@ -1658,7 +1658,7 @@ void Context_Sensitive_Tab_Completion_CvarInit(void)
 	CC_Slider.tooltip = cstc_slider_tooltip;
 	CC_Player_Color.result = &Player_Color_Selector_Result;
 	CC_Player_Color.flags = CSTC_PLAYER_COLOR_SELECTOR | CSTC_NO_INPUT | CSTC_EXECUTE;
-	CC_Player_Color.tooltip = &cstc_player_color_tooltip;
+	CC_Player_Color.tooltip = cstc_player_color_tooltip;
 
 	CC_Color.result = &Color_Selector_Result;
 	CC_Color.flags = CSTC_COLOR_SELECTOR | CSTC_NO_INPUT | CSTC_EXECUTE;
