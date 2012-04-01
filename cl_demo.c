@@ -1493,6 +1493,8 @@ static int cstc_playdemo_data(struct cst_info *self, int remove)
 	return 1;
 }
 
+#define DEMO_INITALIZED	0
+
 static int cstc_playdemo_get_results(struct cst_info *self, int *results, int get_result, int result_type, char **result)
 {
 	struct directory_list *data;
@@ -1503,26 +1505,26 @@ static int cstc_playdemo_get_results(struct cst_info *self, int *results, int ge
 
 	data = (struct directory_list *)self->data;
 
-	if (results || self->initialized == 0)
+	if (results || self->bool_var[DEMO_INITALIZED] == false)
 	{
-		if (self->checked)
-			free(self->checked);
-		self->checked = calloc(data->entry_count, sizeof(qboolean));
-		if (self->checked == NULL)
+		if (self->bool_ptr)
+			free(self->bool_ptr);
+		self->bool_ptr = calloc(data->entry_count, sizeof(qboolean));
+		if (self->bool_ptr == NULL)
 			return 1;
 
 		for (i=0, count=0; i<data->entry_count; i++)
 		{
 			if (playdemo_checkdemo(data->entries[i].name, self->tokenized_input))
 			{
-				self->checked[i] = true;
+				self->bool_ptr[i] = true;
 				count++;
 			}
 		}
 		if (results)
 			*results = count;
 
-		self->initialized = 1;
+		self->bool_var[DEMO_INITALIZED] = true;
 		return 0;
 	}
 
@@ -1531,7 +1533,7 @@ static int cstc_playdemo_get_results(struct cst_info *self, int *results, int ge
 
 	for (i=0, count=-1; i<data->entry_count; i++)
 	{
-		if (self->checked[i] == true)
+		if (self->bool_ptr[i] == true)
 			count++;
 		if (count == get_result)
 		{
@@ -1557,7 +1559,7 @@ void CL_CvarDemoInit(void)
 	Cvar_Register(&demo_dir);
 	Cvar_ResetCurrentGroup();
 
-	CSTC_Add("playdemo timedemo", NULL, &cstc_playdemo_get_results, &cstc_playdemo_data, CSTC_MULTI_COMMAND | CSTC_EXECUTE, "arrow up/down to navigate");
+	CSTC_Add("playdemo timedemo", NULL, &cstc_playdemo_get_results, &cstc_playdemo_data, NULL, CSTC_MULTI_COMMAND | CSTC_EXECUTE, "arrow up/down to navigate");
 
 }
 

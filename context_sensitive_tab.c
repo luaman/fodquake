@@ -9,6 +9,17 @@
 #include "tokenize_string.h"
 #include "text_input.h"
 
+#define SLIDER_LOWER_LIMIT				0
+#define SLIDER_UPPER_LIMIT				1
+#define SLIDER_ORIGINAL_VALUE			2
+#define SLIDER_VALUE					3
+
+#define COLOR_COLOR1	0
+#define COLOR_COLOR2	1
+#define COLOR_ROW		2
+
+#define CC_INITALIZED	0
+
 enum CSTC_Pictures
 {
 	cstcp_magnifying,
@@ -26,6 +37,7 @@ struct cst_commands
 	int (*conditions)(void);
 	int (*result)(struct cst_info *self, int *results, int get_result, int result_type, char **result);
 	int (*get_data)(struct cst_info *self, int remove);
+	void (*draw)(struct cst_info *self);
 	int flags;
 	char *tooltip;
 };
@@ -78,8 +90,12 @@ static void cleanup_cst(struct cst_info *info)
 	if (info->get_data)
 		info->get_data(info, 1);
 
-	if (info->checked)
-		free(info->checked);
+	if (info->bool_ptr)
+		free(info->bool_ptr);
+	if (info->int_ptr)
+		free(info->int_ptr);
+	if (info->double_ptr)
+		free(info->double_ptr);
 
 	if (info->new_input)
 		Text_Input_Delete(info->new_input);
@@ -137,7 +153,7 @@ qboolean CSTC_Execute_On_Enter(char *cmd)
 	return rval;
 }
 
-void CSTC_Add(char *name, int (*conditions)(void), int (*result)(struct cst_info *self, int *results, int get_result, int result_type, char **result), int (*get_data)(struct cst_info *self, int remove), int flags, char *tooltip)
+void CSTC_Add(char *name, int (*conditions)(void), int (*result)(struct cst_info *self, int *results, int get_result, int result_type, char **result), int (*get_data)(struct cst_info *self, int remove), void (*draw)(struct cst_info *self), int flags, char *tooltip)
 {
 	struct cst_commands *command, *cc;
 	char *in;
@@ -171,6 +187,7 @@ void CSTC_Add(char *name, int (*conditions)(void), int (*result)(struct cst_info
 	command->conditions = conditions;
 	command->result = result;
 	command->get_data = get_data;
+	command->draw = draw;
 	command->flags = flags;
 	if (flags & CSTC_MULTI_COMMAND)
 		command->commands = Tokenize_String(command->name);
@@ -272,13 +289,13 @@ void Context_Sensitive_Tab_Completion_Key(int key)
 	if (cst_info->flags & CSTC_COLOR_SELECTOR)
 		i = 256;
 	else
-		i = cst_info->results;
+		cst_info->result(cst_info, &i, 0, 0, NULL);
 
 	if (key == K_ESCAPE)
 	{
 		if (cst_info->flags & CSTC_SLIDER)
 			if (cst_info->variable)
-				Cvar_Set(cst_info->variable, va("%f", cst_info->slider_original_value));
+				Cvar_Set(cst_info->variable, va("%f", cst_info->double_var[SLIDER_ORIGINAL_VALUE]));
 		CSTC_Cleanup(cst_info);
 		return;
 	}
@@ -291,12 +308,11 @@ void Context_Sensitive_Tab_Completion_Key(int key)
 		if (i<0)
 			i+=10;
 		cst_info->toggleables[i] = !cst_info->toggleables[i];
-		cst_info->changed = true;
+		cst_info->toggleables_changed= true;
+
 		if (!(cst_info->flags & CSTC_NO_INPUT) && !(cst_info->flags & CSTC_COLOR_SELECTOR))
-		{
 			cst_info->result(cst_info, &cst_info->results, 0, 0, NULL);
-			cst_info->selection = 0;
-		}
+
 		return;
 	}
 
@@ -315,20 +331,20 @@ void Context_Sensitive_Tab_Completion_Key(int key)
 	if (cst_info->flags & CSTC_SLIDER)
 	{
 		if (key == K_LEFTARROW)
-			cst_info->slider_value -= 0.01;
+			cst_info->double_var[SLIDER_VALUE] -= 0.01;
 
 		if (key == K_RIGHTARROW)
-			cst_info->slider_value += 0.01;
+			cst_info->double_var[SLIDER_VALUE] += 0.01;
 
 		if (key == K_DOWNARROW)
-			cst_info->slider_value -= 0.1;
+			cst_info->double_var[SLIDER_VALUE] -= 0.1;
 
 		if (key == K_UPARROW)
-			cst_info->slider_value += 0.1;
+			cst_info->double_var[SLIDER_VALUE] += 0.1;
 
-		cst_info->slider_value = bound(0, cst_info->slider_value, 1);
+		cst_info->double_var[SLIDER_VALUE] = bound(cst_info->double_var[SLIDER_LOWER_LIMIT], cst_info->double_var[SLIDER_VALUE], cst_info->double_var[SLIDER_UPPER_LIMIT]);
 		if (cst_info->variable)
-			Cvar_Set(cst_info->variable, va("%f", cst_info->slider_value));
+			Cvar_Set(cst_info->variable, va("%f", cst_info->double_var[SLIDER_VALUE]));
 		return;
 	}
 
@@ -387,14 +403,14 @@ void Context_Sensitive_Tab_Completion_Key(int key)
 	{
 		if (key == K_SPACE)
 		{
-			cst_info->color[cst_info->count] = cst_info->selection;
+			cst_info->int_var[cst_info->int_var[COLOR_ROW]] = cst_info->selection;
 			return;
 		}
 
 		if (key == K_UPARROW || key == K_DOWNARROW)
 		{
-			cst_info->count += 1 * (cst_info->direction == 1 ? 1 : -1) * (key == K_UPARROW ? -1 : 1);
-			cst_info->count = bound(0, cst_info->count, 1);
+			cst_info->int_var[COLOR_ROW] += 1 * (cst_info->direction == 1 ? 1 : -1) * (key == K_UPARROW ? -1 : 1);
+			cst_info->int_var[COLOR_ROW] = bound(0, cst_info->int_var[COLOR_ROW], 1);
 			return;
 		}
 
@@ -410,10 +426,16 @@ void Context_Sensitive_Tab_Completion_Key(int key)
 		if (key == K_UPARROW || key == K_DOWNARROW)
 		{
 			cst_info->selection += (keydown[K_CTRL] ? 5 : 1) * (cst_info->direction == 1 ? 1 : -1) * (key == K_UPARROW ? -1 : 1);
+			if (i == 0)
+			{
+				cst_info->selection = 0;
+				return;
+			}
 			if (cst_info->selection < 0)
 				cst_info->selection = i-1;
 			if (cst_info->selection >= i)
 				cst_info->selection = 0;
+
 			return;
 		}
 	}
@@ -442,6 +464,7 @@ void Context_Sensitive_Tab_Completion_Key(int key)
 	{
 		Text_Input_Handle_Key(cst_info->new_input, key);
 		Tokenize_Input(cst_info);
+		cst_info->input_changed = true;
 		cst_info->result(cst_info, &cst_info->results, 0, 0, NULL);
 	}
 	return;
@@ -474,6 +497,8 @@ static void CSTC_Draw(struct cst_info *self, int y_offset)
 	if (rows % 2 != 0)
 		rows--;
 
+	self->offset_y = offset;
+	self->rows = rows;
 
 	result_offset = sup = sdown = 0;
 
@@ -504,6 +529,7 @@ static void CSTC_Draw(struct cst_info *self, int y_offset)
 				pos_x = self->argument_start * 8 + 16;
 				if (pos_x > vid.displaywidth/2)
 					pos_x -= 16 *8;
+				self->offset_x = pos_x;
 				pos_x += x *8;
 				pos_y = offset + y * 8 * self->direction;
 				Draw_Fill(pos_x, pos_y, 8, 8, x + y * 16);
@@ -521,6 +547,7 @@ static void CSTC_Draw(struct cst_info *self, int y_offset)
 		pos_x = self->argument_start * 8 + 16;
 		if (pos_x > vid.displaywidth/2)
 			pos_x -= 16 *8 + 4;
+		self->offset_x = pos_x;
 		pos_y = offset;
 		Draw_Fill(pos_x - 2, pos_y + 8 * self->direction - 2, 6 * 8 + 4 + 4, 16 + 4, 0);
 		Draw_String(pos_x, pos_y, self->direction > 0 ? "top" : "bottom");
@@ -535,25 +562,27 @@ static void CSTC_Draw(struct cst_info *self, int y_offset)
 				else
 					i = x * 16;
 				Draw_Fill(pos_x + x *8, pos_y + y * 8 * self->direction, 8, 8, i);
-				if (y == 0 && x == self->color[0])
+				if (y == 0 && x == self->int_var[COLOR_COLOR1])
 					Draw_String(pos_x + x *8, pos_y + y * 8 * self->direction, "o");
-				if (y == 1 && x == self->color[1])
+				if (y == 1 && x == self->int_var[COLOR_COLOR2])
 					Draw_String(pos_x + x *8, pos_y + y * 8 * self->direction, "o");
 			}
 		}
-		Draw_String(pos_x + self->selection * 8, pos_y + self->count * self->direction * 8, "x");
+		Draw_String(pos_x + self->selection * 8, pos_y + self->int_var[COLOR_ROW] * self->direction * 8, "x");
 	}
 	else if (self->flags & CSTC_SLIDER)
 	{
 		pos_x = self->argument_start * 8 + 16;
+		self->offset_x = pos_x;
 		if (context_sensitive_tab_completion_slider_no_offset.value)
 			pos_y = offset - self->direction * 8;
 		else 
 			pos_y = offset;
+		self->offset_y = pos_y;
 		Draw_Fill(pos_x, pos_y, 8*8 + 2, 8, context_sensitive_tab_completion_slider_border_color.value);
 		Draw_Fill(pos_x+1, pos_y+1, 8*8, 8, context_sensitive_tab_completion_slider_background_color.value);
-		Draw_Fill(pos_x+1, pos_y+1, 8*8 * self->slider_value,8, context_sensitive_tab_completion_slider_color.value);
-		Draw_String(pos_x , pos_y, va("%f", self->slider_value));
+		Draw_Fill(pos_x+1, pos_y+1, 8*8 * self->double_var[SLIDER_VALUE], 8, context_sensitive_tab_completion_slider_color.value);
+		Draw_String(pos_x , pos_y, va("%f", self->double_var[SLIDER_VALUE]));
 	}
 	else
 	{
@@ -565,7 +594,10 @@ static void CSTC_Draw(struct cst_info *self, int y_offset)
 				self->result(self, NULL, i + result_offset, cstc_rt_highlight, &ptr_result);
 
 			if (i + result_offset == self->selection)
+			{
 				Draw_Fill(0, offset + i * 8 * self->direction, vid.conwidth, 8, context_sensitive_tab_completion_selected_color.value);
+				self->offset_y = offset + i * 8 * self->direction;
+			}
 			else
 				Draw_Fill(0, offset + i * 8 * self->direction, vid.conwidth, 8, context_sensitive_tab_completion_background_color.value);
 
@@ -610,6 +642,9 @@ static void CSTC_Draw(struct cst_info *self, int y_offset)
 		Draw_Fill(0, offset , vid.conwidth, 8, context_sensitive_tab_completion_tooltip_color.value);
 		Draw_String(0, offset , va("help: %s", self->tooltip));
 	}
+
+	if (self->draw)
+		self->draw(self);
 }
 
 void Context_Sensitive_Tab_Completion_Draw(void)
@@ -634,6 +669,9 @@ void Context_Sensitive_Tab_Completion_Draw(void)
 	}
 
 	CSTC_Draw(cst_info, scr_conlines);
+
+	// reset all changed flags
+	cst_info->toggleables_changed = cst_info-> selection_changed = cst_info->input_changed = false;
 }
 
 static void getarg(const char *s, char **start, char **end, char **next, qboolean cmd)
@@ -838,6 +876,7 @@ static void setup_completion(struct cst_commands *cc, struct cst_info *c, int ar
 	c->commands = cc->commands;
 	c->result = cc->result;
 	c->get_data = cc->get_data;
+	c->draw = cc->draw;
 	snprintf(c->input, sizeof(c->input), "%.*s", arg_len, key_lines[edit_line] + arg_start);
 
 	c->new_input = Text_Input_Create(c->input, sizeof(c->input), arg_len, 0);
@@ -858,12 +897,12 @@ static void setup_slider(struct cst_info *c)
 {
 	if (c->variable)
 	{
-		c->slider_value = bound(0, c->variable->value, 1);
-		c->slider_original_value = c->variable->value;
+		c->double_var[SLIDER_VALUE] = bound(c->double_var[SLIDER_LOWER_LIMIT], c->variable->value, c->double_var[SLIDER_UPPER_LIMIT]);
+		c->double_var[SLIDER_ORIGINAL_VALUE] = c->variable->value;
 	}
 	else
 	{
-		c->slider_original_value = c->slider_value = 0;
+		c->double_var[SLIDER_VALUE] = c->double_var[SLIDER_ORIGINAL_VALUE] = 0;
 	}
 }
 
@@ -1005,12 +1044,12 @@ static int setup_current_command(void)
 							{
 								if (var_ts->count == 1)
 								{
-									cst_info->color[0] = cst_info->color[1] = atof(var_ts->tokens[0]);
+									cst_info->int_var[COLOR_COLOR1] = cst_info->int_var[COLOR_COLOR2] = atof(var_ts->tokens[0]);
 								}
 								else if (var_ts->count == 2)
 								{
-									cst_info->color[0] = atof(var_ts->tokens[0]);
-									cst_info->color[1] = atof(var_ts->tokens[1]);
+									cst_info->int_var[COLOR_COLOR1] = atoi(var_ts->tokens[0]);
+									cst_info->int_var[COLOR_COLOR2] = atoi(var_ts->tokens[1]);
 								}
 								Tokenize_String_Delete(var_ts);
 							}
@@ -1434,7 +1473,7 @@ static int Command_Completion_Result(struct cst_info *self, int *results, int ge
 		return 1;
 
 	
-	if (results || self->initialized == 0)
+	if (results || self->bool_var[CC_INITALIZED] == false)
 	{
 		count = setup_command_completion_data(self);
 
@@ -1446,9 +1485,7 @@ static int Command_Completion_Result(struct cst_info *self, int *results, int ge
 
 		self->results = count;
 
-		self->initialized = 1;
-
-		self->count = count;
+		self->bool_var[CC_INITALIZED] = true;
 
 		return 0;
 	}
@@ -1456,7 +1493,7 @@ static int Command_Completion_Result(struct cst_info *self, int *results, int ge
 	if (result == NULL)
 		return 0;
 
-	if (get_result >= self->count)
+	if (get_result >= self->results)
 		return 1;
 
 
@@ -1557,7 +1594,7 @@ static int Player_Color_Selector_Result(struct cst_info *self, int *results, int
 {
 	if (result)
 	{
-		*result = va("%i %i", self->color[0], self->color[1]);
+		*result = va("%i %i", self->int_var[COLOR_COLOR1], self->int_var[COLOR_COLOR2]);
 		return 0;
 	}
 
@@ -1578,7 +1615,7 @@ static int Slider_Result(struct cst_info *self, int *results, int get_result, in
 {
 	if (result)
 	{
-		*result = va("%f", self->slider_value);
+		*result = va("%f", self->double_ptr[SLIDER_VALUE]);
 		return 0;
 	}
 	return 1;

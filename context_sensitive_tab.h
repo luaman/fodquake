@@ -7,45 +7,63 @@
 #define CSTC_COMMAND					( 1 << 6)
 #define CSTC_HIGLIGHT_INPUT				( 1 << 7)
 
+
 #define INPUT_MAX 512
 struct cst_info
 {
 	char *name;
 	char real_name[INPUT_MAX];	//for multicmd stuff
-	struct tokenized_string *commands;
+	struct tokenized_string *commands;	// tokenized commands if multicmd
 	char input[INPUT_MAX];
-	int selection;
-	int direction;
 	int argument_start;
 	int argument_length;
 	int command_start;
 	int command_length;
-	int results;
-	int insert_space;
-	struct tokenized_string *tokenized_input;
+	int results;	// overall results count
+	struct tokenized_string *tokenized_input;	// tokenized input
 	int flags;
 	char *tooltip;
 	qboolean tooltip_show;
-	qboolean changed;
-
-	qboolean toggleables[12]; //what a shitty name... F1->F12
 
 	cmd_function_t *function;
 	cvar_t *variable;
 
-	// internal use of result and get_data
-	double slider_value, slider_original_value;
-	int color[2];
-	qboolean *checked;
-	int initialized;
-	int count;
-	void *data;
-	
-
 	int (*result)(struct cst_info *self, int *results, int get_result, int result_type, char **result);
 	int (*get_data)(struct cst_info *self, int remove);
+	void (*draw)(struct cst_info *self);	// more fitting name...
 
 	struct input *new_input;
+
+	// Variables of interest to noninternal functions
+	
+//	qboolean initialized;	// not touched by any internal function
+
+	// set by the internal key function
+	int selection;					// current selection
+	qboolean input_changed;			// will be set if the input changed
+	qboolean toggleables[12];		// will be toggled by ctrl + 1->0
+	qboolean toggleables_changed;	// will be set if one of the toggleables changed
+	qboolean selection_changed;		// will be set if the selection changed
+
+	// set by the internal draw function
+	int direction;		// draw direction 1 = up / -1 = down
+	int rows;			// available rows
+	// offset of the actual selection on screen
+	int offset_x;			// x drawing offset
+	int offset_y;			// y drawing offset
+
+	void *data;		// has to be cleared by get_data()
+
+	// freely allocateable pointers, in case more variables then set below are needed. will be auto freed if not zero
+	qboolean *bool_ptr;
+	int *int_ptr;
+	double *double_ptr;
+
+	// freely setable vars
+	int int_var[4];
+	double double_var[4];
+	qboolean bool_var[4];
+
 };
 
 enum cstc_result_type
@@ -55,7 +73,7 @@ enum cstc_result_type
 	cstc_rt_highlight
 };
 
-void CSTC_Add(char *name, int (*conditions)(void), int (*result)(struct cst_info *self, int *results, int get_result, int result_type, char **result), int (*get_data)(struct cst_info *self, int remove), int flags, char *tooltip);
+void CSTC_Add(char *name, int (*conditions)(void), int (*result)(struct cst_info *self, int *results, int get_result, int result_type, char **result), int (*get_data)(struct cst_info *self, int remove), void (*draw)(struct cst_info *self), int flags, char *tooltip);
 void CSTC_Insert_And_Close(void);
 void Context_Sensitive_Tab_Completion_CvarInit(void);
 void Context_Weighting_Init(void);

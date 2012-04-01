@@ -706,6 +706,7 @@ static int cstc_skins_check(char *entry, struct tokenized_string *ts)
 	return 1;
 }
 
+#define SKINS_INITIALIZED 0
 static int cstc_skins_get_results(struct cst_info *self, int *results, int get_result, int result_type, char **result)
 {
 	struct directory_list *data;
@@ -716,26 +717,26 @@ static int cstc_skins_get_results(struct cst_info *self, int *results, int get_r
 
 	data = (struct directory_list *)self->data;
 
-	if (results || self->initialized == 0)
+	if (results || self->bool_ptr[SKINS_INITIALIZED] == false)
 	{
-		if (self->checked)
-			free(self->checked);
-		self->checked = calloc(data->entry_count, sizeof(qboolean));
-		if (self->checked == NULL)
+		if (self->bool_ptr)
+			free(self->bool_ptr);
+		self->bool_ptr = calloc(data->entry_count, sizeof(qboolean));
+		if (self->bool_ptr == NULL)
 			return 1;
 
 		for (i=0, count=0; i<data->entry_count; i++)
 		{
 			if (cstc_skins_check(data->entries[i].name, self->tokenized_input))
 			{
-				self->checked[i] = true;
+				self->bool_ptr[i] = true;
 				count++;
 			}
 		}
 
 		if (results)
 			*results = count;
-		self->initialized = 1;
+		self->bool_ptr[SKINS_INITIALIZED] = true;
 		return 0;
 	}
 
@@ -744,7 +745,7 @@ static int cstc_skins_get_results(struct cst_info *self, int *results, int get_r
 
 	for (i=0, count=-1; i<data->entry_count; i++)
 	{
-		if (self->checked[i] == true)
+		if (self->bool_ptr[i] == true)
 			count++;
 		if (count == get_result)
 		{
@@ -781,7 +782,7 @@ static int cstc_skins_condition(void)
 
 void FS_Init()
 {
-	CSTC_Add("enemyskin enemyquadskin enemypentskin enemybothskin teamskin teamquadskin teampentskin teambothskin", &cstc_skins_condition, &cstc_skins_get_results, &cstc_skins_get_data, CSTC_MULTI_COMMAND| CSTC_NO_INPUT| CSTC_EXECUTE, "arrow up/down to navigate");
+	CSTC_Add("enemyskin enemyquadskin enemypentskin enemybothskin teamskin teamquadskin teampentskin teambothskin", &cstc_skins_condition, &cstc_skins_get_results, &cstc_skins_get_data, NULL, CSTC_MULTI_COMMAND| CSTC_NO_INPUT| CSTC_EXECUTE, "arrow up/down to navigate");
 	Cmd_AddCommand("path", FS_Path_f);
 }
 

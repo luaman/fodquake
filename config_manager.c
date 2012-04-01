@@ -824,6 +824,8 @@ static int cstc_cfg_load_check(char *entry, struct tokenized_string *ts)
 	return 1;
 }
 
+#define CFG_INITIALIZED 0
+
 static int cstc_cfg_load_get_results(struct cst_info *self, int *results, int get_result, int result_type, char **result)
 {
 	struct directory_list *data;
@@ -834,26 +836,26 @@ static int cstc_cfg_load_get_results(struct cst_info *self, int *results, int ge
 
 	data = (struct directory_list *)self->data;
 
-	if (results || self->initialized == 0)
+	if (results || self->bool_var[CFG_INITIALIZED] == false)
 	{
-		if (self->checked)
-			free(self->checked);
-		self->checked = calloc(data->entry_count, sizeof(qboolean));
-		if (self->checked == NULL)
+		if (self->bool_ptr)
+			free(self->bool_ptr);
+		self->bool_ptr = calloc(data->entry_count, sizeof(qboolean));
+		if (self->bool_ptr == NULL)
 			return 1;
 
 		for (i=0, count=0; i<data->entry_count; i++)
 		{
 			if (cstc_cfg_load_check(data->entries[i].name, self->tokenized_input))
 			{
-				self->checked[i] = true;
+				self->bool_ptr[i] = true;
 				count++;
 			}
 		}
 
 		if (results)
 			*results = count;
-		self->initialized = 1;
+		self->bool_var[CFG_INITIALIZED] = 1;
 		return 0;
 	}
 
@@ -862,7 +864,7 @@ static int cstc_cfg_load_get_results(struct cst_info *self, int *results, int ge
 
 	for (i=0, count=-1; i<data->entry_count; i++)
 	{
-		if (self->checked[i] == true)
+		if (self->bool_ptr[i] == true)
 			count++;
 		if (count == get_result)
 		{
@@ -894,6 +896,6 @@ void ConfigManager_CvarInit(void)
 
 	Cvar_ResetCurrentGroup();
 
-	CSTC_Add("cfg_load cfg_save", NULL, &cstc_cfg_load_get_results, &cstc_cfg_load_get_data, CSTC_MULTI_COMMAND | CSTC_EXECUTE | CSTC_HIGLIGHT_INPUT, "arrow up/down to navigate");
+	CSTC_Add("cfg_load cfg_save", NULL, &cstc_cfg_load_get_results, &cstc_cfg_load_get_data, NULL, CSTC_MULTI_COMMAND | CSTC_EXECUTE | CSTC_HIGLIGHT_INPUT, "arrow up/down to navigate");
 }
 

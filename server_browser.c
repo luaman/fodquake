@@ -137,6 +137,9 @@ static int sb_server_insert_port_position;
 #define SB_FILTER 1
 #define SB_HELP 2
 
+#define SB_MAP_LENGTH		0
+#define SB_COUNT			1
+
 const struct QWServer *current_selected_server;
 
 static int friend_name_max_len = 0;
@@ -2845,50 +2848,73 @@ static qboolean cstc_connect_check(struct cst_info *self, struct QWServer *serve
 
 static int cstc_connect_get_results(struct cst_info *self, int *results, int get_result, int result_type, char **result)
 {
-	int count, i;
+	int count, i, j;
 	struct QWServer *server;
+	qboolean resort = false;
 
-	if (!self)
+	if (self == NULL)
 		return 1;
 
-
-	if (serverscanner && ServerScanner_DataUpdated(serverscanner))
+	if ((serverscanner && ServerScanner_DataUpdated(serverscanner)) || self->toggleables[2] == true)
 	{
+		if (self->toggleables[2] || sb_qw_server == NULL)
+			SB_Refresh();
 		if (sb_qw_server)
 			ServerScanner_FreeServers(serverscanner, sb_qw_server);
 		sb_qw_server = ServerScanner_GetServers(serverscanner, &sb_qw_server_count);
 
-		if (self->checked)
-			free(self->checked);
-		self->checked = calloc(sb_qw_server_count, sizeof(qboolean));
-		if (self->checked == NULL)
-			return 1;
+		if (self->bool_ptr)
+		{
+			free(self->bool_ptr);
+			self->bool_ptr = NULL;
+		}
 
-		self->count = 0;
+		resort = true;
+		self->toggleables[2] = false;
+	}
+
+	if (sb_qw_server_count == 0)
+		return 1;
+
+	if (self->bool_ptr == NULL)
+	{
+		self->bool_ptr = calloc(sb_qw_server_count, sizeof(qboolean));
+		resort = true;
+	}
+
+	if (self->bool_ptr == NULL)
+		return 1;
+
+	if (sb_qw_server == NULL)
+		return 1;
+
+	if (resort || self->input_changed || self->toggleables_changed)
+	{
 		for (i=0, count=0; i<sb_qw_server_count; i++)
 		{
 			if (cstc_connect_check(self, sb_qw_server[i], self->tokenized_input))
 			{
-				self->checked[i] = true;
+				self->bool_ptr[i] = true;
 				if (sb_qw_server[i]->map)
-					if (self->count < strlen(sb_qw_server[i]->map))
-						self->count = strlen(sb_qw_server[i]->map);
+					if (self->int_var[SB_MAP_LENGTH] < strlen(sb_qw_server[i]->map))
+						self->int_var[SB_MAP_LENGTH] = strlen(sb_qw_server[i]->map);
 				count++;
 			}
+			else
+				self->bool_ptr[i] = false;
 		}
-
-		if (results)
-			*results = count;
-		self->initialized = 1;
-		self->changed = false;
+		self->int_var[SB_COUNT] = count;
 	}
+
+	if (results)
+		*results = self->int_var[SB_COUNT];
 
 	if (result == NULL)
 		return 0;
 
 	for (i=0, count=-1; i<sb_qw_server_count; i++)
 	{
-		if (self->checked[i] == true)
+		if (self->bool_ptr[i] == true)
 			count++;
 
 		if (count == get_result)
@@ -2897,17 +2923,11 @@ static int cstc_connect_get_results(struct cst_info *self, int *results, int get
 			if (result_type == cstc_rt_real)
 				*result = va("%s", NET_AdrToString(&server->addr));
 			else
-				*result = va("%*s %3i/%3i %s", self->count, server->map ? server->map : "", server->numplayers, server->maxclients, server->hostname ? server->hostname : "");
+				*result = va("%*s %3i/%3i %s", self->int_var[SB_MAP_LENGTH], server->map ? server->map : "", server->numplayers, server->maxclients, server->hostname ? server->hostname : "");
 			return 0;
 		}
 	}
 	return 1;
-}
-
-static int cstc_connect_get_data(struct cst_info *self, int remove)
-{
-	/*sb_qw_server[];*/
-	return 0;
 }
 
 static int cstc_connect_condition(void)
@@ -2920,6 +2940,64 @@ static int cstc_connect_condition(void)
 		return 0;
 	}
 	return 1;
+}
+
+static void cstc_connect_draw(struct cst_info *self)
+{
+	char *s;
+	int x, y, i, j;
+	struct QWServer *server;
+
+	if (self->selection_changed)
+		self->toggleables[1] = false;
+
+	if (self->toggleables[1] == false)
+		return;
+
+	if (sb_qw_server == NULL)
+		return;
+
+	if (sb_qw_server_count <= self->selection)
+		return;
+
+	for (i=0, j=-1; i<sb_qw_server_count ; i++)
+	{
+		if (self->bool_ptr[i] == true)
+			j++;
+		if (j == self->selection)
+			break;
+	}
+
+	if (i == sb_qw_server_count)
+		return;
+
+	server = sb_qw_server[i];
+
+	if (server == NULL)
+		return;
+
+	x = 0;
+	y = self->offset_y + self->direction * 8;
+
+	Draw_Fill(x, y, vid.displaywidth, 8, 2);
+
+	for (i=0; i<server->numplayers; i++)
+	{
+		s = server->players[i].name;
+		if (s == NULL)
+			continue;
+		Draw_String(x, y, va("%s,", s));
+		x += 8 + strlen(s) * 8 + 8;
+	}
+
+	for (i=0; i<server->numplayers; i++)
+	{
+		s = server->players[i].name;
+		if (s == NULL)
+			continue;
+		Draw_String(x, y, va("\\s%s", s));
+		x += 8 + strlen(s) * 8 + 8;
+	}
 }
 
 void SB_CvarInit(void)
@@ -2952,7 +3030,7 @@ void SB_CvarInit(void)
 	Cvar_Register(&sb_highlight_sort_column_color);
 	Cvar_Register(&sb_highlight_sort_column_alpha);
 
-	CSTC_Add("connect", &cstc_connect_condition, &cstc_connect_get_results, &cstc_connect_get_data, CSTC_EXECUTE | CSTC_HIGLIGHT_INPUT, "arrow up/down to navigate, ctrl+1 to toggle showing empty servers");
+	CSTC_Add("connect", &cstc_connect_condition, &cstc_connect_get_results, NULL, &cstc_connect_draw, CSTC_EXECUTE | CSTC_HIGLIGHT_INPUT, "arrow up/down to navigate, ctrl+1 to toggle showing empty servers");
 }
 
 void Dump_SB_Config(FILE *f)

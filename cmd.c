@@ -1620,6 +1620,8 @@ static int cstc_exec_check(char *entry, struct tokenized_string *ts)
 	return 1;
 }
 
+#define EXEC_INITIALIZED 0
+
 static int cstc_exec_get_results(struct cst_info *self, int *results, int get_result, int result_type, char **result)
 {
 	struct directory_list *data;
@@ -1630,24 +1632,24 @@ static int cstc_exec_get_results(struct cst_info *self, int *results, int get_re
 
 	data = (struct directory_list *)self->data;
 
-	if (results || self->initialized == 0)
+	if (results || self->bool_var[EXEC_INITIALIZED] == false)
 	{
-		if (self->checked)
-			free(self->checked);
-		self->checked = calloc(data->entry_count, sizeof(qboolean));
-		if (self->checked == NULL)
+		if (self->bool_ptr)
+			free(self->bool_ptr);
+		self->bool_ptr = calloc(data->entry_count, sizeof(qboolean));
+		if (self->bool_ptr == NULL)
 			return 1;
 
 		for (i=0, count=0; i<data->entry_count; i++)
 		{
 			if (cstc_exec_check(data->entries[i].name, self->tokenized_input))
 			{
-				self->checked[i] = true;
+				self->bool_ptr[i] = true;
 				count++;
 			}
 		}
 		*results = count;
-		self->initialized = 1;
+		self->bool_var[EXEC_INITIALIZED] = true;
 		return 0;
 	}
 
@@ -1656,7 +1658,7 @@ static int cstc_exec_get_results(struct cst_info *self, int *results, int get_re
 
 	for (i=0, count=-1; i<data->entry_count; i++)
 	{
-		if (self->checked[i] == true)
+		if (self->bool_ptr[i] == true)
 			count++;
 		if (count == get_result)
 		{
@@ -1684,8 +1686,8 @@ void Cmd_Init (void)
 	Cmd_AddCommand("if", Cmd_If_f);
 	Cmd_AddCommand("macrolist", Cmd_MacroList_f);
 
-	CSTC_Add("alias", NULL, &cstc_alias_get_results, NULL, 0, "arrow up/down to navigate");
-	CSTC_Add("exec", NULL, &cstc_exec_get_results, &cstc_exec_get_data, CSTC_EXECUTE, "arrow up/down to navigate");
+	CSTC_Add("alias", NULL, &cstc_alias_get_results, NULL, NULL, 0, "arrow up/down to navigate");
+	CSTC_Add("exec", NULL, &cstc_exec_get_results, &cstc_exec_get_data, NULL, CSTC_EXECUTE, "arrow up/down to navigate");
 }
 
 void Cmd_Shutdown()
