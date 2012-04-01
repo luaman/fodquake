@@ -780,9 +780,58 @@ static int cstc_skins_condition(void)
 	return i;
 }
 
+static void cstc_skins_draw(struct cst_info *self)
+{
+	struct directory_list *data;
+	int x, y;
+	int i, count;
+
+	if (self->picture && ( self->toggleables_changed || self->selection_changed))
+	{
+		Draw_FreePicture(self->picture);
+		self->picture = NULL;
+		self->toggleables[0] = false;
+	}
+
+	if (self->toggleables[0] == false)
+		return;
+
+	self->toggleables[0] = false;
+	if (self->picture == NULL)
+	{
+		data = (struct directory_list *)self->data;
+
+		if (data == NULL)
+			return;
+
+		for (i=0, count=-1; i<data->entry_count; i++)
+		{
+			if (self->bool_ptr[i] == true)
+				count++;
+			if (count == self->selection)
+				break;
+		}
+		if (i == data->entry_count)
+			return;
+
+		self->picture = Draw_LoadPicture(va("skins/%s", data->entries[i].name), DRAW_LOADPICTURE_NOFALLBACK);
+	}
+
+	if (self->picture == NULL)
+		return;
+
+	x = vid.displaywidth/2 - Draw_GetPictureWidth(self->picture)/2;
+	y = self->offset_y - (self->direction == -1 ? Draw_GetPictureHeight(self->picture): 0);
+
+	Draw_DrawPicture(self->picture, x, y, 320, 200);//, Draw_GetPictureWidth(self->picture), Draw_GetPictureHeight(self->picture));
+
+	self->toggleables[0] = true;
+	return;
+}
+
 void FS_Init()
 {
-	CSTC_Add("enemyskin enemyquadskin enemypentskin enemybothskin teamskin teamquadskin teampentskin teambothskin", &cstc_skins_condition, &cstc_skins_get_results, &cstc_skins_get_data, NULL, CSTC_MULTI_COMMAND| CSTC_NO_INPUT| CSTC_EXECUTE, "arrow up/down to navigate");
+	CSTC_Add("enemyskin enemyquadskin enemypentskin enemybothskin teamskin teamquadskin teampentskin teambothskin", &cstc_skins_condition, &cstc_skins_get_results, &cstc_skins_get_data, &cstc_skins_draw, CSTC_MULTI_COMMAND| CSTC_NO_INPUT| CSTC_EXECUTE, "arrow up/down to navigate, ctrl + 1 - to show the skin");
 	Cmd_AddCommand("path", FS_Path_f);
 }
 

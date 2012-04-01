@@ -58,6 +58,7 @@ struct cst_info
 	qboolean *bool_ptr;
 	int *int_ptr;
 	double *double_ptr;
+	struct Picture *picture;
 
 	// freely setable vars
 	int int_var[4];

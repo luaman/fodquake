@@ -96,6 +96,8 @@ static void cleanup_cst(struct cst_info *info)
 		free(info->int_ptr);
 	if (info->double_ptr)
 		free(info->double_ptr);
+	if (info->picture)
+		Draw_FreePicture(info->picture);
 
 	if (info->new_input)
 		Text_Input_Delete(info->new_input);
@@ -357,20 +359,16 @@ void Context_Sensitive_Tab_Completion_Key(int key)
 				cst_info->selection = i-1;
 			if (cst_info->selection >= i)
 				cst_info->selection = 0;
-			return;
 		}
-
-		if (key == K_RIGHTARROW)
+		else if (key == K_RIGHTARROW)
 		{
 			cst_info->selection++;
 			if (cst_info->selection < 0)
 				cst_info->selection = i-1;
 			if (cst_info->selection >= i)
 				cst_info->selection = 0;
-			return;
 		}
-
-		if (key == K_UPARROW)
+		else if (key == K_UPARROW)
 		{
 			if (cst_info->direction == 1)
 				cst_info->selection -= 16;
@@ -381,10 +379,8 @@ void Context_Sensitive_Tab_Completion_Key(int key)
 				cst_info->selection = i + cst_info->selection;
 			if (cst_info->selection >= i)
 				cst_info->selection = cst_info->selection - i;
-			return;
 		}
-
-		if (key == K_DOWNARROW)
+		else if (key == K_DOWNARROW)
 		{
 			if (cst_info->direction == 1)
 				cst_info->selection += 16;
@@ -395,37 +391,35 @@ void Context_Sensitive_Tab_Completion_Key(int key)
 				cst_info->selection = i + cst_info->selection;
 			if (cst_info->selection >= i)
 				cst_info->selection = cst_info->selection - i;
-
-			return;
 		}
+		cst_info->selection_changed = true;
+		return;
 	}
 	else if (cst_info->flags & CSTC_PLAYER_COLOR_SELECTOR)
 	{
 		if (key == K_SPACE)
 		{
 			cst_info->int_var[cst_info->int_var[COLOR_ROW]] = cst_info->selection;
-			return;
 		}
-
-		if (key == K_UPARROW || key == K_DOWNARROW)
+		else if (key == K_UPARROW || key == K_DOWNARROW)
 		{
 			cst_info->int_var[COLOR_ROW] += 1 * (cst_info->direction == 1 ? 1 : -1) * (key == K_UPARROW ? -1 : 1);
 			cst_info->int_var[COLOR_ROW] = bound(0, cst_info->int_var[COLOR_ROW], 1);
-			return;
 		}
-
-		if (key == K_LEFTARROW || key == K_RIGHTARROW)
+		else if (key == K_LEFTARROW || key == K_RIGHTARROW)
 		{
 			cst_info->selection += 1 * key == K_LEFTARROW ? -1 : 1;
 			cst_info->selection = bound(0, cst_info->selection, 13);
-			return;
 		}
+		cst_info->selection_changed = true;
+		return;
 	}
 	else
 	{
 		if (key == K_UPARROW || key == K_DOWNARROW)
 		{
 			cst_info->selection += (keydown[K_CTRL] ? 5 : 1) * (cst_info->direction == 1 ? 1 : -1) * (key == K_UPARROW ? -1 : 1);
+
 			if (i == 0)
 			{
 				cst_info->selection = 0;
@@ -436,6 +430,7 @@ void Context_Sensitive_Tab_Completion_Key(int key)
 			if (cst_info->selection >= i)
 				cst_info->selection = 0;
 
+			cst_info->selection_changed = true;
 			return;
 		}
 	}
@@ -675,7 +670,7 @@ void Context_Sensitive_Tab_Completion_Draw(void)
 	CSTC_Draw(cst_info, scr_conlines);
 
 	// reset all changed flags
-	cst_info->toggleables_changed = cst_info-> selection_changed = cst_info->input_changed = false;
+	cst_info->toggleables_changed = cst_info->selection_changed = cst_info->input_changed = false;
 }
 
 static void getarg(const char *s, char **start, char **end, char **next, qboolean cmd)
