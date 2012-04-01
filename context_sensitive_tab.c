@@ -9,6 +9,14 @@
 #include "tokenize_string.h"
 #include "text_input.h"
 
+enum CSTC_Pictures
+{
+	cstcp_magnifying,
+	cstcp_arrow_up,
+	cstcp_arrow_down,
+	cstcp_arrow_left,
+	cstcp_arrow_right
+};
 
 struct cst_commands
 {
@@ -23,6 +31,7 @@ struct cst_commands
 };
 
 struct cst_commands Command_Completion;
+struct Picture *cstc_pictures;
 
 #define MAXCMDLINE 256
 extern int key_linepos;
@@ -89,6 +98,21 @@ static void CSTC_Cleanup(struct cst_info *self)
 	context_sensitive_tab_completion_active = 0;
 	cleanup_cst(self);
 	memset(self, 0, sizeof(struct cst_info));
+}
+
+static void CSTC_Draw_Picture(int x, int y, int width, int height, enum CSTC_Pictures pic)
+{
+	int index_x, index_y, iw, ih;
+	float sx, sy;
+
+	if (cstc_pictures == NULL)
+		return;
+
+	for (index_x = pic, index_y = 0; index_x > 16; index_x -= 16, index_y++);
+
+	sx = (1.0f/16.0f) * index_x;
+	sy = (1.0f/16.0f) * index_y;
+	Draw_DrawSubPicture(cstc_pictures, (1.0f/16.0f) * index_x, (1.0f/16.0f) * index_y, 1.0f/16.0f, 1.0f/16.0f, x, y, width ? width : 16, height ? height : 16);
 }
 
 qboolean CSTC_Execute_On_Enter(char *cmd)
@@ -581,12 +605,14 @@ static void CSTC_Draw(struct cst_info *self, int y_offset)
 
 		if (sup)
 		{
-			Draw_String(8, offset + (rows - 1) * 8 * self->direction, "^");
+			/*Draw_String(8, offset + (rows - 1) * 8 * self->direction, "^");*/
+			CSTC_Draw_Picture(8, offset + (rows - 1) * 8 * self->direction, 0, 0, cstcp_arrow_up);
 		}
 
 		if (sdown)
 		{
-			Draw_String(8, offset + 8 * self->direction, "v");
+			/*Draw_String(8, offset + 8 * self->direction, "v");*/
+			CSTC_Draw_Picture(8, offset + 8 * self->direction, 0, 0, cstcp_arrow_down);
 		}
 
 		if (rows < self->results && context_sensitive_tab_completion_show_results.value == 1)
@@ -601,6 +627,8 @@ static void CSTC_Draw(struct cst_info *self, int y_offset)
 		Draw_Fill(0, offset , vid.conwidth, 8, context_sensitive_tab_completion_tooltip_color.value);
 		Draw_String(0, offset , va("help: %s", self->tooltip));
 	}
+
+
 
 }
 
@@ -1614,6 +1642,7 @@ void Context_Sensitive_Tab_Completion_CvarInit(void)
 	CC_Color.result = &Color_Selector_Result;
 	CC_Color.flags = CSTC_COLOR_SELECTOR | CSTC_NO_INPUT | CSTC_EXECUTE;
 	CC_Color.tooltip = cstc_color_tooltip;
+
 }
 
 void Context_Weighting_Init(void)
@@ -1621,6 +1650,22 @@ void Context_Weighting_Init(void)
 	Cbuf_AddText("weight_disable\n");
 	Cbuf_AddText("exec weight_file\n");
 	Cbuf_AddText("weight_enable\n");
+}
+
+void CSTC_PictureInit(void)
+{
+	if (cstc_pictures)
+		Draw_FreePicture(cstc_pictures);
+	cstc_pictures = Draw_LoadPicture("gfx/cstc_pics.png", DRAW_LOADPICTURE_NOFALLBACK);
+}
+
+void CSTC_PictureShutdown(void)
+{
+	if (cstc_pictures)
+	{
+		Draw_FreePicture(cstc_pictures);
+		cstc_pictures = NULL;
+	}
 }
 
 void Context_Weighting_Shutdown(void)

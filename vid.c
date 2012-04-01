@@ -40,6 +40,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "sys_thread.h"
 
 #include "sbar.h"
+#include "context_sensitive_tab.h"
 
 static struct SysMutex *display_mutex;
 
@@ -343,6 +344,7 @@ void VID_Open()
 			M_VidInit();
 			Sbar_Init();
 			SCR_Init();
+			CSTC_PictureInit();
 
 			return;
 		}
@@ -367,6 +369,7 @@ void VID_Close()
 	Sbar_Shutdown();
 	M_VidShutdown();
 	Draw_Shutdown();
+	CSTC_PictureShutdown();
 
 #ifndef GLQUAKE
 	D_FlushCaches();

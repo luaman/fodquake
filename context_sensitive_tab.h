@@ -65,3 +65,5 @@ void Context_Sensitive_Tab_Completion_Key(int key);
 int Context_Sensitive_Tab_Completion(void);
 void CSTC_Console_Close(void);
 void CSTC_Shutdown(void);
+void CSTC_PictureShutdown(void);
+void CSTC_PictureInit(void);
