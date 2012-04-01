@@ -620,14 +620,18 @@ static void CSTC_Draw(struct cst_info *self, int y_offset)
 
 		if (sup)
 		{
-			/*Draw_String(8, offset + (rows - 1) * 8 * self->direction, "^");*/
-			CSTC_Draw_Picture(8, offset + (rows - 1) * 8 * self->direction, 0, 0, cstcp_arrow_up);
+			if (cstc_pictures)
+				CSTC_Draw_Picture(8, offset + (rows - 1) * 8 * self->direction, 0, 0, cstcp_arrow_up);
+			else
+				Draw_String(8, offset + (rows - 1) * 8 * self->direction, "^");
 		}
 
 		if (sdown)
 		{
-			/*Draw_String(8, offset + 8 * self->direction, "v");*/
-			CSTC_Draw_Picture(8, offset + 8 * self->direction, 0, 0, cstcp_arrow_down);
+			if (cstc_pictures)
+				CSTC_Draw_Picture(8, offset + 8 * self->direction, 0, 0, cstcp_arrow_down);
+			else
+				Draw_String(8, offset + 8 * self->direction, "v");
 		}
 
 		if (rows < self->results && context_sensitive_tab_completion_show_results.value == 1)
