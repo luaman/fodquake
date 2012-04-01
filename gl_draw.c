@@ -372,6 +372,55 @@ void DrawImp_CvarInit(void)
 	GL_Texture_CvarInit();
 }
 
+static struct Picture *dummypicture;
+
+static const unsigned char dummyfallbackdata[] =
+{
+	0xff, 0xff, 0xff, 0xff,
+	0x00, 0x00, 0x00, 0xff,
+	0x00, 0x00, 0x00, 0xff,
+	0xff, 0xff, 0xff, 0xff,
+};
+
+static void Draw_CreateDummyPicture()
+{
+	dummypicture = malloc(sizeof(*dummypicture));
+	if (dummypicture)
+	{
+		dummypicture->texnum = texture_extension_number++;
+
+		dummypicture->width = 2;
+		dummypicture->height = 2;
+
+		dummypicture->glwidthscale = 1;
+		dummypicture->glheightscale = 1;
+
+		dummypicture->texcoords[0] = 0;
+		dummypicture->texcoords[1] = 0;
+		dummypicture->texcoords[2] = 1;
+		dummypicture->texcoords[3] = 0;
+		dummypicture->texcoords[4] = 1;
+		dummypicture->texcoords[5] = 1;
+		dummypicture->texcoords[6] = 0;
+		dummypicture->texcoords[7] = 1;
+
+		GL_Bind(dummypicture->texnum);
+		glTexImage2D(GL_TEXTURE_2D, 0, 4, 2, 2, 0, GL_RGBA, GL_UNSIGNED_BYTE, dummyfallbackdata);
+
+		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	}
+}
+
+static void Draw_DeleteDummyPicture()
+{
+	free(dummypicture);
+	dummypicture = 0;
+}
+
 void DrawImp_Init(void)
 {
 	int i;
@@ -394,6 +443,8 @@ void DrawImp_Init(void)
 
 	Draw_RecalcCrosshair();
 
+	Draw_CreateDummyPicture();
+
 	drawgl_inited = 1;
 }
 
@@ -404,6 +455,8 @@ void DrawImp_Shutdown()
 		Draw_FreePicture(crosshairpic);
 		crosshairpic = 0;
 	}
+
+	Draw_DeleteDummyPicture();
 
 	drawgl_inited = 0;
 }
@@ -1130,10 +1183,16 @@ struct Picture *Draw_LoadPicture(const char *name, enum Draw_LoadPicture_Fallbac
 			}
 #endif
 
+			if (!newdata)
+			{
+				strcpy(newnameextension, ".pcx");
+				data = Image_LoadPCX(0, newname, 0, 0, &width, &height);
+			}
+
 			free(newname);
 		}
 
-		if (!newdata)
+		if (!newdata && !data)
 		{
 			if (namelen > 4 && strcmp(name + namelen - 4, ".lmp") == 0)
 			{
@@ -1221,18 +1280,20 @@ struct Picture *Draw_LoadPicture(const char *name, enum Draw_LoadPicture_Fallbac
 	if (picture)
 		return picture;
 
-#warning Fixme
 	if (fallback == DRAW_LOADPICTURE_DUMMYFALLBACK)
-		return 42;
+		return dummypicture;
 
 	return 0;
 }
 
 void Draw_FreePicture(struct Picture *picture)
 {
-	glDeleteTextures(1, &picture->texnum);
+	if (picture != dummypicture)
+	{
+		glDeleteTextures(1, &picture->texnum);
 
-	free(picture);
+		free(picture);
+	}
 }
 
 unsigned int Draw_GetPictureWidth(struct Picture *picture)
