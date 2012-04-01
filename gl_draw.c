@@ -1130,10 +1130,16 @@ struct Picture *Draw_LoadPicture(const char *name, enum Draw_LoadPicture_Fallbac
 			}
 #endif
 
+			if (!newdata)
+			{
+				strcpy(newnameextension, ".pcx");
+				data = Image_LoadPCX(0, newname, 0, 0, &width, &height);
+			}
+
 			free(newname);
 		}
 
-		if (!newdata)
+		if (!newdata && !data)
 		{
 			if (namelen > 4 && strcmp(name + namelen - 4, ".lmp") == 0)
 			{

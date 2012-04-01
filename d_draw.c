@@ -6,6 +6,7 @@
 #include "common.h"
 #include "sound.h"
 #include "wad.h"
+#include "image.h"
 #include "draw.h"
 
 static struct Picture *conchar;
@@ -169,9 +170,14 @@ static struct Picture *Draw_LoadLmpPicture(FILE *fh)
 
 struct Picture *Draw_LoadPicture(const char *name, enum Draw_LoadPicture_Fallback fallback)
 {
+	char *newname;
+	char *newnameextension;
 	FILE *fh;
 	unsigned int namelen;
 	struct Picture *picture;
+	unsigned int width;
+	unsigned int height;
+	void *data;
 
 	picture = 0;
 
@@ -181,17 +187,43 @@ struct Picture *Draw_LoadPicture(const char *name, enum Draw_LoadPicture_Fallbac
 	}
 	else
 	{
-		FS_FOpenFile(name, &fh);
-		if (fh)
+		namelen = strlen(name);
+
+		newname = malloc(namelen + 4 + 1);
+		if (newname)
 		{
-			namelen = strlen(name);
+			COM_StripExtension(name, newname);
 
-			if (namelen > 4 && strcmp(name + namelen - 4, ".lmp") == 0)
+			newnameextension = newname + strlen(newname);
+
+			strcpy(newnameextension, ".pcx");
+			data = Image_LoadPCX(0, newname, 0, 0, &width, &height);
+		}
+
+		if (data && width <= 32768 && height <= 32728)
+		{
+			picture = malloc(sizeof(*picture) + width * height);
+			if (picture)
 			{
-				picture = Draw_LoadLmpPicture(fh);
-			}
+				picture->width = width;
+				picture->height = height;
 
-			fclose(fh);
+				memcpy(picture + 1, data, width * height);
+			}
+		}
+
+		if (!picture)
+		{
+			FS_FOpenFile(name, &fh);
+			if (fh)
+			{
+				if (namelen > 4 && strcmp(name + namelen - 4, ".lmp") == 0)
+				{
+					picture = Draw_LoadLmpPicture(fh);
+				}
+
+				fclose(fh);
+			}
 		}
 	}
 
