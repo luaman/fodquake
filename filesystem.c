@@ -785,18 +785,14 @@ static void cstc_skins_draw(struct cst_info *self)
 	struct directory_list *data;
 	int x, y;
 	int i, count;
+	char *s;
 
 	if (self->picture && ( self->toggleables_changed || self->selection_changed))
 	{
 		Draw_FreePicture(self->picture);
 		self->picture = NULL;
-		self->toggleables[0] = false;
 	}
 
-	if (self->toggleables[0] == false)
-		return;
-
-	self->toggleables[0] = false;
 	if (self->picture == NULL)
 	{
 		data = (struct directory_list *)self->data;
@@ -818,14 +814,20 @@ static void cstc_skins_draw(struct cst_info *self)
 	}
 
 	if (self->picture == NULL)
+	{
+		s = va("not a valid skin.");
+		x = vid.displaywidth - strlen(s) * 8;
+		y = self->offset_y;
+		Draw_Fill(x, y, 8 * strlen(s), 8, 0);
+		Draw_String(x, y, s);
 		return;
+	}
 
-	x = vid.displaywidth/2 - Draw_GetPictureWidth(self->picture)/2;
 	y = self->offset_y - (self->direction == -1 ? Draw_GetPictureHeight(self->picture): 0);
+	x = vid.displaywidth - Draw_GetPictureWidth(self->picture);
 
 	Draw_DrawPicture(self->picture, x, y, 320, 200);//, Draw_GetPictureWidth(self->picture), Draw_GetPictureHeight(self->picture));
 
-	self->toggleables[0] = true;
 	return;
 }
 

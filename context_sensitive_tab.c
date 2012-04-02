@@ -688,7 +688,7 @@ static void CSTC_Draw(struct cst_info *self, int y_offset)
 			Draw_Fill(pos_x, pos_y, 8*8 + 2, 8, context_sensitive_tab_completion_slider_border_color.value);
 			Draw_Fill(pos_x+1, pos_y+1, 8*8, 8, context_sensitive_tab_completion_slider_background_color.value);
 			Draw_Fill(pos_x+1, pos_y+1, 8*8 * self->double_var[SLIDER_VALUE], 8, context_sensitive_tab_completion_slider_color.value);
-			Draw_String(pos_x , pos_y, va("%f", self->double_var[SLIDER_VALUE]));
+			Draw_String(pos_x , pos_y, va("%*.2f", self->double_var[SLIDER_VALUE]));
 		}
 	}
 	else
