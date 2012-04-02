@@ -66,6 +66,7 @@ extern char key_lines[32][MAXCMDLINE];
 int context_sensitive_tab_completion_active = 0;
 
 cvar_t	context_sensitive_tab_completion = {"context_sensitive_tab_completion", "1"};
+cvar_t	context_sensitive_tab_completion_use_pictures = {"context_sensitive_tab_completion_use_pictures", "1"};
 cvar_t	context_sensitive_tab_completion_command_only_on_ctrl_tab = {"context_sensitive_tab_completion_command_only_on_ctrl_tab", "1"};
 cvar_t	context_sensitive_tab_completion_color_coded_types = {"context_sensitive_tab_completion_color_coded_types", "1"};
 cvar_t	context_sensitive_tab_completion_close_on_tab = {"context_sensitive_tab_completion_close_on_tab", "1"};
@@ -146,6 +147,14 @@ static void CSTC_Draw_Picture(int x, int y, int width, int height, enum CSTC_Pic
 	Draw_DrawSubPicture(cstc_pictures, (1.0f/16.0f) * index_x, (1.0f/16.0f) * index_y, 1.0f/16.0f, 1.0f/16.0f, x, y, width ? width : 16, height ? height : 16);
 }
 
+static qboolean CSTC_PictureCheck(void)
+{
+	if (cstc_pictures && context_sensitive_tab_completion_use_pictures.value == 1)
+		return true;
+
+	return false;
+}
+
 /*
  * x and y are the positions of the internal lining of the border
  * width and height are the dimensions of the internal lining of the border
@@ -205,33 +214,50 @@ static void CSTC_DrawBorder(int x, int y, int width, int height, int border_widt
  * segment_size is the width/height of one segment
  * segments is the amount of segments drawn between the 2 end segments
  */
-static int CSTC_DrawSlider (int x, int y, int segment_size, int segments, double pos)
+static int CSTC_DrawSlider (int x, int y, int segment_size, int segments, double pos, char *text)
 {
 	int isz;
 	int pos_x, pos_y;
 	int i;
+	int text_x, text_y;
 
-	if (cstc_pictures == NULL)
-		return -1;
+	if (CSTC_PictureCheck() == false)
+	{
+		pos_x = x;
+		pos_y = y;
+		Draw_Fill(pos_x-1, pos_y-1, segments * segment_size + 2, 10, context_sensitive_tab_completion_slider_border_color.value);
+		Draw_Fill(pos_x, pos_y, segments * segment_size, 8, context_sensitive_tab_completion_slider_background_color.value);
+		Draw_Fill(pos_x, pos_y, segments * segment_size * pos, 8, context_sensitive_tab_completion_slider_color.value);
+		text_x = pos_x + segments * segment_size;
+		text_y = pos_y;
+	}
+	else
+	{
+		if (segment_size < 8)
+			segment_size = 8;
 
-	if (segment_size < 8)
-		segment_size = 8;
+		isz = (segment_size == 16 ? 0 : segment_size);
 
-	isz = (segment_size == 16 ? 0 : segment_size);
+		pos_x = x;
+		pos_y = y;
+		pos_y = y - (segment_size - 8) / 2;
 
-	pos_x = x;
-	pos_y = y;
+		CSTC_Draw_Picture(pos_x, pos_y, isz, isz, cstcp_textbox_left);
+		pos_x += segment_size;
 
-	CSTC_Draw_Picture(pos_x, pos_y, isz, isz, cstcp_textbox_left);
-	pos_x += segment_size;
+		for (i=0; i<segments; i++, pos_x+=segment_size)
+			CSTC_Draw_Picture(pos_x, pos_y, isz, isz, cstcp_textbox_center);
 
-	for (i=0; i<segments; i++, pos_x+=segment_size)
-		CSTC_Draw_Picture(pos_x, pos_y, isz, isz, cstcp_textbox_center);
+		CSTC_Draw_Picture(pos_x, pos_y, isz, isz, cstcp_textbox_right);
 
-	CSTC_Draw_Picture(pos_x, pos_y, isz, isz, cstcp_textbox_right);
+		text_x = pos_x + segment_size;
+		pos_x = x + (pos_x - x) * pos;
+		CSTC_Draw_Picture(pos_x, pos_y, isz, isz, cstcp_slider_knob);
+		text_y = y;
+	}
 
-	pos_x = x + (pos_x - x) * pos;
-	CSTC_Draw_Picture(pos_x, pos_y, isz, isz, cstcp_slider_knob);
+	if (text)
+		Draw_String(text_x, text_y, text);
 
 	return pos_x;
 }
@@ -678,18 +704,7 @@ static void CSTC_Draw(struct cst_info *self, int y_offset)
 			pos_y = offset;
 		self->offset_y = pos_y;
 
-		if (cstc_pictures)
-		{
-			CSTC_DrawSlider(pos_x, pos_y -2, 16, 5, self->double_var[SLIDER_VALUE]);
-			Draw_String(pos_x + 7 * 16, pos_y +2, va("%.2f", self->double_var[SLIDER_VALUE]));
-		}
-		else
-		{
-			Draw_Fill(pos_x, pos_y, 8*8 + 2, 8, context_sensitive_tab_completion_slider_border_color.value);
-			Draw_Fill(pos_x+1, pos_y+1, 8*8, 8, context_sensitive_tab_completion_slider_background_color.value);
-			Draw_Fill(pos_x+1, pos_y+1, 8*8 * self->double_var[SLIDER_VALUE], 8, context_sensitive_tab_completion_slider_color.value);
-			Draw_String(pos_x , pos_y, va("%*.2f", self->double_var[SLIDER_VALUE]));
-		}
+		CSTC_DrawSlider(pos_x, pos_y, 16, 5, self->double_var[SLIDER_VALUE], va("%.2f", self->double_var[SLIDER_VALUE]));
 	}
 	else
 	{
@@ -1744,6 +1759,7 @@ void Context_Sensitive_Tab_Completion_CvarInit(void)
 	Command_Completion.conditions = NULL;
 	Command_Completion.flags = CSTC_COMMAND;
 	Cvar_Register(&context_sensitive_tab_completion);
+	Cvar_Register(&context_sensitive_tab_completion_use_pictures);
 	Cvar_Register(&context_sensitive_tab_completion_command_only_on_ctrl_tab);
 	Cvar_Register(&context_sensitive_tab_completion_color_coded_types);
 	Cvar_Register(&context_sensitive_tab_completion_close_on_tab);
