@@ -26,7 +26,20 @@ enum CSTC_Pictures
 	cstcp_arrow_up,
 	cstcp_arrow_down,
 	cstcp_arrow_left,
-	cstcp_arrow_right
+	cstcp_arrow_right,
+	cstcp_textbox_left,
+	cstcp_textbox_center,
+	cstcp_textbox_right,
+	cstcp_border_top_left,
+	cstcp_border_top_right,
+	cstcp_border_bottom_left,
+	cstcp_border_bottom_right,
+	cstcp_border_bottom,
+	cstcp_border_left,
+	cstcp_border_top,
+	cstcp_border_right,
+	cstcp_bubble,
+	cstcp_slider_knob
 };
 
 struct cst_commands
@@ -131,6 +144,96 @@ static void CSTC_Draw_Picture(int x, int y, int width, int height, enum CSTC_Pic
 	sx = (1.0f/16.0f) * index_x;
 	sy = (1.0f/16.0f) * index_y;
 	Draw_DrawSubPicture(cstc_pictures, (1.0f/16.0f) * index_x, (1.0f/16.0f) * index_y, 1.0f/16.0f, 1.0f/16.0f, x, y, width ? width : 16, height ? height : 16);
+}
+
+/*
+ * x and y are the positions of the internal lining of the border
+ * width and height are the dimensions of the internal lining of the border
+ * if fill_color is >= 0 the internal space of the border will be filled with that color
+ */
+static void CSTC_DrawBorder(int x, int y, int width, int height, int border_width, int fill_color)
+{
+	int pos_x, pos_y;
+	int bwi;
+
+	if (cstc_pictures == NULL)
+		return;
+
+	if (border_width < 8)
+		border_width = 8;
+
+	bwi = (border_width == 16 ? 0 : border_width);
+
+	if (fill_color >= 0 && 0)
+		Draw_Fill(x, y, width, height, fill_color);
+
+	// top left
+	pos_x = x - border_width;
+	pos_y = y - border_width;
+	CSTC_Draw_Picture(pos_x, pos_y, bwi, bwi, cstcp_border_top_left);
+
+	// top
+	pos_x += border_width;
+	CSTC_Draw_Picture(pos_x, pos_y, width, bwi, cstcp_border_top);
+
+	// top right
+	pos_x += width;
+	CSTC_Draw_Picture(pos_x, pos_y, bwi, bwi, cstcp_border_top_right);
+
+	// right
+	pos_y += border_width;
+	CSTC_Draw_Picture(pos_x, pos_y, bwi, height, cstcp_border_right);
+
+	// bottom right
+	pos_y += height;
+	CSTC_Draw_Picture(pos_x, pos_y, border_width, border_width, cstcp_border_bottom_right);
+
+	// bottom
+	pos_x -= width;
+	CSTC_Draw_Picture(pos_x, pos_y, width, border_width, cstcp_border_bottom);
+
+	// bottom left
+	pos_x -= border_width;
+	CSTC_Draw_Picture(pos_x, pos_y, border_width, border_width, cstcp_border_bottom_left);
+
+	// left
+	pos_y -= height;
+	CSTC_Draw_Picture(pos_x, pos_y, bwi, height, cstcp_border_left);
+}
+
+/*
+ * segment_size is the width/height of one segment
+ * segments is the amount of segments drawn between the 2 end segments
+ */
+static int CSTC_DrawSlider (int x, int y, int segment_size, int segments, double pos)
+{
+	int isz;
+	int pos_x, pos_y;
+	int i;
+
+	if (cstc_pictures == NULL)
+		return -1;
+
+	if (segment_size < 8)
+		segment_size = 8;
+
+	isz = (segment_size == 16 ? 0 : segment_size);
+
+	pos_x = x;
+	pos_y = y;
+
+	CSTC_Draw_Picture(pos_x, pos_y, isz, isz, cstcp_textbox_left);
+	pos_x += segment_size;
+
+	for (i=0; i<segments; i++, pos_x+=segment_size)
+		CSTC_Draw_Picture(pos_x, pos_y, isz, isz, cstcp_textbox_center);
+
+	CSTC_Draw_Picture(pos_x, pos_y, isz, isz, cstcp_textbox_right);
+
+	pos_x = x + (pos_x - x) * pos;
+	CSTC_Draw_Picture(pos_x, pos_y, isz, isz, cstcp_slider_knob);
+
+	return pos_x;
 }
 
 qboolean CSTC_Execute_On_Enter(char *cmd)
@@ -574,10 +677,19 @@ static void CSTC_Draw(struct cst_info *self, int y_offset)
 		else 
 			pos_y = offset;
 		self->offset_y = pos_y;
-		Draw_Fill(pos_x, pos_y, 8*8 + 2, 8, context_sensitive_tab_completion_slider_border_color.value);
-		Draw_Fill(pos_x+1, pos_y+1, 8*8, 8, context_sensitive_tab_completion_slider_background_color.value);
-		Draw_Fill(pos_x+1, pos_y+1, 8*8 * self->double_var[SLIDER_VALUE], 8, context_sensitive_tab_completion_slider_color.value);
-		Draw_String(pos_x , pos_y, va("%f", self->double_var[SLIDER_VALUE]));
+
+		if (cstc_pictures)
+		{
+			CSTC_DrawSlider(pos_x, pos_y -2, 16, 5, self->double_var[SLIDER_VALUE]);
+			Draw_String(pos_x + 7 * 16, pos_y +2, va("%.2f", self->double_var[SLIDER_VALUE]));
+		}
+		else
+		{
+			Draw_Fill(pos_x, pos_y, 8*8 + 2, 8, context_sensitive_tab_completion_slider_border_color.value);
+			Draw_Fill(pos_x+1, pos_y+1, 8*8, 8, context_sensitive_tab_completion_slider_background_color.value);
+			Draw_Fill(pos_x+1, pos_y+1, 8*8 * self->double_var[SLIDER_VALUE], 8, context_sensitive_tab_completion_slider_color.value);
+			Draw_String(pos_x , pos_y, va("%f", self->double_var[SLIDER_VALUE]));
+		}
 	}
 	else
 	{
@@ -644,6 +756,8 @@ static void CSTC_Draw(struct cst_info *self, int y_offset)
 
 	if (self->draw)
 		self->draw(self);
+
+	//CSTC_DrawBorder(100, 100, 16, 16, 16, 2);
 }
 
 void Context_Sensitive_Tab_Completion_Draw(void)
@@ -894,6 +1008,8 @@ static void setup_completion(struct cst_commands *cc, struct cst_info *c, int ar
 
 static void setup_slider(struct cst_info *c)
 {
+	c->double_var[SLIDER_LOWER_LIMIT] = 0;
+	c->double_var[SLIDER_UPPER_LIMIT] = 1;
 	if (c->variable)
 	{
 		c->double_var[SLIDER_VALUE] = bound(c->double_var[SLIDER_LOWER_LIMIT], c->variable->value, c->double_var[SLIDER_UPPER_LIMIT]);
