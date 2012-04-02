@@ -1289,7 +1289,7 @@ static int setup_current_command(void)
 			var = Cvar_FindVar(new_keyline);
 			if (var)
 			{
-				snprintf(new_keyline, sizeof(new_keyline), "%s\"%s\"", key_lines[edit_line], var->string);
+				snprintf(new_keyline, sizeof(new_keyline), "%s \"%s\"", key_lines[edit_line], var->string);
 				key_linepos = strlen(new_keyline);
 				memcpy(key_lines[edit_line], new_keyline, MAXCMDLINE);
 			}
