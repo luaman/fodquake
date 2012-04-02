@@ -833,7 +833,7 @@ static void cstc_skins_draw(struct cst_info *self)
 
 void FS_Init()
 {
-	CSTC_Add("enemyskin enemyquadskin enemypentskin enemybothskin teamskin teamquadskin teampentskin teambothskin", &cstc_skins_condition, &cstc_skins_get_results, &cstc_skins_get_data, &cstc_skins_draw, CSTC_MULTI_COMMAND| CSTC_NO_INPUT| CSTC_EXECUTE, "arrow up/down to navigate, ctrl + 1 - to show the skin");
+	CSTC_Add("enemyskin enemyquadskin enemypentskin enemybothskin teamskin teamquadskin teampentskin teambothskin", &cstc_skins_condition, &cstc_skins_get_results, &cstc_skins_get_data, &cstc_skins_draw, CSTC_MULTI_COMMAND| CSTC_NO_INPUT| CSTC_EXECUTE, "arrow up/down to navigate");
 	Cmd_AddCommand("path", FS_Path_f);
 }
 
