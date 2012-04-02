@@ -734,7 +734,7 @@ static void CSTC_Draw(struct cst_info *self, int y_offset)
 					s = Util_strcasestr(ptr_result, self->tokenized_input->tokens[j]);
 					if (s)
 					{
-						x = s - ptr_result;
+						x = s - ptr_result - 5;
 						Draw_Fill(32 + x * 8, offset + i * 8 * self->direction, strlen(self->tokenized_input->tokens[j]) * 8, 8, context_sensitive_tab_completion_highlight_color.value);
 					}
 				}
