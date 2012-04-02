@@ -276,18 +276,19 @@ static int CSTC_DrawSlider (int x, int y, int segment_size, int segments, double
 		pos_y = y;
 		if (vertical)
 		{
-			size_x = 8;
+			size_x = segment_size;
 			size_y = segments * segment_size;
+			pos_y -= size_y;
 		}
 		else
 		{
 			size_x = segments * segment_size;
-			size_y = 8;
+			size_y = segment_size;
 		}
 
 		Draw_Fill(pos_x-1, pos_y-1, size_x + 2, size_y + 2, context_sensitive_tab_completion_slider_border_color.value);
 		Draw_Fill(pos_x, pos_y, size_x, size_y, context_sensitive_tab_completion_slider_background_color.value);
-		Draw_Fill(pos_x, pos_y, size_x * pos, size_y, context_sensitive_tab_completion_slider_color.value);
+		Draw_Fill(pos_x, pos_y, size_x * (vertical ? 1 : pos), size_y * (vertical ? pos : 1), context_sensitive_tab_completion_slider_color.value);
 		text_x = pos_x + size_x;
 		text_y = pos_y + size_y;
 	}
