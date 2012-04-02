@@ -406,6 +406,10 @@ void Context_Sensitive_Tab_Completion_Key(int key)
 	if (context_sensitive_tab_completion_active == 0)
 		return;
 
+	// ignore alt tab
+	if (keydown[K_ALT] && key == K_TAB)
+		return;
+
 	//toggle tooltip
 	if (keydown[K_CTRL] && key == 'h')
 	{
