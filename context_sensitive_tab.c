@@ -39,7 +39,10 @@ enum CSTC_Pictures
 	cstcp_border_top,
 	cstcp_border_right,
 	cstcp_bubble,
-	cstcp_slider_knob
+	cstcp_slider_knob,
+	cstcp_slider_vertical_top,
+	cstcp_slider_vertical_center,
+	cstcp_slider_vertical_bottom
 };
 
 struct cst_commands
@@ -214,24 +217,16 @@ static void CSTC_DrawBorder(int x, int y, int width, int height, int border_widt
  * segment_size is the width/height of one segment
  * segments is the amount of segments drawn between the 2 end segments
  */
-static int CSTC_DrawSlider (int x, int y, int segment_size, int segments, double pos, char *text)
+static int CSTC_DrawSlider (int x, int y, int segment_size, int segments, double pos, qboolean vertical, char *text)
 {
 	int isz;
 	int pos_x, pos_y;
 	int i;
 	int text_x, text_y;
+	int size_x, size_y;
+	enum CSTC_Pictures top, center, bottom;
 
-	if (CSTC_PictureCheck() == false)
-	{
-		pos_x = x;
-		pos_y = y;
-		Draw_Fill(pos_x-1, pos_y-1, segments * segment_size + 2, 10, context_sensitive_tab_completion_slider_border_color.value);
-		Draw_Fill(pos_x, pos_y, segments * segment_size, 8, context_sensitive_tab_completion_slider_background_color.value);
-		Draw_Fill(pos_x, pos_y, segments * segment_size * pos, 8, context_sensitive_tab_completion_slider_color.value);
-		text_x = pos_x + segments * segment_size;
-		text_y = pos_y;
-	}
-	else
+	if (CSTC_PictureCheck())
 	{
 		if (segment_size < 8)
 			segment_size = 8;
@@ -240,20 +235,61 @@ static int CSTC_DrawSlider (int x, int y, int segment_size, int segments, double
 
 		pos_x = x;
 		pos_y = y;
-		pos_y = y - (segment_size - 8) / 2;
 
-		CSTC_Draw_Picture(pos_x, pos_y, isz, isz, cstcp_textbox_left);
-		pos_x += segment_size;
+		if (vertical)
+		{
+			top = cstcp_slider_vertical_top;
+			center = cstcp_slider_vertical_center;
+			bottom = cstcp_slider_vertical_bottom;
+		}
+		else
+		{
+			top = cstcp_textbox_left;
+			center = cstcp_textbox_center;
+			bottom = cstcp_textbox_right;
+		}
 
-		for (i=0; i<segments; i++, pos_x+=segment_size)
-			CSTC_Draw_Picture(pos_x, pos_y, isz, isz, cstcp_textbox_center);
+		CSTC_Draw_Picture(pos_x, pos_y, isz, isz, bottom);
+		if (vertical)
+			pos_y -= segment_size;
+		else
+			pos_x += segment_size;
 
-		CSTC_Draw_Picture(pos_x, pos_y, isz, isz, cstcp_textbox_right);
+		text_x = (vertical ? 0 : 1);
+		text_y = (vertical ? 1 : 0);
+		for (i=0; i<segments; i++, pos_y-= segment_size * text_y,  pos_x+=  segment_size * text_x)
+			CSTC_Draw_Picture(pos_x, pos_y, isz, isz, center);
 
-		text_x = pos_x + segment_size;
-		pos_x = x + (pos_x - x) * pos;
+		CSTC_Draw_Picture(pos_x, pos_y, isz, isz, top);
+
+		text_x = pos_x + segment_size * (vertical ? segments: 1);
+		if (vertical)
+			pos_y = y + (pos_y - y) * pos;
+		else
+			pos_x = x + (pos_x - x) * pos;
 		CSTC_Draw_Picture(pos_x, pos_y, isz, isz, cstcp_slider_knob);
-		text_y = y;
+		text_y = y * (vertical ? segments: 1);
+	}
+	else
+	{
+		pos_x = x;
+		pos_y = y;
+		if (vertical)
+		{
+			size_x = 8;
+			size_y = segments * segment_size;
+		}
+		else
+		{
+			size_x = segments * segment_size;
+			size_y = 8;
+		}
+
+		Draw_Fill(pos_x-1, pos_y-1, size_x + 2, size_y + 2, context_sensitive_tab_completion_slider_border_color.value);
+		Draw_Fill(pos_x, pos_y, size_x, size_y, context_sensitive_tab_completion_slider_background_color.value);
+		Draw_Fill(pos_x, pos_y, size_x * pos, size_y, context_sensitive_tab_completion_slider_color.value);
+		text_x = pos_x + size_x;
+		text_y = pos_y + size_y;
 	}
 
 	if (text)
@@ -708,7 +744,7 @@ static void CSTC_Draw(struct cst_info *self, int y_offset)
 			pos_y = offset;
 		self->offset_y = pos_y;
 
-		CSTC_DrawSlider(pos_x, pos_y, 16, 5, self->double_var[SLIDER_VALUE], va("%.2f", self->double_var[SLIDER_VALUE]));
+		CSTC_DrawSlider(pos_x, pos_y, 16, 5, self->double_var[SLIDER_VALUE], false, va("%.2f", self->double_var[SLIDER_VALUE]));
 	}
 	else
 	{
@@ -743,6 +779,9 @@ static void CSTC_Draw(struct cst_info *self, int y_offset)
 			if (ptr)
 				Draw_ColoredString(32, offset + i * 8 * self->direction, ptr, 0);
 		}
+
+		if (sup || sdown)
+			CSTC_DrawSlider(8, offset + 8 * self->direction - 16, 16, rows/2 - 4, (float) self->selection/(self->results ? self->results : 1), true, NULL);
 
 		if (sup)
 		{
@@ -1749,7 +1788,7 @@ static int Slider_Result(struct cst_info *self, int *results, int get_result, in
 {
 	if (result)
 	{
-		*result = va("%f", self->double_ptr[SLIDER_VALUE]);
+		*result = va("%f", self->double_var[SLIDER_VALUE]);
 		return 0;
 	}
 	return 1;
