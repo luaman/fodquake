@@ -86,3 +86,4 @@ void CSTC_Console_Close(void);
 void CSTC_Shutdown(void);
 void CSTC_PictureShutdown(void);
 void CSTC_PictureInit(void);
+void Context_Sensitive_Tab_Completion_Notification(qboolean input);

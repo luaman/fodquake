@@ -42,7 +42,8 @@ enum CSTC_Pictures
 	cstcp_slider_knob,
 	cstcp_slider_vertical_top,
 	cstcp_slider_vertical_center,
-	cstcp_slider_vertical_bottom
+	cstcp_slider_vertical_bottom,
+	cstcp_cstc_icon
 };
 
 struct cst_commands
@@ -69,6 +70,7 @@ extern char key_lines[32][MAXCMDLINE];
 int context_sensitive_tab_completion_active = 0;
 
 cvar_t	context_sensitive_tab_completion = {"context_sensitive_tab_completion", "1"};
+cvar_t	context_sensitive_tab_completion_show_notification = {"context_sensitive_tab_completion_show_notification", "1"};
 cvar_t	context_sensitive_tab_completion_use_pictures = {"context_sensitive_tab_completion_use_pictures", "1"};
 cvar_t	context_sensitive_tab_completion_command_only_on_ctrl_tab = {"context_sensitive_tab_completion_command_only_on_ctrl_tab", "1"};
 cvar_t	context_sensitive_tab_completion_color_coded_types = {"context_sensitive_tab_completion_color_coded_types", "1"};
@@ -135,7 +137,7 @@ static void CSTC_Cleanup(struct cst_info *self)
 	memset(self, 0, sizeof(struct cst_info));
 }
 
-static void CSTC_Draw_Picture(int x, int y, int width, int height, enum CSTC_Pictures pic)
+static void CSTC_DrawPicture(int x, int y, int width, int height, enum CSTC_Pictures pic)
 {
 	int index_x, index_y;
 	float sx, sy;
@@ -143,7 +145,7 @@ static void CSTC_Draw_Picture(int x, int y, int width, int height, enum CSTC_Pic
 	if (cstc_pictures == NULL)
 		return;
 
-	for (index_x = pic, index_y = 0; index_x > 16; index_x -= 16, index_y++);
+	for (index_x = pic, index_y = 0; index_x > 15; index_x -= 16, index_y++);
 
 	sx = (1.0f/16.0f) * index_x;
 	sy = (1.0f/16.0f) * index_y;
@@ -182,35 +184,35 @@ static void CSTC_DrawBorder(int x, int y, int width, int height, int border_widt
 	// top left
 	pos_x = x - border_width;
 	pos_y = y - border_width;
-	CSTC_Draw_Picture(pos_x, pos_y, bwi, bwi, cstcp_border_top_left);
+	CSTC_DrawPicture(pos_x, pos_y, bwi, bwi, cstcp_border_top_left);
 
 	// top
 	pos_x += border_width;
-	CSTC_Draw_Picture(pos_x, pos_y, width, bwi, cstcp_border_top);
+	CSTC_DrawPicture(pos_x, pos_y, width, bwi, cstcp_border_top);
 
 	// top right
 	pos_x += width;
-	CSTC_Draw_Picture(pos_x, pos_y, bwi, bwi, cstcp_border_top_right);
+	CSTC_DrawPicture(pos_x, pos_y, bwi, bwi, cstcp_border_top_right);
 
 	// right
 	pos_y += border_width;
-	CSTC_Draw_Picture(pos_x, pos_y, bwi, height, cstcp_border_right);
+	CSTC_DrawPicture(pos_x, pos_y, bwi, height, cstcp_border_right);
 
 	// bottom right
 	pos_y += height;
-	CSTC_Draw_Picture(pos_x, pos_y, border_width, border_width, cstcp_border_bottom_right);
+	CSTC_DrawPicture(pos_x, pos_y, border_width, border_width, cstcp_border_bottom_right);
 
 	// bottom
 	pos_x -= width;
-	CSTC_Draw_Picture(pos_x, pos_y, width, border_width, cstcp_border_bottom);
+	CSTC_DrawPicture(pos_x, pos_y, width, border_width, cstcp_border_bottom);
 
 	// bottom left
 	pos_x -= border_width;
-	CSTC_Draw_Picture(pos_x, pos_y, border_width, border_width, cstcp_border_bottom_left);
+	CSTC_DrawPicture(pos_x, pos_y, border_width, border_width, cstcp_border_bottom_left);
 
 	// left
 	pos_y -= height;
-	CSTC_Draw_Picture(pos_x, pos_y, bwi, height, cstcp_border_left);
+	CSTC_DrawPicture(pos_x, pos_y, bwi, height, cstcp_border_left);
 }
 
 /*
@@ -249,7 +251,7 @@ static int CSTC_DrawSlider (int x, int y, int segment_size, int segments, double
 			bottom = cstcp_textbox_right;
 		}
 
-		CSTC_Draw_Picture(pos_x, pos_y, isz, isz, bottom);
+		CSTC_DrawPicture(pos_x, pos_y, isz, isz, bottom);
 		if (vertical)
 			pos_y -= segment_size;
 		else
@@ -258,16 +260,16 @@ static int CSTC_DrawSlider (int x, int y, int segment_size, int segments, double
 		text_x = (vertical ? 0 : 1);
 		text_y = (vertical ? 1 : 0);
 		for (i=0; i<segments; i++, pos_y-= segment_size * text_y,  pos_x+=  segment_size * text_x)
-			CSTC_Draw_Picture(pos_x, pos_y, isz, isz, center);
+			CSTC_DrawPicture(pos_x, pos_y, isz, isz, center);
 
-		CSTC_Draw_Picture(pos_x, pos_y, isz, isz, top);
+		CSTC_DrawPicture(pos_x, pos_y, isz, isz, top);
 
 		text_x = pos_x + segment_size * (vertical ? segments: 1);
 		if (vertical)
 			pos_y = y + (pos_y - y) * pos;
 		else
 			pos_x = x + (pos_x - x) * pos;
-		CSTC_Draw_Picture(pos_x, pos_y, isz, isz, cstcp_slider_knob);
+		CSTC_DrawPicture(pos_x, pos_y, isz, isz, cstcp_slider_knob);
 		text_y = y * (vertical ? segments: 1);
 	}
 	else
@@ -299,7 +301,78 @@ static int CSTC_DrawSlider (int x, int y, int segment_size, int segments, double
 	return pos_x;
 }
 
-qboolean CSTC_Execute_On_Enter(char *cmd)
+static void CSTC_DrawTextbox(int x, int y, int segment_size, int segment_count, qboolean auto_size, char *text)
+{
+	int isz;
+	int pos_x, pos_y;
+	int i;
+
+	if (auto_size && text == NULL)
+		return;
+
+	if (auto_size)
+		segment_count = strlen(text);
+
+	if (CSTC_PictureCheck())
+	{
+
+		if (segment_size < 8)
+			segment_size = 8;
+
+		isz = (segment_size == 16 ? 0 : segment_size);
+
+		pos_x = x;
+		pos_y = y;
+
+		CSTC_DrawPicture(pos_x, pos_y, isz, isz, cstcp_textbox_left);
+		pos_x += isz;
+
+		for (i=0; i<segment_count - auto_size ? 1 : 0; i++, pos_x+=segment_size)
+			CSTC_DrawPicture(pos_x, pos_y, isz, isz, cstcp_textbox_center);
+
+		CSTC_DrawPicture(pos_x, pos_y, isz, isz, cstcp_textbox_right);
+
+		if (text)
+			Draw_String(x + segment_size/2, y - 1, text);
+	}
+	else
+	{
+		Draw_Fill(x, y, segment_size * (segment_count + 2 - (auto_size ? 1 : 0)), 8, 0);
+		if (text)
+			Draw_String(x + segment_size/2, y, text);
+	}
+}
+
+static void CSTC_DrawBubble(int x, int y, int size, enum CSTC_Pictures pic, char *bubble_char, char *text)
+{
+	int isz;
+
+	if (CSTC_PictureCheck())
+	{
+			if (size < 8)
+			size = 8;
+
+		isz = (size == 16 ? 0 : size);
+
+		CSTC_DrawPicture(x, y, isz, isz, pic);
+
+		if (bubble_char)
+			Draw_String(x, y, bubble_char);
+	}
+	else
+	{
+		// there needs to be some better way to do this
+		Draw_Fill(x, y, size, size, 5);
+
+		if (bubble_char)
+			Draw_String(x, y, bubble_char);
+	}
+
+	if (text)
+		CSTC_DrawTextbox(x+size, y, size, 0, true, text);
+}
+
+static qboolean CSTC_ExecuteOnEnter(char *cmd)
 {
 	struct tokenized_string *ts;
 	qboolean rval = false;
@@ -421,7 +494,7 @@ void CSTC_Insert_And_Close(void)
 static void cstc_insert_only_find(struct cst_info *self)
 {
 	insert_result(self, NULL);
-	if (CSTC_Execute_On_Enter(self->real_name))
+	if (CSTC_ExecuteOnEnter(self->real_name))
 		Cbuf_AddText("\n");
 	CSTC_Cleanup(self);
 }
@@ -492,7 +565,7 @@ void Context_Sensitive_Tab_Completion_Key(int key)
 	if (key == K_ENTER)
 	{
 		insert_result(cst_info, NULL);
-		if ((CSTC_Execute_On_Enter(cst_info->real_name) || cst_info->flags & CSTC_EXECUTE) && !keydown[K_CTRL])
+		if ((CSTC_ExecuteOnEnter(cst_info->real_name) || cst_info->flags & CSTC_EXECUTE) && !keydown[K_CTRL])
 			execute = true;
 		CSTC_Cleanup(cst_info);
 		if (execute)
@@ -787,7 +860,7 @@ static void CSTC_Draw(struct cst_info *self, int y_offset)
 		if (sup)
 		{
 			if (cstc_pictures)
-				CSTC_Draw_Picture(8, offset + (rows - 1) * 8 * self->direction, 0, 0, cstcp_arrow_up);
+				CSTC_DrawPicture(8, offset + (rows - 1) * 8 * self->direction, 0, 0, cstcp_arrow_up);
 			else
 				Draw_String(8, offset + (rows - 1) * 8 * self->direction, "^");
 		}
@@ -795,7 +868,7 @@ static void CSTC_Draw(struct cst_info *self, int y_offset)
 		if (sdown)
 		{
 			if (cstc_pictures)
-				CSTC_Draw_Picture(8, offset + 8 * self->direction, 0, 0, cstcp_arrow_down);
+				CSTC_DrawPicture(8, offset + 8 * self->direction, 0, 0, cstcp_arrow_down);
 			else
 				Draw_String(8, offset + 8 * self->direction, "v");
 		}
@@ -1080,7 +1153,7 @@ static void setup_slider(struct cst_info *c)
 	}
 }
 
-static int setup_current_command(void)
+static qboolean setup_current_command(void)
 {
 	int cmd_len, arg_len, cursor_on_command, isinvalid, i, dobreak;
 	char *cmd_start, *arg_start, *name;
@@ -1094,7 +1167,7 @@ static int setup_current_command(void)
 	read_info_new(key_lines[edit_line] + 1, key_linepos, &cmd_start, &cmd_len, &arg_start, &arg_len, &cursor_on_command, &isinvalid);
 
 	if (isinvalid)
-		return 0;
+		return false;
 
 	cs = key_lines[edit_line];
 
@@ -1112,7 +1185,7 @@ static int setup_current_command(void)
 		if ((context_sensitive_tab_completion_command_only_on_ctrl_tab.value == 1 && keydown[K_CTRL]) || context_sensitive_tab_completion_command_only_on_ctrl_tab.value == 0)
 		{
 			setup_completion(&Command_Completion, cst_info, cmd_istart , cmd_len, cmd_istart, cmd_len);
-			return 1;
+			return true;
 		}
 	}
 
@@ -1184,7 +1257,7 @@ static int setup_current_command(void)
 				}
 				Tokenize_String_Delete(ts);
 				if (cvar_setup)
-					return 1;
+					return true;
 			}
 
 			// player_color
@@ -1233,7 +1306,7 @@ static int setup_current_command(void)
 				}
 				Tokenize_String_Delete(ts);
 				if (cvar_setup)
-					return 1;
+					return true;
 			}
 
 			// color selector
@@ -1266,7 +1339,7 @@ static int setup_current_command(void)
 				}
 				Tokenize_String_Delete(ts);
 				if (cvar_setup)
-					return 1;
+					return true;
 			}
 		}
 
@@ -1274,20 +1347,20 @@ static int setup_current_command(void)
 		{
 			if (c->conditions)
 				if (c->conditions() == 0)
-					return 0;
+					return false;
 			setup_completion(c, cst_info, arg_istart ,arg_len, cmd_istart, cmd_len);
 			cst_info->function = Cmd_FindCommand(name);
 			cst_info->variable = Cvar_FindVar(name);
 			snprintf(cst_info->real_name, sizeof(cst_info->real_name), "%*.*s", cmd_len, cmd_len, cmd_start);
 			if (cst_info->flags & CSTC_SLIDER)
 				setup_slider(cst_info);
-			return 1;
+			return true;
 		}
 		else
 		{
 			snprintf(new_keyline, sizeof(new_keyline), "%*.*s", cmd_len, cmd_len, cmd_start);
 			var = Cvar_FindVar(new_keyline);
-			if (var)
+			if (var && arg_len == 0)
 			{
 				snprintf(new_keyline, sizeof(new_keyline), "%s \"%s\"", key_lines[edit_line], var->string);
 				key_linepos = strlen(new_keyline);
@@ -1295,7 +1368,7 @@ static int setup_current_command(void)
 			}
 		}
 	}
-	return 0;
+	return false;
 }
 
 int Context_Sensitive_Tab_Completion(void)
@@ -1311,6 +1384,43 @@ int Context_Sensitive_Tab_Completion(void)
 	}
 
 	return 0;
+}
+
+void Context_Sensitive_Tab_Completion_Notification(qboolean input)
+{
+	static double last_input;
+	static qboolean checked;
+	static qboolean show_icon;
+	extern float scr_conlines;
+	int x, y;
+
+	if (context_sensitive_tab_completion_active || context_sensitive_tab_completion_show_notification.value == 0)
+		return;
+
+	if (input)
+	{
+		last_input = Sys_DoubleTime();
+		checked = false;
+		return;
+	}
+
+	if (last_input + 1 > Sys_DoubleTime())
+		return;
+
+	if (checked == false)
+	{
+		show_icon = setup_current_command();
+		CSTC_Console_Close();
+		checked = true;
+	}
+
+	if (show_icon == false)
+		return;
+
+	x = strlen(key_lines[edit_line]) * 8 + 16;
+	y = scr_conlines - 16;
+
+	CSTC_DrawBubble(x, y, 8, cstcp_cstc_icon, NULL, last_input + 3 < Sys_DoubleTime() ? "press tab to start tabcompletion" : NULL);
 }
 
 int Cmd_CompleteCountPossible (char *partial);
@@ -1803,6 +1913,7 @@ void Context_Sensitive_Tab_Completion_CvarInit(void)
 	Command_Completion.conditions = NULL;
 	Command_Completion.flags = CSTC_COMMAND;
 	Cvar_Register(&context_sensitive_tab_completion);
+	Cvar_Register(&context_sensitive_tab_completion_show_notification);
 	Cvar_Register(&context_sensitive_tab_completion_use_pictures);
 	Cvar_Register(&context_sensitive_tab_completion_command_only_on_ctrl_tab);
 	Cvar_Register(&context_sensitive_tab_completion_color_coded_types);
