@@ -826,8 +826,7 @@ static void CSTC_Draw(struct cst_info *self, int y_offset)
 		{
 			if (self->result(self, NULL, i + result_offset, cstc_rt_draw, &ptr))
 				break;
-			if (self->flags & CSTC_COMMAND || self->flags & CSTC_HIGLIGHT_INPUT)
-				self->result(self, NULL, i + result_offset, cstc_rt_highlight, &ptr_result);
+
 
 			if (i + result_offset == self->selection)
 			{
@@ -837,14 +836,15 @@ static void CSTC_Draw(struct cst_info *self, int y_offset)
 			else
 				Draw_Fill(0, offset + i * 8 * self->direction, vid.conwidth, 8, context_sensitive_tab_completion_background_color.value);
 
-			if ((self->flags & CSTC_COMMAND || self->flags & CSTC_HIGLIGHT_INPUT) && ptr_result)
+			if (self->flags & CSTC_COMMAND || self->flags & CSTC_HIGLIGHT_INPUT)
 			{
-				for (j=0; j<self->tokenized_input->count; j++)
+				self->result(self, NULL, i + result_offset, cstc_rt_highlight, &ptr_result);
+				for (j=0; j<self->tokenized_input->count && ptr_result; j++)
 				{
 					s = Util_strcasestr(ptr_result, self->tokenized_input->tokens[j]);
 					if (s)
 					{
-						x = s - ptr_result - 5;
+						x = s - ptr_result;
 						Draw_Fill(32 + x * 8, offset + i * 8 * self->direction, strlen(self->tokenized_input->tokens[j]) * 8, 8, context_sensitive_tab_completion_highlight_color.value);
 					}
 				}
@@ -1813,15 +1813,15 @@ static int Command_Completion_Result(struct cst_info *self, int *results, int ge
 			return 1;
 	}
 
-	if (result_type == 0)
+	if (result_type == cstc_rt_real)
 	{
 		*result = va("%s", res);
 		snprintf(self->real_name, sizeof(self->real_name), "%s", res);
 	}
-	else
-	{
+	else if (result_type == cstc_rt_draw)
 		*result = va("%s%s%s", context_sensitive_tab_completion_color_coded_types.value ? t : "",res, s ? va("%s -> %s", context_sensitive_tab_completion_color_coded_types.value ? "&cfff" : "",  s): "");
-	}
+	else
+		*result = va("%s%s", res, s ? s: "");
 
 	return 0;
 }
