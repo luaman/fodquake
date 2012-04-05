@@ -2989,7 +2989,6 @@ static void cstc_connect_draw(struct cst_info *self)
 		x += 8 + strlen(s) * 8 ;
 	}
 
-
 	for (i=0; i<server->numspectators; i++)
 	{
 		s = server->spectators[i].name;

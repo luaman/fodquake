@@ -1153,7 +1153,7 @@ static void setup_slider(struct cst_info *c)
 	}
 }
 
-static qboolean setup_current_command(void)
+static qboolean setup_current_command(qboolean check_only)
 {
 	int cmd_len, arg_len, cursor_on_command, isinvalid, i, dobreak;
 	char *cmd_start, *arg_start, *name;
@@ -1184,7 +1184,8 @@ static qboolean setup_current_command(void)
 	{
 		if ((context_sensitive_tab_completion_command_only_on_ctrl_tab.value == 1 && keydown[K_CTRL]) || context_sensitive_tab_completion_command_only_on_ctrl_tab.value == 0)
 		{
-			setup_completion(&Command_Completion, cst_info, cmd_istart , cmd_len, cmd_istart, cmd_len);
+			if (check_only == false)
+				setup_completion(&Command_Completion, cst_info, cmd_istart , cmd_len, cmd_istart, cmd_len);
 			return true;
 		}
 	}
@@ -1248,7 +1249,8 @@ static qboolean setup_current_command(void)
 					{
 						cvar_setup = true;
 						c = &CC_Slider;
-						setup_completion(c, cst_info, arg_istart ,arg_len, cmd_istart, cmd_len);
+						if (check_only == false)
+							setup_completion(c, cst_info, arg_istart ,arg_len, cmd_istart, cmd_len);
 
 						cst_info->variable = Cvar_FindVar(name);
 						setup_slider(cst_info);
@@ -1282,7 +1284,8 @@ static qboolean setup_current_command(void)
 						cvar_setup = true;
 						c = &CC_Player_Color;
 						var = Cvar_FindVar(name);
-						setup_completion(c, cst_info, arg_istart ,arg_len, cmd_istart, cmd_len);
+						if (check_only == false)
+							setup_completion(c, cst_info, arg_istart ,arg_len, cmd_istart, cmd_len);
 
 						if (var)
 						{
@@ -1331,7 +1334,8 @@ static qboolean setup_current_command(void)
 						cvar_setup = true;
 						c = &CC_Color;
 						var = Cvar_FindVar(name);
-						setup_completion(c, cst_info, arg_istart ,arg_len, cmd_istart, cmd_len);
+						if (check_only == false)
+							setup_completion(c, cst_info, arg_istart ,arg_len, cmd_istart, cmd_len);
 						if (var)
 							cst_info->selection = var->value;
 						snprintf(cst_info->real_name, sizeof(cst_info->real_name), "%*.*s", cmd_len, cmd_len, cmd_start);
@@ -1348,7 +1352,8 @@ static qboolean setup_current_command(void)
 			if (c->conditions)
 				if (c->conditions() == 0)
 					return false;
-			setup_completion(c, cst_info, arg_istart ,arg_len, cmd_istart, cmd_len);
+			if (check_only == false)
+				setup_completion(c, cst_info, arg_istart ,arg_len, cmd_istart, cmd_len);
 			cst_info->function = Cmd_FindCommand(name);
 			cst_info->variable = Cvar_FindVar(name);
 			snprintf(cst_info->real_name, sizeof(cst_info->real_name), "%*.*s", cmd_len, cmd_len, cmd_start);
@@ -1356,13 +1361,13 @@ static qboolean setup_current_command(void)
 				setup_slider(cst_info);
 			return true;
 		}
-		else
+		else if (check_only == false)
 		{
 			snprintf(new_keyline, sizeof(new_keyline), "%*.*s", cmd_len, cmd_len, cmd_start);
 			var = Cvar_FindVar(new_keyline);
 			if (var && arg_len == 0)
 			{
-				snprintf(new_keyline, sizeof(new_keyline), "%s \"%s\"", key_lines[edit_line], var->string);
+				snprintf(new_keyline, sizeof(new_keyline), "%s%s\"%s\"", key_lines[edit_line], key_lines[edit_line][strlen(key_lines[edit_line])-1] == ' ' ? "" : " ", var->string);
 				key_linepos = strlen(new_keyline);
 				memcpy(key_lines[edit_line], new_keyline, MAXCMDLINE);
 			}
@@ -1377,7 +1382,7 @@ int Context_Sensitive_Tab_Completion(void)
 		if (keydown[K_ALT])
 			return 0;
 
-	if (setup_current_command())
+	if (setup_current_command(false))
 	{
 		context_sensitive_tab_completion_active = 1;
 		return 1;
@@ -1409,7 +1414,7 @@ void Context_Sensitive_Tab_Completion_Notification(qboolean input)
 
 	if (checked == false)
 	{
-		show_icon = setup_current_command();
+		show_icon = setup_current_command(true);
 		CSTC_Console_Close();
 		checked = true;
 	}
