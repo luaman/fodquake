@@ -2979,24 +2979,25 @@ static void cstc_connect_draw(struct cst_info *self)
 	x = 0;
 	y = self->offset_y + self->direction * 8;
 
-	Draw_Fill(x, y, vid.displaywidth, 8, 2);
-
 	for (i=0; i<server->numplayers; i++)
 	{
 		s = server->players[i].name;
 		if (s == NULL)
 			continue;
-		Draw_String(x, y, va("%s,", s));
-		x += 8 + strlen(s) * 8 + 8;
+		Draw_Fill(x, y, strlen(s) *8 + 8, 8, 3);
+		Draw_String(x, y, s);
+		x += 8 + strlen(s) * 8 ;
 	}
 
-	for (i=0; i<server->numplayers; i++)
+
+	for (i=0; i<server->numspectators; i++)
 	{
-		s = server->players[i].name;
+		s = server->spectators[i].name;
 		if (s == NULL)
 			continue;
-		Draw_String(x, y, va("\\s%s", s));
-		x += 8 + strlen(s) * 8 + 8;
+		Draw_Fill(x, y, strlen(s) *8 + 8, 8, 0);
+		Draw_String(x, y, s);
+		x += 8 + strlen(s) * 8 ;
 	}
 }
 
