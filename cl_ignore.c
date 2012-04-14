@@ -196,7 +196,7 @@ static void Unignore_f(void)
 		Com_Printf("%s : no player with name %s\n", Cmd_Argv(0), Cmd_Argv(1));
 	}
 	else
-	{		
+	{
 		if (Ignorelist_Del(slot))
 			Com_Printf("Removed user %s from ignore list\n", cl.players[slot].name);
 		else
@@ -276,7 +276,7 @@ static void Ignoreteam_f(void)
 			Q_strncpyz(ignoreteamlist[j], arg, sizeof(ignoreteamlist[j]));
 
 			if (j + 1 < MAX_TEAMIGNORELIST)
-				ignoreteamlist[j + 1][0] = 0;			
+				ignoreteamlist[j + 1][0] = 0;
 
 			Com_Printf("Added team %s to ignore list\n", arg);
 
@@ -315,7 +315,7 @@ static void Unignoreteam_f(void)
 			if ( --j >  i)
 				Q_strncpyz(ignoreteamlist[i], ignoreteamlist[j], sizeof(ignoreteamlist[i]));
 
-			ignoreteamlist[j][0] = 0;			
+			ignoreteamlist[j][0] = 0;
 			Com_Printf("Removed team %s from ignore list\n", arg);
 
 			return;
@@ -413,11 +413,11 @@ void Ignore_Flood_Add(char *s)
 
 qboolean Ignore_Message(char *s, int flags, int offset)
 {
-	int slot, i, p, q, len;	
+	int slot, i, p, q, len;
 	char name[32];
 
 	if (!ignore_mode.value && (flags & 2))
-		return false;		
+		return false;
 
 	if (ignore_spec.value == 2 && (flags == 4 || (flags == 8 && ignore_mode.value)))
 		return true;
@@ -448,11 +448,11 @@ qboolean Ignore_Message(char *s, int flags, int offset)
 	Q_strncpyz(name, s + p, len + 1);
 
 	if ((slot = Player_NametoSlot(name)) == PLAYER_NAME_NOMATCH)
-		return false;	
+		return false;
 
 	if (cl.players[slot].ignored)
 		return true;
-	
+
 
 	if (	ignore_opponents.value && flags == 1 && !cl.spectator && slot != cl.playernum &&
 			(!cl.teamplay || strcmp(cl.players[slot].team, cl.players[cl.playernum].team))
@@ -464,7 +464,7 @@ qboolean Ignore_Message(char *s, int flags, int offset)
 		return false;
 
 	if (cl.players[slot].spectator || !strcmp(Player_MyName(), name))
-		return false;	
+		return false;
 
 	for (i = 0; i < MAX_TEAMIGNORELIST && ignoreteamlist[i][0]; i++)
 	{
@@ -496,15 +496,15 @@ void Ignore_CvarInit(void)
 
 	Cvar_ResetCurrentGroup();
 
-	Cmd_AddCommand ("ignore", Ignore_f);					
-	Cmd_AddCommand ("ignorelist", IgnoreList_f);			
-	Cmd_AddCommand ("unignore", Unignore_f);				
-	Cmd_AddCommand ("ignore_team", Ignoreteam_f);		
-	Cmd_AddCommand ("unignore_team", Unignoreteam_f);	
-	Cmd_AddCommand ("unignoreAll", UnignoreAll_f);			
-	Cmd_AddCommand ("unignoreAll_team", UnignoreteamAll_f);	
-	Cmd_AddCommand ("unignore_id", Unignore_ID_f);		
-	Cmd_AddCommand ("ignore_id", Ignore_ID_f);			
+	Cmd_AddCommand ("ignore", Ignore_f);
+	Cmd_AddCommand ("ignorelist", IgnoreList_f);
+	Cmd_AddCommand ("unignore", Unignore_f);
+	Cmd_AddCommand ("ignore_team", Ignoreteam_f);
+	Cmd_AddCommand ("unignore_team", Unignoreteam_f);
+	Cmd_AddCommand ("unignoreAll", UnignoreAll_f);
+	Cmd_AddCommand ("unignoreAll_team", UnignoreteamAll_f);
+	Cmd_AddCommand ("unignore_id", Unignore_ID_f);
+	Cmd_AddCommand ("ignore_id", Ignore_ID_f);
 }
 
 void Ignore_Init(void)
