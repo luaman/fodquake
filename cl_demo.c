@@ -1375,17 +1375,17 @@ void CL_Demo_SetSpeed_f (void)
 	Cvar_SetValue(&cl_demospeed, atof(Cmd_Argv(1)) / 100.0);
 }
 
-void CL_Demo_Jump_f (void)
+void CL_Demo_Jump_f(void)
 {
-    int seconds = 0, seen_col, relative = 0;
+	int seconds = 0, seen_col, relative = 0;
 	double newdemotime;
-    char *text, *s;
+	char *text, *s;
 	static char *usage_message = "Usage: %s [+|-][m:]<s> (seconds)\n";
 
 	if (!cls.demoplayback)
 	{
 		Com_Printf("Error: not playing a demo\n");
-        return;
+		return;
 	}
 
 	if (cls.state < ca_active)
@@ -1394,13 +1394,13 @@ void CL_Demo_Jump_f (void)
 		return;
 	}
 
-    if (Cmd_Argc() != 2)
-    {
-        Com_Printf(usage_message, Cmd_Argv(0));
-        return;
-    }
+	if (Cmd_Argc() != 2)
+	{
+		Com_Printf(usage_message, Cmd_Argv(0));
+		return;
+	}
 
-    text = Cmd_Argv(1);
+	text = Cmd_Argv(1);
 	if (text[0] == '-')
 	{
 		text++;
@@ -1411,9 +1411,10 @@ void CL_Demo_Jump_f (void)
 		text++;
 		relative = 1;
 	}
-	else if (!isdigit(text[0])){
-        Com_Printf(usage_message, Cmd_Argv(0));
-        return;
+	else if (!isdigit(text[0])
+	{
+		Com_Printf(usage_message, Cmd_Argv(0));
+		return;
 	}
 
 	for (seen_col = 0, s = text; *s; s++)
@@ -1434,12 +1435,12 @@ void CL_Demo_Jump_f (void)
 		}
 	}
 
-    if (strchr(text, ':'))
-    {
-        seconds += 60 * atoi(text);
-        text = strchr(text, ':') + 1;
-    }
-    seconds += atoi(text);
+	if (strchr(text, ':'))
+	{
+		seconds += 60 * atoi(text);
+		text = strchr(text, ':') + 1;
+	}
+	seconds += atoi(text);
 
 	newdemotime = relative ? cls.demotime + relative * seconds : demostarttime + seconds;
 
@@ -1448,6 +1449,7 @@ void CL_Demo_Jump_f (void)
 		Com_Printf ("Error: cannot demo_jump backwards\n");
 		return;
 	}
+
 	cls.demotime = newdemotime;
 }
 
