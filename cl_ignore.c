@@ -29,16 +29,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define MAX_TEAMIGNORELIST	4
 #define	FLOODLIST_SIZE		10
 
-cvar_t		ignore_spec				=
-{"ignore_spec", "0"};			
-cvar_t		ignore_mode				=
-{"ignore_mode", "0"};
-cvar_t		ignore_flood_duration	=
-{"ignore_flood_duration", "4"};
-cvar_t		ignore_flood			=
-{"ignore_flood", "0"};		
-cvar_t		ignore_opponents		=
-{"ignore_opponents", "0"};
+cvar_t ignore_spec = { "ignore_spec", "0" };
+cvar_t ignore_mode = { "ignore_mode", "0" };
+cvar_t ignore_flood_duration = { "ignore_flood_duration", "4" };
+cvar_t ignore_flood = { "ignore_flood", "0" };
+cvar_t ignore_opponents = { "ignore_opponents", "0" };
 
 char ignoreteamlist[MAX_TEAMIGNORELIST][16 + 1];
 
@@ -314,7 +309,7 @@ static void Unignoreteam_f(void)
 	{
 		if (!strncmp(arg, ignoreteamlist[i], sizeof(ignoreteamlist[i]) - 1))
 		{
-			for (j = i; j < MAX_TEAMIGNORELIST && ignoreteamlist[j][0]; j++) 
+			for (j = i; j < MAX_TEAMIGNORELIST && ignoreteamlist[j][0]; j++)
 				;
 
 			if ( --j >  i)
@@ -362,7 +357,7 @@ char Ignore_Check_Flood(char *s, int flags, int offset)
 	int i, p, q, len;
 	char name[MAX_INFO_STRING];
 
-	if ( !(  
+	if ( !(
 	 ( (ignore_flood.value == 1 && (flags == 1 || flags == 4)) ||
 	 (ignore_flood.value == 2 && flags != 0) )
 	   )  )
