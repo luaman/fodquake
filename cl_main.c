@@ -2100,6 +2100,11 @@ void CL_Frame (double time)
 		cl.gametime += cls.frametime;
 	}
 
+	if (cls.demoplayback)
+	{
+		cl.gametime = cls.demotime - cls.demotimeoffset;
+	}
+
 	focuschanged = VID_FocusChanged();
 
 	while(VID_GetKeyEvent(&key, &down))

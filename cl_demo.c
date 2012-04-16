@@ -1411,7 +1411,7 @@ void CL_Demo_Jump_f(void)
 		text++;
 		relative = 1;
 	}
-	else if (!isdigit(text[0])
+	else if (!isdigit(text[0]))
 	{
 		Com_Printf(usage_message, Cmd_Argv(0));
 		return;
