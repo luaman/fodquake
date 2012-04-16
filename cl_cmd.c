@@ -26,6 +26,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "sys_io.h"
 #include "menu.h"
 #include "teamplay.h"
+#include "ignore.h"
 #include "version.h"
 #include "netqw.h"
 
@@ -634,6 +635,8 @@ void CL_Changing_f (void) {
 
 	S_StopAllSounds (true);
 	cls.state = ca_connected;	// not active anymore, but not disconnected
+
+	Ignore_PreNewMap();
 
 #ifdef NETQW
 	if (cls.netqw)

@@ -18,6 +18,7 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 
+#include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
 
@@ -46,6 +47,14 @@ flood_t;
 
 static flood_t floodlist[FLOODLIST_SIZE];
 static int		floodindex;
+
+struct ignored_name
+{
+	struct ignored_name *next;
+	char *name;
+};
+
+struct ignored_name *ignored_names;
 
 static qboolean IsIgnored(int slot)
 {
@@ -515,5 +524,52 @@ void Ignore_Init(void)
 		ignoreteamlist[i][0] = 0;
 
 	Ignore_ResetFloodList();
+}
+
+void Ignore_PreNewMap()
+{
+	unsigned int i;
+	struct ignored_name *name;
+
+	for(i=0;i<MAX_CLIENTS;i++)
+	{
+		if (cl.players[i].ignored)
+		{
+			name = malloc(sizeof(*name)+strlen(cl.players[i].name) + 1);
+			if (name)
+			{
+				name->name = (char *)(name + 1);
+				strcpy(name->name, cl.players[i].name);
+
+				name->next = ignored_names;
+				ignored_names = name;
+			}
+		}
+	}
+}
+
+void Ignore_PostNewMap()
+{
+	struct ignored_name *name;
+	struct ignored_name *next;
+	int slot;
+
+	next = ignored_names;
+
+	while((name = next))
+	{
+		next = name->next;
+
+		slot = Player_StringtoSlot(name->name);
+
+		if (slot != PLAYER_ID_NOMATCH && slot != PLAYER_NAME_NOMATCH)
+		{
+			Ignorelist_Add(slot);
+		}
+
+		free(name);
+	}
+
+	ignored_names = 0;
 }
 

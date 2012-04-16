@@ -950,6 +950,8 @@ void CL_MakeActive(void)
 
 	Con_ClearNotify();
 	TP_ExecTrigger("f_spawn");
+
+	Ignore_PostNewMap();
 }
 
 //Cvar system calls this when a CVAR_USERINFO cvar changes
