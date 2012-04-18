@@ -84,6 +84,15 @@ void Sys_Video_CvarInit(void)
 {
 }
 
+int Sys_Video_Init()
+{
+	return 1;
+}
+
+void Sys_Video_Shutdown()
+{
+}
+
 void *Sys_Video_Open(const char *mode, unsigned int width, unsigned int height, int fullscreen, unsigned char *palette)
 {
 	struct display *d;
