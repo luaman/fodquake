@@ -35,6 +35,8 @@ struct
 	{ "png12", "libpng12.so.0" },
 	{ "z", "libz.so.1" },
 	{ "jpeg", "libjpeg.so.62" },
+	{ "Xxf86vm", "libXxf86vm.so.1" },
+	{ "Xrandr", "libXrandr.so.2" },
 };
 
 #define LIBNAME_TRANSLATION_TABLE_SIZE (sizeof(libname_translation_table)/sizeof(*libname_translation_table))

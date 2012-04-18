@@ -157,15 +157,22 @@ void VID_Init(unsigned char *palette)
 	memcpy(pal, palette, sizeof(pal));
 
 	display_mutex = Sys_Thread_CreateMutex();
-	if (display_mutex)
+	if (!display_mutex)
 	{
-		return;
+		Sys_Error("Failed to create display mutex");
+	}
+
+	if (!Sys_Video_Init())
+	{
+		Sys_Error("Sys_Video_Init() failed");
 	}
 }
 
 void VID_Shutdown()
 {
 	VID_Close();
+
+	Sys_Video_Shutdown();
 
 	Sys_Thread_DeleteMutex(display_mutex);
 

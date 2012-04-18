@@ -68,13 +68,13 @@ ifeq ($(OS), linux)
 		sys_lib_posix.o
 
 	OSCFLAGS=-DBUILD_STRL
-	OSLDFLAGS=-lpthread -lrt
+	OSLDFLAGS=-lpthread -lrt -ldl
 
-	OSSWOBJS=vid_x11.o vid_mode_x11.o in_x11.o
-	OSSWLDFLAGS=-L/usr/X11R6/lib -lX11 -lXext -lXxf86vm -lXxf86dga
+	OSSWOBJS=vid_x11.o vid_mode_x11.o vid_mode_xf86vm.o vid_mode_xrandr.o in_x11.o
+	OSSWLDFLAGS=-L/usr/X11R6/lib -lX11 -lXext -lXxf86dga
 
-	OSGLOBJS=vid_glx.o vid_mode_x11.o in_x11.o
-	OSGLLDFLAGS=-L/usr/X11R6/lib -lX11 -lXext -lXxf86vm -lXxf86dga -lGL
+	OSGLOBJS=vid_glx.o vid_mode_x11.o vid_mode_xf86vm.o vid_mode_xrandr.o in_x11.o
+	OSGLLDFLAGS=-L/usr/X11R6/lib -lX11 -lXext -lXxf86dga -lGL
 endif
 
 ifeq ($(OS), freebsd)
