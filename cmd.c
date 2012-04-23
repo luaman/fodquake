@@ -1533,6 +1533,14 @@ static int cstc_alias_check(char *string, struct tokenized_string *ts)
 	return 1;
 }
 
+
+static int cstc_alias_conditions(void)
+{
+	if (cmd_alias == NULL)
+		return 0;
+	return 1;
+}
+
 static int cstc_alias_get_results(struct cst_info *self, int *results, int get_result, int result_type, char **result)
 {
 	int count;
@@ -1580,9 +1588,17 @@ static int cstc_alias_get_results(struct cst_info *self, int *results, int get_r
 	return 1;
 }
 
+struct cstc_cfginfo
+{
+	struct directory_list *dl;
+	qboolean *checked;
+	qboolean initialized;
+};
+
+
 static int cstc_exec_get_data(struct cst_info *self, int remove)
 {
-	struct directory_list *data;
+	struct cstc_cfginfo *data;
 	char *cfg_endings[] = { ".cfg", NULL};
 
 	if (!self)
@@ -1590,19 +1606,29 @@ static int cstc_exec_get_data(struct cst_info *self, int remove)
 
 	if (self->data)
 	{
-		data = (struct directory_list *)self->data;
-		Util_Dir_Delete(data);
+		data = (struct cstc_cfginfo *)self->data;
+		Util_Dir_Delete(data->dl);
+		free(data->checked);
+		free(data);
 		self->data = NULL;
 	}
 
 	if (remove)
 		return 0;
 
-	self->data = Util_Dir_Read(va("%s/qw/", com_basedir), 1, 1, cfg_endings);
-
-	if (self->data)
+	if ((data = calloc(1, sizeof(*data))))
 	{
-		return 0;
+		if ((data->dl = Util_Dir_Read(va("%s/qw/", com_basedir), 1, 1, cfg_endings)))
+		{
+			if (data->dl->entries == 0)
+			{
+				cstc_exec_get_data(self, 1);
+				return 1;
+			}
+			self->data = data;
+			return 0;
+		}
+		free(data);
 	}
 
 	return 1;
@@ -1620,49 +1646,46 @@ static int cstc_exec_check(char *entry, struct tokenized_string *ts)
 	return 1;
 }
 
-#define EXEC_INITIALIZED 0
-
 static int cstc_exec_get_results(struct cst_info *self, int *results, int get_result, int result_type, char **result)
 {
-	struct directory_list *data;
+	struct cstc_cfginfo *data;
 	int count, i;
 
 	if (self->data == NULL)
 		return 1;
 
-	data = (struct directory_list *)self->data;
+	data = (struct cstc_cfginfo *)self->data;
 
-	if (results || self->bool_var[EXEC_INITIALIZED] == false)
+	if (results || data->initialized == false)
 	{
-		if (self->bool_ptr)
-			free(self->bool_ptr);
-		self->bool_ptr = calloc(data->entry_count, sizeof(qboolean));
-		if (self->bool_ptr == NULL)
+		if (data->checked)
+			free(data->checked);
+		if (!(data->checked= calloc(data->dl->entry_count, sizeof(qboolean))))
 			return 1;
 
-		for (i=0, count=0; i<data->entry_count; i++)
+		for (i=0, count=0; i<data->dl->entry_count; i++)
 		{
-			if (cstc_exec_check(data->entries[i].name, self->tokenized_input))
+			if (cstc_exec_check(data->dl->entries[i].name, self->tokenized_input))
 			{
-				self->bool_ptr[i] = true;
+				data->checked[i] = true;
 				count++;
 			}
 		}
 		*results = count;
-		self->bool_var[EXEC_INITIALIZED] = true;
+		data->initialized = true;
 		return 0;
 	}
 
 	if (result == NULL)
 		return 0;
 
-	for (i=0, count=-1; i<data->entry_count; i++)
+	for (i=0, count=-1; i<data->dl->entry_count; i++)
 	{
-		if (self->bool_ptr[i] == true)
+		if (data->checked[i] == true)
 			count++;
 		if (count == get_result)
 		{
-			*result = data->entries[i].name;
+			*result = data->dl->entries[i].name;
 			return 0;
 		}
 	}
@@ -1686,7 +1709,7 @@ void Cmd_Init (void)
 	Cmd_AddCommand("if", Cmd_If_f);
 	Cmd_AddCommand("macrolist", Cmd_MacroList_f);
 
-	CSTC_Add("alias", NULL, &cstc_alias_get_results, NULL, NULL, 0, "arrow up/down to navigate");
+	CSTC_Add("alias", &cstc_alias_conditions, &cstc_alias_get_results, NULL, NULL, 0, "arrow up/down to navigate");
 	CSTC_Add("exec", NULL, &cstc_exec_get_results, &cstc_exec_get_data, NULL, CSTC_EXECUTE, "arrow up/down to navigate");
 }
 

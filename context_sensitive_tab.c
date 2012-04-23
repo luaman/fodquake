@@ -109,15 +109,6 @@ static void cleanup_cst(struct cst_info *info)
 	if (info->get_data)
 		info->get_data(info, 1);
 
-	if (info->bool_ptr)
-		free(info->bool_ptr);
-	if (info->int_ptr)
-		free(info->int_ptr);
-	if (info->double_ptr)
-		free(info->double_ptr);
-	if (info->picture)
-		Draw_FreePicture(info->picture);
-
 	if (info->new_input)
 		Text_Input_Delete(info->new_input);
 }
@@ -765,7 +756,7 @@ static void CSTC_Draw(struct cst_info *self, int y_offset)
 			for (y=0; y<16; y++)
 			{
 				pos_x = self->argument_start * 8 + 16;
-				if (pos_x > vid.displaywidth/2)
+				if (pos_x > vid.conwidth/2)
 					pos_x -= 16 *8;
 				self->offset_x = pos_x;
 				pos_x += x *8;
@@ -783,7 +774,7 @@ static void CSTC_Draw(struct cst_info *self, int y_offset)
 	else if (self->flags & CSTC_PLAYER_COLOR_SELECTOR)
 	{
 		pos_x = self->argument_start * 8 + 16;
-		if (pos_x > vid.displaywidth/2)
+		if (pos_x > vid.conwidth/2)
 			pos_x -= 16 *8 + 4;
 		self->offset_x = pos_x;
 		pos_y = offset;
@@ -822,11 +813,11 @@ static void CSTC_Draw(struct cst_info *self, int y_offset)
 	}
 	else
 	{
+
 		for (i=0, ptr = NULL; i<rows; i++)
 		{
 			if (self->result(self, NULL, i + result_offset, cstc_rt_draw, &ptr))
 				break;
-
 
 			if (i + result_offset == self->selection)
 			{

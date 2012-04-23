@@ -1467,9 +1467,16 @@ static int playdemo_checkdemo (char  *name, struct tokenized_string *check)
 	return 1;
 }
 
+struct cstc_demoinfo
+{
+	struct directory_list *dl;
+	qboolean *checked;
+	qboolean initialized;
+};
+
 static int cstc_playdemo_data(struct cst_info *self, int remove)
 {
-	struct directory_list *data;
+	struct cstc_demoinfo *data;
 	char *demo_endings[] = { ".qwd", ".mvd", NULL};
 
 	if (!self)
@@ -1477,69 +1484,72 @@ static int cstc_playdemo_data(struct cst_info *self, int remove)
 
 	if (self->data)
 	{
-		data = (struct directory_list *)self->data;
-		Util_Dir_Delete(data);
+		data = (struct cstc_demoinfo *)self->data;
+		Util_Dir_Delete(data->dl);
+		free(data->checked);
+		free(self->data);
 		self->data = NULL;
 	}
 
 	if (remove)
 		return 0;
 
-	self->data = Util_Dir_Read(va("%s", com_basedir), 1, 1, demo_endings);
-
-	if (self->data)
+	if ((data = calloc(1, sizeof(*data))))
 	{
-		return 0;
+		if ((data->dl = Util_Dir_Read(va("%s", com_basedir), 1, 1, demo_endings)))
+		{
+			self->data = (void *)data;
+			return 1;
+		}
+		free(data);
 	}
 
-	return 1;
+	return 0;
 }
-
-#define DEMO_INITALIZED	0
 
 static int cstc_playdemo_get_results(struct cst_info *self, int *results, int get_result, int result_type, char **result)
 {
-	struct directory_list *data;
+	struct cstc_demoinfo *data;
 	int count, i;
 
 	if (self->data == NULL)
 		return 1;
 
-	data = (struct directory_list *)self->data;
+	data = (struct cstc_demoinfo *)self->data;
 
-	if (results || self->bool_var[DEMO_INITALIZED] == false)
+	if (results || data->initialized == false)
 	{
-		if (self->bool_ptr)
-			free(self->bool_ptr);
-		self->bool_ptr = calloc(data->entry_count, sizeof(qboolean));
-		if (self->bool_ptr == NULL)
+		if (data->checked)
+			free(data->checked);
+		data->checked = calloc(data->dl->entry_count, sizeof(qboolean));
+		if (data->checked == NULL)
 			return 1;
 
-		for (i=0, count=0; i<data->entry_count; i++)
+		for (i=0, count=0; i<data->dl->entry_count; i++)
 		{
-			if (playdemo_checkdemo(data->entries[i].name, self->tokenized_input))
+			if (playdemo_checkdemo(data->dl->entries[i].name, self->tokenized_input))
 			{
-				self->bool_ptr[i] = true;
+				data->checked[i] = true;
 				count++;
 			}
 		}
 		if (results)
 			*results = count;
 
-		self->bool_var[DEMO_INITALIZED] = true;
+		data->initialized = true;
 		return 0;
 	}
 
 	if (result == NULL)
 		return 0;
 
-	for (i=0, count=-1; i<data->entry_count; i++)
+	for (i=0, count=-1; i<data->dl->entry_count; i++)
 	{
-		if (self->bool_ptr[i] == true)
+		if (data->checked[i] == true)
 			count++;
 		if (count == get_result)
 		{
-			*result = va("../%s", data->entries[i].name);
+			*result = va("../%s", data->dl->entries[i].name);
 			return 0;
 		}
 	}

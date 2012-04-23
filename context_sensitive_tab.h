@@ -54,17 +54,10 @@ struct cst_info
 
 	void *data;		// has to be cleared by get_data()
 
-	// freely allocateable pointers, in case more variables then set below are needed. will be auto freed if not zero
-	qboolean *bool_ptr;
-	int *int_ptr;
-	double *double_ptr;
-	struct Picture *picture;
-
-	// freely setable vars
-	int int_var[4];
-	double double_var[4];
-	qboolean bool_var[4];
-
+	// used by command completion
+	qboolean bool_var[5];
+	int int_var[5];
+	double double_var[5];
 };
 
 enum cstc_result_type
