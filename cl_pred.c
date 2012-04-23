@@ -184,7 +184,7 @@ void CL_PredictMove (void) {
 		goto out;
 	}
 
-	if (!INTERPOLATEDPHYSICS && ((cl_nopred.value && !cls.mvdplayback) || cl.validsequence + 1 >= cls.netchan.outgoing_sequence))
+	if ((cl_nopred.value && !cls.mvdplayback) || (!INTERPOLATEDPHYSICS && cl.validsequence + 1 >= cls.netchan.outgoing_sequence))
 	{
 		VectorCopy (to->playerstate[cl.playernum].velocity, cl.simvel);
 		VectorCopy (to->playerstate[cl.playernum].origin, cl.simorg);

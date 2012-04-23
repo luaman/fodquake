@@ -68,13 +68,13 @@ ifeq ($(OS), linux)
 		sys_lib_posix.o
 
 	OSCFLAGS=-DBUILD_STRL
-	OSLDFLAGS=-lpthread -lrt
+	OSLDFLAGS=-lpthread -lrt -ldl
 
-	OSSWOBJS=vid_x11.o vid_mode_x11.o in_x11.o
-	OSSWLDFLAGS=-L/usr/X11R6/lib -lX11 -lXext -lXxf86vm -lXxf86dga
+	OSSWOBJS=vid_x11.o vid_mode_x11.o vid_mode_xf86vm.o vid_mode_xrandr.o in_x11.o
+	OSSWLDFLAGS=-L/usr/X11R6/lib -lX11 -lXext -lXxf86dga
 
-	OSGLOBJS=vid_glx.o vid_mode_x11.o in_x11.o
-	OSGLLDFLAGS=-L/usr/X11R6/lib -lX11 -lXext -lXxf86vm -lXxf86dga -lGL
+	OSGLOBJS=vid_glx.o vid_mode_x11.o vid_mode_xf86vm.o vid_mode_xrandr.o in_x11.o
+	OSGLLDFLAGS=-L/usr/X11R6/lib -lX11 -lXext -lXxf86dga -lGL
 endif
 
 ifeq ($(OS), freebsd)
@@ -91,11 +91,11 @@ ifeq ($(OS), freebsd)
 	OSCFLAGS=-I/usr/local/include
 	OSLDFLAGS=-lpthread
 
-	OSSWOBJS=vid_x11.o vid_mode_x11.o in_x11.o
-	OSSWLDFLAGS=-L/usr/local/lib -lX11 -lXext -lXxf86vm -lXxf86dga
+	OSSWOBJS=vid_x11.o vid_mode_x11.o vid_mode_xf86vm.o vid_mode_xrandr.o in_x11.o
+	OSSWLDFLAGS=-L/usr/local/lib -lX11 -lXext -lXxf86dga
 
-	OSGLOBJS=vid_glx.o vid_mode_x11.o in_x11.o
-	OSGLLDFLAGS=-L/usr/local/lib -lX11 -lXext -lXxf86vm -lXxf86dga -lGL
+	OSGLOBJS=vid_glx.o vid_mode_x11.o vid_mode_xf86vm.o vid_mode_xrandr.o in_x11.o
+	OSGLLDFLAGS=-L/usr/local/lib -lX11 -lXext -lXxf86dga -lGL
 endif
 
 ifeq ($(OS), netbsd)
@@ -107,11 +107,11 @@ ifeq ($(OS), netbsd)
 	OSCFLAGS=-I/usr/X11R6/include
 	OSLDFLAGS=-lossaudio
 
-	OSSWOBJS=vid_x11.o in_x11.o
-	OSSWLDFLAGS=-L/usr/X11R6/lib -lX11 -lXext -lXxf86vm -lXxf86dga
+	OSSWOBJS=vid_x11.o vid_mode_x11.o vid_mode_xf86vm.o vid_mode_xrandr.o in_x11.o
+	OSSWLDFLAGS=-L/usr/X11R6/lib -lX11 -lXext -lXxf86dga
 
-	OSGLOBJS=vid_glx.o in_x11.o
-	OSGLLDFLAGS=-L/usr/X11R6/lib -lX11 -lXext -lXxf86vm -lXxf86dga -lGL
+	OSGLOBJS=vid_glx.o vid_mode_x11.o vid_mode_xf86vm.o vid_mode_xrandr.o in_x11.o
+	OSGLLDFLAGS=-L/usr/X11R6/lib -lX11 -lXext -lXxf86dga -lGL
 endif
 
 ifeq ($(OS), openbsd)
@@ -127,11 +127,11 @@ ifeq ($(OS), openbsd)
 	OSCFLAGS=-I/usr/X11R6/include -I/usr/local/include -I/usr/local/include/libpng -I/usr/local/include/gtk-2.0
 	OSLDFLAGS=-lpthread -lossaudio
 
-	OSSWOBJS=vid_x11.o vid_mode_x11.o in_x11.o
-	OSSWLDFLAGS=-L/usr/X11R6/lib -lX11 -lXext -lXxf86vm -lXxf86dga
+	OSSWOBJS=vid_x11.o vid_mode_x11.o vid_mode_xf86vm.o vid_mode_xrandr.o in_x11.o
+	OSSWLDFLAGS=-L/usr/X11R6/lib -lX11 -lXext -lXxf86dga
 
-	OSGLOBJS=vid_glx.o vid_mode_x11.o in_x11.o
-	OSGLLDFLAGS=-L/usr/X11R6/lib -lX11 -lXext -lXxf86vm -lXxf86dga -lGL
+	OSGLOBJS=vid_glx.o vid_mode_x11.o vid_mode_xf86vm.o vid_mode_xrandr.o in_x11.o
+	OSGLLDFLAGS=-L/usr/X11R6/lib -lX11 -lXext -lXxf86dga -lGL
 endif
 
 ifeq ($(OS), cygwin)

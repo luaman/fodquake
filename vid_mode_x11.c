@@ -1,136 +1,45 @@
-/*
-Copyright (C) 2009 Mark Olsen
-
-This program is free software; you can redistribute it and/or
-modify it under the terms of the GNU General Public License
-as published by the Free Software Foundation; either version 2
-of the License, or (at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
-
-See the GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program; if not, write to the Free Software
-Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
-*/
-
-#include <X11/Xlib.h>
-#include <X11/extensions/xf86vmode.h>
-
 #include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
 
-typedef struct vrect_s vrect_t;
-typedef enum keynum keynum_t;
-#include "sys_video.h"
 #include "vid_mode_x11.h"
+#include "vid_mode_xrandr.h"
+#include "vid_mode_xf86vm.h"
 
-int modeline_to_x11mode(const char *modeline, struct x11mode *x11mode)
+static int xrandr;
+static int xf86vm;
+
+void vidmode_init()
 {
-	const char *p;
-	unsigned int commas;
+	if (xrandr_init())
+		xrandr = 1;
 
-	commas = 0;
-	p = modeline;
-	while((p = strchr(p, ',')))
+	if (xf86vm_init())
+		xf86vm = 1;
+}
+
+void vidmode_shutdown()
+{
+	if (xrandr)
 	{
-		commas++;
-		p = p + 1;
+		xrandr_shutdown();
+		xrandr = 0;
 	}
 
-	if (commas != 10)
-		return 0;
-
-	p = modeline;
-	x11mode->dotclock = strtoul(p, 0, 0);
-	p = strchr(p, ',') + 1;
-	x11mode->hdisplay = strtoul(p, 0, 0);
-	p = strchr(p, ',') + 1;
-	x11mode->hsyncstart = strtoul(p, 0, 0);
-	p = strchr(p, ',') + 1;
-	x11mode->hsyncend = strtoul(p, 0, 0);
-	p = strchr(p, ',') + 1;
-	x11mode->htotal = strtoul(p, 0, 0);
-	p = strchr(p, ',') + 1;
-	x11mode->hskew = strtoul(p, 0, 0);
-	p = strchr(p, ',') + 1;
-	x11mode->vdisplay = strtoul(p, 0, 0);
-	p = strchr(p, ',') + 1;
-	x11mode->vsyncstart = strtoul(p, 0, 0);
-	p = strchr(p, ',') + 1;
-	x11mode->vsyncend = strtoul(p, 0, 0);
-	p = strchr(p, ',') + 1;
-	x11mode->vtotal = strtoul(p, 0, 0);
-	p = strchr(p, ',') + 1;
-	x11mode->flags = strtoul(p, 0, 0);
-
-	return 1;
+	if (xf86vm)
+	{
+		xf86vm_shutdown();
+		xf86vm = 0;
+	}
 }
 
 const char * const *Sys_Video_GetModeList(void)
 {
-	Display *disp;
-	int scrnum;
-	int version;
-	int revision;
-	int num_vidmodes;
-	XF86VidModeModeInfo **vidmodes;
-	const char **ret;
-	char buf[256];
-	unsigned int i;
+	if (xrandr)
+		return xrandr_GetModeList();
 
-	ret = 0;
+	if (xf86vm)
+		return xf86vm_GetModeList();
 
-	disp = XOpenDisplay(NULL);
-	if (disp)
-	{
-		scrnum = DefaultScreen(disp);
-
-		if (XF86VidModeQueryVersion(disp, &version, &revision))
-		{
-			if (XF86VidModeGetAllModeLines(disp, scrnum, &num_vidmodes, &vidmodes))
-			{
-				i = 0;
-
-				if (num_vidmodes < 65536)
-				{
-					ret = malloc(sizeof(*ret) * (num_vidmodes + 1));
-					if (ret)
-					{
-						for(i=0;i<num_vidmodes;i++)
-						{
-							snprintf(buf, sizeof(buf), "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d", vidmodes[i]->dotclock, vidmodes[i]->hdisplay, vidmodes[i]->hsyncstart, vidmodes[i]->hsyncend, vidmodes[i]->htotal, vidmodes[i]->hskew, vidmodes[i]->vdisplay, vidmodes[i]->vsyncstart, vidmodes[i]->vsyncend, vidmodes[i]->vtotal, vidmodes[i]->flags);
-
-							ret[i] = malloc(strlen(buf)+1);
-							if (ret[i] == 0)
-								break;
-
-							strcpy((void *)ret[i], buf);
-						}
-
-						ret[i] = 0;
-
-						if (i != num_vidmodes)
-						{
-							Sys_Video_FreeModeList(ret);
-							ret = 0;
-						}
-
-					}
-				}
-
-				XFree(vidmodes);
-			}
-		}
-
-		XCloseDisplay(disp);
-	}
-
-	return ret;
+	return 0;
 }
 
 void Sys_Video_FreeModeList(const char * const *displaymodes)
@@ -147,27 +56,17 @@ void Sys_Video_FreeModeList(const char * const *displaymodes)
 
 const char *Sys_Video_GetModeDescription(const char *mode)
 {
-	char buf[256];
-	char *ret;
-	struct x11mode x11mode;
-	unsigned long long dotclock;
+	const char *ret;
 
-	if (modeline_to_x11mode(mode, &x11mode))
-	{
-		dotclock = x11mode.dotclock;
+	ret = 0;
 
-		snprintf(buf, sizeof(buf), "%dx%d, %dHz", x11mode.hdisplay, x11mode.vdisplay, (int)((((dotclock*1000000)/(x11mode.htotal*x11mode.vtotal))+500)/1000));
+	if (xrandr)
+		ret = xrandr_GetModeDescription(mode);
 
-		ret = malloc(strlen(buf) + 1);
-		if (ret)
-		{
-			strcpy(ret, buf);
+	if (xf86vm && ret == 0)
+		ret = xf86vm_GetModeDescription(mode);
 
-			return ret;
-		}
-	}
-
-	return 0;
+	return ret;
 }
 
 void Sys_Video_FreeModeDescription(const char *modedescription)

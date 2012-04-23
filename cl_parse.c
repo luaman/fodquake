@@ -1441,7 +1441,10 @@ void CL_ProcessServerInfo (void)
 	countdown = !Q_strcasecmp(p, "countdown");
 
 	if ((cl.standby || cl.countdown) && !(standby || countdown))
+	{
 		cl.gametime = 0;
+		cls.demotimeoffset = cls.demotime;
+	}
 
 	cl.standby = standby;
 	cl.countdown = countdown;

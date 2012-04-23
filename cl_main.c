@@ -950,6 +950,8 @@ void CL_MakeActive(void)
 
 	Con_ClearNotify();
 	TP_ExecTrigger("f_spawn");
+
+	Ignore_PostNewMap();
 }
 
 //Cvar system calls this when a CVAR_USERINFO cvar changes
@@ -2098,6 +2100,11 @@ void CL_Frame (double time)
 		cl.servertime += cls.frametime;
 		cl.stats[STAT_TIME] = (int) (cl.servertime * 1000);
 		cl.gametime += cls.frametime;
+	}
+
+	if (cls.demoplayback)
+	{
+		cl.gametime = cls.demotime - cls.demotimeoffset;
 	}
 
 	focuschanged = VID_FocusChanged();
