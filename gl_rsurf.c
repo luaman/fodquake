@@ -44,6 +44,7 @@ typedef struct glRect_s
 } glRect_t;
 
 static glpoly_t	*lightmap_polys[MAX_LIGHTMAPS];
+static unsigned int lightmap_polys_used[(MAX_LIGHTMAPS+31)/32] __attribute__((aligned(64)));
 static qboolean	lightmap_modified[MAX_LIGHTMAPS];
 static glRect_t	lightmap_rectchange[MAX_LIGHTMAPS];
 
@@ -80,8 +81,12 @@ msurface_t	**drawflatchain_tail = &drawflatchain;
 		(chain) = (surf);						\
 	}
 
-glpoly_t *fullbright_polys[MAX_GLTEXTURES];
-glpoly_t *luma_polys[MAX_GLTEXTURES];
+static glpoly_t *fullbright_polys[MAX_GLTEXTURES];
+static unsigned int fullbright_polys_used[(MAX_GLTEXTURES+31)/32] __attribute__((aligned(64)));
+
+static glpoly_t *luma_polys[MAX_GLTEXTURES];
+static unsigned int luma_polys_used[(MAX_GLTEXTURES+31)/32] __attribute__((aligned(64)));
+
 qboolean drawfullbrights = false, drawlumas = false;
 glpoly_t *caustics_polys = NULL;
 glpoly_t *detail_polys = NULL;
@@ -103,7 +108,8 @@ static void DrawGLPoly (glpoly_t *p)
 
 static void R_RenderFullbrights (void)
 {
-	int i;
+	unsigned int i;
+	unsigned int j;
 	glpoly_t *p;
 
 	if (!drawfullbrights)
@@ -115,14 +121,21 @@ static void R_RenderFullbrights (void)
 
 	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
 
-	for (i = 1; i < MAX_GLTEXTURES; i++)
+	for(j=0;j<(MAX_GLTEXTURES+31)/32;j++)
 	{
-		if (!fullbright_polys[i])
+		if (!fullbright_polys_used[j])
 			continue;
-		GL_Bind (i);
-		for (p = fullbright_polys[i]; p; p = p->fb_chain)
-			DrawGLPoly (p);
-		fullbright_polys[i] = NULL;
+
+		for(i=0;i<32;i++)
+		{
+			if (!(fullbright_polys_used[j]&(1<<i)))
+				continue;
+			GL_Bind(j*32+i);
+			for (p = fullbright_polys[j*32+i]; p; p = p->fb_chain)
+				DrawGLPoly (p);
+		}
+
+		fullbright_polys_used[j] = 0;
 	}
 
 	glDepthMask (GL_TRUE);
@@ -132,7 +145,8 @@ static void R_RenderFullbrights (void)
 
 static void R_RenderLumas (void)
 {
-	int i;
+	unsigned int i;
+	unsigned int j;
 	glpoly_t *p;
 
 	if (!drawlumas)
@@ -144,14 +158,21 @@ static void R_RenderLumas (void)
 
 	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
 
-	for (i = 1; i < MAX_GLTEXTURES; i++)
+	for(j=0;j<(MAX_GLTEXTURES+31)/32;j++)
 	{
-		if (!luma_polys[i])
+		if (!luma_polys_used[j])
 			continue;
-		GL_Bind (i);
-		for (p = luma_polys[i]; p; p = p->luma_chain)
-			DrawGLPoly (p);
-		luma_polys[i] = NULL;
+
+		for(i=0;i<32;i++)
+		{
+			if (!(luma_polys_used[j]&(1<<i)))
+				continue;
+			GL_Bind(j*32+i);
+			for (p = luma_polys[j*32+i]; p; p = p->luma_chain)
+				DrawGLPoly (p);
+		}
+
+		luma_polys_used[j] = 0;
 	}
 
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -591,7 +612,9 @@ static texture_t *R_TextureAnimation (texture_t *base)
 
 static void R_BlendLightmaps (void)
 {
-	int i, j;
+	unsigned int i;
+	unsigned int j;
+	unsigned int k;
 	glpoly_t *p;
 	float *v;
 
@@ -603,26 +626,36 @@ static void R_BlendLightmaps (void)
 
 	GL_SetAlphaTestBlend(0, !r_lightmap.value);
 
-	for (i = 0; i < MAX_LIGHTMAPS; i++)
+	for(k=0;k<(MAX_GLTEXTURES+31)/32;k++)
 	{
-		if (!(p = lightmap_polys[i]))
+		if (!lightmap_polys_used[k])
 			continue;
-		GL_Bind(lightmap_textures + i);
-		if (lightmap_modified[i])
-			R_UploadLightMap (i);
-		for ( ; p; p = p->chain)
+
+		for (i=0;i<32;i++)
 		{
-			glBegin (GL_POLYGON);
-			v = p->verts[0];
-			for (j = 0; j < p->numverts; j++, v+= VERTEXSIZE)
+			if (!(lightmap_polys_used[k]&(1<<i)))
+				continue;
+
+			p = lightmap_polys[k*32+i];
+			GL_Bind(lightmap_textures + k*32 + i);
+			if (lightmap_modified[k*32+i])
+				R_UploadLightMap(k*32+i);
+			for ( ; p; p = p->chain)
 			{
-				glTexCoord2f (v[5], v[6]);
+				glBegin (GL_POLYGON);
+				v = p->verts[0];
+				for (j = 0; j < p->numverts; j++, v+= VERTEXSIZE)
+				{
+					glTexCoord2f (v[5], v[6]);
 				glVertex3fv (v);
+				}
+				glEnd ();
 			}
-			glEnd ();
 		}
-		lightmap_polys[i] = NULL;
+
+		lightmap_polys_used[k] = 0;
 	}
+
 	glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glDepthMask (GL_TRUE);		// back to normal Z buffering
 }
@@ -829,9 +862,9 @@ static void R_ClearTextureChains(model_t *clmodel)
 	int i, waterline;
 	texture_t *texture;
 
-	memset (lightmap_polys, 0, sizeof(lightmap_polys));
-	memset (fullbright_polys, 0, sizeof(fullbright_polys));
-	memset (luma_polys, 0, sizeof(luma_polys));
+	memset (lightmap_polys_used, 0, sizeof(lightmap_polys_used));
+	memset (fullbright_polys_used, 0, sizeof(fullbright_polys_used));
+	memset (luma_polys_used, 0, sizeof(luma_polys_used));
 
 	for (i = 0; i < clmodel->numtextures; i++)
 	{
@@ -992,6 +1025,7 @@ static void DrawTextureChains (model_t *model)
 				{
 					s->polys->chain = lightmap_polys[s->lightmaptexturenum];
 					lightmap_polys[s->lightmaptexturenum] = s->polys;
+					lightmap_polys_used[s->lightmaptexturenum/32] |= (1<<(s->lightmaptexturenum%32));
 				}
 
 				glBegin(GL_POLYGON);
@@ -1033,12 +1067,14 @@ static void DrawTextureChains (model_t *model)
 					{
 						s->polys->luma_chain = luma_polys[t->fb_texturenum];
 						luma_polys[t->fb_texturenum] = s->polys;
+						luma_polys_used[t->fb_texturenum/32] |= (1<<(t->fb_texturenum%32));
 						drawlumas = true;
 					}
 					else
 					{
 						s->polys->fb_chain = fullbright_polys[t->fb_texturenum];
 						fullbright_polys[t->fb_texturenum] = s->polys;
+						fullbright_polys_used[t->fb_texturenum/32] |= (1<<(t->fb_texturenum%32));
 						drawfullbrights = true;
 					}
 				}
