@@ -541,21 +541,24 @@ void V_UpdatePalette(qboolean force_update)
 		current_gamma = current_gamma/vid_gamma;
 	}
 
-	for (i = 0; i < 256; i++)
+	if (VID_HWGammaSupported())
 	{
-		for (j = 0; j < 3; j++)
+		for (i = 0; i < 256; i++)
 		{
-			// apply blend and contrast
-			c = (i * a + rgb[j]) * current_contrast;
-			if (c > 255)
-				c = 255;
-			// apply gamma
-			c = 255 * pow((c + 0.5) / 255.5, current_gamma) + 0.5;
-			c = bound (0, c, 255);
-			ramps[j][i] = c << 8;
+			for (j = 0; j < 3; j++)
+			{
+				// apply blend and contrast
+				c = (i * a + rgb[j]) * current_contrast;
+				if (c > 255)
+					c = 255;
+				// apply gamma
+				c = 255 * pow((c + 0.5) / 255.5, current_gamma) + 0.5;
+				c = bound (0, c, 255);
+				ramps[j][i] = c << 8;
+			}
 		}
+		VID_SetDeviceGammaRamp ((unsigned short *) ramps);
 	}
-	VID_SetDeviceGammaRamp ((unsigned short *) ramps);
 }
 
 #else	// !GLQUAKE
