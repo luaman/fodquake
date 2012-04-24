@@ -795,14 +795,7 @@ void Draw_Crosshair(void)
 
 		GL_Bind(crosshairtexnum);
 
-		if (gl_crosshairalpha.value < 1)
-		{
-			GL_SetAlphaTestBlend(0, 1);
-		}
-		else
-		{
-			GL_SetAlphaTestBlend(1, 0);
-		}
+		GL_SetAlphaTestBlend(0, 1);
 
 		GL_SetArrays(FQ_GL_VERTEX_ARRAY | FQ_GL_COLOR_ARRAY | FQ_GL_TEXTURE_COORD_ARRAY);
 
