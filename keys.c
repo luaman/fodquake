@@ -499,6 +499,8 @@ void Key_Console (int key) {
 		Context_Sensitive_Tab_Completion_Key(key);
 		return;
 	}
+	else
+		Context_Sensitive_Tab_Completion_Notification(true);
 
 	switch (key) {
 	    case K_ENTER:
@@ -1125,6 +1127,7 @@ void Key_Event(int key, qboolean down)
 
 	//	Com_Printf("%i : %i\n", key, down); //@@@
 
+
 	if (key == K_LALT || key == K_RALT)
 		Key_Event(K_ALT, down);
 	else if (key == K_LCTRL || key == K_RCTRL)
@@ -1185,6 +1188,7 @@ void Key_Event(int key, qboolean down)
 				break;
 
 			case key_console:
+				Context_Sensitive_Tab_Completion_Notification(true);
 				if (!SCR_NEED_CONSOLE_BACKGROUND)
 					ToggleConsole_f();
 				else
@@ -1259,6 +1263,7 @@ void Key_Event(int key, qboolean down)
 			}
 		}
 
+		Context_Sensitive_Tab_Completion_Notification(true);
 		return;
 	}
 

@@ -659,38 +659,51 @@ static void FS_Path_f(void)
 	}
 }
 
+struct cstc_skindata
+{
+	qboolean initialized;
+	qboolean *checked;
+	struct directory_list *dl;
+	struct Picture *picture;
+};
 
 static int cstc_skins_get_data(struct cst_info *self, int remove)
 {
-	struct directory_list *data;
+	struct cstc_skindata *data;
 
 	if (!self)
 		return 1;
 
 	if (self->data)
 	{
-		data = (struct directory_list *)self->data;
-		Util_Dir_Delete(data);
+		data = (struct cstc_skindata *)self->data;
+		Util_Dir_Delete(data->dl);
+		if (data->picture)
+			Draw_FreePicture(data->picture);
+		free(data);
 		self->data = NULL;
 	}
 
 	if (remove)
 		return 0;
 
-	self->data = Util_Dir_Read(va("%s/qw/skins/", com_basedir), 1, 1, skins_endings);
-
-	if (self->data)
+	if ((data = calloc(1, sizeof(*data))))
 	{
-		if (((struct directory_list *)self->data)->entry_count == 0)
+		if ((data->dl = Util_Dir_Read(va("%s/qw/skins/", com_basedir), 1, 1, skins_endings)))
 		{
-			Com_Printf(va("%s/qw/skins/ has no skin files in it.\n", com_basedir));
-			Util_Dir_Delete(self->data);
-			self->data = NULL;
-			return 1;
+			if (data->dl->entry_count != 0)
+			{
+				self->data = (void *)data;
+				return 0;
+			}
+			else
+			{
+				Com_Printf(va("%s/qw/skins/ has no skin files in it.\n", com_basedir));
+			}
+			Util_Dir_Delete(data->dl);
 		}
-		return 0;
+		free(data);
 	}
-
 	return 1;
 }
 
@@ -708,47 +721,46 @@ static int cstc_skins_check(char *entry, struct tokenized_string *ts)
 
 static int cstc_skins_get_results(struct cst_info *self, int *results, int get_result, int result_type, char **result)
 {
-	struct directory_list *data;
+	struct cstc_skindata *data;
 	int count, i;
 
 	if (self->data == NULL)
 		return 1;
 
-	data = (struct directory_list *)self->data;
+	data = (struct cstc_skindata *)self->data;
 
-	if (results || self->initialized == 0)
+	if (results || data->initialized == false)
 	{
-		if (self->checked)
-			free(self->checked);
-		self->checked = calloc(data->entry_count, sizeof(qboolean));
-		if (self->checked == NULL)
+		if (data->checked)
+			free(data->checked);
+		if ((data->checked = calloc(data->dl->entry_count, sizeof(qboolean))) == NULL)
 			return 1;
 
-		for (i=0, count=0; i<data->entry_count; i++)
+		for (i=0, count=0; i<data->dl->entry_count; i++)
 		{
-			if (cstc_skins_check(data->entries[i].name, self->tokenized_input))
+			if (cstc_skins_check(data->dl->entries[i].name, self->tokenized_input))
 			{
-				self->checked[i] = true;
+				data->checked[i] = true;
 				count++;
 			}
 		}
 
 		if (results)
 			*results = count;
-		self->initialized = 1;
+		data->initialized = true;
 		return 0;
 	}
 
 	if (result == NULL)
 		return 0;
 
-	for (i=0, count=-1; i<data->entry_count; i++)
+	for (i=0, count=-1; i<data->dl->entry_count; i++)
 	{
-		if (self->checked[i] == true)
+		if (data->checked[i] == true)
 			count++;
 		if (count == get_result)
 		{
-			*result = data->entries[i].name;
+			*result = data->dl->entries[i].name;
 			return 0;
 		}
 	}
@@ -779,9 +791,60 @@ static int cstc_skins_condition(void)
 	return i;
 }
 
+static void cstc_skins_draw(struct cst_info *self)
+{
+	struct cstc_skindata *data;
+	int x, y;
+	int i, count;
+	char *s;
+
+
+	if (self->data == NULL)
+		return;
+
+	data = (struct cstc_skindata *) self->data;
+
+	if (data->picture && ( self->toggleables_changed || self->selection_changed))
+	{
+		Draw_FreePicture(data->picture);
+		data->picture = NULL;
+	}
+
+	if (data->picture == NULL)
+	{
+		for (i=0, count=-1; i<data->dl->entry_count; i++)
+		{
+			if (data->checked[i] == true)
+				count++;
+			if (count == self->selection)
+				break;
+		}
+		if (i == data->dl->entry_count)
+			return;
+
+		data->picture = Draw_LoadPicture(va("skins/%s", data->dl->entries[i].name), DRAW_LOADPICTURE_NOFALLBACK);
+	}
+
+	if (data->picture == NULL)
+	{
+		s = va("not a valid skin.");
+		x = vid.conwidth - strlen(s) * 8;
+		y = self->offset_y;
+		Draw_Fill(x, y, 8 * strlen(s), 8, 0);
+		Draw_String(x, y, s);
+		return;
+	}
+
+	y = self->offset_y - (self->direction == -1 ? 200: 0);
+	x = vid.conwidth - 320;
+
+	Draw_DrawPicture(data->picture, x, y, 320, 200);//, Draw_GetPictureWidth(self->picture), Draw_GetPictureHeight(self->picture));
+	return;
+}
+
 void FS_Init()
 {
-	CSTC_Add("enemyskin enemyquadskin enemypentskin enemybothskin teamskin teamquadskin teampentskin teambothskin", &cstc_skins_condition, &cstc_skins_get_results, &cstc_skins_get_data, CSTC_MULTI_COMMAND| CSTC_NO_INPUT| CSTC_EXECUTE);
+	CSTC_Add("enemyskin enemyquadskin enemypentskin enemybothskin teamskin teamquadskin teampentskin teambothskin", &cstc_skins_condition, &cstc_skins_get_results, &cstc_skins_get_data, &cstc_skins_draw, CSTC_MULTI_COMMAND| CSTC_NO_INPUT| CSTC_EXECUTE, "arrow up/down to navigate");
 	Cmd_AddCommand("path", FS_Path_f);
 }
 

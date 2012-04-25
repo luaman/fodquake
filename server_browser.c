@@ -30,6 +30,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "readablechars.h"
 #include "server_browser_qtv.h"
 #include "utils.h"
+#include "tokenize_string.h"
+#include "context_sensitive_tab.h"
 
 static void SB_AddMacros(void);
 
@@ -2821,7 +2823,210 @@ void SB_Tab_Layout_f(void)
 	update_tab(tab);
 }
 
+struct cstc_sbdata
+{
+	qboolean initialized;
+	qboolean *checked;
+	int map_length;
+	int count;
+};
 
+static qboolean cstc_connect_check(struct cst_info *self, struct QWServer *server, struct tokenized_string *ts)
+{
+	int i;
+	extern cvar_t context_sensitive_tab_completion_connect_show_empty;
+
+	if (server->status == QWSS_FAILED)
+		return false;
+
+	if (server->numplayers > 0 || self->toggleables[0])
+	{
+		for (i=0; i<ts->count; i++)
+			if (Util_strcasestr(va("%s %3i/%3i %s", server->map ? server->map : "", server->numplayers, server->maxclients, server->hostname ? server->hostname : "") , ts->tokens[i]) == NULL)
+				return false;
+	}
+	else
+		return false;
+
+	return true;
+}
+
+static int cstc_connect_get_results(struct cst_info *self, int *results, int get_result, int result_type, char **result)
+{
+	int count, i, j;
+	struct QWServer *server;
+	struct cstc_sbdata *data;
+	qboolean resort = false;
+
+	if (self == NULL)
+		return 1;
+
+	if (self->data == NULL)
+		return 1;
+
+	data = (struct cstc_sbdata *)self->data;
+
+	if ((serverscanner && ServerScanner_DataUpdated(serverscanner)) || self->toggleables[2] == true)
+	{
+		if (self->toggleables[2] || sb_qw_server == NULL)
+			SB_Refresh();
+		if (sb_qw_server)
+			ServerScanner_FreeServers(serverscanner, sb_qw_server);
+		sb_qw_server = ServerScanner_GetServers(serverscanner, &sb_qw_server_count);
+
+		if (data->checked)
+		{
+			free(data->checked);
+			data->checked = NULL;
+		}
+
+		resort = true;
+		self->toggleables[2] = false;
+	}
+
+	if (sb_qw_server_count == 0)
+		return 1;
+
+	if (data->checked == NULL)
+	{
+		if ((data->checked = calloc(sb_qw_server_count, sizeof(qboolean))) == NULL)
+			return 1;
+		resort = true;
+	}
+
+	if (sb_qw_server == NULL)
+		return 1;
+
+	if (resort || self->input_changed || self->toggleables_changed)
+	{
+		for (i=0, count=0; i<sb_qw_server_count; i++)
+		{
+			if (cstc_connect_check(self, sb_qw_server[i], self->tokenized_input))
+			{
+				data->checked[i] = true;
+				if (sb_qw_server[i]->map)
+					if (data->map_length < strlen(sb_qw_server[i]->map))
+						data->map_length = strlen(sb_qw_server[i]->map);
+				count++;
+			}
+			else
+				data->checked[i] = false;
+		}
+		data->count = count;
+	}
+
+	if (results)
+		*results = data->count;
+
+	if (result == NULL)
+		return 0;
+
+	for (i=0, count=-1; i<sb_qw_server_count; i++)
+	{
+		if (data->checked[i] == true)
+			count++;
+
+		if (count == get_result)
+		{
+			server = sb_qw_server[i];
+			if (result_type == cstc_rt_real)
+				*result = va("%s", NET_AdrToString(&server->addr));
+			else
+				*result = va("%*s %3i/%3i %s", data->map_length, server->map ? server->map : "", server->numplayers, server->maxclients, server->hostname ? server->hostname : "");
+			return 0;
+		}
+	}
+	return 1;
+}
+
+static int cstc_connect_condition(void)
+{
+	if (sb_qw_server == NULL)
+	{
+		SB_Refresh();
+		if (serverscanner)
+			return 1;
+		return 0;
+	}
+	return 1;
+}
+
+static void cstc_connect_get_data(struct cst_info *self, int remove)
+{
+	struct cstc_sbdata *data;
+
+	if ((data = calloc(1, sizeof(*data))))
+	{
+		self->data = (void *)data;
+		return 1;
+	}
+
+	return 0;
+}
+
+static void cstc_connect_draw(struct cst_info *self)
+{
+	char *s;
+	int x, y, i, j;
+	struct QWServer *server;
+	struct cstc_sbdata *data;
+
+	if (self->data == NULL)
+		return;
+
+	data = (struct cstc_sbdata *)self->data;
+
+	if (self->selection_changed)
+		self->toggleables[1] = false;
+
+	if (self->toggleables[1] == false)
+		return;
+
+	if (sb_qw_server == NULL)
+		return;
+
+	if (sb_qw_server_count <= self->selection)
+		return;
+
+	for (i=0, j=-1; i<sb_qw_server_count ; i++)
+	{
+		if (data->checked[i] == true)
+			j++;
+		if (j == self->selection)
+			break;
+	}
+
+	if (i == sb_qw_server_count)
+		return;
+
+	server = sb_qw_server[i];
+
+	if (server == NULL)
+		return;
+
+	x = 0;
+	y = self->offset_y + self->direction * 8;
+
+	for (i=0; i<server->numplayers; i++)
+	{
+		s = server->players[i].name;
+		if (s == NULL)
+			continue;
+		Draw_Fill(x, y, strlen(s) *8 + 8, 8, 3);
+		Draw_String(x, y, s);
+		x += 8 + strlen(s) * 8 ;
+	}
+
+	for (i=0; i<server->numspectators; i++)
+	{
+		s = server->spectators[i].name;
+		if (s == NULL)
+			continue;
+		Draw_Fill(x, y, strlen(s) *8 + 8, 8, 0);
+		Draw_String(x, y, s);
+		x += 8 + strlen(s) * 8 ;
+	}
+}
 
 void SB_CvarInit(void)
 {
@@ -2852,6 +3057,8 @@ void SB_CvarInit(void)
 	Cvar_Register(&sb_highlight_sort_column);
 	Cvar_Register(&sb_highlight_sort_column_color);
 	Cvar_Register(&sb_highlight_sort_column_alpha);
+
+	CSTC_Add("connect", &cstc_connect_condition, &cstc_connect_get_results, &cstc_connect_get_data, &cstc_connect_draw, CSTC_EXECUTE | CSTC_HIGLIGHT_INPUT, "arrow up/down to navigate, ctrl+1 to toggle showing empty servers");
 }
 
 void Dump_SB_Config(FILE *f)

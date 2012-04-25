@@ -608,7 +608,7 @@ void CL_CvarInitCam(void) {
 	Cvar_ResetCurrentGroup();
 	Cmd_AddCommand ("track", CL_Track_f);
 
-	CSTC_Add("track", &cstc_track_conditions, &cstc_track_results, NULL, CSTC_EXECUTE);
+	CSTC_Add("track", &cstc_track_conditions, &cstc_track_results, NULL, NULL, CSTC_EXECUTE, "arrow up/down to navigate");
 }
 
 void CL_Track_f(void) {	

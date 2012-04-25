@@ -784,29 +784,47 @@ void LoadConfig_f(void)
 	Cbuf_AddText ("cl_warncmd 1\n");
 }
 
+struct cstc_cfginfo
+{
+	struct directory_list *dl;
+	qboolean *checked;
+	qboolean initialized;
+};
+
 static int cstc_cfg_load_get_data(struct cst_info *self, int remove)
 {
-	struct directory_list *data;
+	struct cstc_cfginfo *data;
 	char *cfg_endings[] = { ".cfg", NULL};
 
 	if (!self)
 		return 1;
 
-	if (self->data)
+	data = (struct cstc_cfginfo *)self->data;
+
+	if (data)
 	{
-		data = (struct directory_list *)self->data;
-		Util_Dir_Delete(data);
+		Util_Dir_Delete(data->dl);
+		free(data->checked);
+		free(data);
 		self->data = NULL;
 	}
 
 	if (remove)
 		return 0;
 
-	self->data = Util_Dir_Read(va("%s/fodquake/configs/", com_basedir), 1, 1, cfg_endings);
-
-	if (self->data)
+	if ((data = calloc(1, sizeof(*data))))
 	{
-		return 0;
+		if ((data->dl = Util_Dir_Read(va("%s/fodquake/configs/", com_basedir), 1, 1, cfg_endings)))
+		{
+			if (data->dl->entries == 0)
+			{
+				cstc_cfg_load_get_data(self, 1);
+				return 1;
+			}
+			self->data = (void *)data;
+			return 0;
+		}
+		free(data);
 	}
 
 	return 1;
@@ -826,47 +844,47 @@ static int cstc_cfg_load_check(char *entry, struct tokenized_string *ts)
 
 static int cstc_cfg_load_get_results(struct cst_info *self, int *results, int get_result, int result_type, char **result)
 {
-	struct directory_list *data;
+	struct cstc_cfginfo *data;
 	int count, i;
 
 	if (self->data == NULL)
 		return 1;
 
-	data = (struct directory_list *)self->data;
+	data = (struct cstc_cfginfo *)self->data;
 
-	if (results || self->initialized == 0)
+	if (results || data->initialized == false)
 	{
-		if (self->checked)
-			free(self->checked);
-		self->checked = calloc(data->entry_count, sizeof(qboolean));
-		if (self->checked == NULL)
+		if (data->checked)
+			free(data->checked);
+
+		if ((data->checked = calloc(data->dl->entry_count, sizeof(qboolean))) == NULL)
 			return 1;
 
-		for (i=0, count=0; i<data->entry_count; i++)
+		for (i=0, count=0; i<data->dl->entry_count; i++)
 		{
-			if (cstc_cfg_load_check(data->entries[i].name, self->tokenized_input))
+			if (cstc_cfg_load_check(data->dl->entries[i].name, self->tokenized_input))
 			{
-				self->checked[i] = true;
+				data->checked[i] = true;
 				count++;
 			}
 		}
 
 		if (results)
 			*results = count;
-		self->initialized = 1;
+		data->initialized = true;
 		return 0;
 	}
 
 	if (result == NULL)
 		return 0;
 
-	for (i=0, count=-1; i<data->entry_count; i++)
+	for (i=0, count=-1; i<data->dl->entry_count; i++)
 	{
-		if (self->checked[i] == true)
+		if (data->checked[i] == true)
 			count++;
 		if (count == get_result)
 		{
-			*result = data->entries[i].name;
+			*result = data->dl->entries[i].name;
 			return 0;
 		}
 	}
@@ -894,6 +912,6 @@ void ConfigManager_CvarInit(void)
 
 	Cvar_ResetCurrentGroup();
 
-	CSTC_Add("cfg_load cfg_save", NULL, &cstc_cfg_load_get_results, &cstc_cfg_load_get_data, CSTC_MULTI_COMMAND | CSTC_EXECUTE);
+	CSTC_Add("cfg_load cfg_save", NULL, &cstc_cfg_load_get_results, &cstc_cfg_load_get_data, NULL, CSTC_MULTI_COMMAND | CSTC_EXECUTE | CSTC_HIGLIGHT_INPUT, "arrow up/down to navigate");
 }
 
