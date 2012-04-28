@@ -98,8 +98,8 @@ int Util_Extend_Filename(char *filename, char **ext)
 	maxextlen = 0;
 	for(s=ext;*s;s++)
 	{
-		if (strlen(s) > maxextlen)
-			maxextlen = strlen(s);
+		if (strlen(*s) > maxextlen)
+			maxextlen = strlen(*s);
 	}
 
 	if (filename[0] == '/')
