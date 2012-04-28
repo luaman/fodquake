@@ -87,7 +87,7 @@ qboolean CheckExtension (const char *extension)
 	const char *start;
 	char *where, *terminator;
 
-	if (!gl_extensions && !(gl_extensions = glGetString (GL_EXTENSIONS)))
+	if (!gl_extensions && !(gl_extensions = (char *)glGetString (GL_EXTENSIONS)))
 		return false;
 
 	if (!extension || *extension == 0 || strchr (extension, ' '))
@@ -186,15 +186,15 @@ void GL_CvarInit()
 
 void GL_Init (void)
 {
-	gl_vendor = glGetString (GL_VENDOR);
-	Com_Printf ("GL_VENDOR: %s\n", gl_vendor);
-	gl_renderer = glGetString (GL_RENDERER);
-	Com_Printf ("GL_RENDERER: %s\n", gl_renderer);
-	gl_version = glGetString (GL_VERSION);
-	Com_Printf ("GL_VERSION: %s\n", gl_version);
-	gl_extensions = glGetString (GL_EXTENSIONS);
+	gl_vendor = (char *)glGetString(GL_VENDOR);
+	Com_Printf("GL_VENDOR: %s\n", gl_vendor);
+	gl_renderer = (char *)glGetString(GL_RENDERER);
+	Com_Printf("GL_RENDERER: %s\n", gl_renderer);
+	gl_version = (char *)glGetString(GL_VERSION);
+	Com_Printf("GL_VERSION: %s\n", gl_version);
+	gl_extensions = (char *)glGetString(GL_EXTENSIONS);
 	if (COM_CheckParm("-gl_ext"))
-		Com_Printf ("GL_EXTENSIONS: %s\n", gl_extensions);
+		Com_Printf("GL_EXTENSIONS: %s\n", gl_extensions);
 
 	Cvar_ForceSet (&gl_strings, va("GL_VENDOR: %s\nGL_RENDERER: %s\n"
 		"GL_VERSION: %s\nGL_EXTENSIONS: %s", gl_vendor, gl_renderer, gl_version, gl_extensions));

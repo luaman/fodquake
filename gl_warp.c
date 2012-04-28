@@ -441,7 +441,6 @@ int R_SetSky(char *skyname)
 {
 	int i, error = 0;
 	byte *data[6] = {NULL, NULL, NULL, NULL, NULL, NULL};
-	extern int gl_max_size_default;
 	int imagewidth, imageheight;
 
 	
