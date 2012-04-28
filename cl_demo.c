@@ -578,6 +578,13 @@ readnext:
 		demotime = LittleFloat(demotime);
 	}
 
+	if (cls.realactualfirstdemotimestamp == -1)
+	{
+		cls.realactualfirstdemotimestamp = demotime;
+	}
+
+	cls.realactualdemotime = demotime - cls.realactualfirstdemotimestamp;
+
 	playback_recordtime = demotime;
 
 	// decide if it is time to grab the next message
@@ -1328,6 +1335,9 @@ void CL_Play_f (void)
 	cls.demotime = 0;
 	demostarttime = -1.0;
 
+	cls.realactualfirstdemotimestamp = -1;
+	cls.realactualdemotime = 0;
+
 	olddemotime = nextdemotime = 0;
 	cls.findtrack = true;
 	cls.lastto = cls.lasttype = 0;
@@ -1356,6 +1366,9 @@ void CL_TimeDemo_f (void)
 	td_starttime = 0;
 	td_startframe = cls.framecount;
 	td_lastframe = -1;		// get a new message this frame
+
+	cls.realactualfirstdemotimestamp = -1;
+	cls.realactualdemotime = 0;
 }
 
 //=============================================================================

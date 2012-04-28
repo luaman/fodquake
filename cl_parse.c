@@ -1443,7 +1443,7 @@ void CL_ProcessServerInfo (void)
 	if ((cl.standby || cl.countdown) && !(standby || countdown))
 	{
 		cl.gametime = 0;
-		cls.demotimeoffset = cls.demotime;
+		cls.demotimeoffset = cls.realactualdemotime;
 	}
 
 	cl.standby = standby;

@@ -223,6 +223,10 @@ typedef struct {
 	double		frametime;		// time since last frame, scaled by cl_demospeed
 	double          framedev;
 
+	/* Let's clear the air with unpolluted, although more, time variables */
+	double realactualfirstdemotimestamp; /* No, really. This is the first timestamp present in the demo file. -1 before the first frame has been parsed. */
+	double realactualdemotime; /* No, really. This is the time in the demo we have most recently read from. This is 0-based. 0 is the first frame of the demo. */
+
 	// network stuff
 	netchan_t	netchan;
 	int			qport;

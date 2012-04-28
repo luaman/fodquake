@@ -2104,7 +2104,7 @@ void CL_Frame (double time)
 
 	if (cls.demoplayback)
 	{
-		cl.gametime = cls.demotime - cls.demotimeoffset;
+		cl.gametime = cls.realactualdemotime - cls.demotimeoffset;
 	}
 
 	focuschanged = VID_FocusChanged();
