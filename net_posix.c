@@ -71,7 +71,7 @@ qboolean Sys_Net_ResolveName(struct SysNetData *netdata, const char *name, struc
 			if (addr->ai_family == AF_INET)
 			{
 				address->type = NA_IPV4;
-				*(unsigned int *)address->addr.ipv4.address = *(unsigned int *)&((struct sockaddr_in *)addr->ai_addr)->sin_addr.s_addr;
+				memcpy(address->addr.ipv4.address, &((struct sockaddr_in *)addr->ai_addr)->sin_addr.s_addr, 4);
 				ret = true;
 				break;
 			}
@@ -106,7 +106,7 @@ qboolean Sys_Net_ResolveAddress(struct SysNetData *netdata, const struct netaddr
 	{
 		addr.addr.sin_family = AF_INET;
 		addr.addr.sin_port = htons(address->addr.ipv4.port);
-		*(unsigned int *)&addr.addr.sin_addr.s_addr = *(unsigned int *)address->addr.ipv4.address;
+		memcpy(&addr.addr.sin_addr.s_addr, address->addr.ipv4.address, 4);
 		addrsize = sizeof(addr.addr);
 	}
 	else if (address->type == NA_IPV6)
@@ -224,7 +224,7 @@ int Sys_Net_Send(struct SysNetData *netdata, struct SysSocket *socket, const voi
 		{
 			addr.addr.sin_family = AF_INET;
 			addr.addr.sin_port = htons(address->addr.ipv4.port);
-			*(unsigned int *)&addr.addr.sin_addr.s_addr = *(unsigned int *)address->addr.ipv4.address;
+			memcpy(&addr.addr.sin_addr.s_addr, address->addr.ipv4.address, 4);
 			addrsize = sizeof(addr.addr);
 		}
 		else if (socket->domain == AF_INET6)
@@ -282,7 +282,7 @@ int Sys_Net_Receive(struct SysNetData *netdata, struct SysSocket *socket, void *
 
 				address->type = NA_IPV4;
 				address->addr.ipv4.port = htons(addr.addr.sin_port);
-				*(unsigned int *)address->addr.ipv4.address = *(unsigned int *)&addr.addr.sin_addr.s_addr;
+				memcpy(address->addr.ipv4.address, &addr.addr.sin_addr.s_addr, 4);
 			}
 			else if (socket->domain == AF_INET6)
 			{

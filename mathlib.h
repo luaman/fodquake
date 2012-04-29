@@ -86,15 +86,19 @@ do {										\
 
 #define VectorNormalizeFast(_v)		\
 do {								\
+	union \
+	{ \
+		float f; \
+		int i; \
+	} _mathlib_temp_union; \
 	float _mathlib_temp_float1, _mathlib_temp_float2; \
-	int _mathlib_temp_int1; \
 \
 	_mathlib_temp_float1 = DotProduct((_v), (_v));						\
 	if (_mathlib_temp_float1) {											\
 		_mathlib_temp_float2 = 0.5f * _mathlib_temp_float1;				\
-		_mathlib_temp_int1 = *((int *) &_mathlib_temp_float1);			\
-		_mathlib_temp_int1 = 0x5f375a86 - (_mathlib_temp_int1 >> 1);	\
-		_mathlib_temp_float1 = *((float *) &_mathlib_temp_int1);		\
+		_mathlib_temp_union.f = _mathlib_temp_float1; \
+		_mathlib_temp_union.i = 0x5f375a86 - (_mathlib_temp_union.i >> 1);	\
+		_mathlib_temp_float1 = _mathlib_temp_union.f;		\
 		_mathlib_temp_float1 = _mathlib_temp_float1 * (1.5f - _mathlib_temp_float2 * _mathlib_temp_float1 * _mathlib_temp_float1);	\
 		VectorScale((_v), _mathlib_temp_float1, (_v))					\
 	}																	\
