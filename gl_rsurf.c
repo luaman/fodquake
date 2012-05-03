@@ -1023,9 +1023,19 @@ static void DrawTextureChains (model_t *model)
 				}
 				else
 				{
-					s->polys->chain = lightmap_polys[s->lightmaptexturenum];
+					if ((lightmap_polys_used[s->lightmaptexturenum/32]&(1<<(s->lightmaptexturenum%32))))
+					{
+						s->polys->chain = lightmap_polys[s->lightmaptexturenum];
+					}
+					else
+					{
+						s->polys->chain = 0;
+					}
+
 					lightmap_polys[s->lightmaptexturenum] = s->polys;
-					lightmap_polys_used[s->lightmaptexturenum/32] |= (1<<(s->lightmaptexturenum%32));
+
+					if (!(lightmap_polys_used[s->lightmaptexturenum/32]&(1<<(s->lightmaptexturenum%32))))
+						lightmap_polys_used[s->lightmaptexturenum/32] |= (1<<(s->lightmaptexturenum%32));
 				}
 
 				glBegin(GL_POLYGON);
@@ -1065,17 +1075,41 @@ static void DrawTextureChains (model_t *model)
 				{
 					if (t->isLumaTexture)
 					{
-						s->polys->luma_chain = luma_polys[t->fb_texturenum];
+						if ((luma_polys_used[t->fb_texturenum/32]&((1<<(t->fb_texturenum%32)))))
+						{
+							s->polys->luma_chain = luma_polys[t->fb_texturenum];
+						}
+						else
+						{
+							s->polys->luma_chain = 0;
+						}
+
 						luma_polys[t->fb_texturenum] = s->polys;
-						luma_polys_used[t->fb_texturenum/32] |= (1<<(t->fb_texturenum%32));
-						drawlumas = true;
+
+						if (!(luma_polys_used[t->fb_texturenum/32]&((1<<(t->fb_texturenum%32)))))
+						{
+							luma_polys_used[t->fb_texturenum/32] |= (1<<(t->fb_texturenum%32));
+							drawlumas = true;
+						}
 					}
 					else
 					{
-						s->polys->fb_chain = fullbright_polys[t->fb_texturenum];
+						if ((fullbright_polys_used[t->fb_texturenum/32])&(1<<(t->fb_texturenum%32)))
+						{
+							s->polys->fb_chain = fullbright_polys[t->fb_texturenum];
+						}
+						else
+						{
+							s->polys->fb_chain = 0;
+						}
+
 						fullbright_polys[t->fb_texturenum] = s->polys;
-						fullbright_polys_used[t->fb_texturenum/32] |= (1<<(t->fb_texturenum%32));
-						drawfullbrights = true;
+
+						if (!(fullbright_polys_used[t->fb_texturenum/32])&(1<<(t->fb_texturenum%32)))
+						{
+							fullbright_polys_used[t->fb_texturenum/32] |= (1<<(t->fb_texturenum%32));
+							drawfullbrights = true;
+						}
 					}
 				}
 			}
