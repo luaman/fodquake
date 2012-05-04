@@ -398,7 +398,19 @@ qboolean Sys_Video_GetFullscreen(void *display)
 
 const char* Sys_Video_GetMode(void *display)
 {
-	return NULL;
+	struct display *d = (struct display*)display;
+	char buf[64];
+	const char *ret;
+	
+	snprintf(buf, sizeof(buf), "%u,%u", d->width, d->height);
+	
+	ret = strdup(buf);
+	if (ret == NULL)
+	{
+		return NULL;
+	}
+	
+	return ret;
 }
 
 int Sys_Video_FocusChanged(void *display)
