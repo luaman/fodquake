@@ -312,8 +312,6 @@ byte	r_avertexnormal_dots[SHADEDOT_QUANT][NUMVERTEXNORMALS] =
 
 byte	*shadedots = r_avertexnormal_dots[0];
 
-int		lastposenum;
-
 float	r_framelerp;
 float	r_modelalpha;
 float	r_lerpdistance;
@@ -326,7 +324,6 @@ static void GL_DrawAliasFrame_Lerp(aliashdr_t *paliashdr, int pose1, int pose2, 
 	trivertx_t *verts1, *verts2;
 
 	lerpfrac = r_framelerp;
-	lastposenum = (lerpfrac >= 0.5) ? pose2 : pose1;
 
 	verts2 = verts1 = paliashdr->posedata;
 
