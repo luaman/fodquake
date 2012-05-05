@@ -443,7 +443,7 @@ static void GL_DrawAliasFrame2(aliashdr_t *paliashdr, int pose1, int pose2, qboo
 			free(lightdest);
 			posedest = newposedest;
 			lightdest = newlightdest;
-			posedestsize = paliashdr->poseverts;
+			posedestsize = paliashdr->totalverts;
 		}
 		else
 		{
