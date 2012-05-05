@@ -226,11 +226,13 @@ typedef void (APIENTRY *lpSelTexFUNC) (GLenum);
 
 #ifdef __MORPHOS__
 #define glMultiTexCoord2f glMultiTexCoord2fARB
+#define glClientActiveTexture glClientActiveTextureARB
 #define glActiveTexture glActiveTextureARB
 #endif
 
 #ifdef _WIN32
 void glMultiTexCoord2f(GLenum target, GLfloat s, GLfloat t);
+void glClientActiveTexture(GLenum texture);
 void glActiveTexture(GLenum texture);
 #endif
 

@@ -54,11 +54,17 @@ struct display
 /* Some lame hacks to support OpenGL 1.3 */
 
 static void (APIENTRY *glMultiTexCoord2f_win)(GLenum target, GLfloat s, GLfloat t);
+static void (APIENTRY *glClientActiveTexture_win)(GLenum texture);
 static void (APIENTRY *glActiveTexture_win)(GLenum texture);
 
 void glMultiTexCoord2f(GLenum target, GLfloat s, GLfloat t)
 {
 	glMultiTexCoord2f_win(target, s, t);
+}
+
+void glClientActiveTexture(GLenum texture)
+{
+	glClientActiveTexture_win(texture);
 }
 
 void glActiveTexture(GLenum texture)
@@ -512,6 +518,7 @@ void *Sys_Video_Open(const char *mode, unsigned int width, unsigned int height, 
 						BOOL (APIENTRY *swapinterval)(int);
 
 						glMultiTexCoord2f_win = (void *)wglGetProcAddress("glMultiTexCoord2f");
+						glClientActiveTexture_win = (void *)wglGetProcAddress("glClientActiveTexture");
 						glActiveTexture_win = (void *)wglGetProcAddress("glActiveTexture");
 
 						if (glMultiTexCoord2f_win && glActiveTexture_win)
