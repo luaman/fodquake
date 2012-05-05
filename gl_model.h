@@ -298,11 +298,9 @@ typedef struct {
 	/* For array-based frame lerping */
 	trivertx_t *realposeverts; /* numverts * numposes */
 
-	/* Old data... Can hopefully go away when array-based drawing is done */
 	int					numposes;
-	int					poseverts;
-	trivertx_t				*posedata;	// numposes*poseverts trivert_t
-	int					*commands;	// gl command list with embedded s/t
+
+	/* Old data... Can hopefully go away when array-based drawing is done */
 	int					gl_texturenum[MAX_SKINS][4];
 	int					fb_texturenum[MAX_SKINS][4];
 	maliasframedesc_t	frames[1];	// variable sized

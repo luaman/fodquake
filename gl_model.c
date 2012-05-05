@@ -133,8 +133,10 @@ static void Mod_FreeAliasData(model_t *model)
 	alias = model->extradata;
 	if (alias)
 	{
-		free(alias->commands);
-		free(alias->posedata);
+		free(alias->collisionmap);
+		free(alias->indices);
+		free(alias->texcoords);
+		free(alias->realposeverts);
 		free(alias);
 		model->extradata = 0;
 	}
@@ -320,7 +322,7 @@ static model_t *Mod_FindName(const char *name)
 
 		submodel = atoi(p + 1);
 		if (!(submodel > 0 && submodel < mod->numsubmodels))
-			Sys_Error("Mod_FindName: Requested submodel out of range\n", submodel);
+			Sys_Error("Mod_FindName: Requested submodel %d out of range\n", submodel);
 
 		mod = &mod->submodels[submodel-1];
 	}
