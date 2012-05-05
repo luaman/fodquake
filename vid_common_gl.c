@@ -50,8 +50,6 @@ const char *gl_extensions;
 
 qboolean gl_mtexable = false;
 int gl_textureunits = 1;
-lpMTexFUNC qglMultiTexCoord2f = NULL;
-lpSelTexFUNC qglActiveTexture = NULL;
 void (*qglBindBufferARB)(GLenum, GLuint);
 void (*qglBufferDataARB)(GLenum, GLsizeiptrARB, const GLvoid *, GLenum);
 
@@ -114,25 +112,16 @@ void CheckMultiTextureExtensions (void)
 		return;
 	}
 
-	if (CheckExtension("GL_ARB_multitexture"))
-	{
+	glGetIntegerv(GL_MAX_TEXTURE_UNITS_ARB, &gl_textureunits);
 
-		qglMultiTexCoord2f = (void *) qglGetProcAddress("glMultiTexCoord2fARB");
-		qglActiveTexture = (void *) qglGetProcAddress("glActiveTextureARB");
-		if (qglMultiTexCoord2f && qglActiveTexture)
-		{
-			glGetIntegerv(GL_MAX_TEXTURE_UNITS_ARB, &gl_textureunits);
+	if (COM_CheckParm("-maxtmu2")/* || !strcmp(gl_vendor, "ATI Technologies Inc.")*/)
+		gl_textureunits = min(gl_textureunits, 2);
 
-			if (COM_CheckParm("-maxtmu2")/* || !strcmp(gl_vendor, "ATI Technologies Inc.")*/)
-				gl_textureunits = min(gl_textureunits, 2);
+	gl_textureunits = min(gl_textureunits, 4);
+	gl_mtexable = true;
 
-			gl_textureunits = min(gl_textureunits, 4);
-			gl_mtexable = true;
-
-			if (gl_textureunits < 2)
-				gl_mtexable = false;
-		}
-	}
+	if (gl_textureunits < 2)
+		gl_mtexable = false;
 
 	if (!gl_mtexable)
 		Com_Printf("OpenGL multitexturing extensions not available.\n");

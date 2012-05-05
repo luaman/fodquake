@@ -410,25 +410,8 @@ qboolean Sys_Video_HWGammaSupported(void *display)
 	return d->gammaenabled;
 }
 
-/* gl extensions */
-
-void myglMultiTexCoord2fARB(GLenum unit, GLfloat s, GLfloat t)
-{
-	GLMultiTexCoord2fARB(__tglContext, unit, s, t);
-}
-
-void myglActiveTextureARB(GLenum unit)
-{
-	GLActiveTextureARB(__tglContext, unit);
-}
-
 void *tglGetProcAddress(const char *s)
 {
-	if (strcmp(s, "glMultiTexCoord2fARB") == 0)
-		return (void *)myglMultiTexCoord2fARB;
-	else if (strcmp(s, "glActiveTextureARB") == 0)
-		return (void *)myglActiveTextureARB;
-
 	return 0;
 }
 

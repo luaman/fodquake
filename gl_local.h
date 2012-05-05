@@ -224,8 +224,15 @@ void R_InitOtherTextures(void);
 typedef void (APIENTRY *lpMTexFUNC) (GLenum, GLfloat, GLfloat);
 typedef void (APIENTRY *lpSelTexFUNC) (GLenum);
 
-extern lpMTexFUNC qglMultiTexCoord2f;
-extern lpSelTexFUNC qglActiveTexture;
+#ifdef __MORPHOS__
+#define glMultiTexCoord2f glMultiTexCoord2fARB
+#define glActiveTexture glActiveTextureARB
+#endif
+
+#ifdef _WIN32
+void glMultiTexCoord2f(GLenum target, GLfloat s, GLfloat t);
+void glActiveTexture(GLenum texture);
+#endif
 
 #ifndef __MACOSX__
 typedef ptrdiff_t GLsizeiptrARB;
