@@ -141,6 +141,46 @@ void* Sys_Video_Open(const char *mode, unsigned int width, unsigned int height, 
 	{
 		memset(d, 0, sizeof(struct display));
 		
+		if (mode)
+		{
+			unsigned int flags;
+			CFArrayRef modes;
+			
+			sscanf(mode, "%u,%u,%u", &width, &height, &flags);
+			
+			modes = CGDisplayCopyAllDisplayModes(CGMainDisplayID(), NULL);
+			if (modes)
+			{
+				unsigned int num_modes = CFArrayGetCount(modes);
+				unsigned int i;
+				
+				for (i = 0; i < num_modes; i++)
+				{
+					CGDisplayModeRef mode = (CGDisplayModeRef)CFArrayGetValueAtIndex(modes, i);
+					
+					if (width == CGDisplayModeGetWidth(mode) && height == CGDisplayModeGetHeight(mode) && flags == CGDisplayModeGetIOFlags(mode))
+					{
+						CGDisplayConfigRef ConfigRef;
+						CGError err;
+						
+						err = CGBeginDisplayConfiguration(&ConfigRef);
+						if (err == kCGErrorSuccess)
+						{
+							err = CGConfigureDisplayWithDisplayMode(ConfigRef, CGMainDisplayID(), mode, NULL);
+							if (err == kCGErrorSuccess)
+							{
+								err = CGCompleteDisplayConfiguration(ConfigRef, kCGConfigureForAppOnly);
+							}
+						}
+						
+						break;
+					}
+				}
+				
+				CFRelease(modes);
+			}
+		}
+		
 		if (fullscreen)
 		{
 			d->window = [[NSMyWindow alloc] initWithContentRect:[[NSScreen mainScreen] frame] styleMask:NSBorderlessWindowMask backing:NSBackingStoreBuffered defer:YES];

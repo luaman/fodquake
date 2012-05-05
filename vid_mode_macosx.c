@@ -26,8 +26,6 @@ const char * const *Sys_Video_GetModeList(void)
 {
 	char buf[64];
 	const char **ret;
-	unsigned int width;
-	unsigned int height;
 	unsigned int num_modes;
 	unsigned int i;
 	
@@ -47,12 +45,17 @@ const char * const *Sys_Video_GetModeList(void)
 	
 	for (i = 0; i < num_modes; i++)
 	{
+		unsigned int width;
+		unsigned int height;
+		unsigned int flags;
+		
 		CGDisplayModeRef mode = (CGDisplayModeRef)CFArrayGetValueAtIndex(modes, i);
 		
 		width = CGDisplayModeGetWidth(mode);
 		height = CGDisplayModeGetHeight(mode);
+		flags = CGDisplayModeGetIOFlags(mode);
 		
-		snprintf(buf, sizeof(buf), "%u,%u", width, height);
+		snprintf(buf, sizeof(buf), "%u,%u,%u", width, height, flags);
 		
 		ret[i] = strdup(buf);
 		if (ret[i] == NULL)
@@ -95,13 +98,14 @@ const char *Sys_Video_GetModeDescription(const char *mode)
 	const char *ret;
 	unsigned int width;
 	unsigned int height;
+	unsigned int flags;
 	
-	if (sscanf(mode, "%u,%u", &width, &height) != 2)
+	if (sscanf(mode, "%u,%u,%u", &width, &height, &flags) != 3)
 	{
 		return NULL;
 	}
 	
-	snprintf(buf, sizeof(buf), "%ux%u", width, height);
+	snprintf(buf, sizeof(buf), "%ux%u%s", width, height, (flags & kDisplayModeStretchedFlag) ? " (stretched)" : "");
 	
 	ret = strdup(buf);
 	if (ret == NULL)
