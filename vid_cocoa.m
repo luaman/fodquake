@@ -163,13 +163,19 @@ void* Sys_Video_Open(const char *mode, unsigned int width, unsigned int height, 
 						CGDisplayConfigRef ConfigRef;
 						CGError err;
 						
-						err = CGBeginDisplayConfiguration(&ConfigRef);
+						// hmz.. capturuing shall be released at soem point..
+						// this makes it difficult across all those different modes..
+						err = CGDisplayCapture(CGMainDisplayID());
 						if (err == kCGErrorSuccess)
 						{
-							err = CGConfigureDisplayWithDisplayMode(ConfigRef, CGMainDisplayID(), mode, NULL);
+							err = CGBeginDisplayConfiguration(&ConfigRef);
 							if (err == kCGErrorSuccess)
 							{
-								err = CGCompleteDisplayConfiguration(ConfigRef, kCGConfigureForAppOnly);
+								err = CGConfigureDisplayWithDisplayMode(ConfigRef, CGMainDisplayID(), mode, NULL);
+								if (err == kCGErrorSuccess)
+								{
+									err = CGCompleteDisplayConfiguration(ConfigRef, kCGConfigureForAppOnly);
+								}
 							}
 						}
 						
@@ -202,7 +208,14 @@ void* Sys_Video_Open(const char *mode, unsigned int width, unsigned int height, 
 				
 				d->fullscreen = true;
 				
-				[d->window setLevel:NSMainMenuWindowLevel + 1];
+				if (mode)
+				{
+					[d->window setLevel:CGShieldingWindowLevel()];
+				}
+				else
+				{
+					[d->window setLevel:NSMainMenuWindowLevel + 1];
+				}
 			}
 			else
 			{
@@ -462,7 +475,7 @@ const char* Sys_Video_GetMode(void *display)
 	char buf[64];
 	const char *ret;
 	
-	snprintf(buf, sizeof(buf), "%u,%u", d->width, d->height);
+	snprintf(buf, sizeof(buf), "%u,%u,%u", d->width, d->height, 0);
 	
 	ret = strdup(buf);
 	if (ret == NULL)
