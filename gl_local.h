@@ -232,6 +232,7 @@ typedef void (APIENTRY *lpSelTexFUNC) (GLenum);
 
 #ifdef _WIN32
 void glMultiTexCoord2f(GLenum target, GLfloat s, GLfloat t);
+void glDrawRangeElements(GLenum mode, GLuint start, GLuint end, GLsizei count, GLenum type, const GLvoid *indices);
 void glClientActiveTexture(GLenum texture);
 void glActiveTexture(GLenum texture);
 #endif
