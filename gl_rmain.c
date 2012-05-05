@@ -18,6 +18,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */
 
+#include <stdlib.h>
 #include <string.h>
 #include <math.h>
 
@@ -316,139 +317,191 @@ float	r_framelerp;
 float	r_modelalpha;
 float	r_lerpdistance;
 
-static void GL_DrawAliasFrame_Lerp(aliashdr_t *paliashdr, int pose1, int pose2, qboolean mtex)
+static void InterpolatePoses(float *posedest, unsigned int *lightdest, trivertx_t *src1, trivertx_t *src2, float lerpfrac, unsigned int count, unsigned char modelalpha)
 {
-	int *order, count;
-	vec3_t interpolated_verts;
-	float l, lerpfrac;
-	trivertx_t *verts1, *verts2;
-
-	lerpfrac = r_framelerp;
-
-	verts2 = verts1 = paliashdr->posedata;
-
-	verts1 += pose1 * paliashdr->poseverts;
-	verts2 += pose2 * paliashdr->poseverts;
-
-	order = paliashdr->commands;
-
-	GL_SetAlphaTestBlend(0, r_modelalpha<1);
-
-	while ((count = *order++))
+	unsigned int i;
+	float l;
+	unsigned char lc;
+	union
 	{
-		if (count < 0)
-		{
-			count = -count;
-			glBegin(GL_TRIANGLE_FAN);
-		}
-		else if (count > 0)
-		{
-			glBegin(GL_TRIANGLE_STRIP);
-		}
+		unsigned int ui;
+		unsigned char uc[4];
+	} lightdestunion;
 
-		do
-		{
-			// texture coordinates come from the draw list
-			if (mtex)
-			{
-				glMultiTexCoord2f (GL_TEXTURE0_ARB, ((float *) order)[0], ((float *) order)[1]);
-				glMultiTexCoord2f (GL_TEXTURE1_ARB, ((float *) order)[0], ((float *) order)[1]);
-			}
-			else
-			{
-				glTexCoord2f (((float *) order)[0], ((float *) order)[1]);
-			}
+	for(i=0;i<count;i++)
+	{
+		l = FloatInterpolate(shadedots[src1[i].lightnormalindex], lerpfrac, shadedots[src2[i].lightnormalindex]) / 127.0;
+		l = (l * shadelight + ambientlight);
+		l = min(l, 255);
+		l = max(l, 0);
+		lc = l;
 
-			order += 2;
+		lightdestunion.uc[0] = lc;
+		lightdestunion.uc[1] = lc;
+		lightdestunion.uc[2] = lc;
+		lightdestunion.uc[3] = modelalpha;
+		lightdest[i] = lightdestunion.ui;
 
-			if ((currententity->flags & RF_LIMITLERP))
-			{
-				lerpfrac = VectorL2Compare(verts1->v, verts2->v, r_lerpdistance) ? r_framelerp : 1;
-			}
-
-
-			l = FloatInterpolate(shadedots[verts1->lightnormalindex], lerpfrac, shadedots[verts2->lightnormalindex]) / 127.0;
-			l = (l * shadelight + ambientlight) / 256.0;
-			l = min(l , 1);
-			glColor4f (l, l, l, r_modelalpha);
-
-			VectorInterpolate(verts1->v, lerpfrac, verts2->v, interpolated_verts);
-			glVertex3fv(interpolated_verts);
-
-
-			verts1++;
-			verts2++;
-		} while (--count);
-
-		glEnd();
+		VectorInterpolate(src1[i].v, lerpfrac, src2[i].v, &posedest[i*3]);
 	}
 }
 
-static void GL_DrawAliasFrame_NoLerp(aliashdr_t *paliashdr, int pose, qboolean mtex)
+static void InterpolatePoses_LimitLerp(float *posedest, unsigned int *lightdest, trivertx_t *src1, trivertx_t *src2, float lerpfrac, unsigned int count, unsigned char modelalpha)
 {
-	int *order, count;
+	unsigned int i;
 	float l;
-	trivertx_t *verts;
-	vec3_t v3;
+	unsigned char lc;
+	union
+	{
+		unsigned int ui;
+		unsigned char uc[4];
+	} lightdestunion;
 
-	verts = paliashdr->posedata;
+	for(i=0;i<count;i++)
+	{
+		lerpfrac = VectorL2Compare(src1[i].v, src2[i].v, r_lerpdistance) ? r_framelerp : 1;
 
-	verts += pose * paliashdr->poseverts;
+		l = FloatInterpolate(shadedots[src1[i].lightnormalindex], lerpfrac, shadedots[src2[i].lightnormalindex]) / 127.0;
+		l = (l * shadelight + ambientlight);
+		l = min(l, 255);
+		l = max(l, 0);
+		lc = l;
+		lightdestunion.uc[0] = lc;
+		lightdestunion.uc[1] = lc;
+		lightdestunion.uc[2] = lc;
+		lightdestunion.uc[3] = modelalpha;
+		lightdest[i] = lightdestunion.ui;
 
-	order = paliashdr->commands;
+		VectorInterpolate(src1[i].v, lerpfrac, src2[i].v, &posedest[i*3]);
+	}
+}
+
+static void CopyPoses(float *posedest, unsigned int *lightdest, trivertx_t *src, unsigned int count, unsigned char modelalpha)
+{
+	unsigned int i;
+	float l;
+	unsigned char lc;
+	union
+	{
+		unsigned int ui;
+		unsigned char uc[4];
+	} lightdestunion;
+
+	for(i=0;i<count;i++)
+	{
+		l = shadedots[src[i].lightnormalindex] / 127.0;
+		l = (l * shadelight + ambientlight);
+		l = min(l, 255);
+		l = max(l, 0);
+		lc = l;
+
+		lightdestunion.uc[0] = lc;
+		lightdestunion.uc[1] = lc;
+		lightdestunion.uc[2] = lc;
+		lightdestunion.uc[3] = modelalpha;
+		lightdest[i] = lightdestunion.ui;
+
+		VectorCopy(src[i].v, &posedest[i*3]);
+	}
+}
+
+static void AddCollisions(float *posedest, unsigned int *lightdest, unsigned int numverts, unsigned int collisions, unsigned short *collisionmap)
+{
+	unsigned int i;
+
+	for(i=0;i<collisions;i++)
+	{
+		posedest[(numverts+i)*3+0] = posedest[collisionmap[i]*3+0];
+		posedest[(numverts+i)*3+1] = posedest[collisionmap[i]*3+1];
+		posedest[(numverts+i)*3+2] = posedest[collisionmap[i]*3+2];
+
+		lightdest[numverts+i] = posedest[collisionmap[i]];
+	}
+}
+
+static float *posedest;
+static unsigned int *lightdest;
+static unsigned int posedestsize;
+
+static void GL_DrawAliasFrame2(aliashdr_t *paliashdr, int pose1, int pose2, qboolean mtex, qboolean dolerp)
+{
+	float lerpfrac;
+	trivertx_t *verts1, *verts2;
 
 	GL_SetAlphaTestBlend(0, r_modelalpha<1);
 
-	while ((count = *order++))
+	if (paliashdr->totalverts > posedestsize)
 	{
-		if (count < 0)
+		float *newposedest;
+		unsigned int *newlightdest;
+
+		newposedest = malloc(paliashdr->totalverts * sizeof(*newposedest) * 3);
+		newlightdest = malloc(paliashdr->totalverts * sizeof(*newlightdest));
+		if (newposedest && newlightdest)
 		{
-			count = -count;
-			glBegin(GL_TRIANGLE_FAN);
+			free(posedest);
+			free(lightdest);
+			posedest = newposedest;
+			lightdest = newlightdest;
+			posedestsize = paliashdr->poseverts;
 		}
-		else if (count > 0)
+		else
 		{
-			glBegin(GL_TRIANGLE_STRIP);
+			free(newposedest);
+			free(newlightdest);
+			return;
 		}
-
-		do
-		{
-			// texture coordinates come from the draw list
-			if (mtex)
-			{
-				glMultiTexCoord2f (GL_TEXTURE0_ARB, ((float *) order)[0], ((float *) order)[1]);
-				glMultiTexCoord2f (GL_TEXTURE1_ARB, ((float *) order)[0], ((float *) order)[1]);
-			}
-			else
-			{
-				glTexCoord2f (((float *) order)[0], ((float *) order)[1]);
-			}
-
-			order += 2;
-
-			l = (float)shadedots[verts->lightnormalindex] / 127.0;
-			l = (l * shadelight + ambientlight) / 256.0;
-			l = min(l , 1);
-			glColor4f (l, l, l, r_modelalpha);
-
-			v3[0] = verts->v[0];
-			v3[1] = verts->v[1];
-			v3[2] = verts->v[2];
-			glVertex3fv(v3);
-
-			verts++;
-		} while (--count);
-
-		glEnd();
 	}
+
+	verts2 = verts1 = paliashdr->realposeverts;
+
+	verts1 += pose1 * paliashdr->numverts;
+	verts2 += pose2 * paliashdr->numverts;
+
+	if (dolerp)
+	{
+		lerpfrac = r_framelerp;
+
+		if ((currententity->flags & RF_LIMITLERP))
+			InterpolatePoses_LimitLerp(posedest, lightdest, verts1, verts2, lerpfrac, paliashdr->numverts, bound(0, r_modelalpha*255, 255));
+		else
+			InterpolatePoses(posedest, lightdest, verts1, verts2, lerpfrac, paliashdr->numverts, bound(0, r_modelalpha*255, 255));
+	}
+	else
+	{
+		CopyPoses(posedest, lightdest, verts1, paliashdr->numverts, bound(0, r_modelalpha*255, 255));
+	}
+
+	AddCollisions(posedest, lightdest, paliashdr->numverts, paliashdr->collisions, paliashdr->collisionmap);
+
+	if (mtex)
+		GL_SetArrays(FQ_GL_VERTEX_ARRAY | FQ_GL_COLOR_ARRAY | FQ_GL_TEXTURE_COORD_ARRAY | FQ_GL_TEXTURE_COORD_ARRAY_1);
+	else
+		GL_SetArrays(FQ_GL_VERTEX_ARRAY | FQ_GL_COLOR_ARRAY | FQ_GL_TEXTURE_COORD_ARRAY);
+
+	glVertexPointer(3, GL_FLOAT, 0, posedest);
+	glColorPointer(4, GL_UNSIGNED_BYTE, 0, lightdest);
+
+	if (mtex)
+	{
+		glClientActiveTexture(GL_TEXTURE1_ARB);
+		glTexCoordPointer(2, GL_FLOAT, 0, paliashdr->texcoords);
+	}
+
+	glClientActiveTexture(GL_TEXTURE0_ARB);
+	glTexCoordPointer(2, GL_FLOAT, 0, paliashdr->texcoords);
+
+	glDrawRangeElements(GL_TRIANGLES, paliashdr->indexmin, paliashdr->indexmax, paliashdr->numtris*3, GL_UNSIGNED_SHORT, paliashdr->indices);
 }
 
 static void GL_DrawAliasFrame(aliashdr_t *paliashdr, int pose1, int pose2, qboolean mtex)
 {
-	if (pose1 == pose2)
-		GL_DrawAliasFrame_NoLerp(paliashdr, pose1, mtex);
+	if (pose1 == pose2 || r_framelerp == 0)
+		GL_DrawAliasFrame2(paliashdr, pose1, pose1, mtex, false);
+	else if (r_framelerp == 1)
+		GL_DrawAliasFrame2(paliashdr, pose2, pose2, mtex, false);
 	else
-		GL_DrawAliasFrame_Lerp(paliashdr, pose1, pose2, mtex);
+		GL_DrawAliasFrame2(paliashdr, pose1, pose2, mtex, true);
 }
 
 static void R_SetupAliasFrame (maliasframedesc_t *oldframe, maliasframedesc_t *frame, aliashdr_t *paliashdr, qboolean mtex)

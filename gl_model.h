@@ -280,10 +280,25 @@ typedef struct {
 	int			numverts;
 	int			numtris;
 	int			numframes;
-	synctype_t	synctype;
+	synctype_t	synctype; /* Unused */
 	int			flags;
 	float		size;
 
+	/* Vertex array stuff */
+	unsigned short totalverts;
+	unsigned int collisions;
+	unsigned short *collisionmap;
+
+	unsigned short *indices;
+	unsigned short indexmin;
+	unsigned short indexmax;
+
+	float *texcoords;
+
+	/* For array-based frame lerping */
+	trivertx_t *realposeverts; /* numverts * numposes */
+
+	/* Old data... Can hopefully go away when array-based drawing is done */
 	int					numposes;
 	int					poseverts;
 	trivertx_t				*posedata;	// numposes*poseverts trivert_t
