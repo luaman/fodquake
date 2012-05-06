@@ -21,13 +21,18 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include <proto/exec.h>
 #include <proto/dos.h>
+#ifndef AROS
+#include <proto/random.h>
+#endif
 
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include <sys/time.h>
 #include <time.h>
+#include <unistd.h>
 
 #include <signal.h>
 
@@ -115,6 +120,11 @@ void Sys_Printf(char *fmt, ...)
 char *Sys_ConsoleInput()
 {
 	return 0;
+}
+
+void Sys_MicroSleep(unsigned int microseconds)
+{
+	usleep(microseconds);
 }
 
 static int secbase;
@@ -266,16 +276,23 @@ void Sys_SleepTime(unsigned int usec)
 	}
 }
 
-void Sys_mkdir(char *path)
+#ifdef AROS
+#warning Fix this.
+void Sys_RandomBytes(void *target, unsigned int numbytes)
 {
-	BPTR lock;
-
-	lock = CreateDir(path);
-	if (lock)
-	{
-		UnLock(lock);
-	}
+	Sys_Error("Sys_RandomBytes() is not implemented on AROS");
 }
+#else
+void Sys_RandomBytes(void *target, unsigned int numbytes)
+{
+	unsigned char *t;
+
+	t = target;
+
+	while(numbytes--)
+		*t++ = RandomByte();
+}
+#endif
 
 int main(int argc, char **argv)
 {
@@ -303,3 +320,57 @@ int main(int argc, char **argv)
 
 	return 0;
 }
+
+static const char *Sys_ResolvePath(const char *path)
+{
+	BPTR lock;
+	char buf[1024];
+	char *ret;
+
+	ret = 0;
+
+	lock = Lock(path, ACCESS_READ);
+	if (lock)
+	{
+		if (NameFromLock(lock, buf, sizeof(buf)))
+		{
+			ret = AllocVec(strlen(buf) + 1, MEMF_ANY);
+			if (ret)
+			{
+				strcpy(ret, buf);
+			}
+		}
+
+		UnLock(lock);
+	}
+
+	return ret;
+}
+
+const char *Sys_GetRODataPath(void)
+{
+	return Sys_ResolvePath("PROGDIR:");
+}
+
+const char *Sys_GetUserDataPath(void)
+{
+	return 0;
+}
+
+const char *Sys_GetLegacyDataPath(void)
+{
+	char buf[1024];
+
+	if (GetCurrentDirName(buf, sizeof(buf)))
+	{
+		return Sys_ResolvePath(buf);
+	}
+
+	return 0;
+}
+
+void Sys_FreePathString(const char *p)
+{
+	FreeVec((void *)p);
+}
+

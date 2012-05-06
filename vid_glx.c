@@ -19,10 +19,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */
 
-#ifndef __CYGWIN__
-#define USE_VMODE 1
-#endif
-
 #include <stdlib.h>
 #include <string.h>
 
@@ -43,24 +39,31 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <X11/keysym.h>
 #include <X11/cursorfont.h>
 
-#if USE_VMODE
 #include <X11/extensions/xf86vmode.h>
-#endif
 
 #include "in_x11.h"
 #include "vid_mode_x11.h"
+#include "vid_mode_xf86vm.h"
+#include "vid_mode_xrandr.h"
+#include "sys_lib.h"
 
 struct display
 {
 	void *inputdata;
 
+	int xrandr_active;
+	struct xrandrmode oldxrandrmode;
+
+	int xf86vm_active;
+	struct xf86vmmode oldxf86vmmode;
 	unsigned int width, height;
 
-#ifdef USE_VMODE
-	XF86VidModeModeInfo origvidmode;
-	qboolean vidmode_active;
+	struct SysLib *xf86vmlib;
+	Bool (*XF86VidModeGetGammaRamp)(Display *display, int screen, int size, unsigned short *red, unsigned short *green, unsigned short *blue);
+	Bool (*XF86VidModeGetGammaRampSize)(Display *display, int screen, int *size);
+	Bool (*XF86VidModeSetGammaRamp)(Display *display, int screen, int size, unsigned short *red, unsigned short *green, unsigned short *blue);
 	qboolean customgamma;
-#endif
+
 	Display *x_disp;
 	Window x_win;
 	GLXContext ctx;
@@ -171,46 +174,49 @@ void InitSig(void) {
 
 static void InitHWGamma(struct display *d)
 {
-#if USE_VMODE
 	int xf86vm_gammaramp_size;
+
+	if (!d->xf86vmlib)
+		return;
 
 	if (!d->fullscreen)
 		return;
 
-	XF86VidModeGetGammaRampSize(d->x_disp, d->scrnum, &xf86vm_gammaramp_size);
+	d->XF86VidModeGetGammaRampSize(d->x_disp, d->scrnum, &xf86vm_gammaramp_size);
 	
 	d->vid_gammaworks = (xf86vm_gammaramp_size == 256);
 
 	if (d->vid_gammaworks)
 	{
-		XF86VidModeGetGammaRamp(d->x_disp, d->scrnum, xf86vm_gammaramp_size, d->systemgammaramp[0], d->systemgammaramp[1], d->systemgammaramp[2]);
+		d->XF86VidModeGetGammaRamp(d->x_disp, d->scrnum, xf86vm_gammaramp_size, d->systemgammaramp[0], d->systemgammaramp[1], d->systemgammaramp[2]);
 	}
-#endif
 }
 
 void Sys_Video_SetGamma(void *display, unsigned short *ramps)
 {
-#if USE_VMODE
 	struct display *d = display;
+
+	if (!d->xf86vmlib)
+		return;
 
 	if (d->vid_gammaworks && d->hasfocus)
 	{
 		d->currentgammaramp = ramps;
-		XF86VidModeSetGammaRamp(d->x_disp, d->scrnum, 256, ramps, ramps + 256, ramps + 512);
+		d->XF86VidModeSetGammaRamp(d->x_disp, d->scrnum, 256, ramps, ramps + 256, ramps + 512);
 		d->customgamma = true;
 	}
-#endif
 }
 
 static void RestoreHWGamma(struct display *d)
 {
-#if USE_VMODE
+	if (!d->xf86vmlib)
+		return;
+
 	if (d->vid_gammaworks && d->customgamma)
 	{
 		d->customgamma = false;
-		XF86VidModeSetGammaRamp(d->x_disp, d->scrnum, 256, d->systemgammaramp[0], d->systemgammaramp[1], d->systemgammaramp[2]);
+		d->XF86VidModeSetGammaRamp(d->x_disp, d->scrnum, 256, d->systemgammaramp[0], d->systemgammaramp[1], d->systemgammaramp[2]);
 	}
-#endif
 }
 
 /************************************* GL *************************************/
@@ -271,10 +277,13 @@ void Sys_Video_Close(void *display)
 	glXDestroyContext(d->x_disp, d->ctx);
 	XDestroyWindow(d->x_disp, d->x_win);
 
-#ifdef USE_VMODE
-	if (d->vidmode_active)
-		XF86VidModeSwitchToMode(d->x_disp, d->scrnum, &d->origvidmode);
-#endif
+	if (d->xrandr_active)
+		xrandr_switch(d->x_disp, &d->oldxrandrmode, 0, 0, 0);
+	else if (d->xf86vm_active)
+		xf86vm_switch(d->x_disp, &d->oldxf86vmmode, 0, 0, 0);
+
+	if (d->xf86vmlib)
+		Sys_Lib_Close(d->xf86vmlib);
 
 	XCloseDisplay(d->x_disp);
 
@@ -315,6 +324,18 @@ void Sys_Video_CvarInit()
 	X11_Input_CvarInit();
 }
 
+int Sys_Video_Init()
+{
+	vidmode_init();
+
+	return 1;
+}
+
+void Sys_Video_Shutdown()
+{
+	vidmode_shutdown();
+}
+
 void *Sys_Video_Open(const char *mode, unsigned int width, unsigned int height, int fullscreen, unsigned char *palette)
 {
 	struct display *d;
@@ -329,11 +350,12 @@ void *Sys_Video_Open(const char *mode, unsigned int width, unsigned int height, 
 		GLX_DEPTH_SIZE, 1,
 		None
 	};
-	int i;
 	XSetWindowAttributes attr;
 	unsigned long mask;
 	Window root;
 	XVisualInfo *visinfo;
+	struct xrandrmode xrandrmode;
+	struct xf86vmmode xf86vmmode;
 
 	d = malloc(sizeof(*d));
 	if (d)
@@ -350,80 +372,74 @@ void *Sys_Video_Open(const char *mode, unsigned int width, unsigned int height, 
 			{
 				root = RootWindow(d->x_disp, d->scrnum);
 
-#ifdef USE_VMODE
 				if (fullscreen)
 				{
-					int version, revision;
-					XF86VidModeModeInfo **vidmodes;
-					int num_vidmodes;
-					int wanted_mode;
-					struct x11mode x11mode;
-
-					if (*mode == 0 || modeline_to_x11mode(mode, &x11mode))
+					if (*mode == 0)
 					{
-						if (XF86VidModeQueryVersion(d->x_disp, &version, &revision))
+						Window rootwindow;
+						XWindowAttributes attributes;
+
+						rootwindow = RootWindow(d->x_disp, d->scrnum);
+
+						if (XGetWindowAttributes(d->x_disp, rootwindow, &attributes))
 						{
-							XF86VidModeGetModeLine(d->x_disp, d->scrnum, &d->origvidmode.dotclock, (XF86VidModeModeLine *)&d->origvidmode.hdisplay);
+							width = attributes.width;
+							height = attributes.height;
 
-							XF86VidModeGetAllModeLines(d->x_disp, d->scrnum, &num_vidmodes, &vidmodes);
+							d->used_mode[0] = 0;
 
-							if (*mode)
+							if (!xrandr_getcurrentmode(d->x_disp, 0, d->used_mode, sizeof(d->used_mode)))
 							{
-								for (i = 0; i < num_vidmodes; i++)
-								{
-									if (vidmodes[i]->dotclock == x11mode.dotclock
-									 && vidmodes[i]->hdisplay == x11mode.hdisplay
-									 && vidmodes[i]->hsyncstart == x11mode.hsyncstart
-									 && vidmodes[i]->hsyncend == x11mode.hsyncend
-									 && vidmodes[i]->htotal == x11mode.htotal
-									 && vidmodes[i]->hskew == x11mode.hskew
-									 && vidmodes[i]->vdisplay == x11mode.vdisplay
-									 && vidmodes[i]->vsyncstart == x11mode.vsyncstart
-									 && vidmodes[i]->vsyncend == x11mode.vsyncend
-									 && vidmodes[i]->vtotal == x11mode.vtotal
-									 && vidmodes[i]->flags == x11mode.flags)
-									{
-										wanted_mode = i;
-										break;
-									}
-								}
+								xf86vm_getcurrentmode(d->x_disp, 0, d->used_mode, sizeof(d->used_mode));
 							}
-							else
-								i = num_vidmodes;
-
-							if (i != num_vidmodes)
-							{
-								XF86VidModeSwitchToMode(d->x_disp, d->scrnum, vidmodes[wanted_mode]);
-								d->vidmode_active = true;
-								XF86VidModeSetViewPort(d->x_disp, d->scrnum, 0, 0);
-
-								width = vidmodes[wanted_mode]->hdisplay;
-								height = vidmodes[wanted_mode]->vdisplay;
-
-								snprintf(d->used_mode, sizeof(d->used_mode), "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d", vidmodes[wanted_mode]->dotclock, vidmodes[wanted_mode]->hdisplay, vidmodes[wanted_mode]->hsyncstart, vidmodes[wanted_mode]->hsyncend, vidmodes[wanted_mode]->htotal, vidmodes[wanted_mode]->hskew, vidmodes[wanted_mode]->vdisplay, vidmodes[wanted_mode]->vsyncstart, vidmodes[wanted_mode]->vsyncend, vidmodes[wanted_mode]->vtotal, vidmodes[wanted_mode]->flags);
-							}
-							else
-							{
-								width = d->origvidmode.hdisplay;
-								height = d->origvidmode.vdisplay;
-
-								snprintf(d->used_mode, sizeof(d->used_mode), "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d", d->origvidmode.dotclock, d->origvidmode.hdisplay, d->origvidmode.hsyncstart, d->origvidmode.hsyncend, d->origvidmode.htotal, d->origvidmode.hskew, d->origvidmode.vdisplay, d->origvidmode.vsyncstart, d->origvidmode.vsyncend, d->origvidmode.vtotal, d->origvidmode.flags);
-							}
-
-							XFree(vidmodes);
 						}
 						else
 						{
-							Com_Printf("Unable to use the XF86 vidmode extension.\n");
 							fullscreen = 0;
 						}
 					}
-					else
-						fullscreen = 0;
+					else if (modeline_to_xrandrmode(mode, &xrandrmode))
+					{
+						if (xrandr_switch(d->x_disp, &xrandrmode, &d->oldxrandrmode, d->used_mode, sizeof(d->used_mode)))
+						{
+							d->xrandr_active = 1;
+							width = xrandrmode.width;
+							height = xrandrmode.height;
+						}
+						else
+							fullscreen = 0;
+					}
+					else if (modeline_to_xf86vmmode(mode, &xf86vmmode))
+					{
+						if (xf86vm_switch(d->x_disp, &xf86vmmode, &d->oldxf86vmmode, d->used_mode, sizeof(d->used_mode)))
+						{
+							d->xf86vm_active = 1;
+							width = xf86vmmode.hdisplay;
+							height = xf86vmmode.vdisplay;
+						}
+						else
+							fullscreen = 0;
+					}
 				}
-#else
-				fullscreen = 0;
-#endif
+
+				if (fullscreen)
+				{
+					d->xf86vmlib = Sys_Lib_Open("Xxf86vm");
+					if (d->xf86vmlib)
+					{
+						d->XF86VidModeSetGammaRamp = Sys_Lib_GetAddressByName(d->xf86vmlib, "XF86VidModeSetGammaRamp");
+						d->XF86VidModeGetGammaRamp = Sys_Lib_GetAddressByName(d->xf86vmlib, "XF86VidModeGetGammaRamp");
+						d->XF86VidModeGetGammaRampSize = Sys_Lib_GetAddressByName(d->xf86vmlib, "XF86VidModeGetGammaRampSize");
+
+						if (!d->XF86VidModeSetGammaRamp
+						 || !d->XF86VidModeGetGammaRamp
+						 || !d->XF86VidModeGetGammaRampSize)
+						{
+							Sys_Lib_Close(d->xf86vmlib);
+							d->xf86vmlib = 0;
+						}
+					}
+				}
 
 				d->width = width;
 				d->height = height;
@@ -446,23 +462,19 @@ void *Sys_Video_Open(const char *mode, unsigned int width, unsigned int height, 
 
 				d->x_win = XCreateWindow(d->x_disp, root, 0, 0, width, height,0, visinfo->depth, InputOutput, visinfo->visual, mask, &attr);
 
-				XStoreName(d->x_disp, d->x_win, "FodQuake");
+				XStoreName(d->x_disp, d->x_win, "Fodquake");
 
 				XDefineCursor(d->x_disp, d->x_win, CreateNullCursor(d->x_disp, d->x_win));
 
 				XMapWindow(d->x_disp, d->x_win);
 
-#if USE_VMODE
 				if (fullscreen)
 				{
 					XSync(d->x_disp, 0);
 					XRaiseWindow(d->x_disp, d->x_win);
 					XWarpPointer(d->x_disp, None, d->x_win, 0, 0, 0, 0, 0, 0);
 					XSync(d->x_disp, 0);
-					// Move the viewport to top left
-					XF86VidModeSetViewPort(d->x_disp, d->scrnum, 0, 0);
 				}
-#endif
 
 				XFlush(d->x_disp);
 
@@ -470,9 +482,17 @@ void *Sys_Video_Open(const char *mode, unsigned int width, unsigned int height, 
 
 				glXMakeCurrent(d->x_disp, d->x_win, d->ctx);
 
-				if (strcmp(glGetString(GL_VENDOR), "ATI Technologies Inc.") == 0)
+				if (strcmp((const char *)glGetString(GL_VENDOR), "ATI Technologies Inc.") == 0)
 				{
 					d->utterly_fucktastically_broken_driver = 1;
+				}
+
+				if (strstr((const char *)glGetString(GL_VERSION), "Mesa") && strstr(glXGetClientString(d->x_disp, GLX_EXTENSIONS), "GLX_SGI_swap_control"))
+				{
+					int (*SwapIntervalSGI)(int);
+					SwapIntervalSGI = (void *)glXGetProcAddressARB((const GLubyte *)"glXSwapIntervalSGI");
+					if (SwapIntervalSGI)
+						SwapIntervalSGI(0);
 				}
 
 				InitSig(); // trap evil signals

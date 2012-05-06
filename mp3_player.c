@@ -19,8 +19,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 
 #include <string.h>
+#include <ctype.h>
 
 #include "quakedef.h"
+#include "filesystem.h"
 #include "mp3_player.h"
 #include "utils.h"
 #include "keys.h"
@@ -379,7 +381,7 @@ void MP3_Execute_f(void) {
 		return;
 	}
 	for (i = 0; i < 6; i++) {
-		Sys_MSleep(50);
+		Sys_MicroSleep(50000);
 		if (MP3_IsPlayerRunning()) {
 			Com_Printf("XMMS is now running\n");
 			return;

@@ -33,5 +33,7 @@ qboolean Ignore_Message(char *s, int flags, int offset);
 char Ignore_Check_Flood(char *s, int flags, int offset);
 void Ignore_Flood_Add(char *s);
 void Ignore_ResetFloodList(void);
+void Ignore_PreNewMap();
+void Ignore_PostNewMap();
 
 #endif

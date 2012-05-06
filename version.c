@@ -34,7 +34,7 @@ CL_Version_f
 */
 void CL_Version_f (void)
 {
-	Com_Printf ("FodQuake version %s\n", VersionString());	
+	Com_Printf ("Fodquake version %s\n", VersionString());	
 	Com_Printf ("Exe: "__TIME__" "__DATE__"\n");
 }
 

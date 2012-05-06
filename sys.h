@@ -19,15 +19,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 // sys.h -- non-portable functions
 
-#ifdef _WIN32
-#define Sys_MSleep(x) Sleep(x)
-#else
-#define Sys_MSleep(x) usleep((x) * 1000)
-#endif
+void Sys_MicroSleep(unsigned int microseconds);
 
-// file IO
-int	Sys_FileTime (char *path);
-void Sys_mkdir (char *path);
+void Sys_RandomBytes(void *target, unsigned int numbytes);
 
 // memory protection
 void Sys_MakeCodeWriteable (unsigned long startaddr, unsigned long length);
@@ -53,6 +47,12 @@ void Sys_SetFPCW (void);
 
 void Sys_CvarInit(void);
 void Sys_Init (void);
+
+const char *Sys_GetRODataPath(void);
+const char *Sys_GetUserDataPath(void);
+const char *Sys_GetLegacyDataPath(void);
+
+void Sys_FreePathString(const char *);
 
 #include "sys_video.h"
 

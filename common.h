@@ -30,6 +30,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "qtypes.h"
 
+#include "qstring.h"
+
 #ifndef NULL
 #define NULL ((void *) 0)
 #endif
@@ -203,20 +205,6 @@ float	FloatSwap (float f);
 
 //============================================================================
 
-#ifdef _WIN32
-
-#define vsnprintf _vsnprintf
-
-#define Q_strcasecmp(s1, s2) _stricmp((s1), (s2))
-#define Q_strncasecmp(s1, s2, n) _strnicmp((s1), (s2), (n))
-
-#else
-
-#define Q_strcasecmp(s1, s2) strcasecmp((s1), (s2))
-#define Q_strncasecmp(s1, s2, n) strncasecmp((s1), (s2), (n))
-
-#endif
-
 int	Q_atoi (char *str);
 float Q_atof (char *str);
 
@@ -282,6 +270,7 @@ byte COM_BlockSequenceCRCByte (byte *base, int length, int sequence);
 void Com_BeginRedirect(void (*RedirectedPrint) (char *));
 void Com_EndRedirect (void);
 void Com_Printf(const char *fmt, ...);
+void Com_ErrorPrintf(const char *fmt, ...);
 void Com_DPrintf(const char *fmt, ...);
 
 //============================================================================

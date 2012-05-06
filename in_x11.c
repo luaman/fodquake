@@ -53,7 +53,7 @@ struct xpropertyrestore
 	struct xpropertyrestore *next;
 	XID deviceid;
 	Atom property;
-	unsigned char oldvalue;
+	char oldvalue;
 };
 
 struct inputdata
@@ -168,8 +168,8 @@ static void disable_middle_button_emulation(struct inputdata *id)
 	int i;
 	int j;
 	int ret;
-	unsigned char oldval;
-	static const unsigned char newval = 0;
+	char oldval;
+	static const char newval = 0;
 	struct xpropertyrestore *xpropertyrestore;
 
 	xdi = id->__XListInputDevices(id->x_disp, &numxdi);
@@ -253,7 +253,7 @@ static int is_evdev_rules(struct inputdata *id)
 	status = XGetWindowProperty(id->x_disp, window, XInternAtom(id->x_disp, "_XKB_RULES_NAMES", True), 0, ~0, False, AnyPropertyType, &actual_type, &actual_format, &nitems, &bytes, &data);
 	if (status == Success)
 	{
-		if (strcmp(data, "evdev") == 0)
+		if (strcmp((char *)data, "evdev") == 0)
 			ret = 1;
 
 		XFree(data);
@@ -265,7 +265,7 @@ static int is_evdev_rules(struct inputdata *id)
 static void DoGrabMouse(struct inputdata *id)
 {
 	Window grab_win;
-	unsigned int dgaflags;
+	int dgaflags;
 
 	if (id->mouse_grabbed)
 		return;

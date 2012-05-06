@@ -4,7 +4,9 @@
 #include "filesystem.h"
 #include "vid.h"
 #include "common.h"
+#include "sound.h"
 #include "wad.h"
+#include "image.h"
 #include "draw.h"
 
 static struct Picture *conchar;
@@ -168,9 +170,14 @@ static struct Picture *Draw_LoadLmpPicture(FILE *fh)
 
 struct Picture *Draw_LoadPicture(const char *name, enum Draw_LoadPicture_Fallback fallback)
 {
+	char *newname;
+	char *newnameextension;
 	FILE *fh;
 	unsigned int namelen;
 	struct Picture *picture;
+	unsigned int width;
+	unsigned int height;
+	void *data;
 
 	picture = 0;
 
@@ -180,17 +187,43 @@ struct Picture *Draw_LoadPicture(const char *name, enum Draw_LoadPicture_Fallbac
 	}
 	else
 	{
-		FS_FOpenFile(name, &fh);
-		if (fh)
+		namelen = strlen(name);
+
+		newname = malloc(namelen + 4 + 1);
+		if (newname)
 		{
-			namelen = strlen(name);
+			COM_StripExtension(name, newname);
 
-			if (namelen > 4 && strcmp(name + namelen - 4, ".lmp") == 0)
+			newnameextension = newname + strlen(newname);
+
+			strcpy(newnameextension, ".pcx");
+			data = Image_LoadPCX(0, newname, 0, 0, &width, &height);
+		}
+
+		if (data && width <= 32768 && height <= 32728)
+		{
+			picture = malloc(sizeof(*picture) + width * height);
+			if (picture)
 			{
-				picture = Draw_LoadLmpPicture(fh);
-			}
+				picture->width = width;
+				picture->height = height;
 
-			fclose(fh);
+				memcpy(picture + 1, data, width * height);
+			}
+		}
+
+		if (!picture)
+		{
+			FS_FOpenFile(name, &fh);
+			if (fh)
+			{
+				if (namelen > 4 && strcmp(name + namelen - 4, ".lmp") == 0)
+				{
+					picture = Draw_LoadLmpPicture(fh);
+				}
+
+				fclose(fh);
+			}
 		}
 	}
 
@@ -213,6 +246,16 @@ void Draw_FreePicture(struct Picture *picture)
 		return;
 
 	free(picture);
+}
+
+unsigned int Draw_GetPictureWidth(struct Picture *picture)
+{
+	return picture->width;
+}
+
+unsigned int Draw_GetPictureHeight(struct Picture *picture)
+{
+	return picture->height;
 }
 
 static void Draw_DrawPictureNonScaled(struct Picture *picture, unsigned int srcx, unsigned int srcy, unsigned int srcwidth, unsigned int srcheight, int x, int y)
@@ -399,7 +442,7 @@ void Draw_DrawPictureAlpha(struct Picture *picture, int x, int y, unsigned int w
 	Draw_DrawPicture(picture, x, y, width, height);
 }
 
-void Draw_DrawSubPicture(struct Picture *picture, unsigned int sx, unsigned int sy, unsigned int swidth, unsigned int sheight, int x, int y, unsigned int width, unsigned int height)
+static void Draw_DrawSubPictureAbsolute(struct Picture *picture, unsigned int sx, unsigned int sy, unsigned int swidth, unsigned int sheight, int x, int y, unsigned int width, unsigned int height)
 {
 	int displayx;
 	int displayy;
@@ -419,6 +462,11 @@ void Draw_DrawSubPicture(struct Picture *picture, unsigned int sx, unsigned int 
 	{
 		Draw_DrawPictureScaled(picture, sx, sy, swidth, sheight, displayx, displayy, displaywidth, displayheight);
 	}
+}
+
+void Draw_DrawSubPicture(struct Picture *picture, float sx, float sy, float swidth, float sheight, int x, int y, unsigned int width, unsigned int height)
+{
+	Draw_DrawSubPictureAbsolute(picture, sx * picture->width, sy * picture->height, swidth * picture->width, sheight * picture->height, x, y, width, height);
 }
 
 void Draw_Fill(int x, int y, int width, int height, int c)
@@ -648,7 +696,7 @@ void Draw_Crosshair(void)
 	extern cvar_t crosshair, cl_crossx, cl_crossy, crosshaircolor, crosshairsize;
 	extern vrect_t scr_vrect;
 	byte c = (byte) crosshaircolor.value;
-	qboolean *data;
+	const qboolean *data;
 
 	if (!crosshair.value)
 		return;

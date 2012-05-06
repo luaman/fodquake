@@ -31,6 +31,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #else
 #include <GL/gl.h>
 #endif
+
+#ifdef AROS
+#include <proto/mesa.h>
+#endif
+
 #include "gl_texture.h"
 #include "gl_model.h"
 
@@ -126,52 +131,7 @@ extern	int	playerfbtextures[MAX_CLIENTS];
 extern	int	skyboxtextures;
 extern	int underwatertexture, detailtexture;
 
-extern	cvar_t	r_drawentities;
-extern	cvar_t	r_drawflame;
-extern	cvar_t	r_speeds;
-extern	cvar_t	r_fullbright;
-extern	cvar_t	r_lightmap;
-extern	cvar_t	r_wateralpha;
-extern	cvar_t	r_dynamic;
-extern	cvar_t	r_novis;
-extern	cvar_t	r_netgraph;
-extern	cvar_t	r_fullbrightSkins;
-extern	cvar_t	r_fastsky;
-extern	cvar_t	r_skycolor;
-extern	cvar_t	r_farclip;
-
-extern	cvar_t	r_skyname;
-extern  cvar_t  gl_caustics;
-extern  cvar_t  gl_detail;
-
-extern	cvar_t	gl_subdivide_size;
-extern	cvar_t	gl_clear;
-extern	cvar_t	gl_cull;
-extern	cvar_t	gl_smoothmodels;
-extern	cvar_t	gl_polyblend;
-extern	cvar_t	gl_flashblend;
-extern	cvar_t	gl_nocolors;
-extern	cvar_t	gl_finish;
-extern	cvar_t	gl_fb_bmodels;
-extern	cvar_t	gl_fb_models;
-extern	cvar_t	gl_lightmode;
-extern  cvar_t  gl_solidparticles;
-extern	cvar_t	gl_playermip;
-
-
-extern  cvar_t gl_part_explosions;
-extern  cvar_t gl_part_trails;
-extern  cvar_t gl_part_spikes;
-extern  cvar_t gl_part_gunshots;
-extern  cvar_t gl_part_blood;
-extern  cvar_t gl_part_telesplash;
-extern  cvar_t gl_part_blobs;
-extern  cvar_t gl_part_lavasplash;
-extern	cvar_t gl_part_inferno;
-
-extern cvar_t gl_max_size, gl_scaleModelTextures, gl_scaleTurbTextures, gl_miptexLevel;
-extern cvar_t gl_externalTextures_world, gl_externalTextures_bmodels;
-
+#include "gl_cvars.h"
 
 extern	int		lightmode;		// set to gl_lightmode on mapchange
 
@@ -258,12 +218,21 @@ void R_InitOtherTextures(void);
 #define GL_ARRAY_BUFFER_ARB                             0x8892
 #define GL_STATIC_DRAW_ARB                              0x88E4
 
-typedef void (APIENTRY *lpMTexFUNC) (GLenum, GLfloat, GLfloat);
-typedef void (APIENTRY *lpSelTexFUNC) (GLenum);
+//fuck windows
+#define GL_CLAMP_TO_EDGE 0x812F
 
-extern lpMTexFUNC qglMultiTexCoord2f;
-extern lpSelTexFUNC qglActiveTexture;
-extern void (APIENTRY *qglClientActiveTexture)(GLenum);
+#ifdef __MORPHOS__
+#define glMultiTexCoord2f glMultiTexCoord2fARB
+#define glClientActiveTexture glClientActiveTextureARB
+#define glActiveTexture glActiveTextureARB
+#endif
+
+#ifdef _WIN32
+void glMultiTexCoord2f(GLenum target, GLfloat s, GLfloat t);
+void glDrawRangeElements(GLenum mode, GLuint start, GLuint end, GLsizei count, GLenum type, const GLvoid *indices);
+void glClientActiveTexture(GLenum texture);
+void glActiveTexture(GLenum texture);
+#endif
 
 #ifndef __MACOSX__
 typedef ptrdiff_t GLsizeiptrARB;
@@ -275,7 +244,7 @@ extern float gldepthmin, gldepthmax;
 extern byte color_white[4], color_black[4];
 extern qboolean gl_mtexable;
 extern int gl_textureunits;
-extern qboolean gl_combine, gl_add_ext, gl_vbo;
+extern qboolean gl_combine, gl_add_ext, gl_npot, gl_vbo;
 
 extern int vbo_number;
 

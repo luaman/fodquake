@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 #include <ctype.h>
 #include <math.h>
 
@@ -78,4 +79,26 @@ int Sys_Read_Dir(char *dir, char *subdir, int *gcount, struct directory_entry_te
 	return 0;
 }
 
+void Sys_IO_Create_Directory(const char *path)
+{
+	CreateDirectory(path, 0);
+}
+
+int Sys_IO_Path_Exists(const char *path)
+{
+	DWORD attributes;
+
+	attributes = GetFileAttributesA(path);
+
+	return attributes != INVALID_FILE_ATTRIBUTES;
+}
+
+int Sys_IO_Path_Writable(const char *path)
+{
+	DWORD attributes;
+
+	attributes = GetFileAttributesA(path);
+
+	return attributes != INVALID_FILE_ATTRIBUTES && !(attributes & FILE_ATTRIBUTE_READONLY);
+}
 

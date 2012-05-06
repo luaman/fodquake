@@ -34,7 +34,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #endif
 
 cvar_t	sys_nostdout = {"sys_nostdout","0"};
-cvar_t	sys_extrasleep = {"sys_extrasleep","0"};
 
 qboolean	stdin_ready;
 
@@ -45,24 +44,6 @@ qboolean	stdin_ready;
 
 ===============================================================================
 */
-
-/*
-============
-Sys_FileTime
-
-returns -1 if not present
-============
-*/
-int	Sys_FileTime (char *path)
-{
-	struct	stat	buf;
-	
-	if (stat (path,&buf) == -1)
-		return -1;
-	
-	return buf.st_mtime;
-}
-
 
 /*
 ============
@@ -202,7 +183,6 @@ is marked
 void Sys_Init (void)
 {
 	Cvar_Register (&sys_nostdout);
-	Cvar_Register (&sys_extrasleep);
 }
 
 /*
@@ -231,10 +211,6 @@ void main (int argc, char *argv[])
 		oldtime = newtime;
 		
 		Host_Frame (time);		
-		
-	// extrasleep is just a way to generate a fucked up connection on purpose
-		if (sys_extrasleep.value)
-			usleep (sys_extrasleep.value);
 	}	
 }
 

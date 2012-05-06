@@ -20,11 +20,15 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
 
 #include "common.h"
+#include "sys_io.h"
 #include "filesystem.h"
 #include "draw.h"
+#include "strl.h"
+#include "context_sensitive_tab.h"
+#include "utils.h"
+#include "tokenize_string.h"
 
 // in memory
 struct packfile
@@ -64,6 +68,8 @@ struct searchpath
 
 static struct searchpath *com_searchpaths;
 static struct searchpath *com_base_searchpaths;	// without gamedirs
+
+static char *skins_endings[] = { ".pcx", NULL};	//endings for skins files
 
 static int FS_FileLength(FILE * f)
 {
@@ -132,7 +138,7 @@ void FS_CreatePath(char *path)
 #endif
 			save = *s;
 			*s = 0;
-			Sys_mkdir(path);
+			Sys_IO_Create_Directory(path);
 			*s = save;
 		}
 	}
@@ -360,8 +366,10 @@ static void FS_FreeSearchPaths(struct searchpath *searchpaths)
 	}
 }
 
+static const char *fs_basedirs[5];
+
 //Sets com_gamedir, adds the directory to the head of the path, then loads and adds pak1.pak pak2.pak ... 
-static void FS_AddGameDirectory(char *dir)
+static void FS_AddGameDirectory_NoReally(const char *dir)
 {
 	int i;
 	struct searchpath *firstsearch;
@@ -370,11 +378,37 @@ static void FS_AddGameDirectory(char *dir)
 	char pakfile[MAX_OSPATH], *p;
 	int error;
 
-	if ((p = strrchr(dir, '/')) != NULL)
-		strcpy(com_gamedirfile, ++p);
-	else
-		strcpy(com_gamedirfile, p);
+	if (strlen(dir) + 1 >= sizeof(com_gamedir))
+	{
+		Sys_Error("Game directory path too long\n");
+		return;
+	}
+
+	p = strrchr(dir, '/');
+	if (p == 0)
+		return;
+
+	if (strlen(p) + 1 >= sizeof(com_gamedirfile))
+	{
+		Sys_Error("Game directory path too long\n");
+		return;
+	}
+
+	strcpy(com_gamedirfile, p + 1);
 	strcpy(com_gamedir, dir);
+
+	search = com_searchpaths;
+	while(search)
+	{
+		if (strcmp(search->filename, dir) == 0)
+			break;
+
+		search = search->next;
+	}
+
+	/* Path already exists */
+	if (search)
+		return;
 
 	// add the directory to the search path
 	search = malloc(sizeof(*search));
@@ -402,6 +436,7 @@ static void FS_AddGameDirectory(char *dir)
 				free(search);
 				break;
 			}
+			strlcpy(search->filename, pakfile, sizeof(search->filename));
 			search->pack = pak;
 			search->next = firstsearch;
 			firstsearch = search;
@@ -414,18 +449,29 @@ static void FS_AddGameDirectory(char *dir)
 		}
 
 		FS_FreeSearchPaths(firstsearch);
+		com_searchpaths = 0;
 	}
 
 	Sys_Error("FS_AddGameDirectory: Failed to add \"%s\"\n", dir);
+}
+
+static void FS_AddGameDirectory(const char *dir)
+{
+	unsigned int i;
+
+	i = 0;
+
+	while(fs_basedirs[i])
+	{
+		FS_AddGameDirectory_NoReally(va("%s/%s", fs_basedirs[i], dir));
+		i++;
+	}
 }
 
 //Sets the gamedir and path to a different directory.
 void FS_SetGamedir(const char *dir)
 {
 	struct searchpath *search;
-	int i;
-	struct pack *pak;
-	char pakfile[MAX_OSPATH];
 
 	if (strstr(dir, "..") || strstr(dir, "/") || strstr(dir, "\\") || strstr(dir, ":"))
 	{
@@ -435,7 +481,6 @@ void FS_SetGamedir(const char *dir)
 
 	if (!strcmp(com_gamedirfile, dir))
 		return;		// still the same
-	Q_strncpyz(com_gamedirfile, dir, sizeof(com_gamedirfile));
 
 	// free up any current game dir info
 	if (com_searchpaths != com_base_searchpaths)
@@ -450,54 +495,128 @@ void FS_SetGamedir(const char *dir)
 		com_searchpaths = com_base_searchpaths;
 	}
 
-	Q_snprintfz(com_gamedir, sizeof(com_gamedir), "%s/%s", com_basedir, dir);
+	FS_AddGameDirectory(dir);
+}
 
-	if (!strcmp(dir, "id1") || !strcmp(dir, "qw") || !strcmp(dir, "fodquake"))
-		return;
+const char *ro_data_path;
+const char *user_data_path;
+const char *legacy_data_path;
 
-	// add the directory to the search path
-	search = Q_Malloc(sizeof(*search));
-	strcpy(search->filename, com_gamedir);
-	search->pack = NULL;
-	search->next = com_searchpaths;
-	com_searchpaths = search;
+static int FS_CheckSubpathExist(const char *path, const char *subpath)
+{
+	char *p;
+	int ret;
 
-	// add any pak files in the format pak0.pak pak1.pak, ...
-	for (i = 0;; i++)
-	{
-		Q_snprintfz(pakfile, sizeof(pakfile), "%s/pak%i.pak", com_gamedir, i);
-		if (!(pak = FS_LoadPackFile(pakfile)))
-			break;
-		search = malloc(sizeof(*search));
-		search->pack = pak;
-		search->next = com_searchpaths;
-		com_searchpaths = search;
-	}
+	p = malloc(strlen(path) + 1 + strlen(subpath) + 1);
+	if (p == 0)
+		Sys_Error("Cry, cry");
+
+	sprintf(p, "%s/%s", path, subpath);
+
+	ret = Sys_IO_Path_Exists(p);
+
+	free(p);
+
+	return ret;
 }
 
 void FS_InitFilesystem(void)
 {
 	int i;
+	int preferlegacy;
+	int legacywritable;
+	int userwritable;
+	unsigned int dircount;
 
-	// -basedir <path>
-	// Overrides the system supplied base directory (under id1)
+	ro_data_path = Sys_GetRODataPath();
+	user_data_path = Sys_GetUserDataPath();
+	legacy_data_path = Sys_GetLegacyDataPath();
+
+	preferlegacy = 0;
+	legacywritable = 0;
+
+	if (legacy_data_path)
+	{
+		if (Sys_IO_Path_Exists(legacy_data_path) && (FS_CheckSubpathExist(legacy_data_path, "id1") || FS_CheckSubpathExist(legacy_data_path, "fodquake") || FS_CheckSubpathExist(legacy_data_path, "qw")))
+		{
+			legacywritable = Sys_IO_Path_Writable(legacy_data_path);
+			if (legacywritable)
+			{
+				preferlegacy = FS_CheckSubpathExist(legacy_data_path, "fodquake/temp"); /* That directory is created by MT_Init() */
+			}
+		}
+		else
+		{
+			Sys_FreePathString(legacy_data_path);
+			legacy_data_path = 0;
+		}
+	}
+
+	userwritable = 0;
+
+	if (user_data_path)
+	{
+		Sys_IO_Create_Directory(user_data_path);
+
+		if (Sys_IO_Path_Exists(user_data_path))
+		{
+			userwritable = Sys_IO_Path_Writable(user_data_path);
+		}
+		else
+		{
+			Sys_FreePathString(user_data_path);
+			user_data_path = 0;
+		}
+	}
+
+	if (!legacywritable && !userwritable)
+	{
+		Sys_Error("Nowhere to write data. Check that either \"%s\" or \"%s\" is writable.\n", legacy_data_path?legacy_data_path:"<none>", user_data_path?user_data_path:"<none>");
+	}
+
+	dircount = 0;
+
+	if (ro_data_path)
+	{
+		fs_basedirs[dircount++] = ro_data_path;
+	}
+
+	if (user_data_path && preferlegacy)
+	{
+		fs_basedirs[dircount++] = user_data_path;
+	}
+
+	if (legacy_data_path)
+	{
+		fs_basedirs[dircount++] = legacy_data_path;
+	}
+
+	if (user_data_path && !preferlegacy)
+	{
+		fs_basedirs[dircount++] = user_data_path;
+	}
+
 	if ((i = COM_CheckParm("-basedir")) && i < com_argc - 1)
-		Q_strncpyz(com_basedir, com_argv[i + 1], sizeof(com_basedir));
-	else
-		getcwd(com_basedir, sizeof(com_basedir) - 1);
+	{
+#warning Create a Sys_ function for converting paths.
+		for (i = 0; i < strlen(com_basedir); i++)
+			if (com_basedir[i] == '\\')
+				com_basedir[i] = '/';
 
-	for (i = 0; i < strlen(com_basedir); i++)
-		if (com_basedir[i] == '\\')
-			com_basedir[i] = '/';
+		fs_basedirs[dircount++] = user_data_path;
+	}
+
+	strlcpy(com_basedir, fs_basedirs[dircount - 1], sizeof(com_basedir));
+
+	fs_basedirs[dircount] = 0;
+
+	FS_AddGameDirectory("id1");
+	FS_AddGameDirectory("fodquake");
+	FS_AddGameDirectory("qw");
 
 	i = strlen(com_basedir) - 1;
 	if (i >= 0 && com_basedir[i] == '/')
 		com_basedir[i] = 0;
-
-	// start up with id1 by default
-	FS_AddGameDirectory(va("%s/id1", com_basedir));
-	FS_AddGameDirectory(va("%s/fodquake", com_basedir));
-	FS_AddGameDirectory(va("%s/qw", com_basedir));
 
 	// any set gamedirs will be freed up to here
 	com_base_searchpaths = com_searchpaths;
@@ -513,6 +632,15 @@ void FS_ShutdownFilesystem(void)
 {
 	FS_FreeSearchPaths(com_searchpaths);
 	com_searchpaths = 0;
+
+	if (ro_data_path)
+		Sys_FreePathString(ro_data_path);
+
+	if (user_data_path)
+		Sys_FreePathString(user_data_path);
+
+	if (legacy_data_path)
+		Sys_FreePathString(legacy_data_path);
 }
 
 static void FS_Path_f(void)
@@ -531,8 +659,192 @@ static void FS_Path_f(void)
 	}
 }
 
+struct cstc_skindata
+{
+	qboolean initialized;
+	qboolean *checked;
+	struct directory_list *dl;
+	struct Picture *picture;
+};
+
+static int cstc_skins_get_data(struct cst_info *self, int remove)
+{
+	struct cstc_skindata *data;
+
+	if (!self)
+		return 1;
+
+	if (self->data)
+	{
+		data = (struct cstc_skindata *)self->data;
+		Util_Dir_Delete(data->dl);
+		if (data->picture)
+			Draw_FreePicture(data->picture);
+		free(data);
+		self->data = NULL;
+	}
+
+	if (remove)
+		return 0;
+
+	if ((data = calloc(1, sizeof(*data))))
+	{
+		if ((data->dl = Util_Dir_Read(va("%s/qw/skins/", com_basedir), 1, 1, skins_endings)))
+		{
+			if (data->dl->entry_count != 0)
+			{
+				self->data = (void *)data;
+				return 0;
+			}
+			else
+			{
+				Com_Printf(va("%s/qw/skins/ has no skin files in it.\n", com_basedir));
+			}
+			Util_Dir_Delete(data->dl);
+		}
+		free(data);
+	}
+	return 1;
+}
+
+static int cstc_skins_check(char *entry, struct tokenized_string *ts)
+{
+	int i;
+
+	for (i=0; i<ts->count; i++)
+	{
+		if (Util_strcasestr(entry, ts->tokens[i]) == NULL)
+			return 0;
+	}
+	return 1;
+}
+
+static int cstc_skins_get_results(struct cst_info *self, int *results, int get_result, int result_type, char **result)
+{
+	struct cstc_skindata *data;
+	int count, i;
+
+	if (self->data == NULL)
+		return 1;
+
+	data = (struct cstc_skindata *)self->data;
+
+	if (results || data->initialized == false)
+	{
+		if (data->checked)
+			free(data->checked);
+		if ((data->checked = calloc(data->dl->entry_count, sizeof(qboolean))) == NULL)
+			return 1;
+
+		for (i=0, count=0; i<data->dl->entry_count; i++)
+		{
+			if (cstc_skins_check(data->dl->entries[i].name, self->tokenized_input))
+			{
+				data->checked[i] = true;
+				count++;
+			}
+		}
+
+		if (results)
+			*results = count;
+		data->initialized = true;
+		return 0;
+	}
+
+	if (result == NULL)
+		return 0;
+
+	for (i=0, count=-1; i<data->dl->entry_count; i++)
+	{
+		if (data->checked[i] == true)
+			count++;
+		if (count == get_result)
+		{
+			*result = data->dl->entries[i].name;
+			return 0;
+		}
+	}
+	return 1;
+}
+
+static int cstc_skins_condition(void)
+{
+	struct directory_list *data;
+	int i;
+
+	data = Util_Dir_Read(va("%s/qw/skins/", com_basedir), 1, 1, skins_endings);
+
+	if (data == NULL)
+		return 0;
+
+	if (data->entry_count == 0)
+	{
+		Com_Printf(va("no skins found in \"%s/qw/skins/\".\n", com_basedir));
+		Util_Dir_Delete(data);
+		i = 0;
+	}
+	else
+		i = 1;
+
+	Util_Dir_Delete(data);
+
+	return i;
+}
+
+static void cstc_skins_draw(struct cst_info *self)
+{
+	struct cstc_skindata *data;
+	int x, y;
+	int i, count;
+	char *s;
+
+
+	if (self->data == NULL)
+		return;
+
+	data = (struct cstc_skindata *) self->data;
+
+	if (data->picture && ( self->toggleables_changed || self->selection_changed))
+	{
+		Draw_FreePicture(data->picture);
+		data->picture = NULL;
+	}
+
+	if (data->picture == NULL)
+	{
+		for (i=0, count=-1; i<data->dl->entry_count; i++)
+		{
+			if (data->checked[i] == true)
+				count++;
+			if (count == self->selection)
+				break;
+		}
+		if (i == data->dl->entry_count)
+			return;
+
+		data->picture = Draw_LoadPicture(va("skins/%s", data->dl->entries[i].name), DRAW_LOADPICTURE_NOFALLBACK);
+	}
+
+	if (data->picture == NULL)
+	{
+		s = va("not a valid skin.");
+		x = vid.conwidth - strlen(s) * 8;
+		y = self->offset_y;
+		Draw_Fill(x, y, 8 * strlen(s), 8, 0);
+		Draw_String(x, y, s);
+		return;
+	}
+
+	y = self->offset_y - (self->direction == -1 ? 200: 0);
+	x = vid.conwidth - 320;
+
+	Draw_DrawPicture(data->picture, x, y, 320, 200);//, Draw_GetPictureWidth(self->picture), Draw_GetPictureHeight(self->picture));
+	return;
+}
+
 void FS_Init()
 {
+	CSTC_Add("enemyskin enemyquadskin enemypentskin enemybothskin teamskin teamquadskin teampentskin teambothskin", &cstc_skins_condition, &cstc_skins_get_results, &cstc_skins_get_data, &cstc_skins_draw, CSTC_MULTI_COMMAND| CSTC_NO_INPUT| CSTC_EXECUTE, "arrow up/down to navigate");
 	Cmd_AddCommand("path", FS_Path_f);
 }
 

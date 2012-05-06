@@ -17,8 +17,6 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 
-#include <unistd.h>
-
 #include <stdlib.h>
 #include <string.h>
 
@@ -215,6 +213,9 @@ static void ServerScanner_Thread_ParseQWServerReply(struct ServerScanner *server
 		printf("%s = %s\n", key, value);
 #endif
 
+		if (*key == '*')
+			key++;
+
 		if (strcmp(key, "maxclients") == 0)
 			qwserver->pub.maxclients = strtoul(value, 0, 0);
 		else if (strcmp(key, "maxspectators") == 0)
@@ -225,6 +226,8 @@ static void ServerScanner_Thread_ParseQWServerReply(struct ServerScanner *server
 			qwserver->pub.map = strdup(value);
 		else if (strcmp(key, "hostname") == 0)
 			qwserver->pub.hostname = strdup(value);
+		else if (strcmp(key, "gamedir") == 0)
+			qwserver->pub.gamedir = strdup(value);
 	}
 
 	if (!p)
@@ -834,7 +837,7 @@ static void ServerScanner_Thread(void *arg)
 		if (serverscanner->sockets[NA_IPV4])
 			Sys_Net_Wait(serverscanner->netdata, serverscanner->sockets[NA_IPV4], timeout);
 		else
-			usleep(timeout);
+			Sys_MicroSleep(timeout);
 	}
 
 	ServerScanner_Thread_CloseSockets(serverscanner);
@@ -998,7 +1001,7 @@ int ServerScanner_DataUpdated(struct ServerScanner *serverscanner)
 const struct QWServer **ServerScanner_GetServers(struct ServerScanner *serverscanner, unsigned int *numservers)
 {
 	struct qwserverpriv *qwserver;
-	struct QWServer **servers;
+	const struct QWServer **servers;
 	unsigned int i;
 	unsigned int count;
 

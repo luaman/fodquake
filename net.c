@@ -63,7 +63,7 @@ qboolean NET_CompareBaseAdr(const struct netaddr *a, const struct netaddr *b)
 		return true;
 	else if (a->type == NA_IPV4)
 	{
-		if (*(unsigned int *)a->addr.ipv4.address == *(unsigned int *)b->addr.ipv4.address)
+		if (memcmp(a->addr.ipv4.address, b->addr.ipv4.address, sizeof(a->addr.ipv4.address)) == 0)
 			return true;
 	}
 	else if (a->type == NA_IPV6)
@@ -102,7 +102,10 @@ qboolean NET_IsLocalAddress(const struct netaddr *a)
 	if (a->type != NA_IPV4)
 		return false;
 
-	if ((*(unsigned *)a->addr.ipv4.address == BigLong(INADDR_LOOPBACK)))
+	if (a->addr.ipv4.address[0] == ((INADDR_LOOPBACK>>24)&0xff)
+	 && a->addr.ipv4.address[1] == ((INADDR_LOOPBACK>>16)&0xff)
+	 && a->addr.ipv4.address[2] == ((INADDR_LOOPBACK>> 8)&0xff)
+	 && a->addr.ipv4.address[3] == ((INADDR_LOOPBACK>> 0)&0xff))
 		return true;
 	
 	return false;
@@ -494,6 +497,10 @@ void NET_ServerConfig (qboolean enable)
 {
 	int i, port;
 
+#warning :(
+	if (!netdata)
+		return;
+
 	if (enable)
 	{
 		if (netdata->sockets[NS_SERVER] == 0)
@@ -595,7 +602,7 @@ void NET_Init(void)
 void NET_Shutdown (void)
 {
 	if (netdata == 0)
-		Sys_Error("NET_Shutdown() called twice\n");
+		return;
 
 	if (netdata->sockets[NS_CLIENT])
 		Sys_Net_DeleteSocket(netdata->sysnetdata, netdata->sockets[NS_CLIENT]);

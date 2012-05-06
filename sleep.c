@@ -17,7 +17,6 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 
-#include <unistd.h>
 #include <sys/time.h>
 #include <math.h>
 #include <stdlib.h>
@@ -25,12 +24,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "common.h"
 #include "sleep.h"
-
-#ifdef _WIN32
-#include <windows.h>
-
-#define usleep(x) Sleep(((x)+999)/1000)
-#endif
 
 static unsigned int sleep_granularity;
 
@@ -54,9 +47,9 @@ static int get_sleep_granularity()
 
 	for(i=0;i<NUMSAMPLES;i++)
 	{
-		usleep(1);
+		Sys_MicroSleep(1);
 		basetime = Sys_IntTime();
-		usleep(1);
+		Sys_MicroSleep(1);
 		sleeptime[i] = Sys_IntTime() - basetime;
 	}
 
@@ -148,7 +141,7 @@ void Sleep_Sleep(unsigned int sleeptime)
 	{
 		real_sleep_time = sleeptime - sleep_granularity;
 
-		usleep(real_sleep_time);
+		Sys_MicroSleep(real_sleep_time);
 	}
 
 	do
@@ -159,7 +152,7 @@ void Sleep_Sleep(unsigned int sleeptime)
 #if 0
 	if (curtime.tv_usec > 100)
 	{
-		printf("Asked to sleep %d us, usleept %d us\n", sleeptime, real_sleep_time);
+		printf("Asked to sleep %d us, Sys_MicroSlept %d us\n", sleeptime, real_sleep_time);
 		printf("Overslept %d us\n", curtime.tv_usec);
 	}
 #endif

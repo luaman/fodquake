@@ -5,7 +5,7 @@ CC=gcc
 STRIP=strip
 AR=ar
 
-CFLAGS=-O2 -g -Wall -fno-strict-aliasing -DNETQW -I../thirdparty/include -L../thirdparty/lib $(OSCFLAGS) $(CPUCFLAGS) $(RENDERERCFLAGS)
+CFLAGS=-O2 -g -Wall -Werror-implicit-function-declaration -fno-strict-aliasing -DNETQW -I../thirdparty/include -L../thirdparty/lib $(OSCFLAGS) $(CPUCFLAGS) $(RENDERERCFLAGS)
 STRIPFLAGS=--strip-unneeded --remove-section=.comment
 
 TARGETSYSTEM:=$(shell $(CC) -dumpmachine)
@@ -33,6 +33,27 @@ ifeq ($(OS), morphos)
 	OSGLOBJS=vid_mode_morphos.o vid_tinygl.o
 endif
 
+ifeq ($(OS), aros)
+	OSCFLAGS=
+	OSOBJS= \
+		sys_morphos.o \
+		net_amitcp.o \
+		thread_aros.o \
+		cd_morphos.o \
+		in_morphos.o \
+		sys_io_morphos.o \
+		sys_lib_null.o
+
+#		snd_morphos.o \
+
+	OSSWOBJS=vid_mode_morphos.o vid_morphos.o
+
+	OSGLOBJS=vid_mode_morphos.o vid_arosmesa.o
+	OSGLLDFLAGS=-lGL
+
+	THIRDPARTYLIBS=libz libpng libjpeg
+endif
+
 ifeq ($(OS), linux)
 	OSOBJS= \
 		sys_linux.o \
@@ -42,17 +63,18 @@ ifeq ($(OS), linux)
 		cd_linux.o \
 		snd_oss.o \
 		snd_alsa2.o \
-		sys_io_linux.o \
+		snd_pulseaudio.o \
+		sys_io_posix.o \
 		sys_lib_posix.o
 
 	OSCFLAGS=-DBUILD_STRL
-	OSLDFLAGS=-lpthread -lrt
+	OSLDFLAGS=-lpthread -lrt -ldl
 
-	OSSWOBJS=vid_x11.o vid_mode_x11.o in_x11.o
-	OSSWLDFLAGS=-L/usr/X11R6/lib -lX11 -lXext -lXxf86vm -lXxf86dga
+	OSSWOBJS=vid_x11.o vid_mode_x11.o vid_mode_xf86vm.o vid_mode_xrandr.o in_x11.o
+	OSSWLDFLAGS=-L/usr/X11R6/lib -lX11 -lXext -lXxf86dga
 
-	OSGLOBJS=vid_glx.o vid_mode_x11.o in_x11.o
-	OSGLLDFLAGS=-L/usr/X11R6/lib -lX11 -lXext -lXxf86vm -lXxf86dga -lGL
+	OSGLOBJS=vid_glx.o vid_mode_x11.o vid_mode_xf86vm.o vid_mode_xrandr.o in_x11.o
+	OSGLLDFLAGS=-L/usr/X11R6/lib -lX11 -lXext -lXxf86dga -lGL
 endif
 
 ifeq ($(OS), freebsd)
@@ -63,17 +85,17 @@ ifeq ($(OS), freebsd)
 		thread_posix.o \
 		cd_null.o \
 		snd_oss.o \
-		sys_io_linux.o \
+		sys_io_posix.o \
 		sys_lib_posix.o
 
 	OSCFLAGS=-I/usr/local/include
 	OSLDFLAGS=-lpthread
 
-	OSSWOBJS=vid_x11.o vid_mode_x11.o in_x11.o
-	OSSWLDFLAGS=-L/usr/local/lib -lX11 -lXext -lXxf86vm -lXxf86dga
+	OSSWOBJS=vid_x11.o vid_mode_x11.o vid_mode_xf86vm.o vid_mode_xrandr.o in_x11.o
+	OSSWLDFLAGS=-L/usr/local/lib -lX11 -lXext -lXxf86dga
 
-	OSGLOBJS=vid_glx.o vid_mode_x11.o in_x11.o
-	OSGLLDFLAGS=-L/usr/local/lib -lX11 -lXext -lXxf86vm -lXxf86dga -lGL
+	OSGLOBJS=vid_glx.o vid_mode_x11.o vid_mode_xf86vm.o vid_mode_xrandr.o in_x11.o
+	OSGLLDFLAGS=-L/usr/local/lib -lX11 -lXext -lXxf86dga -lGL
 endif
 
 ifeq ($(OS), netbsd)
@@ -85,11 +107,11 @@ ifeq ($(OS), netbsd)
 	OSCFLAGS=-I/usr/X11R6/include
 	OSLDFLAGS=-lossaudio
 
-	OSSWOBJS=vid_x11.o in_x11.o
-	OSSWLDFLAGS=-L/usr/X11R6/lib -lX11 -lXext -lXxf86vm -lXxf86dga
+	OSSWOBJS=vid_x11.o vid_mode_x11.o vid_mode_xf86vm.o vid_mode_xrandr.o in_x11.o
+	OSSWLDFLAGS=-L/usr/X11R6/lib -lX11 -lXext -lXxf86dga
 
-	OSGLOBJS=vid_glx.o in_x11.o
-	OSGLLDFLAGS=-L/usr/X11R6/lib -lX11 -lXext -lXxf86vm -lXxf86dga -lGL
+	OSGLOBJS=vid_glx.o vid_mode_x11.o vid_mode_xf86vm.o vid_mode_xrandr.o in_x11.o
+	OSGLLDFLAGS=-L/usr/X11R6/lib -lX11 -lXext -lXxf86dga -lGL
 endif
 
 ifeq ($(OS), openbsd)
@@ -105,11 +127,11 @@ ifeq ($(OS), openbsd)
 	OSCFLAGS=-I/usr/X11R6/include -I/usr/local/include -I/usr/local/include/libpng -I/usr/local/include/gtk-2.0
 	OSLDFLAGS=-lpthread -lossaudio
 
-	OSSWOBJS=vid_x11.o vid_mode_x11.o in_x11.o
-	OSSWLDFLAGS=-L/usr/X11R6/lib -lX11 -lXext -lXxf86vm -lXxf86dga
+	OSSWOBJS=vid_x11.o vid_mode_x11.o vid_mode_xf86vm.o vid_mode_xrandr.o in_x11.o
+	OSSWLDFLAGS=-L/usr/X11R6/lib -lX11 -lXext -lXxf86dga
 
-	OSGLOBJS=vid_glx.o vid_mode_x11.o in_x11.o
-	OSGLLDFLAGS=-L/usr/X11R6/lib -lX11 -lXext -lXxf86vm -lXxf86dga -lGL
+	OSGLOBJS=vid_glx.o vid_mode_x11.o vid_mode_xf86vm.o vid_mode_xrandr.o in_x11.o
+	OSGLLDFLAGS=-L/usr/X11R6/lib -lX11 -lXext -lXxf86dga -lGL
 endif
 
 ifeq ($(OS), cygwin)
@@ -147,7 +169,16 @@ ifeq ($(OS), win32)
 
 	THIRDPARTYLIBS=libz libpng libjpeg
 
-%.windowsicon: %.rc icons/%.ico
+%.ico: icons/%-16x16.png icons/%-32x32.png icons/%-48x48.png icons/%-64x64.png
+	for i in $^; \
+	do \
+		pngtopnm $$i >tmpimg && ppmquant 256 tmpimg >`echo $$i | sed "s,.*/,,"`; rm tmpimg; \
+		pngtopnm -alpha $$i >`echo $$i | sed "s,.*/,,"`_alpha; \
+	done
+
+	ppmtowinicon -andpgms -output $@ `echo $^ | sed "s,[^ ]*/\([^ ]*\),\1 \1_alpha ,g"`
+
+%.windowsicon: %.rc %.ico
 	i586-mingw32msvc-windres -O coff $< $@
 endif
 
@@ -173,32 +204,33 @@ ifeq ($(OS), macosx)
 
 	OSOBJS = \
 		sys_darwin.o \
-		sys_io_linux.o \
+		sys_io_posix.o \
 		sys_lib_null.o \
 		thread_posix.o \
 		net_posix.o \
 		snd_coreaudio.o \
 		vid_mode_macosx.o \
 		clipboard_macosx.o \
-		cd_null.o
-
-	OSGLOBJS = \
-		vid_coregl.o \
+		cd_null.o \
+		vid_cocoa.o \
 		in_macosx.o
 
-	OSGLLDFLAGS = -framework OpenGL -framework ApplicationServices -framework AudioUnit -framework CoreServices -framework IOKit
+	OSGLLDFLAGS = -framework OpenGL
 
 	OSCFLAGS = -D__MACOSX__
 
-	OSLDFLAGS = -lpng -ljpeg
+	OSLDFLAGS = -framework AppKit -framework ApplicationServices -framework AudioUnit -framework CoreServices -framework IOKit -lpng -ljpeg -lz
 
 	THIRDPARTYLIBS=libpng libjpeg
+
+%.o: %.m
+	$(CC) $(CFLAGS) -c $< -o $@
 endif
 
 # CPU specific settings
 
 ifeq ($(CPU), ppc)
-	CPUCFLAGS=-DFOD_BIGENDIAN
+   CPUCFLAGS=-DFOD_BIGENDIAN
 endif
 
 OBJS= \
@@ -250,6 +282,7 @@ OBJS= \
 	pr_edict.o \
 	pr_exec.o \
 	pr_cmds.o \
+	qstring.o \
 	r_draw.o \
 	r_part.o \
 	readablechars.o \
@@ -277,6 +310,7 @@ OBJS= \
 	sv_world.o \
 	tableprint.o \
 	teamplay.o \
+	text_input.o \
 	tokenize_string.o \
 	utils.o \
 	version.o \
@@ -357,23 +391,23 @@ libz/zlib-1.2.5/.buildstamp:
 	mkdir libz
 	(cd libz && tar -xf ../$(VPATH)/thirdparty/zlib-1.2.5.tar.gz)
 	cp $(VPATH)/thirdparty/zlib-Makefile libz/zlib-1.2.5/
-	(cd libz/zlib-1.2.5 && make -f zlib-Makefile libz.a)
+	(cd libz/zlib-1.2.5 && $(MAKE) -f zlib-Makefile libz.a CC="$(CC)")
 	mkdir -p include lib
 	cp libz/zlib-1.2.5/zconf.h libz/zlib-1.2.5/zlib.h include
 	cp libz/zlib-1.2.5/libz.a lib
 	touch $@
 
-libpng: libpng/libpng-1.2.44/.buildstamp
+libpng: libpng/libpng-1.2.47/.buildstamp
 
-libpng/libpng-1.2.44/.buildstamp:
+libpng/libpng-1.2.47/.buildstamp:
 	rm -rf libpng
 	mkdir libpng
-	(cd libpng && tar -xf ../$(VPATH)/thirdparty/libpng-1.2.44-no-config.tar.gz)
-	(cd libpng/libpng-1.2.44 && cp scripts/makefile.gcc Makefile)
-	(cd libpng/libpng-1.2.44 && make AR_RC="$(AR) rcs" CFLAGS="-W -Wall -I../../include $(CRELEASE)" RANLIB=touch libpng.a)
+	(cd libpng && tar -xf ../$(VPATH)/thirdparty/libpng-1.2.47-no-config.tar.gz)
+	(cd libpng/libpng-1.2.47 && cp scripts/makefile.gcc Makefile)
+	(cd libpng/libpng-1.2.47 && $(MAKE) CC="$(CC)" AR_RC="$(AR) rcs" CFLAGS="-W -Wall -I../../include $(CRELEASE)" RANLIB=touch libpng.a)
 	mkdir -p include lib
-	cp libpng/libpng-1.2.44/*.h include
-	cp libpng/libpng-1.2.44/libpng.a lib
+	cp libpng/libpng-1.2.47/*.h include
+	cp libpng/libpng-1.2.47/libpng.a lib
 	touch $@
 
 libjpeg: libjpeg/jpeg-8c/.buildstamp
@@ -383,7 +417,7 @@ libjpeg/jpeg-8c/.buildstamp:
 	mkdir libjpeg
 	(cd libjpeg && tar -xf ../$(VPATH)/thirdparty/jpegsrc.v8c.tar.gz)
 	cp libjpeg/jpeg-8c/jconfig.txt libjpeg/jpeg-8c/jconfig.h
-	(cd libjpeg/jpeg-8c && make -f makefile.ansi CFLAGS="-O2" AR="$(AR) rcs" AR2="touch" libjpeg.a)
+	(cd libjpeg/jpeg-8c && $(MAKE) -f makefile.ansi CC="$(CC)" CFLAGS="-O2" AR="$(AR) rcs" AR2="touch" libjpeg.a)
 	mkdir -p include
 	cp libjpeg/jpeg-8c/jpeglib.h libjpeg/jpeg-8c/jconfig.h libjpeg/jpeg-8c/jmorecfg.h include
 	cp libjpeg/jpeg-8c/libjpeg.a lib

@@ -20,7 +20,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include <stdlib.h>
 #include <string.h>
-#include <assert.h>
 #include <math.h>
 
 #include "quakedef.h"
@@ -186,7 +185,7 @@ static byte *ColorForParticle(part_type_t type) {
 		color[0] = (100 + (rand() & 31)); color[1] = color[2] = 0;
 		break;
 	default:
-		assert(!"ColorForParticle: unexpected type");
+		Sys_Error("ColorForParticle: unexpected type");
 		break;
 	}
 	return color;
@@ -420,7 +419,7 @@ static void QMB_UpdateParticles(void) {
 				}
 				break;
 			default:
-				assert(!"QMB_UpdateParticles: unexpected pt->move");
+				Sys_Error("QMB_UpdateParticles: unexpected pt->move");
 				break;
 			}
 		}
@@ -604,7 +603,7 @@ void QMB_DrawParticles (void) {
 			}
 			break;
 		default:
-			assert(!"QMB_DrawParticles: unexpected drawtype");
+			Sys_Error("QMB_DrawParticles: unexpected drawtype");
 			break;
 		}
 	}
@@ -641,7 +640,11 @@ __inline static void AddParticle(part_type_t type, const vec3_t org, int count, 
 	if (!qmb_initialized)
 		Sys_Error("QMB particle added without initialization");
 
-	assert(size > 0 && time > 0);
+	if (size <= 0)
+		Sys_Error("AddParticle: size <= 0");
+
+	if (time <= 0)
+		Sys_Error("AddParticle: time <= 0");
 
 	if (type < 0 || type >= num_particletypes)
 		Sys_Error("AddParticle: Invalid type (%d)", type);
@@ -742,7 +745,7 @@ __inline static void AddParticle(part_type_t type, const vec3_t org, int count, 
 				p->vel[j] = (rand() % 40) - 20;
 			break;
 		default:
-			assert(!"AddParticle: unexpected type");
+			Sys_Error("AddParticle: unexpected type");
 			break;
 		}
 	}
@@ -759,7 +762,11 @@ __inline static void AddParticleTrail(part_type_t type, vec3_t start, vec3_t end
 	if (!qmb_initialized)
 		Sys_Error("QMB particle added without initialization");
 
-	assert(size > 0 && time > 0);
+	if (size <= 0)
+		Sys_Error("AddParticleTrail: size <= 0");
+
+	if (time <= 0)
+		Sys_Error("AddParticleTrail: time <= 0");
 
 	if (type < 0 || type >= num_particletypes)
 		Sys_Error("AddParticle: Invalid type (%d)", type);
@@ -788,7 +795,7 @@ __inline static void AddParticleTrail(part_type_t type, vec3_t start, vec3_t end
 		count = length / 2.8;
 		break;
 	default:
-		assert(!"AddParticleTrail: unexpected type");
+		Sys_Error("AddParticleTrail: unexpected type");
 		break;
 	}
 
@@ -838,7 +845,7 @@ __inline static void AddParticleTrail(part_type_t type, vec3_t start, vec3_t end
 				p->vel[j] = (rand() % 40) - 20;
 			break;
 		default:
-			assert(!"AddParticleTrail: unexpected type");
+			Sys_Error("AddParticleTrail: unexpected type");
 			break;
 		}
 

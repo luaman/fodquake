@@ -24,6 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <string.h>
 #include <stdlib.h>
 #include <time.h>
+#include <locale.h>
 
 #include "quakedef.h"
 #include "pmove.h"
@@ -123,6 +124,8 @@ void Host_Error(char *error, ...)
 //memsize is the recommended amount of memory to use for hunk
 static void Host_InitMemory()
 {
+	setlocale(LC_NUMERIC, "C");
+
 	Memory_Init();
 }
 
@@ -298,6 +301,8 @@ void Host_Init(int argc, char **argv)
 	SV_Init();
 	CL_Init();
 
+	Context_Weighting_Init();
+
 #ifndef SERVERONLY
 	if (!dedicated)
 		CL_SaveArgv(argc, argv);
@@ -309,7 +314,7 @@ void Host_Init(int argc, char **argv)
 
 	Com_Printf("Exe: "__TIME__" "__DATE__"\n");
 
-	Com_Printf("\nFodQuake version %s\n\n", VersionString());
+	Com_Printf("\nFodquake version %s\n\n", VersionString());
 
 	if (dedicated)
 	{
@@ -336,6 +341,8 @@ void Host_Shutdown(void)
 	}
 	isdown = true;
 
+	Context_Weighting_Shutdown();
+
 	SB_Quit();
 	SV_Shutdown("Server quit\n");
 	QLib_Shutdown();
@@ -351,6 +358,7 @@ void Host_Shutdown(void)
 
 	Cvar_Shutdown();
 	Cmd_Shutdown();
+	CSTC_Shutdown();
 
 	Host_ShutdownMemory();
 }

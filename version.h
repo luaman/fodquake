@@ -1,7 +1,7 @@
 // version.h
 
 #ifdef __GNUC__
-#if __GNUC__ > 3 || (__GNUC__ == 3 && __GNUC_MINOR__ < 3) || (__GNUC__ == 3 && __GNUC_MINOR__ == 3 && __GNUC_PATCHLEVEL__ < 6) || (__GNUC__ == 3 && __GNUC_MINOR__ == 4 && __GNUC_PATCHLEVEL__ < 6)
+#if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ != 6) || (__GNUC__ == 4 && __GNUC_MINOR__ == 6 && __GNUC_PATCHLEVEL__ < 2) || (__GNUC__ == 3 && __GNUC_MINOR__ < 3) || (__GNUC__ == 3 && __GNUC_MINOR__ == 3 && __GNUC_PATCHLEVEL__ < 6) || (__GNUC__ == 3 && __GNUC_MINOR__ == 4 && __GNUC_PATCHLEVEL__ < 6)
 #define COMPILERVERSIONSTRINGAPPEND " (broken GCC)"
 #endif
 #endif
@@ -11,7 +11,7 @@
 #endif
 
 #define	QW_VERSION              2.40
-#define FODQUAKE_VERSION        "0.3 CVS" COMPILERVERSIONSTRINGAPPEND
+#define FODQUAKE_VERSION        "0.4 dev" COMPILERVERSIONSTRINGAPPEND
 
 #ifdef _WIN32
 #define QW_PLATFORM     "Win32"
@@ -32,6 +32,8 @@
 #elif defined(GEKKO)
 /* Not entirely true, but close enough for now. */
 #define QW_PLATFORM     "Wii"
+#elif defined(AROS)
+#define QW_PLATFORM     "AROS"
 #endif
 
 #ifdef GLQUAKE

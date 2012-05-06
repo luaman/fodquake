@@ -23,6 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <string.h>
 
 #include "quakedef.h"
+#include "sys_io.h"
 #include "teamplay.h"
 #include "utils.h"
 #include "logging.h"
@@ -330,6 +331,9 @@ typedef struct matchinfo_s {
 	char month[8];
 	char year[8];
 	char bigyear[8];
+	char hour[8];
+	char minute[8];
+	char second[8];
 } matchinfo_t;
 
 static matchtype_t MT_GetMatchType(matchinfo_t *matchinfo) {
@@ -459,6 +463,9 @@ static matchinfo_t *MT_GetMatchInfo(void) {
 		strftime (matchinfo.month, sizeof(matchinfo.month) - 1, "%m", ptm);
 		strftime (matchinfo.year, sizeof(matchinfo.year) - 1, "%y", ptm);
 		strftime (matchinfo.bigyear, sizeof(matchinfo.bigyear) - 1, "%Y", ptm);
+		strftime (matchinfo.hour, sizeof(matchinfo.hour) - 1, "%H", ptm);
+		strftime (matchinfo.minute, sizeof(matchinfo.minute) - 1, "%M", ptm);
+		strftime (matchinfo.second, sizeof(matchinfo.second) - 1, "%S", ptm);
 	}
 
 	return &matchinfo;
@@ -497,6 +504,9 @@ void MT_Macrolist_f(void) {
 
 		Com_Printf("\x02%%d"); Com_Printf(" - day\n");
 		Com_Printf("\x02%%m"); Com_Printf(" - month\n");
+		Com_Printf("\x02%%H"); Com_Printf(" - hour\n");
+		Com_Printf("\x02%%Q"); Com_Printf(" - minute\n");
+		Com_Printf("\x02%%S"); Com_Printf(" - second\n");
 		Com_Printf("\x02%%y"); Com_Printf(" - year (without century)\n");
 		Com_Printf("\x02%%Y"); Com_Printf(" - year (with century)\n");
 		break;
@@ -565,6 +575,12 @@ static char *MT_ParseFormat(char *format, matchinfo_t *matchinfo) {
 					temp = matchinfo->year; break;
 				case 'Y':
 					temp = matchinfo->bigyear; break;
+				case 'H':
+					temp = matchinfo->hour; break;
+				case 'Q':
+					temp = matchinfo->minute; break;
+				case 'S': 
+					temp = matchinfo->second; break;
 				default:
 					temp = va("%%%c", c); break;
 			}
@@ -1122,7 +1138,7 @@ void MT_CvarInit(void)
 
 void MT_Init(void)
 {
-	Sys_mkdir(va("%s/fodquake/temp", com_basedir));
+	Sys_IO_Create_Directory(va("%s/fodquake/temp", com_basedir));
 
 	MT_ClearClientState();
 

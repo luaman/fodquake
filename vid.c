@@ -40,6 +40,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "sys_thread.h"
 
 #include "sbar.h"
+#include "context_sensitive_tab.h"
 
 static struct SysMutex *display_mutex;
 
@@ -70,7 +71,7 @@ static qboolean vid_conheight_callback(cvar_t *var, char *value)
 static qboolean in_grab_windowed_mouse_callback(cvar_t *var, char *value)
 {
 	if (display)
-		Sys_Video_GrabMouse(display, atoi(value));
+		Sys_Video_GrabMouse(display, Sys_Video_GetFullscreen(display) || atoi(value));
 
 	return false;
 }
@@ -90,7 +91,7 @@ cvar_t vid_mode = { "vid_mode", "", CVAR_ARCHIVE };
 cvar_t vid_conwidth = { "vid_conwidth", "0", CVAR_ARCHIVE, vid_conwidth_callback };
 cvar_t vid_conheight = { "vid_conheight", "0", CVAR_ARCHIVE, vid_conheight_callback };
 
-cvar_t in_grab_windowed_mouse = { "in_grab_windowed_mouse", "1", CVAR_ARCHIVE, in_grab_windowed_mouse_callback };
+cvar_t in_grab_windowed_mouse = { "in_grab_windowed_mouse", "0", CVAR_ARCHIVE, in_grab_windowed_mouse_callback };
 
 static unsigned char pal[768];
 
@@ -157,15 +158,22 @@ void VID_Init(unsigned char *palette)
 	memcpy(pal, palette, sizeof(pal));
 
 	display_mutex = Sys_Thread_CreateMutex();
-	if (display_mutex)
+	if (!display_mutex)
 	{
-		return;
+		Sys_Error("Failed to create display mutex");
+	}
+
+	if (!Sys_Video_Init())
+	{
+		Sys_Error("Sys_Video_Init() failed");
 	}
 }
 
 void VID_Shutdown()
 {
 	VID_Close();
+
+	Sys_Video_Shutdown();
 
 	Sys_Thread_DeleteMutex(display_mutex);
 
@@ -203,7 +211,10 @@ void VID_Restart(void)
 	}
 
 	if (cl.model_precache[1])
+	{
 		R_NewMap();
+		R_DrawFlat_NewMap();
+	}
 
 	Skin_Reload();
 }
@@ -321,7 +332,7 @@ void VID_Open()
 			if (windowtitle)
 				Sys_Video_SetWindowTitle(display, windowtitle);
 
-			Sys_Video_GrabMouse(display, in_grab_windowed_mouse.value);
+			Sys_Video_GrabMouse(display, Sys_Video_GetFullscreen(display) || in_grab_windowed_mouse.value);
 
 			R_Init();
 
@@ -340,6 +351,7 @@ void VID_Open()
 			M_VidInit();
 			Sbar_Init();
 			SCR_Init();
+			CSTC_PictureInit();
 
 			return;
 		}
@@ -364,6 +376,7 @@ void VID_Close()
 	Sbar_Shutdown();
 	M_VidShutdown();
 	Draw_Shutdown();
+	CSTC_PictureShutdown();
 
 #ifndef GLQUAKE
 	D_FlushCaches();

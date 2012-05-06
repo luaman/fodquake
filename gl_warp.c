@@ -296,8 +296,8 @@ static void EmitSkyPolys(msurface_t *fa, qboolean mtex)
 
 			if (mtex)
 			{
-				qglMultiTexCoord2f (GL_TEXTURE0_ARB, s, t);
-				qglMultiTexCoord2f (GL_TEXTURE1_ARB, ss, tt);
+				glMultiTexCoord2f (GL_TEXTURE0_ARB, s, t);
+				glMultiTexCoord2f (GL_TEXTURE1_ARB, ss, tt);
 			}
 			else
 			{
@@ -381,13 +381,13 @@ void R_DrawSkyChain(void)
 qboolean OnChange_r_skyname(cvar_t *v, char *skyname);
 
 //A sky texture is 256 * 128, with the right side being a masked overlay
-void R_InitSky(miptex_t *mt)
+void R_InitSky(void *texturedata)
 {
 	int i, j, p, r, g, b;
 	byte *src;
 	unsigned trans[128 * 128], transpix, *rgba;
 
-	src = (byte *) mt + mt->offsets[0];
+	src = texturedata;
 
 	// make an average value for the back to avoid a fringe on the top level
 	r = g = b = 0;
@@ -441,7 +441,6 @@ int R_SetSky(char *skyname)
 {
 	int i, error = 0;
 	byte *data[6] = {NULL, NULL, NULL, NULL, NULL, NULL};
-	extern int gl_max_size_default;
 	int imagewidth, imageheight;
 
 	

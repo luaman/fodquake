@@ -455,6 +455,8 @@ static void Mod_LoadTextures(model_t *model, lump_t *l)
 	texture_t *tx, *tx2, *anims[10], *altanims[10];
 	dmiptexlump_t *m;
 	extern cvar_t r_max_size_1;
+	int nodata;
+	void *skydata;
 
 	if (!l->filelen)
 	{
@@ -483,11 +485,28 @@ static void Mod_LoadTextures(model_t *model, lump_t *l)
 		m->dataofs[i] = LittleLong(m->dataofs[i]);
 		if (m->dataofs[i] == -1)
 			continue;
+
+		if ((m->dataofs[i] & (1<<31)))
+		{
+			m->dataofs[i] &= ~(1<<31);
+			nodata = 1;
+		}
+		else
+			nodata = 0;
+
 		mt = (miptex_t *)((byte *) m + m->dataofs[i]);
 		mt->width = LittleLong (mt->width);
 		mt->height = LittleLong (mt->height);
-		for (j = 0; j < MIPLEVELS; j++)
-			mt->offsets[j] = LittleLong (mt->offsets[j]);
+
+		if (!nodata)
+		{
+			for (j = 0; j < MIPLEVELS; j++)
+				mt->offsets[j] = LittleLong (mt->offsets[j]);
+
+			skydata = ((void *)mt) + mt->offsets[0];
+		}
+		else
+			skydata = 0;
 
 		if ((mt->width & 15) || (mt->height & 15))
 			Host_Error("Mod_LoadTextures: Texture %s is not 16 aligned", mt->name);
@@ -525,28 +544,35 @@ static void Mod_LoadTextures(model_t *model, lump_t *l)
 			memcpy (tx->name, mt->name, sizeof(tx->name));
 			tx->width = tx->height = 16;
 
-			num = *((byte *) mt + mt->offsets[0] + 2);
-			if (r_max_size_1.value != 2 || num >= 224)
+			if (nodata)
 			{
-				//find the most popular non-fullbright colour
-				memset(palette, 0, sizeof(palette));
-				for (j = 0; j < mt->width * mt->height; j++)
+				num = 0;
+			}
+			else
+			{
+				num = *((byte *) mt + mt->offsets[0] + 2);
+				if (r_max_size_1.value != 2 || num >= 224)
 				{
-					num = ((byte *) mt + mt->offsets[0])[j];
-					if (num < 224)
-						palette[num]++;
-				}
-				for (num = max = 0, j = 1; j < 224; j++)
-				{
-					if (palette[j] > max)
+					//find the most popular non-fullbright colour
+					memset(palette, 0, sizeof(palette));
+					for (j = 0; j < mt->width * mt->height; j++)
 					{
-						num = j;
-						max = palette[j];
+						num = ((byte *) mt + mt->offsets[0])[j];
+						if (num < 224)
+							palette[num]++;
 					}
-				}
+					for (num = max = 0, j = 1; j < 224; j++)
+					{
+						if (palette[j] > max)
+						{
+							num = j;
+							max = palette[j];
+						}
+					}
 
-				if (!max)
-					num = *((byte *) mt + mt->offsets[0] + ((mt->width * mt->height) >> 1));
+					if (!max)
+						num = *((byte *) mt + mt->offsets[0] + ((mt->width * mt->height) >> 1));
+				}
 			}
 
 			memset (tx + 1, num, 16 * 16);
@@ -565,17 +591,52 @@ static void Mod_LoadTextures(model_t *model, lump_t *l)
 			memset(tx, 0, sizeof(texture_t));
 
 			memcpy (tx->name, mt->name, sizeof(tx->name));
+
 			tx->width = mt->width;
 			tx->height = mt->height;
 
-			memcpy (tx + 1, mt + 1, pixels);
+			if (nodata)
+			{
+				tx->offsets[0] = sizeof(*tx);
+				tx->offsets[1] = tx->offsets[0] + tx->width * tx->height;
+				tx->offsets[2] = tx->offsets[1] + (tx->width * tx->height) / 4;
+				tx->offsets[3] = tx->offsets[2] + (tx->width * tx->height) / 16;
 
-			for (j = 0; j < MIPLEVELS; j++)
-				tx->offsets[j] = mt->offsets[j] + sizeof(texture_t) - sizeof(miptex_t);
+				{
+					int x, y;
+					unsigned char *d;
+
+					for(j=0;j<4;j++)
+					{
+						d = ((void *)tx) + tx->offsets[j];
+						for(y=0;y<tx->height/(1<<j);y++)
+						{
+							for(x=0;x<tx->width/(1<<j);x++)
+							{
+								d[x] = ((!!(x&(16/(1<<j)))) ^ (!!(y&(16/(1<<j)))))?0x0e:0;
+							}
+
+							d += tx->width/(1<<j);
+						}
+					}
+				}
+			}
+			else
+			{
+				memcpy (tx + 1, mt + 1, pixels);
+
+				for (j = 0; j < MIPLEVELS; j++)
+					tx->offsets[j] = mt->offsets[j] + sizeof(texture_t) - sizeof(miptex_t);
+			}
 		}
 
 		if (model->isworldmodel && model->bspversion != HL_BSPVERSION && ISSKYTEX(mt->name))
-			R_InitSky (mt);
+		{
+			if (skydata)
+				R_InitSky(skydata);
+			else
+				R_InitSky(((void *)tx) + tx->offsets[0]);
+		}
 	}
 
 	// sequence the animations

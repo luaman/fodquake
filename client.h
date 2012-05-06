@@ -183,7 +183,11 @@ typedef struct {
 	char	map[MAX_STYLESTRING];
 } lightstyle_t;
 
-
+struct static_entity
+{
+	struct static_entity *next;
+	entity_t ent;
+};
 
 #define	MAX_EFRAGS		512
 
@@ -214,9 +218,14 @@ typedef struct {
 	int			framecount;		// incremented every frame, never reset
 	double		realtime;		// scaled by cl_demospeed
 	double		demotime;		// scaled by cl_demospeed, reset when starting a demo
+	double		demotimeoffset;		// demotime-demotimeoffset=gametime
 	double		trueframetime;	// time since last frame
 	double		frametime;		// time since last frame, scaled by cl_demospeed
 	double          framedev;
+
+	/* Let's clear the air with unpolluted, although more, time variables */
+	double realactualfirstdemotimestamp; /* No, really. This is the first timestamp present in the demo file. -1 before the first frame has been parsed. */
+	double realactualdemotime; /* No, really. This is the time in the demo we have most recently read from. This is 0-based. 0 is the first frame of the demo. */
 
 	// network stuff
 	netchan_t	netchan;
@@ -363,7 +372,8 @@ typedef struct {
 	// refresh related state
 	struct model_s	*worldmodel;	// cl_entitites[0].model
 	struct efrag_s	*free_efrags;
-	int				num_statics;	// stored top down in cl_entities
+	struct static_entity *first_static;
+	struct static_entity *last_static;
 
 	int			cdtrack;		// cd audio
 
@@ -400,6 +410,8 @@ typedef struct {
 	interpolate_t	int_projectiles[MAX_PROJECTILES];
 
 	int			protoversion;
+
+	int weapon_to_model_index[8];
 } clientState_t;
 
 extern	clientState_t	cl;
@@ -445,13 +457,11 @@ extern cvar_t r_rockettrail;
 extern cvar_t r_grenadetrail;
 extern cvar_t r_powerupglow;
 
-#define	MAX_STATIC_ENTITIES	128			// torches, etc
 #define	CL_MAX_EDICTS		768			// FIXME: ouch! ouch! ouch!
 
 // FIXME, allocate dynamically
 extern	centity_t		cl_entities[CL_MAX_EDICTS];
 extern	efrag_t			cl_efrags[MAX_EFRAGS];
-extern	entity_t		cl_static_entities[MAX_STATIC_ENTITIES];
 extern	lightstyle_t	cl_lightstyle[MAX_LIGHTSTYLES];
 extern	dlight_t		cl_dlights[MAX_DLIGHTS];
 
@@ -459,6 +469,8 @@ extern byte		*host_basepal;
 extern byte		*host_colormap;
 
 //=============================================================================
+
+void CL_InitCommands(void);
 
 // cl_main
 void CL_UserinfoChanged(char *key, char *string);
@@ -510,6 +522,8 @@ void CL_StopUpload(void);
 void CL_ParseClientdata (void);	
 
 void CL_RequestNextFTEDownloadChunk(sizebuf_t *buf);
+
+void CL_FreeStatics(void);
 
 // cl_tent.c
 void CL_InitTEnts (void);

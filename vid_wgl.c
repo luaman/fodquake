@@ -20,12 +20,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 
 #include <windows.h>
+#include <GL/gl.h>
 
 #include "quakedef.h"
 #include "sys_win.h"
 #include "resource.h"
 #include "in_dinput8.h"
 #include "strl.h"
+#include "vid_mode_win32.h"
 
 struct display
 {
@@ -42,10 +44,39 @@ struct display
 
 	char mode[256];
 
+	DEVMODE gdevmode;
+
 	int gammaworks;
 	unsigned short currentgammaramps[3][256];
 	unsigned short originalgammaramps[3][256];
 };
+
+/* Some lame hacks to support OpenGL 1.3 */
+
+static void (APIENTRY *glMultiTexCoord2f_win)(GLenum target, GLfloat s, GLfloat t);
+static void (APIENTRY *glDrawRangeElements_win)(GLenum mode, GLuint start, GLuint end, GLsizei count, GLenum type, const GLvoid *indices);
+static void (APIENTRY *glClientActiveTexture_win)(GLenum texture);
+static void (APIENTRY *glActiveTexture_win)(GLenum texture);
+
+void glMultiTexCoord2f(GLenum target, GLfloat s, GLfloat t)
+{
+	glMultiTexCoord2f_win(target, s, t);
+}
+
+void glDrawRangeElements(GLenum mode, GLuint start, GLuint end, GLsizei count, GLenum type, const GLvoid *indices)
+{
+	glDrawRangeElements_win(mode, start, end, count, type, indices);
+}
+
+void glClientActiveTexture(GLenum texture)
+{
+	glClientActiveTexture_win(texture);
+}
+
+void glActiveTexture(GLenum texture)
+{
+	glActiveTexture_win(texture);
+}
 
 static void ProcessMessages()
 {
@@ -162,7 +193,7 @@ static LONG WINAPI MainWndProc (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 			break;
 
 		case WM_CLOSE:
-			if (MessageBox (d->window, "Are you sure you want to quit?", "FodQuake : Confirm Exit",
+			if (MessageBox (d->window, "Are you sure you want to quit?", "Fodquake : Confirm Exit",
 						MB_YESNO | MB_SETFOREGROUND | MB_ICONQUESTION) == IDYES)
 			{
 				Host_Quit ();
@@ -174,6 +205,8 @@ static LONG WINAPI MainWndProc (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 			{
 				if (wParam == WA_INACTIVE)
 				{
+					ChangeDisplaySettings (NULL, 0);
+
 					if (d->gammaworks)
 					{
 						SetDeviceGammaRamp(d->dc, d->originalgammaramps);
@@ -181,13 +214,21 @@ static LONG WINAPI MainWndProc (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 				}
 				else
 				{
+					if (ChangeDisplaySettings(&d->gdevmode, CDS_FULLSCREEN) != DISP_CHANGE_SUCCESSFUL)
+						Com_ErrorPrintf("Unable to reset fullscreen mode\n");
+					else
+					{
+						ShowWindow (d->window, SW_SHOWNORMAL);
+						MoveWindow(d->window, 0, 0, d->width, d->height, false);
+					}
+
 					if (d->gammaworks)
 					{
 						SetDeviceGammaRamp(d->dc, d->currentgammaramps);
 					}
 				}
 			}
-			d->windowactive  = wParam != WA_INACTIVE;
+			d->windowactive = wParam != WA_INACTIVE;
 			d->focuschanged = 1;
 			break;
 
@@ -241,6 +282,8 @@ void Sys_Video_GetMouseMovement(void *display, int *mousex, int *mousey)
 void Sys_Video_GrabMouse(void *display, int dograb)
 {
 	struct display *d = display;
+
+	Sys_Input_GrabMouse(d->inputdata, dograb);
 }
 
 qboolean Sys_Video_HWGammaSupported(void *display)
@@ -312,6 +355,15 @@ void Sys_Video_CvarInit()
 {
 }
 
+int Sys_Video_Init()
+{
+	return 1;
+}
+
+void Sys_Video_Shutdown()
+{
+}
+
 void *Sys_Video_Open(const char *mode, unsigned int width, unsigned int height, int fullscreen, unsigned char *palette)
 {
 	RECT		rect;
@@ -332,22 +384,19 @@ void *Sys_Video_Open(const char *mode, unsigned int width, unsigned int height, 
 
 		if (fullscreen)	//first step is to set up the video res that we want
 		{
-			DEVMODE gdevmode;
-			memset(&gdevmode, 0, sizeof(gdevmode));
-
-			if (mode == 0 || *mode == 0 || !modeline_to_devmode(mode, &gdevmode))
+			if (mode == 0 || *mode == 0 || !modeline_to_devmode(mode, &d->gdevmode))
 			{
-				EnumDisplaySettings(0, ENUM_CURRENT_SETTINGS, &gdevmode);
+				EnumDisplaySettings(0, ENUM_CURRENT_SETTINGS, &d->gdevmode);
 
-				snprintf(d->mode, sizeof(d->mode), "%d,%d,%d,%d,%d", gdevmode.dmPelsWidth, gdevmode.dmPelsHeight, gdevmode.dmBitsPerPel, gdevmode.dmDisplayFlags, gdevmode.dmDisplayFrequency);
+				snprintf(d->mode, sizeof(d->mode), "%d,%d,%d,%d,%d", d->gdevmode.dmPelsWidth, d->gdevmode.dmPelsHeight, d->gdevmode.dmBitsPerPel, d->gdevmode.dmDisplayFlags, d->gdevmode.dmDisplayFrequency);
 			}
 			else
 				strlcpy(d->mode, mode, sizeof(d->mode));
 
-			gdevmode.dmFields = DM_BITSPERPEL | DM_PELSWIDTH | DM_PELSHEIGHT | DM_DISPLAYFREQUENCY;
-			gdevmode.dmSize = sizeof (gdevmode);
+			d->gdevmode.dmFields = DM_BITSPERPEL | DM_PELSWIDTH | DM_PELSHEIGHT | DM_DISPLAYFREQUENCY;
+			d->gdevmode.dmSize = sizeof(d->gdevmode);
 
-			if (ChangeDisplaySettings (&gdevmode, CDS_FULLSCREEN) != DISP_CHANGE_SUCCESSFUL)
+			if (ChangeDisplaySettings(&d->gdevmode, CDS_FULLSCREEN) != DISP_CHANGE_SUCCESSFUL)
 			{
 				Com_Printf ("Couldn't set fullscreen DIB mode\n");
 
@@ -355,8 +404,8 @@ void *Sys_Video_Open(const char *mode, unsigned int width, unsigned int height, 
 			}
 			else
 			{
-				width = gdevmode.dmPelsWidth;
-				height = gdevmode.dmPelsHeight;
+				width = d->gdevmode.dmPelsWidth;
+				height = d->gdevmode.dmPelsHeight;
 			}
 		}
 
@@ -389,7 +438,7 @@ void *Sys_Video_Open(const char *mode, unsigned int width, unsigned int height, 
 			wc.hCursor       = LoadCursor (NULL,IDC_ARROW);
 			wc.hbrBackground = NULL;
 			wc.lpszMenuName  = 0;
-			wc.lpszClassName = "FodQuake";
+			wc.lpszClassName = "Fodquake";
 
 			RegisterClass (&wc);	//assume that any failures are due to it still being registered
 							//we'll fail on the create instead.
@@ -423,8 +472,8 @@ void *Sys_Video_Open(const char *mode, unsigned int width, unsigned int height, 
 			// Create the DIB window
 			d->window = CreateWindowEx (
 				 ExWindowStyle,
-				 "FodQuake",
-				 "FodQuake",
+				 "Fodquake",
+				 "Fodquake",
 				 WindowStyle,
 				 rect.left, rect.top,
 				 rect.right - rect.left,
@@ -474,19 +523,27 @@ void *Sys_Video_Open(const char *mode, unsigned int width, unsigned int height, 
 					{
 						BOOL (APIENTRY *swapinterval)(int);
 
-						/* Vsync is broken on Windows, no point in ever enabling it. */
-						swapinterval = wglGetProcAddress("wglSwapIntervalEXT");
-						if (swapinterval)
+						glMultiTexCoord2f_win = (void *)wglGetProcAddress("glMultiTexCoord2f");
+						glDrawRangeElements_win = (void *)wglGetProcAddress("glDrawRangeElements");
+						glClientActiveTexture_win = (void *)wglGetProcAddress("glClientActiveTexture");
+						glActiveTexture_win = (void *)wglGetProcAddress("glActiveTexture");
+
+						if (glMultiTexCoord2f_win && glDrawRangeElements_win && glClientActiveTexture_win && glActiveTexture_win)
 						{
-							Com_Printf("Disabled vsync\n");
-							swapinterval(0);
+							/* Vsync is broken on Windows, no point in ever enabling it. */
+							swapinterval = wglGetProcAddress("wglSwapIntervalEXT");
+							if (swapinterval)
+							{
+								Com_Printf("Disabled vsync\n");
+								swapinterval(0);
+							}
+
+							d->inputdata = Sys_Input_Init(d->window);
+							if (d->inputdata)
+								return d;
+
+							wglMakeCurrent(0, 0);
 						}
-
-						d->inputdata = Sys_Input_Init(d->window);
-						if (d->inputdata)
-							return d;
-
-						wglMakeCurrent(0, 0);
 					}
 
 					wglDeleteContext(d->glctx);

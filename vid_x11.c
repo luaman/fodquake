@@ -25,10 +25,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 typedef unsigned short PIXEL16;
 typedef unsigned int PIXEL24;
 
-#ifndef __CYGWIN__
-#define USE_VMODE 1
-#endif
-
 #include <ctype.h>
 #include <sys/time.h>
 #include <sys/types.h>
@@ -43,9 +39,6 @@ typedef unsigned int PIXEL24;
 #include <X11/Xutil.h>
 #include <X11/Xatom.h>
 #include <X11/extensions/XShm.h>
-#if USE_VMODE
-#include <X11/extensions/xf86vmode.h>
-#endif
 
 #include "quakedef.h"
 #include "d_local.h"
@@ -53,14 +46,19 @@ typedef unsigned int PIXEL24;
 #include "keys.h"
 #include "in_x11.h"
 #include "vid_mode_x11.h"
+#include "vid_mode_xf86vm.h"
+#include "vid_mode_xrandr.h"
 
 struct display
 {
 	void *inputdata;
-#if USE_VMODE
-	XF86VidModeModeInfo origvidmode;
-	qboolean vidmode_active;
-#endif
+
+	int xrandr_active;
+	struct xrandrmode oldxrandrmode;
+
+	int xf86vm_active;
+	struct xf86vmmode oldxf86vmmode;
+
 	int scrnum;
 	qboolean doShm; 
 	Display *x_disp;
@@ -341,11 +339,25 @@ void Sys_Video_CvarInit()
 	X11_Input_CvarInit();
 }
 
+int Sys_Video_Init()
+{
+	vidmode_init();
+
+	return 1;
+}
+
+void Sys_Video_Shutdown()
+{
+	vidmode_shutdown();
+}
+
 void *Sys_Video_Open(const char *mode, unsigned int width, unsigned int height, int fullscreen, unsigned char *palette)
 {
 	int pnum, i, num_visuals, template_mask;
 	XVisualInfo template;
 	struct display *d;
+	struct xrandrmode xrandrmode;
+	struct xf86vmmode xf86vmmode;
 
 	d = malloc(sizeof(*d));
 	if (d)
@@ -369,80 +381,55 @@ void *Sys_Video_Open(const char *mode, unsigned int width, unsigned int height, 
 
 		d->scrnum = DefaultScreen(d->x_disp);
 
-#ifdef USE_VMODE
 		if (fullscreen)
 		{
-			int version, revision;
-			XF86VidModeModeInfo **vidmodes;
-			int num_vidmodes;
-			int wanted_mode;
-			struct x11mode x11mode;
-
-			if (*mode == 0 || modeline_to_x11mode(mode, &x11mode))
+			if (*mode == 0)
 			{
-				if (XF86VidModeQueryVersion(d->x_disp, &version, &revision))
+				Window rootwindow;
+				XWindowAttributes attributes;
+
+				rootwindow = RootWindow(d->x_disp, d->scrnum);
+
+				if (XGetWindowAttributes(d->x_disp, rootwindow, &attributes))
 				{
-					XF86VidModeGetModeLine(d->x_disp, d->scrnum, &d->origvidmode.dotclock, (XF86VidModeModeLine *)&d->origvidmode.hdisplay);
+					width = attributes.width;
+					height = attributes.height;
 
-					XF86VidModeGetAllModeLines(d->x_disp, d->scrnum, &num_vidmodes, &vidmodes);
+					d->used_mode[0] = 0;
 
-					if (*mode)
+					if (!xrandr_getcurrentmode(d->x_disp, 0, d->used_mode, sizeof(d->used_mode)))
 					{
-						for (i = 0; i < num_vidmodes; i++)
-							{
-							if (vidmodes[i]->dotclock == x11mode.dotclock
-							 && vidmodes[i]->hdisplay == x11mode.hdisplay
-							 && vidmodes[i]->hsyncstart == x11mode.hsyncstart
-							 && vidmodes[i]->hsyncend == x11mode.hsyncend
-							 && vidmodes[i]->htotal == x11mode.htotal
-							 && vidmodes[i]->hskew == x11mode.hskew
-							 && vidmodes[i]->vdisplay == x11mode.vdisplay
-							 && vidmodes[i]->vsyncstart == x11mode.vsyncstart
-							 && vidmodes[i]->vsyncend == x11mode.vsyncend
-							 && vidmodes[i]->vtotal == x11mode.vtotal
-							 && vidmodes[i]->flags == x11mode.flags)
-							{
-								wanted_mode = i;
-								break;
-							}
-						}
+						xf86vm_getcurrentmode(d->x_disp, 0, d->used_mode, sizeof(d->used_mode));
 					}
-					else
-						i = num_vidmodes;
-
-					if (i != num_vidmodes)
-					{
-						XF86VidModeSwitchToMode(d->x_disp, d->scrnum, vidmodes[wanted_mode]);
-						d->vidmode_active = true;
-						XF86VidModeSetViewPort(d->x_disp, d->scrnum, 0, 0);
-
-						width = vidmodes[wanted_mode]->hdisplay;
-						height = vidmodes[wanted_mode]->vdisplay;
-
-						snprintf(d->used_mode, sizeof(d->used_mode), "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d", vidmodes[wanted_mode]->dotclock, vidmodes[wanted_mode]->hdisplay, vidmodes[wanted_mode]->hsyncstart, vidmodes[wanted_mode]->hsyncend, vidmodes[wanted_mode]->htotal, vidmodes[wanted_mode]->hskew, vidmodes[wanted_mode]->vdisplay, vidmodes[wanted_mode]->vsyncstart, vidmodes[wanted_mode]->vsyncend, vidmodes[wanted_mode]->vtotal, vidmodes[wanted_mode]->flags);
-					}
-					else
-					{
-						width = d->origvidmode.hdisplay;
-						height = d->origvidmode.vdisplay;
-
-						snprintf(d->used_mode, sizeof(d->used_mode), "%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d", d->origvidmode.dotclock, d->origvidmode.hdisplay, d->origvidmode.hsyncstart, d->origvidmode.hsyncend, d->origvidmode.htotal, d->origvidmode.hskew, d->origvidmode.vdisplay, d->origvidmode.vsyncstart, d->origvidmode.vsyncend, d->origvidmode.vtotal, d->origvidmode.flags);
-					}
-
-					XFree(vidmodes);
 				}
 				else
 				{
-					Com_Printf("Unable to use the XF86 vidmode extension.\n");
 					fullscreen = 0;
 				}
 			}
-			else
-				fullscreen = 0;
+			else if (modeline_to_xrandrmode(mode, &xrandrmode))
+			{
+				if (xrandr_switch(d->x_disp, &xrandrmode, &d->oldxrandrmode, d->used_mode, sizeof(d->used_mode)))
+				{
+					d->xrandr_active = 1;
+					width = xrandrmode.width;
+					height = xrandrmode.height;
+				}
+				else
+					fullscreen = 0;
+			}
+			else if (modeline_to_xf86vmmode(mode, &xf86vmmode))
+			{
+				if (xf86vm_switch(d->x_disp, &xf86vmmode, &d->oldxf86vmmode, d->used_mode, sizeof(d->used_mode)))
+				{
+					d->xf86vm_active = 1;
+					width = xf86vmmode.hdisplay;
+					height = xf86vmmode.vdisplay;
+				}
+				else
+					fullscreen = 0;
+			}
 		}
-#else
-				fullscreen = 0;
-#endif
 
 		d->width = width;
 		d->height = height;
@@ -506,7 +493,7 @@ void *Sys_Video_Open(const char *mode, unsigned int width, unsigned int height, 
 			d->x_win = XCreateWindow(d->x_disp, XRootWindow(d->x_disp, d->x_visinfo->screen), 0, 0,	// x, y
 					      d->width, d->height, 0,	// borderwidth
 					      d->x_visinfo->depth, InputOutput, d->x_vis, attribmask, &attribs);
-			XStoreName(d->x_disp, d->x_win, "FodQuake");
+			XStoreName(d->x_disp, d->x_win, "Fodquake");
 
 			if (d->x_visinfo->class != TrueColor)
 				XFreeColormap(d->x_disp, tmpcmap);
@@ -665,11 +652,8 @@ void Sys_Video_Close(void *display)
 	struct display *d = display;
 
 	X11_Input_Shutdown(d->inputdata);
-	
-#if USE_VMODE
-	if (d->vidmode_active)
-		XF86VidModeSwitchToMode(d->x_disp, d->scrnum, &d->origvidmode);
-#endif
+
+	XDestroyWindow(d->x_disp, d->x_win);
 
 	XDestroyImage(d->x_framebuffer[0]);
 	XDestroyImage(d->x_framebuffer[1]);
@@ -679,6 +663,11 @@ void Sys_Video_Close(void *display)
 	XFree(d->x_visinfo);
 
 	XFreeGC(d->x_disp, d->x_gc);
+
+	if (d->xrandr_active)
+		xrandr_switch(d->x_disp, &d->oldxrandrmode, 0, 0, 0);
+	else if (d->xf86vm_active)
+		xf86vm_switch(d->x_disp, &d->oldxf86vmmode, 0, 0, 0);
 
 	XCloseDisplay(d->x_disp);
 

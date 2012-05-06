@@ -21,7 +21,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include <string.h>
 #include <stdlib.h>
-#include <assert.h>
 
 #include "quakedef.h"
 #include "common.h"
@@ -217,7 +216,7 @@ void Cbuf_ExecuteEx (cbuf_t *cbuf)
 		// don't execute lines without ending \n; this fixes problems with
 		// partially stuffed aliases not being executed properly
 #ifndef SERVERONLY
-		if (cbuf_current == &cbuf_svc && i == cursize)
+		if (cbuf == &cbuf_svc && i == cursize)
 			break;
 #endif
 
@@ -395,14 +394,18 @@ void Cmd_Exec_f(void)
 #ifndef SERVERONLY
 	if (cbuf_current == &cbuf_svc)
 	{
+		Cbuf_AddText("weight_disable\n");
 		Cbuf_AddText(f);
 		Cbuf_AddText("\n");
+		Cbuf_AddText("weight_enable\n");
 	}
 	else
 #endif
 	{
+		Cbuf_InsertText("weight_enable\n");
 		Cbuf_InsertText("\n");
 		Cbuf_InsertText(f);
+		Cbuf_InsertText("weight_disable\n");
 	}
 
 	free(f);
@@ -630,7 +633,7 @@ qboolean Cmd_DeleteAlias (char *name)
 		prev = a;
 	}
 
-	assert(!"Cmd_DeleteAlias: alias list broken");
+	Sys_Error("Cmd_DeleteAlias: alias list broken");
 	return false;	// shut up compiler
 }
 
@@ -756,7 +759,9 @@ static qboolean Cmd_LegacyCommand (void)
 	// build new command string
 	Q_snprintfz(text, sizeof(text), "%s %s", cmd->newname, Cmd_Args());
 
-	assert (!recursive);
+	if (recursive)
+		Sys_Error("Cmd_LegacyCommand: Called recursively");
+
 	recursive = true;
 	Cmd_ExecuteString (text);
 	recursive = false;
@@ -876,9 +881,6 @@ void Cmd_AddCommand (char *cmd_name, xcommand_t function)
 		printf("Command \"%s\" registered too late\n", cmd_name);
 	}
 
-	if (host_initialized)	// because hunk allocation would get stomped
-		assert (!"Cmd_AddCommand after host_initialized");
-
 	// fail if the command is a variable name
 	if (Cvar_FindVar(cmd_name))
 	{
@@ -908,6 +910,7 @@ void Cmd_AddCommand (char *cmd_name, xcommand_t function)
 	cmd_functions = cmd;
 	cmd->hash_next = cmd_hash_array[key];
 	cmd_hash_array[key] = cmd;
+	cmd->weight = 0;
 }
 
 qboolean Cmd_Exists (char *cmd_name)
@@ -1002,35 +1005,33 @@ int Cmd_AliasCompleteCountPossible (char *partial)
 
 int Cmd_CommandCompare (const void *p1, const void *p2)
 {
-    return strcmp((*((cmd_function_t **) p1))->name, (*((cmd_function_t **) p2))->name);
+	return strcmp((*((cmd_function_t **) p1))->name, (*((cmd_function_t **) p2))->name);
 }
 
 void Cmd_CmdList_f (void)
 {
 	cmd_function_t *cmd;
-	int	i;
-	static int count;
-	static qboolean sorted = false;
-	static cmd_function_t *sorted_cmds[512];
+	int i;
+	int count;
+	cmd_function_t **sorted_cmds;
 
-#define MAX_SORTED_CMDS (sizeof(sorted_cmds) / sizeof(sorted_cmds[0]))
+	for (cmd = cmd_functions, count = 0; cmd; cmd = cmd->next, count++);
 
-	if (!sorted)
-	{
-		for (cmd = cmd_functions, count = 0; cmd && count < MAX_SORTED_CMDS; cmd = cmd->next, count++)
-			sorted_cmds[count] = cmd;
+	sorted_cmds = malloc(count * sizeof(*sorted_cmds));
+	if (sorted_cmds == 0)
+		Com_ErrorPrintf("cmdlist: out of memory\n");
 
-		qsort(sorted_cmds, count, sizeof (cmd_function_t *), Cmd_CommandCompare);
-		sorted = true;
-	}
+	for (cmd = cmd_functions, count = 0; cmd; cmd = cmd->next, count++)
+		sorted_cmds[count] = cmd;
 
-	if (count == MAX_SORTED_CMDS)
-		assert(!"count == MAX_SORTED_CMDS");
+	qsort(sorted_cmds, count, sizeof (cmd_function_t *), Cmd_CommandCompare);
 
 	for (i = 0; i < count; i++)
 		Com_Printf ("%s\n", sorted_cmds[i]->name);
 
 	Com_Printf ("------------\n%d commands\n", count);
+
+	free(sorted_cmds);
 }
 
 
@@ -1087,7 +1088,7 @@ char *Cmd_MacroString (char *s, int *macro_length)
 
 int Cmd_MacroCompare (const void *p1, const void *p2)
 {
-    return strcmp((*((macro_command_t **) p1))->name, (*((macro_command_t **) p2))->name);
+	return strcmp((*((macro_command_t **) p1))->name, (*((macro_command_t **) p2))->name);
 }
 
 void Cmd_MacroList_f (void)
@@ -1243,6 +1244,7 @@ static void Cmd_ExecuteStringEx (cbuf_t *context, char *text)
 	cmd_alias_t *a;
 	static char buf[2048];
 	cbuf_t *inserttarget, *oldcontext;
+	extern int weight_disable;
 
 	oldcontext = cbuf_current;
 	cbuf_current = context;
@@ -1297,10 +1299,14 @@ static void Cmd_ExecuteStringEx (cbuf_t *context, char *text)
 			}
 #endif
 
+			if (weight_disable == 0)
+				cmd->weight++;
+
 			if (cmd->function)
 				cmd->function();
 			else
 				Cmd_ForwardToServer ();
+
 			goto done;
 		}
 		else
@@ -1318,6 +1324,8 @@ static void Cmd_ExecuteStringEx (cbuf_t *context, char *text)
 	// check cvars
 	if ((v = Cvar_FindVar (Cmd_Argv(0))))
 	{
+		if (weight_disable == 0)
+			v->weight++;
 #ifndef SERVERONLY
 		if (cbuf_current == &cbuf_formatted_comms)
 		{
@@ -1333,6 +1341,8 @@ static void Cmd_ExecuteStringEx (cbuf_t *context, char *text)
 checkaliases:
 	if ((a = Cmd_FindAlias(cmd_argv[0])))
 	{
+		if (weight_disable == 0)
+			a->weight++;
 #ifndef SERVERONLY
 		if (cbuf_current == &cbuf_svc)
 		{
@@ -1495,9 +1505,6 @@ int Cmd_CheckParm (char *parm)
 {
 	int i, c;
 
-	if (!parm)
-		assert(!"Cmd_CheckParm: NULL");
-
 	c = Cmd_Argc();
 	for (i = 1; i < c; i++)
 		if (! Q_strcasecmp (parm, Cmd_Argv (i)))
@@ -1523,6 +1530,14 @@ static int cstc_alias_check(char *string, struct tokenized_string *ts)
 			return 0;
 	}
 
+	return 1;
+}
+
+
+static int cstc_alias_conditions(void)
+{
+	if (cmd_alias == NULL)
+		return 0;
 	return 1;
 }
 
@@ -1573,9 +1588,17 @@ static int cstc_alias_get_results(struct cst_info *self, int *results, int get_r
 	return 1;
 }
 
+struct cstc_cfginfo
+{
+	struct directory_list *dl;
+	qboolean *checked;
+	qboolean initialized;
+};
+
+
 static int cstc_exec_get_data(struct cst_info *self, int remove)
 {
-	struct directory_list *data;
+	struct cstc_cfginfo *data;
 	char *cfg_endings[] = { ".cfg", NULL};
 
 	if (!self)
@@ -1583,19 +1606,29 @@ static int cstc_exec_get_data(struct cst_info *self, int remove)
 
 	if (self->data)
 	{
-		data = (struct directory_list *)self->data;
-		Util_Dir_Delete(data);
+		data = (struct cstc_cfginfo *)self->data;
+		Util_Dir_Delete(data->dl);
+		free(data->checked);
+		free(data);
 		self->data = NULL;
 	}
 
 	if (remove)
 		return 0;
 
-	self->data = Util_Dir_Read(va("%s/qw/", com_basedir), 1, 1, cfg_endings);
-
-	if (self->data)
+	if ((data = calloc(1, sizeof(*data))))
 	{
-		return 0;
+		if ((data->dl = Util_Dir_Read(va("%s/qw/", com_basedir), 1, 1, cfg_endings)))
+		{
+			if (data->dl->entries == 0)
+			{
+				cstc_exec_get_data(self, 1);
+				return 1;
+			}
+			self->data = data;
+			return 0;
+		}
+		free(data);
 	}
 
 	return 1;
@@ -1615,45 +1648,44 @@ static int cstc_exec_check(char *entry, struct tokenized_string *ts)
 
 static int cstc_exec_get_results(struct cst_info *self, int *results, int get_result, int result_type, char **result)
 {
-	struct directory_list *data;
+	struct cstc_cfginfo *data;
 	int count, i;
 
 	if (self->data == NULL)
 		return 1;
 
-	data = (struct directory_list *)self->data;
+	data = (struct cstc_cfginfo *)self->data;
 
-	if (results || self->initialized == 0)
+	if (results || data->initialized == false)
 	{
-		if (self->checked)
-			free(self->checked);
-		self->checked = calloc(data->entry_count, sizeof(qboolean));
-		if (self->checked == NULL)
+		if (data->checked)
+			free(data->checked);
+		if (!(data->checked= calloc(data->dl->entry_count, sizeof(qboolean))))
 			return 1;
 
-		for (i=0, count=0; i<data->entry_count; i++)
+		for (i=0, count=0; i<data->dl->entry_count; i++)
 		{
-			if (cstc_exec_check(data->entries[i].name, self->tokenized_input))
+			if (cstc_exec_check(data->dl->entries[i].name, self->tokenized_input))
 			{
-				self->checked[i] = true;
+				data->checked[i] = true;
 				count++;
 			}
 		}
 		*results = count;
-		self->initialized = 1;
+		data->initialized = true;
 		return 0;
 	}
 
 	if (result == NULL)
 		return 0;
 
-	for (i=0, count=-1; i<data->entry_count; i++)
+	for (i=0, count=-1; i<data->dl->entry_count; i++)
 	{
-		if (self->checked[i] == true)
+		if (data->checked[i] == true)
 			count++;
 		if (count == get_result)
 		{
-			*result = data->entries[i].name;
+			*result = data->dl->entries[i].name;
 			return 0;
 		}
 	}
@@ -1677,8 +1709,8 @@ void Cmd_Init (void)
 	Cmd_AddCommand("if", Cmd_If_f);
 	Cmd_AddCommand("macrolist", Cmd_MacroList_f);
 
-	CSTC_Add("alias", NULL, &cstc_alias_get_results, NULL, 0);
-	CSTC_Add("exec", NULL, &cstc_exec_get_results, &cstc_exec_get_data, 0);
+	CSTC_Add("alias", &cstc_alias_conditions, &cstc_alias_get_results, NULL, NULL, 0, "arrow up/down to navigate");
+	CSTC_Add("exec", NULL, &cstc_exec_get_results, &cstc_exec_get_data, NULL, CSTC_EXECUTE, "arrow up/down to navigate");
 }
 
 void Cmd_Shutdown()

@@ -20,7 +20,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include <stdlib.h>
 #include <string.h>
-#include <assert.h>
 
 #include "qwsvdef.h"
 #include "pmove.h"
@@ -33,7 +32,8 @@ int SV_TranslateEntnum(int num) {
 	double	besttime, trivial_accept;
 	entity_translation_t *trans, *best;
 
-	assert(num >= 0 && num < SV_MAX_EDICTS);
+	if (num < 0 || num >= SV_MAX_EDICTS)
+		Sys_Error("SV_TranslateEntnum: num out of range");
 
 	if (num <= MAX_CLIENTS)					// client entitites are never translated
 		return num;
@@ -275,7 +275,7 @@ void SV_WritePlayersToClient (client_t *client, byte *pvs, sizebuf_t *msg) {
 			pm_code = PMC_NORMAL;
 			break;
 		default:
-			assert(!"SV_WritePlayersToClient: unexpected pm_type");
+			Sys_Error("SV_WritePlayersToClient: unexpected pm_type");
 		}
 
 		pflags |= pm_code << PF_PMC_SHIFT;

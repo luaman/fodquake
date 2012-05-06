@@ -18,6 +18,7 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 
+#include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
 
@@ -29,23 +30,34 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define MAX_TEAMIGNORELIST	4
 #define	FLOODLIST_SIZE		10
 
-cvar_t		ignore_spec				= {"ignore_spec", "0"};			
-cvar_t		ignore_mode				= {"ignore_mode", "0"};
-cvar_t		ignore_flood_duration	= {"ignore_flood_duration", "4"};
-cvar_t		ignore_flood			= {"ignore_flood", "0"};		
-cvar_t		ignore_opponents		= {"ignore_opponents", "0"};
+cvar_t ignore_spec = { "ignore_spec", "0" };
+cvar_t ignore_mode = { "ignore_mode", "0" };
+cvar_t ignore_flood_duration = { "ignore_flood_duration", "4" };
+cvar_t ignore_flood = { "ignore_flood", "0" };
+cvar_t ignore_opponents = { "ignore_opponents", "0" };
 
 char ignoreteamlist[MAX_TEAMIGNORELIST][16 + 1];
 
-typedef struct flood_s {
+typedef struct flood_s
+{
 	char data[2048];
 	float time;
-} flood_t;
+}
+flood_t;
 
 static flood_t floodlist[FLOODLIST_SIZE];
 static int		floodindex;
 
-static qboolean IsIgnored(int slot) {
+struct ignored_name
+{
+	struct ignored_name *next;
+	char *name;
+};
+
+struct ignored_name *ignored_names;
+
+static qboolean IsIgnored(int slot)
+{
 	return cl.players[slot].ignored;
 }
 
@@ -75,7 +87,8 @@ static void Display_Ignorelist(void)
 	Com_Printf("\n");
 }
 
-static qboolean Ignorelist_Add(int slot) {
+static qboolean Ignorelist_Add(int slot)
+{
 	if (IsIgnored(slot))
 		return false;
 
@@ -83,7 +96,8 @@ static qboolean Ignorelist_Add(int slot) {
 	return true;
 }
 
-static qboolean Ignorelist_Del(int slot) {
+static qboolean Ignorelist_Del(int slot)
+{
 	if (cl.players[slot].ignored == false)
 		return false;
 
@@ -91,22 +105,31 @@ static qboolean Ignorelist_Del(int slot) {
 	return true;
 }
 
-static void Ignore_f(void) {
+static void Ignore_f(void)
+{
 	int c, slot;
 
-	if ((c = Cmd_Argc()) == 1) {
+	if ((c = Cmd_Argc()) == 1)
+	{
 		Display_Ignorelist();
 		return;
-	} else if (c != 2) {
+	}
+	else if (c != 2)
+	{
 		Com_Printf("Usage: %s [userid | name]\n", Cmd_Argv(0));
 		return;
 	}
 
-	if ((slot = Player_StringtoSlot(Cmd_Argv(1))) == PLAYER_ID_NOMATCH) {
+	if ((slot = Player_StringtoSlot(Cmd_Argv(1))) == PLAYER_ID_NOMATCH)
+	{
 		Com_Printf("%s : no player with userid %d\n", Cmd_Argv(0), Q_atoi(Cmd_Argv(1)));
-	} else if (slot == PLAYER_NAME_NOMATCH) {
+	}
+	else if (slot == PLAYER_NAME_NOMATCH)
+	{
 		Com_Printf("%s : no player with name %s\n", Cmd_Argv(0), Cmd_Argv(1));
-	} else {
+	}
+	else
+	{
 		if (Ignorelist_Add(slot))
 			Com_Printf("Added user %s to ignore list\n", cl.players[slot].name);
 		else
@@ -114,33 +137,41 @@ static void Ignore_f(void) {
 	}
 }
 
-static void IgnoreList_f(void) {
+static void IgnoreList_f(void)
+{
 	if (Cmd_Argc() != 1)
 		Com_Printf("%s : no arguments expected\n", Cmd_Argv(0));
 	else
 		Display_Ignorelist();
 }
 
-static void Ignore_ID_f(void) {
+static void Ignore_ID_f(void)
+{
 	int c, userid, i, slot;
 	char *arg;
 
-	if ((c = Cmd_Argc()) == 1) {
+	if ((c = Cmd_Argc()) == 1)
+	{
 		Display_Ignorelist();
 		return;
-	} else if (c != 2) {
+	}
+	else if (c != 2)
+	{
 		Com_Printf("Usage: %s [userid]\n", Cmd_Argv(0));
 		return;
 	}
 	arg = Cmd_Argv(1);
-	for (i = 0; arg[i]; i++) {
-		if (!isdigit(arg[i])) {
+	for (i = 0; arg[i]; i++)
+	{
+		if (!isdigit(arg[i]))
+		{
 			Com_Printf("Usage: %s [userid]\n", Cmd_Argv(0));
 			return;
 		}
 	}
 	userid = Q_atoi(arg);
-	if ((slot = Player_IdtoSlot(userid)) == PLAYER_ID_NOMATCH) {
+	if ((slot = Player_IdtoSlot(userid)) == PLAYER_ID_NOMATCH)
+	{
 		Com_Printf("%s : no player with userid %d\n", Cmd_Argv(0), userid);
 		return;
 	}
@@ -150,22 +181,31 @@ static void Ignore_ID_f(void) {
 		Com_Printf ("User %s is already ignored\n", cl.players[slot].name);
 }
 
-static void Unignore_f(void) {
+static void Unignore_f(void)
+{
 	int c, slot;
 
-	if ((c = Cmd_Argc()) == 1) {
+	if ((c = Cmd_Argc()) == 1)
+	{
 		Display_Ignorelist();
 		return;
-	} else if (c != 2) {
+	}
+	else if (c != 2)
+	{
 		Com_Printf("Usage: %s [userid | name]\n", Cmd_Argv(0));
 		return;
 	}
 
-	if ((slot = Player_StringtoSlot(Cmd_Argv(1))) == PLAYER_ID_NOMATCH) {
+	if ((slot = Player_StringtoSlot(Cmd_Argv(1))) == PLAYER_ID_NOMATCH)
+	{
 		Com_Printf("%s : no player with userid %d\n", Cmd_Argv(0), Q_atoi(Cmd_Argv(1)));
-	} else if (slot == PLAYER_NAME_NOMATCH) {
+	}
+	else if (slot == PLAYER_NAME_NOMATCH)
+	{
 		Com_Printf("%s : no player with name %s\n", Cmd_Argv(0), Cmd_Argv(1));
-	} else {		
+	}
+	else
+	{
 		if (Ignorelist_Del(slot))
 			Com_Printf("Removed user %s from ignore list\n", cl.players[slot].name);
 		else
@@ -173,26 +213,33 @@ static void Unignore_f(void) {
 	}
 }
 
-static void Unignore_ID_f(void) {
+static void Unignore_ID_f(void)
+{
 	int c, i, userid, slot;
 	char *arg;
 
-	if ((c = Cmd_Argc()) == 1) {
+	if ((c = Cmd_Argc()) == 1)
+	{
 		Display_Ignorelist();
 		return;
-	} else if (c != 2) {
+	}
+	else if (c != 2)
+	{
 		Com_Printf("Usage: %s [userid]\n", Cmd_Argv(0));
 		return;
 	}
 	arg = Cmd_Argv(1);
-	for (i = 0; arg[i]; i++) {
-		if (!isdigit(arg[i])) {
+	for (i = 0; arg[i]; i++)
+	{
+		if (!isdigit(arg[i]))
+		{
 			Com_Printf("Usage: %s [userid]\n", Cmd_Argv(0));
 			return;
 		}
 	}
 	userid = Q_atoi(arg);
-	if ((slot = Player_IdtoSlot(userid)) == PLAYER_ID_NOMATCH) {
+	if ((slot = Player_IdtoSlot(userid)) == PLAYER_ID_NOMATCH)
+	{
 		Com_Printf("%s : no player with userid %d\n", Cmd_Argv(0), userid);
 		return;
 	}
@@ -202,80 +249,111 @@ static void Unignore_ID_f(void) {
 		Com_Printf("User %s is not being ignored\n", cl.players[slot].name);
 }
 
-static void Ignoreteam_f(void) {
+static void Ignoreteam_f(void)
+{
 	int c, i, j;
 	char *arg;
 
 	c = Cmd_Argc();
-	if (c == 1) {
+	if (c == 1)
+	{
 		Display_Ignorelist();
 		return;
-	} else if (c != 2) {
+	}
+	else if (c != 2)
+	{
 		Com_Printf("Usage: %s [team]\n", Cmd_Argv(0));
 		return;
 	}
 	arg = Cmd_Argv(1);
-	for (i = 0; i < MAX_CLIENTS; i++) {
-		if (cl.players[i].name[0] && !cl.players[i].spectator && !strcmp(arg, cl.players[i].team)) {
-			for (j = 0; j < MAX_TEAMIGNORELIST && ignoreteamlist[j][0]; j++) {
-				if (!strncmp(arg, ignoreteamlist[j], sizeof(ignoreteamlist[j]) - 1)) {
+	for (i = 0; i < MAX_CLIENTS; i++)
+	{
+		if (cl.players[i].name[0] && !cl.players[i].spectator && !strcmp(arg, cl.players[i].team))
+		{
+			for (j = 0; j < MAX_TEAMIGNORELIST && ignoreteamlist[j][0]; j++)
+			{
+				if (!strncmp(arg, ignoreteamlist[j], sizeof(ignoreteamlist[j]) - 1))
+				{
 					Com_Printf ("Team %s is already ignored\n", arg);
 					return;
 				}
 			}
+
 			if (j == MAX_TEAMIGNORELIST)
 				Com_Printf("You cannot ignore more than %d teams\n", MAX_TEAMIGNORELIST);
+
 			Q_strncpyz(ignoreteamlist[j], arg, sizeof(ignoreteamlist[j]));
+
 			if (j + 1 < MAX_TEAMIGNORELIST)
-				ignoreteamlist[j + 1][0] = 0;			
+				ignoreteamlist[j + 1][0] = 0;
+
 			Com_Printf("Added team %s to ignore list\n", arg);
+
 			return;
 		}
 	}
+
 	Com_Printf("%s : no team with name %s\n", Cmd_Argv(0), arg);
 }
 
-static void Unignoreteam_f(void) {
+static void Unignoreteam_f(void)
+{
 	int i, c, j;
 	char *arg;
 
 	c = Cmd_Argc();
-	if (c == 1) {
+	if (c == 1)
+	{
 		Display_Ignorelist();
 		return;
-	} else if (c != 2) {
+	}
+	else if (c != 2)
+	{
 		Com_Printf("Usage: %s [team]\n", Cmd_Argv(0));
 		return;
-	}	
+	}
+
 	arg = Cmd_Argv(1);
-	for (i = 0; i < MAX_TEAMIGNORELIST && ignoreteamlist[i][0]; i++) {
-		if (!strncmp(arg, ignoreteamlist[i], sizeof(ignoreteamlist[i]) - 1)) {
-			for (j = i; j < MAX_TEAMIGNORELIST && ignoreteamlist[j][0]; j++) 
+	for (i = 0; i < MAX_TEAMIGNORELIST && ignoreteamlist[i][0]; i++)
+	{
+		if (!strncmp(arg, ignoreteamlist[i], sizeof(ignoreteamlist[i]) - 1))
+		{
+			for (j = i; j < MAX_TEAMIGNORELIST && ignoreteamlist[j][0]; j++)
 				;
+
 			if ( --j >  i)
 				Q_strncpyz(ignoreteamlist[i], ignoreteamlist[j], sizeof(ignoreteamlist[i]));
-			ignoreteamlist[j][0] = 0;			
+
+			ignoreteamlist[j][0] = 0;
 			Com_Printf("Removed team %s from ignore list\n", arg);
+
 			return;
 		}
 	}
+
 	Com_Printf("Team %s is not being ignored\n", arg);
 }
 
-static void UnignoreAll_f (void) {
+static void UnignoreAll_f(void)
+{
 	int i;
 
-	if (Cmd_Argc() != 1) {
+	if (Cmd_Argc() != 1)
+	{
 		Com_Printf("%s : no arguments expected\n", Cmd_Argv(0));
 		return;
 	}
+
 	for (i = 0; i < MAX_CLIENTS; i++)
 		cl.players[i].ignored = false;
+
 	Com_Printf("User ignore list cleared\n");
 }
 
-static void UnignoreteamAll_f (void) {
-	if (Cmd_Argc() != 1) {
+static void UnignoreteamAll_f(void)
+{
+	if (Cmd_Argc() != 1)
+	{
 		Com_Printf("%s : no arguments expected\n", Cmd_Argv(0));
 		return;
 	}
@@ -283,45 +361,56 @@ static void UnignoreteamAll_f (void) {
 	Com_Printf("Team ignore list cleared\n");
 }
 
-char Ignore_Check_Flood(char *s, int flags, int offset) {
+char Ignore_Check_Flood(char *s, int flags, int offset)
+{
 	int i, p, q, len;
 	char name[MAX_INFO_STRING];
 
-	if ( !(  
+	if ( !(
 	 ( (ignore_flood.value == 1 && (flags == 1 || flags == 4)) ||
 	 (ignore_flood.value == 2 && flags != 0) )
 	   )  )
 		return NO_IGNORE_NO_ADD;
 
-	if (flags == 1 || flags == 4) {
+	if (flags == 1 || flags == 4)
+	{
 		p = 0;
 		q = offset - 3;
-	} else if (flags == 2) {
+	}
+	else if (flags == 2)
+	{
 		p = 1;
 		q = offset - 4;
-	} else if (flags == 8) {
+	}
+	else if (flags == 8)
+	{
 		p = 7;
 		q = offset -3;
-	} else
+	}
+	else
 		return NO_IGNORE_NO_ADD;
 
 	len = bound (0, q - p + 1, MAX_INFO_STRING - 1);
 
 	Q_strncpyz(name, s + p, len + 1);
-	if (!cls.demoplayback && !strcmp(name, Player_MyName())) {
+	if (!cls.demoplayback && !strcmp(name, Player_MyName()))
+	{
 		return NO_IGNORE_NO_ADD;
 	}
-	for (i = 0; i < FLOODLIST_SIZE; i++) {
-		if (floodlist[i].data[0] && !strncmp(floodlist[i].data, s, sizeof(floodlist[i].data) - 1) &&
-			cls.realtime - floodlist[i].time < ignore_flood_duration.value) {
+	for (i = 0; i < FLOODLIST_SIZE; i++)
+	{
+		if (floodlist[i].data[0] && !strncmp(floodlist[i].data, s, sizeof(floodlist[i].data) - 1) && cls.realtime - floodlist[i].time < ignore_flood_duration.value)
+		{
+
 			return IGNORE_NO_ADD;
 		}
 	}
+
 	return NO_IGNORE_ADD;
 }
 
-void Ignore_Flood_Add(char *s) {
-
+void Ignore_Flood_Add(char *s)
+{
 	floodlist[floodindex].data[0] = 0;
 	Q_strncpyz(floodlist[floodindex].data, s, sizeof(floodlist[floodindex].data));
 	floodlist[floodindex].time = cls.realtime;
@@ -331,29 +420,36 @@ void Ignore_Flood_Add(char *s) {
 }
 
 
-qboolean Ignore_Message(char *s, int flags, int offset) {
-	int slot, i, p, q, len;	
+qboolean Ignore_Message(char *s, int flags, int offset)
+{
+	int slot, i, p, q, len;
 	char name[32];
 
 	if (!ignore_mode.value && (flags & 2))
-		return false;		
-
+		return false;
 
 	if (ignore_spec.value == 2 && (flags == 4 || (flags == 8 && ignore_mode.value)))
 		return true;
 	else if (ignore_spec.value == 1 && (flags == 4) && !cl.spectator)
 		return true;
 
-	if (flags == 1 || flags == 4) {
+	if (flags == 1 || flags == 4)
+	{
 		p = 0;
 		q = offset - 3;
-	} else if (flags == 2) {
+	}
+	else if (flags == 2)
+	{
 		p = 1;
 		q = offset - 4;
-	} else if (flags == 8) {
+	}
+	else if (flags == 8)
+	{
 		p = 7;
 		q = offset - 3;
-	} else {
+	}
+	else
+	{
 		return false;
 	}
 
@@ -361,11 +457,11 @@ qboolean Ignore_Message(char *s, int flags, int offset) {
 	Q_strncpyz(name, s + p, len + 1);
 
 	if ((slot = Player_NametoSlot(name)) == PLAYER_NAME_NOMATCH)
-		return false;	
+		return false;
 
 	if (cl.players[slot].ignored)
 		return true;
-	
+
 
 	if (	ignore_opponents.value && flags == 1 && !cl.spectator && slot != cl.playernum &&
 			(!cl.teamplay || strcmp(cl.players[slot].team, cl.players[cl.playernum].team))
@@ -377,9 +473,10 @@ qboolean Ignore_Message(char *s, int flags, int offset) {
 		return false;
 
 	if (cl.players[slot].spectator || !strcmp(Player_MyName(), name))
-		return false;	
+		return false;
 
-	for (i = 0; i < MAX_TEAMIGNORELIST && ignoreteamlist[i][0]; i++) {
+	for (i = 0; i < MAX_TEAMIGNORELIST && ignoreteamlist[i][0]; i++)
+	{
 		if (!strncmp(cl.players[slot].team, ignoreteamlist[i], sizeof(ignoreteamlist[i]) - 1))
 			return true;
 	}
@@ -387,11 +484,13 @@ qboolean Ignore_Message(char *s, int flags, int offset) {
 	return false;
 }
 
-void Ignore_ResetFloodList(void) {
+void Ignore_ResetFloodList(void)
+{
 	int i;
 
 	for (i = 0; i < FLOODLIST_SIZE; i++)
 		floodlist[i].data[0] = 0;
+
 	floodindex = 0;
 }
 
@@ -406,15 +505,15 @@ void Ignore_CvarInit(void)
 
 	Cvar_ResetCurrentGroup();
 
-	Cmd_AddCommand ("ignore", Ignore_f);					
-	Cmd_AddCommand ("ignorelist", IgnoreList_f);			
-	Cmd_AddCommand ("unignore", Unignore_f);				
-	Cmd_AddCommand ("ignore_team", Ignoreteam_f);		
-	Cmd_AddCommand ("unignore_team", Unignoreteam_f);	
-	Cmd_AddCommand ("unignoreAll", UnignoreAll_f);			
-	Cmd_AddCommand ("unignoreAll_team", UnignoreteamAll_f);	
-	Cmd_AddCommand ("unignore_id", Unignore_ID_f);		
-	Cmd_AddCommand ("ignore_id", Ignore_ID_f);			
+	Cmd_AddCommand ("ignore", Ignore_f);
+	Cmd_AddCommand ("ignorelist", IgnoreList_f);
+	Cmd_AddCommand ("unignore", Unignore_f);
+	Cmd_AddCommand ("ignore_team", Ignoreteam_f);
+	Cmd_AddCommand ("unignore_team", Unignoreteam_f);
+	Cmd_AddCommand ("unignoreAll", UnignoreAll_f);
+	Cmd_AddCommand ("unignoreAll_team", UnignoreteamAll_f);
+	Cmd_AddCommand ("unignore_id", Unignore_ID_f);
+	Cmd_AddCommand ("ignore_id", Ignore_ID_f);
 }
 
 void Ignore_Init(void)
@@ -423,6 +522,54 @@ void Ignore_Init(void)
 
 	for (i = 0; i < MAX_TEAMIGNORELIST; i++)
 		ignoreteamlist[i][0] = 0;
+
 	Ignore_ResetFloodList();
+}
+
+void Ignore_PreNewMap()
+{
+	unsigned int i;
+	struct ignored_name *name;
+
+	for(i=0;i<MAX_CLIENTS;i++)
+	{
+		if (cl.players[i].ignored)
+		{
+			name = malloc(sizeof(*name)+strlen(cl.players[i].name) + 1);
+			if (name)
+			{
+				name->name = (char *)(name + 1);
+				strcpy(name->name, cl.players[i].name);
+
+				name->next = ignored_names;
+				ignored_names = name;
+			}
+		}
+	}
+}
+
+void Ignore_PostNewMap()
+{
+	struct ignored_name *name;
+	struct ignored_name *next;
+	int slot;
+
+	next = ignored_names;
+
+	while((name = next))
+	{
+		next = name->next;
+
+		slot = Player_StringtoSlot(name->name);
+
+		if (slot != PLAYER_ID_NOMATCH && slot != PLAYER_NAME_NOMATCH)
+		{
+			Ignorelist_Add(slot);
+		}
+
+		free(name);
+	}
+
+	ignored_names = 0;
 }
 

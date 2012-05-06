@@ -19,7 +19,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 
 #include <string.h>
-#include <assert.h>
 
 #include "quakedef.h"
 
@@ -166,8 +165,8 @@ void MSG_WriteDeltaEntity (entity_state_t *from, entity_state_t *to, sizebuf_t *
 	int bits, i;
 	float miss;
 
-	assert (to->number > 0); 
-	assert (to->number < 512); 
+	if (to->number <= 0 && to->number >= 512)
+		Sys_Error("MSG_WriteDeltaEntity: Number out of range");
 
 	// send an update
 	bits = 0;
@@ -215,7 +214,6 @@ void MSG_WriteDeltaEntity (entity_state_t *from, entity_state_t *to, sizebuf_t *
 		return;		// nothing to send!
 
 	i = to->number | (bits & ~511);
-	assert (!(i & U_REMOVE));
 	MSG_WriteShort (msg, i);
 
 	if (bits & U_MOREBITS)

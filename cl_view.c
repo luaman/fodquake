@@ -541,21 +541,24 @@ void V_UpdatePalette(qboolean force_update)
 		current_gamma = current_gamma/vid_gamma;
 	}
 
-	for (i = 0; i < 256; i++)
+	if (VID_HWGammaSupported())
 	{
-		for (j = 0; j < 3; j++)
+		for (i = 0; i < 256; i++)
 		{
-			// apply blend and contrast
-			c = (i * a + rgb[j]) * current_contrast;
-			if (c > 255)
-				c = 255;
-			// apply gamma
-			c = 255 * pow((c + 0.5) / 255.5, current_gamma) + 0.5;
-			c = bound (0, c, 255);
-			ramps[j][i] = c << 8;
+			for (j = 0; j < 3; j++)
+			{
+				// apply blend and contrast
+				c = (i * a + rgb[j]) * current_contrast;
+				if (c > 255)
+					c = 255;
+				// apply gamma
+				c = 255 * pow((c + 0.5) / 255.5, current_gamma) + 0.5;
+				c = bound (0, c, 255);
+				ramps[j][i] = c << 8;
+			}
 		}
+		VID_SetDeviceGammaRamp ((unsigned short *) ramps);
 	}
-	VID_SetDeviceGammaRamp ((unsigned short *) ramps);
 }
 
 #else	// !GLQUAKE
@@ -636,7 +639,9 @@ void V_UpdatePalette(qboolean force_update)
 	VID_SetPalette(current_pal);
 }
 
-unsigned char V_LookUpColour(float r, float g, float b)
+#endif	// !GLQUAKE
+
+static unsigned char V_LookUpColourInternal(float r, float g, float b, unsigned int maxindex)
 {
 	double bestdistance;
 	double distance;
@@ -650,7 +655,7 @@ unsigned char V_LookUpColour(float r, float g, float b)
 	g = g * 255 + 0.5;
 	b = b * 255 + 0.5;
 
-	for(i=0;i<256;i++)
+	for(i=0;i<maxindex;i++)
 	{
 		distance = sqrt(pow(r-host_basepal[i*3+0], 2) + pow(g-host_basepal[i*3+1], 2) + pow(b-host_basepal[i*3+2], 2));
 		if (distance < bestdistance)
@@ -663,7 +668,15 @@ unsigned char V_LookUpColour(float r, float g, float b)
 	return bestfit;
 }
 
-#endif	// !GLQUAKE
+unsigned char V_LookUpColour(float r, float g, float b)
+{
+	return V_LookUpColourInternal(r, g, b, 256);
+}
+
+unsigned char V_LookUpColourNoFullbright(float r, float g, float b)
+{
+	return V_LookUpColourInternal(r, g, b, 224);
+}
 
 /*
 ==============================================================================
@@ -742,12 +755,14 @@ void V_AddViewWeapon(float bob)
 	vec3_t forward;
 	centity_t *cent;
 	extern cvar_t scr_fov;
+	extern int cl_preselectedweapon;
+	int weapon;
 
 	cent = &cl.viewent;
 	TP_ParseWeaponModel(cl.model_precache[cl.stats[STAT_WEAPON]]);
 
 	if (!cl_drawgun.value || (cl_drawgun.value == 2 && scr_fov.value > 90)
-		|| ((view_message->flags & (PF_GIB|PF_DEAD)))	
+		|| ((view_message->flags & (PF_GIB|PF_DEAD)))
 		|| cl.stats[STAT_ITEMS] & IT_INVISIBILITY || cl.stats[STAT_HEALTH] <= 0 || !Cam_DrawViewModel())
 	{
 		cent->current.modelindex = 0;	//no model
@@ -772,8 +787,12 @@ void V_AddViewWeapon(float bob)
 	else if (scr_viewsize.value == 80)
 		cent->current.origin[2] += 0.5;
 
+	if (cl_preselectedweapon && cl_preselectedweapon >= 1 && cl_preselectedweapon <= 8 && cl.weapon_to_model_index[cl_preselectedweapon-1])
+		weapon = cl.weapon_to_model_index[cl_preselectedweapon-1];
+	else
+		weapon = cl.stats[STAT_WEAPON];
 
-	if (cent->current.modelindex != cl.stats[STAT_WEAPON])
+	if (cent->current.modelindex != weapon)
 	{
 		cl.viewent.frametime = -1;
 	}
@@ -786,7 +805,7 @@ void V_AddViewWeapon(float bob)
 		}
 	}
 
-	cent->current.modelindex = cl.stats[STAT_WEAPON];
+	cent->current.modelindex = weapon;
 	cent->current.frame = view_message->weaponframe;
 }
 

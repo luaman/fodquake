@@ -28,9 +28,10 @@ typedef struct
 	int		state;			// low bit is down state
 } kbutton_t;
 
-void CL_CvarInitInput (void);
-void CL_SendCmd (void);
-void CL_BaseMove (usercmd_t *cmd);
+void CL_CvarInitInput(void);
+void CL_SendCmd(void);
+void CL_BaseMove(usercmd_t *cmd);
+void CL_FinishMove(usercmd_t *cmd);
 
 extern cvar_t	sensitivity;
 

@@ -29,6 +29,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "serverscanner.h"
 #include "readablechars.h"
 #include "server_browser_qtv.h"
+#include "utils.h"
+#include "tokenize_string.h"
+#include "context_sensitive_tab.h"
 
 static void SB_AddMacros(void);
 
@@ -58,44 +61,24 @@ static struct sb_friend *friends;
 static int qtv_connect_pending;
 static double qtv_connect_time;
 
-//sb_search
-static void SB_Finish_Search(void);
-static int sb_search_running;
-static double sb_last_refresh;
-struct sb_search_info
-{
-	char *player;
-	char *map;
-	char *gametype;
-};
+static cvar_t sb_masterserver = {"sb_masterserver", "qwmaster.fodquake.net:27000 master.quakeservers.net:27000 satan.idsoftware.com:27000"};
+static cvar_t sb_player_drawing = {"sb_player_drawing", "1"};
+static cvar_t sb_refresh_on_activate = {"sb_refresh_on_activate", "1"};
 
-static struct sb_search_info sb_search_info;
+static cvar_t sb_color_bg = {"sb_color_bg", "1"};
+static cvar_t sb_color_bg_free = {"sb_color_bg_free", "55"};
+static cvar_t sb_color_bg_full = {"sb_color_bg_full", "70"};
+static cvar_t sb_color_bg_empty = {"sb_color_bg_empty", "1"};
+static cvar_t sb_color_bg_specable = {"sb_color_bg_specable", "88"};
+static cvar_t sb_qtv_proxy = {"sb_qtv_proxy", "qtv.fodquake.net:27599"};
+static cvar_t sb_qtv_lookup = {"sb_qtv_lookup", "qtv.fodquake.net:12000"};
+static cvar_t sb_qtv_connect_timeout = {"sb_qtv_connect_timeout", "2"};
 
-cvar_t sb_masterserver = {"sb_masterserver", "qwmaster.fodquake.net:27000 master.quakeservers.net:27000 satan.idsoftware.com:27000"};
-cvar_t sb_player_drawing = {"sb_player_drawing", "1"};
-cvar_t sb_refresh_on_activate = {"sb_refresh_on_activate", "1"};
+static cvar_t sb_highlight_sort_column = {"sb_highlight_sort_column", "1"};
+static cvar_t sb_highlight_sort_column_color = {"sb_highlight_sort_column_color", "70"};
+static cvar_t sb_highlight_sort_column_alpha = {"sb_highlight_sort_column_alpha", "0.5"};
 
-cvar_t sb_refresh_on_search = {"sb_refresh_on_search", "1"};
-cvar_t sb_search_show_players = {"sb_search_show_players", "1"};
-cvar_t sb_search_display_string = {"sb_search_display_string", "pmhc"};
-cvar_t sb_search_show_spectators = {"sb_search_show_spectators", "1"};
-
-cvar_t sb_refresh_interval = {"sb_refresh_interval", "180"};
-
-cvar_t sb_color_bg = {"sb_color_bg", "1"};
-cvar_t sb_color_bg_free = {"sb_color_bg_free", "55"};
-cvar_t sb_color_bg_full = {"sb_color_bg_full", "70"};
-cvar_t sb_color_bg_empty = {"sb_color_bg_empty", "1"};
-cvar_t sb_color_bg_specable = {"sb_color_bg_specable", "88"};
-cvar_t sb_qtv_proxy = {"sb_qtv_proxy", "qtv.fodquake.net:27599"};
-cvar_t sb_qtv_lookup = {"sb_qtv_lookup", "qtv.fodquake.net:12000"};
-cvar_t sb_qtv_connect_timeout = {"sb_qtv_connect_timeout", "2"};
-
-cvar_t sb_highlight_sort_column = {"sb_highlight_sort_column", "1"};
-cvar_t sb_highlight_sort_column_color = {"sb_highlight_sort_column_color", "70"};
-cvar_t sb_highlight_sort_column_alpha = {"sb_highlight_sort_column_alpha", "0.5"};
-
-char sb_macro_buf[512];
+static char sb_macro_buf[512];
 
 static struct qtvr *qtvr;
 
@@ -136,6 +119,12 @@ static int sb_player_filter = 0;
 static char sb_player_filter_entry[512];
 static int sb_player_filter_entry_position = 0;
 static double sb_player_filter_blink_time = 0;
+
+// text filter
+static int sb_text_filter = 0;
+static char sb_text_filter_entry[512];
+static int sb_text_filter_entry_position = 0;
+static double sb_text_filter_blink_time = 0;
 
 static int sb_server_insert_selected_box;
 static char sb_server_insert_ip[512];
@@ -185,6 +174,7 @@ struct tab
 	struct server **servers;
 	int *server_index;
 	char *player_filter;
+	char *text_filter;
 	struct linked_list *filters;
 	int friends;
 	struct sb_friend **friend_links;
@@ -492,6 +482,7 @@ static void sb_del_tab(struct tab *tab)
 	free(tab->name);
 	free(tab->column_types);
 	free(tab->player_filter);
+	free(tab->text_filter);
 	free(tab->server_index);
 	free(tab);
 }
@@ -714,7 +705,7 @@ static int check_player_name(char *name, const struct QWServer *server)
 			player_uncolored = remove_colors(server->players[i].name , strlen(server->players[i].name));
 			if (player_uncolored == NULL)
 				continue;
-			if (strcasestr(player_uncolored, player))
+			if (Util_strcasestr(player_uncolored, player))
 			{
 				free(player_uncolored);
 				return 1;
@@ -730,7 +721,7 @@ static int check_player_name(char *name, const struct QWServer *server)
 			player_uncolored = remove_colors(server->spectators[i].name , strlen(server->spectators[i].name));
 			if (player_uncolored == NULL)
 				continue;
-			if (strcasestr(player_uncolored, player))
+			if (Util_strcasestr(player_uncolored, player))
 			{
 				free(player_uncolored);
 				return 1;
@@ -744,6 +735,25 @@ static int check_player_name(char *name, const struct QWServer *server)
 static int check_player(struct tab *tab, const struct QWServer *server)
 {
 	return check_player_name(tab->player_filter, server);
+}
+
+static int check_text_hm(char *text, const struct QWServer *server)
+{
+	if (server->hostname)
+		if (Util_strcasestr(server->hostname, text))
+			return 1;
+	if (server->map)
+		if (Util_strcasestr(server->map, text))
+			return 1;
+	if (server->gamedir)
+		if (Util_strcasestr(server->gamedir, text))
+			return 1;
+	return 0;
+}
+
+static int check_text (struct tab *tab, const struct QWServer *server)
+{
+	return check_text_hm (tab->text_filter, server);
 }
 
 static int hostname_compare(const void *a, const void *b);
@@ -953,6 +963,8 @@ static void update_tab(struct tab *tab)
 		cf = Check_Server_Against_Filter;
 	else if (tab->player_filter)
 		cf = check_player;
+	else if (tab->text_filter)
+		cf = check_text;
 	else
 		cf = stubby;
 
@@ -1283,6 +1295,40 @@ void SB_Key(int key)
 				return;
 		}
 
+		if (sb_text_filter == 1)
+		{
+			tab->changed = 1;
+			update = 0;
+			if (key == K_ESCAPE)
+			{
+				sb_text_filter = 0;
+				return;
+			}
+
+			if (key == K_ENTER)
+				sb_text_filter = 0;
+
+			handle_textbox(key, sb_text_filter_entry, &sb_text_filter_entry_position, sizeof(sb_text_filter_entry));
+			if (tab->text_filter)
+			{
+				free(tab->text_filter);
+				tab->text_filter = NULL;
+				update = 1;
+			}
+			if (strlen(sb_text_filter_entry) > 0)
+			{
+				tab->text_filter = strdup(sb_text_filter_entry);
+				if (tab->text_filter == NULL)
+					Com_Printf("warning: strdup failed in \"%s\", line: %s.\n", __func__, __LINE__);
+				update_tab(tab);
+			}
+			if (update)
+				update_tab(tab);
+
+			if (key != K_UPARROW && key != K_DOWNARROW && key != K_ENTER)
+				return;
+		}
+
 		if (sb_server_insert == 1)
 		{
 			SB_Server_Insert_Handler(key);
@@ -1418,6 +1464,12 @@ void SB_Key(int key)
 		if (key == 'f' && keydown[K_CTRL])
 		{
 			sb_player_filter = 1;
+			return;
+		}
+
+		if (key == '/')
+		{
+			sb_text_filter = 1;
 			return;
 		}
 
@@ -1901,6 +1953,7 @@ static void SB_Draw_Server(void)
 	struct tab *tab;
 	const char *hostname, *map;
 	char string[512];
+	char *s;
 	int position;
 	char *friend_name;
 	const struct QWPlayer **sorted_players;
@@ -1939,31 +1992,32 @@ static void SB_Draw_Server(void)
 	}
 	Draw_ColoredString(8, 16, string, 0);
 
-	if (sb_player_filter == 1 || tab->player_filter)
+	if (sb_player_filter == 1 || sb_text_filter == 1)
 	{
-		snprintf(string, 512, "Server: %*i/%*i - player_filter: ", sb_server_count_width, tab->sb_position + 1, sb_server_count_width, tab->server_count);
+		snprintf(string, 512, "Server: %*i/%*i - %s: ", sb_server_count_width, tab->sb_position + 1, sb_server_count_width, tab->server_count, sb_text_filter ? "text search" : "player search");
 		i = strlen(string);
 		Draw_String(8, 8,string);
 		x = 1;
-		if (tab->player_filter)
+		if (tab->player_filter || tab->text_filter)
 		{
-			x = strlen(tab->player_filter);
+			s = tab->text_filter ? tab->text_filter : tab->player_filter;
+			x = strlen(s);
 			if (x == 0)
 				x = 1;
 			else 
 				x += 1;
 
-			if (sb_player_filter == 1)
+			if (sb_player_filter == 1 || sb_text_filter == 1)
 				Draw_Fill(8 + i *8, 8, x * 8, 8, 55);
-			Draw_String(8 + i *8, 8, tab->player_filter);
+			Draw_String(8 + i *8, 8, s);
 		}
 		else
 		{
-			if (sb_player_filter == 1)
+			if (sb_player_filter == 1 | sb_text_filter == 1)
 			Draw_Fill(8 + i *8, 8, x * 8, 8, 55);
 		}
 
-		if (sb_player_filter == 1)
+		if (sb_player_filter == 1 && sb_text_filter == 0)
 		{
 			if (sb_player_filter_blink_time < cls.realtime)
 				Draw_Character(8 + i *8 + sb_player_filter_entry_position *8, 8, 11);
@@ -1971,6 +2025,17 @@ static void SB_Draw_Server(void)
 			if (sb_player_filter_blink_time + 0.2f < cls.realtime)
 				sb_player_filter_blink_time = cls.realtime + 0.2f;
 		}
+
+		if (sb_text_filter == 1)
+		{
+			if (sb_text_filter_blink_time < cls.realtime)
+				Draw_Character(8 + i *8 + sb_text_filter_entry_position *8, 8, 11);
+
+			if (sb_text_filter_blink_time + 0.2f < cls.realtime)
+				sb_text_filter_blink_time = cls.realtime + 0.2f;
+		}
+
+
 	}
 	else
 		Draw_String(8, 8,va("Server: %*i/%*i ", sb_server_count_width, tab->sb_position + 1, sb_server_count_width, tab->server_count));
@@ -2292,23 +2357,17 @@ void SB_Frame(void)
 	if (key_dest != key_serverbrowser)
 		sb_open = 0;
 
-	if (!sb_open && !sb_search_running)
+	if (!sb_open)
 		return;
 
 	if (serverscanner)
 		ServerScanner_DoStuff(serverscanner);
 
-	if (serverscanner && (sb_check_serverscanner || sb_search_running))
+	if (serverscanner && sb_check_serverscanner)
 	{
 		sss = ServerScanner_GetStatus(serverscanner);
 		if (sss == SSS_IDLE)
 		{
-			if (sb_search_running)
-			{
-				sb_search_running = 0;
-				SB_Finish_Search();
-			}
-
 			SB_Set_Statusbar("All done. Press \"ctrl + h\" for help.");
 			sb_check_serverscanner = 0;
 		}
@@ -2682,246 +2741,6 @@ void SB_Remove_Friend_f(void)
 	SB_Remove_Friend(Cmd_Argv(1));
 }
 
-
-static int SB_Parse_Searchstring(void)
-{
-	static char *available_types = "nmg";
-	char *arguments;
-	int arguments_count;
-	int i;
-
-	arguments = Cmd_Argv(1);
-	arguments_count = strlen(arguments);
-
-	if (arguments_count == 0 || arguments_count > strlen(available_types))
-		return 1;
-
-	if (arguments_count + 2 != Cmd_Argc())
-		return 1;
-
-	if (sb_search_info.player)
-	{
-		free(sb_search_info.player);
-		sb_search_info.player = NULL;
-	}
-
-	if (sb_search_info.map)
-	{
-		free(sb_search_info.map);
-		sb_search_info.map = NULL;
-	}
-
-	if (sb_search_info.gametype)
-	{
-		free(sb_search_info.gametype);
-		sb_search_info.gametype = NULL;
-	}
-
-
-	for (i = 0; i < arguments_count; i++)
-	{
-		if (arguments[i] == 'n')
-		{
-			sb_search_info.player = strdup(Cmd_Argv(2 + i));
-			if (sb_search_info.player == NULL)
-				return 1;
-		}
-		if (arguments[i] == 'm')
-		{
-			sb_search_info.map = strdup(Cmd_Argv(2 + i));
-			if (sb_search_info.map == NULL)
-				return 1;
-		}
-		if (arguments[i] == 'g')
-		{
-			sb_search_info.gametype = strdup(Cmd_Argv(2 + i));
-			if (sb_search_info.gametype == NULL)
-				return 1;
-		}
-	}
-
-	return 0;
-}
-
-static void SB_Search_f(void)
-{
-	if (sb_search_running == 1)
-	{
-		Com_Printf("search already in progress.\n");
-		return;
-	}
-
-	if (Cmd_Argc() < 3)
-	{
-		Com_Printf("Usage: %s nm player_name map\nYou can use one or both arguments.\n", Cmd_Argv(0));
-		return;
-	}
-
-	if (SB_Parse_Searchstring() == 1)
-	{
-		Com_Printf("Usage: %s nm player_name map\nYou can use one or both arguments.\n", Cmd_Argv(0));
-		return;
-	}
-
-	sb_search_running = 1;
-
-	if (sb_refresh_on_search.value == 1 || serverscanner == NULL || sb_last_refresh + sb_refresh_interval.value < cls.realtime)
-	{
-		sb_last_refresh = cls.realtime;
-		SB_Refresh();
-	}
-}
-
-static void SB_Search_Print_Result_String(const struct QWServer *server, int count)
-{
-	char *ptr;
-	int len, i;
-
-
-	Com_Printf("%3i: ", count);
-
-	ptr = sb_search_display_string.string;
-	len = strlen(ptr);
-
-	for (i = 0; i < len; i++)
-	{
-		switch (*ptr)
-		{
-			case 'h':
-				Com_Printf("%s ", server->hostname);
-				break;
-			case 'p':
-				Com_Printf("%i ", server->pingtime/1000);
-				break;
-			case 'c':
-				Com_Printf("%i/%i ", server->numplayers, server->maxclients);
-				break;
-			case 'm':
-				if (server->map)
-					Com_Printf("%s ", server->map);
-				break;
-		}
-		ptr++;
-	}
-	Com_Printf("\n");
-}
-
-static void SB_Finish_Search(void)
-{
-	int x, i;
-	int found_count = 0;
-
-	sb_search_running = 0;
-
-	if (sb_search_info.map)
-	{
-		Com_Printf("map: %s\n", sb_search_info.map);
-	}
-
-	if (sb_search_info.player)
-	{
-		Com_Printf("player: %s\n", sb_search_info.player);
-	}
-
-	if (sb_search_info.gametype)
-	{
-		Com_Printf("gametype: %s\n", sb_search_info.gametype);
-	}
-
-
-	for (x=0; x < sb_qw_server_count; x++)
-	{
-		if (sb_qw_server[x]->numplayers == 0 && sb_qw_server[x]->numspectators == 0)
-			continue;
-
-		if (sb_search_info.map && sb_qw_server[x]->map)
-		{
-			if (!char_check(sb_qw_server[x]->map, sb_search_info.map, 0))
-			{
-				continue;
-			}
-		}
-
-		if (sb_search_info.player)
-		{
-			if (!check_player_name(sb_search_info.player, sb_qw_server[x]))
-			{
-				continue;
-			}
-		}
-
-		if (sb_search_info.gametype)
-		{
-			if (strcmp(sb_search_info.gametype, "1on1") == 0)
-			{
-				if(!sb_qw_server[x]->numplayers <= 2 && sb_qw_server[x]->maxclients == 2)
-					continue;
-			}
-			else if (strcmp(sb_search_info.gametype, "2on2") == 0)
-			{
-				if(!sb_qw_server[x]->numplayers <= 4 && sb_qw_server[x]->maxclients == 4)
-					continue;
-			}
-			else if (strcmp(sb_search_info.gametype, "4on4") == 0)
-			{
-				if(!sb_qw_server[x]->numplayers <= 8 && sb_qw_server[x]->maxclients == 8)
-					continue;
-			}
-		}
-
-		found_count++;
-
-		Cbuf_AddText(va("set sb_sr_ip_%i %s\n", found_count, NET_AdrToString(&sb_qw_server[x]->addr)));
-
-		if (found_count > 1)
-		{
-			Com_Printf("\x80");
-			for (i=0;i<20;i++)
-				Com_Printf("\x81");
-			Com_Printf("\x82");
-			Com_Printf("\n");
-		}
-
-		SB_Search_Print_Result_String(sb_qw_server[x], found_count);
-
-		if (sb_search_show_players.value == 1 && sb_qw_server[x]->numplayers > 0)
-		{
-			Com_Printf("    players: ");
-			for (i = 0; i < sb_qw_server[x]->numplayers; i++)
-			{
-				if (i == 0)
-					Com_Printf("%s", sb_qw_server[x]->players[i].name);
-				else
-					Com_Printf(", %s", sb_qw_server[x]->players[i].name);
-
-			}
-			Com_Printf("\n");
-
-		}
-
-		if (sb_search_show_spectators.value == 1 && sb_qw_server[x]->numspectators > 0)
-		{
-			Com_Printf("    spectators: ");
-			for (i = 0; i < sb_qw_server[x]->numspectators; i++)
-			{
-				if (i == 0)
-					Com_Printf("%s", sb_qw_server[x]->spectators[i].name);
-				else
-					Com_Printf(", %s", sb_qw_server[x]->spectators[i].name);
-
-			}
-			Com_Printf("\n");
-
-		}
-
-	}
-
-	if (found_count == 0)
-	{
-		Com_Printf("The search yielded no results.\n");
-	}
-}
-
 void SB_Init(void)
 {
 	SB_Set_Statusbar("just started!. press \"ctrl + h\" for help\n");
@@ -3004,7 +2823,210 @@ void SB_Tab_Layout_f(void)
 	update_tab(tab);
 }
 
+struct cstc_sbdata
+{
+	qboolean initialized;
+	qboolean *checked;
+	int map_length;
+	int count;
+};
 
+static qboolean cstc_connect_check(struct cst_info *self, struct QWServer *server, struct tokenized_string *ts)
+{
+	int i;
+	extern cvar_t context_sensitive_tab_completion_connect_show_empty;
+
+	if (server->status == QWSS_FAILED)
+		return false;
+
+	if (server->numplayers > 0 || self->toggleables[0])
+	{
+		for (i=0; i<ts->count; i++)
+			if (Util_strcasestr(va("%s %3i/%3i %s", server->map ? server->map : "", server->numplayers, server->maxclients, server->hostname ? server->hostname : "") , ts->tokens[i]) == NULL)
+				return false;
+	}
+	else
+		return false;
+
+	return true;
+}
+
+static int cstc_connect_get_results(struct cst_info *self, int *results, int get_result, int result_type, char **result)
+{
+	int count, i, j;
+	struct QWServer *server;
+	struct cstc_sbdata *data;
+	qboolean resort = false;
+
+	if (self == NULL)
+		return 1;
+
+	if (self->data == NULL)
+		return 1;
+
+	data = (struct cstc_sbdata *)self->data;
+
+	if ((serverscanner && ServerScanner_DataUpdated(serverscanner)) || self->toggleables[2] == true)
+	{
+		if (self->toggleables[2] || sb_qw_server == NULL)
+			SB_Refresh();
+		if (sb_qw_server)
+			ServerScanner_FreeServers(serverscanner, sb_qw_server);
+		sb_qw_server = ServerScanner_GetServers(serverscanner, &sb_qw_server_count);
+
+		if (data->checked)
+		{
+			free(data->checked);
+			data->checked = NULL;
+		}
+
+		resort = true;
+		self->toggleables[2] = false;
+	}
+
+	if (sb_qw_server_count == 0)
+		return 1;
+
+	if (data->checked == NULL)
+	{
+		if ((data->checked = calloc(sb_qw_server_count, sizeof(qboolean))) == NULL)
+			return 1;
+		resort = true;
+	}
+
+	if (sb_qw_server == NULL)
+		return 1;
+
+	if (resort || self->input_changed || self->toggleables_changed)
+	{
+		for (i=0, count=0; i<sb_qw_server_count; i++)
+		{
+			if (cstc_connect_check(self, sb_qw_server[i], self->tokenized_input))
+			{
+				data->checked[i] = true;
+				if (sb_qw_server[i]->map)
+					if (data->map_length < strlen(sb_qw_server[i]->map))
+						data->map_length = strlen(sb_qw_server[i]->map);
+				count++;
+			}
+			else
+				data->checked[i] = false;
+		}
+		data->count = count;
+	}
+
+	if (results)
+		*results = data->count;
+
+	if (result == NULL)
+		return 0;
+
+	for (i=0, count=-1; i<sb_qw_server_count; i++)
+	{
+		if (data->checked[i] == true)
+			count++;
+
+		if (count == get_result)
+		{
+			server = sb_qw_server[i];
+			if (result_type == cstc_rt_real)
+				*result = va("%s", NET_AdrToString(&server->addr));
+			else
+				*result = va("%*s %3i/%3i %s", data->map_length, server->map ? server->map : "", server->numplayers, server->maxclients, server->hostname ? server->hostname : "");
+			return 0;
+		}
+	}
+	return 1;
+}
+
+static int cstc_connect_condition(void)
+{
+	if (sb_qw_server == NULL)
+	{
+		SB_Refresh();
+		if (serverscanner)
+			return 1;
+		return 0;
+	}
+	return 1;
+}
+
+static void cstc_connect_get_data(struct cst_info *self, int remove)
+{
+	struct cstc_sbdata *data;
+
+	if ((data = calloc(1, sizeof(*data))))
+	{
+		self->data = (void *)data;
+		return 1;
+	}
+
+	return 0;
+}
+
+static void cstc_connect_draw(struct cst_info *self)
+{
+	char *s;
+	int x, y, i, j;
+	struct QWServer *server;
+	struct cstc_sbdata *data;
+
+	if (self->data == NULL)
+		return;
+
+	data = (struct cstc_sbdata *)self->data;
+
+	if (self->selection_changed)
+		self->toggleables[1] = false;
+
+	if (self->toggleables[1] == false)
+		return;
+
+	if (sb_qw_server == NULL)
+		return;
+
+	if (sb_qw_server_count <= self->selection)
+		return;
+
+	for (i=0, j=-1; i<sb_qw_server_count ; i++)
+	{
+		if (data->checked[i] == true)
+			j++;
+		if (j == self->selection)
+			break;
+	}
+
+	if (i == sb_qw_server_count)
+		return;
+
+	server = sb_qw_server[i];
+
+	if (server == NULL)
+		return;
+
+	x = 0;
+	y = self->offset_y + self->direction * 8;
+
+	for (i=0; i<server->numplayers; i++)
+	{
+		s = server->players[i].name;
+		if (s == NULL)
+			continue;
+		Draw_Fill(x, y, strlen(s) *8 + 8, 8, 3);
+		Draw_String(x, y, s);
+		x += 8 + strlen(s) * 8 ;
+	}
+
+	for (i=0; i<server->numspectators; i++)
+	{
+		s = server->spectators[i].name;
+		if (s == NULL)
+			continue;
+		Draw_Fill(x, y, strlen(s) *8 + 8, 8, 0);
+		Draw_String(x, y, s);
+		x += 8 + strlen(s) * 8 ;
+	}
+}
 
 void SB_CvarInit(void)
 {
@@ -3018,18 +3040,12 @@ void SB_CvarInit(void)
 	Cmd_AddCommand("sb_set_clipboard", &SB_Set_Clipboard_f);
 	Cmd_AddCommand("sb_add_friend", &SB_Add_Friend_f);
 	Cmd_AddCommand("sb_remove_friend", &SB_Remove_Friend_f);
-	Cmd_AddCommand("sb_search", &SB_Search_f);
 
 	SB_AddMacros();
 
 	Cvar_Register(&sb_masterserver);
 	Cvar_Register(&sb_player_drawing);
 	Cvar_Register(&sb_refresh_on_activate);
-	Cvar_Register(&sb_refresh_on_search);
-	Cvar_Register(&sb_search_display_string);
-	Cvar_Register(&sb_search_show_players);
-	Cvar_Register(&sb_search_show_spectators);
-	Cvar_Register(&sb_refresh_interval);
 	Cvar_Register(&sb_color_bg);
 	Cvar_Register(&sb_color_bg_empty);
 	Cvar_Register(&sb_color_bg_free);
@@ -3041,6 +3057,8 @@ void SB_CvarInit(void)
 	Cvar_Register(&sb_highlight_sort_column);
 	Cvar_Register(&sb_highlight_sort_column_color);
 	Cvar_Register(&sb_highlight_sort_column_alpha);
+
+	CSTC_Add("connect", &cstc_connect_condition, &cstc_connect_get_results, &cstc_connect_get_data, &cstc_connect_draw, CSTC_EXECUTE | CSTC_HIGLIGHT_INPUT, "arrow up/down to navigate, ctrl+1 to toggle showing empty servers");
 }
 
 void Dump_SB_Config(FILE *f)

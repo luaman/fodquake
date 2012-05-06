@@ -19,6 +19,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include <exec/exec.h>
 #include <intuition/intuition.h>
+#include <intuition/intuitionbase.h>
 #include <graphics/gfx.h>
 #include <cybergraphx/cybergraphics.h>
 
@@ -26,6 +27,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <proto/intuition.h>
 #include <proto/graphics.h>
 #include <proto/cybergraphics.h>
+
+#include <string.h>
 
 #include "quakedef.h"
 #include "d_local.h"
@@ -62,11 +65,21 @@ void Sys_Video_CvarInit(void)
 {
 }
 
+int Sys_Video_Init()
+{
+	return 1;
+}
+
+void Sys_Video_Shutdown()
+{
+}
+
 void *Sys_Video_Open(const char *mode, unsigned int width, unsigned int height, int fullscreen, unsigned char *palette)
 {
 	struct display *d;
 	struct modeinfo modeinfo;
 	char monitorname[128];
+	char *p;
 	int i;
 	int screenbuffersallocated;
 
@@ -82,7 +95,9 @@ void *Sys_Video_Open(const char *mode, unsigned int width, unsigned int height, 
 					SA_Width, modeinfo.width,
 					SA_Height, modeinfo.height,
 					SA_Depth, 8,
+#ifndef AROS
 					SA_MonitorName, monitorname,
+#endif
 					SA_Quiet, TRUE,
 					TAG_DONE);
 			}
@@ -99,7 +114,23 @@ void *Sys_Video_Open(const char *mode, unsigned int width, unsigned int height, 
 				width = d->screen->Width;
 				height = d->screen->Height;
 
-				snprintf(d->used_mode, sizeof(d->used_mode), "Dunno,%d,%d,8", width, height);
+				strlcpy(monitorname, "Dunno", sizeof(monitorname));
+
+#ifndef __AROS__
+				if (IntuitionBase->LibNode.lib_Version > 50 || (IntuitionBase->LibNode.lib_Version == 50 && IntuitionBase->LibNode.lib_Revision >= 53))
+				{
+					GetAttr(SA_MonitorName, d->screen, &p);
+					if (p)
+					{
+						strlcpy(monitorname, p, sizeof(monitorname));
+						p = strstr(monitorname, ".monitor");
+						if (p)
+							*p = 0;
+					}
+				}
+#endif
+
+				snprintf(d->used_mode, sizeof(d->used_mode), "%s,%d,%d,%d", monitorname, width, height, GetBitMapAttr(d->screen->RastPort.BitMap, BMA_DEPTH));
 			}
 			else
 				fullscreen = 0;
@@ -108,7 +139,7 @@ void *Sys_Video_Open(const char *mode, unsigned int width, unsigned int height, 
 		d->window = OpenWindowTags(0,
 			WA_InnerWidth, width,
 			WA_InnerHeight, height,
-			WA_Title, "FodQuake",
+			WA_Title, "Fodquake",
 			WA_DragBar, d->screen ? FALSE : TRUE,
 			WA_DepthGadget, d->screen ? FALSE : TRUE,
 			WA_Borderless, d->screen ? TRUE : FALSE,
@@ -311,10 +342,17 @@ void Sys_Video_SetPalette(void *display, unsigned char *palette)
 
 	for (i = 0; i < 256; i++)
 	{
+#ifdef FOD_BIGENDIAN
 		d->pal[i * 4] = 0;
 		d->pal[i * 4 + 1] = palette[i * 3 + 0];
 		d->pal[i * 4 + 2] = palette[i * 3 + 1];
 		d->pal[i * 4 + 3] = palette[i * 3 + 2];
+#else
+		d->pal[i * 4] = palette[i * 3 + 2];
+		d->pal[i * 4 + 1] = palette[i * 3 + 1];
+		d->pal[i * 4 + 2] = palette[i * 3 + 0];
+		d->pal[i * 4 + 3] = 0;
+#endif
 	}
 }
 

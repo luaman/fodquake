@@ -21,7 +21,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include <stdlib.h>
 #include <string.h>
-#include <assert.h>
 #include <math.h>
 #include <time.h>
 
@@ -40,6 +39,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "config.h"
 
 #include "server_browser.h"
+#include "context_sensitive_tab.h"
 
 #ifdef GLQUAKE
 #include "gl_local.h"
@@ -940,6 +940,7 @@ void SCR_DrawConsole(void)
 		scr_copyeverything = 1;
 		Con_DrawConsole(scr_con_current);
 		Context_Sensitive_Tab_Completion_Draw();
+		Context_Sensitive_Tab_Completion_Notification(false);
 		clearconsole = 0;
 
 		if (cls.download)
@@ -1435,7 +1436,7 @@ static char *SShot_ExtForFormat(int format) {
 	case IMAGE_JPEG: return ".jpg";
 	case IMAGE_PNG: return ".png";
 	}
-	assert(!"SShot_ExtForFormat: unknown format");
+	Sys_Error("SShot_ExtForFormat: unknown format");
 	return "err";
 }
 

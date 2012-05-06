@@ -90,6 +90,8 @@ struct SoundCard
 	int samplebits;
 	int speed;
 	void *buffer;
+
+	char *drivername;
 };
 
 typedef void (*SoundCvarInitFunc)(void);

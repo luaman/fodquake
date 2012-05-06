@@ -38,7 +38,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "strl.h"
 
 #ifdef GLQUAKE
-#include "gl_local.h"
+#include "gl_cvars.h"
 #endif
 
 #include "menu.h"
@@ -1062,7 +1062,7 @@ static void M_Options_ResetToDefaults()
 
 static void M_Options_SaveConfiguration()
 {
-	Cbuf_AddText("cfg_save config.cfg\n");
+	Cbuf_AddText("cfg_save default.cfg\n");
 }
 
 static void M_Options_Draw()
@@ -1103,10 +1103,6 @@ static char *bindnames[][2] =
 	{ "+movedown",  "swim down" },
 	{ "impulse 12", "previous weapon" },
 	{ "impulse 10", "next weapon" },
-	{ "+left",      "turn left" },
-	{ "+right",     "turn right" },
-	{ "+lookup",    "look up" },
-	{ "+lookdown",  "look down" },
 };
 
 #define	NUMCOMMANDS	(sizeof(bindnames)/sizeof(bindnames[0]))
@@ -3957,10 +3953,13 @@ static void M_Quit_Draw()
 {
 	static char *quitmsg[] =
 	{
-		"0FodQuake "FODQUAKE_VERSION,
+		"0Fodquake "FODQUAKE_VERSION,
 		"0",
 		"1Programming:",
+		"0David Walton",
 		"0Florian Zwoch",
+		"0Jacek Piszczek",
+		"0Jonny Tornbom",
 		"0Juergen Legler",
 		"0Mark Olsen",
 		"0Morten Bojsen-Hansen",
@@ -3973,13 +3972,13 @@ static void M_Quit_Draw()
 		"0ZQuake by Anton Garilov",
 		"0Quakeworld by Id Software",
 		"0",
-		"1Press 'y' to exit FodQuake",
+		"1Press 'y' to exit Fodquake",
 		NULL
 	};
 	char **p;
 	int x, y;
 
-	M_DrawTextBox (0, 12, 38, 19);
+	M_DrawTextBox (0, 11, 38, 21);
 	y = 24;
 	for (p = quitmsg; *p; p++, y += 8)
 	{

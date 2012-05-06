@@ -133,8 +133,10 @@ static void Mod_FreeAliasData(model_t *model)
 	alias = model->extradata;
 	if (alias)
 	{
-		free(alias->commands);
-		free(alias->posedata);
+		free(alias->collisionmap);
+		free(alias->indices);
+		free(alias->texcoords);
+		free(alias->realposeverts);
 		free(alias);
 		model->extradata = 0;
 	}
@@ -320,7 +322,7 @@ static model_t *Mod_FindName(const char *name)
 
 		submodel = atoi(p + 1);
 		if (!(submodel > 0 && submodel < mod->numsubmodels))
-			Sys_Error("Mod_FindName: Requested submodel out of range\n", submodel);
+			Sys_Error("Mod_FindName: Requested submodel %d out of range\n", submodel);
 
 		mod = &mod->submodels[submodel-1];
 	}
@@ -503,6 +505,8 @@ static void Mod_LoadTextures(model_t *model, lump_t *l)
 	texture_t *tx, *tx2, *anims[10], *altanims[10], *txblock;
 	dmiptexlump_t *m;
 	byte *data;
+	int nodata;
+	void *freethis;
 
 	if (!l->filelen)
 	{
@@ -533,6 +537,14 @@ static void Mod_LoadTextures(model_t *model, lump_t *l)
 		if (m->dataofs[i] == -1)
 			continue;
 
+		if (m->dataofs[i]&(1<<31))
+		{
+			nodata = 1;
+			m->dataofs[i] &= ~(1<<31);
+		}
+		else
+			nodata = 0;
+
 		mt = (miptex_t *) ((byte *) m + m->dataofs[i]);
 		model->textures[i] = tx = txblock + i;
 
@@ -545,11 +557,15 @@ static void Mod_LoadTextures(model_t *model, lump_t *l)
 
 		tx->width = mt->width = LittleLong (mt->width);
 		tx->height = mt->height = LittleLong (mt->height);
+
 		if ((mt->width & 15) || (mt->height & 15))
 			Host_Error ("Mod_LoadTextures: Texture %s is not 16 aligned", mt->name);
 
-		for (j = 0; j < MIPLEVELS; j++)
-			mt->offsets[j] = LittleLong (mt->offsets[j]);
+		if (!nodata)
+		{
+			for (j = 0; j < MIPLEVELS; j++)
+				mt->offsets[j] = LittleLong (mt->offsets[j]);
+		}
 
 		// HACK HACK HACK
 		if (!strcmp(mt->name, "shot1sid") && mt->width == 32 && mt->height == 32
@@ -561,7 +577,7 @@ static void Mod_LoadTextures(model_t *model, lump_t *l)
 			memcpy (mt + 1, (byte *) (mt + 1) + 32 * 31, 32);
 		}
 
-		if (mt->offsets[0])
+		if (!nodata && mt->offsets[0])
 		{
 			data = (byte *) &d_8to24table[*((byte *) mt + mt->offsets[0] + ((mt->height * mt->width) >> 1))];
 			tx->colour = (255 << 24) + (data[0] << 0) + (data[1] << 8) + (data[2] << 16);
@@ -569,7 +585,36 @@ static void Mod_LoadTextures(model_t *model, lump_t *l)
 
 		if (model->isworldmodel && model->bspversion != HL_BSPVERSION && ISSKYTEX(tx->name))
 		{
-			R_InitSky (mt);
+			if (nodata)
+			{
+				width = tx->width;
+				height = tx->height;
+				freethis = malloc(width * height);
+				if (!freethis)
+					Sys_Error("Out of memory");
+
+				{
+					int x, y;
+					unsigned char *d;
+
+					d = freethis;
+
+					for(y=0;y<height;y++)
+					{
+						for(x=0;x<width;x++)
+						{
+							d[x] = ((!!(x&(16))) ^ (!!(y&(16))))?0x0e:0;
+						}
+
+						d += width;
+					}
+				}
+				R_InitSky(freethis);
+				free(freethis);
+			}
+			else
+				R_InitSky(((void *)mt) + mt->offsets[0]);
+
 			continue;
 		}
 
@@ -594,23 +639,47 @@ static void Mod_LoadTextures(model_t *model, lump_t *l)
 		}
 
 
-		if (mt->offsets[0])
+		if (!nodata && mt->offsets[0])
 		{
 			texname = tx->name;
 			width = tx->width >> mipTexLevel;
 			height = tx->height >> mipTexLevel;
 			data = (byte *) mt + mt->offsets[mipTexLevel];
+			freethis = 0;
 		}
 		else
 		{
 			texname = r_notexture_mip->name;
-			width = r_notexture_mip->width >> mipTexLevel;
-			height = r_notexture_mip->height >> mipTexLevel;
+			width = 32 >> mipTexLevel;
+			height = 32 >> mipTexLevel;
 			data = (byte *) r_notexture_mip + r_notexture_mip->offsets[mipTexLevel];
+			freethis = malloc(width * height);
+			if (!freethis)
+				Sys_Error("Out of memory");
+
+			{
+				int x, y;
+				unsigned char *d;
+
+				d = freethis;
+
+				for(y=0;y<height;y++)
+				{
+					for(x=0;x<width;x++)
+					{
+						d[x] = ((!!(x&(16/(1<<mipTexLevel)))) ^ (!!(y&(16/(1<<mipTexLevel)))))?0x0e:0;
+					}
+
+					d += width;
+				}
+			}
+			data = freethis;
 		}
 		tx->gl_texturenum = GL_LoadTexture (texname, width, height, data, texmode | brighten_flag, 1);
 		if (!ISTURBTEX(model, tx->name) && Img_HasFullbrights(data, width * height))
 			tx->fb_texturenum = GL_LoadTexture (va("@fb_%s", texname), width, height, data, texmode | TEX_FULLBRIGHT, 1);
+
+		free(freethis);
 	}
 
 	// sequence the animations

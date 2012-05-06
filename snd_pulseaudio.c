@@ -138,11 +138,13 @@ static qboolean pulseaudio_init(struct SoundCard *sc, int rate, int channels, in
 	if (!pulseaudio_internal_initso(p))
 	{
 		DEBUG("Failed to initialize shared library");
+		Com_ErrorPrintf("PulseAudio: Unable to open shared library\n");
 		pulseaudio_shutdown(sc);
 		return false;
 	}
 	
-	if (!pulseaudio_internal_initpulse(p, rate, channels, bits)) {
+	if (!pulseaudio_internal_initpulse(p, rate, channels, bits))
+	{
 		DEBUG("Failed to initialize PulseAudio");
 		pulseaudio_shutdown(sc);
 		return false;
@@ -365,6 +367,7 @@ static qboolean pulseaudio_internal_initpulse(struct pulseaudio_private *p, int 
 	if (p->pa_context_connect(p->context, NULL, 0, NULL) < 0)
 	{
 		DEBUG("Unable to connect to server");
+		Com_ErrorPrintf("PulseAudio: Unable to connect to server\n");
 		return false;
 	}
 

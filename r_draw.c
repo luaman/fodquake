@@ -244,6 +244,8 @@ void Draw_ColoredString_Length(int x, int y, char *text, int red, int len, unsig
 
 	Draw_BeginColoredTextRendering();
 
+	DrawImp_SetTextColor((startcolour>>8)&15, (startcolour>>4)&15, startcolour&15);
+
 	while(len)
 	{
 		if (*text == '&')
@@ -347,7 +349,7 @@ void Draw_ConsoleBackground(int lines)
 		Draw_DrawPictureAlpha(conbackpic, 0, lines - vid.conheight, vid.conwidth, vid.conheight, scr_conalpha.value);
 	}
 
-	sprintf(ver, "FodQuake %s", FODQUAKE_VERSION);
+	sprintf(ver, "Fodquake %s", FODQUAKE_VERSION);
 	Draw_Alt_String(vid.conwidth - strlen(ver) * 8 - 8, lines - 10, ver);
 }
 
@@ -381,7 +383,7 @@ void Draw_TileClear(int x, int y, int width, int height)
 			if (tilewidth > dstwidth)
 				tilewidth = dstwidth;
 
-			Draw_DrawSubPicture(backtilepic, xoffset, yoffset, tilewidth, tileheight, dstx, dsty, tilewidth, tileheight);
+			Draw_DrawSubPicture(backtilepic, ((double)xoffset)/64, ((double)yoffset)/64, ((double)tilewidth/64), ((double)tileheight)/64, dstx, dsty, tilewidth, tileheight);
 
 			dstx += tilewidth;
 			dstwidth -= tilewidth;

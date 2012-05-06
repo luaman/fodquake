@@ -76,6 +76,7 @@ cvar_t s_noextraupdate = {"s_noextraupdate", "0"};
 cvar_t s_show = {"s_show", "0"};
 cvar_t s_mixahead = {"s_mixahead", "0.1", CVAR_ARCHIVE};
 cvar_t s_swapstereo = {"s_swapstereo", "0"};
+cvar_t s_driver = {"s_driver", "auto"};
 
 struct SoundDriver
 {
@@ -90,6 +91,7 @@ SoundCvarInitFunc WaveOut_CvarInit;
 SoundCvarInitFunc DS7_CvarInit;
 SoundCvarInitFunc ALSA_CvarInit;
 SoundCvarInitFunc CoreAudio_CvarInit;
+SoundCvarInitFunc PulseAudio_CvarInit;
 
 SoundInitFunc AHI_Init;
 SoundInitFunc OSS_Init;
@@ -97,12 +99,14 @@ SoundInitFunc WaveOut_Init;
 SoundInitFunc DS7_Init;
 SoundInitFunc ALSA_Init;
 SoundInitFunc CoreAudio_Init;
+SoundInitFunc PulseAudio_Init;
 
 const static struct SoundDriver sounddrivers[] =
 {
 	{ "AHI", &AHI_Init, &AHI_CvarInit },
 	{ "OSS", &OSS_Init, &OSS_CvarInit },
 	{ "ALSA", &ALSA_Init, &ALSA_CvarInit },
+	{ "PulseAudio", &PulseAudio_Init, &PulseAudio_CvarInit },
 	{ "DS7", &DS7_Init, &DS7_CvarInit },
 	{ "WaveOut", &WaveOut_Init, &WaveOut_CvarInit },
 	{ "CoreAudio", &CoreAudio_Init, &CoreAudio_CvarInit },
@@ -121,7 +125,7 @@ void S_SoundInfo_f (void)
 		Com_Printf ("sound system not started\n");
 		return;
 	}
-
+	Com_Printf ("%s driver\n", soundcard->drivername);
 	Com_Printf ("%5d stereo\n", soundcard->channels - 1);
 	Com_Printf ("%5d samples\n", soundcard->samples);
 	Com_Printf ("%5d samplepos\n", soundcard->samplepos);
@@ -150,16 +154,19 @@ static void S_InitDriver()
 	soundcard = malloc(sizeof(*soundcard));
 	if (soundcard)
 	{
-
 		for(i=0;i<NUMSOUNDDRIVERS;i++)
 		{
 			if (*sounddrivers[i].init)
 			{
-				bzero(soundcard, sizeof(*soundcard));
+				if(Q_strcasecmp(s_driver.string, "auto") != 0)
+					if(Q_strcasecmp(sounddrivers[i].name, s_driver.string) != 0)
+						continue;
 
+				memset(soundcard, 0, sizeof(*soundcard));
 				rc = (*sounddrivers[i].init)(soundcard, rate, 2, 16);
 				if (rc)
 				{
+					soundcard->drivername = sounddrivers[i].name;
 					break;
 				}
 			}
@@ -174,7 +181,9 @@ static void S_InitDriver()
 
 	if (!rc)
 	{
-		Com_Printf("Unable to initialise sound output.\n");
+		Com_ErrorPrintf("Unable to initialise sound output.\n");
+		if(Q_strcasecmp(s_driver.string, "auto") != 0)
+			Com_Printf("WARNING: You have specified a custom s_driver which may be the cause of failure. Try setting it to \"auto\"\n");
 		free(soundcard);
 		soundcard = 0;
 		sound_started = 0;
@@ -244,6 +253,7 @@ void S_CvarInit(void)
 	Cvar_Register(&s_show);
 	Cvar_Register(&s_mixahead);
 	Cvar_Register(&s_swapstereo);
+	Cvar_Register(&s_driver);
 
 	Cvar_ResetCurrentGroup();
 

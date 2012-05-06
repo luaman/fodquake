@@ -115,7 +115,11 @@ static void Mouse_UpdateValues(struct Mouse *mouse)
 	}
 
 	mouse->viewangles[YAW] -= mouse->m_yaw * mx;
-	mouse->viewangles[YAW] = anglemod(mouse->viewangles[YAW]);
+
+	if (mouse->viewangles[YAW] < 0)
+		mouse->viewangles[YAW] = 360-fmod(-mouse->viewangles[YAW], 360);
+	else if (mouse->viewangles[YAW] >= 360)
+		mouse->viewangles[YAW] = fmod(mouse->viewangles[YAW], 360);
 
 	mouse->viewangles[PITCH] += mouse->m_pitch * my;
 	mouse->viewangles[PITCH] = bound(-70, mouse->viewangles[PITCH], 80);
@@ -181,6 +185,9 @@ int Mouse_Init()
 
 void Mouse_Shutdown()
 {
+	if (!mouse_global)
+		return;
+
 	Sys_Thread_DeleteMutex(mouse_global->mutex);
 	free(mouse_global);
 	mouse_global = 0;

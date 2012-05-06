@@ -30,12 +30,23 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "movie.h"
 #include "mouse.h"
 #include "ruleset.h"
+#include "netqw.h"
+
+cvar_t cl_weaponfire = { "cl_weaponfire", "1" };
+cvar_t cl_weaponswitch = { "cl_weaponswitch", "2 1" };
+
+int cl_preselectedweapon;
 
 cvar_t	cl_nodelta = {"cl_nodelta","0"};
 cvar_t	cl_c2spps = {"cl_c2spps","0"};
 cvar_t	cl_c2sImpulseBackup = {"cl_c2sImpulseBackup","3"};
 
 cvar_t	cl_smartjump = {"cl_smartjump", "0"};
+
+static cvar_t	cl_upspeed = {"cl_upspeed","400"};
+static cvar_t	cl_forwardspeed = {"cl_forwardspeed","400",CVAR_ARCHIVE};
+static cvar_t	cl_backspeed = {"cl_backspeed","400",CVAR_ARCHIVE};
+static cvar_t	cl_sidespeed = {"cl_sidespeed","400",CVAR_ARCHIVE};
 
 
 /*
@@ -56,12 +67,13 @@ state bit 1 is edge triggered on the up to down transition
 ===============================================================================
 */
 
-kbutton_t	in_left, in_right, in_forward, in_back;
-kbutton_t	in_lookup, in_lookdown, in_moveleft, in_moveright;
+kbutton_t	in_forward, in_back;
+kbutton_t	in_moveleft, in_moveright;
 kbutton_t	in_use, in_jump, in_attack;
 kbutton_t	in_up, in_down;
 
-int			in_impulse;
+static int in_impulse;
+static int in_otherimpulse;
 
 static int checkmovementruleset()
 {
@@ -142,127 +154,6 @@ static void KeyUp(kbutton_t *b)
 	b->state &= ~1;		// now up
 }
 
-static void IN_UpDown(void) {KeyDown(&in_up);}
-static void IN_UpUp(void) {KeyUp(&in_up);}
-static void IN_DownDown(void) {KeyDown(&in_down);}
-static void IN_DownUp(void) {KeyUp(&in_down);}
-static void IN_LeftDown(void) {KeyDown(&in_left);}
-static void IN_LeftUp(void) {KeyUp(&in_left);}
-static void IN_RightDown(void) {KeyDown(&in_right);}
-static void IN_RightUp(void) {KeyUp(&in_right);}
-static void IN_ForwardDown(void) {if (checkmovementruleset()) KeyDown(&in_forward);}
-static void IN_ForwardUp(void) {if (checkmovementruleset()) KeyUp(&in_forward);}
-static void IN_BackDown(void) {if (checkmovementruleset()) KeyDown(&in_back);}
-static void IN_BackUp(void) {if (checkmovementruleset()) KeyUp(&in_back);}
-static void IN_LookupDown(void) {KeyDown(&in_lookup);}
-static void IN_LookupUp(void) {KeyUp(&in_lookup);}
-static void IN_LookdownDown(void) {KeyDown(&in_lookdown);}
-static void IN_LookdownUp(void) {KeyUp(&in_lookdown);}
-static void IN_MoveleftDown(void) {if (checkmovementruleset()) KeyDown(&in_moveleft);}
-static void IN_MoveleftUp(void) {if (checkmovementruleset()) KeyUp(&in_moveleft);}
-static void IN_MoverightDown(void) {if (checkmovementruleset()) KeyDown(&in_moveright);}
-static void IN_MoverightUp(void) {if (checkmovementruleset()) KeyUp(&in_moveright);}
-
-static void IN_AttackDown(void) {KeyDown(&in_attack);}
-static void IN_AttackUp(void) {KeyUp(&in_attack);}
-
-static void IN_UseDown(void) {KeyDown(&in_use);}
-static void IN_UseUp(void) {KeyUp(&in_use);}
-
-
-static void IN_JumpDown(void)
-{
-	qboolean condition;
-
-	condition = (cls.state == ca_active && cl_smartjump.value);
-	if (condition && cl.stats[STAT_HEALTH] > 0
-	 && !cls.demoplayback && !cl.spectator
-	 && cl.waterlevel >= 2
-	 && (!cl.teamfortress || !(in_forward.state & 1)))
-	{
-		KeyDown(&in_up);
-	}
-	else if (condition && cl.spectator && Cam_TrackNum() == -1)
-	{
-		KeyDown(&in_up);
-	}
-	else
-	{
-		KeyDown(&in_jump);
-	}
-}
-
-static void IN_JumpUp(void)
-{
-	if (cl_smartjump.value)
-		KeyUp(&in_up);
-	KeyUp(&in_jump);
-}
-
-
-
-//Tonik void IN_Impulse (void) {in_impulse=Q_atoi(Cmd_Argv(1));}
-
-// Tonik -->
-static void IN_Impulse(void)
-{
-	int best, i, imp, items;
-
-	in_impulse = Q_atoi(Cmd_Argv(1));
-
-	if (Cmd_Argc() <= 2)
-		return;
-
-	items = cl.stats[STAT_ITEMS];
-	best = 0;
-
-	for (i = Cmd_Argc() - 1; i > 0; i--)
-	{
-		imp = Q_atoi(Cmd_Argv(i));
-		if (imp < 1 || imp > 8)
-			continue;
-
-		switch(imp)
-		{
-			case 1:
-				if (items & IT_AXE)
-					best = 1;
-				break;
-			case 2:
-				if (items & IT_SHOTGUN && cl.stats[STAT_SHELLS] >= 1)
-					best = 2;
-				break;
-			case 3:
-				if (items & IT_SUPER_SHOTGUN && cl.stats[STAT_SHELLS] >= 2)
-					best = 3;
-				break;
-			case 4:
-				if (items & IT_NAILGUN && cl.stats[STAT_NAILS] >= 1)
-					best = 4;
-				break;
-			case 5:
-				if (items & IT_SUPER_NAILGUN && cl.stats[STAT_NAILS] >= 2)
-					best = 5;
-				break;
-			case 6:
-				if (items & IT_GRENADE_LAUNCHER && cl.stats[STAT_ROCKETS] >= 1)
-					best = 6;
-				break;
-			case 7:
-				if (items & IT_ROCKET_LAUNCHER && cl.stats[STAT_ROCKETS] >= 1)
-					best = 7;
-				break;
-			case 8:
-				if (items & IT_LIGHTNING && cl.stats[STAT_CELLS] >= 1)
-					best = 8;
-		}
-	}
-
-	if (best)
-		in_impulse = best;
-}
-// <-- Tonik
-
 /*
 Does not return 0.25 if a key was pressed and released during the frame,
 0.5 if it was pressed and held
@@ -284,12 +175,316 @@ static float CL_KeyState(kbutton_t *key)
 	return val;
 }
 
-//==========================================================================
+static void UpdateNetQWForwardSpeed()
+{
+	float speed;
 
-static cvar_t	cl_upspeed = {"cl_upspeed","400"};
-static cvar_t	cl_forwardspeed = {"cl_forwardspeed","400",CVAR_ARCHIVE};
-static cvar_t	cl_backspeed = {"cl_backspeed","400",CVAR_ARCHIVE};
-static cvar_t	cl_sidespeed = {"cl_sidespeed","400",CVAR_ARCHIVE};
+	if (cls.netqw)
+	{
+		speed = cl_forwardspeed.value * CL_KeyState(&in_forward) - cl_backspeed.value * CL_KeyState(&in_back);
+
+		NetQW_SetForwardSpeed(cls.netqw, speed);
+	}
+}
+
+static void UpdateNetQWSideSpeed()
+{
+	float speed;
+
+	if (cls.netqw)
+	{
+		speed = cl_sidespeed.value * CL_KeyState(&in_moveright) - cl_sidespeed.value * CL_KeyState(&in_moveleft);
+
+		NetQW_SetSideSpeed(cls.netqw, speed);
+	}
+}
+
+static void UpdateNetQWUpSpeed()
+{
+	float speed;
+
+	if (cls.netqw)
+	{
+		speed = cl_upspeed.value * CL_KeyState(&in_up) - cl_upspeed.value * CL_KeyState(&in_down);
+
+		NetQW_SetUpSpeed(cls.netqw, speed);
+	}
+}
+
+static void IN_UpDown(void) { KeyDown(&in_up); UpdateNetQWUpSpeed(); }
+static void IN_UpUp(void) { KeyUp(&in_up); UpdateNetQWUpSpeed(); }
+static void IN_DownDown(void) { KeyDown(&in_down); UpdateNetQWUpSpeed(); }
+static void IN_DownUp(void) { KeyUp(&in_down); UpdateNetQWUpSpeed(); }
+static void IN_ForwardDown(void) {if (checkmovementruleset()) { KeyDown(&in_forward); UpdateNetQWForwardSpeed(); }}
+static void IN_ForwardUp(void) {if (checkmovementruleset()) { KeyUp(&in_forward); UpdateNetQWForwardSpeed(); }}
+static void IN_BackDown(void) {if (checkmovementruleset()) { KeyDown(&in_back); UpdateNetQWForwardSpeed(); }}
+static void IN_BackUp(void) {if (checkmovementruleset()) { KeyUp(&in_back); UpdateNetQWForwardSpeed(); }}
+static void IN_MoveleftDown(void) {if (checkmovementruleset()) { KeyDown(&in_moveleft); UpdateNetQWSideSpeed(); }}
+static void IN_MoveleftUp(void) {if (checkmovementruleset()) { KeyUp(&in_moveleft); UpdateNetQWSideSpeed(); }}
+static void IN_MoverightDown(void) {if (checkmovementruleset()) { KeyDown(&in_moveright); UpdateNetQWSideSpeed(); }}
+static void IN_MoverightUp(void) {if (checkmovementruleset()) { KeyUp(&in_moveright); UpdateNetQWSideSpeed(); }}
+
+static unsigned char idleweaponlist[8];
+
+static const unsigned short weaponindex[8] =
+{
+	IT_AXE,
+	IT_SHOTGUN,
+	IT_SUPER_SHOTGUN,
+	IT_NAILGUN,
+	IT_SUPER_NAILGUN,
+	IT_GRENADE_LAUNCHER,
+	IT_ROCKET_LAUNCHER,
+	IT_LIGHTNING
+};
+
+static const struct
+{
+	unsigned char statindex;
+	unsigned char minamount;
+} ammoindex[8] =
+{
+	{ STAT_SHELLS, 0 }, /* hah */
+	{ STAT_SHELLS, 1 },
+	{ STAT_SHELLS, 2 },
+	{ STAT_NAILS, 1 },
+	{ STAT_NAILS, 2 },
+	{ STAT_ROCKETS, 1 },
+	{ STAT_ROCKETS, 1 },
+	{ STAT_CELLS, 1 }
+};
+
+static int CheckWeaponAvailable(int index)
+{
+	if (index < 1 || index > 8)
+		return 0;
+
+	index--;
+
+	if ((cl.stats[STAT_ITEMS] & weaponindex[index]) && cl.stats[ammoindex[index].statindex] >= ammoindex[index].minamount)
+		return 1;
+
+	return 0;
+}
+
+static void WeaponFallback()
+{
+	int i;
+	int weapon;
+
+	weapon = 0;
+
+	for(i=0;i<sizeof(idleweaponlist)/sizeof(*idleweaponlist) && idleweaponlist[i];i++)
+	{
+		if (CheckWeaponAvailable(idleweaponlist[i]))
+		{
+			weapon = idleweaponlist[i];
+			break;
+		}
+	}
+
+	if (weapon)
+	{
+		if (cls.netqw)
+			NetQW_SetImpulse(cls.netqw, weapon);
+		else
+			in_otherimpulse = weapon;
+	}
+}
+
+static void IN_AttackDown(void)
+{
+	if (cl_preselectedweapon)
+		in_impulse = cl_preselectedweapon;
+
+	KeyDown(&in_attack);
+
+	if (cls.netqw)
+		NetQW_ButtonDown(cls.netqw, 0, cl_preselectedweapon);
+}
+
+static void IN_AttackUp(void)
+{
+	KeyUp(&in_attack);
+
+	if (cl_preselectedweapon)
+		WeaponFallback();
+
+	if (cls.netqw)
+		NetQW_ButtonUp(cls.netqw, 0);
+}
+
+static void IN_UseDown(void)
+{
+	KeyDown(&in_use);
+
+	if (cls.netqw)
+		NetQW_ButtonDown(cls.netqw, 2, 0);
+}
+
+static void IN_UseUp(void)
+{
+	KeyUp(&in_use);
+
+	if (cls.netqw)
+		NetQW_ButtonUp(cls.netqw, 2);
+}
+
+
+static void IN_WeaponDown()
+{
+	int idleindex;
+	int index;
+	int max;
+	int num;
+	int weapon;
+
+	if (Cmd_Argc() < 2)
+	{
+		Com_Printf("Usage: +weapon <weapon preference list>\n");
+		return;
+	}
+
+	idleindex = 0;
+	index = Cmd_Argc() - 1;
+	weapon = 0;
+
+	for(index=1,max=Cmd_Argc();index<max;index++)
+	{
+		num = Q_atoi(Cmd_Argv(index));
+
+		if (num < 0)
+		{
+			if (idleindex < sizeof(idleweaponlist)/sizeof(*idleweaponlist))
+				idleweaponlist[idleindex++] = -num;
+		}
+		else
+		{
+			if (!weapon)
+			{
+				if (CheckWeaponAvailable(num))
+					weapon = num;
+			}
+		}
+	}
+
+	if (!weapon && (!cl_weaponfire.value || (cl.stats[STAT_HEALTH] > 0 && !cl.intermission)))
+		return;
+
+	if (idleindex == 0)
+	{
+		Cmd_TokenizeString(cl_weaponswitch.string);
+
+		for(index=0,max=Cmd_Argc();index<max;index++)
+		{
+			num = Q_atoi(Cmd_Argv(index));
+
+			if (idleindex < sizeof(idleweaponlist)/sizeof(*idleweaponlist))
+				idleweaponlist[idleindex++] = num;
+		}
+	}
+
+	if (idleindex < sizeof(idleweaponlist)/sizeof(*idleweaponlist))
+		idleweaponlist[idleindex] = 0;
+
+	if (cl_weaponfire.value)
+	{
+		KeyDown(&in_attack);
+
+		if (cls.netqw)
+			NetQW_ButtonDown(cls.netqw, 0, weapon);
+		else
+			in_impulse = weapon;
+	}
+	else
+		cl_preselectedweapon = weapon;
+}
+
+static void IN_WeaponUp()
+{
+	if (!cl_weaponfire.value)
+		return;
+
+	KeyUp(&in_attack);
+
+	if (cls.netqw)
+		NetQW_ButtonUp(cls.netqw, 0);
+
+	WeaponFallback();
+}
+
+static void IN_JumpDown(void)
+{
+	qboolean condition;
+
+	condition = (cls.state == ca_active && cl_smartjump.value);
+	if (condition && cl.stats[STAT_HEALTH] > 0
+	 && !cls.demoplayback && !cl.spectator
+	 && cl.waterlevel >= 2
+	 && (!cl.teamfortress || !(in_forward.state & 1)))
+	{
+		IN_UpDown();
+	}
+	else if (condition && cl.spectator && Cam_TrackNum() == -1)
+	{
+		IN_UpDown();
+	}
+	else
+	{
+		if (cls.netqw)
+			NetQW_ButtonDown(cls.netqw, 1, 0);
+
+		KeyDown(&in_jump);
+	}
+}
+
+static void IN_JumpUp(void)
+{
+	if (cl_smartjump.value)
+		IN_UpUp();
+
+	KeyUp(&in_jump);
+
+	if (cls.netqw)
+		NetQW_ButtonUp(cls.netqw, 1);
+}
+
+//Tonik void IN_Impulse (void) {in_impulse=Q_atoi(Cmd_Argv(1));}
+
+// Tonik -->
+static void IN_Impulse(void)
+{
+	int best, i, imp;
+
+	best = Q_atoi(Cmd_Argv(1));
+
+	if (best >= 1 && best <= 8)
+		cl_preselectedweapon = 0;
+
+	if (Cmd_Argc() > 2)
+	{
+		best = 0;
+
+		for (i = Cmd_Argc() - 1; i > 0; i--)
+		{
+			imp = Q_atoi(Cmd_Argv(i));
+
+			if (CheckWeaponAvailable(imp))
+				best = imp;
+		}
+	}
+
+	if (best)
+	{
+		if (cls.netqw)
+			NetQW_SetImpulse(cls.netqw, best);
+		else
+			in_impulse = best;
+	}
+}
+// <-- Tonik
+
+//==========================================================================
 
 static void CL_Rotate_f(void)
 {
@@ -371,8 +566,16 @@ void CL_FinishMove(usercmd_t *cmd)
 
 	VectorCopy(cl.viewangles, cmd->angles);
 
-	cmd->impulse = in_impulse;
-	in_impulse = 0;
+	if (in_impulse)
+	{
+		cmd->impulse = in_impulse;
+		in_impulse = 0;
+	}
+	else if (in_otherimpulse)
+	{
+		cmd->impulse = in_otherimpulse;
+		in_otherimpulse = 0;
+	}
 
 	// chop down so no extra bits are kept that the server wouldn't get
 	cmd->forwardmove = MakeShort(cmd->forwardmove);
@@ -533,18 +736,10 @@ void CL_CvarInitInput(void)
 	Cmd_AddCommand("-moveup",IN_UpUp);
 	Cmd_AddCommand("+movedown",IN_DownDown);
 	Cmd_AddCommand("-movedown",IN_DownUp);
-	Cmd_AddCommand("+left",IN_LeftDown);
-	Cmd_AddCommand("-left",IN_LeftUp);
-	Cmd_AddCommand("+right",IN_RightDown);
-	Cmd_AddCommand("-right",IN_RightUp);
 	Cmd_AddCommand("+forward",IN_ForwardDown);
 	Cmd_AddCommand("-forward",IN_ForwardUp);
 	Cmd_AddCommand("+back",IN_BackDown);
 	Cmd_AddCommand("-back",IN_BackUp);
-	Cmd_AddCommand("+lookup", IN_LookupDown);
-	Cmd_AddCommand("-lookup", IN_LookupUp);
-	Cmd_AddCommand("+lookdown", IN_LookdownDown);
-	Cmd_AddCommand("-lookdown", IN_LookdownUp);
 	Cmd_AddCommand("+moveleft", IN_MoveleftDown);
 	Cmd_AddCommand("-moveleft", IN_MoveleftUp);
 	Cmd_AddCommand("+moveright", IN_MoverightDown);
@@ -557,10 +752,15 @@ void CL_CvarInitInput(void)
 	Cmd_AddCommand("-jump", IN_JumpUp);
 	Cmd_AddCommand("impulse", IN_Impulse);
 
+	Cmd_AddCommand("+weapon", IN_WeaponDown);
+	Cmd_AddCommand("-weapon", IN_WeaponUp);
 
 	Cmd_AddCommand("rotate", CL_Rotate_f);
 
 	Cvar_SetCurrentGroup(CVAR_GROUP_INPUT_KEYBOARD);
+
+	Cvar_Register(&cl_weaponswitch);
+	Cvar_Register(&cl_weaponfire);
 
 	Cvar_Register(&cl_smartjump);
 

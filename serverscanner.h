@@ -60,6 +60,7 @@ struct QWServer
 	enum QWServerStatus status;
 	unsigned int pingtime; /* In microseconds */
 	const char *hostname; /* Note, this is the _QW_ text 'hostname' */
+	const char *gamedir;
 	unsigned int maxclients;
 	unsigned int maxspectators;
 	unsigned int teamplay;

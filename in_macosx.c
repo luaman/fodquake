@@ -28,6 +28,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "keys.h"
 #include "in_macosx.h"
+#include "vid.h"
+#include "sys.h"
 
 #define NUMBUTTONEVENTS 32
 
@@ -308,6 +310,10 @@ struct input_data
 	IOHIDManagerRef hid_manager;
 
 	int ignore_mouse;
+	qboolean left_cmd_key_active;
+	qboolean right_cmd_key_active;
+	qboolean fn_key_active;
+	int fn_key_behavior;
 
 	int mouse_x;
 	int mouse_y;
@@ -332,6 +338,14 @@ static void add_to_event_queue(struct input_data *input, keynum_t key, qboolean 
 	if ((input->buttoneventhead + 1) % NUMBUTTONEVENTS == input->buttoneventtail)
 	{
 		return;
+	}
+
+	if ((input->fn_key_behavior && input->fn_key_active) || (!input->fn_key_behavior && !input->fn_key_active))
+	{
+		if (key >= K_F1 && key <= K_F12)
+		{
+			return;
+		}
 	}
 
 	input->buttonevents[input->buttoneventhead].key = key;
@@ -393,12 +407,28 @@ static void input_callback(void *context, IOReturn result, void *sender, IOHIDVa
 		}
 
 		if (usage < 1 || usage > 10)
+		{
 			usage = 10;
+		}
 
 		add_to_event_queue(input, K_MOUSE1 + usage - 1, val ? true : false);
 	}
 	else if (page == kHIDPage_KeyboardOrKeypad)
 	{
+		if (usage == kHIDUsage_KeyboardLeftGUI)
+		{
+			input->left_cmd_key_active = val ? true : false;
+		}
+		else if (usage == kHIDUsage_KeyboardRightGUI)
+		{
+			input->right_cmd_key_active = val ? true : false;
+		}
+		
+		if (input->left_cmd_key_active || input->right_cmd_key_active)
+		{
+			return;
+		}
+		
 		if (usage < sizeof(keytable))
 		{
 			add_to_event_queue(input, keytable[usage], val ? true : false);
@@ -417,6 +447,13 @@ static void input_callback(void *context, IOReturn result, void *sender, IOHIDVa
 			}
 			
 			pthread_mutex_unlock(&input->key_mutex);
+		}
+	}
+	else if (page == 0xFF)
+	{
+		if (usage == kHIDUsage_KeyboardErrorUndefined)
+		{
+			input->fn_key_active = val ? true : false;
 		}
 	}
 }
@@ -464,6 +501,15 @@ struct input_data *Sys_Input_Init()
 		input->ignore_mouse = 1;
 		input->key_repeat_initial_delay = 500000;
 		input->key_repeat_delay = 100000;
+		
+		NXEventHandle handle = NXOpenEventStatus();
+		if (handle)
+		{
+			input->key_repeat_initial_delay = NXKeyRepeatThreshold(handle) * 1000000; 
+			input->key_repeat_delay = NXKeyRepeatInterval(handle) * 1000000;
+			
+			NXCloseEventStatus(handle);
+		}
 
 		if (pthread_mutex_init(&input->mouse_mutex, 0) == 0)
 		{
@@ -471,15 +517,6 @@ struct input_data *Sys_Input_Init()
 			{
 				if (pthread_create(&input->thread, 0, Sys_Input_Thread, input) == 0)
 				{
-					NXEventHandle handle = NXOpenEventStatus();
-					if (handle)
-					{
-						input->key_repeat_initial_delay = NXKeyRepeatThreshold(handle) * 1000000; 
-						input->key_repeat_delay = NXKeyRepeatInterval(handle) * 1000000;
-
-						NXCloseEventStatus(handle);
-					}
-					
 					return input;
 				}
 
@@ -565,3 +602,7 @@ void Sys_Input_GrabMouse(struct input_data *input, int dograb)
 	}
 }
 
+void Sys_Input_SetFnKeyBehavior(struct input_data *input, int behavior)
+{
+	input->fn_key_behavior = behavior;
+}

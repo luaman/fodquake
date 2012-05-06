@@ -26,7 +26,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "huffman.h"
 
 #include <sys/types.h>
-#include <unistd.h>
 
 #define	PACKET_HEADER	8
 
@@ -115,14 +114,9 @@ static void Huff_DecompressPacketSizebuf(struct HuffContext *huffcontext, sizebu
 
 void Netchan_CvarInit(void)
 {
-	int port;
+	unsigned short port;
 
-	// pick a port value that should be nice and random
-#ifdef _WIN32
-	port = ((int) (timeGetTime() * 1000) * time(NULL)) & 0xffff;
-#else
-	port = ((int) (getpid() + getuid() * 1000) * time(NULL)) & 0xffff;
-#endif
+	Sys_RandomBytes(&port, sizeof(port));
 
 	Cvar_SetCurrentGroup(CVAR_GROUP_SCREEN);
 	Cvar_Register (&showpackets);

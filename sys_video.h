@@ -20,6 +20,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "qtypes.h"
 
 void Sys_Video_CvarInit(void);
+int Sys_Video_Init(void);
+void Sys_Video_Shutdown(void);
 void *Sys_Video_Open(const char *mode, unsigned int width, unsigned int height, int fullscreen, unsigned char *palette);
 void Sys_Video_Close(void *display);
 unsigned int Sys_Video_GetNumBuffers(void *display);

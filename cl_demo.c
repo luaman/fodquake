@@ -252,6 +252,7 @@ static void CL_WriteStartupData (void)
 	sizebuf_t buf;
 	char buf_data[MAX_MSGLEN * 2], *s, *s2;
 	int n, i, j, seq = 1;
+	struct static_entity *sent;
 	entity_t *ent;
 	entity_state_t *es, blankes;
 	player_info_t *player;
@@ -362,9 +363,10 @@ static void CL_WriteStartupData (void)
 	}
 
 	// spawnstatic
-	for (i = 0; i < cl.num_statics; i++)
+	sent = cl.first_static;
+	while(sent)
 	{
-		ent = cl_static_entities + i;
+		ent = &sent->ent;
 
 		MSG_WriteByte (&buf, svc_spawnstatic);
 
@@ -390,6 +392,8 @@ static void CL_WriteStartupData (void)
 			CL_WriteStartupDemoMessage (&buf, seq++);
 			SZ_Clear (&buf);
 		}
+
+		sent = sent->next;
 	}
 
 	// static sounds are skipped in demos, life is hard
@@ -573,6 +577,13 @@ readnext:
 		CL_Demo_Read(&demotime, sizeof(demotime));
 		demotime = LittleFloat(demotime);
 	}
+
+	if (cls.realactualfirstdemotimestamp == -1)
+	{
+		cls.realactualfirstdemotimestamp = demotime;
+	}
+
+	cls.realactualdemotime = demotime - cls.realactualfirstdemotimestamp;
 
 	playback_recordtime = demotime;
 
@@ -1324,6 +1335,9 @@ void CL_Play_f (void)
 	cls.demotime = 0;
 	demostarttime = -1.0;
 
+	cls.realactualfirstdemotimestamp = -1;
+	cls.realactualdemotime = 0;
+
 	olddemotime = nextdemotime = 0;
 	cls.findtrack = true;
 	cls.lastto = cls.lasttype = 0;
@@ -1352,6 +1366,9 @@ void CL_TimeDemo_f (void)
 	td_starttime = 0;
 	td_startframe = cls.framecount;
 	td_lastframe = -1;		// get a new message this frame
+
+	cls.realactualfirstdemotimestamp = -1;
+	cls.realactualdemotime = 0;
 }
 
 //=============================================================================
@@ -1371,17 +1388,17 @@ void CL_Demo_SetSpeed_f (void)
 	Cvar_SetValue(&cl_demospeed, atof(Cmd_Argv(1)) / 100.0);
 }
 
-void CL_Demo_Jump_f (void)
+void CL_Demo_Jump_f(void)
 {
-    int seconds = 0, seen_col, relative = 0;
+	int seconds = 0, seen_col, relative = 0;
 	double newdemotime;
-    char *text, *s;
+	char *text, *s;
 	static char *usage_message = "Usage: %s [+|-][m:]<s> (seconds)\n";
 
 	if (!cls.demoplayback)
 	{
 		Com_Printf("Error: not playing a demo\n");
-        return;
+		return;
 	}
 
 	if (cls.state < ca_active)
@@ -1390,13 +1407,13 @@ void CL_Demo_Jump_f (void)
 		return;
 	}
 
-    if (Cmd_Argc() != 2)
-    {
-        Com_Printf(usage_message, Cmd_Argv(0));
-        return;
-    }
+	if (Cmd_Argc() != 2)
+	{
+		Com_Printf(usage_message, Cmd_Argv(0));
+		return;
+	}
 
-    text = Cmd_Argv(1);
+	text = Cmd_Argv(1);
 	if (text[0] == '-')
 	{
 		text++;
@@ -1407,9 +1424,10 @@ void CL_Demo_Jump_f (void)
 		text++;
 		relative = 1;
 	}
-	else if (!isdigit(text[0])){
-        Com_Printf(usage_message, Cmd_Argv(0));
-        return;
+	else if (!isdigit(text[0]))
+	{
+		Com_Printf(usage_message, Cmd_Argv(0));
+		return;
 	}
 
 	for (seen_col = 0, s = text; *s; s++)
@@ -1430,12 +1448,12 @@ void CL_Demo_Jump_f (void)
 		}
 	}
 
-    if (strchr(text, ':'))
-    {
-        seconds += 60 * atoi(text);
-        text = strchr(text, ':') + 1;
-    }
-    seconds += atoi(text);
+	if (strchr(text, ':'))
+	{
+		seconds += 60 * atoi(text);
+		text = strchr(text, ':') + 1;
+	}
+	seconds += atoi(text);
 
 	newdemotime = relative ? cls.demotime + relative * seconds : demostarttime + seconds;
 
@@ -1444,6 +1462,7 @@ void CL_Demo_Jump_f (void)
 		Com_Printf ("Error: cannot demo_jump backwards\n");
 		return;
 	}
+
 	cls.demotime = newdemotime;
 }
 
@@ -1461,9 +1480,16 @@ static int playdemo_checkdemo (char  *name, struct tokenized_string *check)
 	return 1;
 }
 
+struct cstc_demoinfo
+{
+	struct directory_list *dl;
+	qboolean *checked;
+	qboolean initialized;
+};
+
 static int cstc_playdemo_data(struct cst_info *self, int remove)
 {
-	struct directory_list *data;
+	struct cstc_demoinfo *data;
 	char *demo_endings[] = { ".qwd", ".mvd", NULL};
 
 	if (!self)
@@ -1471,67 +1497,72 @@ static int cstc_playdemo_data(struct cst_info *self, int remove)
 
 	if (self->data)
 	{
-		data = (struct directory_list *)self->data;
-		Util_Dir_Delete(data);
+		data = (struct cstc_demoinfo *)self->data;
+		Util_Dir_Delete(data->dl);
+		free(data->checked);
+		free(self->data);
 		self->data = NULL;
 	}
 
 	if (remove)
 		return 0;
 
-	self->data = Util_Dir_Read(va("%s", com_basedir), 1, 1, demo_endings);
-
-	if (self->data)
+	if ((data = calloc(1, sizeof(*data))))
 	{
-		return 0;
+		if ((data->dl = Util_Dir_Read(va("%s", com_basedir), 1, 1, demo_endings)))
+		{
+			self->data = (void *)data;
+			return 1;
+		}
+		free(data);
 	}
 
-	return 1;
+	return 0;
 }
 
 static int cstc_playdemo_get_results(struct cst_info *self, int *results, int get_result, int result_type, char **result)
 {
-	struct directory_list *data;
+	struct cstc_demoinfo *data;
 	int count, i;
 
 	if (self->data == NULL)
 		return 1;
 
-	data = (struct directory_list *)self->data;
+	data = (struct cstc_demoinfo *)self->data;
 
-	if (results || self->initialized == 0)
+	if (results || data->initialized == false)
 	{
-		if (self->checked)
-			free(self->checked);
-		self->checked = calloc(data->entry_count, sizeof(qboolean));
-		if (self->checked == NULL)
+		if (data->checked)
+			free(data->checked);
+		data->checked = calloc(data->dl->entry_count, sizeof(qboolean));
+		if (data->checked == NULL)
 			return 1;
 
-		for (i=0, count=0; i<data->entry_count; i++)
+		for (i=0, count=0; i<data->dl->entry_count; i++)
 		{
-			if (playdemo_checkdemo(data->entries[i].name, self->tokenized_input))
+			if (playdemo_checkdemo(data->dl->entries[i].name, self->tokenized_input))
 			{
-				self->checked[i] = true;
+				data->checked[i] = true;
 				count++;
 			}
 		}
 		if (results)
 			*results = count;
 
-		self->initialized = 1;
+		data->initialized = true;
 		return 0;
 	}
 
 	if (result == NULL)
 		return 0;
 
-	for (i=0, count=-1; i<data->entry_count; i++)
+	for (i=0, count=-1; i<data->dl->entry_count; i++)
 	{
-		if (self->checked[i] == true)
+		if (data->checked[i] == true)
 			count++;
 		if (count == get_result)
 		{
-			*result = va("../%s", data->entries[i].name);
+			*result = va("../%s", data->dl->entries[i].name);
 			return 0;
 		}
 	}
@@ -1553,8 +1584,7 @@ void CL_CvarDemoInit(void)
 	Cvar_Register(&demo_dir);
 	Cvar_ResetCurrentGroup();
 
-	CSTC_Add("playdemo", NULL, &cstc_playdemo_get_results, &cstc_playdemo_data, 0);
-	CSTC_Add("timedemo", NULL, &cstc_playdemo_get_results, &cstc_playdemo_data, 0);
+	CSTC_Add("playdemo timedemo", NULL, &cstc_playdemo_get_results, &cstc_playdemo_data, NULL, CSTC_MULTI_COMMAND | CSTC_EXECUTE, "arrow up/down to navigate");
 
 }
 

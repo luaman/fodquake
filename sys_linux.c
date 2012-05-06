@@ -17,6 +17,7 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */
+
 #include <unistd.h>
 #include <signal.h>
 #include <stdlib.h>
@@ -36,6 +37,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <sys/wait.h>
 #include <sys/mman.h>
 #include <errno.h>
+#include <pwd.h>
 
 #include "quakedef.h"
 #include "sys_error_gtk.h"
@@ -43,10 +45,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 qboolean stdin_ready;
 int do_stdin = 1;
 
+static int randomfd;
 
 cvar_t sys_nostdout = { "sys_nostdout", "0" };
-cvar_t sys_extrasleep = { "sys_extrasleep", "0" };
-
 
 void Sys_Printf(char *fmt, ...)
 {
@@ -82,7 +83,6 @@ void Sys_CvarInit(void)
 	if (dedicated)
 	{
 		Cvar_Register(&sys_nostdout);
-		Cvar_Register(&sys_extrasleep);
 	}
 }
 
@@ -109,18 +109,12 @@ void Sys_Error(char *error, ...)
 	exit(1);
 }
 
-//returns -1 if not present
-int Sys_FileTime(char *path)
-{
-	struct stat buf;
-
-	if (stat(path, &buf) == -1)
-		return -1;
-
-	return buf.st_mtime;
-}
-
 static unsigned int secbase;
+
+void Sys_MicroSleep(unsigned int microseconds)
+{
+	usleep(microseconds);
+}
 
 #if LINUX_DOES_NOT_SUCK /* haha, good joke! */
 double Sys_DoubleTime(void)
@@ -246,6 +240,10 @@ int main(int argc, char **argv)
 	dedicated = COM_CheckParm("-dedicated");
 #endif
 
+	randomfd = open("/dev/urandom", O_RDONLY);
+	if (randomfd == -1)
+		Sys_Error("Unable to open /dev/urandom");
+
 	if (!dedicated)
 	{
 		signal(SIGFPE, SIG_IGN);
@@ -278,12 +276,6 @@ int main(int argc, char **argv)
 		oldtime = newtime;
 
 		Host_Frame(time);
-
-		if (dedicated)
-		{
-			if (sys_extrasleep.value)
-				usleep(sys_extrasleep.value);
-		}
 	}
 }
 
@@ -297,5 +289,82 @@ void Sys_MakeCodeWriteable(unsigned long startaddr, unsigned long length)
 	r = mprotect((char *)addr, length + startaddr - addr + psize, 7);
 	if (r < 0)
 		Sys_Error("Protection change failed");
+}
+
+void Sys_RandomBytes(void *target, unsigned int numbytes)
+{
+	ssize_t s;
+
+	while(numbytes)
+	{
+		s = read(randomfd, target, numbytes);
+		if (s < 0)
+		{
+			Sys_Error("Linux sucks");
+		}
+
+		numbytes -= s;
+		target += s;
+	}
+}
+
+const char *Sys_GetRODataPath(void)
+{
+	return 0;
+}
+
+const char *Sys_GetUserDataPath(void)
+{
+	/* Seriously, whoever the fuck came up with the getpwuid_r() interface
+	 * is a fucking moron. Seriously. */
+
+	struct passwd pwd;
+	struct passwd *pwd2;
+	void *buf;
+	long bufsize;
+	char *ret;
+
+	ret = 0;
+
+	bufsize = sysconf(_SC_GETPW_R_SIZE_MAX);
+	if (bufsize == -1) /* FreeBSD... */
+		bufsize = 16384;
+
+	if (bufsize > 0 && bufsize < 16777216)
+	{
+		buf = malloc(bufsize);
+		if (buf)
+		{
+			if (getpwuid_r(getuid(), &pwd, buf, bufsize, &pwd2) == 0)
+			{
+				ret = malloc(strlen(pwd2->pw_dir) + strlen("/.fodquake") + 1);
+				if (ret)
+				{
+					sprintf(ret, "%s/.fodquake", pwd2->pw_dir);
+				}
+			}
+
+			free(buf);
+		}
+	}
+
+	return ret;
+}
+
+const char *Sys_GetLegacyDataPath(void)
+{
+	char buf[1024];
+
+	if (getcwd(buf, sizeof(buf)))
+	{
+		return strdup(buf);
+	}
+
+	return 0;
+}
+
+void Sys_FreePathString(const char *x)
+{
+	free((void *)x);
 }
 

@@ -187,7 +187,7 @@ void GL_SelectTexture(GLenum target)
 	if (target == oldtarget) 
 		return;
 
-	qglActiveTexture(target);
+	glActiveTexture(target);
 
 	cnttextures[oldtarget - GL_TEXTURE0_ARB] = currenttexture;
 	currenttexture = cnttextures[target - GL_TEXTURE0_ARB];
@@ -441,7 +441,7 @@ static struct gltexture *GL_FindTexture(const char *identifier)
 static void GL_FlushTextures()
 {
 	struct gltexture *glt;
-	int textures[MAX_GLTEXTURES];
+	unsigned int textures[MAX_GLTEXTURES];
 	int i;
 
 	for(glt=gltextures,i=0;i<numgltextures;glt++,i++)
@@ -453,7 +453,7 @@ static void GL_FlushTextures()
 
 	glDeleteTextures(numgltextures, textures);
 
-	bzero(gltextures, sizeof(gltextures));
+	memset(gltextures, 0, sizeof(gltextures));
 	numgltextures = 0;
 }
 
@@ -486,7 +486,8 @@ static qboolean CheckTextureLoaded(int mode)
 byte *GL_LoadImagePixels(char *filename, int matchwidth, int matchheight, int *imagewidth, int *imageheight, int mode)
 {
 	char basename[MAX_QPATH], name[MAX_QPATH];
-	byte *c, *data;
+	char *c;
+	byte *data;
 	FILE *f;
 
 	COM_StripExtension(filename, basename);

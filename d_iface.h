@@ -114,13 +114,16 @@ extern spritedesc_t		r_spritedesc;
 extern zpointdesc_t		r_zpointdesc;
 extern polydesc_t		r_polydesc;
 
+#if 0
 extern vec3_t	r_pright, r_pup, r_ppn;
+#endif
 
 
 void D_Aff8Patch (void *pcolormap);
 void D_DisableBackBufferAccess (void);
 void D_PolysetDraw (void);
 void D_PolysetDrawFinalVerts (finalvert_t *fv, int numverts);
+void D_DrawParticleBegin(void);
 void D_DrawParticle (particle_t *pparticle);
 void D_DrawSprite (void);
 void D_DrawSurfaces (void);

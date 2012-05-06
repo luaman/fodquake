@@ -266,6 +266,26 @@ void Model_NextDownload (void)
 
 		cl.model_precache[i] = Mod_ForName(cl.model_name[i], false);
 
+		if (strncmp(cl.model_name[i], "progs/v_", 8) == 0)
+		{
+			if (strcmp(cl.model_name[i] + 8, "axe.mdl") == 0)
+				cl.weapon_to_model_index[0] = i;
+			else if (strcmp(cl.model_name[i] + 8, "shot.mdl") == 0)
+				cl.weapon_to_model_index[1] = i;
+			else if (strcmp(cl.model_name[i] + 8, "shot2.mdl") == 0)
+				cl.weapon_to_model_index[2] = i;
+			else if (strcmp(cl.model_name[i] + 8, "nail.mdl") == 0)
+				cl.weapon_to_model_index[3] = i;
+			else if (strcmp(cl.model_name[i] + 8, "nail2.mdl") == 0)
+				cl.weapon_to_model_index[4] = i;
+			else if (strcmp(cl.model_name[i] + 8, "rock.mdl") == 0)
+				cl.weapon_to_model_index[5] = i;
+			else if (strcmp(cl.model_name[i] + 8, "rock2.mdl") == 0)
+				cl.weapon_to_model_index[6] = i;
+			else if (strcmp(cl.model_name[i] + 8, "light.mdl") == 0)
+				cl.weapon_to_model_index[7] = i;
+		}
+
 		if (!cl.model_precache[i])
 		{
 			Com_Printf("\nThe required model file '%s' could not be found or downloaded.\n\n", cl.model_name[i]);
@@ -378,6 +398,8 @@ static qboolean CL_OpenDownloadFile()
 	cls.download = fopen(name, "wb");
 	if (cls.download)
 		return true;
+
+	Com_ErrorPrintf("Failed to open output file \"%s\" for writing.\n", name);
 
 	return false;
 }
@@ -1053,30 +1075,64 @@ void CL_ParseBaseline (entity_state_t *es)
 	}
 }
 
-//Static entities are non-interactive world objects like torches
-void CL_ParseStatic (void)
+void CL_FreeStatics()
 {
+	struct static_entity *sent, *next;
+
+	sent = cl.first_static;
+	while(sent)
+	{
+		next = sent->next;
+		free(sent);
+		sent = next;
+	}
+
+	cl.first_static = 0;
+	cl.last_static = 0;
+}
+
+//Static entities are non-interactive world objects like torches
+static int CL_ParseStatic (void)
+{
+	struct static_entity *sent;
 	entity_t *ent;
 	entity_state_t es;
 
-	CL_ParseBaseline (&es);
+	sent = malloc(sizeof(*sent));
+	if (sent)
+	{
+		memset(sent, 0, sizeof(*sent));
+		CL_ParseBaseline (&es);
 
-	if (cl.num_statics >= MAX_STATIC_ENTITIES)
-		Host_Error ("Too many static entities");
-	ent = &cl_static_entities[cl.num_statics];
-	cl.num_statics++;
+		ent = &sent->ent;
 
-	// copy it to the current state
+		// copy it to the current state
 
-	ent->model = cl.model_precache[es.modelindex];
-	ent->frame = es.frame;
-	ent->colormap = vid.colormap;
-	ent->skinnum = es.skinnum;
+		ent->model = cl.model_precache[es.modelindex];
+		ent->frame = es.frame;
+		ent->colormap = vid.colormap;
+		ent->skinnum = es.skinnum;
 
-	VectorCopy (es.origin, ent->origin);
-	VectorCopy (es.angles, ent->angles);
+		VectorCopy (es.origin, ent->origin);
+		VectorCopy (es.angles, ent->angles);
 
-	R_AddEfrags (ent);
+		R_AddEfrags (ent);
+
+		if (cl.first_static == 0)
+		{
+			cl.first_static = sent;
+			cl.last_static = sent;
+		}
+		else
+		{
+			cl.last_static->next = sent;
+			cl.last_static = sent;
+		}
+
+		return 1;
+	}
+
+	return 0;
 }
 
 void CL_ParseStaticSound (void)
@@ -1385,7 +1441,10 @@ void CL_ProcessServerInfo (void)
 	countdown = !Q_strcasecmp(p, "countdown");
 
 	if ((cl.standby || cl.countdown) && !(standby || countdown))
+	{
 		cl.gametime = 0;
+		cls.demotimeoffset = cls.realactualdemotime;
+	}
 
 	cl.standby = standby;
 	cl.countdown = countdown;
@@ -1821,7 +1880,9 @@ void CL_ParseServerMessage (void)
 			break;
 
 		case svc_spawnstatic:
-			CL_ParseStatic ();
+			if (!CL_ParseStatic())
+				Host_Error ("CL_ParseServerMessage: CL_ParseStatic() failed");
+
 			break;
 
 		case svc_temp_entity:

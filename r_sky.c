@@ -44,11 +44,11 @@ byte	newsky[128*256];	// newsky and topsky both pack in here, 128 bytes
 							//  drawers need 256-byte scan widths
 
 //A sky texture is 256*128, with the right side being a masked overlay
-void R_InitSky (miptex_t *mt) {
+void R_InitSky (void *texturedata) {
 	int i, j;
 	byte *src;
 
-	src = (byte *)mt + mt->offsets[0];
+	src = texturedata;
 
 	for (i = 0; i < 128; i++) {
 		for (j = 0; j < 128; j++)

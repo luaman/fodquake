@@ -54,6 +54,8 @@ int Utils_TF_TeamToColor(char *);
 char *Util_Remove_Colors(const char *string, int size);
 char *Util_strcasestr (const char *psz_big, const char *psz_little);
 
+int ParseColourDescription(const char *source, float *rgb);
+
 int Colored_String_Length(char *string);
 int Colored_String_Offset(char *string, unsigned int maxlen, unsigned short *lastcolour);
 

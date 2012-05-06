@@ -28,12 +28,15 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "gl_state.h"
 
 #ifdef _WIN32
+#include <windows.h>
 #define qglGetProcAddress wglGetProcAddress
 #elif defined(__MORPHOS__)
+#include "vid_tinygl.h"
 #define qglGetProcAddress tglGetProcAddress
 #elif defined(__MACOSX__)
-#warning Fix this dummy.
-void *qglGetProcAddress(const char *p) { return 0; }
+void *qglGetProcAddress(const char *p);
+#elif defined(AROS)
+#define qglGetProcAddress AROSMesaGetProcAddress
 #else
 #define GLX_GLXEXT_PROTOTYPES 1
 #include <GL/glx.h>
@@ -47,15 +50,14 @@ const char *gl_extensions;
 
 qboolean gl_mtexable = false;
 int gl_textureunits = 1;
-lpMTexFUNC qglMultiTexCoord2f = NULL;
-lpSelTexFUNC qglActiveTexture = NULL;
-void (APIENTRY *qglClientActiveTexture)(GLenum);
 void (*qglBindBufferARB)(GLenum, GLuint);
 void (*qglBufferDataARB)(GLenum, GLsizeiptrARB, const GLvoid *, GLenum);
 
 qboolean gl_combine = false;
 
 qboolean gl_add_ext = false;
+
+qboolean gl_npot;
 
 qboolean gl_vbo = false;
 
@@ -83,7 +85,7 @@ qboolean CheckExtension (const char *extension)
 	const char *start;
 	char *where, *terminator;
 
-	if (!gl_extensions && !(gl_extensions = glGetString (GL_EXTENSIONS)))
+	if (!gl_extensions && !(gl_extensions = (char *)glGetString (GL_EXTENSIONS)))
 		return false;
 
 	if (!extension || *extension == 0 || strchr (extension, ' '))
@@ -110,26 +112,16 @@ void CheckMultiTextureExtensions (void)
 		return;
 	}
 
-	if (CheckExtension("GL_ARB_multitexture"))
-	{
+	glGetIntegerv(GL_MAX_TEXTURE_UNITS_ARB, &gl_textureunits);
 
-		qglMultiTexCoord2f = (void *) qglGetProcAddress("glMultiTexCoord2fARB");
-		qglActiveTexture = (void *) qglGetProcAddress("glActiveTextureARB");
-		qglClientActiveTexture = (void *) qglGetProcAddress("glClientActiveTextureARB");
-		if (qglMultiTexCoord2f && qglActiveTexture && qglClientActiveTexture)
-		{
-			glGetIntegerv(GL_MAX_TEXTURE_UNITS_ARB, &gl_textureunits);
+	if (COM_CheckParm("-maxtmu2")/* || !strcmp(gl_vendor, "ATI Technologies Inc.")*/)
+		gl_textureunits = min(gl_textureunits, 2);
 
-			if (COM_CheckParm("-maxtmu2")/* || !strcmp(gl_vendor, "ATI Technologies Inc.")*/)
-				gl_textureunits = min(gl_textureunits, 2);
+	gl_textureunits = min(gl_textureunits, 4);
+	gl_mtexable = true;
 
-			gl_textureunits = min(gl_textureunits, 4);
-			gl_mtexable = true;
-
-			if (gl_textureunits < 2)
-				gl_mtexable = false;
-		}
-	}
+	if (gl_textureunits < 2)
+		gl_mtexable = false;
 
 	if (!gl_mtexable)
 		Com_Printf("OpenGL multitexturing extensions not available.\n");
@@ -141,6 +133,7 @@ void GL_CheckExtensions (void)
 
 	gl_combine = CheckExtension("GL_ARB_texture_env_combine");
 	gl_add_ext = CheckExtension("GL_ARB_texture_env_add");
+	gl_npot = CheckExtension("GL_ARB_texture_non_power_of_two");
 	gl_vbo = CheckExtension("GL_ARB_vertex_buffer_object");
 	if (gl_vbo)
 	{
@@ -182,15 +175,15 @@ void GL_CvarInit()
 
 void GL_Init (void)
 {
-	gl_vendor = glGetString (GL_VENDOR);
-	Com_Printf ("GL_VENDOR: %s\n", gl_vendor);
-	gl_renderer = glGetString (GL_RENDERER);
-	Com_Printf ("GL_RENDERER: %s\n", gl_renderer);
-	gl_version = glGetString (GL_VERSION);
-	Com_Printf ("GL_VERSION: %s\n", gl_version);
-	gl_extensions = glGetString (GL_EXTENSIONS);
+	gl_vendor = (char *)glGetString(GL_VENDOR);
+	Com_Printf("GL_VENDOR: %s\n", gl_vendor);
+	gl_renderer = (char *)glGetString(GL_RENDERER);
+	Com_Printf("GL_RENDERER: %s\n", gl_renderer);
+	gl_version = (char *)glGetString(GL_VERSION);
+	Com_Printf("GL_VERSION: %s\n", gl_version);
+	gl_extensions = (char *)glGetString(GL_EXTENSIONS);
 	if (COM_CheckParm("-gl_ext"))
-		Com_Printf ("GL_EXTENSIONS: %s\n", gl_extensions);
+		Com_Printf("GL_EXTENSIONS: %s\n", gl_extensions);
 
 	Cvar_ForceSet (&gl_strings, va("GL_VENDOR: %s\nGL_RENDERER: %s\n"
 		"GL_VERSION: %s\nGL_EXTENSIONS: %s", gl_vendor, gl_renderer, gl_version, gl_extensions));

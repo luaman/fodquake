@@ -20,7 +20,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include <string.h>
 #include <ctype.h>
-#include <assert.h>
 
 #include "quakedef.h"
 #include "keys.h"
@@ -500,6 +499,8 @@ void Key_Console (int key) {
 		Context_Sensitive_Tab_Completion_Key(key);
 		return;
 	}
+	else
+		Context_Sensitive_Tab_Completion_Notification(true);
 
 	switch (key) {
 	    case K_ENTER:
@@ -1126,6 +1127,7 @@ void Key_Event(int key, qboolean down)
 
 	//	Com_Printf("%i : %i\n", key, down); //@@@
 
+
 	if (key == K_LALT || key == K_RALT)
 		Key_Event(K_ALT, down);
 	else if (key == K_LCTRL || key == K_RCTRL)
@@ -1186,6 +1188,7 @@ void Key_Event(int key, qboolean down)
 				break;
 
 			case key_console:
+				Context_Sensitive_Tab_Completion_Notification(true);
 				if (!SCR_NEED_CONSOLE_BACKGROUND)
 					ToggleConsole_f();
 				else
@@ -1195,9 +1198,6 @@ void Key_Event(int key, qboolean down)
 			case key_serverbrowser:
 				SB_Key(key);
 				break;
-
-			default:
-				assert(!"Bad key_dest");
 		}
 
 		return;
@@ -1263,6 +1263,7 @@ void Key_Event(int key, qboolean down)
 			}
 		}
 
+		Context_Sensitive_Tab_Completion_Notification(true);
 		return;
 	}
 
@@ -1290,9 +1291,6 @@ void Key_Event(int key, qboolean down)
 		case key_serverbrowser:
 			SB_Key(key);
 			break;
-
-		default:
-			assert(!"Bad key_dest");
 	}
 }
 
