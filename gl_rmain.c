@@ -415,7 +415,7 @@ static void AddCollisions(float *posedest, unsigned int *lightdest, unsigned int
 		posedest[(numverts+i)*3+1] = posedest[collisionmap[i]*3+1];
 		posedest[(numverts+i)*3+2] = posedest[collisionmap[i]*3+2];
 
-		lightdest[numverts+i] = posedest[collisionmap[i]];
+		lightdest[numverts+i] = lightdest[collisionmap[i]];
 	}
 }
 
