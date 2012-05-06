@@ -221,9 +221,6 @@ void R_InitOtherTextures(void);
 //fuck windows
 #define GL_CLAMP_TO_EDGE 0x812F
 
-typedef void (APIENTRY *lpMTexFUNC) (GLenum, GLfloat, GLfloat);
-typedef void (APIENTRY *lpSelTexFUNC) (GLenum);
-
 #ifdef __MORPHOS__
 #define glMultiTexCoord2f glMultiTexCoord2fARB
 #define glClientActiveTexture glClientActiveTextureARB
