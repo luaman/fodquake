@@ -221,11 +221,18 @@ void R_InitOtherTextures(void);
 //fuck windows
 #define GL_CLAMP_TO_EDGE 0x812F
 
-typedef void (APIENTRY *lpMTexFUNC) (GLenum, GLfloat, GLfloat);
-typedef void (APIENTRY *lpSelTexFUNC) (GLenum);
+#ifdef __MORPHOS__
+#define glMultiTexCoord2f glMultiTexCoord2fARB
+#define glClientActiveTexture glClientActiveTextureARB
+#define glActiveTexture glActiveTextureARB
+#endif
 
-extern lpMTexFUNC qglMultiTexCoord2f;
-extern lpSelTexFUNC qglActiveTexture;
+#ifdef _WIN32
+void glMultiTexCoord2f(GLenum target, GLfloat s, GLfloat t);
+void glDrawRangeElements(GLenum mode, GLuint start, GLuint end, GLsizei count, GLenum type, const GLvoid *indices);
+void glClientActiveTexture(GLenum texture);
+void glActiveTexture(GLenum texture);
+#endif
 
 #ifndef __MACOSX__
 typedef ptrdiff_t GLsizeiptrARB;

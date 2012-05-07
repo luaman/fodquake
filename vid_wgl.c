@@ -20,6 +20,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 
 #include <windows.h>
+#include <GL/gl.h>
 
 #include "quakedef.h"
 #include "sys_win.h"
@@ -49,6 +50,33 @@ struct display
 	unsigned short currentgammaramps[3][256];
 	unsigned short originalgammaramps[3][256];
 };
+
+/* Some lame hacks to support OpenGL 1.3 */
+
+static void (APIENTRY *glMultiTexCoord2f_win)(GLenum target, GLfloat s, GLfloat t);
+static void (APIENTRY *glDrawRangeElements_win)(GLenum mode, GLuint start, GLuint end, GLsizei count, GLenum type, const GLvoid *indices);
+static void (APIENTRY *glClientActiveTexture_win)(GLenum texture);
+static void (APIENTRY *glActiveTexture_win)(GLenum texture);
+
+void glMultiTexCoord2f(GLenum target, GLfloat s, GLfloat t)
+{
+	glMultiTexCoord2f_win(target, s, t);
+}
+
+void glDrawRangeElements(GLenum mode, GLuint start, GLuint end, GLsizei count, GLenum type, const GLvoid *indices)
+{
+	glDrawRangeElements_win(mode, start, end, count, type, indices);
+}
+
+void glClientActiveTexture(GLenum texture)
+{
+	glClientActiveTexture_win(texture);
+}
+
+void glActiveTexture(GLenum texture)
+{
+	glActiveTexture_win(texture);
+}
 
 static void ProcessMessages()
 {
@@ -495,19 +523,27 @@ void *Sys_Video_Open(const char *mode, unsigned int width, unsigned int height, 
 					{
 						BOOL (APIENTRY *swapinterval)(int);
 
-						/* Vsync is broken on Windows, no point in ever enabling it. */
-						swapinterval = wglGetProcAddress("wglSwapIntervalEXT");
-						if (swapinterval)
+						glMultiTexCoord2f_win = (void *)wglGetProcAddress("glMultiTexCoord2f");
+						glDrawRangeElements_win = (void *)wglGetProcAddress("glDrawRangeElements");
+						glClientActiveTexture_win = (void *)wglGetProcAddress("glClientActiveTexture");
+						glActiveTexture_win = (void *)wglGetProcAddress("glActiveTexture");
+
+						if (glMultiTexCoord2f_win && glDrawRangeElements_win && glClientActiveTexture_win && glActiveTexture_win)
 						{
-							Com_Printf("Disabled vsync\n");
-							swapinterval(0);
+							/* Vsync is broken on Windows, no point in ever enabling it. */
+							swapinterval = wglGetProcAddress("wglSwapIntervalEXT");
+							if (swapinterval)
+							{
+								Com_Printf("Disabled vsync\n");
+								swapinterval(0);
+							}
+
+							d->inputdata = Sys_Input_Init(d->window);
+							if (d->inputdata)
+								return d;
+
+							wglMakeCurrent(0, 0);
 						}
-
-						d->inputdata = Sys_Input_Init(d->window);
-						if (d->inputdata)
-							return d;
-
-						wglMakeCurrent(0, 0);
 					}
 
 					wglDeleteContext(d->glctx);
