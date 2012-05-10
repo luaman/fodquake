@@ -36,6 +36,7 @@ struct display
 	qboolean fullscreen;
 	struct input_data *input;
 	NSWindow *window;
+	CGDisplayModeRef orig_display_mode;
 	unsigned int width;
 	unsigned int height;
 	
@@ -163,8 +164,8 @@ void* Sys_Video_Open(const char *mode, unsigned int width, unsigned int height, 
 						CGDisplayConfigRef ConfigRef;
 						CGError err;
 						
-						// hmz.. capturuing shall be released at soem point..
-						// this makes it difficult across all those different modes..
+						d->orig_display_mode = CGDisplayCopyDisplayMode(CGMainDisplayID());
+						
 						err = CGDisplayCapture(CGMainDisplayID());
 						if (err == kCGErrorSuccess)
 						{
@@ -324,6 +325,24 @@ void* Sys_Video_Open(const char *mode, unsigned int width, unsigned int height, 
 void Sys_Video_Close(void *display)
 {
 	struct display *d = (struct display*)display;
+	
+	if (d->orig_display_mode)
+	{
+		CGDisplayConfigRef ConfigRef;
+		CGError err;
+		
+		err = CGBeginDisplayConfiguration(&ConfigRef);
+		if (err == kCGErrorSuccess)
+		{
+			err = CGConfigureDisplayWithDisplayMode(ConfigRef, CGMainDisplayID(), d->orig_display_mode, NULL);
+			if (err == kCGErrorSuccess)
+			{
+				err = CGCompleteDisplayConfiguration(ConfigRef, kCGConfigureForAppOnly);
+			}
+		}
+		
+		CGDisplayRelease(CGMainDisplayID());
+	}
 	
 	Sys_Input_Shutdown(d->input);
 	
