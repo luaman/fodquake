@@ -50,6 +50,8 @@ static char *windowtitle;
 
 static void set_up_conwidth_conheight(void);
 
+static int vid_restarted;
+
 static qboolean vid_conwidth_callback(cvar_t *var, char *value)
 {
 	var->value = Q_atof(value);
@@ -217,6 +219,8 @@ void VID_Restart(void)
 	}
 
 	Skin_Reload();
+
+	vid_restarted = 1;
 }
 
 void VID_CvarInit()
@@ -514,6 +518,12 @@ const char *VID_GetMode()
 
 int VID_FocusChanged()
 {
+	if (vid_restarted)
+	{
+		vid_restarted = 0;
+		return 1;
+	}
+
 	return Sys_Video_FocusChanged(display);
 }
 
