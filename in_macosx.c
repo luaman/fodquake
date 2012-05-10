@@ -543,8 +543,6 @@ void Sys_Input_Shutdown(struct input_data *input)
 	pthread_mutex_destroy(&input->key_mutex);
 
 	free(input);
-	
-	Key_ClearStates();
 }
 
 int Sys_Input_GetKeyEvent(struct input_data *input, keynum_t *keynum, qboolean *down)
