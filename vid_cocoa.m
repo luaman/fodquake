@@ -142,7 +142,7 @@ void* Sys_Video_Open(const char *mode, unsigned int width, unsigned int height, 
 	{
 		memset(d, 0, sizeof(struct display));
 		
-		if (mode)
+		if (strlen(mode) && fullscreen)
 		{
 			unsigned int flags;
 			CFArrayRef modes;
@@ -157,25 +157,25 @@ void* Sys_Video_Open(const char *mode, unsigned int width, unsigned int height, 
 				
 				for (i = 0; i < num_modes; i++)
 				{
-					CGDisplayModeRef mode = (CGDisplayModeRef)CFArrayGetValueAtIndex(modes, i);
+					CGDisplayModeRef mode_ref = (CGDisplayModeRef)CFArrayGetValueAtIndex(modes, i);
 					
-					if (width == CGDisplayModeGetWidth(mode) && height == CGDisplayModeGetHeight(mode) && flags == CGDisplayModeGetIOFlags(mode))
+					if (width == CGDisplayModeGetWidth(mode_ref) && height == CGDisplayModeGetHeight(mode_ref) && flags == CGDisplayModeGetIOFlags(mode_ref))
 					{
-						CGDisplayConfigRef ConfigRef;
+						CGDisplayConfigRef config_ref;
 						CGError err;
 						
 						d->orig_display_mode = CGDisplayCopyDisplayMode(CGMainDisplayID());
 						
-						err = CGDisplayCapture(CGMainDisplayID());
+						err = CGCaptureAllDisplays();
 						if (err == kCGErrorSuccess)
 						{
-							err = CGBeginDisplayConfiguration(&ConfigRef);
+							err = CGBeginDisplayConfiguration(&config_ref);
 							if (err == kCGErrorSuccess)
 							{
-								err = CGConfigureDisplayWithDisplayMode(ConfigRef, CGMainDisplayID(), mode, NULL);
+								err = CGConfigureDisplayWithDisplayMode(config_ref, CGMainDisplayID(), mode_ref, NULL);
 								if (err == kCGErrorSuccess)
 								{
-									err = CGCompleteDisplayConfiguration(ConfigRef, kCGConfigureForAppOnly);
+									err = CGCompleteDisplayConfiguration(config_ref, kCGConfigureForAppOnly);
 								}
 							}
 						}
@@ -328,20 +328,20 @@ void Sys_Video_Close(void *display)
 	
 	if (d->orig_display_mode)
 	{
-		CGDisplayConfigRef ConfigRef;
+		CGDisplayConfigRef config_ref;
 		CGError err;
 		
-		err = CGBeginDisplayConfiguration(&ConfigRef);
+		err = CGBeginDisplayConfiguration(&config_ref);
 		if (err == kCGErrorSuccess)
 		{
-			err = CGConfigureDisplayWithDisplayMode(ConfigRef, CGMainDisplayID(), d->orig_display_mode, NULL);
+			err = CGConfigureDisplayWithDisplayMode(config_ref, CGMainDisplayID(), d->orig_display_mode, NULL);
 			if (err == kCGErrorSuccess)
 			{
-				err = CGCompleteDisplayConfiguration(ConfigRef, kCGConfigureForAppOnly);
+				err = CGCompleteDisplayConfiguration(config_ref, kCGConfigureForAppOnly);
 			}
 		}
 		
-		CGDisplayRelease(CGMainDisplayID());
+		err = CGReleaseAllDisplays();
 	}
 	
 	Sys_Input_Shutdown(d->input);
