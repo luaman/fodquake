@@ -110,7 +110,7 @@ cvar_t	cl_filterdrawviewmodel = {"cl_filterdrawviewmodel", "0"};
 cvar_t	cl_oldPL = {"cl_oldPL", "0"};
 cvar_t	cl_demoPingInterval = {"cl_demoPingInterval", "5"};
 cvar_t	cl_chatsound = {"cl_chatsound", "1"};
-cvar_t	cl_confirmquit = {"cl_confirmquit", "1", CVAR_INIT};
+cvar_t	cl_confirmquit = {"cl_confirmquit", "1"};
 cvar_t	default_fov = {"default_fov", "0"};
 cvar_t	qizmo_dir = {"qizmo_dir", "qizmo"};
 
