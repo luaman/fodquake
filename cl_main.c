@@ -61,6 +61,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "d_local.h"
 #endif
 
+#ifdef FOD_PPC
+int altivec_available;
+#endif
+
 int movementkey;
 
 static qboolean net_maxfps_callback(cvar_t *var, char *string);

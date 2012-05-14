@@ -17,6 +17,8 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 
+#include <exec/exec.h>
+#include <exec/system.h>
 #include <dos/dos.h>
 
 #include <proto/exec.h>
@@ -297,6 +299,17 @@ void Sys_RandomBytes(void *target, unsigned int numbytes)
 int main(int argc, char **argv)
 {
 	double time, oldtime, newtime;
+	struct Resident *morphos;
+	ULONG r1;
+	ULONG r2;
+
+	morphos = FindResident("MorphOS");
+	if (morphos)
+	{
+		r1 = NewGetSystemAttrs(&r2, sizeof(r2), SYSTEMINFOTYPE_PPC_ALTIVEC, TAG_DONE);
+		if (r1 == sizeof(r2) && r2 != 0 && morphos && (morphos->rt_Flags&RTF_EXTENDED) && (morphos->rt_Version > 1 || (morphos->rt_Version == 1 && morphos->rt_Revision >= 5)))
+			altivec_available = 1;
+	}
 
 	signal(SIGINT, SIG_IGN);
 
