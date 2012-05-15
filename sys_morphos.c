@@ -299,6 +299,7 @@ void Sys_RandomBytes(void *target, unsigned int numbytes)
 int main(int argc, char **argv)
 {
 	double time, oldtime, newtime;
+#ifndef AROS
 	struct Resident *morphos;
 	ULONG r1;
 	ULONG r2;
@@ -310,6 +311,7 @@ int main(int argc, char **argv)
 		if (r1 == sizeof(r2) && r2 != 0 && morphos && (morphos->rt_Flags&RTF_EXTENDED) && (morphos->rt_Version > 1 || (morphos->rt_Version == 1 && morphos->rt_Revision >= 5)))
 			altivec_available = 1;
 	}
+#endif
 
 	signal(SIGINT, SIG_IGN);
 
