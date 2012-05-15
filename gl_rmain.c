@@ -1640,7 +1640,7 @@ static void R_RenderScene(void)
 	R_DrawEntitiesOnList(&cl_visents);
 	R_DrawEntitiesOnList(&cl_alphaents);
 
-	R_DrawWaterChain();
+	R_DrawWaterSurfaces();
 
 	GL_DisableMultitexture();
 }
