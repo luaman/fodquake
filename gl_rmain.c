@@ -22,6 +22,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <string.h>
 #include <math.h>
 
+#ifdef FOD_PPC
+#include <altivec.h>
+#endif
+
 #include "quakedef.h"
 #include "gl_local.h"
 #include "gl_state.h"
@@ -317,7 +321,7 @@ float	r_framelerp;
 float	r_modelalpha;
 float	r_lerpdistance;
 
-static void InterpolatePoses(float *posedest, unsigned int *lightdest, trivertx_t *src1, trivertx_t *src2, float lerpfrac, unsigned int count, unsigned char modelalpha)
+static void InterpolatePoses_Scalar(float *posedest, unsigned int *lightdest, trivertx_t *src1, trivertx_t *src2, float lerpfrac, unsigned int count, unsigned char modelalpha)
 {
 	unsigned int i;
 	float l;
@@ -417,6 +421,149 @@ static void AddCollisions(float *posedest, unsigned int *lightdest, unsigned int
 
 		lightdest[numverts+i] = lightdest[collisionmap[i]];
 	}
+}
+
+#ifdef FOD_PPC
+static void __attribute__ ((__noinline__)) InterpolatePoses_Altivec(float *posedest, unsigned int *lightdest, trivertx_t *src1, trivertx_t *src2, float lerpfrac, unsigned int count, unsigned char modelalpha)
+{
+	vector unsigned char trivert1, trivert2, aux, vindices, vmodelalpha;
+	vector float t1, t2, t3, t4, t5, t6, vlerpfrac;
+	vector unsigned char *vsrc1 = (vector unsigned char*)src1, *vsrc2 = (vector unsigned char*)src2;
+	vector unsigned char p1, p2, p3;
+	vector float *vposedest = (vector float*)posedest;
+	vector unsigned char *vlightdest = (vector unsigned char*)lightdest;
+	unsigned char *indices = (unsigned char*)&vindices;
+	vector float vshade1, vshade2, div127, vshadelight, vambientlight;
+	vector float v255;
+	vector float v0;
+	vector unsigned char vperm;
+	int i;
+	int *shade;
+
+	v255 = (vector float){ 255.0, 255.0, 255.0, 255.0 };
+	v0 = (vector float){ 0.0, 0.0, 0.0, 0.0 };
+	vperm = (vector unsigned char){3, 3, 3, 19, 7, 7, 7, 23, 11, 11, 11, 27, 15, 15, 15, 31};
+
+	p1 = (vector unsigned char){ 0x10, 0x10, 0x10, 0x00, 0x10, 0x10, 0x10, 0x01, 0x10, 0x10, 0x10, 0x02, 0x10, 0x10, 0x10, 0x04 };
+	p2 = (vector unsigned char){ 0x10, 0x10, 0x10, 0x05, 0x10, 0x10, 0x10, 0x06, 0x10, 0x10, 0x10, 0x08, 0x10, 0x10, 0x10, 0x09 };
+	p3 = (vector unsigned char){ 0x10, 0x10, 0x10, 0x0A, 0x10, 0x10, 0x10, 0x0C, 0x10, 0x10, 0x10, 0x0D, 0x10, 0x10, 0x10, 0x0E };
+
+	*((float*)&vlerpfrac) = lerpfrac;
+	vlerpfrac = vec_splat(vlerpfrac, 0);
+	*((float*)&vshadelight) = shadelight;
+	vshadelight = vec_splat(vshadelight, 0);
+	*((float*)&vambientlight) = ambientlight;
+	vambientlight = vec_splat(vambientlight, 0);
+	*((unsigned int*)&vmodelalpha) = modelalpha;
+	vmodelalpha = (vector unsigned char)vec_splat((vector unsigned int)vmodelalpha, 0);
+
+	div127 = (vector float){ 1.0/127.0, 1.0/127.0, 1.0/127.0, 1.0/127.0 };
+
+	while (count >= 4)
+	{
+		// Loading data (4 trivertxs from each source).
+
+		trivert1 = *vsrc1++;
+		trivert2 = *vsrc2++;
+
+		// Extracting data. 12 'v' coordinates from source 1 are placed in 3 registers t1, t2 and t3.
+		// 12 'v' coordinates from source 2 are placed in 3 registers t4, t5 i t6.
+
+		t1 = (vector float)vec_splat_s32(0);     // clear 't' registers to all zeros
+		t2 = t1;
+		t3 = t1;
+		t4 = t1;
+		t5 = t1;
+		t6 = t1;
+
+		t1 = (vector float)vec_perm(trivert1, (vector unsigned char)t1, p1);
+		t2 = (vector float)vec_perm(trivert1, (vector unsigned char)t1, p2);
+		t3 = (vector float)vec_perm(trivert1, (vector unsigned char)t1, p3);
+
+		t4 = (vector float)vec_perm(trivert2, (vector unsigned char)t4, p1);
+		t5 = (vector float)vec_perm(trivert2, (vector unsigned char)t4, p2);
+		t6 = (vector float)vec_perm(trivert2, (vector unsigned char)t4, p3);
+
+		// Now 'v' coordinates are converted to floats.
+
+		t1 = vec_ctf((vector unsigned int)t1, 0);
+		t2 = vec_ctf((vector unsigned int)t2, 0);
+		t3 = vec_ctf((vector unsigned int)t3, 0);
+		t4 = vec_ctf((vector unsigned int)t4, 0);
+		t5 = vec_ctf((vector unsigned int)t5, 0);
+		t6 = vec_ctf((vector unsigned int)t6, 0);
+
+		// Interpolation step 1. Calculating differencies.
+
+		t4 = vec_sub(t4, t1);
+		t5 = vec_sub(t5, t2);
+		t6 = vec_sub(t6, t3);
+
+		// Interpolation step 2. Multiplying by fraction and adding source 1.
+
+		t1 = vec_madd(t4, vlerpfrac, t1);
+		t2 = vec_madd(t5, vlerpfrac, t2);
+		t3 = vec_madd(t6, vlerpfrac, t3);
+
+		// Store results.
+
+		*vposedest++ = t1;
+		*vposedest++ = t2;
+		*vposedest++ = t3;
+
+		// Extracting lightnormindexes. Source data contains them as xxxAxxxBxxxCxxxD for src 1 and xxxExxxFxxxGxxxH for src 2.
+		// Then I pack these two, obtaining xAxBxCxDxExFxGxH and then pack the result with itself, getting ABCDEFGHABCDEFGH.
+		// This is stored into ubyte table and used to perform lookup scalarly.
+
+		aux = vec_pack((vector unsigned short)trivert1, (vector unsigned short)trivert2);
+		aux = vec_pack((vector unsigned short)aux, (vector unsigned short)aux);
+		vindices = aux;
+		t1 = (vector float)vec_splat_s32(0);
+
+		// Scalar lookup. Values are expanded to floats on altivec side.
+
+		shade = (int*)&vshade1;
+		for (i = 0; i < 4; i++) shade[i] = shadedots[indices[i]];
+		shade = (int*)&vshade2;
+		for (i = 0; i < 4; i++) shade[i] = shadedots[indices[i + 4]];
+
+		vshade1 = vec_ctf((vector int)vshade1, 0);
+		vshade2 = vec_ctf((vector int)vshade2, 0);
+
+		// Interpolation now, then division by 127.0, applying shadeligth and ambientlight.
+
+		vshade2 = vec_sub(vshade2, vshade1);
+		vshade1 = vec_madd(vshade2, vlerpfrac, vshade1);
+		vshade1 = vec_madd(vshade1, div127, t1);                     // t1 is all zeros
+		vshade1 = vec_madd(vshade1, vshadelight, vambientlight);
+
+		// Saturation, conversion to integer, packing, merging with modelalpha.
+
+		vshade1 = vec_min(vshade1, v255);
+		vshade1 = vec_max(vshade1, v0);
+		trivert1 = (vector unsigned char)vec_ctu(vshade1, 0);
+		trivert1 = vec_perm(trivert1, vmodelalpha, vperm);
+
+		// Store.
+
+		*vlightdest++ = trivert1;
+
+		count -= 4;
+	}
+
+	if (count > 0)
+		InterpolatePoses_Scalar((float*)vposedest, (unsigned int*)vlightdest, (trivertx_t*)vsrc1, (trivertx_t*)vsrc2, lerpfrac, count, modelalpha);
+}
+#endif
+
+static void InterpolatePoses(float *posedest, unsigned int *lightdest, trivertx_t *src1, trivertx_t *src2, float lerpfrac, unsigned int count, unsigned char modelalpha)
+{
+#ifdef FOD_PPC
+	if (altivec_available)
+		InterpolatePoses_Altivec(posedest, lightdest, src1, src2, lerpfrac, count, modelalpha);
+	else
+#endif
+		InterpolatePoses_Scalar(posedest, lightdest, src1, src2, lerpfrac, count, modelalpha);
 }
 
 static float *posedest;
