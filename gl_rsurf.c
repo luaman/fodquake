@@ -1341,70 +1341,71 @@ static void R_RecursiveWorldNode(mnode_t *node, int clipflags)
 			} while(--c);
 		}
 
-	// deal with model fragments in this leaf
+		// deal with model fragments in this leaf
 		if (pleaf->efrags)
 			R_StoreEfrags(&pleaf->efrags);
-
-		return;
 	}
-
-	// node is just a decision point, so go down the apropriate sides
-
-	// find which side of the node we are on
-	plane = node->plane;
-
-	dot = PlaneDiff(modelorg, plane);
-	side = (dot >= 0) ? 0 : 1;
-
-	// recurse down the children, front side first
-	R_RecursiveWorldNode(node->children[side], clipflags);
-
-	// draw stuff
-	c = node->numsurfaces;
-
-	if (c)
+	else
 	{
-		surf = cl.worldmodel->surfaces + node->firstsurface;
+		// node is just a decision point, so go down the apropriate sides
 
-		if (dot < -BACKFACE_EPSILON)
-			side = SURF_PLANEBACK;
-		else if (dot > BACKFACE_EPSILON)
-			side = 0;
+		// find which side of the node we are on
+		plane = node->plane;
 
-		for ( ; c; c--, surf++)
+		dot = PlaneDiff(modelorg, plane);
+		side = (dot >= 0) ? 0 : 1;
+
+		// recurse down the children, front side first
+		R_RecursiveWorldNode(node->children[side], clipflags);
+
+		// draw stuff
+		c = node->numsurfaces;
+
+		if (c)
 		{
-			if (surf->visframe != r_framecount)
-				continue;
+			surf = cl.worldmodel->surfaces + node->firstsurface;
 
-			if ((dot < 0) ^ !!(surf->flags & SURF_PLANEBACK))
-				continue;		// wrong side
+			if (dot < -BACKFACE_EPSILON)
+				side = SURF_PLANEBACK;
+			else if (dot > BACKFACE_EPSILON)
+				side = 0;
 
-			// add surf to the right chain
-			if (surf->flags & SURF_DRAWSKY)
+			for ( ; c; c--, surf++)
 			{
-				CHAIN_SURF_F2B(surf, skychain_tail);
-			}
-			else if (surf->flags & SURF_DRAWTURB)
-			{
-				CHAIN_SURF_F2B(surf, waterchain_tail);
-			}
-			else if (surf->flags & SURF_DRAWALPHA)
-			{
-				CHAIN_SURF_B2F(surf, alphachain);
-			}
-			else if (surf->is_drawflat && r_drawflat_enable.value == 1)
-			{
-				CHAIN_SURF_F2B(surf, drawflatchain_tail);
-			}
-			else
-			{
-				underwater = (surf->flags & SURF_UNDERWATER) ? 1 : 0;
-				CHAIN_SURF_F2B(surf, surf->texinfo->texture->texturechain_tail[underwater]);
+				if (surf->visframe != r_framecount)
+					continue;
+
+				if ((dot < 0) ^ !!(surf->flags & SURF_PLANEBACK))
+					continue;		// wrong side
+
+				// add surf to the right chain
+				if (surf->flags & SURF_DRAWSKY)
+				{
+					CHAIN_SURF_F2B(surf, skychain_tail);
+				}
+				else if (surf->flags & SURF_DRAWTURB)
+				{
+					CHAIN_SURF_F2B(surf, waterchain_tail);
+				}
+				else if (surf->flags & SURF_DRAWALPHA)
+				{
+					CHAIN_SURF_B2F(surf, alphachain);
+				}
+				else if (surf->is_drawflat && r_drawflat_enable.value == 1)
+				{
+					CHAIN_SURF_F2B(surf, drawflatchain_tail);
+				}
+				else
+				{
+					underwater = (surf->flags & SURF_UNDERWATER) ? 1 : 0;
+					CHAIN_SURF_F2B(surf, surf->texinfo->texture->texturechain_tail[underwater]);
+				}
 			}
 		}
+
+		// recurse down the back side
+		R_RecursiveWorldNode(node->children[!side], clipflags);
 	}
-	// recurse down the back side
-	R_RecursiveWorldNode(node->children[!side], clipflags);
 }
 
 void R_DrawWorld (void)
