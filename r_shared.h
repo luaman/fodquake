@@ -73,9 +73,10 @@ typedef struct espan_s {
 
 // FIXME: compress, make a union if that will help
 // insubmodel is only 1, flags is fewer than 32, spanstate could be a byte
-typedef struct surf_s {
-	struct surf_s	*next;			// active surface stack in r_edge.c
-	struct surf_s	*prev;			// used in r_edge.c for active surf stack
+struct surf
+{
+	struct surf	*next;			// active surface stack in r_edge.c
+	struct surf	*prev;			// used in r_edge.c for active surf stack
 	struct espan_s	*spans;			// pointer to linked list of spans to draw
 	int			key;				// sorting key (BSP order)
 	int			last_u;				// set during tracing
@@ -90,9 +91,9 @@ typedef struct surf_s {
 	float		d_ziorigin, d_zistepu, d_zistepv;
 
 	int			pad[2];				// to 64 bytes
-} surf_t;
+};
 
-extern	surf_t	*surfaces, *surface_p, *surf_max;
+extern struct surf *surfaces, *surface_p, *surf_max;
 
 // surfaces are generated in back to front order by the bsp, so if a surf
 // pointer is greater than another one, it should be drawn in front

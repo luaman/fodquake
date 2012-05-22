@@ -54,7 +54,7 @@ int D_MipLevelForScale (float scale)
 }
 
 // FIXME: clean this up
-void D_DrawSolidSurface (surf_t *surf, int color)
+void D_DrawSolidSurface (struct surf *surf, int color)
 {
 	espan_t *span;
 	byte *pdest;
@@ -128,7 +128,7 @@ void D_CalcGradients (msurface_t *pface)
 
 void D_DrawSurfaces (void)
 {
-	surf_t *s;
+	struct surf *s;
 	msurface_t *pface;
 	surfcache_t *pcurrentcache;
 	vec3_t world_transformed_modelorg, local_modelorg;

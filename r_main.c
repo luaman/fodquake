@@ -263,7 +263,7 @@ int R_Init(void)
 		if (r_cnumsurfs <= MINSURFACES)
 			r_cnumsurfs = MINSURFACES;
 
-		surfacememory = malloc(r_cnumsurfs * sizeof(surf_t) + (CACHE_SIZE - 1));
+		surfacememory = malloc(r_cnumsurfs * sizeof(struct surf) + (CACHE_SIZE - 1));
 		if (surfacememory)
 		{
 			surfaces = (void *)((((long)surfacememory) + CACHE_SIZE - 1) & ~(CACHE_SIZE - 1));

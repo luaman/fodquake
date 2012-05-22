@@ -26,7 +26,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 edge_t	*auxedges;
 edge_t	*r_edges, *edge_p, *edge_max;
 
-surf_t	*surfaces, *surface_p, *surf_max;
+struct surf	*surfaces, *surface_p, *surf_max;
 
 // surfaces are generated in back to front order by the bsp, so if a surf
 // pointer is greater than another one, it should be drawn in front
@@ -57,7 +57,7 @@ void R_GenerateSpansBackward (void);
 
 void R_LeadingEdge (edge_t *edge);
 void R_LeadingEdgeBackwards (edge_t *edge);
-void R_TrailingEdge (surf_t *surf, edge_t *edge);
+void R_TrailingEdge (struct surf *surf, edge_t *edge);
 
 
 //=============================================================================
@@ -245,7 +245,7 @@ R_CleanupSpan
 */
 void R_CleanupSpan ()
 {
-	surf_t	*surf;
+	struct surf	*surf;
 	int		iu;
 	espan_t	*span;
 
@@ -280,7 +280,7 @@ R_LeadingEdgeBackwards
 void R_LeadingEdgeBackwards (edge_t *edge)
 {
 	espan_t			*span;
-	surf_t			*surf, *surf2;
+	struct surf			*surf, *surf2;
 	int				iu;
 
 // it's adding a new surface in, so find the correct place
@@ -357,7 +357,7 @@ gotposition:
 R_TrailingEdge
 ==============
 */
-void R_TrailingEdge (surf_t *surf, edge_t *edge)
+void R_TrailingEdge (struct surf *surf, edge_t *edge)
 {
 	espan_t			*span;
 	int				iu;
@@ -404,7 +404,7 @@ R_LeadingEdge
 void R_LeadingEdge (edge_t *edge)
 {
 	espan_t			*span;
-	surf_t			*surf, *surf2;
+	struct surf			*surf, *surf2;
 	int				iu;
 	double			fu, newzi, testzi, newzitop, newzibottom;
 
@@ -532,7 +532,7 @@ R_GenerateSpans
 void R_GenerateSpans (void)
 {
 	edge_t			*edge;
-	surf_t			*surf;
+	struct surf			*surf;
 
 	r_bmodelactive = 0;
 
@@ -609,7 +609,7 @@ void R_ScanEdges (void)
 	int		iv, bottom;
 	byte	basespans[MAXSPANS*sizeof(espan_t)+CACHE_SIZE];
 	espan_t	*basespan_p;
-	surf_t	*s;
+	struct surf	*s;
 
 	basespan_p = (espan_t *)
 			((long)(basespans + CACHE_SIZE - 1) & ~(CACHE_SIZE - 1));
