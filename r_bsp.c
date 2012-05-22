@@ -375,7 +375,9 @@ void R_RecursiveWorldNode(mnode_t *node, int clipflags)
 	int i, c, side, *pindex;
 	vec3_t acceptpt, rejectpt;
 	mplane_t *plane;
-	msurface_t *surf, **mark;
+	msurface_t *surf;
+	unsigned int surfnum;
+	unsigned short *mark;
 	mleaf_t *pleaf;
 	double d, dot;
 
@@ -433,7 +435,7 @@ void R_RecursiveWorldNode(mnode_t *node, int clipflags)
 		{
 			do
 			{
-				(*mark)->visframe = r_framecount;
+				cl.worldmodel->surfvisframes[*mark] = r_framecount;
 				mark++;
 			} while (--c);
 		}
@@ -464,24 +466,28 @@ void R_RecursiveWorldNode(mnode_t *node, int clipflags)
 		if (c)
 		{
 			surf = cl.worldmodel->surfaces + node->firstsurface;
+			surfnum = node->firstsurface;
+
 			if (dot < -BACKFACE_EPSILON)
 			{
 				do
 				{
-					if ((surf->flags & SURF_PLANEBACK) && surf->visframe == r_framecount)
+					if ((surf->flags & SURF_PLANEBACK) && cl.worldmodel->surfvisframes[surfnum] == r_framecount)
 						R_RenderFace(surf, clipflags);
 
 					surf++;
+					surfnum++;
 				} while (--c);
 			}
 			else if (dot > BACKFACE_EPSILON)
 			{
 				do
 				{
-					if (!(surf->flags & SURF_PLANEBACK) && surf->visframe == r_framecount)
+					if (!(surf->flags & SURF_PLANEBACK) && cl.worldmodel->surfvisframes[surfnum] == r_framecount)
 						R_RenderFace(surf, clipflags);
 
 					surf++;
+					surfnum++;
 				} while (--c);
 			}
 

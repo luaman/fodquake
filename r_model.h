@@ -107,8 +107,6 @@ typedef struct {
 } mtexinfo_t;
 
 typedef struct msurface_s {
-	int			visframe;		// should be drawn when node is crossed
-
 	int			dlightframe;
 	int			dlightbits;
 
@@ -169,7 +167,7 @@ typedef struct mleaf_s {
 	byte		*compressed_vis;
 	struct efrag_s	*efrags;
 
-	msurface_t	**firstmarksurface;
+	unsigned short	*firstmarksurface;
 	int			nummarksurfaces;
 	int			key;			// BSP sequence number for leaf's contents
 	byte		ambient_sound_level[NUM_AMBIENTS];
@@ -347,7 +345,7 @@ typedef struct model_s {
 	dclipnode_t	*clipnodes;
 
 	int			nummarksurfaces;
-	msurface_t	**marksurfaces;
+	unsigned short	*marksurfaces;
 
 	hull_t		hulls[MAX_MAP_HULLS];
 
@@ -363,6 +361,8 @@ typedef struct model_s {
 
 	int			bspversion;
 	qboolean	isworldmodel;
+
+	unsigned short *surfvisframes;
 
 	// additional model data
 	void *extradata;

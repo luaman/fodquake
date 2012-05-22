@@ -1302,7 +1302,9 @@ static void R_RecursiveWorldNode(mnode_t *node, int clipflags)
 {
 	int c, side, clipped, underwater;
 	mplane_t *plane, *clipplane;
-	msurface_t *surf, **mark;
+	msurface_t *surf;
+	unsigned int surfnum;
+	unsigned short *mark;
 	mleaf_t *pleaf;
 	float dot;
 
@@ -1336,7 +1338,7 @@ static void R_RecursiveWorldNode(mnode_t *node, int clipflags)
 		{
 			do
 			{
-				(*mark)->visframe = r_framecount;
+				cl.worldmodel->surfvisframes[*mark] = r_framecount;
 				mark++;
 			} while(--c);
 		}
@@ -1364,15 +1366,16 @@ static void R_RecursiveWorldNode(mnode_t *node, int clipflags)
 		if (c)
 		{
 			surf = cl.worldmodel->surfaces + node->firstsurface;
+			surfnum = node->firstsurface;
 
 			if (dot < -BACKFACE_EPSILON)
 				side = SURF_PLANEBACK;
 			else if (dot > BACKFACE_EPSILON)
 				side = 0;
 
-			for ( ; c; c--, surf++)
+			for ( ; c; c--, surf++, surfnum++)
 			{
-				if (surf->visframe != r_framecount)
+				if (cl.worldmodel->surfvisframes[surfnum] != r_framecount)
 					continue;
 
 				if ((dot < 0) ^ !!(surf->flags & SURF_PLANEBACK))
