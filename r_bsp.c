@@ -370,7 +370,8 @@ void R_DrawSubmodelPolygons (model_t *pmodel, int clipflags) {
 	}
 }
 
-void R_RecursiveWorldNode (mnode_t *node, int clipflags) {
+void R_RecursiveWorldNode(mnode_t *node, int clipflags)
+{
 	int i, c, side, *pindex;
 	vec3_t acceptpt, rejectpt;
 	mplane_t *plane;
@@ -386,8 +387,10 @@ void R_RecursiveWorldNode (mnode_t *node, int clipflags) {
 
 	// cull the clipping planes if not trivial accept
 	// FIXME: the compiler is doing a lousy job of optimizing here; it could be twice as fast in ASM
-	if (clipflags) {
-		for (i = 0; i < 4; i++) {
+	if (clipflags)
+	{
+		for (i = 0; i < 4; i++)
+		{
 			if (!(clipflags & (1<<i)) )
 				continue;	// don't need to clip against it
 
@@ -419,14 +422,17 @@ void R_RecursiveWorldNode (mnode_t *node, int clipflags) {
 	}
 	
 	// if a leaf node, draw stuff
-	if (node->contents < 0) {
+	if (node->contents < 0)
+	{
 		pleaf = (mleaf_t *)node;
 
 		mark = pleaf->firstmarksurface;
 		c = pleaf->nummarksurfaces;
 
-		if (c) {
-			do {
+		if (c)
+		{
+			do
+			{
 				(*mark)->visframe = r_framecount;
 				mark++;
 			} while (--c);
@@ -434,38 +440,46 @@ void R_RecursiveWorldNode (mnode_t *node, int clipflags) {
 
 		// deal with model fragments in this leaf
 		if (pleaf->efrags)
-			R_StoreEfrags (&pleaf->efrags);
+			R_StoreEfrags(&pleaf->efrags);
 
 		pleaf->key = r_currentkey;
 		r_currentkey++;		// all bmodels in a leaf share the same key
-	} else {
+	}
+	else
+	{
 		// node is just a decision point, so go down the apropriate sides
 
 		// find which side of the node we are on
 		plane = node->plane;
-		dot = PlaneDiff (modelorg, plane);
+
+		dot = PlaneDiff(modelorg, plane);
 		side = (dot < 0);
 
 		// recurse down the children, front side first
-		R_RecursiveWorldNode (node->children[side], clipflags);
+		R_RecursiveWorldNode(node->children[side], clipflags);
 
 		// draw stuff
 		c = node->numsurfaces;
 
-		if (c) {
+		if (c)
+		{
 			surf = cl.worldmodel->surfaces + node->firstsurface;
-			if (dot < -BACKFACE_EPSILON) {
-				do {
+			if (dot < -BACKFACE_EPSILON)
+			{
+				do
+				{
 					if ((surf->flags & SURF_PLANEBACK) && surf->visframe == r_framecount)
-						R_RenderFace (surf, clipflags);
+						R_RenderFace(surf, clipflags);
 
 					surf++;
 				} while (--c);
-			} else if (dot > BACKFACE_EPSILON) {
+			}
+			else if (dot > BACKFACE_EPSILON)
+			{
 				do
 				{
 					if (!(surf->flags & SURF_PLANEBACK) && surf->visframe == r_framecount)
-						R_RenderFace (surf, clipflags);
+						R_RenderFace(surf, clipflags);
 
 					surf++;
 				} while (--c);
@@ -476,7 +490,7 @@ void R_RecursiveWorldNode (mnode_t *node, int clipflags) {
 		}
 
 		// recurse down the back side
-		R_RecursiveWorldNode (node->children[!side], clipflags);
+		R_RecursiveWorldNode(node->children[!side], clipflags);
 	}
 }
 

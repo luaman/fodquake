@@ -1298,7 +1298,7 @@ void R_DrawBrushModel (entity_t *e)
 }
 
 
-static void R_RecursiveWorldNode (mnode_t *node, int clipflags)
+static void R_RecursiveWorldNode(mnode_t *node, int clipflags)
 {
 	int c, side, clipped, underwater;
 	mplane_t *plane, *clipplane;
@@ -1308,8 +1308,10 @@ static void R_RecursiveWorldNode (mnode_t *node, int clipflags)
 
 	if (node->contents == CONTENTS_SOLID)
 		return;		// solid
+
 	if (node->visframe != r_visframecount)
 		return;
+
 	for (c = 0, clipplane = frustum; c < 4; c++, clipplane++)
 	{
 		if (!(clipflags & (1 << c)))
@@ -1323,8 +1325,9 @@ static void R_RecursiveWorldNode (mnode_t *node, int clipflags)
 	}
 
 	// if a leaf node, draw stuff
-	if (node->contents < 0)	{
-		pleaf = (mleaf_t *) node;
+	if (node->contents < 0)
+	{
+		pleaf = (mleaf_t *)node;
 
 		mark = pleaf->firstmarksurface;
 		c = pleaf->nummarksurfaces;
@@ -1335,12 +1338,12 @@ static void R_RecursiveWorldNode (mnode_t *node, int clipflags)
 			{
 				(*mark)->visframe = r_framecount;
 				mark++;
-			} while (--c);
+			} while(--c);
 		}
 
 	// deal with model fragments in this leaf
 		if (pleaf->efrags)
-			R_StoreEfrags (&pleaf->efrags);
+			R_StoreEfrags(&pleaf->efrags);
 
 		return;
 	}
@@ -1354,12 +1357,13 @@ static void R_RecursiveWorldNode (mnode_t *node, int clipflags)
 	side = (dot >= 0) ? 0 : 1;
 
 	// recurse down the children, front side first
-	R_RecursiveWorldNode (node->children[side], clipflags);
+	R_RecursiveWorldNode(node->children[side], clipflags);
 
 	// draw stuff
 	c = node->numsurfaces;
 
-	if (c)	{
+	if (c)
+	{
 		surf = cl.worldmodel->surfaces + node->firstsurface;
 
 		if (dot < -BACKFACE_EPSILON)
@@ -1400,7 +1404,7 @@ static void R_RecursiveWorldNode (mnode_t *node, int clipflags)
 		}
 	}
 	// recurse down the back side
-	R_RecursiveWorldNode (node->children[!side], clipflags);
+	R_RecursiveWorldNode(node->children[!side], clipflags);
 }
 
 void R_DrawWorld (void)
