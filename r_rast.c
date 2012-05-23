@@ -75,7 +75,7 @@ qboolean	r_lastvertvalid;
 R_EmitEdge
 ================
 */
-void R_EmitEdge (mvertex_t *pv0, mvertex_t *pv1)
+static void R_EmitEdge (mvertex_t *pv0, mvertex_t *pv1)
 {
 	edge_t *edge, *pcheck;
 	int u_check, v, v2, ceilv0, side;
@@ -310,7 +310,7 @@ void R_ClipEdge (mvertex_t *pv0, mvertex_t *pv1, clipplane_t *clip)
 
 #endif	// !id386
 
-void R_EmitCachedEdge (void)
+static void R_EmitCachedEdge(void)
 {
 	edge_t *pedge_t;
 
