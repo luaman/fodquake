@@ -376,6 +376,11 @@ void Sys_Video_Close(void *display)
 {
 	struct display *d = (struct display*)display;
 	
+	Sys_Input_Shutdown(d->input);
+	
+	[[d->window contentView] release];
+	[d->window close];
+	
 	if (d->orig_display_mode)
 	{
 		CGError err;
@@ -386,11 +391,6 @@ void Sys_Video_Close(void *display)
 			CGReleaseAllDisplays();
 		}
 	}
-	
-	Sys_Input_Shutdown(d->input);
-	
-	[[d->window contentView] release];
-	[d->window close];
 	
 #ifndef GLQUAKE
 	free(d->rgb_buf);
