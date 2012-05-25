@@ -206,6 +206,9 @@ static void Mod_FreeBrushData(model_t *model)
 	free(model->surfaces);
 	model->surfaces = 0;
 
+	free(model->surfvisframes);
+	model->surfvisframes = 0;
+
 	free(model->visdata);
 	model->visdata = 0;
 
@@ -1229,10 +1232,12 @@ static void Mod_LoadFaces(model_t *model, lump_t *l)
 		Host_Error ("Mod_LoadFaces: funny lump size in %s", model->name);
 	count = l->filelen / sizeof(*in);
 	out = malloc(count*sizeof(*out));
-	if (out == 0)
+	model->surfvisframes = malloc(count*sizeof(*model->surfvisframes));
+	if (out == 0 || model->surfvisframes == 0)
 		Sys_Error("Mod_LoadBrushModel: Out of memory\n");
 
 	memset(out, 0, count*sizeof(*out));
+	memset(model->surfvisframes, 0, count*sizeof(*model->surfvisframes));
 
 	model->surfaces = out;
 	model->numsurfaces = count;
@@ -1374,8 +1379,7 @@ static void Mod_LoadLeafs(model_t *model, lump_t *l)
 		p = LittleLong(in->contents);
 		out->contents = p;
 
-		out->firstmarksurface = model->marksurfaces +
-			LittleShort(in->firstmarksurface);
+		out->firstmarksurface = model->marksurfaces + LittleShort(in->firstmarksurface);
 		out->nummarksurfaces = LittleShort(in->nummarksurfaces);
 
 		p = LittleLong(in->visofs);
@@ -1388,7 +1392,7 @@ static void Mod_LoadLeafs(model_t *model, lump_t *l)
 		if (!dedicated && out->contents != CONTENTS_EMPTY)
 		{
 			for (j = 0; j < out->nummarksurfaces; j++)
-				out->firstmarksurface[j]->flags |= SURF_UNDERWATER;
+				model->surfaces[out->firstmarksurface[j]].flags |= SURF_UNDERWATER;
 		}
 	}
 }
@@ -1522,7 +1526,7 @@ static void Mod_LoadMarksurfaces(model_t *model, lump_t *l)
 {
 	int i, j, count;
 	short *in;
-	msurface_t **out;
+	unsigned short *out;
 
 	in = (void *)(mod_base + l->fileofs);
 	if (l->filelen % sizeof(*in))
@@ -1540,7 +1544,7 @@ static void Mod_LoadMarksurfaces(model_t *model, lump_t *l)
 		j = LittleShort(in[i]);
 		if (j >= model->numsurfaces)
 			Host_Error ("Mod_LoadMarksurfaces: bad surface number");
-		out[i] = model->surfaces + j;
+		out[i] = j;
 	}
 }
 

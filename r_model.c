@@ -244,6 +244,9 @@ static void Mod_FreeBrushData(model_t *model)
 	free(model->surfaces);
 	model->surfaces = 0;
 
+	free(model->surfvisframes);
+	model->surfvisframes = 0;
+
 	free(model->nodes);
 	model->nodes = 0;
 
@@ -1016,10 +1019,13 @@ static void Mod_LoadFaces(model_t *model, lump_t *l)
 
 	count = l->filelen / sizeof(*in);
 	out = malloc(count*sizeof(*out));
-	if (out == 0)
+	model->surfvisframes = malloc(count*sizeof(*model->surfvisframes));
+
+	if (out == 0 || model->surfvisframes == 0)
 		Sys_Error("Mod_LoadFaces: Out of memory\n");
 
 	memset(out, 0, count*sizeof(*out));
+	memset(model->surfvisframes, 0, count*sizeof(*model->surfvisframes));
 
 	model->surfaces = out;
 	model->numsurfaces = count;
@@ -1299,7 +1305,7 @@ static void Mod_LoadMarksurfaces(model_t *model, lump_t *l)
 {
 	int i, j, count;
 	short *in;
-	msurface_t **out;
+	unsigned short *out;
 
 	in = (void *) (mod_base + l->fileofs);
 	if (l->filelen % sizeof(*in))
@@ -1317,7 +1323,7 @@ static void Mod_LoadMarksurfaces(model_t *model, lump_t *l)
 		j = LittleShort(in[i]);
 		if (j >= model->numsurfaces)
 			Host_Error("Mod_LoadMarksurfaces: bad surface number");
-		out[i] = model->surfaces + j;
+		out[i] = j;
 	}
 }
 

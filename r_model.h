@@ -86,12 +86,11 @@ typedef struct texture_s {
 } texture_t;
 
 
-#define	SURF_PLANEBACK		2
-#define	SURF_DRAWSKY		4
-#define SURF_DRAWSPRITE		8
-#define SURF_DRAWTURB		0x10
-#define SURF_DRAWTILED		0x20
-#define SURF_DRAWBACKGROUND	0x40
+#define SURF_PLANEBACK          (1<<1)
+#define SURF_DRAWSKY            (1<<2)
+#define SURF_DRAWTURB           (1<<3)
+#define SURF_DRAWTILED          (1<<4)
+#define SURF_DRAWBACKGROUND     (1<<5)
 
 // !!! if this is changed, it must be changed in asm_draw.h too !!!
 typedef struct {
@@ -107,8 +106,6 @@ typedef struct {
 } mtexinfo_t;
 
 typedef struct msurface_s {
-	int			visframe;		// should be drawn when node is crossed
-
 	int			dlightframe;
 	int			dlightbits;
 
@@ -169,7 +166,7 @@ typedef struct mleaf_s {
 	byte		*compressed_vis;
 	struct efrag_s	*efrags;
 
-	msurface_t	**firstmarksurface;
+	unsigned short	*firstmarksurface;
 	int			nummarksurfaces;
 	int			key;			// BSP sequence number for leaf's contents
 	byte		ambient_sound_level[NUM_AMBIENTS];
@@ -347,7 +344,7 @@ typedef struct model_s {
 	dclipnode_t	*clipnodes;
 
 	int			nummarksurfaces;
-	msurface_t	**marksurfaces;
+	unsigned short	*marksurfaces;
 
 	hull_t		hulls[MAX_MAP_HULLS];
 
@@ -363,6 +360,8 @@ typedef struct model_s {
 
 	int			bspversion;
 	qboolean	isworldmodel;
+
+	unsigned short *surfvisframes;
 
 	// additional model data
 	void *extradata;

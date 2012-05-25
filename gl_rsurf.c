@@ -1298,18 +1298,22 @@ void R_DrawBrushModel (entity_t *e)
 }
 
 
-static void R_RecursiveWorldNode (mnode_t *node, int clipflags)
+static void R_RecursiveWorldNode(mnode_t *node, int clipflags)
 {
 	int c, side, clipped, underwater;
 	mplane_t *plane, *clipplane;
-	msurface_t *surf, **mark;
+	msurface_t *surf;
+	unsigned int surfnum;
+	unsigned short *mark;
 	mleaf_t *pleaf;
 	float dot;
 
 	if (node->contents == CONTENTS_SOLID)
 		return;		// solid
+
 	if (node->visframe != r_visframecount)
 		return;
+
 	for (c = 0, clipplane = frustum; c < 4; c++, clipplane++)
 	{
 		if (!(clipflags & (1 << c)))
@@ -1323,8 +1327,9 @@ static void R_RecursiveWorldNode (mnode_t *node, int clipflags)
 	}
 
 	// if a leaf node, draw stuff
-	if (node->contents < 0)	{
-		pleaf = (mleaf_t *) node;
+	if (node->contents < 0)
+	{
+		pleaf = (mleaf_t *)node;
 
 		mark = pleaf->firstmarksurface;
 		c = pleaf->nummarksurfaces;
@@ -1333,74 +1338,77 @@ static void R_RecursiveWorldNode (mnode_t *node, int clipflags)
 		{
 			do
 			{
-				(*mark)->visframe = r_framecount;
+				cl.worldmodel->surfvisframes[*mark] = r_framecount;
 				mark++;
-			} while (--c);
+			} while(--c);
 		}
 
-	// deal with model fragments in this leaf
+		// deal with model fragments in this leaf
 		if (pleaf->efrags)
-			R_StoreEfrags (&pleaf->efrags);
-
-		return;
+			R_StoreEfrags(&pleaf->efrags);
 	}
+	else
+	{
+		// node is just a decision point, so go down the apropriate sides
 
-	// node is just a decision point, so go down the apropriate sides
+		// find which side of the node we are on
+		plane = node->plane;
 
-	// find which side of the node we are on
-	plane = node->plane;
+		dot = PlaneDiff(modelorg, plane);
+		side = (dot >= 0) ? 0 : 1;
 
-	dot = PlaneDiff(modelorg, plane);
-	side = (dot >= 0) ? 0 : 1;
+		// recurse down the children, front side first
+		R_RecursiveWorldNode(node->children[side], clipflags);
 
-	// recurse down the children, front side first
-	R_RecursiveWorldNode (node->children[side], clipflags);
+		// draw stuff
+		c = node->numsurfaces;
 
-	// draw stuff
-	c = node->numsurfaces;
-
-	if (c)	{
-		surf = cl.worldmodel->surfaces + node->firstsurface;
-
-		if (dot < -BACKFACE_EPSILON)
-			side = SURF_PLANEBACK;
-		else if (dot > BACKFACE_EPSILON)
-			side = 0;
-
-		for ( ; c; c--, surf++)
+		if (c)
 		{
-			if (surf->visframe != r_framecount)
-				continue;
+			surf = cl.worldmodel->surfaces + node->firstsurface;
+			surfnum = node->firstsurface;
 
-			if ((dot < 0) ^ !!(surf->flags & SURF_PLANEBACK))
-				continue;		// wrong side
+			if (dot < -BACKFACE_EPSILON)
+				side = SURF_PLANEBACK;
+			else if (dot > BACKFACE_EPSILON)
+				side = 0;
 
-			// add surf to the right chain
-			if (surf->flags & SURF_DRAWSKY)
+			for ( ; c; c--, surf++, surfnum++)
 			{
-				CHAIN_SURF_F2B(surf, skychain_tail);
-			}
-			else if (surf->flags & SURF_DRAWTURB)
-			{
-				CHAIN_SURF_F2B(surf, waterchain_tail);
-			}
-			else if (surf->flags & SURF_DRAWALPHA)
-			{
-				CHAIN_SURF_B2F(surf, alphachain);
-			}
-			else if (surf->is_drawflat && r_drawflat_enable.value == 1)
-			{
-				CHAIN_SURF_F2B(surf, drawflatchain_tail);
-			}
-			else
-			{
-				underwater = (surf->flags & SURF_UNDERWATER) ? 1 : 0;
-				CHAIN_SURF_F2B(surf, surf->texinfo->texture->texturechain_tail[underwater]);
+				if (cl.worldmodel->surfvisframes[surfnum] != r_framecount)
+					continue;
+
+				if ((dot < 0) ^ !!(surf->flags & SURF_PLANEBACK))
+					continue;		// wrong side
+
+				// add surf to the right chain
+				if (surf->flags & SURF_DRAWSKY)
+				{
+					CHAIN_SURF_F2B(surf, skychain_tail);
+				}
+				else if (surf->flags & SURF_DRAWTURB)
+				{
+					CHAIN_SURF_F2B(surf, waterchain_tail);
+				}
+				else if (surf->flags & SURF_DRAWALPHA)
+				{
+					CHAIN_SURF_B2F(surf, alphachain);
+				}
+				else if (surf->is_drawflat && r_drawflat_enable.value == 1)
+				{
+					CHAIN_SURF_F2B(surf, drawflatchain_tail);
+				}
+				else
+				{
+					underwater = (surf->flags & SURF_UNDERWATER) ? 1 : 0;
+					CHAIN_SURF_F2B(surf, surf->texinfo->texture->texturechain_tail[underwater]);
+				}
 			}
 		}
+
+		// recurse down the back side
+		R_RecursiveWorldNode(node->children[!side], clipflags);
 	}
-	// recurse down the back side
-	R_RecursiveWorldNode (node->children[!side], clipflags);
 }
 
 void R_DrawWorld (void)
