@@ -247,6 +247,9 @@ static void Mod_FreeBrushData(model_t *model)
 	free(model->surfvisframes);
 	model->surfvisframes = 0;
 
+	free(model->surfflags);
+	model->surfflags = 0;
+
 	free(model->nodes);
 	model->nodes = 0;
 
@@ -1012,6 +1015,7 @@ static void Mod_LoadFaces(model_t *model, lump_t *l)
 	dface_t *in;
 	msurface_t *out;
 	int i, count, surfnum, planenum, side;
+	unsigned char flags;
 
 	in = (void *) (mod_base + l->fileofs);
 	if (l->filelen % sizeof(*in))
@@ -1020,8 +1024,9 @@ static void Mod_LoadFaces(model_t *model, lump_t *l)
 	count = l->filelen / sizeof(*in);
 	out = malloc(count*sizeof(*out));
 	model->surfvisframes = malloc(count*sizeof(*model->surfvisframes));
+	model->surfflags = malloc(count*sizeof(*model->surfflags));
 
-	if (out == 0 || model->surfvisframes == 0)
+	if (out == 0 || model->surfvisframes == 0 || model->surfflags == 0)
 		Sys_Error("Mod_LoadFaces: Out of memory\n");
 
 	memset(out, 0, count*sizeof(*out));
@@ -1032,14 +1037,15 @@ static void Mod_LoadFaces(model_t *model, lump_t *l)
 
 	for (surfnum = 0; surfnum<count; surfnum++, in++, out++)
 	{
+		flags = 0;
+
 		out->firstedge = LittleLong(in->firstedge);
 		out->numedges = LittleShort(in->numedges);
-		out->flags = 0;
 
 		planenum = LittleShort(in->planenum);
 		side = LittleShort(in->side);
 		if (side)
-			out->flags |= SURF_PLANEBACK;
+			flags |= SURF_PLANEBACK;
 
 		out->plane = model->planes + planenum;
 
@@ -1060,20 +1066,24 @@ static void Mod_LoadFaces(model_t *model, lump_t *l)
 		// set the drawing flags flag
 		if (ISSKYTEX(out->texinfo->texture->name))
 		{	// sky
-			out->flags |= (SURF_DRAWSKY | SURF_DRAWTILED);
+			flags |= (SURF_DRAWSKY | SURF_DRAWTILED);
+			model->surfflags[surfnum] = flags;
 			continue;
 		}
 
 		if (ISTURBTEX(model, out->texinfo->texture->name))
 		{		// turbulent
-			out->flags |= (SURF_DRAWTURB | SURF_DRAWTILED);
+			flags |= (SURF_DRAWTURB | SURF_DRAWTILED);
 			for (i = 0; i < 2; i++)
 			{
 				out->extents[i] = 16384;
 				out->texturemins[i] = -8192;
 			}
+			model->surfflags[surfnum] = flags;
 			continue;
 		}
+
+		model->surfflags[surfnum] = flags;
 	}
 }
 

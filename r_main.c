@@ -263,12 +263,12 @@ int R_Init(void)
 		if (r_cnumsurfs <= MINSURFACES)
 			r_cnumsurfs = MINSURFACES;
 
-		surfacememory = malloc(r_cnumsurfs * sizeof(surf_t) + (CACHE_SIZE - 1));
+		surfacememory = malloc(r_cnumsurfs * sizeof(struct surf) + (CACHE_SIZE - 1));
 		if (surfacememory)
 		{
 			surfaces = (void *)((((long)surfacememory) + CACHE_SIZE - 1) & ~(CACHE_SIZE - 1));
-			surface_p = surfaces;
-			surf_max = &surfaces[r_cnumsurfs];
+			surf_cur = 1;
+			surf_max = r_cnumsurfs;
 			// surface 0 doesn't really exist; it's just a dummy because index 0
 			// is used to indicate no edge attached to surface
 			surfaces--;

@@ -42,7 +42,7 @@ struct SysThread *Sys_Thread_CreateThread(void (*entrypoint)(void *), void *argu
 	thread = malloc(sizeof(*thread));
 	if (thread)
 	{
-		r = pthread_create(&thread->thread, 0, entrypoint, argument);
+		r = pthread_create(&thread->thread, 0, (void *(*)(void *))entrypoint, argument);
 		if (r == 0)
 		{
 			return thread;
@@ -66,8 +66,7 @@ int Sys_Thread_SetThreadPriority(struct SysThread *thread, enum SysThreadPriorit
 	int policy;
 	int prev;
 
-	pthread_attr_getschedparam(thread->thread, &sp);
-	pthread_attr_getschedpolicy(thread->thread, &policy);
+	pthread_getschedparam(thread->thread, &policy, &sp);
 
 	prev = sp.sched_priority;
 

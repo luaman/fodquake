@@ -256,7 +256,7 @@ loc0:
 		lightplane = node->plane;
 		surf = cl.worldmodel->surfaces + node->firstsurface;
 		for (i = 0; i < node->numsurfaces; i++, surf++) {
-			if (surf->flags & SURF_DRAWTILED)
+			if (cl.worldmodel->surfflags[node->firstsurface + i] & SURF_DRAWTILED)
 				continue;	// no lightmaps
 			ds = (int) ((float) DotProduct (mid, surf->texinfo->vecs[0]) + surf->texinfo->vecs[0][3]);
 			dt = (int) ((float) DotProduct (mid, surf->texinfo->vecs[1]) + surf->texinfo->vecs[1][3]);
