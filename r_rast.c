@@ -327,7 +327,7 @@ static void R_EmitCachedEdge(unsigned int surfnum)
 	r_emitted = 1;
 }
 
-void R_RenderFace(msurface_t *fa, int clipflags)
+void R_RenderFace(model_t *model, unsigned int surfnum, int clipflags)
 {
 	int i, lindex;
 	unsigned mask;
@@ -337,6 +337,7 @@ void R_RenderFace(msurface_t *fa, int clipflags)
 	medge_t *pedges, tedge;
 	clipplane_t *pclip;
 	struct surf *surface_p;
+	msurface_t *fa;
 
 	// skip out if no more surfs
 	if (surf_cur >= surf_max)
@@ -344,6 +345,8 @@ void R_RenderFace(msurface_t *fa, int clipflags)
 		r_outofsurfaces++;
 		return;
 	}
+
+	fa = model->surfaces + surfnum;
 
 	// ditto if not enough edges left, or switch to auxedges if possible
 	if ((edge_p + fa->numedges + 4) >= edge_max)
@@ -488,7 +491,7 @@ void R_RenderFace(msurface_t *fa, int clipflags)
 
 	surface_p->data = (void *)fa;
 	surface_p->nearzi = r_nearzi;
-	surface_p->flags = fa->flags;
+	surface_p->flags = model->surfflags[surfnum];
 	surface_p->insubmodel = insubmodel;
 	surface_p->spanstate = 0;
 	surface_p->entity = currententity;
@@ -508,7 +511,7 @@ void R_RenderFace(msurface_t *fa, int clipflags)
 	surf_cur++;
 }
 
-void R_RenderBmodelFace(bedge_t *pedges, msurface_t *psurf)
+void R_RenderBmodelFace(model_t *model, bedge_t *pedges, unsigned int surfnum)
 {
 	int i;
 	unsigned mask;
@@ -518,6 +521,7 @@ void R_RenderBmodelFace(bedge_t *pedges, msurface_t *psurf)
 	medge_t tedge;
 	clipplane_t	*pclip;
 	struct surf *surface_p;
+	msurface_t *psurf;
 
 	// skip out if no more surfs
 	if (surf_cur >= surf_max)
@@ -525,6 +529,8 @@ void R_RenderBmodelFace(bedge_t *pedges, msurface_t *psurf)
 		r_outofsurfaces++;
 		return;
 	}
+
+	psurf = model->surfaces + surfnum;
 
 	// ditto if not enough edges left, or switch to auxedges if possible
 	if ((edge_p + psurf->numedges + 4) >= edge_max)
@@ -596,7 +602,7 @@ void R_RenderBmodelFace(bedge_t *pedges, msurface_t *psurf)
 
 	surface_p->data = (void *)psurf;
 	surface_p->nearzi = r_nearzi;
-	surface_p->flags = psurf->flags;
+	surface_p->flags = model->surfflags[surfnum];
 	surface_p->insubmodel = true;
 	surface_p->spanstate = 0;
 	surface_p->entity = currententity;

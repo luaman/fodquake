@@ -110,7 +110,6 @@ typedef struct msurface_s {
 	int			dlightbits;
 
 	mplane_t	*plane;
-	int			flags;
 
 	int			firstedge;	// look up in model->surfedges[], negative numbers
 	int			numedges;	// are backwards edges
@@ -362,6 +361,7 @@ typedef struct model_s {
 	qboolean	isworldmodel;
 
 	unsigned short *surfvisframes;
+	unsigned char *surfflags;
 
 	// additional model data
 	void *extradata;

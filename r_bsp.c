@@ -158,7 +158,7 @@ void R_RotateBmodel (void)
 	R_TransformFrustum ();
 }
 
-void R_RecursiveClipBPoly (bedge_t *pedges, mnode_t *pnode, msurface_t *psurf)
+static void R_RecursiveClipBPoly(model_t *model, bedge_t *pedges, mnode_t *pnode, unsigned int surfnum)
 {
 	bedge_t *psideedges[2], *pnextedge, *ptedge;
 	int i, side, lastside;
@@ -294,19 +294,19 @@ void R_RecursiveClipBPoly (bedge_t *pedges, mnode_t *pnode, msurface_t *psurf)
 					if (pn->contents != CONTENTS_SOLID)
 					{
 						r_currentbkey = ((mleaf_t *)pn)->key;
-						R_RenderBmodelFace (psideedges[i], psurf);
+						R_RenderBmodelFace(model, psideedges[i], surfnum);
 					}
 				}
 				else
 				{
-					R_RecursiveClipBPoly (psideedges[i], pnode->children[i], psurf);
+					R_RecursiveClipBPoly(model, psideedges[i], pnode->children[i], surfnum);
 				}
 			}
 		}
 	}
 }
 
-void R_DrawSolidClippedSubmodelPolygons (model_t *pmodel)
+void R_DrawSolidClippedSubmodelPolygons(model_t *pmodel)
 {
 	int i, j, lindex, numsurfaces;
 	vec_t dot;
@@ -315,6 +315,7 @@ void R_DrawSolidClippedSubmodelPolygons (model_t *pmodel)
 	mvertex_t bverts[MAX_BMODEL_VERTS];
 	bedge_t bedges[MAX_BMODEL_EDGES], *pbedge;
 	medge_t *pedge, *pedges;
+	unsigned char flags;
 
 	// FIXME: use bounding-box-based frustum clipping info?
 
@@ -329,9 +330,11 @@ void R_DrawSolidClippedSubmodelPolygons (model_t *pmodel)
 
 		dot = PlaneDiff (modelorg, pplane);
 
+		flags = pmodel->surfflags[pmodel->firstmodelsurface + i];
+
 		// draw the polygon
-		if (((psurf->flags & SURF_PLANEBACK) && dot < -BACKFACE_EPSILON) ||
-			(!(psurf->flags & SURF_PLANEBACK) && dot > BACKFACE_EPSILON))
+		if (((flags & SURF_PLANEBACK) && dot < -BACKFACE_EPSILON)
+		 || (!(flags & SURF_PLANEBACK) && dot > BACKFACE_EPSILON))
 		{
 			// FIXME: use bounding-box-based frustum clipping info?
 
@@ -370,7 +373,7 @@ void R_DrawSolidClippedSubmodelPolygons (model_t *pmodel)
 
 				pbedge[j-1].pnext = NULL;	// mark end of edges
 
-				R_RecursiveClipBPoly (pbedge, currententity->topnode, psurf);
+				R_RecursiveClipBPoly(pmodel, pbedge, currententity->topnode, pmodel->firstmodelsurface + i);
 			}
 			else
 			{
@@ -386,6 +389,7 @@ void R_DrawSubmodelPolygons (model_t *pmodel, int clipflags)
 	vec_t dot;
 	msurface_t *psurf;
 	mplane_t *pplane;
+	unsigned char flags;
 
 	// FIXME: use bounding-box-based frustum clipping info?
 
@@ -399,14 +403,16 @@ void R_DrawSubmodelPolygons (model_t *pmodel, int clipflags)
 
 		dot = PlaneDiff (modelorg, pplane);
 
+		flags = pmodel->surfflags[pmodel->firstmodelsurface + i];
+
 		// draw the polygon
-		if (((psurf->flags & SURF_PLANEBACK) && dot < -BACKFACE_EPSILON) ||
-			(!(psurf->flags & SURF_PLANEBACK) && dot > BACKFACE_EPSILON))
+		if (((flags & SURF_PLANEBACK) && dot < -BACKFACE_EPSILON)
+		 || (!(flags & SURF_PLANEBACK) && dot > BACKFACE_EPSILON))
 		{
 			r_currentkey = ((mleaf_t *)currententity->topnode)->key;
 
 			// FIXME: use bounding-box-based frustum clipping info?
-			R_RenderFace (psurf, clipflags);
+			R_RenderFace(pmodel, pmodel->firstmodelsurface + i, clipflags);
 		}
 	}
 }
@@ -416,7 +422,6 @@ void R_RecursiveWorldNode(mnode_t *node, int clipflags)
 	int i, c, side, *pindex;
 	vec3_t acceptpt, rejectpt;
 	mplane_t *plane;
-	msurface_t *surf;
 	unsigned int surfnum;
 	unsigned short *mark;
 	mleaf_t *pleaf;
@@ -506,17 +511,15 @@ void R_RecursiveWorldNode(mnode_t *node, int clipflags)
 
 		if (c)
 		{
-			surf = cl.worldmodel->surfaces + node->firstsurface;
 			surfnum = node->firstsurface;
 
 			if (dot < -BACKFACE_EPSILON)
 			{
 				do
 				{
-					if ((surf->flags & SURF_PLANEBACK) && cl.worldmodel->surfvisframes[surfnum] == r_framecount)
-						R_RenderFace(surf, clipflags);
+					if ((cl.worldmodel->surfflags[surfnum] & SURF_PLANEBACK) && cl.worldmodel->surfvisframes[surfnum] == r_framecount)
+						R_RenderFace(cl.worldmodel, surfnum, clipflags);
 
-					surf++;
 					surfnum++;
 				} while (--c);
 			}
@@ -524,10 +527,9 @@ void R_RecursiveWorldNode(mnode_t *node, int clipflags)
 			{
 				do
 				{
-					if (!(surf->flags & SURF_PLANEBACK) && cl.worldmodel->surfvisframes[surfnum] == r_framecount)
-						R_RenderFace(surf, clipflags);
+					if (!(cl.worldmodel->surfflags[surfnum] & SURF_PLANEBACK) && cl.worldmodel->surfvisframes[surfnum] == r_framecount)
+						R_RenderFace(cl.worldmodel, surfnum, clipflags);
 
-					surf++;
 					surfnum++;
 				} while (--c);
 			}

@@ -1194,6 +1194,7 @@ void R_DrawBrushModel (entity_t *e)
 	mplane_t *pplane;
 	model_t *clmodel;
 	qboolean rotated;
+	unsigned char flags;
 
 	currententity = e;
 	currenttexture = -1;
@@ -1259,29 +1260,31 @@ void R_DrawBrushModel (entity_t *e)
 		pplane = psurf->plane;
 		dot = PlaneDiff(modelorg, pplane);
 
+		flags = clmodel->surfflags[clmodel->firstmodelsurface + i];
+
 		//draw the water surfaces now, and setup sky/normal chains
-		if (	((psurf->flags & SURF_PLANEBACK) && (dot < -BACKFACE_EPSILON)) ||
-				(!(psurf->flags & SURF_PLANEBACK) && (dot > BACKFACE_EPSILON)))
+		if (((flags & SURF_PLANEBACK) && (dot < -BACKFACE_EPSILON))
+		 || (!(flags & SURF_PLANEBACK) && (dot > BACKFACE_EPSILON)))
 		{
-			if (psurf->flags & SURF_DRAWSKY)
+			if (flags & SURF_DRAWSKY)
 			{
 				CHAIN_SURF_B2F(psurf, skychain);
 			}
-			else if (psurf->flags & SURF_DRAWTURB)
+			else if (flags & SURF_DRAWTURB)
 			{
 				EmitWaterPolys (psurf);
 			}
-			else if (psurf->flags & SURF_DRAWALPHA)
+			else if (flags & SURF_DRAWALPHA)
 			{
 				CHAIN_SURF_B2F(psurf, alphachain);
 			}
-			else if (psurf->is_drawflat && r_drawflat_enable.value == 1)
+			else if (r_drawflat_enable.value == 1 && psurf->is_drawflat)
 			{
 				CHAIN_SURF_B2F(psurf, drawflatchain);
 			}
 			else
 			{
-				underwater = (psurf->flags & SURF_UNDERWATER) ? 1 : 0;
+				underwater = (flags & SURF_UNDERWATER) ? 1 : 0;
 				CHAIN_SURF_B2F(psurf, psurf->texinfo->texture->texturechain[underwater]);
 			}
 		}
@@ -1305,6 +1308,7 @@ static void R_RecursiveWorldNode(mnode_t *node, int clipflags)
 	msurface_t *surf;
 	unsigned int surfnum;
 	unsigned short *mark;
+	unsigned char flags;
 	mleaf_t *pleaf;
 	float dot;
 
@@ -1378,29 +1382,31 @@ static void R_RecursiveWorldNode(mnode_t *node, int clipflags)
 				if (cl.worldmodel->surfvisframes[surfnum] != r_framecount)
 					continue;
 
-				if ((dot < 0) ^ !!(surf->flags & SURF_PLANEBACK))
+				flags = cl.worldmodel->surfflags[surfnum];
+
+				if ((dot < 0) ^ !!(flags & SURF_PLANEBACK))
 					continue;		// wrong side
 
 				// add surf to the right chain
-				if (surf->flags & SURF_DRAWSKY)
+				if (flags & SURF_DRAWSKY)
 				{
 					CHAIN_SURF_F2B(surf, skychain_tail);
 				}
-				else if (surf->flags & SURF_DRAWTURB)
+				else if (flags & SURF_DRAWTURB)
 				{
 					CHAIN_SURF_F2B(surf, waterchain_tail);
 				}
-				else if (surf->flags & SURF_DRAWALPHA)
+				else if (flags & SURF_DRAWALPHA)
 				{
 					CHAIN_SURF_B2F(surf, alphachain);
 				}
-				else if (surf->is_drawflat && r_drawflat_enable.value == 1)
+				else if (r_drawflat_enable.value == 1 && surf->is_drawflat)
 				{
 					CHAIN_SURF_F2B(surf, drawflatchain_tail);
 				}
 				else
 				{
-					underwater = (surf->flags & SURF_UNDERWATER) ? 1 : 0;
+					underwater = (flags & SURF_UNDERWATER) ? 1 : 0;
 					CHAIN_SURF_F2B(surf, surf->texinfo->texture->texturechain_tail[underwater]);
 				}
 			}
@@ -1667,7 +1673,7 @@ void GL_BuildLightmaps (void)
 			continue;
 		for (i = 0; i < m->numsurfaces; i++)
 		{
-			if (m->surfaces[i].flags & (SURF_DRAWTURB | SURF_DRAWSKY))
+			if (m->surfflags[i] & (SURF_DRAWTURB | SURF_DRAWSKY))
 				continue;
 			if (m->surfaces[i].texinfo->flags & TEX_SPECIAL)
 				continue;

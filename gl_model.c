@@ -209,6 +209,9 @@ static void Mod_FreeBrushData(model_t *model)
 	free(model->surfvisframes);
 	model->surfvisframes = 0;
 
+	free(model->surfflags);
+	model->surfflags = 0;
+
 	free(model->visdata);
 	model->visdata = 0;
 
@@ -1226,6 +1229,7 @@ static void Mod_LoadFaces(model_t *model, lump_t *l)
 	dface_t *in;
 	msurface_t *out;
 	int i, count, surfnum, planenum, side;
+	unsigned char flags;
 
 	in = (void *)(mod_base + l->fileofs);
 	if (l->filelen % sizeof(*in))
@@ -1233,25 +1237,28 @@ static void Mod_LoadFaces(model_t *model, lump_t *l)
 	count = l->filelen / sizeof(*in);
 	out = malloc(count*sizeof(*out));
 	model->surfvisframes = malloc(count*sizeof(*model->surfvisframes));
-	if (out == 0 || model->surfvisframes == 0)
+	model->surfflags = malloc(count*sizeof(*model->surfflags));
+	if (out == 0 || model->surfvisframes == 0 || model->surfflags == 0)
 		Sys_Error("Mod_LoadBrushModel: Out of memory\n");
 
 	memset(out, 0, count*sizeof(*out));
 	memset(model->surfvisframes, 0, count*sizeof(*model->surfvisframes));
+	memset(model->surfflags, 0, count*sizeof(*model->surfflags));
 
 	model->surfaces = out;
 	model->numsurfaces = count;
 
 	for (surfnum = 0; surfnum < count; surfnum++, in++, out++)
 	{
+		flags = 0;
+
 		out->firstedge = LittleLong(in->firstedge);
 		out->numedges = LittleShort(in->numedges);
-		out->flags = 0;
 
 		planenum = LittleShort(in->planenum);
 		side = LittleShort(in->side);
 		if (side)
-			out->flags |= SURF_PLANEBACK;
+			flags |= SURF_PLANEBACK;
 
 		out->plane = model->planes + planenum;
 
@@ -1273,25 +1280,29 @@ static void Mod_LoadFaces(model_t *model, lump_t *l)
 
 		if (ISSKYTEX(out->texinfo->texture->name))
 		{	// sky
-			out->flags |= (SURF_DRAWSKY | SURF_DRAWTILED);
+			flags |= (SURF_DRAWSKY | SURF_DRAWTILED);
 			GL_SubdivideSurface(model, out);	// cut up polygon for warps
+			model->surfflags[surfnum] = flags;
 			continue;
 		}
 
 		if (ISTURBTEX(model, out->texinfo->texture->name))
 		{	// turbulent
-			out->flags |= (SURF_DRAWTURB | SURF_DRAWTILED);
+			flags |= (SURF_DRAWTURB | SURF_DRAWTILED);
 			for (i = 0; i < 2; i++)
 			{
 				out->extents[i] = 16384;
 				out->texturemins[i] = -8192;
 			}
 			GL_SubdivideSurface(model, out);	// cut up polygon for warps
+			model->surfflags[surfnum] = flags;
 			continue;
 		}
 
 		if (ISALPHATEX(model, out->texinfo->texture->name))
-			out->flags |= SURF_DRAWALPHA;
+			flags |= SURF_DRAWALPHA;
+
+		model->surfflags[surfnum] = flags;
 	}
 }
 
@@ -1392,7 +1403,7 @@ static void Mod_LoadLeafs(model_t *model, lump_t *l)
 		if (!dedicated && out->contents != CONTENTS_EMPTY)
 		{
 			for (j = 0; j < out->nummarksurfaces; j++)
-				model->surfaces[out->firstmarksurface[j]].flags |= SURF_UNDERWATER;
+				model->surfflags[out->firstmarksurface[j]] |= SURF_UNDERWATER;
 		}
 	}
 }
