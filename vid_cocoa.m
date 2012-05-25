@@ -535,17 +535,10 @@ const char* Sys_Video_GetMode(void *display)
 {
 	struct display *d = (struct display*)display;
 	char buf[64];
-	const char *ret;
 	
 	snprintf(buf, sizeof(buf), "%u,%u,%u", d->width, d->height, 0);
 	
-	ret = strdup(buf);
-	if (ret == NULL)
-	{
-		return NULL;
-	}
-	
-	return ret;
+	return strdup(buf);
 }
 
 int Sys_Video_FocusChanged(void *display)
