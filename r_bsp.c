@@ -36,7 +36,8 @@ float			entity_rotation[3][3];
 
 int				r_currentbkey;
 
-typedef enum {touchessolid, drawnode, nodrawnode} solidstate_t;
+typedef enum
+{touchessolid, drawnode, nodrawnode} solidstate_t;
 
 #define MAX_BMODEL_VERTS	500			// 6K
 #define MAX_BMODEL_EDGES	1000		// 12K
@@ -52,7 +53,8 @@ static qboolean		makeclippededge;
 
 //===========================================================================
 
-void R_EntityRotate (vec3_t vec) {
+void R_EntityRotate (vec3_t vec)
+{
 	vec3_t tvec;
 
 	VectorCopy (vec, tvec);
@@ -61,7 +63,8 @@ void R_EntityRotate (vec3_t vec) {
 	vec[2] = DotProduct (entity_rotation[2], tvec);
 }
 
-void R_RotateBmodel (void) {
+void R_RotateBmodel (void)
+{
 	float angle, s, c, temp1[3][3], temp2[3][3], temp3[3][3];
 
 // TODO: should use a look-up table
@@ -70,12 +73,15 @@ void R_RotateBmodel (void) {
 // TODO: share work with R_SetUpAliasTransform
 
 	// yaw
-	angle = currententity->angles[YAW];		
+	angle = currententity->angles[YAW];
 	angle = DEG2RAD(angle);
-	if (angle) {
+	if (angle)
+	{
 		s = sin(angle);
 		c = cos(angle);
-	} else {
+	}
+	else
+	{
 		s = 0;
 		c = 1;
 	}
@@ -92,12 +98,15 @@ void R_RotateBmodel (void) {
 
 
 	// pitch
-	angle = currententity->angles[PITCH];		
+	angle = currententity->angles[PITCH];
 	angle = DEG2RAD(angle);
-	if (angle) {
+	if (angle)
+	{
 		s = sin(angle);
 		c = cos(angle);
-	} else {
+	}
+	else
+	{
 		s = 0;
 		c = 1;
 	}
@@ -115,12 +124,15 @@ void R_RotateBmodel (void) {
 	R_ConcatRotations (temp2, temp1, temp3);
 
 	// roll
-	angle = currententity->angles[ROLL];		
+	angle = currententity->angles[ROLL];
 	angle = DEG2RAD(angle);
-	if (angle) {
+	if (angle)
+	{
 		s = sin(angle);
 		c = cos(angle);
-	} else {
+	}
+	else
+	{
 		s = 0;
 		c = 1;
 	}
@@ -146,7 +158,8 @@ void R_RotateBmodel (void) {
 	R_TransformFrustum ();
 }
 
-void R_RecursiveClipBPoly (bedge_t *pedges, mnode_t *pnode, msurface_t *psurf) {
+void R_RecursiveClipBPoly (bedge_t *pedges, mnode_t *pnode, msurface_t *psurf)
+{
 	bedge_t *psideedges[2], *pnextedge, *ptedge;
 	int i, side, lastside;
 	float dist, frac, lastdist;
@@ -167,22 +180,24 @@ void R_RecursiveClipBPoly (bedge_t *pedges, mnode_t *pnode, msurface_t *psurf) {
 	tplane.normal[2] = PlaneDist (entity_rotation[2], splitplane);
 
 	// clip edges to BSP plane
-	for ( ; pedges ; pedges = pnextedge) {
+	for ( ; pedges ; pedges = pnextedge)
+	{
 		pnextedge = pedges->pnext;
 
 		// set the status for the last point as the previous point
 		// FIXME: cache this stuff somehow?
 		plastvert = pedges->v[0];
-		
+
 		lastdist = DotProduct (plastvert->position, tplane.normal) - tplane.dist;
 		lastside = (lastdist <= 0);
 
 		pvert = pedges->v[1];
-		
+
 		dist = DotProduct (pvert->position, tplane.normal) - tplane.dist;
 		side = (dist <= 0);
 
-		if (side != lastside) {
+		if (side != lastside)
+		{
 			// clipped
 			if (numbverts >= MAX_BMODEL_VERTS)
 				return;
@@ -197,7 +212,8 @@ void R_RecursiveClipBPoly (bedge_t *pedges, mnode_t *pnode, msurface_t *psurf) {
 			// split into two edges, one on each side, and remember entering
 			// and exiting points
 			// FIXME: share the clip edge by having a winding direction flag?
-			if (numbedges >= (MAX_BMODEL_EDGES - 1)) {
+			if (numbedges >= (MAX_BMODEL_EDGES - 1))
+			{
 				Com_Printf ("Out of edges for bmodel\n");
 				return;
 			}
@@ -216,15 +232,20 @@ void R_RecursiveClipBPoly (bedge_t *pedges, mnode_t *pnode, msurface_t *psurf) {
 
 			numbedges += 2;
 
-			if (side == 0) {
+			if (side == 0)
+			{
 				// entering for front, exiting for back
 				pfrontenter = ptvert;
 				makeclippededge = true;
-			} else {
+			}
+			else
+			{
 				pfrontexit = ptvert;
 				makeclippededge = true;
 			}
-		} else {
+		}
+		else
+		{
 			// add the edge to the appropriate side
 			pedges->pnext = psideedges[side];
 			psideedges[side] = pedges;
@@ -233,8 +254,10 @@ void R_RecursiveClipBPoly (bedge_t *pedges, mnode_t *pnode, msurface_t *psurf) {
 
 	// if anything was clipped, reconstitute and add the edges along the clip
 	// plane to both sides (but in opposite directions)
-	if (makeclippededge) {
-		if (numbedges >= (MAX_BMODEL_EDGES - 2)) {
+	if (makeclippededge)
+	{
+		if (numbedges >= (MAX_BMODEL_EDGES - 2))
+		{
 			Com_Printf ("Out of edges for bmodel\n");
 			return;
 		}
@@ -255,20 +278,27 @@ void R_RecursiveClipBPoly (bedge_t *pedges, mnode_t *pnode, msurface_t *psurf) {
 	}
 
 	// draw or recurse further
-	for (i = 0; i < 2; i++) {
-		if (psideedges[i]) {
+	for (i = 0; i < 2; i++)
+	{
+		if (psideedges[i])
+		{
 			// draw if we've reached a non-solid leaf, done if all that's left is a
 			// solid leaf, and continue down the tree if it's not a leaf
 			pn = pnode->children[i];
 
 			// we're done with this branch if the node or leaf isn't in the PVS
-			if (pn->visframe == r_visframecount) {
-				if (pn->contents < 0) {
-					if (pn->contents != CONTENTS_SOLID) {
+			if (pn->visframe == r_visframecount)
+			{
+				if (pn->contents < 0)
+				{
+					if (pn->contents != CONTENTS_SOLID)
+					{
 						r_currentbkey = ((mleaf_t *)pn)->key;
 						R_RenderBmodelFace (psideedges[i], psurf);
 					}
-				} else {
+				}
+				else
+				{
 					R_RecursiveClipBPoly (psideedges[i], pnode->children[i], psurf);
 				}
 			}
@@ -276,7 +306,8 @@ void R_RecursiveClipBPoly (bedge_t *pedges, mnode_t *pnode, msurface_t *psurf) {
 	}
 }
 
-void R_DrawSolidClippedSubmodelPolygons (model_t *pmodel) {
+void R_DrawSolidClippedSubmodelPolygons (model_t *pmodel)
+{
 	int i, j, lindex, numsurfaces;
 	vec_t dot;
 	msurface_t *psurf;
@@ -291,7 +322,8 @@ void R_DrawSolidClippedSubmodelPolygons (model_t *pmodel) {
 	numsurfaces = pmodel->nummodelsurfaces;
 	pedges = pmodel->edges;
 
-	for (i = 0 ; i < numsurfaces; i++, psurf++) {
+	for (i = 0 ; i < numsurfaces; i++, psurf++)
+	{
 		// find which side of the node we are on
 		pplane = psurf->plane;
 
@@ -310,18 +342,23 @@ void R_DrawSolidClippedSubmodelPolygons (model_t *pmodel) {
 			pbedges = bedges;
 			numbverts = numbedges = 0;
 
-			if (psurf->numedges > 0) {
+			if (psurf->numedges > 0)
+			{
 				pbedge = &bedges[numbedges];
 				numbedges += psurf->numedges;
 
-				for (j = 0; j < psurf->numedges; j++) {
+				for (j = 0; j < psurf->numedges; j++)
+				{
 				   lindex = pmodel->surfedges[psurf->firstedge + j];
 
-					if (lindex > 0) {
+					if (lindex > 0)
+					{
 						pedge = &pedges[lindex];
 						pbedge[j].v[0] = &r_pcurrentvertbase[pedge->v[0]];
 						pbedge[j].v[1] = &r_pcurrentvertbase[pedge->v[1]];
-					} else {
+					}
+					else
+					{
 						lindex = -lindex;
 						pedge = &pedges[lindex];
 						pbedge[j].v[0] = &r_pcurrentvertbase[pedge->v[1]];
@@ -334,14 +371,17 @@ void R_DrawSolidClippedSubmodelPolygons (model_t *pmodel) {
 				pbedge[j-1].pnext = NULL;	// mark end of edges
 
 				R_RecursiveClipBPoly (pbedge, currententity->topnode, psurf);
-			} else {
+			}
+			else
+			{
 				Sys_Error ("no edges in bmodel");
 			}
 		}
 	}
 }
 
-void R_DrawSubmodelPolygons (model_t *pmodel, int clipflags) {
+void R_DrawSubmodelPolygons (model_t *pmodel, int clipflags)
+{
 	int i, numsurfaces;
 	vec_t dot;
 	msurface_t *psurf;
@@ -352,7 +392,8 @@ void R_DrawSubmodelPolygons (model_t *pmodel, int clipflags) {
 	psurf = &pmodel->surfaces[pmodel->firstmodelsurface];
 	numsurfaces = pmodel->nummodelsurfaces;
 
-	for (i = 0; i < numsurfaces; i++, psurf++) {
+	for (i = 0; i < numsurfaces; i++, psurf++)
+	{
 		// find which side of the node we are on
 		pplane = psurf->plane;
 
@@ -422,7 +463,7 @@ void R_RecursiveWorldNode(mnode_t *node, int clipflags)
 				clipflags &= ~(1<<i);	// node is entirely on screen
 		}
 	}
-	
+
 	// if a leaf node, draw stuff
 	if (node->contents < 0)
 	{
@@ -500,7 +541,8 @@ void R_RecursiveWorldNode(mnode_t *node, int clipflags)
 	}
 }
 
-void R_RenderWorld (void) {
+void R_RenderWorld (void)
+{
 	model_t *clmodel;
 
 	currententity = &r_worldentity;
