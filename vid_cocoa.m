@@ -31,6 +31,29 @@
 
 extern cvar_t in_grab_windowed_mouse;
 
+static CGError switch_display_mode(CGDisplayModeRef new_mode, CGDisplayModeRef *current_mode)
+{
+	CGError err = kCGErrorSuccess;
+	CGDisplayConfigRef config_ref;
+	
+	if (current_mode)
+	{
+		*current_mode = CGDisplayCopyDisplayMode(CGMainDisplayID());
+	}
+	
+	err = CGBeginDisplayConfiguration(&config_ref);
+	if (err == kCGErrorSuccess)
+	{
+		err = CGConfigureDisplayWithDisplayMode(config_ref, CGMainDisplayID(), new_mode, NULL);
+		if (err == kCGErrorSuccess)
+		{
+			err = CGCompleteDisplayConfiguration(config_ref, kCGConfigureForAppOnly);
+		}
+	}
+	
+	return err;
+}
+
 struct display
 {
 	qboolean fullscreen;
@@ -68,6 +91,20 @@ struct display
 {
 	if ([event keyCode] == 4 && [event modifierFlags] & NSCommandKeyMask)
 	{
+		if (d->orig_display_mode)
+		{
+			CGDisplayModeRef tmp;
+			CGError err;
+			
+			err = switch_display_mode(d->orig_display_mode, &tmp);
+			if (err == kCGErrorSuccess)
+			{
+				d->orig_display_mode = tmp;
+				
+				CGReleaseAllDisplays();
+			}
+		}
+		
 		[NSApp hide:nil];
 	}
 }
@@ -75,7 +112,14 @@ struct display
 {
 	if (d->fullscreen)
 	{
-		[self setLevel:NSMainMenuWindowLevel + 1];
+		if (d->orig_display_mode)
+		{
+			[self setLevel:CGShieldingWindowLevel()];
+		}
+		else
+		{
+			[self setLevel:NSMainMenuWindowLevel + 1];
+		}
 	}
 }
 - (void)applicationDidResignActive:(NSNotification*)notification
@@ -88,6 +132,22 @@ struct display
 - (void)applicationDidUnhide:(NSNotification*)notification
 {
 	CGPoint point = { -1.0, -1.0 };
+	
+	if (d->orig_display_mode)
+	{
+		CGDisplayModeRef tmp;
+		CGError err;
+		
+		err = CGCaptureAllDisplays();
+		if (err == kCGErrorSuccess)
+		{
+			err = switch_display_mode(d->orig_display_mode, &tmp);
+			if (err == kCGErrorSuccess)
+			{
+				d->orig_display_mode = tmp;
+			}
+		}
+	}
 	
 	if (d->fullscreen)
 	{
@@ -164,20 +224,10 @@ void* Sys_Video_Open(const char *mode, unsigned int width, unsigned int height, 
 						CGDisplayConfigRef config_ref;
 						CGError err;
 						
-						d->orig_display_mode = CGDisplayCopyDisplayMode(CGMainDisplayID());
-						
 						err = CGCaptureAllDisplays();
 						if (err == kCGErrorSuccess)
 						{
-							err = CGBeginDisplayConfiguration(&config_ref);
-							if (err == kCGErrorSuccess)
-							{
-								err = CGConfigureDisplayWithDisplayMode(config_ref, CGMainDisplayID(), mode_ref, NULL);
-								if (err == kCGErrorSuccess)
-								{
-									err = CGCompleteDisplayConfiguration(config_ref, kCGConfigureForAppOnly);
-								}
-							}
+							err = switch_display_mode(mode_ref, &d->orig_display_mode);
 						}
 						
 						break;
@@ -328,20 +378,13 @@ void Sys_Video_Close(void *display)
 	
 	if (d->orig_display_mode)
 	{
-		CGDisplayConfigRef config_ref;
 		CGError err;
 		
-		err = CGBeginDisplayConfiguration(&config_ref);
+		err = switch_display_mode(d->orig_display_mode, NULL);
 		if (err == kCGErrorSuccess)
 		{
-			err = CGConfigureDisplayWithDisplayMode(config_ref, CGMainDisplayID(), d->orig_display_mode, NULL);
-			if (err == kCGErrorSuccess)
-			{
-				err = CGCompleteDisplayConfiguration(config_ref, kCGConfigureForAppOnly);
-			}
+			CGReleaseAllDisplays();
 		}
-		
-		err = CGReleaseAllDisplays();
 	}
 	
 	Sys_Input_Shutdown(d->input);
