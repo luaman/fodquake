@@ -1,6 +1,6 @@
 /*
- Copyright (C) 2011 Florian Zwoch
- Copyright (C) 2011 Mark Olsen
+ Copyright (C) 2011-2012 Florian Zwoch
+ Copyright (C) 2011-2012 Mark Olsen
  
  This program is free software; you can redistribute it and/or
  modify it under the terms of the GNU General Public License
@@ -31,6 +31,11 @@
 
 extern cvar_t in_grab_windowed_mouse;
 
+#ifdef __MAC_OS_X_VERSION_MAX_ALLOWED && __MAC_OS_X_VERSION_MAX_ALLOWED < __MAC_10_6
+#define __USE_DEPRECATED_APIS
+#endif
+
+#ifndef __USE_DEPRECATED_APIS
 static CGError switch_display_mode(CGDisplayModeRef new_mode, CGDisplayModeRef *current_mode)
 {
 	CGError err = kCGErrorSuccess;
@@ -53,13 +58,42 @@ static CGError switch_display_mode(CGDisplayModeRef new_mode, CGDisplayModeRef *
 	
 	return err;
 }
+#else
+static long GetDictionaryLong(CFDictionaryRef theDict, const void *key)
+{
+	long value = 0;
+	CFNumberRef numRef;
+	
+	numRef = (CFNumberRef)CFDictionaryGetValue(theDict, key);
+	if (numRef != NULL)
+	{
+		CFNumberGetValue(numRef, kCFNumberLongType, &value);
+	}
+	
+	return value;
+}
+
+static CGError switch_display_mode(CFDictionaryRef new_mode, CFDictionaryRef *current_mode)
+{
+	if (current_mode)
+	{
+		*current_mode = CGDisplayCurrentMode(CGMainDisplayID());
+	}
+	
+	return CGDisplaySwitchToMode(CGMainDisplayID(), new_mode);
+}
+#endif
 
 struct display
 {
 	qboolean fullscreen;
 	struct input_data *input;
 	NSWindow *window;
+#ifndef __USE_DEPRECATED_APIS
 	CGDisplayModeRef orig_display_mode;
+#else
+	CFDictionaryRef orig_display_mode;
+#endif
 	unsigned int width;
 	unsigned int height;
 	
@@ -93,7 +127,11 @@ struct display
 	{
 		if (d->orig_display_mode)
 		{
+#ifndef __USE_DEPRECATED_APIS
 			CGDisplayModeRef tmp;
+#else
+			CFDictionaryRef tmp;
+#endif
 			CGError err;
 			
 			err = switch_display_mode(d->orig_display_mode, &tmp);
@@ -135,7 +173,11 @@ struct display
 	
 	if (d->orig_display_mode)
 	{
+#ifndef __USE_DEPRECATED_APIS
 		CGDisplayModeRef tmp;
+#else
+		CFDictionaryRef tmp;
+#endif
 		CGError err;
 		
 		err = CGCaptureAllDisplays();
@@ -209,7 +251,11 @@ void* Sys_Video_Open(const char *mode, unsigned int width, unsigned int height, 
 			
 			sscanf(mode, "%u,%u,%u", &width, &height, &flags);
 			
+#ifndef __USE_DEPRECATED_APIS
 			modes = CGDisplayCopyAllDisplayModes(CGMainDisplayID(), NULL);
+#else
+			modes = CGDisplayAvailableModes(CGMainDisplayID());
+#endif
 			if (modes)
 			{
 				unsigned int num_modes = CFArrayGetCount(modes);
@@ -217,11 +263,16 @@ void* Sys_Video_Open(const char *mode, unsigned int width, unsigned int height, 
 				
 				for (i = 0; i < num_modes; i++)
 				{
+#ifndef __USE_DEPRECATED_APIS
 					CGDisplayModeRef mode_ref = (CGDisplayModeRef)CFArrayGetValueAtIndex(modes, i);
 					
 					if (width == CGDisplayModeGetWidth(mode_ref) && height == CGDisplayModeGetHeight(mode_ref) && flags == CGDisplayModeGetIOFlags(mode_ref))
+#else
+					CFDictionaryRef mode_ref = (CFDictionaryRef)CFArrayGetValueAtIndex(modes, i);
+					
+					if (width == GetDictionaryLong(mode_ref, kCGDisplayWidth) && height == GetDictionaryLong(mode_ref, kCGDisplayHeight) && flags == GetDictionaryLong(mode_ref, kCGDisplayIOFlags))	
+#endif
 					{
-						CGDisplayConfigRef config_ref;
 						CGError err;
 						
 						err = CGCaptureAllDisplays();
@@ -233,8 +284,9 @@ void* Sys_Video_Open(const char *mode, unsigned int width, unsigned int height, 
 						break;
 					}
 				}
-				
+#ifndef __USE_DEPRECATED_APIS
 				CFRelease(modes);
+#endif
 			}
 		}
 		

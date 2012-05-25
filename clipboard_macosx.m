@@ -1,6 +1,6 @@
 /*
- Copyright (C) 2011 Florian Zwoch
- Copyright (C) 2011 Mark Olsen
+ Copyright (C) 2011-2012 Florian Zwoch
+ Copyright (C) 2011-2012 Mark Olsen
  
  This program is free software; you can redistribute it and/or
  modify it under the terms of the GNU General Public License
