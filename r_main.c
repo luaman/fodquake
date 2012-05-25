@@ -267,8 +267,8 @@ int R_Init(void)
 		if (surfacememory)
 		{
 			surfaces = (void *)((((long)surfacememory) + CACHE_SIZE - 1) & ~(CACHE_SIZE - 1));
-			surface_p = surfaces;
-			surf_max = &surfaces[r_cnumsurfs];
+			surf_cur = 1;
+			surf_max = r_cnumsurfs;
 			// surface 0 doesn't really exist; it's just a dummy because index 0
 			// is used to indicate no edge attached to surface
 			surfaces--;

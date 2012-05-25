@@ -75,7 +75,7 @@ qboolean	r_lastvertvalid;
 R_EmitEdge
 ================
 */
-static void R_EmitEdge (mvertex_t *pv0, mvertex_t *pv1)
+static void R_EmitEdge(unsigned int surfnum, mvertex_t *pv0, mvertex_t *pv1)
 {
 	edge_t *edge, *pcheck;
 	int u_check, v, v2, ceilv0, side;
@@ -171,7 +171,7 @@ static void R_EmitEdge (mvertex_t *pv0, mvertex_t *pv1)
 		v = ceilv0;
 		v2 = r_ceilv1 - 1;
 
-		edge->surfs[0] = surface_p - surfaces;
+		edge->surfs[0] = surfnum;
 		edge->surfs[1] = 0;
 
 		u_step = ((r_u1 - u0) / (r_v1 - v0));
@@ -184,7 +184,7 @@ static void R_EmitEdge (mvertex_t *pv0, mvertex_t *pv1)
 		v = r_ceilv1;
 
 		edge->surfs[0] = 0;
-		edge->surfs[1] = surface_p - surfaces;
+		edge->surfs[1] = surfnum;
 
 		u_step = ((u0 - r_u1) / (v0 - r_v1));
 		u = r_u1 + ((float)v - r_v1) * u_step;
@@ -225,7 +225,7 @@ static void R_EmitEdge (mvertex_t *pv0, mvertex_t *pv1)
 	removeedges[v2] = edge;
 }
 
-void R_ClipEdge (mvertex_t *pv0, mvertex_t *pv1, clipplane_t *clip)
+static void R_ClipEdge(unsigned int surfnum, mvertex_t *pv0, mvertex_t *pv1, clipplane_t *clip)
 {
 	float d0, d1, f;
 	mvertex_t clipvert;
@@ -264,7 +264,7 @@ void R_ClipEdge (mvertex_t *pv0, mvertex_t *pv1, clipplane_t *clip)
 					r_rightexit = clipvert;
 				}
 
-				R_ClipEdge (pv0, &clipvert, clip->next);
+				R_ClipEdge(surfnum, pv0, &clipvert, clip->next);
 				return;
 			}
 			else
@@ -298,28 +298,28 @@ void R_ClipEdge (mvertex_t *pv0, mvertex_t *pv1, clipplane_t *clip)
 					r_rightenter = clipvert;
 				}
 
-				R_ClipEdge (&clipvert, pv1, clip->next);
+				R_ClipEdge(surfnum, &clipvert, pv1, clip->next);
 				return;
 			}
 		} while ((clip = clip->next) != NULL);
 	}
 
 	// add the edge
-	R_EmitEdge (pv0, pv1);
+	R_EmitEdge(surfnum, pv0, pv1);
 }
 
 #endif	// !id386
 
-static void R_EmitCachedEdge(void)
+static void R_EmitCachedEdge(unsigned int surfnum)
 {
 	edge_t *pedge_t;
 
 	pedge_t = (edge_t *)((unsigned long)r_edges + r_pedge->cachededgeoffset);
 
 	if (!pedge_t->surfs[0])
-		pedge_t->surfs[0] = surface_p - surfaces;
+		pedge_t->surfs[0] = surfnum;
 	else
-		pedge_t->surfs[1] = surface_p - surfaces;
+		pedge_t->surfs[1] = surfnum;
 
 	if (pedge_t->nearzi > r_nearzi)	// for mipmap finding
 		r_nearzi = pedge_t->nearzi;
@@ -327,7 +327,7 @@ static void R_EmitCachedEdge(void)
 	r_emitted = 1;
 }
 
-void R_RenderFace (msurface_t *fa, int clipflags)
+void R_RenderFace(msurface_t *fa, int clipflags)
 {
 	int i, lindex;
 	unsigned mask;
@@ -336,9 +336,10 @@ void R_RenderFace (msurface_t *fa, int clipflags)
 	vec3_t p_normal;
 	medge_t *pedges, tedge;
 	clipplane_t *pclip;
+	struct surf *surface_p;
 
 	// skip out if no more surfs
-	if (surface_p >= surf_max)
+	if (surf_cur >= surf_max)
 	{
 		r_outofsurfaces++;
 		return;
@@ -350,6 +351,8 @@ void R_RenderFace (msurface_t *fa, int clipflags)
 		r_outofedges += fa->numedges;
 		return;
 	}
+
+	surface_p = surfaces + surf_cur;
 
 	c_faceclip++;
 
@@ -397,7 +400,7 @@ void R_RenderFace (msurface_t *fa, int clipflags)
 					if ((((unsigned long)edge_p - (unsigned long)r_edges) > r_pedge->cachededgeoffset) &&
 						(((edge_t *)((unsigned long) r_edges + r_pedge->cachededgeoffset))->owner == r_pedge))
 					{
-						R_EmitCachedEdge ();
+						R_EmitCachedEdge(surf_cur);
 						r_lastvertvalid = false;
 						continue;
 					}
@@ -407,7 +410,7 @@ void R_RenderFace (msurface_t *fa, int clipflags)
 			// assume it's cacheable
 			cacheoffset = (byte *)edge_p - (byte *)r_edges;
 			r_leftclipped = r_rightclipped = false;
-			R_ClipEdge (&r_pcurrentvertbase[r_pedge->v[0]], &r_pcurrentvertbase[r_pedge->v[1]], pclip);
+			R_ClipEdge(surf_cur, &r_pcurrentvertbase[r_pedge->v[0]], &r_pcurrentvertbase[r_pedge->v[1]], pclip);
 			r_pedge->cachededgeoffset = cacheoffset;
 
 			if (r_leftclipped)
@@ -437,7 +440,7 @@ void R_RenderFace (msurface_t *fa, int clipflags)
 					if ((((unsigned long)edge_p - (unsigned long)r_edges) > r_pedge->cachededgeoffset) &&
 						(((edge_t *)((unsigned long)r_edges + r_pedge->cachededgeoffset))->owner == r_pedge))
 					{
-						R_EmitCachedEdge ();
+						R_EmitCachedEdge(surf_cur);
 						r_lastvertvalid = false;
 						continue;
 					}
@@ -447,7 +450,7 @@ void R_RenderFace (msurface_t *fa, int clipflags)
 			// assume it's cacheable
 			cacheoffset = (byte *)edge_p - (byte *)r_edges;
 			r_leftclipped = r_rightclipped = false;
-			R_ClipEdge (&r_pcurrentvertbase[r_pedge->v[1]], &r_pcurrentvertbase[r_pedge->v[0]], pclip);
+			R_ClipEdge(surf_cur, &r_pcurrentvertbase[r_pedge->v[1]], &r_pcurrentvertbase[r_pedge->v[0]], pclip);
 			r_pedge->cachededgeoffset = cacheoffset;
 
 			if (r_leftclipped)
@@ -465,7 +468,7 @@ void R_RenderFace (msurface_t *fa, int clipflags)
 	{
 		r_pedge = &tedge;
 		r_lastvertvalid = false;
-		R_ClipEdge (&r_leftexit, &r_leftenter, pclip->next);
+		R_ClipEdge(surf_cur, &r_leftexit, &r_leftenter, pclip->next);
 	}
 
 	// if there was a clip off the right edge, get the right r_nearzi
@@ -474,7 +477,7 @@ void R_RenderFace (msurface_t *fa, int clipflags)
 		r_pedge = &tedge;
 		r_lastvertvalid = false;
 		r_nearzionly = true;
-		R_ClipEdge (&r_rightexit, &r_rightenter, view_clipplanes[1].next);
+		R_ClipEdge(surf_cur, &r_rightexit, &r_rightenter, view_clipplanes[1].next);
 	}
 
 	// if no edges made it out, return without posting the surface
@@ -502,10 +505,10 @@ void R_RenderFace (msurface_t *fa, int clipflags)
 	surface_p->d_zistepv = -p_normal[1] * yscaleinv * distinv;
 	surface_p->d_ziorigin = p_normal[2] * distinv - xcenter * surface_p->d_zistepu - ycenter * surface_p->d_zistepv;
 
-	surface_p++;
+	surf_cur++;
 }
 
-void R_RenderBmodelFace (bedge_t *pedges, msurface_t *psurf)
+void R_RenderBmodelFace(bedge_t *pedges, msurface_t *psurf)
 {
 	int i;
 	unsigned mask;
@@ -514,9 +517,10 @@ void R_RenderBmodelFace (bedge_t *pedges, msurface_t *psurf)
 	vec3_t p_normal;
 	medge_t tedge;
 	clipplane_t	*pclip;
+	struct surf *surface_p;
 
 	// skip out if no more surfs
-	if (surface_p >= surf_max)
+	if (surf_cur >= surf_max)
 	{
 		r_outofsurfaces++;
 		return;
@@ -528,6 +532,8 @@ void R_RenderBmodelFace (bedge_t *pedges, msurface_t *psurf)
 		r_outofedges += psurf->numedges;
 		return;
 	}
+
+	surface_p = surfaces + surf_cur;
 
 	c_faceclip++;
 
@@ -557,7 +563,7 @@ void R_RenderBmodelFace (bedge_t *pedges, msurface_t *psurf)
 	for ( ; pedges ; pedges = pedges->pnext)
 	{
 		r_leftclipped = r_rightclipped = false;
-		R_ClipEdge (pedges->v[0], pedges->v[1], pclip);
+		R_ClipEdge(surf_cur, pedges->v[0], pedges->v[1], pclip);
 
 		if (r_leftclipped)
 			makeleftedge = true;
@@ -571,7 +577,7 @@ void R_RenderBmodelFace (bedge_t *pedges, msurface_t *psurf)
 	if (makeleftedge)
 	{
 		r_pedge = &tedge;
-		R_ClipEdge (&r_leftexit, &r_leftenter, pclip->next);
+		R_ClipEdge(surf_cur, &r_leftexit, &r_leftenter, pclip->next);
 	}
 
 	// if there was a clip off the right edge, get the right r_nearzi
@@ -579,7 +585,7 @@ void R_RenderBmodelFace (bedge_t *pedges, msurface_t *psurf)
 	{
 		r_pedge = &tedge;
 		r_nearzionly = true;
-		R_ClipEdge (&r_rightexit, &r_rightenter, view_clipplanes[1].next);
+		R_ClipEdge(surf_cur, &r_rightexit, &r_rightenter, view_clipplanes[1].next);
 	}
 
 	// if no edges made it out, return without posting the surface
@@ -607,5 +613,5 @@ void R_RenderBmodelFace (bedge_t *pedges, msurface_t *psurf)
 	surface_p->d_zistepv = -p_normal[1] * yscaleinv * distinv;
 	surface_p->d_ziorigin = p_normal[2] * distinv - xcenter * surface_p->d_zistepu - ycenter * surface_p->d_zistepv;
 
-	surface_p++;
+	surf_cur++;
 }

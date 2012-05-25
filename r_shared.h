@@ -93,7 +93,8 @@ struct surf
 	int			pad[2];				// to 64 bytes
 };
 
-extern struct surf *surfaces, *surface_p, *surf_max;
+extern unsigned int surf_cur, surf_max;
+extern struct surf *surfaces;
 
 // surfaces are generated in back to front order by the bsp, so if a surf
 // pointer is greater than another one, it should be drawn in front

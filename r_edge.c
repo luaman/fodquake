@@ -26,7 +26,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 edge_t	*auxedges;
 edge_t	*r_edges, *edge_p, *edge_max;
 
-struct surf	*surfaces, *surface_p, *surf_max;
+
+unsigned int surf_cur, surf_max;
+struct surf *surfaces;
 
 // surfaces are generated in back to front order by the bsp, so if a surf
 // pointer is greater than another one, it should be drawn in front
@@ -75,7 +77,7 @@ void R_BeginEdgeFrame (void)
 	edge_p = r_edges;
 	edge_max = &r_edges[r_numallocatededges];
 
-	surface_p = &surfaces[2];	// background is surface 1,
+	surf_cur = 2; // background is surface 1
 								//  surface 0 is a dummy
 	surfaces[1].spans = NULL;	// no background spans yet
 	surfaces[1].flags = SURF_DRAWBACKGROUND;
@@ -610,6 +612,7 @@ void R_ScanEdges (void)
 	byte	basespans[MAXSPANS*sizeof(espan_t)+CACHE_SIZE];
 	espan_t	*basespan_p;
 	struct surf	*s;
+	unsigned int i;
 
 	basespan_p = (espan_t *)
 			((long)(basespans + CACHE_SIZE - 1) & ~(CACHE_SIZE - 1));
@@ -675,7 +678,7 @@ void R_ScanEdges (void)
 			D_DrawSurfaces ();
 
 		// clear the surface span pointers
-			for (s = &surfaces[1] ; s<surface_p ; s++)
+			for (i=0,s=surfaces+1;i<surf_cur;i++,s++)
 				s->spans = NULL;
 
 			span_p = basespan_p;

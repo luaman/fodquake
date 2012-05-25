@@ -132,13 +132,14 @@ void D_DrawSurfaces (void)
 	msurface_t *pface;
 	surfcache_t *pcurrentcache;
 	vec3_t world_transformed_modelorg, local_modelorg;
+	unsigned int i;
 
 	currententity = &r_worldentity;
 	TransformVector (modelorg, transformed_modelorg);
 	VectorCopy (transformed_modelorg, world_transformed_modelorg);
 
 	// TODO: could preset a lot of this at mode set time
-	for (s = &surfaces[1]; s<surface_p; s++)
+	for(i=1,s=surfaces+1;i<surf_cur;i++,s++)
 	{
 		if (!s->spans)
 			continue;

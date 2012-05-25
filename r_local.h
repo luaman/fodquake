@@ -246,7 +246,6 @@ void R_PrintDSpeeds (void);
 void R_AnimateLight (void);
 int R_LightPoint (vec3_t p);
 void R_SetupFrame (void);
-void R_ClipEdge (mvertex_t *pv0, mvertex_t *pv1, clipplane_t *clip);
 void R_MarkLights (dlight_t *light, int bit, mnode_t *node);
 
 // !!! if this is changed, it must be changed in d_ifacea.h too !!!
