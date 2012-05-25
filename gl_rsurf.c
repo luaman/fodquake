@@ -1105,7 +1105,7 @@ static void DrawTextureChains (model_t *model)
 
 						fullbright_polys[t->fb_texturenum] = s->polys;
 
-						if (!(fullbright_polys_used[t->fb_texturenum/32])&(1<<(t->fb_texturenum%32)))
+						if (!((fullbright_polys_used[t->fb_texturenum/32])&(1<<(t->fb_texturenum%32))))
 						{
 							fullbright_polys_used[t->fb_texturenum/32] |= (1<<(t->fb_texturenum%32));
 							drawfullbrights = true;
