@@ -140,7 +140,8 @@ static void R_RenderDlight (dlight_t *light)
 
 void R_RenderDlights (void)
 {
-	int i;
+	unsigned int i;
+	unsigned int j;
 	dlight_t *l;
 
 	if (!gl_flashblend.value)
@@ -153,15 +154,23 @@ void R_RenderDlights (void)
 	GL_SetAlphaTestBlend(0, 1);
 	glBlendFunc (GL_ONE, GL_ONE);
 
-	l = cl_dlights;
-	for (i = 0; i < MAX_DLIGHTS; i++, l++)
+	for(i=0;i<MAX_DLIGHTS/32;i++)
 	{
-		if (l->die < cl.time || !l->radius)
-			continue;
-		if (l->bubble && ((int) gl_flashblend.value != 2))
-			R_MarkLights ( l, 1 << i, cl.worldmodel->nodes);
-		else
-			R_RenderDlight (l);
+		if (cl_dlight_active[i])
+		{
+			for(j=0;j<32;j++)
+			{
+				if ((cl_dlight_active[i]&(1<<j)) && i*32+j < MAX_DLIGHTS)
+				{
+					l = cl_dlights + i*32 + j;
+
+					if (l->bubble && ((int) gl_flashblend.value != 2))
+						R_MarkLights(l, 1 << (i*32 + j), cl.worldmodel->nodes);
+					else
+						R_RenderDlight(l);
+				}
+			}
+		}
 	}
 
 	glColor3ubv (color_white);
@@ -216,7 +225,8 @@ void R_MarkLights (dlight_t *light, int bit, mnode_t *node)
 
 void R_PushDlights (void)
 {
-	int i;
+	unsigned int i;
+	unsigned int j;
 	dlight_t *l;
 
 	if (gl_flashblend.value)
@@ -224,13 +234,21 @@ void R_PushDlights (void)
 
 	r_dlightframecount = r_framecount + 1;	// because the count hasn't
 											//  advanced yet for this frame
-	l = cl_dlights;
 
-	for (i = 0; i < MAX_DLIGHTS; i++, l++)
+	for(i=0;i<MAX_DLIGHTS/32;i++)
 	{
-		if (l->die < cl.time || !l->radius)
-			continue;
-		R_MarkLights ( l, 1<<i, cl.worldmodel->nodes );
+		if (cl_dlight_active[i])
+		{
+			for(j=0;j<32;j++)
+			{
+				if ((cl_dlight_active[i]&(1<<j)) && i*32+j < MAX_DLIGHTS)
+				{
+					l = cl_dlights + i*32 + j;
+
+					R_MarkLights(l, 1<<(i*32 + j), cl.worldmodel->nodes);
+				}
+			}
+		}
 	}
 }
 

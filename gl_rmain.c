@@ -693,6 +693,8 @@ static void R_AliasSetupLighting(entity_t *ent)
 {
 	int minlight, lnum;
 	float add, fbskins;
+	unsigned int i;
+	unsigned int j;
 	vec3_t dist;
 	model_t *clmodel;
 
@@ -715,16 +717,24 @@ static void R_AliasSetupLighting(entity_t *ent)
 	//normal lighting
 	ambientlight = shadelight = R_LightPoint (ent->origin);
 
-	for (lnum = 0; lnum < MAX_DLIGHTS; lnum++)
+	for(i=0;i<MAX_DLIGHTS/32;i++)
 	{
-		if (cl_dlights[lnum].die < cl.time || !cl_dlights[lnum].radius)
-			continue;
+		if (cl_dlight_active[i])
+		{
+			for(j=0;j<32;j++)
+			{
+				if ((cl_dlight_active[i]&(1<<j)) && i*32+j < MAX_DLIGHTS)
+				{
+					lnum = i*32 + j;
 
-		VectorSubtract (ent->origin, cl_dlights[lnum].origin, dist);
-		add = cl_dlights[lnum].radius - VectorLength(dist);
+					VectorSubtract (ent->origin, cl_dlights[lnum].origin, dist);
+					add = cl_dlights[lnum].radius - VectorLength(dist);
 
-		if (add > 0)
-			ambientlight += add;
+					if (add > 0)
+						ambientlight += add;
+				}
+			}
+		}
 	}
 
 	// clamp lighting so it doesn't overbright as much
