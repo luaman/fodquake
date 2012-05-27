@@ -173,6 +173,7 @@ centity_t		cl_entities[CL_MAX_EDICTS];
 efrag_t			cl_efrags[MAX_EFRAGS];
 lightstyle_t	cl_lightstyle[MAX_LIGHTSTYLES];
 dlight_t		cl_dlights[MAX_DLIGHTS];
+unsigned int cl_dlight_active[MAX_DLIGHTS/32];
 
 // draw flat globals
 static float draw_flat[3][3];
@@ -1239,7 +1240,7 @@ void CL_ClearState(void)
 
 	// clear other arrays
 	memset(cl_efrags, 0, sizeof(cl_efrags));
-	memset(cl_dlights, 0, sizeof(cl_dlights));
+	memset(cl_dlight_active, 0, sizeof(cl_dlight_active));
 	memset(cl_lightstyle, 0, sizeof(cl_lightstyle));
 	memset(cl_entities, 0, sizeof(cl_entities));
 

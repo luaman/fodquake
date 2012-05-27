@@ -701,6 +701,8 @@ static mnode_t *R_FindTopNode(vec3_t mins, vec3_t maxs)
 static void R_DrawBEntitiesOnList(visentlist_t *vislist)
 {
 	int i, k, clipflags;
+	unsigned int li;
+	unsigned int lj;
 	vec3_t oldorigin;
 	model_t *clmodel;
 	float minmaxs[6];
@@ -741,13 +743,21 @@ static void R_DrawBEntitiesOnList(visentlist_t *vislist)
 		// calculate dynamic lighting for bmodel if it's not an instanced model
 		if (clmodel->firstmodelsurface != 0)
 		{
-			for (k = 0; k < MAX_DLIGHTS; k++)
+			for(li=0;li<MAX_DLIGHTS/32;li++)
 			{
-				if (cl_dlights[k].die < cl.time || !cl_dlights[k].radius)
-					continue;
+				if (cl_dlight_active[li])
+				{
+					for(lj=0;lj<32;lj++)
+					{
+						if ((cl_dlight_active[li]&(1<<lj)) && li*32+lj < MAX_DLIGHTS)
+						{
+							k = li*32 + lj;
 
-				R_MarkLights (&cl_dlights[k], 1<<k,
-					clmodel->nodes + clmodel->hulls[0].firstclipnode);
+							/* This will fail for k >= 32 */
+							R_MarkLights(&cl_dlights[k], 1<<k, clmodel->nodes + clmodel->hulls[0].firstclipnode);
+						}
+					}
+				}
 			}
 		}
 
