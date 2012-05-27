@@ -167,7 +167,12 @@ typedef enum {
 // JACK: Intellimouse(c) Mouse Wheel Support
 
 	K_MWHEELUP,
-	K_MWHEELDOWN
+	K_MWHEELDOWN,
+
+/* OS code detected a copy or paste key combination */
+
+	K_COPY,
+	K_PASTE
 } keynum_t;
 
 
