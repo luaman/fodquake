@@ -4278,6 +4278,19 @@ void M_Keydown(int key)
 	}
 }
 
+void M_PerFramePreRender()
+{
+	if (m_state == m_video_verify)
+	{
+		if (curtime >= video_verify_fail_time)
+		{
+			M_Menu_Video_Verify_Revert();
+			M_Menu_Video_Verify_Cleanup();
+			M_LeaveMenu(m_video);
+		}
+	}
+}
+
 void M_Init()
 {
 	optionsmenu = Menu_Create(1, m_main);

@@ -2114,6 +2114,8 @@ void CL_Frame (double time)
 
 	focuschanged = VID_FocusChanged();
 
+	M_PerFramePreRender();
+
 	while(VID_GetKeyEvent(&key, &down))
 		Key_Event(key, down);
 
