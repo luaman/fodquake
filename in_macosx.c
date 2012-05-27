@@ -426,6 +426,17 @@ static void input_callback(void *context, IOReturn result, void *sender, IOHIDVa
 		
 		if (input->left_cmd_key_active || input->right_cmd_key_active)
 		{
+			if (keytable[usage] == 'c' && val == true)
+			{
+				add_to_event_queue(input, K_COPY, true);
+				add_to_event_queue(input, K_COPY, false);
+			}
+			else if (keytable[usage] == 'v' && val == true)
+			{
+				add_to_event_queue(input, K_PASTE, true);
+				add_to_event_queue(input, K_PASTE, false);
+			}
+			
 			return;
 		}
 		
