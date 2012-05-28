@@ -1784,6 +1784,9 @@ static void Mod_LoadAliasModel(model_t *mod, void *buffer)
 	if (pmodel->skinheight > MAX_LBM_HEIGHT)
 		Host_Error("Mod_LoadAliasModel: model %s has a skin taller than %d", mod->name, MAX_LBM_HEIGHT);
 
+	if (pmodel->skinwidth > 32768 || pmodel->skinwidth <= 0 || pmodel->skinheight > 32768 || pmodel->skinheight <= 0)
+		Host_Error("Mod_LoadAliasModel: Invalid skin dimensions in %s", mod->name);
+
 	pmodel->numverts = LittleLong (pinmodel->numverts);
 
 	if (pmodel->numverts <= 0)
