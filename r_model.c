@@ -29,6 +29,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "crc.h"
 #include "r_local.h"
 #include "filesystem.h"
+#include "image.h"
 #ifdef NETQW
 #include "netqw.h"
 #endif
@@ -1629,22 +1630,45 @@ static void *Mod_LoadAliasGroup(void * pin, maliasgroup_t **pframeindex, int num
 	return ptemp;
 }
 
-static void *Mod_LoadAliasSkin(void *pin, byte **pskinindex, int skinsize, aliashdr_t *pheader)
+static void *Mod_LoadAliasSkin(model_t *model, mdl_t *mdl, unsigned int skinnum, void *pin, byte **pskinindex, aliashdr_t *pheader)
 {
+	char basename[64];
+	char identifier[256];
+	unsigned int skinwidth;
+	unsigned int skinheight;
+	unsigned int skinsize;
 	byte *pskin;
+	int w, h;
 
-	pskin = malloc(skinsize);
+	skinwidth = mdl->skinwidth;
+	skinheight = mdl->skinheight;
+	skinsize = skinwidth * skinheight;
+
+	COM_StripExtension(COM_SkipPath(model->name), basename);
+
+	snprintf(identifier, sizeof(identifier), "textures/models/%s_%i.pcx", basename, skinnum);
+	pskin = Image_LoadPCX(0, identifier, skinwidth, skinheight, &w, &h);
 	if (pskin == 0)
-		Sys_Error("Mod_LoadAliasSkin: Out of memory\n");
+	{
+		snprintf(identifier, sizeof(identifier), "textures/%s_%i.pcx", basename, skinnum);
+		pskin = Image_LoadPCX(0, identifier, skinwidth, skinheight, &w, &h);
+	}
+
+	if (pskin == 0)
+	{
+		pskin = malloc(skinsize);
+		if (pskin == 0)
+			Sys_Error("Mod_LoadAliasSkin: Out of memory\n");
+
+		memcpy(pskin, pin, skinsize);
+	}
 
 	*pskinindex = pskin;
-
-	memcpy(pskin, pin, skinsize);
 
 	return pin + skinsize;
 }
 
-static void *Mod_LoadAliasSkinGroup(void *pin, byte **pskinindex, int skinsize, aliashdr_t *pheader)
+static void *Mod_LoadAliasSkinGroup(model_t *model, mdl_t *mdl, unsigned int skinnum, void *pin, byte **pskinindex, aliashdr_t *pheader)
 {
 	daliasskingroup_t *pinskingroup;
 	maliasskingroup_t *paliasskingroup;
@@ -1686,7 +1710,7 @@ static void *Mod_LoadAliasSkinGroup(void *pin, byte **pskinindex, int skinsize, 
 	ptemp = (void *) pinskinintervals;
 
 	for (i = 0; i < numskins; i++)
-		ptemp = Mod_LoadAliasSkin (ptemp, &paliasskingroup->skindescs[i].skin, skinsize, pheader);
+		ptemp = Mod_LoadAliasSkin(model, mdl, skinnum, ptemp, &paliasskingroup->skindescs[i].skin, pheader);
 
 	return ptemp;
 }
@@ -1784,6 +1808,9 @@ static void Mod_LoadAliasModel(model_t *mod, void *buffer)
 	if (pmodel->skinheight > MAX_LBM_HEIGHT)
 		Host_Error("Mod_LoadAliasModel: model %s has a skin taller than %d", mod->name, MAX_LBM_HEIGHT);
 
+	if (pmodel->skinwidth > 32768 || pmodel->skinwidth <= 0 || pmodel->skinheight > 32768 || pmodel->skinheight <= 0)
+		Host_Error("Mod_LoadAliasModel: Invalid skin dimensions in %s", mod->name);
+
 	pmodel->numverts = LittleLong (pinmodel->numverts);
 
 	if (pmodel->numverts <= 0)
@@ -1839,9 +1866,9 @@ static void Mod_LoadAliasModel(model_t *mod, void *buffer)
 		pskindesc[i].type = skintype;
 
 		if (skintype == ALIAS_SKIN_SINGLE)
-			pskintype = (daliasskintype_t *) Mod_LoadAliasSkin (pskintype + 1, &pskindesc[i].skin, skinsize, pheader);
+			pskintype = (daliasskintype_t *) Mod_LoadAliasSkin(mod, pmodel, i, pskintype + 1, &pskindesc[i].skin, pheader);
 		else
-			pskintype = (daliasskintype_t *) Mod_LoadAliasSkinGroup (pskintype + 1, &pskindesc[i].skin, skinsize, pheader);
+			pskintype = (daliasskintype_t *) Mod_LoadAliasSkinGroup(mod, pmodel, i, pskintype + 1, &pskindesc[i].skin, pheader);
 	}
 
 	// set base s and t vertices
