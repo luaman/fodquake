@@ -2,11 +2,6 @@
 
 #include "sys_io.h"
 
-int Sys_Read_Dir(char *dir, char *subdir, int *gcount, struct directory_entry_temp **list, struct directory_entry_temp *(*add_det)(struct directory_entry_temp **tmp))
-{
-	return 1;
-}
-
 void Sys_IO_Create_Directory(const char *path)
 {
 	BPTR lock;
@@ -16,6 +11,11 @@ void Sys_IO_Create_Directory(const char *path)
 	{
 		UnLock(lock);
 	}
+}
+
+int Sys_IO_Read_Dir(const char *basedir, const char *subdir, int (*callback)(void *opaque, struct directory_entry *de), void *opaque)
+{
+	return 0;
 }
 
 int Sys_IO_Path_Exists(const char *path)
