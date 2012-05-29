@@ -1353,7 +1353,8 @@ static void R_RecursiveWorldNode(mnode_t *node, int clipflags)
 		{
 			do
 			{
-				cl.worldmodel->surfvisframes[*mark] = r_framecount;
+				surfnum = *mark;
+				cl.worldmodel->surfvisible[surfnum/32] |= (1<<(surfnum%32));
 				mark++;
 			} while(--c);
 		}
@@ -1390,7 +1391,7 @@ static void R_RecursiveWorldNode(mnode_t *node, int clipflags)
 
 			for ( ; c; c--, surf++, surfnum++)
 			{
-				if (cl.worldmodel->surfvisframes[surfnum] != r_framecount)
+				if (!(cl.worldmodel->surfvisible[surfnum/32]&(1<<(surfnum%32))))
 					continue;
 
 				flags = cl.worldmodel->surfflags[surfnum];
@@ -1443,6 +1444,7 @@ void R_DrawWorld (void)
 	currenttexture = -1;
 
 	//set up texture chains for the world
+	memset(cl.worldmodel->surfvisible, 0, ((cl.worldmodel->numsurfaces+31)/32)*sizeof(*cl.worldmodel->surfvisible));
 	R_RecursiveWorldNode (cl.worldmodel->nodes, 15);
 
 	//draw the world sky

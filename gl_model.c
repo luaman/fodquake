@@ -19,6 +19,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 // gl_model.c  -- model loading and caching
 
+#include <inttypes.h>
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
@@ -206,8 +207,9 @@ static void Mod_FreeBrushData(model_t *model)
 	free(model->surfaces);
 	model->surfaces = 0;
 
-	free(model->surfvisframes);
-	model->surfvisframes = 0;
+	free(model->surfvisibleunaligned);
+	model->surfvisibleunaligned = 0;
+	model->surfvisible = 0;
 
 	free(model->surfflags);
 	model->surfflags = 0;
@@ -1236,14 +1238,15 @@ static void Mod_LoadFaces(model_t *model, lump_t *l)
 		Host_Error ("Mod_LoadFaces: funny lump size in %s", model->name);
 	count = l->filelen / sizeof(*in);
 	out = malloc(count*sizeof(*out));
-	model->surfvisframes = malloc(count*sizeof(*model->surfvisframes));
+	model->surfvisibleunaligned = malloc((((count+31)/32)*sizeof(*model->surfvisibleunaligned)) + 127);
 	model->surfflags = malloc(count*sizeof(*model->surfflags));
-	if (out == 0 || model->surfvisframes == 0 || model->surfflags == 0)
+	if (out == 0 || model->surfvisibleunaligned == 0 || model->surfflags == 0)
 		Sys_Error("Mod_LoadBrushModel: Out of memory\n");
 
 	memset(out, 0, count*sizeof(*out));
-	memset(model->surfvisframes, 0, count*sizeof(*model->surfvisframes));
 	memset(model->surfflags, 0, count*sizeof(*model->surfflags));
+
+	model->surfvisible = (void *)((((uintptr_t)model->surfvisibleunaligned)+127)&~127);
 
 	model->surfaces = out;
 	model->numsurfaces = count;
