@@ -37,13 +37,16 @@ int Sys_IO_Read_Dir(const char *basedir, const char *subdir, int (*callback)(voi
 	ret = 0;
 	while(1)
 	{
-		snprintf(buf, sizeof(buf), "%s%s%s", subdir?subdir:"", subdir?"/":"", fd.cFileName);
+		if (strcmp(fd.cFileName, ".") != 0 && strcmp(fd.cFileName, "..") != 0)
+		{
+			snprintf(buf, sizeof(buf), "%s%s%s", subdir?subdir:"", subdir?"/":"", fd.cFileName);
 
-		de.type = (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)?et_dir:et_file;
-		de.size = (((unsigned long long)fd.nFileSizeHigh)<<32)|fd.nFileSizeLow;
+			de.type = (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)?et_dir:et_file;
+			de.size = (((unsigned long long)fd.nFileSizeHigh)<<32)|fd.nFileSizeLow;
 
-		if (!callback(opaque, &de))
-			break;
+			if (!callback(opaque, &de))
+				break;
+		}
 
 		if (FindNextFile(h, &fd) == 0)
 		{
