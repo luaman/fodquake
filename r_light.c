@@ -168,8 +168,9 @@ LIGHT SAMPLING
 =============================================================================
 */
 
-int RecursiveLightPoint(model_t *model, mnode_t *node, vec3_t start, vec3_t end)
+static int RecursiveLightPoint(model_t *model, unsigned int nodenum, vec3_t start, vec3_t end)
 {
+	mnode_t *node;
 	int			r;
 	float		front, back, frac;
 	int			side;
@@ -183,9 +184,11 @@ int RecursiveLightPoint(model_t *model, mnode_t *node, vec3_t start, vec3_t end)
 	unsigned	scale;
 	int			maps;
 
-	if (node->contents < 0)
+	if (nodenum >= model->numnodes)
 		return -1;		// didn't hit anything
 	
+	node = model->nodes + nodenum;
+
 // calculate mid point
 
 // FIXME: optimize for axial
@@ -200,7 +203,7 @@ int RecursiveLightPoint(model_t *model, mnode_t *node, vec3_t start, vec3_t end)
 	side = front < 0;
 	
 	if ((back < 0) == side)
-		return RecursiveLightPoint(model, NODENUM_TO_NODE(model, node->childrennum[side]), start, end);
+		return RecursiveLightPoint(model, node->childrennum[side], start, end);
 	
 	frac = front / (front-back);
 	mid[0] = start[0] + (end[0] - start[0])*frac;
@@ -208,7 +211,7 @@ int RecursiveLightPoint(model_t *model, mnode_t *node, vec3_t start, vec3_t end)
 	mid[2] = start[2] + (end[2] - start[2])*frac;
 	
 // go down front side	
-	r = RecursiveLightPoint(model, NODENUM_TO_NODE(model, node->childrennum[side]), start, mid);
+	r = RecursiveLightPoint(model, node->childrennum[side], start, mid);
 	if (r >= 0)
 		return r;		// hit something
 		
@@ -267,7 +270,7 @@ int RecursiveLightPoint(model_t *model, mnode_t *node, vec3_t start, vec3_t end)
 	}
 
 // go down back side
-	return RecursiveLightPoint(model, NODENUM_TO_NODE(model, node->childrennum[!side]), mid, end);
+	return RecursiveLightPoint(model, node->childrennum[!side], mid, end);
 }
 
 int R_LightPoint (vec3_t p)
@@ -282,7 +285,7 @@ int R_LightPoint (vec3_t p)
 	end[1] = p[1];
 	end[2] = p[2] - 2048;
 	
-	r = RecursiveLightPoint(cl.worldmodel, cl.worldmodel->nodes, p, end);
+	r = RecursiveLightPoint(cl.worldmodel, 0, p, end);
 	
 	if (r == -1)
 		r = 0;
