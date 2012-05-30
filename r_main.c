@@ -668,7 +668,7 @@ static int R_BmodelCheckBBox(model_t *clmodel, float *minmaxs)
 	return clipflags;
 }
 
-static mnode_t *R_FindTopNode(vec3_t mins, vec3_t maxs)
+static unsigned int R_FindTopNode(vec3_t mins, vec3_t maxs)
 {
 	mplane_t *splitplane;
 	int sides;
@@ -685,22 +685,22 @@ static mnode_t *R_FindTopNode(vec3_t mins, vec3_t maxs)
 		node = NODENUM_TO_NODE(model, nodenum);
 
 		if (node->visframe != r_visframecount)
-			return NULL;		// not visible at all
+			return 0xffff;		// not visible at all
 
 		if (nodenum >= model->numnodes)
 		{
 			leafnum = nodenum - model->numnodes;
 			if (!(model->leafsolid[leafnum/32] & (1<<(leafnum%32))))
-				return node; // we've reached a non-solid leaf, so it's
+				return nodenum; // we've reached a non-solid leaf, so it's
 							//  visible and not BSP clipped
-			return NULL;	// in solid, so not visible
+			return 0xffff;	// in solid, so not visible
 		}
 
 		splitplane = node->plane;
 		sides = BOX_ON_PLANE_SIDE (mins, maxs, splitplane);
 
 		if (sides == 3)
-			return node;	// this is the splitter
+			return nodenum;	// this is the splitter
 
 		// not split yet; recurse down the contacted side
 		nodenum = (sides & 1) ? node->childrennum[0] : node->childrennum[1];
@@ -715,6 +715,7 @@ static void R_DrawBEntitiesOnList(visentlist_t *vislist)
 	vec3_t oldorigin;
 	model_t *clmodel;
 	float minmaxs[6];
+	unsigned int topnodenum;
 	mnode_t *topnode;
 
 	if (!r_drawentities.value || !vislist->count)
@@ -738,7 +739,7 @@ static void R_DrawBEntitiesOnList(visentlist_t *vislist)
 		if (clipflags == BMODEL_FULLY_CLIPPED)
 			continue;		// off the edge of the screen
 
-		if (!(topnode = R_FindTopNode (minmaxs, minmaxs + 3)))
+		if ((topnodenum = R_FindTopNode(minmaxs, minmaxs + 3)) == 0xffff)
 			continue;	// no part in a visible leaf
 
 		VectorCopy (currententity->origin, r_entorigin);
@@ -770,9 +771,10 @@ static void R_DrawBEntitiesOnList(visentlist_t *vislist)
 			}
 		}
 
+		topnode = NODENUM_TO_NODE(cl.worldmodel, topnodenum);
 		currententity->topnode = topnode;
 
-		if (topnode->contents >= 0)
+		if (topnodenum < cl.worldmodel->numnodes)
 		{
 			// not a leaf; has to be clipped to the world BSP
 			r_clipflags = clipflags;
