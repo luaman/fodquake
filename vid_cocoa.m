@@ -31,6 +31,22 @@
 
 extern cvar_t in_grab_windowed_mouse;
 
+#ifndef NSAppKitVersionNumber10_5
+#define NSAppKitVersionNumber10_5 949
+#endif
+
+#ifndef NSAppKitVersionNumber10_6
+#define NSAppKitVersionNumber10_6 1038
+
+typedef struct CGDisplayMode *CGDisplayModeRef;
+CG_EXTERN size_t CGDisplayModeGetWidth(CGDisplayModeRef mode);
+CG_EXTERN size_t CGDisplayModeGetHeight(CGDisplayModeRef mode);
+CG_EXTERN CGDisplayModeRef CGDisplayCopyDisplayMode(CGDirectDisplayID display);
+CG_EXTERN CFArrayRef CGDisplayCopyAllDisplayModes(CGDirectDisplayID display, CFDictionaryRef options);
+CG_EXTERN CGError CGConfigureDisplayWithDisplayMode(CGDisplayConfigRef config, CGDirectDisplayID display, CGDisplayModeRef mode, CFDictionaryRef options);
+CG_EXTERN uint32_t CGDisplayModeGetIOFlags(CGDisplayModeRef mode);
+#endif
+
 static CGError switch_display_mode(CGDisplayModeRef new_mode, CGDisplayModeRef *current_mode)
 {
 	CGError err = kCGErrorSuccess;
