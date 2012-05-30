@@ -31,11 +31,6 @@
 
 extern cvar_t in_grab_windowed_mouse;
 
-#ifdef __MAC_OS_X_VERSION_MAX_ALLOWED && __MAC_OS_X_VERSION_MAX_ALLOWED < __MAC_10_6
-#define __USE_DEPRECATED_APIS
-#endif
-
-#ifndef __USE_DEPRECATED_APIS
 static CGError switch_display_mode(CGDisplayModeRef new_mode, CGDisplayModeRef *current_mode)
 {
 	CGError err = kCGErrorSuccess;
@@ -58,7 +53,7 @@ static CGError switch_display_mode(CGDisplayModeRef new_mode, CGDisplayModeRef *
 	
 	return err;
 }
-#else
+
 static long GetDictionaryLong(CFDictionaryRef theDict, const void *key)
 {
 	long value = 0;
@@ -73,7 +68,7 @@ static long GetDictionaryLong(CFDictionaryRef theDict, const void *key)
 	return value;
 }
 
-static CGError switch_display_mode(CFDictionaryRef new_mode, CFDictionaryRef *current_mode)
+static CGError switch_display_mode_legacy(CFDictionaryRef new_mode, CFDictionaryRef *current_mode)
 {
 	if (current_mode)
 	{
@@ -82,18 +77,14 @@ static CGError switch_display_mode(CFDictionaryRef new_mode, CFDictionaryRef *cu
 	
 	return CGDisplaySwitchToMode(CGMainDisplayID(), new_mode);
 }
-#endif
 
 struct display
 {
 	qboolean fullscreen;
 	struct input_data *input;
 	NSWindow *window;
-#ifndef __USE_DEPRECATED_APIS
 	CGDisplayModeRef orig_display_mode;
-#else
-	CFDictionaryRef orig_display_mode;
-#endif
+	CFDictionaryRef orig_display_mode_legacy;
 	unsigned int width;
 	unsigned int height;
 	
@@ -127,18 +118,27 @@ struct display
 	{
 		if (d->orig_display_mode)
 		{
-#ifndef __USE_DEPRECATED_APIS
 			CGDisplayModeRef tmp;
-#else
-			CFDictionaryRef tmp;
-#endif
 			CGError err;
 			
 			err = switch_display_mode(d->orig_display_mode, &tmp);
 			if (err == kCGErrorSuccess)
 			{
 				d->orig_display_mode = tmp;
-				
+					
+				CGReleaseAllDisplays();
+			}
+		}
+		else if (d->orig_display_mode_legacy)
+		{
+			CFDictionaryRef tmp;
+			CGError err;
+			
+			err = switch_display_mode_legacy(d->orig_display_mode_legacy, &tmp);
+			if (err == kCGErrorSuccess)
+			{
+				d->orig_display_mode_legacy = tmp;
+					
 				CGReleaseAllDisplays();
 			}
 		}
@@ -150,7 +150,7 @@ struct display
 {
 	if (d->fullscreen)
 	{
-		if (d->orig_display_mode)
+		if (d->orig_display_mode || d->orig_display_mode_legacy)
 		{
 			[self setLevel:CGShieldingWindowLevel()];
 		}
@@ -173,11 +173,7 @@ struct display
 	
 	if (d->orig_display_mode)
 	{
-#ifndef __USE_DEPRECATED_APIS
 		CGDisplayModeRef tmp;
-#else
-		CFDictionaryRef tmp;
-#endif
 		CGError err;
 		
 		err = CGCaptureAllDisplays();
@@ -187,6 +183,21 @@ struct display
 			if (err == kCGErrorSuccess)
 			{
 				d->orig_display_mode = tmp;
+			}
+		}
+	}
+	else if (d->orig_display_mode_legacy)
+	{
+		CFDictionaryRef tmp;
+		CGError err;
+		
+		err = CGCaptureAllDisplays();
+		if (err == kCGErrorSuccess)
+		{
+			err = switch_display_mode_legacy(d->orig_display_mode_legacy, &tmp);
+			if (err == kCGErrorSuccess)
+			{
+				d->orig_display_mode_legacy = tmp;
 			}
 		}
 	}
@@ -251,11 +262,15 @@ void* Sys_Video_Open(const char *mode, unsigned int width, unsigned int height, 
 			
 			sscanf(mode, "%u,%u,%u", &width, &height, &flags);
 			
-#ifndef __USE_DEPRECATED_APIS
-			modes = CGDisplayCopyAllDisplayModes(CGMainDisplayID(), NULL);
-#else
-			modes = CGDisplayAvailableModes(CGMainDisplayID());
-#endif
+			if (NSAppKitVersionNumber < NSAppKitVersionNumber10_6)
+			{
+				modes = CGDisplayAvailableModes(CGMainDisplayID());
+			}
+			else
+			{
+				modes = CGDisplayCopyAllDisplayModes(CGMainDisplayID(), NULL);
+			}
+			
 			if (modes)
 			{
 				unsigned int num_modes = CFArrayGetCount(modes);
@@ -263,30 +278,55 @@ void* Sys_Video_Open(const char *mode, unsigned int width, unsigned int height, 
 				
 				for (i = 0; i < num_modes; i++)
 				{
-#ifndef __USE_DEPRECATED_APIS
-					CGDisplayModeRef mode_ref = (CGDisplayModeRef)CFArrayGetValueAtIndex(modes, i);
+					CGDisplayModeRef mode_ref;
+					CFDictionaryRef mode_ref_legacy;
+					unsigned int width_tmp;
+					unsigned int height_tmp;
+					unsigned int flags_tmp;
 					
-					if (width == CGDisplayModeGetWidth(mode_ref) && height == CGDisplayModeGetHeight(mode_ref) && flags == CGDisplayModeGetIOFlags(mode_ref))
-#else
-					CFDictionaryRef mode_ref = (CFDictionaryRef)CFArrayGetValueAtIndex(modes, i);
+					if (NSAppKitVersionNumber < NSAppKitVersionNumber10_6)
+					{
+						mode_ref_legacy = (CFDictionaryRef)CFArrayGetValueAtIndex(modes, i);
+						
+						width_tmp = GetDictionaryLong(mode_ref_legacy, kCGDisplayWidth);
+						height_tmp = GetDictionaryLong(mode_ref_legacy, kCGDisplayHeight);
+						flags_tmp = GetDictionaryLong(mode_ref_legacy, kCGDisplayIOFlags);
+					}
+					else
+					{
+						mode_ref = (CGDisplayModeRef)CFArrayGetValueAtIndex(modes, i);
+						
+						width_tmp = CGDisplayModeGetWidth(mode_ref);
+						height_tmp = CGDisplayModeGetHeight(mode_ref);
+						flags_tmp = CGDisplayModeGetIOFlags(mode_ref);
+					}
 					
-					if (width == GetDictionaryLong(mode_ref, kCGDisplayWidth) && height == GetDictionaryLong(mode_ref, kCGDisplayHeight) && flags == GetDictionaryLong(mode_ref, kCGDisplayIOFlags))	
-#endif
+
+					if (width == width_tmp && height == height_tmp && flags == flags_tmp)
 					{
 						CGError err;
 						
 						err = CGCaptureAllDisplays();
 						if (err == kCGErrorSuccess)
 						{
-							err = switch_display_mode(mode_ref, &d->orig_display_mode);
+							if (NSAppKitVersionNumber < NSAppKitVersionNumber10_6)
+							{
+								err = switch_display_mode_legacy(mode_ref_legacy, &d->orig_display_mode_legacy);
+							}
+							else
+							{
+								err = switch_display_mode(mode_ref, &d->orig_display_mode);
+							}
 						}
 						
 						break;
 					}
 				}
-#ifndef __USE_DEPRECATED_APIS
-				CFRelease(modes);
-#endif
+
+				if (NSAppKitVersionNumber > NSAppKitVersionNumber10_5)
+				{
+					CFRelease(modes);
+				}
 			}
 		}
 		
@@ -438,6 +478,16 @@ void Sys_Video_Close(void *display)
 		CGError err;
 		
 		err = switch_display_mode(d->orig_display_mode, NULL);
+		if (err == kCGErrorSuccess)
+		{
+			CGReleaseAllDisplays();
+		}
+	}
+	else if (d->orig_display_mode_legacy)
+	{
+		CGError err;
+		
+		err = switch_display_mode_legacy(d->orig_display_mode_legacy, NULL);
 		if (err == kCGErrorSuccess)
 		{
 			CGReleaseAllDisplays();
