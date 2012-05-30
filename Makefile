@@ -5,7 +5,7 @@ CC=gcc
 STRIP=strip
 AR=ar
 
-CFLAGS=-O2 -g -Wall -Werror-implicit-function-declaration -fno-strict-aliasing -DNETQW -I../thirdparty/include -L../thirdparty/lib $(OSCFLAGS) $(CPUCFLAGS) $(RENDERERCFLAGS)
+CFLAGS=-O2 -g -Wall -Werror-implicit-function-declaration -fno-strict-aliasing -DCLIENTONLY -DNETQW -I../thirdparty/include -L../thirdparty/lib $(OSCFLAGS) $(CPUCFLAGS) $(RENDERERCFLAGS)
 STRIPFLAGS=--strip-unneeded --remove-section=.comment
 
 TARGETSYSTEM:=$(shell $(CC) -dumpmachine)
