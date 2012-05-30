@@ -8,80 +8,58 @@
 
 #include "windows.h"
 
-int Sys_Read_Dir(char *dir, char *subdir, int *gcount, struct directory_entry_temp **list, struct directory_entry_temp *(*add_det)(struct directory_entry_temp **tmp))
-{
-	enum directory_entry_type type;
-	char dir_buf[4096];
-	char file_buf[4096];
-	char dir_buf_temp[4096];
-	struct directory_entry_temp *detc;
-	int count;
-
-	HANDLE h;
-	WIN32_FIND_DATA fd;
-
-	if (dir == NULL || list == NULL)
-		return 1;
-
-	if (subdir == NULL)
-		snprintf(dir_buf, sizeof(dir_buf), "%s/", dir);
-	else
-		snprintf(dir_buf, sizeof(dir_buf), "%s/%s/", dir, subdir);
-
-	snprintf(dir_buf_temp, sizeof(dir_buf_temp), "%s/*.*", dir_buf);
-	h = FindFirstFile(dir_buf_temp, &fd);
-	if (h == INVALID_HANDLE_VALUE)
-		return 1;
-
-	count = 0;
-	do
-	{
-
-		if (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
-		{
-			type = et_dir;
-			if (!strcmp(fd.cFileName, ".") || !strcmp(fd.cFileName, ".."))
-				continue;
-		}
-		else
-		{
-			type = et_file;
-		}
-
-		detc = add_det(list);
-		if (detc == NULL)
-		{
-			FindClose(h);
-			return 1;
-		}
-
-		detc->type = type;
-
-		if (subdir)
-			snprintf(file_buf, sizeof(file_buf), "%s/%s", subdir, fd.cFileName);
-		else
-			snprintf(file_buf, sizeof(file_buf), "%s", fd.cFileName);
-
-		detc->name = strdup(file_buf);
-		if (detc->name == NULL)
-		{
-			FindClose(h);
-			return 1;
-		}
-		count++;
-
-	} while (FindNextFile(h, &fd));
-	FindClose(h);
-
-	if (gcount)
-		*gcount = *gcount + count;
-
-	return 0;
-}
-
 void Sys_IO_Create_Directory(const char *path)
 {
 	CreateDirectory(path, 0);
+}
+
+int Sys_IO_Read_Dir(const char *basedir, const char *subdir, int (*callback)(void *opaque, struct directory_entry *de), void *opaque)
+{
+	WIN32_FIND_DATA fd;
+	HANDLE h;
+	struct directory_entry de;
+	char buf[4096];
+	int ret;
+
+	snprintf(buf, sizeof(buf), "%s%s%s/*", basedir, subdir?"/":"", subdir?subdir:"");
+
+	h = FindFirstFile(buf, &fd);
+	if (h == INVALID_HANDLE_VALUE)
+	{
+		if (GetLastError() == ERROR_FILE_NOT_FOUND)
+			return 1;
+		else
+			return 0;
+	}
+
+	de.name = buf;
+
+	ret = 0;
+	while(1)
+	{
+		if (strcmp(fd.cFileName, ".") != 0 && strcmp(fd.cFileName, "..") != 0)
+		{
+			snprintf(buf, sizeof(buf), "%s%s%s", subdir?subdir:"", subdir?"/":"", fd.cFileName);
+
+			de.type = (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)?et_dir:et_file;
+			de.size = (((unsigned long long)fd.nFileSizeHigh)<<32)|fd.nFileSizeLow;
+
+			if (!callback(opaque, &de))
+				break;
+		}
+
+		if (FindNextFile(h, &fd) == 0)
+		{
+			if (GetLastError() == ERROR_NO_MORE_FILES)
+				ret = 1;
+
+			break;
+		}
+	}
+
+	FindClose(h);
+
+	return ret;
 }
 
 int Sys_IO_Path_Exists(const char *path)

@@ -391,7 +391,8 @@ typedef struct model_s {
 	int			bspversion;
 	qboolean	isworldmodel;
 
-	unsigned short *surfvisframes;
+	unsigned int *surfvisibleunaligned;
+	unsigned int *surfvisible;
 	unsigned char *surfflags;
 
 	// additional model data

@@ -198,6 +198,8 @@ struct Picture *Draw_LoadPicture(const char *name, enum Draw_LoadPicture_Fallbac
 
 			strcpy(newnameextension, ".pcx");
 			data = Image_LoadPCX(0, newname, 0, 0, &width, &height);
+
+			free(newname);
 		}
 
 		if (data && width <= 32768 && height <= 32728)

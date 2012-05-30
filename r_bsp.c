@@ -18,6 +18,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */
 
+#include <string.h>
 #include <math.h>
 
 #include "quakedef.h"
@@ -481,7 +482,8 @@ void R_RecursiveWorldNode(mnode_t *node, int clipflags)
 		{
 			do
 			{
-				cl.worldmodel->surfvisframes[*mark] = r_framecount;
+				surfnum = *mark;
+				cl.worldmodel->surfvisible[surfnum/32] |= (1<<(surfnum%32));
 				mark++;
 			} while (--c);
 		}
@@ -517,7 +519,7 @@ void R_RecursiveWorldNode(mnode_t *node, int clipflags)
 			{
 				do
 				{
-					if ((cl.worldmodel->surfflags[surfnum] & SURF_PLANEBACK) && cl.worldmodel->surfvisframes[surfnum] == r_framecount)
+					if ((cl.worldmodel->surfflags[surfnum] & SURF_PLANEBACK) && (cl.worldmodel->surfvisible[surfnum/32]&(1<<(surfnum%32))))
 						R_RenderFace(cl.worldmodel, surfnum, clipflags);
 
 					surfnum++;
@@ -527,7 +529,7 @@ void R_RecursiveWorldNode(mnode_t *node, int clipflags)
 			{
 				do
 				{
-					if (!(cl.worldmodel->surfflags[surfnum] & SURF_PLANEBACK) && cl.worldmodel->surfvisframes[surfnum] == r_framecount)
+					if (!(cl.worldmodel->surfflags[surfnum] & SURF_PLANEBACK) && (cl.worldmodel->surfvisible[surfnum/32]&(1<<(surfnum%32))))
 						R_RenderFace(cl.worldmodel, surfnum, clipflags);
 
 					surfnum++;
@@ -552,5 +554,6 @@ void R_RenderWorld (void)
 	clmodel = currententity->model;
 	r_pcurrentvertbase = clmodel->vertexes;
 
+	memset(cl.worldmodel->surfvisible, 0, ((cl.worldmodel->numsurfaces+31)/32)*sizeof(*cl.worldmodel->surfvisible));
 	R_RecursiveWorldNode (clmodel->nodes, 15);
 }
