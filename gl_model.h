@@ -31,6 +31,8 @@ d*_t structures are on-disk representations
 m*_t structures are in-memory
 */
 
+#define NODENUM_TO_NODE(__model,__nodenum) ({ model_t *_model = (__model); unsigned int _nodenum = (__nodenum); mnode_t *node; if (_nodenum >= _model->numnodes) { node = (mnode_t *)(_model->leafs + (_nodenum - _model->numnodes)); } else { node = _model->nodes + _nodenum; } node; })
+
 // entity effects
 
 #define	EF_BRIGHTFIELD			1
@@ -168,7 +170,7 @@ typedef struct mnode_s {
 
 // node specific
 	mplane_t	*plane;
-	struct mnode_s	*children[2];	
+	unsigned short childrennum[2];
 
 	unsigned short		firstsurface;
 	unsigned short		numsurfaces;

@@ -670,16 +670,21 @@ static mnode_t *R_FindTopNode(vec3_t mins, vec3_t maxs)
 {
 	mplane_t *splitplane;
 	int sides;
+	unsigned int nodenum;
 	mnode_t *node;
+	model_t *model;
 
-	node = cl.worldmodel->nodes;
+	model = cl.worldmodel;
+	nodenum = 0;
 
 	while (1)
 	{
+		node = NODENUM_TO_NODE(model, nodenum);
+
 		if (node->visframe != r_visframecount)
 			return NULL;		// not visible at all
 
-		if (node->contents < 0)
+		if (nodenum >= model->numnodes)
 		{
 			if (node->contents != CONTENTS_SOLID)
 				return node; // we've reached a non-solid leaf, so it's
@@ -694,7 +699,7 @@ static mnode_t *R_FindTopNode(vec3_t mins, vec3_t maxs)
 			return node;	// this is the splitter
 
 		// not split yet; recurse down the contacted side
-		node = (sides & 1) ? node->children[0] : node->children[1];
+		nodenum = (sides & 1) ? node->childrennum[0] : node->childrennum[1];
 	}
 }
 
@@ -754,7 +759,7 @@ static void R_DrawBEntitiesOnList(visentlist_t *vislist)
 							k = li*32 + lj;
 
 							/* This will fail for k >= 32 */
-							R_MarkLights(&cl_dlights[k], 1<<k, clmodel->nodes + clmodel->hulls[0].firstclipnode);
+							R_MarkLights(clmodel, &cl_dlights[k], 1<<k, clmodel->hulls[0].firstclipnode);
 						}
 					}
 				}

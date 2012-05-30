@@ -164,7 +164,7 @@ void R_BrightenScreen (void);
 void R_DrawEntitiesOnList (visentlist_t *vislist);
 
 // gl_rlight.c
-void R_MarkLights (dlight_t *light, int bit, mnode_t *node);
+void R_MarkLights(model_t *model, dlight_t *light, int bit, unsigned int nodenum);
 void R_AnimateLight (void);
 void R_RenderDlights (void);
 int R_LightPoint (vec3_t p);

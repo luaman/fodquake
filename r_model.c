@@ -61,20 +61,22 @@ void *Mod_Extradata(model_t *mod)
 mleaf_t *Mod_PointInLeaf (vec3_t p, model_t *model)
 {
 	mnode_t *node;
+	unsigned int nodenum;
 	float d;
 	mplane_t *plane;
 
 	if (!model || !model->nodes)
 		Sys_Error ("Mod_PointInLeaf: bad model");
 
-	node = model->nodes;
+	nodenum = 0;
 	while (1)
 	{
-		if (node->contents < 0)
+		node = NODENUM_TO_NODE(model, nodenum);
+		if (nodenum >= model->numnodes)
 			return (mleaf_t *)node;
 		plane = node->plane;
 		d = PlaneDiff (p,plane);
-		node = (d > 0) ? node->children[0] : node->children[1];
+		nodenum = (d > 0) ? node->childrennum[0] : node->childrennum[1];
 	}
 
 	return NULL;	// never reached
@@ -1091,14 +1093,18 @@ static void Mod_LoadFaces(model_t *model, lump_t *l)
 	}
 }
 
-static void Mod_SetParent(mnode_t *node, mnode_t *parent)
+static void Mod_SetParent(model_t *model, unsigned int nodenum, mnode_t *parent)
 {
+	mnode_t *node;
+
+	node = NODENUM_TO_NODE(model, nodenum);
+
 	node->parent = parent;
-	if (node->contents < 0)
+	if (nodenum >= model->numnodes)
 		return;
 
-	Mod_SetParent(node->children[0], node);
-	Mod_SetParent(node->children[1], node);
+	Mod_SetParent(model, node->childrennum[0], node);
+	Mod_SetParent(model, node->childrennum[1], node);
 }
 
 static void Mod_LoadNodes(model_t *model, lump_t *l)
@@ -1139,13 +1145,13 @@ static void Mod_LoadNodes(model_t *model, lump_t *l)
 		{
 			p = LittleShort (in->children[j]);
 			if (p >= 0)
-				out->children[j] = model->nodes + p;
+				out->childrennum[j] = p;
 			else
-				out->children[j] = (mnode_t *)(model->leafs + (-1 - p));
+				out->childrennum[j] = model->numnodes + (-1 - p);
 		}
 	}
 
-	Mod_SetParent(model->nodes, NULL);	// sets nodes and leafs
+	Mod_SetParent(model, 0, NULL);	// sets nodes and leafs
 }
 
 static void Mod_LoadLeafs(model_t *model, lump_t *l)
@@ -1306,7 +1312,7 @@ static void Mod_MakeHull0(model_t *model)
 		out->planenum = in->plane - model->planes;
 		for (j = 0; j < 2; j++)
 		{
-			child = in->children[j];
+			child = NODENUM_TO_NODE(model, in->childrennum[j]);
 			if (child->contents < 0)
 				out->children[j] = child->contents;
 			else

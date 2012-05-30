@@ -285,7 +285,7 @@ static void R_RecursiveClipBPoly(model_t *model, bedge_t *pedges, mnode_t *pnode
 		{
 			// draw if we've reached a non-solid leaf, done if all that's left is a
 			// solid leaf, and continue down the tree if it's not a leaf
-			pn = pnode->children[i];
+			pn = NODENUM_TO_NODE(model, pnode->childrennum[i]);
 
 			// we're done with this branch if the node or leaf isn't in the PVS
 			if (pn->visframe == r_visframecount)
@@ -300,7 +300,7 @@ static void R_RecursiveClipBPoly(model_t *model, bedge_t *pedges, mnode_t *pnode
 				}
 				else
 				{
-					R_RecursiveClipBPoly(model, psideedges[i], pnode->children[i], surfnum);
+					R_RecursiveClipBPoly(model, psideedges[i], pn, surfnum);
 				}
 			}
 		}
@@ -418,8 +418,9 @@ void R_DrawSubmodelPolygons (model_t *pmodel, int clipflags)
 	}
 }
 
-void R_RecursiveWorldNode(mnode_t *node, int clipflags)
+static void R_RecursiveWorldNode(model_t *model, unsigned int nodenum, int clipflags)
 {
+	mnode_t *node;
 	int i, c, side, *pindex;
 	vec3_t acceptpt, rejectpt;
 	mplane_t *plane;
@@ -427,6 +428,18 @@ void R_RecursiveWorldNode(mnode_t *node, int clipflags)
 	unsigned short *mark;
 	mleaf_t *pleaf;
 	double d, dot;
+	int isleaf;
+
+	if (nodenum >= model->numnodes)
+	{
+		isleaf = 1;
+		node = (mnode_t *)(model->leafs + (nodenum - model->numnodes));
+	}
+	else
+	{
+		isleaf = 0;
+		node = model->nodes + nodenum;
+	}
 
 	if (node->contents == CONTENTS_SOLID)
 		return;		// solid
@@ -506,7 +519,7 @@ void R_RecursiveWorldNode(mnode_t *node, int clipflags)
 		side = (dot < 0);
 
 		// recurse down the children, front side first
-		R_RecursiveWorldNode(node->children[side], clipflags);
+		R_RecursiveWorldNode(model, node->childrennum[side], clipflags);
 
 		// draw stuff
 		c = node->numsurfaces;
@@ -541,7 +554,7 @@ void R_RecursiveWorldNode(mnode_t *node, int clipflags)
 		}
 
 		// recurse down the back side
-		R_RecursiveWorldNode(node->children[!side], clipflags);
+		R_RecursiveWorldNode(model, node->childrennum[!side], clipflags);
 	}
 }
 
@@ -555,5 +568,5 @@ void R_RenderWorld (void)
 	r_pcurrentvertbase = clmodel->vertexes;
 
 	memset(cl.worldmodel->surfvisible, 0, ((cl.worldmodel->numsurfaces+31)/32)*sizeof(*cl.worldmodel->surfvisible));
-	R_RecursiveWorldNode (clmodel->nodes, 15);
+	R_RecursiveWorldNode(clmodel, 0, 15);
 }

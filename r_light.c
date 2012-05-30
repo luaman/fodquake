@@ -66,16 +66,19 @@ DYNAMIC LIGHTS
 R_MarkLights
 =============
 */
-void R_MarkLights (dlight_t *light, int bit, mnode_t *node)
+void R_MarkLights(model_t *model, dlight_t *light, int bit, unsigned int nodenum)
 {
+	mnode_t *node;
 	mplane_t	*splitplane;
 	float		dist;
 	msurface_t	*surf;
 	int			i;
 loc0:
-	
-	if (node->contents < 0)
+
+	if (nodenum >= model->numnodes)
 		return;
+
+	node = model->nodes + nodenum;
 
 	splitplane = node->plane;
 
@@ -83,12 +86,12 @@ loc0:
 	
 	if (dist > light->radius)
 	{
-		node = node->children[0];
+		nodenum = node->childrennum[0];
 		goto loc0;
 	}
 	if (dist < -light->radius)
 	{
-		node = node->children[1];
+		nodenum = node->childrennum[1];
 		goto loc0;
 	}
 		
@@ -104,23 +107,23 @@ loc0:
 		surf->dlightbits |= bit;
 	}
 
-	if (node->children[0]->contents >= 0)
+	if (node->childrennum[0] < model->numnodes)
 	{
-		if (node->children[1]->contents >= 0)
+		if (node->childrennum[1] < model->numnodes)
 		{
-			R_MarkLights (light, bit, node->children[0]);
-			node = node->children[1];
+			R_MarkLights(model, light, bit, node->childrennum[0]);
+			nodenum = node->childrennum[1];
 			goto loc0;
 		}
 		else
 		{
-			node = node->children[0];
+			nodenum = node->childrennum[0];
 			goto loc0;
 		}
 	}
-	else if (node->children[1]->contents >= 0)
+	else if (node->childrennum[1] < model->numnodes)
 	{
-		node = node->children[1];
+		nodenum = node->childrennum[1];
 		goto loc0;
 	}
 }
@@ -149,7 +152,7 @@ void R_PushDlights (void)
 				{
 					l = cl_dlights + i*32 + j;
 
-					R_MarkLights ( l, 1<<(i*32 + j), cl.worldmodel->nodes );
+					R_MarkLights(cl.worldmodel, l, 1<<(i*32 + j), 0);
 				}
 			}
 		}
@@ -165,7 +168,7 @@ LIGHT SAMPLING
 =============================================================================
 */
 
-int RecursiveLightPoint (mnode_t *node, vec3_t start, vec3_t end)
+int RecursiveLightPoint(model_t *model, mnode_t *node, vec3_t start, vec3_t end)
 {
 	int			r;
 	float		front, back, frac;
@@ -197,7 +200,7 @@ int RecursiveLightPoint (mnode_t *node, vec3_t start, vec3_t end)
 	side = front < 0;
 	
 	if ((back < 0) == side)
-		return RecursiveLightPoint (node->children[side], start, end);
+		return RecursiveLightPoint(model, NODENUM_TO_NODE(model, node->childrennum[side]), start, end);
 	
 	frac = front / (front-back);
 	mid[0] = start[0] + (end[0] - start[0])*frac;
@@ -205,7 +208,7 @@ int RecursiveLightPoint (mnode_t *node, vec3_t start, vec3_t end)
 	mid[2] = start[2] + (end[2] - start[2])*frac;
 	
 // go down front side	
-	r = RecursiveLightPoint (node->children[side], start, mid);
+	r = RecursiveLightPoint(model, NODENUM_TO_NODE(model, node->childrennum[side]), start, mid);
 	if (r >= 0)
 		return r;		// hit something
 		
@@ -264,7 +267,7 @@ int RecursiveLightPoint (mnode_t *node, vec3_t start, vec3_t end)
 	}
 
 // go down back side
-	return RecursiveLightPoint (node->children[!side], mid, end);
+	return RecursiveLightPoint(model, NODENUM_TO_NODE(model, node->childrennum[!side]), mid, end);
 }
 
 int R_LightPoint (vec3_t p)
@@ -279,7 +282,7 @@ int R_LightPoint (vec3_t p)
 	end[1] = p[1];
 	end[2] = p[2] - 2048;
 	
-	r = RecursiveLightPoint (cl.worldmodel->nodes, p, end);
+	r = RecursiveLightPoint(cl.worldmodel, cl.worldmodel->nodes, p, end);
 	
 	if (r == -1)
 		r = 0;
