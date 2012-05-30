@@ -1093,18 +1093,18 @@ static void Mod_LoadFaces(model_t *model, lump_t *l)
 	}
 }
 
-static void Mod_SetParent(model_t *model, unsigned int nodenum, mnode_t *parent)
+static void Mod_SetParent(model_t *model, unsigned int nodenum, unsigned int parentnum)
 {
 	mnode_t *node;
 
 	node = NODENUM_TO_NODE(model, nodenum);
 
-	node->parent = parent;
+	node->parentnum = parentnum;
 	if (nodenum >= model->numnodes)
 		return;
 
-	Mod_SetParent(model, node->childrennum[0], node);
-	Mod_SetParent(model, node->childrennum[1], node);
+	Mod_SetParent(model, node->childrennum[0], nodenum);
+	Mod_SetParent(model, node->childrennum[1], nodenum);
 }
 
 static void Mod_LoadNodes(model_t *model, lump_t *l)
@@ -1151,7 +1151,7 @@ static void Mod_LoadNodes(model_t *model, lump_t *l)
 		}
 	}
 
-	Mod_SetParent(model, 0, NULL);	// sets nodes and leafs
+	Mod_SetParent(model, 0, 0xffff);	// sets nodes and leafs
 }
 
 static void Mod_LoadLeafs(model_t *model, lump_t *l)

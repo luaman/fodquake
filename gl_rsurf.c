@@ -1524,13 +1524,16 @@ void R_MarkLeaves (void)
 		if (vis[i >> 3] & (1 << (i & 7)))
 		{
 			node = (mnode_t *)&cl.worldmodel->leafs[i + 1];
-			do
+			while(1)
 			{
 				if (node->visframe == r_visframecount)
 					break;
 				node->visframe = r_visframecount;
-				node = node->parent;
-			} while (node);
+				if (node->parentnum == 0xffff)
+					break;
+
+				node = NODENUM_TO_NODE(cl.worldmodel, node->parentnum);
+			}
 		}
 	}
 }

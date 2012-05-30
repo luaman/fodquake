@@ -166,7 +166,7 @@ typedef struct mnode_s {
 	
 	float		minmaxs[6];		// for bounding box culling
 
-	struct mnode_s	*parent;
+	unsigned short parentnum;
 
 // node specific
 	mplane_t	*plane;
