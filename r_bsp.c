@@ -492,7 +492,7 @@ static void R_RecursiveWorldNode(model_t *model, unsigned int nodenum, int clipf
 	}
 
 	// if a leaf node, draw stuff
-	if (node->contents < 0)
+	if (isleaf)
 	{
 		pleaf = (mleaf_t *)node;
 
