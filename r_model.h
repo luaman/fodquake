@@ -137,7 +137,6 @@ typedef struct msurface_s {
 typedef struct mnode_s
 {
 // common with leaf
-	int			contents;		// 0, to differentiate from leafs
 	int			visframe;		// node needs to be traversed if current
 	
 	short		minmaxs[6];		// for bounding box culling
@@ -156,7 +155,6 @@ typedef struct mnode_s
 
 typedef struct mleaf_s {
 // common with node
-	int			contents;		// wil be a negative contents number
 	int			visframe;		// node needs to be traversed if current
 
 	short		minmaxs[6];		// for bounding box culling
@@ -164,6 +162,8 @@ typedef struct mleaf_s {
 	struct mnode_s	*parent;
 
 // leaf specific
+	short contents;		// 0, to differentiate from leafs
+
 	byte		*compressed_vis;
 	struct efrag_s	*efrags;
 
