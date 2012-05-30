@@ -1325,10 +1325,10 @@ static void Mod_MakeHull0(model_t *model)
 		for (j = 0; j < 2; j++)
 		{
 			child = NODENUM_TO_NODE(model, in->childrennum[j]);
-			if (child->contents < 0)
-				out->children[j] = child->contents;
+			if (in->childrennum[j] >= model->numnodes)
+				out->children[j] = ((mleaf_t *)child)->contents;
 			else
-				out->children[j] = child - model->nodes;
+				out->children[j] = in->childrennum[j];
 		}
 	}
 }
