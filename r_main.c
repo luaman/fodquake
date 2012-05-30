@@ -675,6 +675,7 @@ static mnode_t *R_FindTopNode(vec3_t mins, vec3_t maxs)
 	unsigned int nodenum;
 	mnode_t *node;
 	model_t *model;
+	unsigned int leafnum;
 
 	model = cl.worldmodel;
 	nodenum = 0;
@@ -688,7 +689,8 @@ static mnode_t *R_FindTopNode(vec3_t mins, vec3_t maxs)
 
 		if (nodenum >= model->numnodes)
 		{
-			if (node->contents != CONTENTS_SOLID)
+			leafnum = nodenum - model->numnodes;
+			if (!(model->leafsolid[leafnum/32] & (1<<(leafnum%32))))
 				return node; // we've reached a non-solid leaf, so it's
 							//  visible and not BSP clipped
 			return NULL;	// in solid, so not visible

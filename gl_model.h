@@ -397,6 +397,9 @@ typedef struct model_s {
 	unsigned int *surfvisible;
 	unsigned char *surfflags;
 
+	unsigned int *leafsolidunaligned;
+	unsigned int *leafsolid;
+
 	// additional model data
 	void *extradata;
 } model_t;

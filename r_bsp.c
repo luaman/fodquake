@@ -166,6 +166,8 @@ static void R_RecursiveClipBPoly(model_t *model, bedge_t *pedges, mnode_t *pnode
 	float dist, frac, lastdist;
 	mplane_t *splitplane, tplane;
 	mvertex_t *pvert, *plastvert, *ptvert;
+	unsigned int nodenum;
+	unsigned int leafnum;
 	mnode_t *pn;
 
 	psideedges[0] = psideedges[1] = NULL;
@@ -285,14 +287,17 @@ static void R_RecursiveClipBPoly(model_t *model, bedge_t *pedges, mnode_t *pnode
 		{
 			// draw if we've reached a non-solid leaf, done if all that's left is a
 			// solid leaf, and continue down the tree if it's not a leaf
-			pn = NODENUM_TO_NODE(model, pnode->childrennum[i]);
+			nodenum = pnode->childrennum[i];
+			pn = NODENUM_TO_NODE(model, nodenum);
 
 			// we're done with this branch if the node or leaf isn't in the PVS
 			if (pn->visframe == r_visframecount)
 			{
-				if (pn->contents < 0)
+				if (nodenum >= model->numnodes)
 				{
-					if (pn->contents != CONTENTS_SOLID)
+					leafnum = nodenum - model->numnodes;
+
+					if (!(model->leafsolid[leafnum/32] & (1<<(leafnum%32))))
 					{
 						r_currentbkey = ((mleaf_t *)pn)->key;
 						R_RenderBmodelFace(model, psideedges[i], surfnum);
@@ -428,21 +433,24 @@ static void R_RecursiveWorldNode(model_t *model, unsigned int nodenum, int clipf
 	unsigned short *mark;
 	mleaf_t *pleaf;
 	double d, dot;
+	unsigned int leafnum;
 	int isleaf;
 
 	if (nodenum >= model->numnodes)
 	{
 		isleaf = 1;
-		node = (mnode_t *)(model->leafs + (nodenum - model->numnodes));
+		leafnum = nodenum - model->numnodes;
+
+		if ((model->leafsolid[leafnum/32] & (1<<(leafnum%32))))
+			return; // solid
+
+		node = (mnode_t *)(model->leafs + leafnum);
 	}
 	else
 	{
 		isleaf = 0;
 		node = model->nodes + nodenum;
 	}
-
-	if (node->contents == CONTENTS_SOLID)
-		return;		// solid
 
 	if (node->visframe != r_visframecount)
 		return;

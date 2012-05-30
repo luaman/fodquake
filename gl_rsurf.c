@@ -1322,21 +1322,24 @@ static void R_RecursiveWorldNode(model_t *model, unsigned int nodenum, int clipf
 	unsigned char flags;
 	mleaf_t *pleaf;
 	float dot;
+	unsigned int leafnum;
 	int isleaf;
 
 	if (nodenum >= model->numnodes)
 	{
 		isleaf = 1;
-		node = (mnode_t *)(model->leafs + (nodenum - model->numnodes));
+		leafnum = nodenum - model->numnodes;
+
+		if ((model->leafsolid[leafnum/32] & (1<<(leafnum%32))))
+			return; // solid
+
+		node = (mnode_t *)(model->leafs + leafnum);
 	}
 	else
 	{
 		isleaf = 0;
 		node = model->nodes + nodenum;
 	}
-
-	if (node->contents == CONTENTS_SOLID)
-		return;		// solid
 
 	if (node->visframe != r_visframecount)
 		return;

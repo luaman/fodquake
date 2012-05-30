@@ -258,6 +258,10 @@ static void Mod_FreeBrushData(model_t *model)
 	free(model->nodes);
 	model->nodes = 0;
 
+	free(model->leafsolidunaligned);
+	model->leafsolidunaligned = 0;
+	model->leafsolid = 0;
+
 	free(model->leafs);
 	model->leafs = 0;
 
@@ -1158,17 +1162,22 @@ static void Mod_LoadLeafs(model_t *model, lump_t *l)
 {
 	dleaf_t *in;
 	mleaf_t *out;
-	int i, j, count, p;
+	unsigned int i;
+	int j, count, p;
 
 	in = (void *) (mod_base + l->fileofs);
 	if (l->filelen % sizeof(*in))
 		Host_Error("Mod_LoadLeafs: funny lump size in %s", model->name);
 	count = l->filelen / sizeof(*in);
 	out = malloc(count*sizeof(*out));
-	if (out == 0)
+	model->leafsolidunaligned = malloc((((count+31)/32)*sizeof(*model->leafsolidunaligned)) + 127);
+	if (out == 0 || model->leafsolidunaligned == 0)
 		Sys_Error("Mod_LoadLeafs: Out of memory\n");
 
 	memset(out, 0, count*sizeof(*out));
+
+	model->leafsolid = (void *)((((uintptr_t)model->leafsolidunaligned)+127)&~127);
+	memset(model->leafsolid, 0, ((count+31)/32)*sizeof(*model->leafsolid));
 
 	model->leafs = out;
 	model->numleafs = count;
@@ -1183,6 +1192,9 @@ static void Mod_LoadLeafs(model_t *model, lump_t *l)
 
 		p = LittleLong(in->contents);
 		out->contents = p;
+
+		if (p == CONTENTS_SOLID)
+			model->leafsolid[i/32] |= (1<<(i%32));
 
 		out->firstmarksurface = model->marksurfaces + LittleShort(in->firstmarksurface);
 		out->nummarksurfaces = LittleShort(in->nummarksurfaces);
