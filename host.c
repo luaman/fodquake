@@ -308,7 +308,9 @@ void Host_Init(int argc, char **argv)
 	Mod_Init();
 
 	SB_Init();
+#ifndef CLIENTONLY
 	SV_Init();
+#endif
 	CL_Init();
 
 	Context_Weighting_Init();
