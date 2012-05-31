@@ -868,13 +868,12 @@ static void R_ClearTextureChains(model_t *clmodel)
 
 	for (i = 0; i < clmodel->numtextures; i++)
 	{
-		for (waterline = 0; waterline < 2; waterline++)
+		if ((texture = clmodel->textures[i]))
 		{
-			if ((texture = clmodel->textures[i]))
-			{
-				texture->texturechain[waterline] = NULL;
-				texture->texturechain_tail[waterline] = &texture->texturechain[waterline];
-			}
+			texture->texturechain[0] = NULL;
+			texture->texturechain[1] = NULL;
+			texture->texturechain_tail[0] = &texture->texturechain[0];
+			texture->texturechain_tail[1] = &texture->texturechain[1];
 		}
 	}
 
