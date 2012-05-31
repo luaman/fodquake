@@ -2125,8 +2125,10 @@ void CL_Frame (double time)
 	// process console commands
 	Cbuf_Execute();
 
+#ifndef CLIENTONLY
 	if (com_serveractive)
 		SV_Frame(cls.frametime);
+#endif
 
 	// fetch results from server
 	CL_ReadPackets();

@@ -165,7 +165,7 @@ void R_RenderDlights (void)
 					l = cl_dlights + i*32 + j;
 
 					if (l->bubble && ((int) gl_flashblend.value != 2))
-						R_MarkLights(l, 1 << (i*32 + j), cl.worldmodel->nodes);
+						R_MarkLights(cl.worldmodel, l, 1 << (i*32 + j), 0);
 					else
 						R_RenderDlight(l);
 				}
@@ -180,28 +180,31 @@ void R_RenderDlights (void)
 }
 
 
-void R_MarkLights (dlight_t *light, int bit, mnode_t *node)
+void R_MarkLights(model_t *model, dlight_t *light, int bit, unsigned int nodenum)
 {
+	mnode_t *node;
 	mplane_t *splitplane;
 	float dist;
 	msurface_t *surf;
 	int i;
 	unsigned dlightframecount;
 
-	if (node->contents < 0)
+	if (nodenum >= model->numnodes)
 		return;
+
+	node = model->nodes + nodenum;
 
 	splitplane = node->plane;
 	dist = PlaneDiff(light->origin, splitplane);
 
 	if (dist > light->radius)
 	{
-		R_MarkLights (light, bit, node->children[0]);
+		R_MarkLights(model, light, bit, node->childrennum[0]);
 		return;
 	}
 	if (dist < -light->radius)
 	{
-		R_MarkLights (light, bit, node->children[1]);
+		R_MarkLights(model, light, bit, node->childrennum[1]);
 		return;
 	}
 
@@ -219,8 +222,8 @@ void R_MarkLights (dlight_t *light, int bit, mnode_t *node)
 		surf->dlightbits |= bit;
 	}
 
-	R_MarkLights (light, bit, node->children[0]);
-	R_MarkLights (light, bit, node->children[1]);
+	R_MarkLights(model, light, bit, node->childrennum[0]);
+	R_MarkLights(model, light, bit, node->childrennum[1]);
 }
 
 void R_PushDlights (void)
@@ -245,7 +248,7 @@ void R_PushDlights (void)
 				{
 					l = cl_dlights + i*32 + j;
 
-					R_MarkLights(l, 1<<(i*32 + j), cl.worldmodel->nodes);
+					R_MarkLights(cl.worldmodel, l, 1<<(i*32 + j), 0);
 				}
 			}
 		}
@@ -257,14 +260,17 @@ static mplane_t	*lightplane;
 static vec3_t		lightspot;
 static vec3_t		lightcolor;
 
-static int RecursiveLightPoint (vec3_t color, mnode_t *node, vec3_t start, vec3_t end)
+static int RecursiveLightPoint(model_t *model, vec3_t color, unsigned int nodenum, vec3_t start, vec3_t end)
 {
+	mnode_t *node;
 	float front, back, frac;
 	vec3_t mid;
 
 loc0:
-	if (node->contents < 0)
+	if (nodenum >= model->numnodes)
 		return false;		// didn't hit anything
+
+	node = model->nodes + nodenum;
 
 	// calculate mid point
 	if (node->plane->type < 3)
@@ -280,7 +286,7 @@ loc0:
 	// optimized recursion
 	if ((back < 0) == (front < 0))
 	{
-		node = node->children[front < 0];
+		nodenum = node->childrennum[front < 0];
 		goto loc0;
 	}
 
@@ -290,7 +296,7 @@ loc0:
 	mid[2] = start[2] + (end[2] - start[2]) * frac;
 
 	// go down front side
-	if (RecursiveLightPoint (color, node->children[front < 0], start, mid))
+	if (RecursiveLightPoint(model, color, node->childrennum[front < 0], start, mid))
 	{
 		return true;	// hit something
 	}
@@ -360,7 +366,7 @@ loc0:
 			return true; // success
 		}
 		// go down back side
-		return RecursiveLightPoint (color, node->children[front >= 0], mid, end);
+		return RecursiveLightPoint(model, color, node->childrennum[front >= 0], mid, end);
 	}
 }
 
@@ -376,6 +382,6 @@ int R_LightPoint (vec3_t p)
 	end[2] = p[2] - 2048;
 
 	lightcolor[0] = lightcolor[1] = lightcolor[2] = 0;
-	RecursiveLightPoint (lightcolor, cl.worldmodel->nodes, p, end);
+	RecursiveLightPoint(cl.worldmodel, lightcolor, 0, p, end);
 	return (lightcolor[0] + lightcolor[1] + lightcolor[2]) / 3.0;
 }

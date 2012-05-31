@@ -1249,7 +1249,7 @@ void R_DrawBrushModel (entity_t *e)
 
 						/* This will fail for k >= 32 */
 						if (!gl_flashblend.value || (cl_dlights[k].bubble && gl_flashblend.value != 2))
-							R_MarkLights(&cl_dlights[k], 1 << k, clmodel->nodes + clmodel->hulls[0].firstclipnode);
+							R_MarkLights(clmodel, &cl_dlights[k], 1 << k, clmodel->hulls[0].firstclipnode);
 					}
 				}
 			}
@@ -1311,9 +1311,9 @@ void R_DrawBrushModel (entity_t *e)
 	glPopMatrix ();
 }
 
-
-static void R_RecursiveWorldNode(mnode_t *node, int clipflags)
+static void R_RecursiveWorldNode(model_t *model, unsigned int nodenum, int clipflags)
 {
+	mnode_t *node;
 	int c, side, clipped, underwater;
 	mplane_t *plane, *clipplane;
 	msurface_t *surf;
@@ -1322,27 +1322,45 @@ static void R_RecursiveWorldNode(mnode_t *node, int clipflags)
 	unsigned char flags;
 	mleaf_t *pleaf;
 	float dot;
+	unsigned int leafnum;
+	int isleaf;
 
-	if (node->contents == CONTENTS_SOLID)
-		return;		// solid
+	if (nodenum >= model->numnodes)
+	{
+		isleaf = 1;
+		leafnum = nodenum - model->numnodes;
+
+		if ((model->leafsolid[leafnum/32] & (1<<(leafnum%32))))
+			return; // solid
+
+		node = (mnode_t *)(model->leafs + leafnum);
+	}
+	else
+	{
+		isleaf = 0;
+		node = model->nodes + nodenum;
+	}
 
 	if (node->visframe != r_visframecount)
 		return;
 
-	for (c = 0, clipplane = frustum; c < 4; c++, clipplane++)
+	if (clipflags)
 	{
-		if (!(clipflags & (1 << c)))
-			continue;	// don't need to clip against it
+		for (c = 0, clipplane = frustum; c < 4; c++, clipplane++)
+		{
+			if (!(clipflags & (1 << c)))
+				continue;	// don't need to clip against it
 
-		clipped = BOX_ON_PLANE_SIDE (node->minmaxs, node->minmaxs + 3, clipplane);
-		if (clipped == 2)
-			return;
-		else if (clipped == 1)
-			clipflags &= ~(1<<c);	// node is entirely on screen
+			clipped = BOX_ON_PLANE_SIDE (node->minmaxs, node->minmaxs + 3, clipplane);
+			if (clipped == 2)
+				return;
+			else if (clipped == 1)
+				clipflags &= ~(1<<c);	// node is entirely on screen
+		}
 	}
 
 	// if a leaf node, draw stuff
-	if (node->contents < 0)
+	if (isleaf)
 	{
 		pleaf = (mleaf_t *)node;
 
@@ -1374,7 +1392,7 @@ static void R_RecursiveWorldNode(mnode_t *node, int clipflags)
 		side = (dot >= 0) ? 0 : 1;
 
 		// recurse down the children, front side first
-		R_RecursiveWorldNode(node->children[side], clipflags);
+		R_RecursiveWorldNode(model, node->childrennum[side], clipflags);
 
 		// draw stuff
 		c = node->numsurfaces;
@@ -1425,7 +1443,7 @@ static void R_RecursiveWorldNode(mnode_t *node, int clipflags)
 		}
 
 		// recurse down the back side
-		R_RecursiveWorldNode(node->children[!side], clipflags);
+		R_RecursiveWorldNode(model, node->childrennum[!side], clipflags);
 	}
 }
 
@@ -1445,7 +1463,7 @@ void R_DrawWorld (void)
 
 	//set up texture chains for the world
 	memset(cl.worldmodel->surfvisible, 0, ((cl.worldmodel->numsurfaces+31)/32)*sizeof(*cl.worldmodel->surfvisible));
-	R_RecursiveWorldNode (cl.worldmodel->nodes, 15);
+	R_RecursiveWorldNode(cl.worldmodel, 0, 15);
 
 	//draw the world sky
 	if (r_skyboxloaded)
@@ -1504,17 +1522,21 @@ void R_MarkLeaves (void)
 		}
 	}
 
-	for (i = 0; i < cl.worldmodel->numleafs; i++)	{
+	for (i = 0; i < cl.worldmodel->numleafs; i++)
+	{
 		if (vis[i >> 3] & (1 << (i & 7)))
 		{
 			node = (mnode_t *)&cl.worldmodel->leafs[i + 1];
-			do
+			while(1)
 			{
 				if (node->visframe == r_visframecount)
 					break;
 				node->visframe = r_visframecount;
-				node = node->parent;
-			} while (node);
+				if (node->parentnum == 0xffff)
+					break;
+
+				node = NODENUM_TO_NODE(cl.worldmodel, node->parentnum);
+			}
 		}
 	}
 }

@@ -31,6 +31,8 @@ d*_t structures are on-disk representations
 m*_t structures are in-memory
 */
 
+#define NODENUM_TO_NODE(__model,__nodenum) ({ model_t *_model = (__model); unsigned int _nodenum = (__nodenum); mnode_t *node; if (_nodenum >= _model->numnodes) { node = (mnode_t *)(_model->leafs + (_nodenum - _model->numnodes)); } else { node = _model->nodes + _nodenum; } node; })
+
 // entity effects
 
 #define	EF_BRIGHTFIELD			1
@@ -159,16 +161,15 @@ typedef struct msurface_s {
 
 typedef struct mnode_s {
 // common with leaf
-	int			contents;		// 0, to differentiate from leafs
 	int			visframe;		// node needs to be traversed if current
 	
 	float		minmaxs[6];		// for bounding box culling
 
-	struct mnode_s	*parent;
+	unsigned short parentnum;
 
 // node specific
 	mplane_t	*plane;
-	struct mnode_s	*children[2];	
+	unsigned short childrennum[2];
 
 	unsigned short		firstsurface;
 	unsigned short		numsurfaces;
@@ -176,7 +177,6 @@ typedef struct mnode_s {
 
 typedef struct mleaf_s {
 // common with node
-	int			contents;		// wil be a negative contents number
 	int			visframe;		// node needs to be traversed if current
 
 	float		minmaxs[6];		// for bounding box culling
@@ -184,6 +184,8 @@ typedef struct mleaf_s {
 	struct mnode_s	*parent;
 
 // leaf specific
+	short			contents;		// wil be a negative contents number
+
 	byte		*compressed_vis;
 	struct efrag_s	*efrags;
 
@@ -394,6 +396,9 @@ typedef struct model_s {
 	unsigned int *surfvisibleunaligned;
 	unsigned int *surfvisible;
 	unsigned char *surfflags;
+
+	unsigned int *leafsolidunaligned;
+	unsigned int *leafsolid;
 
 	// additional model data
 	void *extradata;
