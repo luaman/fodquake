@@ -18,15 +18,20 @@
  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include <stdlib.h>
-#include <string.h>
-#include <ApplicationServices/ApplicationServices.h>
+#include <AppKit/AppKit.h>
 
-#ifdef __MAC_OS_X_VERSION_MAX_ALLOWED && __MAC_OS_X_VERSION_MAX_ALLOWED < __MAC_10_6
-#define __USE_DEPRECATED_APIS
+#ifndef NSAppKitVersionNumber10_6
+#define NSAppKitVersionNumber10_6 1038
+
+typedef struct CGDisplayMode *CGDisplayModeRef;
+CG_EXTERN size_t CGDisplayModeGetWidth(CGDisplayModeRef mode);
+CG_EXTERN size_t CGDisplayModeGetHeight(CGDisplayModeRef mode);
+CG_EXTERN CGDisplayModeRef CGDisplayCopyDisplayMode(CGDirectDisplayID display);
+CG_EXTERN CFArrayRef CGDisplayCopyAllDisplayModes(CGDirectDisplayID display, CFDictionaryRef options);
+CG_EXTERN CGError CGConfigureDisplayWithDisplayMode(CGDisplayConfigRef config, CGDirectDisplayID display, CGDisplayModeRef mode, CFDictionaryRef options);
+CG_EXTERN uint32_t CGDisplayModeGetIOFlags(CGDisplayModeRef mode);
 #endif
 
-#ifdef __USE_DEPRECATED_APIS
 static long GetDictionaryLong(CFDictionaryRef theDict, const void *key)
 {
 	long value = 0;
@@ -40,7 +45,6 @@ static long GetDictionaryLong(CFDictionaryRef theDict, const void *key)
 	
 	return value;
 }
-#endif
 
 const char * const *Sys_Video_GetModeList(void)
 {
@@ -48,12 +52,17 @@ const char * const *Sys_Video_GetModeList(void)
 	const char **ret;
 	unsigned int num_modes;
 	unsigned int i;
+	CFArrayRef modes;
 	
-#ifndef __USE_DEPRECATED_APIS
-	CFArrayRef modes = CGDisplayCopyAllDisplayModes(CGMainDisplayID(), NULL);
-#else
-	CFArrayRef modes = CGDisplayAvailableModes(CGMainDisplayID());
-#endif
+	if (NSAppKitVersionNumber < NSAppKitVersionNumber10_6)
+	{
+		modes = CGDisplayAvailableModes(CGMainDisplayID());
+	}
+	else
+	{
+		modes = CGDisplayCopyAllDisplayModes(CGMainDisplayID(), NULL);
+	}
+
 	if (modes == NULL)
 	{
 		return NULL;
@@ -72,20 +81,26 @@ const char * const *Sys_Video_GetModeList(void)
 		unsigned int width;
 		unsigned int height;
 		unsigned int flags;
+		CFDictionaryRef mode_legacy;
+		CGDisplayModeRef mode;
 		
-#ifndef __USE_DEPRECATED_APIS
-		CGDisplayModeRef mode = (CGDisplayModeRef)CFArrayGetValueAtIndex(modes, i);
-		
-		width = CGDisplayModeGetWidth(mode);
-		height = CGDisplayModeGetHeight(mode);
-		flags = CGDisplayModeGetIOFlags(mode);
-#else
-		CFDictionaryRef mode = (CFDictionaryRef)CFArrayGetValueAtIndex(modes, i);
-		
-		width = GetDictionaryLong(mode, kCGDisplayWidth);
-		height = GetDictionaryLong(mode, kCGDisplayHeight);
-		flags = GetDictionaryLong(mode, kCGDisplayIOFlags);
-#endif
+		if (NSAppKitVersionNumber < NSAppKitVersionNumber10_6)
+		{
+			mode_legacy = (CFDictionaryRef)CFArrayGetValueAtIndex(modes, i);
+			
+			width = GetDictionaryLong(mode_legacy, kCGDisplayWidth);
+			height = GetDictionaryLong(mode_legacy, kCGDisplayHeight);
+			flags = GetDictionaryLong(mode_legacy, kCGDisplayIOFlags);
+		}
+		else
+		{
+			mode = (CGDisplayModeRef)CFArrayGetValueAtIndex(modes, i);
+			
+			width = CGDisplayModeGetWidth(mode);
+			height = CGDisplayModeGetHeight(mode);
+			flags = CGDisplayModeGetIOFlags(mode);
+		}
+
 		snprintf(buf, sizeof(buf), "%u,%u,%u", width, height, flags);
 		
 		ret[i] = strdup(buf);
@@ -97,16 +112,23 @@ const char * const *Sys_Video_GetModeList(void)
 			{
 				free((char*)ret[j]);
 			}
-#ifndef __USE_DEPRECATED_APIS
-			CFRelease(modes);
-#endif
+			
+			free(ret);
+
+			if (NSAppKitVersionNumber >= NSAppKitVersionNumber10_6)
+			{
+				CFRelease(modes);
+			}
+			
 			return NULL;
 		}
 	}
 	
-#ifndef __USE_DEPRECATED_APIS
-	CFRelease(modes);
-#endif
+	if (NSAppKitVersionNumber >= NSAppKitVersionNumber10_6)
+	{
+		CFRelease(modes);
+	}
+	
 	ret[num_modes] = NULL;
 	
 	return ret;
@@ -127,7 +149,6 @@ void Sys_Video_FreeModeList(const char * const *displaymodes)
 const char *Sys_Video_GetModeDescription(const char *mode)
 {
 	char buf[64];
-	const char *ret;
 	unsigned int width;
 	unsigned int height;
 	unsigned int flags;
@@ -139,13 +160,7 @@ const char *Sys_Video_GetModeDescription(const char *mode)
 	
 	snprintf(buf, sizeof(buf), "%ux%u%s", width, height, (flags & kDisplayModeStretchedFlag) ? " (stretched)" : "");
 	
-	ret = strdup(buf);
-	if (ret == NULL)
-	{
-		return NULL;
-	}
-	
-	return ret;
+	return strdup(buf);
 }
 
 void Sys_Video_FreeModeDescription(const char *modedescription)
