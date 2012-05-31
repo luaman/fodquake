@@ -1897,12 +1897,21 @@ qboolean	wasInMenus;
 
 void M_Menu_Quit_f()
 {
-	if (m_state == m_quit)
-		return;
-	wasInMenus = (key_dest == key_menu);
-	m_quit_prevstate = m_state;
-	msgNumber = rand()&7;
-	M_EnterMenu (m_quit);
+	extern cvar_t cl_confirmquit;
+
+	if (cl_confirmquit.value)
+	{
+		if (m_state == m_quit)
+			return;
+		wasInMenus = (key_dest == key_menu);
+		m_quit_prevstate = m_state;
+		msgNumber = rand()&7;
+		M_EnterMenu (m_quit);
+	}
+	else
+	{
+		Host_Quit();
+	}
 }
 
 static void M_Quit_Key(int key)
