@@ -1031,6 +1031,10 @@ static void Mod_LoadFaces(model_t *model, lump_t *l)
 		Host_Error("Mod_LoadFaces: funny lump size in %s", model->name);
 
 	count = l->filelen / sizeof(*in);
+
+	if (count > 65535)
+		Sys_Error("Mod_LoadFaces: count > 65535");
+
 	out = malloc(count*sizeof(*out));
 	model->surfvisibleunaligned = malloc((((count+31)/32)*sizeof(*model->surfvisibleunaligned)) + 127);
 	model->surfflags = malloc(count*sizeof(*model->surfflags));
@@ -1388,6 +1392,10 @@ static void Mod_LoadPlanes(model_t *model, lump_t *l)
 	if (l->filelen % sizeof(*in))
 		Host_Error("Mod_LoadPlanes: funny lump size in %s", model->name);
 	count = l->filelen / sizeof(*in);
+
+	if (count > 65535)
+		Sys_Error("Mod_LoadPlanes: count > 65535");
+
 	out = malloc(count*2*sizeof(*out));
 	if (out == 0)
 		Sys_Error("Mod_LoadPlanes: Out of memory\n");
