@@ -75,7 +75,7 @@ mleaf_t *Mod_PointInLeaf (vec3_t p, model_t *model)
 		node = NODENUM_TO_NODE(model, nodenum);
 		if (nodenum >= model->numnodes)
 			return (mleaf_t *)node;
-		plane = node->plane;
+		plane = model->planes + node->planenum;
 		d = PlaneDiff(p, plane);
 		nodenum = (d > 0) ? node->childrennum[0] : node->childrennum[1];
 	}
@@ -1367,7 +1367,7 @@ static void Mod_LoadNodes(model_t *model, lump_t *l)
 		}
 
 		p = LittleLong(in->planenum);
-		out->plane = model->planes + p;
+		out->planenum = p;
 
 		out->firstsurface = LittleShort (in->firstface);
 		out->numsurfaces = LittleShort (in->numfaces);
@@ -1553,7 +1553,7 @@ static void Mod_MakeHull0(model_t *model)
 
 	for (i = 0; i < count; i++, out++, in++)
 	{
-		out->planenum = in->plane - model->planes;
+		out->planenum = in->planenum;
 		for (j = 0; j < 2; j++)
 		{
 			child = NODENUM_TO_NODE(model, in->childrennum[j]);

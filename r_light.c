@@ -80,7 +80,7 @@ loc0:
 
 	node = model->nodes + nodenum;
 
-	splitplane = node->plane;
+	splitplane = model->planes + node->planenum;
 
 	dist = PlaneDiff(light->origin, splitplane);
 	
@@ -192,7 +192,7 @@ static int RecursiveLightPoint(model_t *model, unsigned int nodenum, vec3_t star
 // calculate mid point
 
 // FIXME: optimize for axial
-	plane = node->plane;
+	plane = model->planes + node->planenum;
 	if (plane->type < 3) {
 		front = start[plane->type] - plane->dist;
 		back = end[plane->type] - plane->dist;

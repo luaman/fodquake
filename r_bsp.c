@@ -176,7 +176,7 @@ static void R_RecursiveClipBPoly(model_t *model, bedge_t *pedges, mnode_t *pnode
 
 	// transform the BSP plane into model space
 	// FIXME: cache these?
-	splitplane = pnode->plane;
+	splitplane = model->planes + pnode->planenum;
 	tplane.dist = -PlaneDiff(r_entorigin, splitplane);
 	tplane.normal[0] = PlaneDist (entity_rotation[0], splitplane);
 	tplane.normal[1] = PlaneDist (entity_rotation[1], splitplane);
@@ -521,7 +521,7 @@ static void R_RecursiveWorldNode(model_t *model, unsigned int nodenum, int clipf
 		// node is just a decision point, so go down the apropriate sides
 
 		// find which side of the node we are on
-		plane = node->plane;
+		plane = model->planes + node->planenum;
 
 		dot = PlaneDiff(modelorg, plane);
 		side = (dot < 0);

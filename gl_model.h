@@ -168,7 +168,7 @@ typedef struct mnode_s {
 	unsigned short parentnum;
 
 // node specific
-	mplane_t	*plane;
+	unsigned short planenum;
 	unsigned short childrennum[2];
 
 	unsigned short		firstsurface;

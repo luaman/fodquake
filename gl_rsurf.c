@@ -1385,7 +1385,7 @@ static void R_RecursiveWorldNode(model_t *model, unsigned int nodenum, int clipf
 		// node is just a decision point, so go down the apropriate sides
 
 		// find which side of the node we are on
-		plane = node->plane;
+		plane = model->planes + node->planenum;
 
 		dot = PlaneDiff(modelorg, plane);
 		side = (dot >= 0) ? 0 : 1;
