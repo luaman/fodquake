@@ -151,7 +151,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 //============================================================================
 
-typedef struct sizebuf_s {
+typedef struct sizebuf_s
+{
 	qboolean	allowoverflow;	// if false, do a Sys_Error
 	qboolean	overflowed;		// set to true if the buffer size failed
 	byte	*data;
@@ -159,11 +160,11 @@ typedef struct sizebuf_s {
 	int		cursize;
 } sizebuf_t;
 
-void SZ_Init (sizebuf_t *buf, byte *data, int length);
-void SZ_Clear (sizebuf_t *buf);
-void *SZ_GetSpace (sizebuf_t *buf, int length);
-void SZ_Write (sizebuf_t *buf, void *data, int length);
-void SZ_Print (sizebuf_t *buf, char *data);	// strcats onto the sizebuf
+void SZ_Init(sizebuf_t *buf, void *data, int length);
+void SZ_Clear(sizebuf_t *buf);
+void *SZ_GetSpace(sizebuf_t *buf, int length);
+void SZ_Write(sizebuf_t *buf, void *data, int length);
+void SZ_Print(sizebuf_t *buf, char *data);	// strcats onto the sizebuf
 
 //============================================================================
 
