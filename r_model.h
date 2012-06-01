@@ -159,7 +159,7 @@ typedef struct mleaf_s {
 
 	short		minmaxs[6];		// for bounding box culling
 
-	struct mnode_s	*parent;
+	unsigned short parentnum;
 
 // leaf specific
 	short contents;		// 0, to differentiate from leafs
