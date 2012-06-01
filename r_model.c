@@ -916,7 +916,7 @@ static void Mod_LoadTexinfo(model_t *model, lump_t *l)
 {
 	texinfo_t *in;
 	mtexinfo_t *out;
-	int i, j, count, miptex;
+	int i, count, miptex;
 	float len1, len2;
 
 	in = (void *)(mod_base + l->fileofs);
@@ -933,8 +933,14 @@ static void Mod_LoadTexinfo(model_t *model, lump_t *l)
 
 	for (i = 0; i < count; i++, in++, out++)
 	{
-		for (j = 0; j < 8; j++)
-			out->vecs[0][j] = LittleFloat (in->vecs[0][j]);
+		out->vecs[0][0] = LittleFloat(in->vecs[0][0]);
+		out->vecs[0][1] = LittleFloat(in->vecs[0][1]);
+		out->vecs[0][2] = LittleFloat(in->vecs[0][2]);
+		out->vecs[0][3] = LittleFloat(in->vecs[0][3]);
+		out->vecs[1][0] = LittleFloat(in->vecs[1][0]);
+		out->vecs[1][1] = LittleFloat(in->vecs[1][1]);
+		out->vecs[1][2] = LittleFloat(in->vecs[1][2]);
+		out->vecs[1][3] = LittleFloat(in->vecs[1][3]);
 
 		len1 = VectorLength (out->vecs[0]);
 		len2 = VectorLength (out->vecs[1]);
