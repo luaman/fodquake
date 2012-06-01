@@ -1206,7 +1206,7 @@ static void Mod_LoadLeafs(model_t *model, lump_t *l)
 		if (p == CONTENTS_SOLID)
 			model->leafsolid[i/32] |= (1<<(i%32));
 
-		out->firstmarksurface = model->marksurfaces + LittleShort(in->firstmarksurface);
+		out->firstmarksurfacenum = LittleShort(in->firstmarksurface);
 		out->nummarksurfaces = LittleShort(in->nummarksurfaces);
 
 		p = LittleLong(in->visofs);

@@ -1422,7 +1422,7 @@ static void Mod_LoadLeafs(model_t *model, lump_t *l)
 		if (p == CONTENTS_SOLID)
 			model->leafsolid[i/32] |= (1<<(i%32));
 
-		out->firstmarksurface = model->marksurfaces + LittleShort(in->firstmarksurface);
+		out->firstmarksurfacenum = LittleShort(in->firstmarksurface);
 		out->nummarksurfaces = LittleShort(in->nummarksurfaces);
 
 		p = LittleLong(in->visofs);
@@ -1435,7 +1435,7 @@ static void Mod_LoadLeafs(model_t *model, lump_t *l)
 		if (!dedicated && out->contents != CONTENTS_EMPTY)
 		{
 			for (j = 0; j < out->nummarksurfaces; j++)
-				model->surfflags[out->firstmarksurface[j]] |= SURF_UNDERWATER;
+				model->surfflags[model->marksurfaces[out->firstmarksurfacenum + j]] |= SURF_UNDERWATER;
 		}
 	}
 }

@@ -537,7 +537,7 @@ static void R_DrawFlatShoot_f(void)
 		return;
 	}
 
-	for (i=0, surface = leaf->firstmarksurface; i<leaf->nummarksurfaces; i++, surface++)
+	for (i=0, surface = model->marksurfaces + leaf->firstmarksurfacenum; i<leaf->nummarksurfaces; i++, surface++)
 	{
 		points = calloc((*surface)->numedges , sizeof(vec3_t));
 		if (points == NULL)
@@ -606,7 +606,7 @@ static void R_DrawFlatShootUnset_f(void)
 		return;
 	}
 
-	for (i=0, surface = leaf->firstmarksurface; i<leaf->nummarksurfaces; i++, surface++)
+	for (i=0, surface = model->marksurfaces + leaf->firstmarksurfacenum; i<leaf->nummarksurfaces; i++, surface++)
 	{
 		points = calloc((*surface)->numedges , sizeof(vec3_t));
 		if (points == NULL)

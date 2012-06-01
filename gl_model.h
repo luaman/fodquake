@@ -189,7 +189,7 @@ typedef struct mleaf_s {
 	byte		*compressed_vis;
 	struct efrag_s	*efrags;
 
-	unsigned short	*firstmarksurface;
+	unsigned short	firstmarksurfacenum;
 	int			nummarksurfaces;
 	byte		ambient_sound_level[NUM_AMBIENTS];
 } mleaf_t;

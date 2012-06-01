@@ -1363,7 +1363,7 @@ static void R_RecursiveWorldNode(model_t *model, unsigned int nodenum, int clipf
 	{
 		pleaf = (mleaf_t *)node;
 
-		mark = pleaf->firstmarksurface;
+		mark = model->marksurfaces + pleaf->firstmarksurfacenum;
 		c = pleaf->nummarksurfaces;
 
 		if (c)
