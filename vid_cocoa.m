@@ -40,15 +40,15 @@ extern cvar_t in_grab_windowed_mouse;
 typedef struct _CGDisplayConfigRef * CGDisplayConfigRef;
 #endif
 
-extern CGError _CGDisplayCopyDisplayMode(CGDirectDisplayID display);
-extern CGError _CGBeginDisplayConfiguration(CGDisplayConfigRef *pConfigRef);
-extern CGError _CGConfigureDisplayWithDisplayMode(CGDisplayConfigRef config, CGDirectDisplayID display, CGDisplayModeRef mode, CFDictionaryRef options);
-extern CGError _CGCompleteDisplayConfiguration(CGDisplayConfigRef configRef, CGConfigureOption option);
-extern CGError _CGCancelDisplayConfiguration(CGDisplayConfigRef configRef);
-extern CFArrayRef _CGDisplayCopyAllDisplayModes(CGDirectDisplayID display, CFDictionaryRef options);
-extern size_t _CGDisplayModeGetWidth(CGDisplayModeRef mode);
-extern size_t _CGDisplayModeGetHeight(CGDisplayModeRef mode);
-extern uint32_t _CGDisplayModeGetIOFlags(CGDisplayModeRef mode);
+extern CGDisplayModeRef (*_CGDisplayCopyDisplayMode)(CGDirectDisplayID display);
+extern CGError (*_CGBeginDisplayConfiguration)(CGDisplayConfigRef *pConfigRef);
+extern CGError (*_CGConfigureDisplayWithDisplayMode)(CGDisplayConfigRef config, CGDirectDisplayID display, CGDisplayModeRef mode, CFDictionaryRef options);
+extern CGError (*_CGCompleteDisplayConfiguration)(CGDisplayConfigRef configRef, CGConfigureOption option);
+extern CGError (*_CGCancelDisplayConfiguration)(CGDisplayConfigRef configRef);
+extern CFArrayRef (*_CGDisplayCopyAllDisplayModes)(CGDirectDisplayID display, CFDictionaryRef options);
+extern size_t (*_CGDisplayModeGetWidth)(CGDisplayModeRef mode);
+extern size_t (*_CGDisplayModeGetHeight)(CGDisplayModeRef mode);
+extern uint32_t (*_CGDisplayModeGetIOFlags)(CGDisplayModeRef mode);
 
 static CGError switch_display_mode(CGDisplayModeRef new_mode, CGDisplayModeRef *current_mode)
 {
