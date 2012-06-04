@@ -37,15 +37,18 @@ extern cvar_t in_grab_windowed_mouse;
 
 #ifndef NSAppKitVersionNumber10_6
 #define NSAppKitVersionNumber10_6 1038
-
-typedef struct CGDisplayMode *CGDisplayModeRef;
-CG_EXTERN size_t CGDisplayModeGetWidth(CGDisplayModeRef mode);
-CG_EXTERN size_t CGDisplayModeGetHeight(CGDisplayModeRef mode);
-CG_EXTERN CGDisplayModeRef CGDisplayCopyDisplayMode(CGDirectDisplayID display);
-CG_EXTERN CFArrayRef CGDisplayCopyAllDisplayModes(CGDirectDisplayID display, CFDictionaryRef options);
-CG_EXTERN CGError CGConfigureDisplayWithDisplayMode(CGDisplayConfigRef config, CGDirectDisplayID display, CGDisplayModeRef mode, CFDictionaryRef options);
-CG_EXTERN uint32_t CGDisplayModeGetIOFlags(CGDisplayModeRef mode);
+typedef struct _CGDisplayConfigRef * CGDisplayConfigRef;
 #endif
+
+extern CGError _CGDisplayCopyDisplayMode(CGDirectDisplayID display);
+extern CGError _CGBeginDisplayConfiguration(CGDisplayConfigRef *pConfigRef);
+extern CGError _CGConfigureDisplayWithDisplayMode(CGDisplayConfigRef config, CGDirectDisplayID display, CGDisplayModeRef mode, CFDictionaryRef options);
+extern CGError _CGCompleteDisplayConfiguration(CGDisplayConfigRef configRef, CGConfigureOption option);
+extern CGError _CGCancelDisplayConfiguration(CGDisplayConfigRef configRef);
+extern CFArrayRef _CGDisplayCopyAllDisplayModes(CGDirectDisplayID display, CFDictionaryRef options);
+extern size_t _CGDisplayModeGetWidth(CGDisplayModeRef mode);
+extern size_t _CGDisplayModeGetHeight(CGDisplayModeRef mode);
+extern uint32_t _CGDisplayModeGetIOFlags(CGDisplayModeRef mode);
 
 static CGError switch_display_mode(CGDisplayModeRef new_mode, CGDisplayModeRef *current_mode)
 {
@@ -54,16 +57,20 @@ static CGError switch_display_mode(CGDisplayModeRef new_mode, CGDisplayModeRef *
 	
 	if (current_mode)
 	{
-		*current_mode = CGDisplayCopyDisplayMode(CGMainDisplayID());
+		*current_mode = _CGDisplayCopyDisplayMode(CGMainDisplayID());
 	}
 	
-	err = CGBeginDisplayConfiguration(&config_ref);
+	err = _CGBeginDisplayConfiguration(&config_ref);
 	if (err == kCGErrorSuccess)
 	{
-		err = CGConfigureDisplayWithDisplayMode(config_ref, CGMainDisplayID(), new_mode, NULL);
+		err = _CGConfigureDisplayWithDisplayMode(config_ref, CGMainDisplayID(), new_mode, NULL);
 		if (err == kCGErrorSuccess)
 		{
-			err = CGCompleteDisplayConfiguration(config_ref, kCGConfigureForAppOnly);
+			err = _CGCompleteDisplayConfiguration(config_ref, kCGConfigureForAppOnly);
+		}
+		else
+		{
+			_CGCancelDisplayConfiguration(config_ref);
 		}
 	}
 	
@@ -265,7 +272,7 @@ void Sys_Video_Shutdown()
 void* Sys_Video_Open(const char *mode, unsigned int width, unsigned int height, int fullscreen, unsigned char *palette)
 {
 	struct display *d;
-	
+
 	d = malloc(sizeof(struct display));
 	if (d)
 	{
@@ -284,7 +291,7 @@ void* Sys_Video_Open(const char *mode, unsigned int width, unsigned int height, 
 			}
 			else
 			{
-				modes = CGDisplayCopyAllDisplayModes(CGMainDisplayID(), NULL);
+				modes = _CGDisplayCopyAllDisplayModes(CGMainDisplayID(), NULL);
 			}
 			
 			if (modes)
@@ -312,11 +319,10 @@ void* Sys_Video_Open(const char *mode, unsigned int width, unsigned int height, 
 					{
 						mode_ref = (CGDisplayModeRef)CFArrayGetValueAtIndex(modes, i);
 						
-						width_tmp = CGDisplayModeGetWidth(mode_ref);
-						height_tmp = CGDisplayModeGetHeight(mode_ref);
-						flags_tmp = CGDisplayModeGetIOFlags(mode_ref);
+						width_tmp = _CGDisplayModeGetWidth(mode_ref);
+						height_tmp = _CGDisplayModeGetHeight(mode_ref);
+						flags_tmp = _CGDisplayModeGetIOFlags(mode_ref);
 					}
-					
 
 					if (width == width_tmp && height == height_tmp && flags == flags_tmp)
 					{

@@ -4,6 +4,7 @@
 #import <stdio.h>
 #import <stdlib.h>
 #import <stdarg.h>
+#import <dlfcn.h>
 
 #undef true
 #undef false
@@ -13,6 +14,83 @@
 static mach_timebase_info_data_t tbinfo;
 static int randomfd;
 static NSAutoreleasePool *pool;
+
+#ifndef NSAppKitVersionNumber10_5
+#define NSAppKitVersionNumber10_5 949
+#endif
+
+#ifndef NSAppKitVersionNumber10_6
+#define NSAppKitVersionNumber10_6 1038
+typedef struct _CGDisplayConfigRef * CGDisplayConfigRef;
+#endif
+
+// 10.5 backwards compatability; dynamically load 10.6 symbols
+typedef CGDisplayModeRef (*CGDisplayCopyDisplayModeType)(CGDirectDisplayID display);
+typedef CGError (*CGBeginDisplayConfigurationType)(CGDisplayConfigRef *pConfigRef);
+typedef CGError (*CGConfigureDisplayWithDisplayModeType)(CGDisplayConfigRef config, CGDirectDisplayID display, CGDisplayModeRef mode, CFDictionaryRef options);
+typedef CGError (*CGCompleteDisplayConfigurationType)(CGDisplayConfigRef configRef, CGConfigureOption option);
+typedef CGError (*CGCancelDisplayConfigurationType)(CGDisplayConfigRef configRef);
+typedef CFArrayRef (*CGDisplayCopyAllDisplayModesType)(CGDirectDisplayID display, CFDictionaryRef options);
+typedef size_t (*CGDisplayModeGetWidthType)(CGDisplayModeRef mode);
+typedef size_t (*CGDisplayModeGetHeightType)(CGDisplayModeRef mode);
+typedef uint32_t (*CGDisplayModeGetIOFlagsType)(CGDisplayModeRef mode);
+
+CGDisplayCopyDisplayModeType _CGDisplayCopyDisplayMode = NULL;
+CGBeginDisplayConfigurationType _CGBeginDisplayConfiguration = NULL;
+CGConfigureDisplayWithDisplayModeType _CGConfigureDisplayWithDisplayMode = NULL;
+CGCompleteDisplayConfigurationType _CGCompleteDisplayConfiguration = NULL;
+CGCancelDisplayConfigurationType _CGCancelDisplayConfiguration = NULL;
+CGDisplayCopyAllDisplayModesType _CGDisplayCopyAllDisplayModes = NULL;
+CGDisplayModeGetWidthType _CGDisplayModeGetWidth = NULL;
+CGDisplayModeGetHeightType _CGDisplayModeGetHeight = NULL;
+CGDisplayModeGetIOFlagsType _CGDisplayModeGetIOFlags = NULL;
+
+static void *CoreGraphicsLibrary = NULL;
+
+static int load_missing_osx_symbols()
+{
+	CoreGraphicsLibrary = dlopen("/System/Library/Frameworks/ApplicationServices.framework/Frameworks/CoreGraphics.framework/CoreGraphics", RTLD_NOW);
+	if (!CoreGraphicsLibrary)
+		return 1;
+	
+	_CGDisplayCopyDisplayMode = dlsym(CoreGraphicsLibrary, "CGDisplayCopyDisplayMode");
+	if (!_CGDisplayCopyDisplayMode)
+		return 1;
+	
+	_CGBeginDisplayConfiguration = dlsym(CoreGraphicsLibrary, "CGBeginDisplayConfiguration");
+	if (!_CGBeginDisplayConfiguration)
+		return 1;
+	
+	_CGConfigureDisplayWithDisplayMode = dlsym(CoreGraphicsLibrary, "CGConfigureDisplayWithDisplayMode");
+	if (!_CGConfigureDisplayWithDisplayMode)
+		return 1;
+	
+	_CGCompleteDisplayConfiguration = dlsym(CoreGraphicsLibrary, "CGCompleteDisplayConfiguration");
+	if (!_CGCompleteDisplayConfiguration)
+		return 1;
+	
+	_CGCancelDisplayConfiguration = dlsym(CoreGraphicsLibrary, "CGCancelDisplayConfiguration");
+	if (!_CGCancelDisplayConfiguration)
+		return 1;
+	
+	_CGDisplayCopyAllDisplayModes = dlsym(CoreGraphicsLibrary, "CGDisplayCopyAllDisplayModes");
+	if (!_CGDisplayCopyAllDisplayModes)
+		return 1;
+	
+	_CGDisplayModeGetWidth = dlsym(CoreGraphicsLibrary, "CGDisplayModeGetWidth");
+	if (!_CGDisplayModeGetWidth)
+		return 1;
+	
+	_CGDisplayModeGetHeight = dlsym(CoreGraphicsLibrary, "CGDisplayModeGetHeight");
+	if (!_CGDisplayModeGetHeight)
+		return 1;
+	
+	_CGDisplayModeGetIOFlags = dlsym(CoreGraphicsLibrary, "CGDisplayModeGetIOFlags");
+	if (!_CGDisplayModeGetIOFlags)
+		return 1;
+	
+	return 0;
+}
 
 static unsigned long long monotonictime()
 {
@@ -177,13 +255,12 @@ int main(int argc, char **argv)
 
 	COM_InitArgv(argc, argv);
 
-/* Because Apple's Mac OS X 10.6 headers don't have this... */
-#ifndef NSAppKitVersionNumber10_5
-#define NSAppKitVersionNumber10_5 949
-#endif
-
 	if (NSAppKitVersionNumber < NSAppKitVersionNumber10_5)
 		Sys_Error("Fodquake requires Mac OS X 10.5 or higher");
+	
+	if (NSAppKitVersionNumber >= NSAppKitVersionNumber10_6)
+		if (load_missing_osx_symbols() != 0)
+			Sys_Error("Error loading CoreGraphics symbols");
 	
 	randomfd = open("/dev/urandom", O_RDONLY);
 	if (randomfd == -1)
@@ -201,6 +278,9 @@ int main(int argc, char **argv)
 		Host_Frame(time);
 	}
 
+	if (CoreGraphicsLibrary)
+		dlclose(CoreGraphicsLibrary);
+	
 	return 0;
 }
 

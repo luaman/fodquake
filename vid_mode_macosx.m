@@ -22,15 +22,18 @@
 
 #ifndef NSAppKitVersionNumber10_6
 #define NSAppKitVersionNumber10_6 1038
-
-typedef struct CGDisplayMode *CGDisplayModeRef;
-CG_EXTERN size_t CGDisplayModeGetWidth(CGDisplayModeRef mode);
-CG_EXTERN size_t CGDisplayModeGetHeight(CGDisplayModeRef mode);
-CG_EXTERN CGDisplayModeRef CGDisplayCopyDisplayMode(CGDirectDisplayID display);
-CG_EXTERN CFArrayRef CGDisplayCopyAllDisplayModes(CGDirectDisplayID display, CFDictionaryRef options);
-CG_EXTERN CGError CGConfigureDisplayWithDisplayMode(CGDisplayConfigRef config, CGDirectDisplayID display, CGDisplayModeRef mode, CFDictionaryRef options);
-CG_EXTERN uint32_t CGDisplayModeGetIOFlags(CGDisplayModeRef mode);
+typedef struct _CGDisplayConfigRef * CGDisplayConfigRef;
 #endif
+
+extern CGError _CGDisplayCopyDisplayMode(CGDirectDisplayID display);
+extern CGError _CGBeginDisplayConfiguration(CGDisplayConfigRef *pConfigRef);
+extern CGError _CGConfigureDisplayWithDisplayMode(CGDisplayConfigRef config, CGDirectDisplayID display, CGDisplayModeRef mode, CFDictionaryRef options);
+extern CGError _CGCompleteDisplayConfiguration(CGDisplayConfigRef configRef, CGConfigureOption option);
+extern CGError _CGCancelDisplayConfiguration(CGDisplayConfigRef configRef);
+extern CFArrayRef _CGDisplayCopyAllDisplayModes(CGDirectDisplayID display, CFDictionaryRef options);
+extern size_t _CGDisplayModeGetWidth(CGDisplayModeRef mode);
+extern size_t _CGDisplayModeGetHeight(CGDisplayModeRef mode);
+extern uint32_t _CGDisplayModeGetIOFlags(CGDisplayModeRef mode);
 
 static long GetDictionaryLong(CFDictionaryRef theDict, const void *key)
 {
@@ -60,7 +63,7 @@ const char * const *Sys_Video_GetModeList(void)
 	}
 	else
 	{
-		modes = CGDisplayCopyAllDisplayModes(CGMainDisplayID(), NULL);
+		modes = _CGDisplayCopyAllDisplayModes(CGMainDisplayID(), NULL);
 	}
 
 	if (modes == NULL)
@@ -96,9 +99,9 @@ const char * const *Sys_Video_GetModeList(void)
 		{
 			mode = (CGDisplayModeRef)CFArrayGetValueAtIndex(modes, i);
 			
-			width = CGDisplayModeGetWidth(mode);
-			height = CGDisplayModeGetHeight(mode);
-			flags = CGDisplayModeGetIOFlags(mode);
+			width = _CGDisplayModeGetWidth(mode);
+			height = _CGDisplayModeGetHeight(mode);
+			flags = _CGDisplayModeGetIOFlags(mode);
 		}
 
 		snprintf(buf, sizeof(buf), "%u,%u,%u", width, height, flags);
