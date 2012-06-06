@@ -33,6 +33,7 @@
 #ifndef NSAppKitVersionNumber10_6
 #define NSAppKitVersionNumber10_6 1038
 typedef struct _CGDisplayConfigRef * CGDisplayConfigRef;
+typedef struct CGDisplayMode * CGDisplayModeRef;
 #endif
 
 typedef struct {
