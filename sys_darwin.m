@@ -10,83 +10,60 @@
 #undef false
 
 #import "common.h"
+#import "vid_macosx_bc.h"
 
 static mach_timebase_info_data_t tbinfo;
 static int randomfd;
 static NSAutoreleasePool *pool;
-
-#ifndef NSAppKitVersionNumber10_5
-#define NSAppKitVersionNumber10_5 949
-#endif
-
-#ifndef NSAppKitVersionNumber10_6
-#define NSAppKitVersionNumber10_6 1038
-typedef struct _CGDisplayConfigRef * CGDisplayConfigRef;
-#endif
-
-// 10.5 backwards compatability; dynamically load 10.6 symbols
-typedef CGDisplayModeRef (*CGDisplayCopyDisplayModeType)(CGDirectDisplayID display);
-typedef CGError (*CGBeginDisplayConfigurationType)(CGDisplayConfigRef *pConfigRef);
-typedef CGError (*CGConfigureDisplayWithDisplayModeType)(CGDisplayConfigRef config, CGDirectDisplayID display, CGDisplayModeRef mode, CFDictionaryRef options);
-typedef CGError (*CGCompleteDisplayConfigurationType)(CGDisplayConfigRef configRef, CGConfigureOption option);
-typedef CGError (*CGCancelDisplayConfigurationType)(CGDisplayConfigRef configRef);
-typedef CFArrayRef (*CGDisplayCopyAllDisplayModesType)(CGDirectDisplayID display, CFDictionaryRef options);
-typedef size_t (*CGDisplayModeGetWidthType)(CGDisplayModeRef mode);
-typedef size_t (*CGDisplayModeGetHeightType)(CGDisplayModeRef mode);
-typedef uint32_t (*CGDisplayModeGetIOFlagsType)(CGDisplayModeRef mode);
-
-CGDisplayCopyDisplayModeType _CGDisplayCopyDisplayMode = NULL;
-CGBeginDisplayConfigurationType _CGBeginDisplayConfiguration = NULL;
-CGConfigureDisplayWithDisplayModeType _CGConfigureDisplayWithDisplayMode = NULL;
-CGCompleteDisplayConfigurationType _CGCompleteDisplayConfiguration = NULL;
-CGCancelDisplayConfigurationType _CGCancelDisplayConfiguration = NULL;
-CGDisplayCopyAllDisplayModesType _CGDisplayCopyAllDisplayModes = NULL;
-CGDisplayModeGetWidthType _CGDisplayModeGetWidth = NULL;
-CGDisplayModeGetHeightType _CGDisplayModeGetHeight = NULL;
-CGDisplayModeGetIOFlagsType _CGDisplayModeGetIOFlags = NULL;
-
 static void *CoreGraphicsLibrary = NULL;
+
+bc_func_ptrs_t bc_func_ptrs;
 
 static int load_missing_osx_symbols()
 {
+	memset(&bc_func_ptrs, 0, sizeof(bc_func_ptrs_t));
+	
+	if (NSAppKitVersionNumber < NSAppKitVersionNumber10_6)
+		return 0;
+	
 	CoreGraphicsLibrary = dlopen("/System/Library/Frameworks/ApplicationServices.framework/Frameworks/CoreGraphics.framework/CoreGraphics", RTLD_NOW);
 	if (!CoreGraphicsLibrary)
 		return 1;
 	
-	_CGDisplayCopyDisplayMode = dlsym(CoreGraphicsLibrary, "CGDisplayCopyDisplayMode");
-	if (!_CGDisplayCopyDisplayMode)
+	bc_func_ptrs.CGDisplayCopyDisplayMode = dlsym(CoreGraphicsLibrary, "CGDisplayCopyDisplayMode");
+	if (!bc_func_ptrs.CGDisplayCopyDisplayMode)
 		return 1;
 	
-	_CGBeginDisplayConfiguration = dlsym(CoreGraphicsLibrary, "CGBeginDisplayConfiguration");
-	if (!_CGBeginDisplayConfiguration)
+	bc_func_ptrs.CGBeginDisplayConfiguration = dlsym(CoreGraphicsLibrary, "CGBeginDisplayConfiguration");
+	if (!bc_func_ptrs.CGBeginDisplayConfiguration)
 		return 1;
 	
-	_CGConfigureDisplayWithDisplayMode = dlsym(CoreGraphicsLibrary, "CGConfigureDisplayWithDisplayMode");
-	if (!_CGConfigureDisplayWithDisplayMode)
+	bc_func_ptrs.CGConfigureDisplayWithDisplayMode = dlsym(CoreGraphicsLibrary, "CGConfigureDisplayWithDisplayMode");
+	if (!bc_func_ptrs.CGConfigureDisplayWithDisplayMode)
 		return 1;
 	
-	_CGCompleteDisplayConfiguration = dlsym(CoreGraphicsLibrary, "CGCompleteDisplayConfiguration");
-	if (!_CGCompleteDisplayConfiguration)
+	bc_func_ptrs.CGCompleteDisplayConfiguration = dlsym(CoreGraphicsLibrary, "CGCompleteDisplayConfiguration");
+	if (!bc_func_ptrs.CGCompleteDisplayConfiguration)
 		return 1;
 	
-	_CGCancelDisplayConfiguration = dlsym(CoreGraphicsLibrary, "CGCancelDisplayConfiguration");
-	if (!_CGCancelDisplayConfiguration)
+	bc_func_ptrs.CGCancelDisplayConfiguration = dlsym(CoreGraphicsLibrary, "CGCancelDisplayConfiguration");
+	if (!bc_func_ptrs.CGCancelDisplayConfiguration)
 		return 1;
 	
-	_CGDisplayCopyAllDisplayModes = dlsym(CoreGraphicsLibrary, "CGDisplayCopyAllDisplayModes");
-	if (!_CGDisplayCopyAllDisplayModes)
+	bc_func_ptrs.CGDisplayCopyAllDisplayModes = dlsym(CoreGraphicsLibrary, "CGDisplayCopyAllDisplayModes");
+	if (!bc_func_ptrs.CGDisplayCopyAllDisplayModes)
 		return 1;
 	
-	_CGDisplayModeGetWidth = dlsym(CoreGraphicsLibrary, "CGDisplayModeGetWidth");
-	if (!_CGDisplayModeGetWidth)
+	bc_func_ptrs.CGDisplayModeGetWidth = dlsym(CoreGraphicsLibrary, "CGDisplayModeGetWidth");
+	if (!bc_func_ptrs.CGDisplayModeGetWidth)
 		return 1;
 	
-	_CGDisplayModeGetHeight = dlsym(CoreGraphicsLibrary, "CGDisplayModeGetHeight");
-	if (!_CGDisplayModeGetHeight)
+	bc_func_ptrs.CGDisplayModeGetHeight = dlsym(CoreGraphicsLibrary, "CGDisplayModeGetHeight");
+	if (!bc_func_ptrs.CGDisplayModeGetHeight)
 		return 1;
 	
-	_CGDisplayModeGetIOFlags = dlsym(CoreGraphicsLibrary, "CGDisplayModeGetIOFlags");
-	if (!_CGDisplayModeGetIOFlags)
+	bc_func_ptrs.CGDisplayModeGetIOFlags = dlsym(CoreGraphicsLibrary, "CGDisplayModeGetIOFlags");
+	if (!bc_func_ptrs.CGDisplayModeGetIOFlags)
 		return 1;
 	
 	return 0;
@@ -258,9 +235,8 @@ int main(int argc, char **argv)
 	if (NSAppKitVersionNumber < NSAppKitVersionNumber10_5)
 		Sys_Error("Fodquake requires Mac OS X 10.5 or higher");
 	
-	if (NSAppKitVersionNumber >= NSAppKitVersionNumber10_6)
-		if (load_missing_osx_symbols() != 0)
-			Sys_Error("Error loading CoreGraphics symbols");
+	if (load_missing_osx_symbols() != 0)
+		Sys_Error("Error loading CoreGraphics symbols");
 	
 	randomfd = open("/dev/urandom", O_RDONLY);
 	if (randomfd == -1)

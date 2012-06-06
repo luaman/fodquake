@@ -18,22 +18,10 @@
  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include <AppKit/AppKit.h>
+#import <AppKit/AppKit.h>
+#import "vid_macosx_bc.h"
 
-#ifndef NSAppKitVersionNumber10_6
-#define NSAppKitVersionNumber10_6 1038
-typedef struct _CGDisplayConfigRef * CGDisplayConfigRef;
-#endif
-
-extern CGDisplayModeRef (*_CGDisplayCopyDisplayMode)(CGDirectDisplayID display);
-extern CGError (*_CGBeginDisplayConfiguration)(CGDisplayConfigRef *pConfigRef);
-extern CGError (*_CGConfigureDisplayWithDisplayMode)(CGDisplayConfigRef config, CGDirectDisplayID display, CGDisplayModeRef mode, CFDictionaryRef options);
-extern CGError (*_CGCompleteDisplayConfiguration)(CGDisplayConfigRef configRef, CGConfigureOption option);
-extern CGError (*_CGCancelDisplayConfiguration)(CGDisplayConfigRef configRef);
-extern CFArrayRef (*_CGDisplayCopyAllDisplayModes)(CGDirectDisplayID display, CFDictionaryRef options);
-extern size_t (*_CGDisplayModeGetWidth)(CGDisplayModeRef mode);
-extern size_t (*_CGDisplayModeGetHeight)(CGDisplayModeRef mode);
-extern uint32_t (*_CGDisplayModeGetIOFlags)(CGDisplayModeRef mode);
+extern bc_func_ptrs_t bc_func_ptrs;
 
 static long GetDictionaryLong(CFDictionaryRef theDict, const void *key)
 {
@@ -63,7 +51,7 @@ const char * const *Sys_Video_GetModeList(void)
 	}
 	else
 	{
-		modes = _CGDisplayCopyAllDisplayModes(CGMainDisplayID(), NULL);
+		modes = bc_func_ptrs.CGDisplayCopyAllDisplayModes(CGMainDisplayID(), NULL);
 	}
 
 	if (modes == NULL)
@@ -99,9 +87,9 @@ const char * const *Sys_Video_GetModeList(void)
 		{
 			mode = (CGDisplayModeRef)CFArrayGetValueAtIndex(modes, i);
 			
-			width = _CGDisplayModeGetWidth(mode);
-			height = _CGDisplayModeGetHeight(mode);
-			flags = _CGDisplayModeGetIOFlags(mode);
+			width = bc_func_ptrs.CGDisplayModeGetWidth(mode);
+			height = bc_func_ptrs.CGDisplayModeGetHeight(mode);
+			flags = bc_func_ptrs.CGDisplayModeGetIOFlags(mode);
 		}
 
 		snprintf(buf, sizeof(buf), "%u,%u,%u", width, height, flags);

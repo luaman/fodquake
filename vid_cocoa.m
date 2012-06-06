@@ -28,27 +28,10 @@
 #import "keys.h"
 #import "gl_local.h"
 #import "in_macosx.h"
+#import "vid_macosx_bc.h"
 
 extern cvar_t in_grab_windowed_mouse;
-
-#ifndef NSAppKitVersionNumber10_5
-#define NSAppKitVersionNumber10_5 949
-#endif
-
-#ifndef NSAppKitVersionNumber10_6
-#define NSAppKitVersionNumber10_6 1038
-typedef struct _CGDisplayConfigRef * CGDisplayConfigRef;
-#endif
-
-extern CGDisplayModeRef (*_CGDisplayCopyDisplayMode)(CGDirectDisplayID display);
-extern CGError (*_CGBeginDisplayConfiguration)(CGDisplayConfigRef *pConfigRef);
-extern CGError (*_CGConfigureDisplayWithDisplayMode)(CGDisplayConfigRef config, CGDirectDisplayID display, CGDisplayModeRef mode, CFDictionaryRef options);
-extern CGError (*_CGCompleteDisplayConfiguration)(CGDisplayConfigRef configRef, CGConfigureOption option);
-extern CGError (*_CGCancelDisplayConfiguration)(CGDisplayConfigRef configRef);
-extern CFArrayRef (*_CGDisplayCopyAllDisplayModes)(CGDirectDisplayID display, CFDictionaryRef options);
-extern size_t (*_CGDisplayModeGetWidth)(CGDisplayModeRef mode);
-extern size_t (*_CGDisplayModeGetHeight)(CGDisplayModeRef mode);
-extern uint32_t (*_CGDisplayModeGetIOFlags)(CGDisplayModeRef mode);
+extern bc_func_ptrs_t bc_func_ptrs;
 
 static CGError switch_display_mode(CGDisplayModeRef new_mode, CGDisplayModeRef *current_mode)
 {
@@ -57,20 +40,20 @@ static CGError switch_display_mode(CGDisplayModeRef new_mode, CGDisplayModeRef *
 	
 	if (current_mode)
 	{
-		*current_mode = _CGDisplayCopyDisplayMode(CGMainDisplayID());
+		*current_mode = bc_func_ptrs.CGDisplayCopyDisplayMode(CGMainDisplayID());
 	}
 	
-	err = _CGBeginDisplayConfiguration(&config_ref);
+	err = bc_func_ptrs.CGBeginDisplayConfiguration(&config_ref);
 	if (err == kCGErrorSuccess)
 	{
-		err = _CGConfigureDisplayWithDisplayMode(config_ref, CGMainDisplayID(), new_mode, NULL);
+		err = bc_func_ptrs.CGConfigureDisplayWithDisplayMode(config_ref, CGMainDisplayID(), new_mode, NULL);
 		if (err == kCGErrorSuccess)
 		{
-			err = _CGCompleteDisplayConfiguration(config_ref, kCGConfigureForAppOnly);
+			err = bc_func_ptrs.CGCompleteDisplayConfiguration(config_ref, kCGConfigureForAppOnly);
 		}
 		else
 		{
-			_CGCancelDisplayConfiguration(config_ref);
+			bc_func_ptrs.CGCancelDisplayConfiguration(config_ref);
 		}
 	}
 	
@@ -291,7 +274,7 @@ void* Sys_Video_Open(const char *mode, unsigned int width, unsigned int height, 
 			}
 			else
 			{
-				modes = _CGDisplayCopyAllDisplayModes(CGMainDisplayID(), NULL);
+				modes = bc_func_ptrs.CGDisplayCopyAllDisplayModes(CGMainDisplayID(), NULL);
 			}
 			
 			if (modes)
@@ -319,9 +302,9 @@ void* Sys_Video_Open(const char *mode, unsigned int width, unsigned int height, 
 					{
 						mode_ref = (CGDisplayModeRef)CFArrayGetValueAtIndex(modes, i);
 						
-						width_tmp = _CGDisplayModeGetWidth(mode_ref);
-						height_tmp = _CGDisplayModeGetHeight(mode_ref);
-						flags_tmp = _CGDisplayModeGetIOFlags(mode_ref);
+						width_tmp = bc_func_ptrs.CGDisplayModeGetWidth(mode_ref);
+						height_tmp = bc_func_ptrs.CGDisplayModeGetHeight(mode_ref);
+						flags_tmp = bc_func_ptrs.CGDisplayModeGetIOFlags(mode_ref);
 					}
 
 					if (width == width_tmp && height == height_tmp && flags == flags_tmp)
