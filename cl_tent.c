@@ -339,7 +339,8 @@ void CL_ParseTEnt (void) {
 
 void vectoangles(vec3_t vec, vec3_t ang);
 
-void CL_UpdateBeams (void) {
+void CL_UpdateBeams (void)
+{
 	int i;
 	beam_t *b;
 	vec3_t dist, org;
@@ -350,26 +351,28 @@ void CL_UpdateBeams (void) {
 	memset (&ent, 0, sizeof(entity_t));
 	ent.colormap = vid.colormap;
 
-	
 	truelightning = bound(0, cl_trueLightning.value, cl.truelightning);
 
 	// update lightning
-	for (i = 0, b = cl_beams; i < MAX_BEAMS; i++, b++)	{
+	for (i = 0, b = cl_beams; i < MAX_BEAMS; i++, b++)
+	{
 		if (!b->model || b->endtime < cl.time)
 			continue;
 
 		// if coming from the player, update the start position
-		if (b->entity == cl.viewplayernum + 1) {
+		if (b->entity == cl.viewplayernum + 1)
+		{
 			VectorCopy (cl.simorg, b->start);
 			b->start[2] += cl.crouch + bound(-7, v_viewheight.value, 4);
-			if (cl_trueLightning.value)	{
-				vec3_t	forward, v, org, ang;
-				float	delta;
-				pmtrace_t	trace;
+			if (cl_trueLightning.value)
+			{
+				vec3_t forward, v, org, ang;
+				float delta;
+				pmtrace_t trace;
 
-				VectorSubtract (playerbeam_end, cl.simorg, v);
+				VectorSubtract(playerbeam_end, cl.simorg, v);
 				v[2] -= 22;		// adjust for view height
-				vectoangles (v, ang);
+				vectoangles(v, ang);
 
 				// lerp pitch
 				ang[0] = -ang[0];
@@ -386,25 +389,28 @@ void CL_UpdateBeams (void) {
 				ang[1] += delta * truelightning;
 				ang[2] = 0;
 
-				AngleVectors (ang, forward, NULL, NULL);
-				VectorScale (forward, 600, forward);
-				VectorCopy (cl.simorg, org);
+				AngleVectors(ang, forward, NULL, NULL);
+				VectorScale(forward, 600, forward);
+				VectorCopy(cl.simorg, org);
 				org[2] += 16;
-				VectorAdd (org, forward, b->end);
+				VectorAdd(org, forward, b->end);
 
-				trace = PM_TraceLine (org, b->end);
+				trace = PM_TraceLine(org, b->end);
 				if (trace.fraction < 1)
-					VectorCopy (trace.endpos, b->end);
+					VectorCopy(trace.endpos, b->end);
 			}
 		}
 
 		// calculate pitch and yaw
-		VectorSubtract (b->end, b->start, dist);
+		VectorSubtract(b->end, b->start, dist);
 
-		if (dist[1] == 0 && dist[0] == 0) {
+		if (dist[1] == 0 && dist[0] == 0)
+		{
 			yaw = 0;
 			pitch = (dist[2] > 0) ? 90 : 270;
-		} else {
+		}
+		else
+		{
 			yaw = atan2(dist[1], dist[0]) * 180 / M_PI;
 			if (yaw < 0)
 				yaw += 360;
@@ -420,7 +426,8 @@ void CL_UpdateBeams (void) {
 		d = VectorNormalize(dist);
 		VectorScale (dist, 30, dist);
 
-		for ( ; d > 0; d -= 30) {
+		for ( ; d > 0; d -= 30)
+		{
 			VectorCopy (org, ent.origin);
 			ent.model = b->model;
 			ent.angles[0] = pitch;
@@ -428,7 +435,7 @@ void CL_UpdateBeams (void) {
 			ent.angles[2] = rand() % 360;
 
 			CL_AddEntity (&ent);
-			
+
 			VectorAdd (org, dist, org);
 		}
 	}	
