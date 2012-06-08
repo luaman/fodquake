@@ -26,6 +26,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "quakedef.h"
 #include "pmove.h"
 #include "sound.h"
+#include "netqw.h"
 
 #ifdef GLQUAKE
 #include "gl_local.h"
@@ -373,7 +374,22 @@ void CL_UpdateBeams (void)
 
 				if (cl_trueLightning.value == 2)
 				{
-					destangles = cl.frames[(cls.netchan.outgoing_sequence - 1) & UPDATE_MASK].cmd.angles;
+					extern unsigned int attack_outgoing_sequence;
+					unsigned int myseqnum;
+					unsigned long long mytime;
+					unsigned long long frametime;
+
+					frametime = NetQW_GetFrameTime(cls.netqw);
+
+					if (cls.netchan.outgoing_sequence > attack_outgoing_sequence)
+					{
+						mytime = ((unsigned long long)((cls.netchan.outgoing_sequence - 1) - attack_outgoing_sequence)) * frametime;
+						mytime = mytime - (mytime % 100000) + (frametime + 1);
+						myseqnum = attack_outgoing_sequence + mytime/frametime;
+						destangles = cl.frames[myseqnum & UPDATE_MASK].cmd.angles;
+					}
+					else
+						destangles = cl.frames[(cls.netchan.outgoing_sequence - 1) & UPDATE_MASK].cmd.angles;
 				}
 				else
 				{
