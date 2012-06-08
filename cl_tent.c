@@ -369,6 +369,16 @@ void CL_UpdateBeams (void)
 				vec3_t forward, v, org, ang;
 				float delta;
 				pmtrace_t trace;
+				const float *destangles;
+
+				if (cl_trueLightning.value == 2)
+				{
+					destangles = cl.frames[(cls.netchan.outgoing_sequence - 1) & UPDATE_MASK].cmd.angles;
+				}
+				else
+				{
+					destangles = cl.simangles;
+				}
 
 				VectorSubtract(playerbeam_end, cl.simorg, v);
 				v[2] -= 22;		// adjust for view height
@@ -378,10 +388,10 @@ void CL_UpdateBeams (void)
 				ang[0] = -ang[0];
 				if (ang[0] < -180)
 					ang[0] += 360;
-				ang[0] += (cl.simangles[0] - ang[0]) * truelightning;
+				ang[0] += (destangles[0] - ang[0]) * truelightning;
 
 				// lerp yaw
-				delta = cl.simangles[1] - ang[1];
+				delta = destangles[1] - ang[1];
 				if (delta > 180)
 					delta -= 360;
 				if (delta < -180)
