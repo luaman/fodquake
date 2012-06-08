@@ -384,7 +384,7 @@ void CL_UpdateBeams (void)
 					if (cls.netchan.outgoing_sequence > attack_outgoing_sequence)
 					{
 						mytime = ((unsigned long long)((cls.netchan.outgoing_sequence - 1) - attack_outgoing_sequence)) * frametime;
-						mytime = mytime - (mytime % 100000) + (frametime + 1);
+						mytime = mytime - (mytime % 100000) + (frametime - 1);
 						myseqnum = attack_outgoing_sequence + mytime/frametime;
 						destangles = cl.frames[myseqnum & UPDATE_MASK].cmd.angles;
 					}
