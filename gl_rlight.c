@@ -194,7 +194,7 @@ void R_MarkLights(model_t *model, dlight_t *light, int bit, unsigned int nodenum
 
 	node = model->nodes + nodenum;
 
-	splitplane = node->plane;
+	splitplane = model->planes + node->planenum;
 	dist = PlaneDiff(light->origin, splitplane);
 
 	if (dist > light->radius)
@@ -263,6 +263,7 @@ static vec3_t		lightcolor;
 static int RecursiveLightPoint(model_t *model, vec3_t color, unsigned int nodenum, vec3_t start, vec3_t end)
 {
 	mnode_t *node;
+	mplane_t *plane;
 	float front, back, frac;
 	vec3_t mid;
 
@@ -272,16 +273,18 @@ loc0:
 
 	node = model->nodes + nodenum;
 
+	plane = model->planes + node->planenum;
+
 	// calculate mid point
-	if (node->plane->type < 3)
+	if (plane->type < 3)
 	{
-		front = start[node->plane->type] - node->plane->dist;
-		back = end[node->plane->type] - node->plane->dist;
+		front = start[plane->type] - plane->dist;
+		back = end[plane->type] - plane->dist;
 	}
 	else
 	{
-		front = DotProduct(start, node->plane->normal) - node->plane->dist;
-		back = DotProduct(end, node->plane->normal) - node->plane->dist;
+		front = DotProduct(start, plane->normal) - plane->dist;
+		back = DotProduct(end, plane->normal) - plane->dist;
 	}
 	// optimized recursion
 	if ((back < 0) == (front < 0))
@@ -306,7 +309,7 @@ loc0:
 		msurface_t *surf;
 		// check for impact on this node
 		VectorCopy (mid, lightspot);
-		lightplane = node->plane;
+		lightplane = plane;
 		surf = cl.worldmodel->surfaces + node->firstsurface;
 		for (i = 0; i < node->numsurfaces; i++, surf++)
 		{

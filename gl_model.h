@@ -168,7 +168,7 @@ typedef struct mnode_s {
 	unsigned short parentnum;
 
 // node specific
-	mplane_t	*plane;
+	unsigned short planenum;
 	unsigned short childrennum[2];
 
 	unsigned short		firstsurface;
@@ -181,7 +181,7 @@ typedef struct mleaf_s {
 
 	float		minmaxs[6];		// for bounding box culling
 
-	struct mnode_s	*parent;
+	unsigned short parentnum;
 
 // leaf specific
 	short			contents;		// wil be a negative contents number
@@ -189,7 +189,7 @@ typedef struct mleaf_s {
 	byte		*compressed_vis;
 	struct efrag_s	*efrags;
 
-	unsigned short	*firstmarksurface;
+	unsigned short	firstmarksurfacenum;
 	int			nummarksurfaces;
 	byte		ambient_sound_level[NUM_AMBIENTS];
 } mleaf_t;

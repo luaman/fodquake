@@ -292,6 +292,8 @@ static void WeaponFallback()
 	}
 }
 
+unsigned int attack_outgoing_sequence;
+
 static void IN_AttackDown(void)
 {
 	if (cl_preselectedweapon)
@@ -300,7 +302,9 @@ static void IN_AttackDown(void)
 	KeyDown(&in_attack);
 
 	if (cls.netqw)
-		NetQW_ButtonDown(cls.netqw, 0, cl_preselectedweapon);
+		attack_outgoing_sequence = NetQW_ButtonDown(cls.netqw, 0, cl_preselectedweapon);
+	else
+		attack_outgoing_sequence = cls.netchan.outgoing_sequence;
 }
 
 static void IN_AttackUp(void)

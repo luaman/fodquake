@@ -75,7 +75,7 @@ mleaf_t *Mod_PointInLeaf (vec3_t p, model_t *model)
 		node = NODENUM_TO_NODE(model, nodenum);
 		if (nodenum >= model->numnodes)
 			return (mleaf_t *)node;
-		plane = node->plane;
+		plane = model->planes + node->planenum;
 		d = PlaneDiff(p, plane);
 		nodenum = (d > 0) ? node->childrennum[0] : node->childrennum[1];
 	}
@@ -1143,7 +1143,7 @@ static void Mod_LoadTexinfo(model_t *model, lump_t *l)
 {
 	texinfo_t *in;
 	mtexinfo_t *out;
-	int i, j, count, miptex;
+	int i, count, miptex;
 
 	in = (void *) (mod_base + l->fileofs);
 	if (l->filelen % sizeof(*in))
@@ -1158,8 +1158,14 @@ static void Mod_LoadTexinfo(model_t *model, lump_t *l)
 
 	for (i = 0; i < count; i++, in++, out++)
 	{
-		for (j = 0; j < 8; j++)
-			out->vecs[0][j] = LittleFloat (in->vecs[0][j]);
+		out->vecs[0][0] = LittleFloat(in->vecs[0][0]);
+		out->vecs[0][1] = LittleFloat(in->vecs[0][1]);
+		out->vecs[0][2] = LittleFloat(in->vecs[0][2]);
+		out->vecs[0][3] = LittleFloat(in->vecs[0][3]);
+		out->vecs[1][0] = LittleFloat(in->vecs[1][0]);
+		out->vecs[1][1] = LittleFloat(in->vecs[1][1]);
+		out->vecs[1][2] = LittleFloat(in->vecs[1][2]);
+		out->vecs[1][3] = LittleFloat(in->vecs[1][3]);
 
 		miptex = LittleLong (in->miptex);
 		out->flags = LittleLong (in->flags);
@@ -1243,6 +1249,10 @@ static void Mod_LoadFaces(model_t *model, lump_t *l)
 	if (l->filelen % sizeof(*in))
 		Host_Error ("Mod_LoadFaces: funny lump size in %s", model->name);
 	count = l->filelen / sizeof(*in);
+
+	if (count > 65535)
+		Sys_Error("Mod_LoadFaces: count > 65535");
+
 	out = malloc(count*sizeof(*out));
 	model->surfvisibleunaligned = malloc((((count+31)/32)*sizeof(*model->surfvisibleunaligned)) + 127);
 	model->surfflags = malloc(count*sizeof(*model->surfflags));
@@ -1357,7 +1367,7 @@ static void Mod_LoadNodes(model_t *model, lump_t *l)
 		}
 
 		p = LittleLong(in->planenum);
-		out->plane = model->planes + p;
+		out->planenum = p;
 
 		out->firstsurface = LittleShort (in->firstface);
 		out->numsurfaces = LittleShort (in->numfaces);
@@ -1412,7 +1422,7 @@ static void Mod_LoadLeafs(model_t *model, lump_t *l)
 		if (p == CONTENTS_SOLID)
 			model->leafsolid[i/32] |= (1<<(i%32));
 
-		out->firstmarksurface = model->marksurfaces + LittleShort(in->firstmarksurface);
+		out->firstmarksurfacenum = LittleShort(in->firstmarksurface);
 		out->nummarksurfaces = LittleShort(in->nummarksurfaces);
 
 		p = LittleLong(in->visofs);
@@ -1425,7 +1435,7 @@ static void Mod_LoadLeafs(model_t *model, lump_t *l)
 		if (!dedicated && out->contents != CONTENTS_EMPTY)
 		{
 			for (j = 0; j < out->nummarksurfaces; j++)
-				model->surfflags[out->firstmarksurface[j]] |= SURF_UNDERWATER;
+				model->surfflags[model->marksurfaces[out->firstmarksurfacenum + j]] |= SURF_UNDERWATER;
 		}
 	}
 }
@@ -1543,7 +1553,7 @@ static void Mod_MakeHull0(model_t *model)
 
 	for (i = 0; i < count; i++, out++, in++)
 	{
-		out->planenum = in->plane - model->planes;
+		out->planenum = in->planenum;
 		for (j = 0; j < 2; j++)
 		{
 			child = NODENUM_TO_NODE(model, in->childrennum[j]);
@@ -1610,6 +1620,10 @@ static void Mod_LoadPlanes(model_t *model, lump_t *l)
 	if (l->filelen % sizeof(*in))
 		Host_Error ("Mod_LoadPlanes: funny lump size in %s", model->name);
 	count = l->filelen / sizeof(*in);
+
+	if (count > 65535)
+		Sys_Error("Mod_LoadPlanes: count > 65535");
+
 	out = malloc(count*sizeof(*out));
 	if (out == 0)
 		Sys_Error("Mod_LoadPlanes: Out of memory\n");

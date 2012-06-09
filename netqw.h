@@ -5,6 +5,7 @@ struct NetQW *NetQW_Create(const char *hoststring, const char *userinfo, unsigne
 void NetQW_Delete(struct NetQW *netqw);
 void NetQW_GenerateFrames(struct NetQW *netqw);
 void NetQW_SetFPS(struct NetQW *netqw, unsigned int fps);
+unsigned long long NetQW_GetFrameTime(struct NetQW *netqw);
 int NetQW_AppendReliableBuffer(struct NetQW *netqw, const void *buffer, unsigned int bufferlen);
 unsigned int NetQW_GetPacketLength(struct NetQW *netqw);
 void *NetQW_GetPacketData(struct NetQW *netqw);
@@ -21,7 +22,7 @@ void NetQW_UnlockMovement(struct NetQW *netqw);
 void NetQW_SetForwardSpeed(struct NetQW *netqw, float value);
 void NetQW_SetSideSpeed(struct NetQW *netqw, float value);
 void NetQW_SetUpSpeed(struct NetQW *netqw, float value);
-void NetQW_ButtonDown(struct NetQW *netqw, int button, int impulse);
+unsigned int NetQW_ButtonDown(struct NetQW *netqw, int button, int impulse);
 void NetQW_ButtonUp(struct NetQW *netqw, int button);
 void NetQW_SetImpulse(struct NetQW *netqw, int impulse);
 

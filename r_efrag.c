@@ -127,7 +127,7 @@ static void R_SplitEntityOnNode(model_t *model, unsigned int nodenum)
 
 	node = model->nodes + nodenum;
 
-	splitplane = node->plane;
+	splitplane = model->planes + node->planenum;
 	sides = BOX_ON_PLANE_SIDE(r_emins, r_emaxs, splitplane);
 
 	if (sides == 3)

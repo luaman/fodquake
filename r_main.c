@@ -696,7 +696,7 @@ static unsigned int R_FindTopNode(vec3_t mins, vec3_t maxs)
 			return 0xffff;	// in solid, so not visible
 		}
 
-		splitplane = node->plane;
+		splitplane = model->planes + node->planenum;
 		sides = BOX_ON_PLANE_SIDE (mins, maxs, splitplane);
 
 		if (sides == 3)
