@@ -23,15 +23,15 @@
 
 extern bc_func_ptrs_t bc_func_ptrs;
 
-static long GetDictionaryLong(CFDictionaryRef theDict, const void *key)
+static int GetDictionaryInt(CFDictionaryRef theDict, const void *key)
 {
-	long value = 0;
+	int value = 0;
 	CFNumberRef numRef;
 	
 	numRef = (CFNumberRef)CFDictionaryGetValue(theDict, key);
 	if (numRef != NULL)
 	{
-		CFNumberGetValue(numRef, kCFNumberLongType, &value);
+		CFNumberGetValue(numRef, kCFNumberIntType, &value);
 	}
 	
 	return value;
@@ -79,9 +79,9 @@ const char * const *Sys_Video_GetModeList(void)
 		{
 			mode_legacy = (CFDictionaryRef)CFArrayGetValueAtIndex(modes, i);
 			
-			width = GetDictionaryLong(mode_legacy, kCGDisplayWidth);
-			height = GetDictionaryLong(mode_legacy, kCGDisplayHeight);
-			flags = GetDictionaryLong(mode_legacy, kCGDisplayIOFlags);
+			width = GetDictionaryInt(mode_legacy, kCGDisplayWidth);
+			height = GetDictionaryInt(mode_legacy, kCGDisplayHeight);
+			flags = GetDictionaryInt(mode_legacy, kCGDisplayIOFlags);
 		}
 		else
 		{

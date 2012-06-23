@@ -60,15 +60,15 @@ static CGError switch_display_mode(CGDisplayModeRef new_mode, CGDisplayModeRef *
 	return err;
 }
 
-static long GetDictionaryLong(CFDictionaryRef theDict, const void *key)
+static int GetDictionaryInt(CFDictionaryRef theDict, const void *key)
 {
-	long value = 0;
+	int value = 0;
 	CFNumberRef numRef;
 	
 	numRef = (CFNumberRef)CFDictionaryGetValue(theDict, key);
 	if (numRef != NULL)
 	{
-		CFNumberGetValue(numRef, kCFNumberLongType, &value);
+		CFNumberGetValue(numRef, kCFNumberIntType, &value);
 	}
 	
 	return value;
@@ -294,9 +294,9 @@ void* Sys_Video_Open(const char *mode, unsigned int width, unsigned int height, 
 					{
 						mode_ref_legacy = (CFDictionaryRef)CFArrayGetValueAtIndex(modes, i);
 						
-						width_tmp = GetDictionaryLong(mode_ref_legacy, kCGDisplayWidth);
-						height_tmp = GetDictionaryLong(mode_ref_legacy, kCGDisplayHeight);
-						flags_tmp = GetDictionaryLong(mode_ref_legacy, kCGDisplayIOFlags);
+						width_tmp = GetDictionaryInt(mode_ref_legacy, kCGDisplayWidth);
+						height_tmp = GetDictionaryInt(mode_ref_legacy, kCGDisplayHeight);
+						flags_tmp = GetDictionaryInt(mode_ref_legacy, kCGDisplayIOFlags);
 					}
 					else
 					{

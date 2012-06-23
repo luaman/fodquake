@@ -165,6 +165,12 @@ void Sys_Printf(char *fmt, ...)
 
 void Sys_Quit(void)
 {
+	if (CoreGraphicsLibrary)
+	{
+		dlclose(CoreGraphicsLibrary);
+		CoreGraphicsLibrary = NULL;
+	}
+    
 	exit(0);
 }
 
@@ -203,6 +209,12 @@ void Sys_Error(char *error, ...)
 		}
 		
 		[NSApp release];
+	}
+    
+	if (CoreGraphicsLibrary)
+	{
+		dlclose(CoreGraphicsLibrary);
+		CoreGraphicsLibrary = NULL;
 	}
 
 	exit(1);
@@ -255,7 +267,10 @@ int main(int argc, char **argv)
 	}
 
 	if (CoreGraphicsLibrary)
+	{
 		dlclose(CoreGraphicsLibrary);
+		CoreGraphicsLibrary = NULL;
+	}
 	
 	return 0;
 }
