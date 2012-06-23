@@ -92,7 +92,7 @@ const char * const *Sys_Video_GetModeList(void)
 			flags = bc_func_ptrs.CGDisplayModeGetIOFlags(mode);
 		}
 
-		snprintf(buf, sizeof(buf), "%u,%u,%u", width, height, flags);
+		snprintf(buf, sizeof(buf), "macosx:%u,%u,%u", width, height, flags);
 		
 		ret[i] = strdup(buf);
 		if (ret[i] == NULL)
@@ -144,7 +144,7 @@ const char *Sys_Video_GetModeDescription(const char *mode)
 	unsigned int height;
 	unsigned int flags;
 	
-	if (sscanf(mode, "%u,%u,%u", &width, &height, &flags) != 3)
+	if (sscanf(mode, "macosx:%u,%u,%u", &width, &height, &flags) != 3)
 	{
 		return NULL;
 	}

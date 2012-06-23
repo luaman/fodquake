@@ -266,7 +266,7 @@ void* Sys_Video_Open(const char *mode, unsigned int width, unsigned int height, 
 			unsigned int flags;
 			CFArrayRef modes;
 			
-			sscanf(mode, "%u,%u,%u", &width, &height, &flags);
+			sscanf(mode, "macosx:%u,%u,%u", &width, &height, &flags);
 			
 			if (NSAppKitVersionNumber < NSAppKitVersionNumber10_6)
 			{
@@ -643,7 +643,7 @@ const char* Sys_Video_GetMode(void *display)
 	struct display *d = (struct display*)display;
 	char buf[64];
 	
-	snprintf(buf, sizeof(buf), "%u,%u,%u", d->width, d->height, 0);
+	snprintf(buf, sizeof(buf), "macosx:%u,%u,%u", d->width, d->height, 0);
 	
 	return strdup(buf);
 }
