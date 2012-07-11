@@ -20,6 +20,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 // vid_common_gl.c -- Common code for vid_wgl.c and vid_glx.c
 
+#include <stdlib.h>
 #include <string.h>
 #include <math.h>
 
@@ -53,6 +54,20 @@ int gl_textureunits = 1;
 void (*qglBindBufferARB)(GLenum, GLuint);
 void (*qglBufferDataARB)(GLenum, GLsizeiptrARB, const GLvoid *, GLenum);
 
+/* GLSL stuff */
+void (*qglAttachObjectARB)(GLhandleARB, GLhandleARB);
+void (*qglCompileShaderARB)(GLhandleARB);
+GLhandleARB (*qglCreateProgramObjectARB)(void);
+GLhandleARB (*qglCreateShaderObjectARB)(GLenum);
+void (*qglDeleteObjectARB)(GLhandleARB);
+void (*qglGetInfoLogARB)(GLhandleARB, GLsizei, GLsizei *, GLcharARB *);
+void (*qglGetObjectParameterivARB)(GLhandleARB, GLenum, GLint *);
+GLint (*qglGetUniformLocationARB)(GLhandleARB, const GLcharARB *);
+void (*qglLinkProgramARB)(GLhandleARB);
+void (*qglShaderSourceARB)(GLhandleARB, GLsizei, const GLcharARB* *, const GLint *);
+void (*qglUniform1fARB)(GLint, GLfloat);
+void (*qglUseProgramObjectARB)(GLhandleARB);
+
 qboolean gl_combine = false;
 
 qboolean gl_add_ext = false;
@@ -60,6 +75,8 @@ qboolean gl_add_ext = false;
 qboolean gl_npot;
 
 qboolean gl_vbo = false;
+
+qboolean gl_fs;
 
 float gldepthmin, gldepthmax;
 
@@ -135,6 +152,8 @@ void GL_CheckExtensions (void)
 	gl_add_ext = CheckExtension("GL_ARB_texture_env_add");
 	gl_npot = CheckExtension("GL_ARB_texture_non_power_of_two");
 	gl_vbo = CheckExtension("GL_ARB_vertex_buffer_object");
+	gl_fs = CheckExtension("GL_ARB_fragment_shader");
+
 	if (gl_vbo)
 	{
 		qglBindBufferARB = (void *)qglGetProcAddress("glBindBufferARB");
@@ -142,6 +161,38 @@ void GL_CheckExtensions (void)
 
 		if (qglBindBufferARB == 0 || qglBufferDataARB == 0)
 			gl_vbo = false;
+	}
+
+	if (gl_fs)
+	{
+		qglAttachObjectARB = (void *)qglGetProcAddress("glAttachObjectARB");
+		qglCompileShaderARB = (void *)qglGetProcAddress("glCompileShaderARB");
+		qglCreateProgramObjectARB = (void *)qglGetProcAddress("glCreateProgramObjectARB");
+		qglCreateShaderObjectARB = (void *)qglGetProcAddress("glCreateShaderObjectARB");
+		qglDeleteObjectARB = (void *)qglGetProcAddress("glDeleteObjectARB");
+		qglGetInfoLogARB = (void *)qglGetProcAddress("glGetInfoLogARB");
+		qglGetObjectParameterivARB = (void *)qglGetProcAddress("glGetObjectParameterivARB");
+		qglGetUniformLocationARB = (void *)qglGetProcAddress("glGetUniformLocationARB");
+		qglLinkProgramARB = (void *)qglGetProcAddress("glLinkProgramARB");
+		qglShaderSourceARB = (void *)qglGetProcAddress("glShaderSourceARB");
+		qglUniform1fARB = (void *)qglGetProcAddress("glUniform1fARB");
+		qglUseProgramObjectARB = (void *)qglGetProcAddress("glUseProgramObjectARB");
+
+		if (qglAttachObjectARB == 0
+		 || qglCompileShaderARB == 0
+		 || qglCreateProgramObjectARB == 0
+		 || qglCreateShaderObjectARB == 0
+		 || qglDeleteObjectARB == 0
+		 || qglGetInfoLogARB == 0
+		 || qglGetObjectParameterivARB == 0
+		 || qglGetUniformLocationARB == 0
+		 || qglLinkProgramARB == 0
+		 || qglShaderSourceARB == 0
+		 || qglUniform1fARB == 0
+		 || qglUseProgramObjectARB == 0)
+		{
+			gl_fs = 0;
+		}
 	}
 
 	if (CheckExtension("GL_ARB_texture_compression"))
@@ -288,5 +339,115 @@ void VID_SetPalette (unsigned char *palette)
 	}
 
 	d_8to24table2[255] = 0;	// 255 is transparent
+}
+
+static int GL_CompileShader(GLenum type, const char *shader)
+{
+	int object;
+	int compiled;
+
+	object = qglCreateShaderObjectARB(type);
+	qglShaderSourceARB(object, 1, &shader, 0);
+	qglCompileShaderARB(object);
+	qglGetObjectParameterivARB(object, GL_OBJECT_COMPILE_STATUS_ARB, &compiled);
+	if (!compiled)
+	{
+		char *log;
+		int loglength;
+
+		fprintf(stderr, "Failed to compile the following shader:\n%s\n", shader);
+
+		qglGetObjectParameterivARB(object, GL_OBJECT_INFO_LOG_LENGTH_ARB, &loglength);
+		log = malloc(loglength);
+		if (log)
+		{
+			qglGetInfoLogARB(object, loglength, NULL, log);
+
+			fprintf(stderr, "OpenGL returned:\n%s\n", log);
+
+			free(log);
+		}
+
+		qglDeleteObjectARB(object);
+
+		return 0;
+	}
+
+	return object;
+}
+
+int GL_SetupShaderProgram(const char *vertexshader, const char *fragmentshader)
+{
+	int programobject;
+	int shaderobject;
+	int linked;
+	int ok;
+
+	ok = 1;
+
+	programobject = qglCreateProgramObjectARB();
+
+	if (vertexshader)
+	{
+		shaderobject = GL_CompileShader(GL_VERTEX_SHADER_ARB, vertexshader);
+		if (shaderobject)
+		{
+			qglAttachObjectARB(programobject, shaderobject);
+			qglDeleteObjectARB(shaderobject);
+		}
+		else
+			ok = 0;
+	}
+
+	if (ok && fragmentshader)
+	{
+		shaderobject = GL_CompileShader(GL_FRAGMENT_SHADER_ARB, fragmentshader);
+		if (shaderobject)
+		{
+			qglAttachObjectARB(programobject, shaderobject);
+			qglDeleteObjectARB(shaderobject);
+		}
+		else
+			ok = 0;
+	}
+
+	if (!ok)
+	{
+		qglDeleteObjectARB(programobject);
+		return 0;
+	}
+
+	qglLinkProgramARB(programobject);
+	qglGetObjectParameterivARB(programobject, GL_OBJECT_LINK_STATUS_ARB, &linked);
+
+	if (!linked)
+	{
+		char *log;
+		int loglength;
+
+		fprintf(stderr, "Failed to link the following shader(s):\n");
+		if (vertexshader)
+			fprintf(stderr, "Vertex shader:\n%s\n", vertexshader);
+
+		if (fragmentshader)
+			fprintf(stderr, "Fragment shader:\n%s\n", fragmentshader);
+
+		qglGetObjectParameterivARB(programobject, GL_OBJECT_INFO_LOG_LENGTH_ARB, &loglength);
+		log = malloc(loglength);
+		if (log)
+		{
+			qglGetInfoLogARB(programobject, loglength, NULL, log);
+
+			fprintf(stderr, "OpenGL returned:\n%s\n", log);
+
+			free(log);
+		}
+
+		qglDeleteObjectARB(programobject);
+
+		return 0;
+	}
+
+	return programobject;
 }
 

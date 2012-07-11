@@ -240,11 +240,25 @@ extern void (*qglBindBufferARB)(GLenum, GLuint);
 extern void (*qglBufferDataARB)(GLenum, GLsizeiptrARB, const GLvoid *, GLenum);
 #endif
 
+/* GLSL stuff */
+extern void (*qglAttachObjectARB)(GLhandleARB, GLhandleARB);
+extern void (*qglCompileShaderARB)(GLhandleARB);
+extern GLhandleARB (*qglCreateProgramObjectARB)(void);
+extern GLhandleARB (*qglCreateShaderObjectARB)(GLenum);
+extern void (*qglDeleteObjectARB)(GLhandleARB);
+extern void (*qglGetInfoLogARB)(GLhandleARB, GLsizei, GLsizei *, GLcharARB *);
+extern void (*qglGetObjectParameterivARB)(GLhandleARB, GLenum, GLint *);
+extern GLint (*qglGetUniformLocationARB)(GLhandleARB, const GLcharARB *);
+extern void (*qglLinkProgramARB)(GLhandleARB);
+extern void (*qglShaderSourceARB)(GLhandleARB, GLsizei, const GLcharARB* *, const GLint *);
+extern void (*qglUniform1fARB)(GLint, GLfloat);
+extern void (*qglUseProgramObjectARB)(GLhandleARB);
+
 extern float gldepthmin, gldepthmax;
 extern byte color_white[4], color_black[4];
 extern qboolean gl_mtexable;
 extern int gl_textureunits;
-extern qboolean gl_combine, gl_add_ext, gl_npot, gl_vbo;
+extern qboolean gl_combine, gl_add_ext, gl_npot, gl_vbo, gl_fs;
 
 extern int vbo_number;
 
@@ -253,4 +267,5 @@ void Check_Gamma (unsigned char *pal);
 void VID_SetPalette (unsigned char *palette);
 void GL_CvarInit(void);
 void GL_Init (void);
+int GL_SetupShaderProgram(const char *vertexshader, const char *fragmentshader);
 
