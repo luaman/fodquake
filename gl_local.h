@@ -241,6 +241,15 @@ extern void (*qglBufferDataARB)(GLenum, GLsizeiptrARB, const GLvoid *, GLenum);
 #endif
 
 /* GLSL stuff */
+#define GL_FRAGMENT_SHADER_ARB        0x8B30
+#define GL_OBJECT_COMPILE_STATUS_ARB  0x8B81
+#define GL_OBJECT_INFO_LOG_LENGTH_ARB 0x8B84
+#define GL_OBJECT_LINK_STATUS_ARB     0x8B82
+#define GL_VERTEX_SHADER_ARB          0x8B31
+
+typedef char GLcharARB;
+typedef unsigned int GLhandleARB;
+
 extern void (*qglAttachObjectARB)(GLhandleARB, GLhandleARB);
 extern void (*qglCompileShaderARB)(GLhandleARB);
 extern GLhandleARB (*qglCreateProgramObjectARB)(void);
