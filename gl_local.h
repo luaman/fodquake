@@ -247,8 +247,10 @@ extern void (*qglBufferDataARB)(GLenum, GLsizeiptrARB, const GLvoid *, GLenum);
 #define GL_OBJECT_LINK_STATUS_ARB     0x8B82
 #define GL_VERTEX_SHADER_ARB          0x8B31
 
+#ifndef __MACOSX__
 typedef char GLcharARB;
 typedef unsigned int GLhandleARB;
+#endif
 
 extern void (*qglAttachObjectARB)(GLhandleARB, GLhandleARB);
 extern void (*qglCompileShaderARB)(GLhandleARB);
