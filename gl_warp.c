@@ -29,6 +29,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "utils.h"
 
+static int waterprogram;
+
 static char sky_initialised;
 
 extern msurface_t *skychain;
@@ -147,14 +149,20 @@ void GL_SubdivideSurface(model_t *model, msurface_t *fa)
 	vec3_t verts[64];
 	int i, lindex;
 	float *vec;
+	float s;
+	float t;
 
 	/* Build simple verts for fastturb/fastsky */
 	fa->fastpolys = malloc(fa->numedges * 3 * sizeof(*fa->fastpolys));
 	if (fa->fastpolys == 0)
 		Sys_Error("GL_SubdivideSurface,: Out of memory\n");
 
+	fa->shadertexcoords = malloc(fa->numedges * 3 * sizeof(*fa->shadertexcoords));
+	if (fa->shadertexcoords == 0)
+		Sys_Error("GL_SubdivideSurface,: Out of memory\n");
+
 	// convert edges back to a normal polygon
-	for (i = 0; i < fa->numedges; i++)
+	for (i = 0; i < fa->numedges && i < 64; i++)
 	{
 		lindex = model->surfedges[fa->firstedge + i];
 
@@ -167,6 +175,11 @@ void GL_SubdivideSurface(model_t *model, msurface_t *fa)
 		fa->fastpolys[i*3+0] = vec[0];
 		fa->fastpolys[i*3+1] = vec[1];
 		fa->fastpolys[i*3+2] = vec[2];
+
+		s = DotProduct(vec, fa->texinfo->vecs[0]);
+		t = DotProduct(vec, fa->texinfo->vecs[1]);
+		fa->shadertexcoords[i*2+0] = s / 64.0;
+		fa->shadertexcoords[i*2+1] = t / 64.0;
 	}
 
 	SubdividePolygon(fa, fa->numedges, verts[0]);
@@ -211,11 +224,20 @@ static void EmitFlatPoly(msurface_t *fa)
 	glDrawArrays(GL_POLYGON, 0, fa->numedges);
 }
 
+static void EmitShaderPoly(msurface_t *fa)
+{
+	GL_SetArrays(FQ_GL_VERTEX_ARRAY | FQ_GL_TEXTURE_COORD_ARRAY);
+	glVertexPointer(3, GL_FLOAT, 0, fa->fastpolys);
+	glTexCoordPointer(2, GL_FLOAT, 0, fa->shadertexcoords);
+	glDrawArrays(GL_POLYGON, 0, fa->numedges);
+}
+
 //Does a water warp on the pre-fragmented struct glwarppoly chain
 void EmitWaterPolys(msurface_t *fa)
 {
 	struct glwarppoly *p;
 	float *v, s, t, os, ot;
+	int cltimeloc;
 	int i;
 
 	GL_DisableMultitexture();
@@ -232,6 +254,15 @@ void EmitWaterPolys(msurface_t *fa)
 
 		glColor3ubv (color_white);
 		glEnable (GL_TEXTURE_2D);
+	}
+	else if (waterprogram)
+	{
+		GL_Bind (fa->texinfo->texture->gl_texturenum);
+		qglUseProgramObjectARB(waterprogram);
+		cltimeloc = qglGetUniformLocationARB(waterprogram, "cltime");
+		qglUniform1fARB(cltimeloc, cl.time * (20.0/64.0));
+		EmitShaderPoly(fa);
+		qglUseProgramObjectARB(0);
 	}
 	else
 	{
@@ -842,9 +873,38 @@ void GL_Warp_Init()
 {
 	solidskytexture = texture_extension_number++;
 	alphaskytexture = texture_extension_number++;
+
+	if (gl_fs)
+	{
+		const char *prog = "#version 120\n"
+		"uniform sampler2D mytex;\n"
+		"uniform float cltime;\n"
+		"const float mypi = 3.14159265358979323846;\n"
+		"void main(void)\n"
+		"{\n"
+		"vec2 mycoords;\n"
+		"float s;\n"
+		"float t;\n"
+		"float os;\n"
+		"float ot;\n"
+		"mycoords = vec2(gl_TexCoord[0]);\n"
+		"os = mycoords[0];\n"
+		"ot = mycoords[1];\n"
+		"s = os + ((8.0/64.0) + sin((ot + cltime) * mypi) * (8.0/64.0));\n"
+		"t = ot + ((8.0/64.0) + sin((os + cltime) * mypi) * (8.0/64.0));\n"
+		"gl_FragColor = texture2D(mytex, vec2(s, t));\n"
+		"}\n";
+
+		waterprogram = GL_SetupShaderProgram(0, prog);
+	}
 }
 
 void GL_Warp_Shutdown()
 {
+	if (waterprogram)
+	{
+		qglDeleteObjectARB(waterprogram);
+		waterprogram = 0;
+	}
 }
 
