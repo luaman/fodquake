@@ -19,6 +19,7 @@
  */
 
 #import <AppKit/AppKit.h>
+#import <mach-o/dyld.h>
 
 #undef true
 #undef false
@@ -684,22 +685,26 @@ qboolean Sys_Video_HWGammaSupported(void *display)
 
 void *qglGetProcAddress(const char *p)
 {
-	void *ret;
-	
-	ret = 0;
-	
-	if (strcmp(p, "glMultiTexCoord2fARB") == 0)
-		ret = glMultiTexCoord2f;
-	else if (strcmp(p, "glActiveTextureARB") == 0)
-		ret = glActiveTexture;
-	else if (strcmp(p, "glBindBufferARB") == 0)
-		ret = glBindBuffer;
-	else if (strcmp(p, "glBufferDataARB") == 0)
-		ret = glBufferData;
-	else
-		Sys_Error("Unknown OpenGL function \"%s\"\n", p);
-	
-	return ret;
+	NSSymbol symbol = NULL;
+	char *symbolName;
+
+	symbolName = malloc(strlen(p) + 2);
+	if (!symbolName)
+	{
+		return NULL;
+	}
+
+	strcpy(symbolName + 1, p);
+	symbolName[0] = '_';
+
+	if (NSIsSymbolNameDefined(symbolName))
+	{
+		symbol = NSLookupAndBindSymbol(symbolName);
+	}
+
+	free(symbolName);
+
+	return symbol ? NSAddressOfSymbol(symbol) : NULL;
 }
 #else
 void Sys_Video_SetPalette(void *display, unsigned char *palette)
