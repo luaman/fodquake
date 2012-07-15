@@ -526,6 +526,10 @@ void Draw_AlphaFill(int x, int y, int w, int h, int c, float alpha)
 {
 }
 
+void Draw_AlphaFillRGB(int x, int y, int w, int h, float r, float g, float b, float alpha)
+{
+}
+
 void Draw_BeginTextRendering()
 {
 }

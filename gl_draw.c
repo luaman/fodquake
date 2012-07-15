@@ -814,7 +814,7 @@ void Draw_Crosshair(void)
 	}
 }
 
-void Draw_AlphaFill(int x, int y, int w, int h, int c, float alpha)
+void Draw_AlphaFillRGB(int x, int y, int w, int h, float r, float g, float b, float alpha)
 {
 	float coords[4*2];
 
@@ -827,11 +827,11 @@ void Draw_AlphaFill(int x, int y, int w, int h, int c, float alpha)
 	GL_SetAlphaTestBlend(0, alpha < 1);
 	if (alpha < 1)
 	{
-		glColor4f(host_basepal[c * 3] / 255.0,  host_basepal[c * 3 + 1] / 255.0, host_basepal[c * 3 + 2] / 255.0, alpha);
+		glColor4f(r, g, b, alpha);
 	}
 	else
 	{
-		glColor3f(host_basepal[c * 3] / 255.0, host_basepal[c * 3 + 1] / 255.0, host_basepal[c * 3 + 2]  /255.0);
+		glColor3f(r, g, b);
 	}
 
 	coords[0 + 0] = x;
@@ -853,6 +853,19 @@ void Draw_AlphaFill(int x, int y, int w, int h, int c, float alpha)
 	glEnable(GL_TEXTURE_2D);
 
 	glColor3ubv(color_white);
+}
+
+void Draw_AlphaFill(int x, int y, int w, int h, int c, float alpha)
+{
+	float r;
+	float g;
+	float b;
+
+	r = host_basepal[c * 3 + 0] / 255.0;
+	g = host_basepal[c * 3 + 1] / 255.0;
+	b = host_basepal[c * 3 + 2] / 255.0;
+
+	Draw_AlphaFillRGB(x, y, w, h, r, g, b, alpha);
 }
 
 void Draw_Fill(int x, int y, int w, int h, int c)
