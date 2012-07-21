@@ -23,7 +23,7 @@ ifeq ($(OS), morphos)
 		sys_morphos.o \
 		net_amitcp.o \
 		thread_morphos.o \
-		cd_morphos.o \
+		cd_null.o \
 		snd_morphos.o \
 		in_morphos.o \
 		sys_io_morphos.o
