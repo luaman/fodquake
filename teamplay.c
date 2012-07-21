@@ -245,7 +245,7 @@ void TP_ExecTrigger (char *trigger)
 	{
 		if (Ruleset_AllowFTrigger(trigger))
 		{
-			Cbuf_AddTextEx (&cbuf_main, va("%s\n", alias->value));
+			Cbuf_AddTextEx (cbuf_main, va("%s\n", alias->value));
 		}
 	}
 }
@@ -2018,7 +2018,7 @@ void TP_SearchForMsgTriggers (char *s, int level)
 			if ((string = Cmd_AliasString (t->name)))
 			{
 				Q_strncpyz(vars.lasttrigger_match, s, sizeof(vars.lasttrigger_match));
-				Cbuf_AddTextEx (&cbuf_safe, string);
+				Cbuf_AddTextEx (cbuf_safe, string);
 			}
 			else
 			{

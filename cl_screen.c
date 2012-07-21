@@ -161,7 +161,7 @@ static void SCR_CheckAutoScreenshot(void);
 
 
 qboolean OnChange_scr_allowsnap(cvar_t *var, char *s) {
-	return (cls.state >= ca_connected && cbuf_current == &cbuf_svc);
+	return (cls.state >= ca_connected && cbuf_current == cbuf_svc);
 }
 
 /**************************** CENTER PRINTING ********************************/

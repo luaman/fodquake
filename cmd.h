@@ -43,10 +43,10 @@ typedef struct cbuf_s
 	int runAwayLoop;
 } cbuf_t;
 
-extern cbuf_t cbuf_main;
+extern cbuf_t *cbuf_main;
 #ifndef SERVERONLY
-extern cbuf_t cbuf_safe, cbuf_formatted_comms;
-extern cbuf_t cbuf_svc;
+extern cbuf_t *cbuf_safe, *cbuf_formatted_comms;
+extern cbuf_t *cbuf_svc;
 #endif
 extern cbuf_t *cbuf_current;
 
@@ -55,6 +55,7 @@ void Cbuf_InsertTextEx(cbuf_t *cbuf, char *text);
 void Cbuf_ExecuteEx(cbuf_t *cbuf);
 
 void Cbuf_Init(void);
+void Cbuf_Shutdown(void);
 // allocates an initial text buffer that will grow as needed
 
 void Cbuf_AddText(char *text);

@@ -2139,7 +2139,7 @@ void CL_Frame (double time)
 		MVD_Interpolate();
 
 	// process stuffed commands
-	Cbuf_ExecuteEx(&cbuf_svc);
+	Cbuf_ExecuteEx(cbuf_svc);
 
 	if (!cls.demoplayback || cls.mvdplayback)
 		Mouse_GetViewAngles(cl.viewangles);

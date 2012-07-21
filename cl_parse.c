@@ -819,7 +819,7 @@ void CL_ParseServerData (void)
 	{
 		extern cvar_t	v_iyaw_cycle, v_iroll_cycle, v_ipitch_cycle,
 			v_iyaw_level, v_iroll_level, v_ipitch_level, v_idlescale;
-		cbuf_current = &cbuf_svc;	// hack
+		cbuf_current = cbuf_svc;	// hack
 		Cvar_SetValue (&v_iyaw_cycle, 2);
 		Cvar_SetValue (&v_iroll_cycle, 0.5);
 		Cvar_SetValue (&v_ipitch_cycle, 1);
@@ -1597,18 +1597,18 @@ void CL_ParseStufftext (void)
 
 
 	if (!strncmp(s, "alias _cs", 9))
-		Cbuf_AddTextEx (&cbuf_svc, "alias _cs \"wait;+attack;wait;wait;-attack;wait\"\n");
+		Cbuf_AddTextEx (cbuf_svc, "alias _cs \"wait;+attack;wait;wait;-attack;wait\"\n");
 	else if (!strncmp(s, "alias _y", 8))
-		Cbuf_AddTextEx (&cbuf_svc, "alias _y \"wait;-attack;wait;wait;+attack;wait;wait;-attack;wait\"\n");
+		Cbuf_AddTextEx (cbuf_svc, "alias _y \"wait;-attack;wait;wait;+attack;wait;wait;-attack;wait\"\n");
 
 	else if (!strcmp (s, "cmd snap") || (!strncmp (s, "r_skyname ", 10) && !strchr (s, '\n')))
-		Cbuf_AddTextEx (&cbuf_svc, va("%s\n", s));
+		Cbuf_AddTextEx (cbuf_svc, va("%s\n", s));
 	else
-		Cbuf_AddTextEx (&cbuf_svc, s);
+		Cbuf_AddTextEx (cbuf_svc, s);
 
 	// Execute stuffed commands immediately when starting a demo
 	if (cls.demoplayback && cls.state != ca_active)
-		Cbuf_ExecuteEx (&cbuf_svc); // FIXME: execute cbuf_main too?
+		Cbuf_ExecuteEx (cbuf_svc); // FIXME: execute cbuf_main too?
 }
 
 void CL_SetStat (int stat, int value)
@@ -1802,7 +1802,7 @@ void CL_ParseServerMessage (void)
 			break;
 
 		case svc_serverdata:
-			Cbuf_ExecuteEx (&cbuf_svc);		// make sure any stuffed commands are done
+			Cbuf_ExecuteEx (cbuf_svc);		// make sure any stuffed commands are done
 			CL_ParseServerData ();
 			vid.recalc_refdef = true;		// leave full screen intermission
 			break;

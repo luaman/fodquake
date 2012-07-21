@@ -372,6 +372,7 @@ void Host_Shutdown(void)
 
 	Cvar_Shutdown();
 	Cmd_Shutdown();
+	Cbuf_Shutdown();
 	CSTC_Shutdown();
 
 	Host_ShutdownMemory();

@@ -51,14 +51,14 @@ static qboolean can_execute_functions;
 
 cvar_t cl_warncmd = {"cl_warncmd", "0"};
 
-cbuf_t	cbuf_main;
+cbuf_t *cbuf_main;
 #ifndef SERVERONLY
-cbuf_t	cbuf_svc;
-cbuf_t	cbuf_safe, cbuf_formatted_comms;
+cbuf_t *cbuf_svc;
+cbuf_t *cbuf_safe, *cbuf_formatted_comms;
 #endif
-cbuf_t	cbuf_cmdsave;
+cbuf_t *cbuf_cmdsave;
 
-cbuf_t	*cbuf_current = NULL;
+cbuf_t *cbuf_current = NULL;
 
 //=============================================================================
 
@@ -78,45 +78,101 @@ void Cmd_Wait_f (void)
 
 void Cbuf_AddText (char *text)
 {
-	Cbuf_AddTextEx (&cbuf_main, text);
+	Cbuf_AddTextEx (cbuf_main, text);
 }
 
 void Cbuf_InsertText (char *text)
 {
-	Cbuf_InsertTextEx (&cbuf_main, text);
+	Cbuf_InsertTextEx (cbuf_main, text);
 }
 
 void Cbuf_Execute (void)
 {
-	Cbuf_ExecuteEx (&cbuf_main);
+	Cbuf_ExecuteEx (cbuf_main);
 #ifndef SERVERONLY
-	Cbuf_ExecuteEx (&cbuf_safe);
-	Cbuf_ExecuteEx (&cbuf_formatted_comms);
+	Cbuf_ExecuteEx (cbuf_safe);
+	Cbuf_ExecuteEx (cbuf_formatted_comms);
 #endif
 }
 
 void Cbuf_Init (void)
 {
-	cbuf_main.text_start = cbuf_main.text_end = MAXCMDBUF >> 1;
-	cbuf_main.wait = false;
-	cbuf_main.runAwayLoop = 0;
+	cbuf_main = malloc(sizeof(*cbuf_main));
+
 #ifndef SERVERONLY
-	cbuf_safe.text_start = cbuf_safe.text_end = (MAXCMDBUF >> 1);
-	cbuf_safe.wait = false;
-	cbuf_safe.runAwayLoop = 0;
-
-	cbuf_formatted_comms.text_start = cbuf_formatted_comms.text_end = (MAXCMDBUF >> 1);
-	cbuf_formatted_comms.wait = false;
-	cbuf_formatted_comms.runAwayLoop = 0;
-
-	cbuf_svc.text_start = cbuf_svc.text_end = (MAXCMDBUF >> 1);
-	cbuf_svc.wait = false;
-	cbuf_svc.runAwayLoop = 0;
+	cbuf_svc = malloc(sizeof(*cbuf_svc));
+	cbuf_safe = malloc(sizeof(*cbuf_safe));
+	cbuf_formatted_comms = malloc(sizeof(*cbuf_formatted_comms));
 #endif
 
-	cbuf_cmdsave.text_start = cbuf_cmdsave.text_end = (MAXCMDBUF >> 1);
-	cbuf_cmdsave.wait = false;
-	cbuf_cmdsave.runAwayLoop = 0;
+	cbuf_cmdsave = malloc(sizeof(*cbuf_cmdsave));
+
+	if (cbuf_main == 0
+#ifndef SERVERONLY
+	 || cbuf_svc == 0
+	 || cbuf_safe == 0
+	 || cbuf_formatted_comms == 0
+#endif
+	 || cbuf_cmdsave == 0)
+	{
+		Sys_Error("Cmd_Init: Out of memory\n");
+	}
+
+	cbuf_main->text_start = cbuf_main->text_end = MAXCMDBUF >> 1;
+	cbuf_main->wait = false;
+	cbuf_main->runAwayLoop = 0;
+#ifndef SERVERONLY
+	cbuf_safe->text_start = cbuf_safe->text_end = (MAXCMDBUF >> 1);
+	cbuf_safe->wait = false;
+	cbuf_safe->runAwayLoop = 0;
+
+	cbuf_formatted_comms->text_start = cbuf_formatted_comms->text_end = (MAXCMDBUF >> 1);
+	cbuf_formatted_comms->wait = false;
+	cbuf_formatted_comms->runAwayLoop = 0;
+
+	cbuf_svc->text_start = cbuf_svc->text_end = (MAXCMDBUF >> 1);
+	cbuf_svc->wait = false;
+	cbuf_svc->runAwayLoop = 0;
+#endif
+
+	cbuf_cmdsave->text_start = cbuf_cmdsave->text_end = (MAXCMDBUF >> 1);
+	cbuf_cmdsave->wait = false;
+	cbuf_cmdsave->runAwayLoop = 0;
+}
+
+void Cbuf_Shutdown()
+{
+	if (cbuf_main)
+	{
+		free(cbuf_main);
+		cbuf_main = 0;
+	}
+
+#ifndef SERVERONLY
+	if (cbuf_svc)
+	{
+		free(cbuf_svc);
+		cbuf_svc = 0;
+	}
+
+	if (cbuf_safe)
+	{
+		free(cbuf_safe);
+		cbuf_safe = 0;
+	}
+
+	if (cbuf_formatted_comms)
+	{
+		free(cbuf_formatted_comms);
+		cbuf_formatted_comms = 0;
+	}
+#endif
+
+	if (cbuf_cmdsave)
+	{
+		free(cbuf_cmdsave);
+		cbuf_cmdsave = 0;
+	}
 }
 
 //Adds command text at the end of the buffer
@@ -216,7 +272,7 @@ void Cbuf_ExecuteEx (cbuf_t *cbuf)
 		// don't execute lines without ending \n; this fixes problems with
 		// partially stuffed aliases not being executed properly
 #ifndef SERVERONLY
-		if (cbuf == &cbuf_svc && i == cursize)
+		if (cbuf == cbuf_svc && i == cursize)
 			break;
 #endif
 
@@ -392,7 +448,7 @@ void Cmd_Exec_f(void)
 		Com_Printf("execing %s\n", name);
 
 #ifndef SERVERONLY
-	if (cbuf_current == &cbuf_svc)
+	if (cbuf_current == cbuf_svc)
 	{
 		Cbuf_AddText("weight_disable\n");
 		Cbuf_AddText(f);
@@ -578,7 +634,7 @@ void Cmd_Alias_f (void)
 		a->flags |= ALIAS_ARCHIVE;
 
 #ifndef SERVERONLY
-	if (cbuf_current == &cbuf_svc)
+	if (cbuf_current == cbuf_svc)
 		a->flags |= ALIAS_SERVER;
 	if (!Q_strcasecmp(Cmd_Argv(0), "tempalias"))
 		a->flags |= ALIAS_TEMP;
@@ -1074,8 +1130,8 @@ char *Cmd_MacroString (char *s, int *macro_length)
 		if (!Q_strncasecmp(s, macro->name, strlen(macro->name)))
 		{
 #ifndef SERVERONLY
-			if (cbuf_current == &cbuf_main && macro->teamplay)
-				cbuf_current = &cbuf_formatted_comms;
+			if (cbuf_current == cbuf_main && macro->teamplay)
+				cbuf_current = cbuf_formatted_comms;
 #endif
 			*macro_length = strlen(macro->name);
 			return macro->func();
@@ -1256,7 +1312,7 @@ static void Cmd_ExecuteStringEx (cbuf_t *context, char *text)
 		goto done;		// no tokens
 
 #ifndef SERVERONLY
-	if (cbuf_current == &cbuf_svc)
+	if (cbuf_current == cbuf_svc)
 	{
 		if (CL_CheckServerCommand())
 			goto done;
@@ -1271,7 +1327,7 @@ static void Cmd_ExecuteStringEx (cbuf_t *context, char *text)
 		{
 			char **s;
 
-			if (cbuf_current == &cbuf_safe)
+			if (cbuf_current == cbuf_safe)
 			{
 				for (s = msgtrigger_commands; *s; s++)
 				{
@@ -1284,7 +1340,7 @@ static void Cmd_ExecuteStringEx (cbuf_t *context, char *text)
 					goto done;
 				}
 			}
-			else if (cbuf_current == &cbuf_formatted_comms)
+			else if (cbuf_current == cbuf_formatted_comms)
 			{
 				for (s = formatted_comms_commands; *s; s++)
 				{
@@ -1311,8 +1367,8 @@ static void Cmd_ExecuteStringEx (cbuf_t *context, char *text)
 		}
 		else
 		{
-			Cbuf_AddTextEx(&cbuf_cmdsave, text);
-			Cbuf_AddTextEx(&cbuf_cmdsave, "\n");
+			Cbuf_AddTextEx(cbuf_cmdsave, text);
+			Cbuf_AddTextEx(cbuf_cmdsave, "\n");
 			goto done;
 		}
 	}
@@ -1327,7 +1383,7 @@ static void Cmd_ExecuteStringEx (cbuf_t *context, char *text)
 		if (weight_disable == 0)
 			v->weight++;
 #ifndef SERVERONLY
-		if (cbuf_current == &cbuf_formatted_comms)
+		if (cbuf_current == cbuf_formatted_comms)
 		{
 			Com_Printf("\"%s\" cannot be used in combination with teamplay $macros\n", cmd_argv[0]);
 			goto done;
@@ -1344,7 +1400,7 @@ checkaliases:
 		if (weight_disable == 0)
 			a->weight++;
 #ifndef SERVERONLY
-		if (cbuf_current == &cbuf_svc)
+		if (cbuf_current == cbuf_svc)
 		{
 			Cbuf_AddText (a->value);
 			Cbuf_AddText ("\n");
@@ -1354,9 +1410,9 @@ checkaliases:
 		{
 
 #ifdef SERVERONLY
-			inserttarget = &cbuf_main;
+			inserttarget = cbuf_main;
 #else
-			inserttarget = cbuf_current ? cbuf_current : &cbuf_main;
+			inserttarget = cbuf_current ? cbuf_current : cbuf_main;
 #endif
 
 			Cbuf_InsertTextEx (inserttarget, "\n");
@@ -1381,7 +1437,7 @@ checkaliases:
 #endif
 
 #ifndef SERVERONLY
-	if (cbuf_current != &cbuf_svc)
+	if (cbuf_current != cbuf_svc)
 #endif
 	{
 		if (cl_warncmd.value || developer.value)
@@ -1497,7 +1553,7 @@ void Cmd_If_f (void)
 	}
 
 	strlcat(buf, "\n", sizeof(buf));
-	Cbuf_InsertTextEx (cbuf_current ? cbuf_current : &cbuf_main, buf);
+	Cbuf_InsertTextEx (cbuf_current ? cbuf_current : cbuf_main, buf);
 }
 
 //Returns the position (1 to argc - 1) in the command's argument list where the given parameter apears, or 0 if not present
@@ -1517,7 +1573,7 @@ void Cmd_EnableFunctionExecution()
 {
 	can_execute_functions = 1;
 
-	Cbuf_ExecuteEx(&cbuf_cmdsave);
+	Cbuf_ExecuteEx(cbuf_cmdsave);
 }
 
 static int cstc_alias_check(char *string, struct tokenized_string *ts)
