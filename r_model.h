@@ -295,7 +295,10 @@ typedef enum {MOD_NORMAL, MOD_PLAYER, MOD_EYES, MOD_FLAME, MOD_THUNDERBOLT, MOD_
 #define	EF_TRACER2	64			// orange split trail + rotate
 #define	EF_TRACER3	128			// purple trail
 
-typedef struct model_s {
+typedef struct model_s
+{
+	struct model_s *next;
+
 	char		name[MAX_QPATH];
 	qboolean	needload;		// bmodels and sprites don't cache normally
 

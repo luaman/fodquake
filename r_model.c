@@ -43,9 +43,7 @@ static void Mod_LoadAliasModel(model_t *mod, void *buffer);
 
 byte	mod_novis[MAX_MAP_LEAFS/8];
 
-#define	MAX_MOD_KNOWN	256
-model_t	mod_known[MAX_MOD_KNOWN];
-int		mod_numknown;
+static model_t *firstmodel;
 
 //Caches the data if needed
 void *Mod_Extradata(model_t *mod)
@@ -292,11 +290,16 @@ static void Mod_FreeBrushData(model_t *model)
 
 void Mod_ClearBrushesSprites(void)
 {
-	int i;
 	model_t	*mod;
+	model_t *next;
+	model_t *prev;
 
-	for (i = 0, mod = mod_known; i < mod_numknown; i++, mod++)
+	prev = 0;
+	next = firstmodel;
+	while((mod = next))
 	{
+		next = mod->next;
+
 		if (mod->type != mod_alias)
 		{
 			if (mod->type == mod_brush)
@@ -304,18 +307,23 @@ void Mod_ClearBrushesSprites(void)
 			else if (mod->type == mod_sprite)
 				Mod_FreeSpriteData(mod);
 
-			mod->needload = true;
+			free(mod);
 		}
+		else
+			prev = mod;
 	}
 }
 
 void Mod_ClearAll(void)
 {
-	int i;
 	model_t	*mod;
+	model_t *next;
 
-	for (i = 0, mod = mod_known; i < mod_numknown; i++, mod++)
+	next = firstmodel;
+	while((mod = next))
 	{
+		next = mod->next;
+
 		if (mod->type == mod_alias)
 		{
 			Mod_FreeAliasData(mod);
@@ -329,13 +337,14 @@ void Mod_ClearAll(void)
 			Mod_FreeBrushData(mod);
 		}
 
-		mod->needload = true;
+		free(mod);
 	}
+
+	firstmodel = 0;
 }
 
 static model_t *Mod_FindName(const char *name)
 {
-	int i;
 	model_t	*mod;
 	char namebuf[MAX_QPATH];
 	const char *p;
@@ -355,13 +364,18 @@ static model_t *Mod_FindName(const char *name)
 		Sys_Error ("Mod_ForName: NULL name");
 
 	// search the currently loaded models
-	for (i = 0, mod = mod_known; i < mod_numknown; i++, mod++)
+	mod = firstmodel;
+	while(mod)
+	{
 		if (strcmp(mod->name, searchname) == 0)
 			break;
 
+		mod = mod->next;
+	}
+
 	if (p)
 	{
-		if (i == mod_numknown)
+		if (!mod)
 			Sys_Error("Mod_FindName: Submodel for non-existant model %s requested\n", searchname);
 
 		submodel = atoi(p + 1);
@@ -370,14 +384,19 @@ static model_t *Mod_FindName(const char *name)
 
 		mod = &mod->submodels[submodel-1];
 	}
-
-	if (i == mod_numknown)
+	else if (mod == 0)
 	{
-		if (mod_numknown == MAX_MOD_KNOWN)
-			Sys_Error ("Mod_FindName: mod_numknown == MAX_MOD_KNOWN");
+		mod = malloc(sizeof(*mod));
+		if (mod == 0)
+			Sys_Error("Mod_FindName: Out of memory\n");
+
+		memset(mod, 0, sizeof(*mod));
+
 		strcpy (mod->name, name);
 		mod->needload = true;
-		mod_numknown++;
+
+		mod->next = firstmodel;
+		firstmodel = mod;
 	}
 
 	return mod;
