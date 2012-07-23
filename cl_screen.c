@@ -1520,6 +1520,7 @@ int SCR_Screenshot(char *name) {
 	buffersize = glwidth * glheight * 3;
 
 	buffer = Q_Malloc (buffersize);
+	glPixelStorei(GL_PACK_ALIGNMENT, 1);
 	glReadPixels (glx, gly, glwidth, glheight, GL_RGB, GL_UNSIGNED_BYTE, buffer); 
 
 #if USE_PNG
