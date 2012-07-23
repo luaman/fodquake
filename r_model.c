@@ -1524,6 +1524,8 @@ static void Mod_LoadBrushModel(model_t *mod, void *buffer)
 			if (mod->submodels == 0)
 				Sys_Error("Mod_LoadBrushModel: Out of memory\n");
 		}
+		else
+			mod->submodels = 0;
 
 		mainmodel = mod;
 
