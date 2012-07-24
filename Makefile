@@ -39,7 +39,7 @@ ifeq ($(OS), aros)
 		sys_morphos.o \
 		net_amitcp.o \
 		thread_aros.o \
-		cd_morphos.o \
+		cd_null.o \
 		in_morphos.o \
 		sys_io_morphos.o \
 		sys_lib_null.o
