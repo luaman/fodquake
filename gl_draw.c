@@ -873,6 +873,40 @@ void Draw_Fill(int x, int y, int w, int h, int c)
 	Draw_AlphaFill(x, y, w, h, c, 1);
 }
 
+void Draw_Line(int x1, int y1, int x2, int y2, float width, float r, float g, float b, float a)
+{
+	float coords[4];
+	float colours[8];
+
+	coords[0 + 0] = x1;
+	coords[0 + 1] = y1;
+	coords[2 + 0] = x2;
+	coords[2 + 1] = y2;
+
+	colours[0 + 0] = r;
+	colours[0 + 1] = g;
+	colours[0 + 2] = b;
+	colours[0 + 3] = a;
+
+	colours[4 + 0] = r;
+	colours[4 + 1] = g;
+	colours[4 + 2] = b;
+	colours[4 + 3] = a;
+
+	GL_SetAlphaTestBlend(0, 1);
+	glDisable(GL_TEXTURE_2D);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+	GL_SetArrays(FQ_GL_VERTEX_ARRAY|FQ_GL_COLOR_ARRAY);
+
+	glVertexPointer(2, GL_FLOAT, 0, coords);
+	glColorPointer(4, GL_FLOAT, 0, colours);
+
+	glDrawArrays(GL_LINES, 0, 2);
+
+	glEnable(GL_TEXTURE_2D);
+}
+
 //=============================================================================
 
 void Draw_FadeScreen(void)
