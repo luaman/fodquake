@@ -196,8 +196,6 @@ int cvarsregged;
 
 void Host_Init(int argc, char **argv)
 {
-	FILE *f;
-
 	srand(time(0));
 
 	COM_InitArgv(argc, argv);
@@ -275,15 +273,13 @@ void Host_Init(int argc, char **argv)
 	else
 	{
 		Cbuf_AddText("exec default.cfg\n");
-		if (FS_FOpenFile("config.cfg", &f) != -1)
+		if (FS_FileExists("config.cfg"))
 		{
 			Cbuf_AddText("exec config.cfg\n");
-			fclose(f);
 		}
-		if (FS_FOpenFile("autoexec.cfg", &f) != -1)
+		if (FS_FileExists("autoexec.cfg"))
 		{
-			Cbuf_AddText ("exec autoexec.cfg\n");
-			fclose(f);
+			Cbuf_AddText("exec autoexec.cfg\n");
 		}
 		Cbuf_AddText("cfg_load default.cfg\n");
 		Cbuf_Execute();

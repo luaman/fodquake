@@ -2001,18 +2001,7 @@ static void M_SinglePlayer_Draw()
 
 static void CheckSPGame ()
 {
-	FILE *f;
-
-	FS_FOpenFile ("spprogs.dat", &f);
-	if (f)
-	{
-		fclose (f);
-		m_singleplayer_notavail = false;
-	}
-	else
-	{
-		m_singleplayer_notavail = true;
-	}
+	m_singleplay_notavail = !FS_FileExists("spprogs.dat");
 }
 
 extern int file_from_gamedir;
@@ -2207,11 +2196,11 @@ static void M_Menu_Load_f()
 {
 	FILE *f;
 
-	if (FS_FOpenFile ("spprogs.dat", &f) == -1)
+	if (!FS_FileExists("spprogs.dat"))
 		return;
 
-	M_EnterMenu (m_load);
-	M_ScanSaves (!file_from_gamedir ? "qw" : com_gamedir);
+	M_EnterMenu(m_load);
+	M_ScanSaves(com_gamedir);
 }
 
 static void M_Menu_Save_f()

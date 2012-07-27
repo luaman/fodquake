@@ -510,16 +510,11 @@ skipwhite:
 	return data;
 }
 
-void COM_CheckRegistered (void)
+void COM_CheckRegistered(void)
 {
-	FILE *h;
-
-	FS_FOpenFile ("gfx/pop.lmp", &h);
-
-	if (h)
+	if (FS_FileExists("gfx/pop.lmp"))
 	{
-		Cvar_Set (&registered, "1");
-		fclose (h);
+		Cvar_Set(&registered, "1");
 	}
 }
 

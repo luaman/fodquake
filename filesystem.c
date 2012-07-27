@@ -221,6 +221,45 @@ int FS_FOpenFile(const char *filename, FILE ** file)
 	return -1;
 }
 
+int FS_FileExists(const char *filename)
+{
+	struct searchpath *search;
+	struct pack *pak;
+	struct packfile *pakfile;
+	FILE *f;
+
+	// search through the path, one element at a time
+	for (search = com_searchpaths; search; search = search->next)
+	{
+		// is the element a pak file?
+		if (search->pack)
+		{
+			// look through all the pak file elements
+			pak = search->pack;
+
+			pakfile = bsearch(filename, pak->files, pak->numfiles, sizeof(*pak->files), pakfile_compare);
+
+			if (pakfile)
+			{
+				return 1;
+			}
+		}
+		else
+		{
+			Q_snprintfz(com_netpath, sizeof(com_netpath), "%s/%s", search->filename, filename);
+
+			if (!(f = fopen(com_netpath, "rb")))
+				continue;
+
+			fclose(f);
+
+			return 1;
+		}
+	}
+
+	return -1;
+}
+
 //Filename are relative to the quake directory.
 //Always appends a 0 byte to the loaded data.
 static byte *FS_LoadFile(const char *path, int usehunk)

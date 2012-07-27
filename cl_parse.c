@@ -175,7 +175,6 @@ qboolean CL_CheckOrDownloadFile (char *filename)
 {
 	char buf[1500];
 	unsigned int i;
-	FILE *f;
 
 	if (strstr (filename, ".."))
 	{
@@ -183,10 +182,8 @@ qboolean CL_CheckOrDownloadFile (char *filename)
 		return true;
 	}
 
-	FS_FOpenFile (filename, &f);
-	if (f)
+	if (FS_FileExists(filename))
 	{	// it exists, no need to download
-		fclose (f);
 		return true;
 	}
 
