@@ -1,6 +1,15 @@
 #ifndef SYS_IO_H
 #define SYS_IO_H
 
+struct SysFile;
+
+enum Sys_IO_File_Status
+{
+	SIOFS_OK,
+	SIOFS_NOT_FOUND,
+	SIOFS_TRY_AGAIN,
+};
+
 enum directory_entry_type
 {
 	et_file,
@@ -21,6 +30,15 @@ int Sys_IO_Read_Dir(const char *basedir, const char *subdir, int (*callback)(voi
 
 int Sys_IO_Path_Exists(const char *path);
 int Sys_IO_Path_Writable(const char *path);
+
+struct SysFile *Sys_IO_Open_File_Read(const char *path, enum Sys_IO_File_Status *filestatus);
+struct SysFile *Sys_IO_Open_File_Write(const char *path);
+void Sys_IO_Close_File(struct SysFile *);
+int Sys_IO_Get_File_Length(struct SysFile *);
+int Sys_IO_Get_File_Position(struct SysFile *);
+void Sys_IO_Set_File_Position(struct SysFile *, int position);
+unsigned int Sys_IO_Read_File(struct SysFile *, void *buffer, unsigned int length);
+unsigned int Sys_IO_Write_File(struct SysFile *, const void *buffer, unsigned int length);
 
 #endif /* SYS_IO_H */
 
