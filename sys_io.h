@@ -37,8 +37,8 @@ void Sys_IO_Close_File(struct SysFile *);
 int Sys_IO_Get_File_Length(struct SysFile *);
 int Sys_IO_Get_File_Position(struct SysFile *);
 void Sys_IO_Set_File_Position(struct SysFile *, int position);
-unsigned int Sys_IO_Read_File(struct SysFile *, void *buffer, unsigned int length);
-unsigned int Sys_IO_Write_File(struct SysFile *, const void *buffer, unsigned int length);
+int Sys_IO_Read_File(struct SysFile *, void *buffer, int length);
+int Sys_IO_Write_File(struct SysFile *, const void *buffer, int length);
 
 #endif /* SYS_IO_H */
 
