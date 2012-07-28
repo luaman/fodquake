@@ -727,12 +727,4 @@ void *Sys_Video_GetBuffer(void *display)
 	
 	return d->buf;
 }
-
-void VID_LockBuffer()
-{
-}
-
-void VID_UnlockBuffer()
-{
-}
 #endif

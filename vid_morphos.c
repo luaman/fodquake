@@ -356,14 +356,6 @@ void Sys_Video_SetPalette(void *display, unsigned char *palette)
 	}
 }
 
-void VID_LockBuffer()
-{
-}
-
-void VID_UnlockBuffer()
-{
-}
-
 void Sys_Video_SetWindowTitle(void *display, const char *text)
 {
 	struct display *d;

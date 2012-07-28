@@ -527,3 +527,11 @@ int VID_FocusChanged()
 	return Sys_Video_FocusChanged(display);
 }
 
+void VID_LockBuffer(void)
+{
+}
+
+void VID_UnlockBuffer(void)
+{
+}
+
