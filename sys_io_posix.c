@@ -9,6 +9,12 @@
 #include "dirent.h"
 #include "sys/stat.h"
 
+struct SysFile
+{
+	FILE *f;
+	unsigned int length;
+};
+
 void Sys_IO_Create_Directory(const char *path)
 {
 	mkdir(path, 0777);
@@ -72,5 +78,62 @@ int Sys_IO_Path_Exists(const char *path)
 int Sys_IO_Path_Writable(const char *path)
 {
 	return access(path, W_OK) == 0;
+}
+
+struct SysFile *Sys_IO_Open_File_Read(const char *path, enum Sys_IO_File_Status *filestatus)
+{
+	struct SysFile *sysfile;
+	struct stat st;
+
+	if (filestatus)
+		*filestatus = SIOFS_NOT_FOUND;
+
+	if (stat(path, &st) != 0)
+		return 0;
+
+	sysfile = malloc(sizeof(*sysfile));
+	if (sysfile)
+	{
+		sysfile->f = fopen(path, "r");
+		if (sysfile->f)
+		{
+			sysfile->length = st.st_size;
+
+			if (filestatus)
+				*filestatus = SIOFS_OK;
+
+			return sysfile;
+		}
+
+		free(sysfile);
+	}
+
+	return 0;
+}
+
+void Sys_IO_Close_File(struct SysFile *sysfile)
+{
+	fclose(sysfile->f);
+	free(sysfile);
+}
+
+int Sys_IO_Get_File_Length(struct SysFile *sysfile)
+{
+	return sysfile->length;
+}
+
+int Sys_IO_Get_File_Position(struct SysFile *sysfile)
+{
+	return ftell(sysfile->f);
+}
+
+void Sys_IO_Set_File_Position(struct SysFile *sysfile, int position)
+{
+	return fseek(sysfile->f, position, SEEK_SET);
+}
+
+unsigned int Sys_IO_Read_File(struct SysFile *sysfile, void *buffer, unsigned int length)
+{
+	return fread(buffer, 1, length, sysfile->f);
 }
 
