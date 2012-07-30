@@ -140,8 +140,8 @@ void GL_CheckExtensions (void)
 
 	if (gl_vbo)
 	{
-		qglBindBufferARB = (void *)qglGetProcAddress("glBindBufferARB");
-		qglBufferDataARB = (void *)qglGetProcAddress("glBufferDataARB");
+		qglBindBufferARB = VID_GetProcAddress("glBindBufferARB");
+		qglBufferDataARB = VID_GetProcAddress("glBufferDataARB");
 
 		if (qglBindBufferARB == 0 || qglBufferDataARB == 0)
 			gl_vbo = false;
@@ -149,18 +149,18 @@ void GL_CheckExtensions (void)
 
 	if (gl_fs)
 	{
-		qglAttachObjectARB = (void *)qglGetProcAddress("glAttachObjectARB");
-		qglCompileShaderARB = (void *)qglGetProcAddress("glCompileShaderARB");
-		qglCreateProgramObjectARB = (void *)qglGetProcAddress("glCreateProgramObjectARB");
-		qglCreateShaderObjectARB = (void *)qglGetProcAddress("glCreateShaderObjectARB");
-		qglDeleteObjectARB = (void *)qglGetProcAddress("glDeleteObjectARB");
-		qglGetInfoLogARB = (void *)qglGetProcAddress("glGetInfoLogARB");
-		qglGetObjectParameterivARB = (void *)qglGetProcAddress("glGetObjectParameterivARB");
-		qglGetUniformLocationARB = (void *)qglGetProcAddress("glGetUniformLocationARB");
-		qglLinkProgramARB = (void *)qglGetProcAddress("glLinkProgramARB");
-		qglShaderSourceARB = (void *)qglGetProcAddress("glShaderSourceARB");
-		qglUniform1fARB = (void *)qglGetProcAddress("glUniform1fARB");
-		qglUseProgramObjectARB = (void *)qglGetProcAddress("glUseProgramObjectARB");
+		qglAttachObjectARB = VID_GetProcAddress("glAttachObjectARB");
+		qglCompileShaderARB = VID_GetProcAddress("glCompileShaderARB");
+		qglCreateProgramObjectARB = VID_GetProcAddress("glCreateProgramObjectARB");
+		qglCreateShaderObjectARB = VID_GetProcAddress("glCreateShaderObjectARB");
+		qglDeleteObjectARB = VID_GetProcAddress("glDeleteObjectARB");
+		qglGetInfoLogARB = VID_GetProcAddress("glGetInfoLogARB");
+		qglGetObjectParameterivARB = VID_GetProcAddress("glGetObjectParameterivARB");
+		qglGetUniformLocationARB = VID_GetProcAddress("glGetUniformLocationARB");
+		qglLinkProgramARB = VID_GetProcAddress("glLinkProgramARB");
+		qglShaderSourceARB = VID_GetProcAddress("glShaderSourceARB");
+		qglUniform1fARB = VID_GetProcAddress("glUniform1fARB");
+		qglUseProgramObjectARB = VID_GetProcAddress("glUseProgramObjectARB");
 
 		if (qglAttachObjectARB == 0
 		 || qglCompileShaderARB == 0

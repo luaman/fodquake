@@ -458,6 +458,11 @@ qboolean VID_HWGammaSupported()
 {
 	return Sys_Video_HWGammaSupported(display);
 }
+
+void *VID_GetProcAddress(const char *name)
+{
+	return Sys_Video_GetProcAddress(display, name);
+}
 #endif
 
 void VID_SetCaption(const char *text)
