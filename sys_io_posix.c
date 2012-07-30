@@ -132,7 +132,7 @@ void Sys_IO_Set_File_Position(struct SysFile *sysfile, int position)
 	return fseek(sysfile->f, position, SEEK_SET);
 }
 
-unsigned int Sys_IO_Read_File(struct SysFile *sysfile, void *buffer, unsigned int length)
+int Sys_IO_Read_File(struct SysFile *sysfile, void *buffer, int length)
 {
 	return fread(buffer, 1, length, sysfile->f);
 }
