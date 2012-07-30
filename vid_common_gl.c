@@ -28,22 +28,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "gl_local.h"
 #include "gl_state.h"
 
-#ifdef _WIN32
-#include <windows.h>
-#define qglGetProcAddress wglGetProcAddress
-#elif defined(__MORPHOS__)
-#include "vid_tinygl.h"
-#define qglGetProcAddress tglGetProcAddress
-#elif defined(__MACOSX__)
-void *qglGetProcAddress(const char *p);
-#elif defined(AROS)
-#define qglGetProcAddress AROSMesaGetProcAddress
-#else
-#define GLX_GLXEXT_PROTOTYPES 1
-#include <GL/glx.h>
-#define qglGetProcAddress glXGetProcAddressARB
-#endif
-
 const char *gl_vendor;
 const char *gl_renderer;
 const char *gl_version;

@@ -295,6 +295,11 @@ qboolean Sys_Video_HWGammaSupported(void *display)
 	return d->gammaworks;
 }
 
+void *Sys_Video_GetProcAddress(void *display, const char *name)
+{
+	return wglGetProcAddress(name);
+}
+
 void Sys_Video_SetGamma(void *display, unsigned short *ramps)
 {
 	struct display *d;

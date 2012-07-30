@@ -323,6 +323,11 @@ qboolean Sys_Video_HWGammaSupported(void *display)
 	return 0; 
 }
 
+void *Sys_Video_GetProcAddress(void *display, const char *name)
+{
+	return AROSMesaGetProcAddress(name);
+}
+
 int Sys_Video_FocusChanged(void *display)
 {
 	return 0;

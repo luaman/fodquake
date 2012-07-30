@@ -410,7 +410,7 @@ qboolean Sys_Video_HWGammaSupported(void *display)
 	return d->gammaenabled;
 }
 
-void *tglGetProcAddress(const char *s)
+void *Sys_Video_GetProcAddress(void *display, const char *name);
 {
 	return 0;
 }
