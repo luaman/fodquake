@@ -895,7 +895,7 @@ void GL_Warp_Init()
 		"gl_FragColor = texture2D(mytex, vec2(s, t));\n"
 		"}\n";
 
-		waterprogram = GL_SetupShaderProgram(0, prog);
+		waterprogram = GL_SetupShaderProgram(0, 0, 0, prog);
 	}
 }
 

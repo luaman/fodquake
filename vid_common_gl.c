@@ -360,46 +360,45 @@ static int GL_CompileShader(GLenum type, const char *shader)
 	return object;
 }
 
-int GL_SetupShaderProgram(const char *vertexshader, const char *fragmentshader)
+int GL_SetupShaderProgram(int vertexobject, const char *vertexshader, int fragmentobject, const char *fragmentshader)
 {
 	int programobject;
-	int shaderobject;
 	int linked;
-	int ok;
 
-	ok = 1;
-
-	programobject = qglCreateProgramObjectARB();
+	if ((vertexobject && vertexshader) || (fragmentobject && fragmentshader))
+		return 0;
 
 	if (vertexshader)
 	{
-		shaderobject = GL_CompileShader(GL_VERTEX_SHADER_ARB, vertexshader);
-		if (shaderobject)
-		{
-			qglAttachObjectARB(programobject, shaderobject);
-			qglDeleteObjectARB(shaderobject);
-		}
-		else
-			ok = 0;
+		vertexobject = GL_CompileShader(GL_VERTEX_SHADER_ARB, vertexshader);
 	}
 
-	if (ok && fragmentshader)
+	if (fragmentshader)
 	{
-		shaderobject = GL_CompileShader(GL_FRAGMENT_SHADER_ARB, fragmentshader);
-		if (shaderobject)
-		{
-			qglAttachObjectARB(programobject, shaderobject);
-			qglDeleteObjectARB(shaderobject);
-		}
-		else
-			ok = 0;
+		fragmentobject = GL_CompileShader(GL_FRAGMENT_SHADER_ARB, fragmentshader);
 	}
 
-	if (!ok)
+	if ((vertexobject || vertexshader == 0) && (fragmentobject || fragmentshader == 0))
 	{
-		qglDeleteObjectARB(programobject);
+		programobject = qglCreateProgramObjectARB();
+
+		if (vertexobject)
+			qglAttachObjectARB(programobject, vertexobject);
+
+		if (fragmentobject)
+			qglAttachObjectARB(programobject, fragmentobject);
+	}
+	else
+		programobject = 0;
+
+	if (vertexshader && vertexobject)
+		qglDeleteObjectARB(vertexobject);
+
+	if (fragmentshader && fragmentobject)
+		qglDeleteObjectARB(fragmentobject);
+
+	if (!programobject)
 		return 0;
-	}
 
 	qglLinkProgramARB(programobject);
 	qglGetObjectParameterivARB(programobject, GL_OBJECT_LINK_STATUS_ARB, &linked);
