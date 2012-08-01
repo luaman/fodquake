@@ -52,6 +52,9 @@ void (*qglShaderSourceARB)(GLhandleARB, GLsizei, const GLcharARB* *, const GLint
 void (*qglUniform1fARB)(GLint, GLfloat);
 void (*qglUseProgramObjectARB)(GLhandleARB);
 
+void (*qglBindAttribLocationARB)(GLhandleARB, GLuint, const GLcharARB *);
+void (*qglVertexAttribPointerARB)(GLuint, GLint, GLenum, GLboolean, GLsizei, const GLvoid *);
+
 qboolean gl_combine = false;
 
 qboolean gl_add_ext = false;
@@ -60,6 +63,7 @@ qboolean gl_npot;
 
 qboolean gl_vbo = false;
 
+qboolean gl_vs;
 qboolean gl_fs;
 
 float gldepthmin, gldepthmax;
@@ -136,6 +140,7 @@ void GL_CheckExtensions (void)
 	gl_add_ext = CheckExtension("GL_ARB_texture_env_add");
 	gl_npot = CheckExtension("GL_ARB_texture_non_power_of_two");
 	gl_vbo = CheckExtension("GL_ARB_vertex_buffer_object");
+	gl_vs = CheckExtension("GL_ARB_vertex_shader");
 	gl_fs = CheckExtension("GL_ARB_fragment_shader");
 
 	if (gl_vbo)
@@ -147,7 +152,7 @@ void GL_CheckExtensions (void)
 			gl_vbo = false;
 	}
 
-	if (gl_fs)
+	if (gl_vs || gl_fs)
 	{
 		qglAttachObjectARB = VID_GetProcAddress("glAttachObjectARB");
 		qglCompileShaderARB = VID_GetProcAddress("glCompileShaderARB");
@@ -175,7 +180,19 @@ void GL_CheckExtensions (void)
 		 || qglUniform1fARB == 0
 		 || qglUseProgramObjectARB == 0)
 		{
+			gl_vs = 0;
 			gl_fs = 0;
+		}
+		else if (gl_vs)
+		{
+			qglBindAttribLocationARB = VID_GetProcAddress("glBindAttribLocationARB");
+			qglVertexAttribPointerARB = VID_GetProcAddress("glVertexAttribPointerARB");
+
+			if (qglBindAttribLocationARB == 0
+			 || qglVertexAttribPointerARB == 0)
+			{
+				gl_vs = 0;
+			}
 		}
 	}
 

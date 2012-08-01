@@ -265,6 +265,9 @@ extern void (*qglShaderSourceARB)(GLhandleARB, GLsizei, const GLcharARB* *, cons
 extern void (*qglUniform1fARB)(GLint, GLfloat);
 extern void (*qglUseProgramObjectARB)(GLhandleARB);
 
+extern void (*qglBindAttribLocationARB)(GLhandleARB, GLuint, const GLcharARB *);
+extern void (*qglVertexAttribPointerARB)(GLuint, GLint, GLenum, GLboolean, GLsizei, const GLvoid *);
+
 extern float gldepthmin, gldepthmax;
 extern byte color_white[4], color_black[4];
 extern qboolean gl_mtexable;
