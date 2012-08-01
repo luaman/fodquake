@@ -64,9 +64,6 @@ int			underwatertexture, detailtexture;
 vec3_t		vup, vpn, vright;
 vec3_t		r_origin;
 
-float	r_world_matrix[16];
-float	r_base_world_matrix[16];
-
 // screen size info
 refdef_t	r_refdef;
 
@@ -1470,8 +1467,6 @@ static void R_SetupGL (void)
 	glRotatef (-r_refdef.viewangles[0], 0, 1, 0);
 	glRotatef (-r_refdef.viewangles[1], 0, 0, 1);
 	glTranslatef (-r_refdef.vieworg[0], -r_refdef.vieworg[1], -r_refdef.vieworg[2]);
-
-	glGetFloatv (GL_MODELVIEW_MATRIX, r_world_matrix);
 
 	// set drawing parms
 	if (gl_cull.value)

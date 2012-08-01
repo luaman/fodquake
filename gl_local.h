@@ -135,8 +135,6 @@ extern	int underwatertexture, detailtexture;
 
 extern	int		lightmode;		// set to gl_lightmode on mapchange
 
-extern	float	r_world_matrix[16];
-
 extern	const char *gl_vendor;
 extern	const char *gl_renderer;
 extern	const char *gl_version;
