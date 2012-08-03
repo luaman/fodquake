@@ -447,6 +447,16 @@ static void AddCollisions(float *posedest, unsigned int *lightdest, unsigned int
 	}
 }
 
+static void AddColourCollisions(unsigned int *lightdest, unsigned int numverts, unsigned int collisions, unsigned short *collisionmap)
+{
+	unsigned int i;
+
+	for(i=0;i<collisions;i++)
+	{
+		lightdest[numverts+i] = lightdest[collisionmap[i]];
+	}
+}
+
 #ifdef FOD_PPC
 static void __attribute__ ((__noinline__)) InterpolatePoses_Altivec(float *posedest, unsigned int *lightdest, trivertx_t *src1, trivertx_t *src2, float lerpfrac, unsigned int count, unsigned char modelalpha)
 {
@@ -578,6 +588,7 @@ static void __attribute__ ((__noinline__)) InterpolatePoses_Altivec(float *posed
 	if (count > 0)
 		InterpolatePoses_Scalar((float*)vposedest, (unsigned int*)vlightdest, (trivertx_t*)vsrc1, (trivertx_t*)vsrc2, lerpfrac, count, modelalpha);
 }
+#endif
 
 static void InterpolatePoses(float *posedest, unsigned int *lightdest, trivertx_t *src1, trivertx_t *src2, float lerpfrac, unsigned int count, unsigned char modelalpha)
 {
@@ -587,7 +598,6 @@ static void InterpolatePoses(float *posedest, unsigned int *lightdest, trivertx_
 	else
 #endif
 		InterpolatePoses_Scalar(posedest, lightdest, src1, src2, lerpfrac, count, modelalpha);
->>>>>>> master
 }
 
 static float *posedest;
