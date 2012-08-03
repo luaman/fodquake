@@ -526,6 +526,11 @@ qboolean Sys_Video_HWGammaSupported(void *display)
 	return d->vid_gammaworks;
 }
 
+void *Sys_Video_GetProcAddress(void *display, const char *name)
+{
+	return glXGetProcAddressARB((GLubyte *)name);
+}
+
 int Sys_Video_FocusChanged(void *display)
 {
 	struct display *d;

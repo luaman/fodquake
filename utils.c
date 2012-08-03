@@ -517,6 +517,12 @@ char *Util_strcasestr (const char *psz_big, const char *psz_little)
  * Directory Reading
  */
 
+struct directory_entry_temp
+{
+	struct directory_entry_temp *next;
+	struct directory_entry directory_entry;
+};
+
 static void del_det_list(struct directory_entry_temp *list, int free_name)
 {
 	struct directory_entry_temp *temp, *temp1;
@@ -527,53 +533,65 @@ static void del_det_list(struct directory_entry_temp *list, int free_name)
 	{
 		temp1 = temp->next;
 		if (free_name)
-			free(temp->name);
+			free(temp->directory_entry.name);
 		free(temp);
 		temp = temp1;
 	}
-}	
-
-static struct directory_entry_temp *add_det(struct directory_entry_temp **list)
-{
-	struct directory_entry_temp *temp;
-
-	if (*list == NULL)
-	{
-		temp = calloc(1, sizeof(struct directory_entry_temp));
-		if (temp == NULL)
-			return NULL;
-		*list = temp;
-		return temp;
-	}
-	temp = *list;
-	while (temp->next)
-		temp = temp->next;
-
-	temp->next = calloc(1, sizeof(struct directory_entry_temp));
-
-	return temp->next;
 }
 
-static int create_entries(struct directory_list *list, struct directory_entry_temp *det, int count)
+static int add_det(void *opaque, struct directory_entry *directory_entry)
 {
-	int i;
+	struct directory_entry_temp **list;
+	struct directory_entry_temp *temp;
+	char *strtmp;
+
+	list = opaque;
+
+	strtmp = strdup(directory_entry->name);
+	temp = malloc(sizeof(*temp));
+	if (temp == 0 || strtmp == 0)
+	{
+		free(temp);
+		free(strtmp);
+		return 0;
+	}
+
+	temp->next = *list;
+	temp->directory_entry = *directory_entry;
+	temp->directory_entry.name = strtmp;
+	*list = temp;
+
+	return 1;
+}
+
+static int create_entries(struct directory_list *list, struct directory_entry_temp *det)
+{
 	struct directory_entry_temp *dett;
+	unsigned int count;
+	unsigned int i;
+
+	count = 0;
+	dett = det;
+	while(dett)
+	{
+		count++;
+		dett = dett->next;
+	}
+
+	list->entry_count = count;
 
 	list->entries = calloc(count, sizeof(struct directory_entry));
 	if (list->entries == NULL)
-		return 1;
+		return 0;
 
 	dett = det;
 	for (i=0; i<count; i++)
 	{
-		if (dett == NULL)
-			return 1;
-		list->entries[i].type = dett->type;
-		list->entries[i].name = dett->name;
+		list->entries[i] = dett->directory_entry;
 		dett = dett->next;
 	}
 
-	return 0;
+	return 1;
 }
 
 void Util_Dir_Delete(struct directory_list *dlist)
@@ -612,54 +630,47 @@ void Util_Dir_Sort(struct directory_list *dlist)
 	qsort(dlist->entries, dlist->entry_count, sizeof(struct directory_entry), dir_entry_compare);
 }
 
-static int remove_dirs_from_det(struct directory_entry_temp **list)
+static void remove_dirs_from_det(struct directory_entry_temp **list)
 {
 	struct directory_entry_temp *tmp, *tmpn, *tmpp;
-	int count;
 
 	tmp = *list;
 	tmpp = NULL;
 
-	count = 0;
-
 	while(tmp)
 	{
 		tmpn = tmp->next;
-		if (tmp->type == et_dir)
+		if (tmp->directory_entry.type == et_dir)
 		{
 			if (tmp == *list)
 				*list = tmpn;
 			else if (tmpp)
 				tmpp->next = tmpn;
-			free(tmp->name);
+			free(tmp->directory_entry.name);
 			free(tmp);
-			count++;
 		}
 		else
 			tmpp = tmp;
 
 		tmp = tmpn;
-	}	
-
-	return count;
+	}
 }
 
-static int filter_det(struct directory_entry_temp **list, char **filter)
+static void filter_det(struct directory_entry_temp **list, char **filter)
 {
 	struct directory_entry_temp *tmp, *tmpn, *tmpp;
 	char **cfilter;
-	int remove, count;
+	int remove;
 
 	tmp = *list;
 	tmpp = NULL;
-	count = 0;
 
 	while (tmp)
 	{
 		tmpn = tmp->next;
 		cfilter = filter;
 		remove = 1;
-		if (tmp->type == et_dir)
+		if (tmp->directory_entry.type == et_dir)
 		{
 			remove = 0;
 		}
@@ -667,7 +678,7 @@ static int filter_det(struct directory_entry_temp **list, char **filter)
 		{
 			while (*cfilter)
 			{
-				if (Util_strcasestr(tmp->name, *cfilter) != NULL)
+				if (Util_strcasestr(tmp->directory_entry.name, *cfilter) != NULL)
 				{
 					remove = 0;
 					break;
@@ -678,12 +689,11 @@ static int filter_det(struct directory_entry_temp **list, char **filter)
 
 		if (remove)
 		{
-			count++;
 			if (tmp == *list)
 				*list = tmpn;
 			else if (tmpp)
 				tmpp->next = tmpn;
-			free(tmp->name);
+			free(tmp->directory_entry.name);
 			free(tmp);
 		}
 		else
@@ -693,81 +703,78 @@ static int filter_det(struct directory_entry_temp **list, char **filter)
 
 
 		tmp = tmpn;
-	}	
-
-	return count;
+	}
 }
 
 struct directory_list *Util_Dir_Read(char *dir, int recursive, int remove_dirs, char **filters)
 {
 	struct directory_list *dlist;
-	struct directory_entry_temp *det, *cdet;
-	int count;
+	struct directory_entry_temp *det, *cdet, *osdet, *osdet2;
+	int r;
 
 	if (dir == NULL)
 		return NULL;
 
 	dlist = calloc(1, sizeof(struct directory_list));
-	if (dlist == NULL)
-		return NULL;
-
-	dlist->base_dir = strdup(dir);
-	if (dlist->base_dir == NULL)
+	if (dlist)
 	{
-		free(dlist);
-		return NULL;
-	}
-
-	count = 0;
-	det = NULL;
-
-	if (Sys_Read_Dir(dir, NULL, &count, &det, &add_det))
-	{
-		del_det_list(det, 1);
-		free(dlist->base_dir);
-		free(dlist);
-		return NULL;
-
-	}
-
-	if (recursive)
-	{
-		cdet = det;
-		while (cdet)
+		dlist->base_dir = strdup(dir);
+		if (dlist->base_dir)
 		{
-			if (cdet->type == et_dir)
+			det = NULL;
+
+			if (Sys_IO_Read_Dir(dir, NULL, add_det, &det))
 			{
-				if (Sys_Read_Dir(dir, cdet->name, &count, &det, &add_det))
+				r = 1;
+
+				if (recursive)
 				{
-					del_det_list(det, 1);
-					free(dlist->base_dir);
-					free(dlist);
-					return NULL;
+					osdet = 0;
+					while(osdet != det && r)
+					{
+						osdet2 = det;
+						cdet = det;
+						while(cdet != osdet)
+						{
+							if (cdet->directory_entry.type == et_dir)
+							{
+								r = Sys_IO_Read_Dir(dir, cdet->directory_entry.name, add_det, &det);
+								if (!r)
+									break;
+							}
+
+							cdet = cdet->next;
+						}
+
+						osdet = osdet2;
+					}
 				}
+
+				if (r)
+				{
+					if (remove_dirs)
+						remove_dirs_from_det(&det);
+
+					if (filters)
+						filter_det(&det, filters);
+
+					if (create_entries(dlist, det))
+					{
+						del_det_list(det, 0);
+						return dlist;
+					}
+				}
+
+				del_det_list(det, 1);
 			}
-			cdet = cdet->next;
+
+			free(dlist->base_dir);
 		}
 
-		count -= remove_dirs_from_det(&det);
+		free(dlist);
 	}
 
-	if (filters)
-	{
-		count -= filter_det(&det, filters);
-	}
-
-	if (create_entries(dlist, det, count))
-	{
-		del_det_list(det, 1);
-		Util_Dir_Delete(dlist);
-		return NULL;
-	}
-
-	del_det_list(det, 0);
-
-	dlist->entry_count = count;
-
-	return dlist;
+	return 0;
 }
 
 int ParseColourDescription(const char *source, float *rgb)

@@ -93,7 +93,7 @@ player_state_t	*view_message;
 static qboolean Change_v_idle(cvar_t *var, char *value)
 {
 	// Don't allow cheating in TF
-	return (cl.teamfortress && cls.state >= ca_connected &&	cbuf_current != &cbuf_svc);
+	return (cl.teamfortress && cls.state >= ca_connected &&	cbuf_current != cbuf_svc);
 }
 
 static void PostChange_crosshairstuff(cvar_t *cvar)
@@ -283,7 +283,7 @@ void V_ParseDamage(void)
 void V_cshift_f(void)
 {
 	// don't allow cheating in TF
-	if (cls.state >= ca_connected && cl.teamfortress && cbuf_current != &cbuf_svc)
+	if (cls.state >= ca_connected && cl.teamfortress && cbuf_current != cbuf_svc)
 		return;
 
 	cshift_empty.destcolor[0] = atoi(Cmd_Argv(1));
@@ -295,7 +295,7 @@ void V_cshift_f(void)
 //When you run over an item, the server sends this command
 void V_BonusFlash_f(void)
 {
-	if (!v_bonusflash.value && cbuf_current == &cbuf_svc)
+	if (!v_bonusflash.value && cbuf_current == cbuf_svc)
 		return;
 
 	cl.cshifts[CSHIFT_BONUS].destcolor[0] = 215;
@@ -716,6 +716,9 @@ void V_BoundOffsets(void)
 //Idle swaying
 void V_AddIdle(void)
 {
+	if (v_idlescale.value == 0)
+		return;
+
 	r_refdef.viewangles[ROLL] += v_idlescale.value * sin(cl.time * v_iroll_cycle.value) * v_iroll_level.value;
 	r_refdef.viewangles[PITCH] += v_idlescale.value * sin(cl.time * v_ipitch_cycle.value) * v_ipitch_level.value;
 	r_refdef.viewangles[YAW] += v_idlescale.value * sin(cl.time * v_iyaw_cycle.value) * v_iyaw_level.value;

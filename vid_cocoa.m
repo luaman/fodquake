@@ -1,4 +1,25 @@
+/*
+ Copyright (C) 2011-2012 Florian Zwoch
+ Copyright (C) 2011-2012 Mark Olsen
+ 
+ This program is free software; you can redistribute it and/or
+ modify it under the terms of the GNU General Public License
+ as published by the Free Software Foundation; either version 2
+ of the License, or (at your option) any later version.
+ 
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
+ 
+ See the GNU General Public License for more details.
+ 
+ You should have received a copy of the GNU General Public License
+ along with this program; if not, write to the Free Software
+ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ */
+
 #import <AppKit/AppKit.h>
+#import <mach-o/dyld.h>
 
 #undef true
 #undef false
@@ -8,14 +29,69 @@
 #import "keys.h"
 #import "gl_local.h"
 #import "in_macosx.h"
+#import "vid_macosx_bc.h"
 
 extern cvar_t in_grab_windowed_mouse;
+extern bc_func_ptrs_t bc_func_ptrs;
+
+static CGError switch_display_mode(CGDisplayModeRef new_mode, CGDisplayModeRef *current_mode)
+{
+	CGError err = kCGErrorSuccess;
+	CGDisplayConfigRef config_ref;
+	
+	if (current_mode)
+	{
+		*current_mode = bc_func_ptrs.CGDisplayCopyDisplayMode(CGMainDisplayID());
+	}
+	
+	err = bc_func_ptrs.CGBeginDisplayConfiguration(&config_ref);
+	if (err == kCGErrorSuccess)
+	{
+		err = bc_func_ptrs.CGConfigureDisplayWithDisplayMode(config_ref, CGMainDisplayID(), new_mode, NULL);
+		if (err == kCGErrorSuccess)
+		{
+			err = bc_func_ptrs.CGCompleteDisplayConfiguration(config_ref, kCGConfigureForAppOnly);
+		}
+		else
+		{
+			bc_func_ptrs.CGCancelDisplayConfiguration(config_ref);
+		}
+	}
+	
+	return err;
+}
+
+static int GetDictionaryInt(CFDictionaryRef theDict, const void *key)
+{
+	int value = 0;
+	CFNumberRef numRef;
+	
+	numRef = (CFNumberRef)CFDictionaryGetValue(theDict, key);
+	if (numRef != NULL)
+	{
+		CFNumberGetValue(numRef, kCFNumberIntType, &value);
+	}
+	
+	return value;
+}
+
+static CGError switch_display_mode_legacy(CFDictionaryRef new_mode, CFDictionaryRef *current_mode)
+{
+	if (current_mode)
+	{
+		*current_mode = CGDisplayCurrentMode(CGMainDisplayID());
+	}
+	
+	return CGDisplaySwitchToMode(CGMainDisplayID(), new_mode);
+}
 
 struct display
 {
 	qboolean fullscreen;
 	struct input_data *input;
 	NSWindow *window;
+	CGDisplayModeRef orig_display_mode;
+	CFDictionaryRef orig_display_mode_legacy;
 	unsigned int width;
 	unsigned int height;
 	
@@ -47,6 +123,33 @@ struct display
 {
 	if ([event keyCode] == 4 && [event modifierFlags] & NSCommandKeyMask)
 	{
+		if (d->orig_display_mode)
+		{
+			CGDisplayModeRef tmp;
+			CGError err;
+			
+			err = switch_display_mode(d->orig_display_mode, &tmp);
+			if (err == kCGErrorSuccess)
+			{
+				d->orig_display_mode = tmp;
+					
+				CGReleaseAllDisplays();
+			}
+		}
+		else if (d->orig_display_mode_legacy)
+		{
+			CFDictionaryRef tmp;
+			CGError err;
+			
+			err = switch_display_mode_legacy(d->orig_display_mode_legacy, &tmp);
+			if (err == kCGErrorSuccess)
+			{
+				d->orig_display_mode_legacy = tmp;
+					
+				CGReleaseAllDisplays();
+			}
+		}
+		
 		[NSApp hide:nil];
 	}
 }
@@ -54,7 +157,14 @@ struct display
 {
 	if (d->fullscreen)
 	{
-		[self setLevel:NSMainMenuWindowLevel + 1];
+		if (d->orig_display_mode || d->orig_display_mode_legacy)
+		{
+			[self setLevel:CGShieldingWindowLevel()];
+		}
+		else
+		{
+			[self setLevel:NSMainMenuWindowLevel + 1];
+		}
 	}
 }
 - (void)applicationDidResignActive:(NSNotification*)notification
@@ -67,6 +177,37 @@ struct display
 - (void)applicationDidUnhide:(NSNotification*)notification
 {
 	CGPoint point = { -1.0, -1.0 };
+	
+	if (d->orig_display_mode)
+	{
+		CGDisplayModeRef tmp;
+		CGError err;
+		
+		err = CGCaptureAllDisplays();
+		if (err == kCGErrorSuccess)
+		{
+			err = switch_display_mode(d->orig_display_mode, &tmp);
+			if (err == kCGErrorSuccess)
+			{
+				d->orig_display_mode = tmp;
+			}
+		}
+	}
+	else if (d->orig_display_mode_legacy)
+	{
+		CFDictionaryRef tmp;
+		CGError err;
+		
+		err = CGCaptureAllDisplays();
+		if (err == kCGErrorSuccess)
+		{
+			err = switch_display_mode_legacy(d->orig_display_mode_legacy, &tmp);
+			if (err == kCGErrorSuccess)
+			{
+				d->orig_display_mode_legacy = tmp;
+			}
+		}
+	}
 	
 	if (d->fullscreen)
 	{
@@ -115,11 +256,85 @@ void Sys_Video_Shutdown()
 void* Sys_Video_Open(const char *mode, unsigned int width, unsigned int height, int fullscreen, unsigned char *palette)
 {
 	struct display *d;
-	
+
 	d = malloc(sizeof(struct display));
 	if (d)
 	{
 		memset(d, 0, sizeof(struct display));
+		
+		if (strlen(mode) && fullscreen)
+		{
+			unsigned int flags;
+			CFArrayRef modes;
+			
+			sscanf(mode, "macosx:%u,%u,%u", &width, &height, &flags);
+			
+			if (NSAppKitVersionNumber < NSAppKitVersionNumber10_6)
+			{
+				modes = CGDisplayAvailableModes(CGMainDisplayID());
+			}
+			else
+			{
+				modes = bc_func_ptrs.CGDisplayCopyAllDisplayModes(CGMainDisplayID(), NULL);
+			}
+			
+			if (modes)
+			{
+				unsigned int num_modes = CFArrayGetCount(modes);
+				unsigned int i;
+				
+				for (i = 0; i < num_modes; i++)
+				{
+					CGDisplayModeRef mode_ref;
+					CFDictionaryRef mode_ref_legacy;
+					unsigned int width_tmp;
+					unsigned int height_tmp;
+					unsigned int flags_tmp;
+					
+					if (NSAppKitVersionNumber < NSAppKitVersionNumber10_6)
+					{
+						mode_ref_legacy = (CFDictionaryRef)CFArrayGetValueAtIndex(modes, i);
+						
+						width_tmp = GetDictionaryInt(mode_ref_legacy, kCGDisplayWidth);
+						height_tmp = GetDictionaryInt(mode_ref_legacy, kCGDisplayHeight);
+						flags_tmp = GetDictionaryInt(mode_ref_legacy, kCGDisplayIOFlags);
+					}
+					else
+					{
+						mode_ref = (CGDisplayModeRef)CFArrayGetValueAtIndex(modes, i);
+						
+						width_tmp = bc_func_ptrs.CGDisplayModeGetWidth(mode_ref);
+						height_tmp = bc_func_ptrs.CGDisplayModeGetHeight(mode_ref);
+						flags_tmp = bc_func_ptrs.CGDisplayModeGetIOFlags(mode_ref);
+					}
+
+					if (width == width_tmp && height == height_tmp && flags == flags_tmp)
+					{
+						CGError err;
+						
+						err = CGCaptureAllDisplays();
+						if (err == kCGErrorSuccess)
+						{
+							if (NSAppKitVersionNumber < NSAppKitVersionNumber10_6)
+							{
+								err = switch_display_mode_legacy(mode_ref_legacy, &d->orig_display_mode_legacy);
+							}
+							else
+							{
+								err = switch_display_mode(mode_ref, &d->orig_display_mode);
+							}
+						}
+						
+						break;
+					}
+				}
+
+				if (NSAppKitVersionNumber > NSAppKitVersionNumber10_5)
+				{
+					CFRelease(modes);
+				}
+			}
+		}
 		
 		if (fullscreen)
 		{
@@ -142,7 +357,14 @@ void* Sys_Video_Open(const char *mode, unsigned int width, unsigned int height, 
 				
 				d->fullscreen = true;
 				
-				[d->window setLevel:NSMainMenuWindowLevel + 1];
+				if (mode)
+				{
+					[d->window setLevel:CGShieldingWindowLevel()];
+				}
+				else
+				{
+					[d->window setLevel:NSMainMenuWindowLevel + 1];
+				}
 			}
 			else
 			{
@@ -256,6 +478,27 @@ void Sys_Video_Close(void *display)
 	
 	[[d->window contentView] release];
 	[d->window close];
+	
+	if (d->orig_display_mode)
+	{
+		CGError err;
+		
+		err = switch_display_mode(d->orig_display_mode, NULL);
+		if (err == kCGErrorSuccess)
+		{
+			CGReleaseAllDisplays();
+		}
+	}
+	else if (d->orig_display_mode_legacy)
+	{
+		CGError err;
+		
+		err = switch_display_mode_legacy(d->orig_display_mode_legacy, NULL);
+		if (err == kCGErrorSuccess)
+		{
+			CGReleaseAllDisplays();
+		}
+	}
 	
 #ifndef GLQUAKE
 	free(d->rgb_buf);
@@ -398,7 +641,12 @@ qboolean Sys_Video_GetFullscreen(void *display)
 
 const char* Sys_Video_GetMode(void *display)
 {
-	return NULL;
+	struct display *d = (struct display*)display;
+	char buf[64];
+	
+	snprintf(buf, sizeof(buf), "macosx:%u,%u,%u", d->width, d->height, 0);
+	
+	return strdup(buf);
 }
 
 int Sys_Video_FocusChanged(void *display)
@@ -435,24 +683,28 @@ qboolean Sys_Video_HWGammaSupported(void *display)
 	return true;
 }
 
-void *qglGetProcAddress(const char *p)
+void *Sys_Video_GetProcAddress(void *display, const char *p);
 {
-	void *ret;
-	
-	ret = 0;
-	
-	if (strcmp(p, "glMultiTexCoord2fARB") == 0)
-		ret = glMultiTexCoord2f;
-	else if (strcmp(p, "glActiveTextureARB") == 0)
-		ret = glActiveTexture;
-	else if (strcmp(p, "glBindBufferARB") == 0)
-		ret = glBindBuffer;
-	else if (strcmp(p, "glBufferDataARB") == 0)
-		ret = glBufferData;
-	else
-		Sys_Error("Unknown OpenGL function \"%s\"\n", p);
-	
-	return ret;
+	NSSymbol symbol = NULL;
+	char *symbolName;
+
+	symbolName = malloc(strlen(p) + 2);
+	if (!symbolName)
+	{
+		return NULL;
+	}
+
+	strcpy(symbolName + 1, p);
+	symbolName[0] = '_';
+
+	if (NSIsSymbolNameDefined(symbolName))
+	{
+		symbol = NSLookupAndBindSymbol(symbolName);
+	}
+
+	free(symbolName);
+
+	return symbol ? NSAddressOfSymbol(symbol) : NULL;
 }
 #else
 void Sys_Video_SetPalette(void *display, unsigned char *palette)
@@ -474,13 +726,5 @@ void *Sys_Video_GetBuffer(void *display)
 	struct display *d = (struct display*)display;
 	
 	return d->buf;
-}
-
-void VID_LockBuffer()
-{
-}
-
-void VID_UnlockBuffer()
-{
 }
 #endif

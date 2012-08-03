@@ -1183,6 +1183,11 @@ void NetQW_SetFPS(struct NetQW *netqw, unsigned int fps)
 	}
 }
 
+unsigned long long NetQW_GetFrameTime(struct NetQW *netqw)
+{
+	return netqw->microsecondsperframe;
+}
+
 int NetQW_AppendReliableBuffer(struct NetQW *netqw, const void *buffer, unsigned int bufferlen)
 {
 	struct ReliableBuffer *reliablebuffer;
@@ -1372,19 +1377,26 @@ void NetQW_SetUpSpeed(struct NetQW *netqw, float value)
 	netqw->upspeed = value;
 }
 
-void NetQW_ButtonDown(struct NetQW *netqw, int button, int impulse)
+unsigned int NetQW_ButtonDown(struct NetQW *netqw, int button, int impulse)
 {
+	unsigned int ret;
+
 	if (button < 0 || button > 2)
-		return;
+		return 0;
 
 	Sys_Thread_LockMutex(netqw->mutex);
 	if (impulse)
 		netqw->priorityimpulse = impulse;
 
 	netqw->oncebuttons |= (1<<button);
-	Sys_Thread_UnlockMutex(netqw->mutex);
+
+	ret = netqw->current_outgoing_sequence_number;
 
 	netqw->currentbuttons |= (1<<button);
+
+	Sys_Thread_UnlockMutex(netqw->mutex);
+
+	return ret;
 }
 
 void NetQW_ButtonUp(struct NetQW *netqw, int button)

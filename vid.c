@@ -50,6 +50,8 @@ static char *windowtitle;
 
 static void set_up_conwidth_conheight(void);
 
+static int vid_restarted;
+
 static qboolean vid_conwidth_callback(cvar_t *var, char *value)
 {
 	var->value = Q_atof(value);
@@ -217,6 +219,8 @@ void VID_Restart(void)
 	}
 
 	Skin_Reload();
+
+	vid_restarted = 1;
 }
 
 void VID_CvarInit()
@@ -454,6 +458,11 @@ qboolean VID_HWGammaSupported()
 {
 	return Sys_Video_HWGammaSupported(display);
 }
+
+void *VID_GetProcAddress(const char *name)
+{
+	return Sys_Video_GetProcAddress(display, name);
+}
 #endif
 
 void VID_SetCaption(const char *text)
@@ -514,6 +523,20 @@ const char *VID_GetMode()
 
 int VID_FocusChanged()
 {
+	if (vid_restarted)
+	{
+		vid_restarted = 0;
+		return 1;
+	}
+
 	return Sys_Video_FocusChanged(display);
+}
+
+void VID_LockBuffer(void)
+{
+}
+
+void VID_UnlockBuffer(void)
+{
 }
 

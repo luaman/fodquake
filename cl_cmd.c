@@ -229,7 +229,7 @@ void CL_Packet_f(void) {
 		return;
 	}
 
-	if (cbuf_current && cbuf_current != &cbuf_svc && !Ruleset_AllowPacketCmd()) {
+	if (cbuf_current && cbuf_current != cbuf_svc && !Ruleset_AllowPacketCmd()) {
 		Com_Printf("Packet commands is disabled during match\n");
 		return;
 	}
@@ -714,7 +714,7 @@ svcmd_t svcmds[] = {
 	{NULL, NULL}
 };
 
-//Called by Cmd_ExecuteString if cbuf_current == &cbuf_svc
+//Called by Cmd_ExecuteString if cbuf_current == cbuf_svc
 qboolean CL_CheckServerCommand ()
 {
 	svcmd_t	*cmd;

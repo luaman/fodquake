@@ -1897,12 +1897,21 @@ qboolean	wasInMenus;
 
 void M_Menu_Quit_f()
 {
-	if (m_state == m_quit)
-		return;
-	wasInMenus = (key_dest == key_menu);
-	m_quit_prevstate = m_state;
-	msgNumber = rand()&7;
-	M_EnterMenu (m_quit);
+	extern cvar_t cl_confirmquit;
+
+	if (cl_confirmquit.value)
+	{
+		if (m_state == m_quit)
+			return;
+		wasInMenus = (key_dest == key_menu);
+		m_quit_prevstate = m_state;
+		msgNumber = rand()&7;
+		M_EnterMenu (m_quit);
+	}
+	else
+	{
+		Host_Quit();
+	}
 }
 
 static void M_Quit_Key(int key)
@@ -1992,18 +2001,7 @@ static void M_SinglePlayer_Draw()
 
 static void CheckSPGame ()
 {
-	FILE *f;
-
-	FS_FOpenFile ("spprogs.dat", &f);
-	if (f)
-	{
-		fclose (f);
-		m_singleplayer_notavail = false;
-	}
-	else
-	{
-		m_singleplayer_notavail = true;
-	}
+	m_singleplay_notavail = !FS_FileExists("spprogs.dat");
 }
 
 extern int file_from_gamedir;
@@ -2198,11 +2196,11 @@ static void M_Menu_Load_f()
 {
 	FILE *f;
 
-	if (FS_FOpenFile ("spprogs.dat", &f) == -1)
+	if (!FS_FileExists("spprogs.dat"))
 		return;
 
-	M_EnterMenu (m_load);
-	M_ScanSaves (!file_from_gamedir ? "qw" : com_gamedir);
+	M_EnterMenu(m_load);
+	M_ScanSaves(com_gamedir);
 }
 
 static void M_Menu_Save_f()
@@ -4275,6 +4273,19 @@ void M_Keydown(int key)
 		M_Menu_MP3_Playlist_Key (key);
 		break;
 #endif
+	}
+}
+
+void M_PerFramePreRender()
+{
+	if (m_state == m_video_verify)
+	{
+		if (curtime >= video_verify_fail_time)
+		{
+			M_Menu_Video_Verify_Revert();
+			M_Menu_Video_Verify_Cleanup();
+			M_LeaveMenu(m_video);
+		}
 	}
 }
 

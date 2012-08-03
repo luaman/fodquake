@@ -593,8 +593,6 @@ static void Config_PrintPreamble(FILE *f)
 
 static void ResetConfigs(qboolean resetall)
 {
-	FILE *f;
-
 	ResetVariables(CVAR_SERVERINFO, !resetall);
 
 	DeleteUserAliases();
@@ -612,10 +610,9 @@ static void ResetConfigs(qboolean resetall)
 
 	Cbuf_AddText ("cl_warncmd 0\n");
 	Cbuf_AddText ("exec default.cfg\n");
-	if (FS_FOpenFile("autoexec.cfg", &f) != -1)
+	if (FS_FileExists("autoexec.cfg"))
 	{
-		Cbuf_AddText ("exec autoexec.cfg\n");
-		fclose(f);
+		Cbuf_AddText("exec autoexec.cfg\n");
 	}
 	Cbuf_AddText ("cl_warncmd 1\n");
 }

@@ -5,7 +5,7 @@ CC=gcc
 STRIP=strip
 AR=ar
 
-CFLAGS=-O2 -g -Wall -Werror-implicit-function-declaration -fno-strict-aliasing -DNETQW -I../thirdparty/include -L../thirdparty/lib $(OSCFLAGS) $(CPUCFLAGS) $(RENDERERCFLAGS)
+CFLAGS=-O2 -g -Wall -Werror-implicit-function-declaration -fno-strict-aliasing -DCLIENTONLY -DNETQW -I../thirdparty/include -L../thirdparty/lib $(OSCFLAGS) $(CPUCFLAGS) $(RENDERERCFLAGS)
 STRIPFLAGS=--strip-unneeded --remove-section=.comment
 
 TARGETSYSTEM:=$(shell $(CC) -dumpmachine)
@@ -23,7 +23,7 @@ ifeq ($(OS), morphos)
 		sys_morphos.o \
 		net_amitcp.o \
 		thread_morphos.o \
-		cd_morphos.o \
+		cd_null.o \
 		snd_morphos.o \
 		in_morphos.o \
 		sys_io_morphos.o
@@ -39,7 +39,7 @@ ifeq ($(OS), aros)
 		sys_morphos.o \
 		net_amitcp.o \
 		thread_aros.o \
-		cd_morphos.o \
+		cd_null.o \
 		in_morphos.o \
 		sys_io_morphos.o \
 		sys_lib_null.o
@@ -230,8 +230,24 @@ endif
 # CPU specific settings
 
 ifeq ($(CPU), ppc)
-   CPUCFLAGS=-DFOD_BIGENDIAN
+   CPUCFLAGS=-DFOD_BIGENDIAN -DFOD_PPC -maltivec
 endif
+
+SVOBJS= \
+	pr_edict.o \
+	pr_exec.o \
+	pr_cmds.o \
+	sv_ccmds.o \
+	sv_ents.o \
+	sv_init.o \
+	sv_main.o \
+	sv_move.o \
+	sv_nchan.o \
+	sv_phys.o \
+	sv_save.o \
+	sv_send.o \
+	sv_user.o \
+	sv_world.o
 
 OBJS= \
 	cl_sbar.o \
@@ -279,9 +295,6 @@ OBJS= \
 	netqw.o \
 	pmove.o \
 	pmovetst.o \
-	pr_edict.o \
-	pr_exec.o \
-	pr_cmds.o \
 	qstring.o \
 	r_draw.o \
 	r_part.o \
@@ -297,17 +310,6 @@ OBJS= \
 	snd_mix.o \
 	strlcat.o \
 	strlcpy.o \
-	sv_ccmds.o \
-	sv_ents.o \
-	sv_init.o \
-	sv_main.o \
-	sv_move.o \
-	sv_nchan.o \
-	sv_phys.o \
-	sv_save.o \
-	sv_send.o \
-	sv_user.o \
-	sv_world.o \
 	tableprint.o \
 	teamplay.o \
 	text_input.o \

@@ -30,23 +30,22 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define MAX_TEAMIGNORELIST	4
 #define	FLOODLIST_SIZE		10
 
-cvar_t ignore_spec = { "ignore_spec", "0" };
-cvar_t ignore_mode = { "ignore_mode", "0" };
-cvar_t ignore_flood_duration = { "ignore_flood_duration", "4" };
-cvar_t ignore_flood = { "ignore_flood", "0" };
-cvar_t ignore_opponents = { "ignore_opponents", "0" };
+static cvar_t ignore_spec = { "ignore_spec", "0" };
+static cvar_t ignore_mode = { "ignore_mode", "0" };
+static cvar_t ignore_flood_duration = { "ignore_flood_duration", "4" };
+static cvar_t ignore_flood = { "ignore_flood", "0" };
+static cvar_t ignore_opponents = { "ignore_opponents", "0" };
 
-char ignoreteamlist[MAX_TEAMIGNORELIST][16 + 1];
+static char ignoreteamlist[MAX_TEAMIGNORELIST][16 + 1];
 
 typedef struct flood_s
 {
 	char data[2048];
 	float time;
-}
-flood_t;
+} flood_t;
 
 static flood_t floodlist[FLOODLIST_SIZE];
-static int		floodindex;
+static int floodindex;
 
 struct ignored_name
 {
@@ -54,7 +53,7 @@ struct ignored_name
 	char *name;
 };
 
-struct ignored_name *ignored_names;
+static struct ignored_name *ignored_names;
 
 static qboolean IsIgnored(int slot)
 {

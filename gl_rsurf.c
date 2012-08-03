@@ -868,13 +868,12 @@ static void R_ClearTextureChains(model_t *clmodel)
 
 	for (i = 0; i < clmodel->numtextures; i++)
 	{
-		for (waterline = 0; waterline < 2; waterline++)
+		if ((texture = clmodel->textures[i]))
 		{
-			if ((texture = clmodel->textures[i]))
-			{
-				texture->texturechain[waterline] = NULL;
-				texture->texturechain_tail[waterline] = &texture->texturechain[waterline];
-			}
+			texture->texturechain[0] = NULL;
+			texture->texturechain[1] = NULL;
+			texture->texturechain_tail[0] = &texture->texturechain[0];
+			texture->texturechain_tail[1] = &texture->texturechain[1];
 		}
 	}
 
@@ -1212,7 +1211,7 @@ static void DrawTextureChains (model_t *model)
 
 						fullbright_polys[t->fb_texturenum] = s->polys;
 
-						if (!(fullbright_polys_used[t->fb_texturenum/32])&(1<<(t->fb_texturenum%32)))
+						if (!((fullbright_polys_used[t->fb_texturenum/32])&(1<<(t->fb_texturenum%32))))
 						{
 							fullbright_polys_used[t->fb_texturenum/32] |= (1<<(t->fb_texturenum%32));
 							drawfullbrights = true;
@@ -1358,12 +1357,15 @@ static void R_DrawFlat (model_t *model)
 void R_DrawBrushModel (entity_t *e)
 {
 	int i, k, underwater;
+	unsigned int li;
+	unsigned int lj;
 	vec3_t mins, maxs;
 	msurface_t *psurf;
 	float dot;
 	mplane_t *pplane;
 	model_t *clmodel;
 	qboolean rotated;
+	unsigned char flags;
 
 	currententity = e;
 	currenttexture = -1;
@@ -1404,17 +1406,26 @@ void R_DrawBrushModel (entity_t *e)
 	// calculate dynamic lighting for bmodel if it's not an instanced model
 	if (clmodel->firstmodelsurface)
 	{
-		for (k = 0; k < MAX_DLIGHTS; k++)
+		for(li=0;li<MAX_DLIGHTS/32;li++)
 		{
-			if ((cl_dlights[k].die < cl.time) || !cl_dlights[k].radius)
-				continue;
+			if (cl_dlight_active[li])
+			{
+				for(lj=0;lj<32;lj++)
+				{
+					if ((cl_dlight_active[li]&(1<<lj)) && li*32+lj < MAX_DLIGHTS)
+					{
+						k = li*32 + lj;
 
-			if (!gl_flashblend.value || (cl_dlights[k].bubble && gl_flashblend.value != 2))
-				R_MarkLights (&cl_dlights[k], 1 << k, clmodel->nodes + clmodel->hulls[0].firstclipnode);
+						/* This will fail for k >= 32 */
+						if (!gl_flashblend.value || (cl_dlights[k].bubble && gl_flashblend.value != 2))
+							R_MarkLights(clmodel, &cl_dlights[k], 1 << k, clmodel->hulls[0].firstclipnode);
+					}
+				}
+			}
 		}
 	}
 
-    glPushMatrix ();
+	glPushMatrix ();
 
 	glTranslatef (e->origin[0],  e->origin[1],  e->origin[2]);
 	glRotatef (e->angles[1], 0, 0, 1);
@@ -1429,29 +1440,31 @@ void R_DrawBrushModel (entity_t *e)
 		pplane = psurf->plane;
 		dot = PlaneDiff(modelorg, pplane);
 
+		flags = clmodel->surfflags[clmodel->firstmodelsurface + i];
+
 		//draw the water surfaces now, and setup sky/normal chains
-		if (	((psurf->flags & SURF_PLANEBACK) && (dot < -BACKFACE_EPSILON)) ||
-				(!(psurf->flags & SURF_PLANEBACK) && (dot > BACKFACE_EPSILON)))
+		if (((flags & SURF_PLANEBACK) && (dot < -BACKFACE_EPSILON))
+		 || (!(flags & SURF_PLANEBACK) && (dot > BACKFACE_EPSILON)))
 		{
-			if (psurf->flags & SURF_DRAWSKY)
+			if (flags & SURF_DRAWSKY)
 			{
 				CHAIN_SURF_B2F(psurf, skychain);
 			}
-			else if (psurf->flags & SURF_DRAWTURB)
+			else if (flags & SURF_DRAWTURB)
 			{
 				EmitWaterPolys (psurf);
 			}
-			else if (psurf->flags & SURF_DRAWALPHA)
+			else if (flags & SURF_DRAWALPHA)
 			{
 				CHAIN_SURF_B2F(psurf, alphachain);
 			}
-			else if (psurf->is_drawflat && r_drawflat_enable.value == 1)
+			else if (r_drawflat_enable.value == 1 && psurf->is_drawflat)
 			{
 				CHAIN_SURF_B2F(psurf, drawflatchain);
 			}
 			else
 			{
-				underwater = (psurf->flags & SURF_UNDERWATER) ? 1 : 0;
+				underwater = (flags & SURF_UNDERWATER) ? 1 : 0;
 				CHAIN_SURF_B2F(psurf, psurf->texinfo->texture->texturechain[underwater]);
 			}
 		}
@@ -1468,110 +1481,140 @@ void R_DrawBrushModel (entity_t *e)
 	glPopMatrix ();
 }
 
-
-static void R_RecursiveWorldNode (mnode_t *node, int clipflags)
+static void R_RecursiveWorldNode(model_t *model, unsigned int nodenum, int clipflags)
 {
+	mnode_t *node;
 	int c, side, clipped, underwater;
 	mplane_t *plane, *clipplane;
-	msurface_t *surf, **mark;
+	msurface_t *surf;
+	unsigned int surfnum;
+	unsigned short *mark;
+	unsigned char flags;
 	mleaf_t *pleaf;
 	float dot;
+	unsigned int leafnum;
+	int isleaf;
 
-	if (node->contents == CONTENTS_SOLID)
-		return;		// solid
+	if (nodenum >= model->numnodes)
+	{
+		isleaf = 1;
+		leafnum = nodenum - model->numnodes;
+
+		if ((model->leafsolid[leafnum/32] & (1<<(leafnum%32))))
+			return; // solid
+
+		node = (mnode_t *)(model->leafs + leafnum);
+	}
+	else
+	{
+		isleaf = 0;
+		node = model->nodes + nodenum;
+	}
+
 	if (node->visframe != r_visframecount)
 		return;
-	for (c = 0, clipplane = frustum; c < 4; c++, clipplane++)
-	{
-		if (!(clipflags & (1 << c)))
-			continue;	// don't need to clip against it
 
-		clipped = BOX_ON_PLANE_SIDE (node->minmaxs, node->minmaxs + 3, clipplane);
-		if (clipped == 2)
-			return;
-		else if (clipped == 1)
-			clipflags &= ~(1<<c);	// node is entirely on screen
+	if (clipflags)
+	{
+		for (c = 0, clipplane = frustum; c < 4; c++, clipplane++)
+		{
+			if (!(clipflags & (1 << c)))
+				continue;	// don't need to clip against it
+
+			clipped = BOX_ON_PLANE_SIDE (node->minmaxs, node->minmaxs + 3, clipplane);
+			if (clipped == 2)
+				return;
+			else if (clipped == 1)
+				clipflags &= ~(1<<c);	// node is entirely on screen
+		}
 	}
 
 	// if a leaf node, draw stuff
-	if (node->contents < 0)	{
-		pleaf = (mleaf_t *) node;
+	if (isleaf)
+	{
+		pleaf = (mleaf_t *)node;
 
-		mark = pleaf->firstmarksurface;
+		mark = model->marksurfaces + pleaf->firstmarksurfacenum;
 		c = pleaf->nummarksurfaces;
 
 		if (c)
 		{
 			do
 			{
-				(*mark)->visframe = r_framecount;
+				surfnum = *mark;
+				cl.worldmodel->surfvisible[surfnum/32] |= (1<<(surfnum%32));
 				mark++;
-			} while (--c);
+			} while(--c);
 		}
 
-	// deal with model fragments in this leaf
+		// deal with model fragments in this leaf
 		if (pleaf->efrags)
-			R_StoreEfrags (&pleaf->efrags);
-
-		return;
+			R_StoreEfrags(&pleaf->efrags);
 	}
+	else
+	{
+		// node is just a decision point, so go down the apropriate sides
 
-	// node is just a decision point, so go down the apropriate sides
+		// find which side of the node we are on
+		plane = model->planes + node->planenum;
 
-	// find which side of the node we are on
-	plane = node->plane;
+		dot = PlaneDiff(modelorg, plane);
+		side = (dot >= 0) ? 0 : 1;
 
-	dot = PlaneDiff(modelorg, plane);
-	side = (dot >= 0) ? 0 : 1;
+		// recurse down the children, front side first
+		R_RecursiveWorldNode(model, node->childrennum[side], clipflags);
 
-	// recurse down the children, front side first
-	R_RecursiveWorldNode (node->children[side], clipflags);
+		// draw stuff
+		c = node->numsurfaces;
 
-	// draw stuff
-	c = node->numsurfaces;
-
-	if (c)	{
-		surf = cl.worldmodel->surfaces + node->firstsurface;
-
-		if (dot < -BACKFACE_EPSILON)
-			side = SURF_PLANEBACK;
-		else if (dot > BACKFACE_EPSILON)
-			side = 0;
-
-		for ( ; c; c--, surf++)
+		if (c)
 		{
-			if (surf->visframe != r_framecount)
-				continue;
+			surf = cl.worldmodel->surfaces + node->firstsurface;
+			surfnum = node->firstsurface;
 
-			if ((dot < 0) ^ !!(surf->flags & SURF_PLANEBACK))
-				continue;		// wrong side
+			if (dot < -BACKFACE_EPSILON)
+				side = SURF_PLANEBACK;
+			else if (dot > BACKFACE_EPSILON)
+				side = 0;
 
-			// add surf to the right chain
-			if (surf->flags & SURF_DRAWSKY)
+			for ( ; c; c--, surf++, surfnum++)
 			{
-				CHAIN_SURF_F2B(surf, skychain_tail);
-			}
-			else if (surf->flags & SURF_DRAWTURB)
-			{
-				CHAIN_SURF_F2B(surf, waterchain_tail);
-			}
-			else if (surf->flags & SURF_DRAWALPHA)
-			{
-				CHAIN_SURF_B2F(surf, alphachain);
-			}
-			else if (surf->is_drawflat && r_drawflat_enable.value == 1)
-			{
-				CHAIN_SURF_F2B(surf, drawflatchain_tail);
-			}
-			else
-			{
-				underwater = (surf->flags & SURF_UNDERWATER) ? 1 : 0;
-				CHAIN_SURF_F2B(surf, surf->texinfo->texture->texturechain_tail[underwater]);
+				if (!(cl.worldmodel->surfvisible[surfnum/32]&(1<<(surfnum%32))))
+					continue;
+
+				flags = cl.worldmodel->surfflags[surfnum];
+
+				if ((dot < 0) ^ !!(flags & SURF_PLANEBACK))
+					continue;		// wrong side
+
+				// add surf to the right chain
+				if (flags & SURF_DRAWSKY)
+				{
+					CHAIN_SURF_F2B(surf, skychain_tail);
+				}
+				else if (flags & SURF_DRAWTURB)
+				{
+					CHAIN_SURF_F2B(surf, waterchain_tail);
+				}
+				else if (flags & SURF_DRAWALPHA)
+				{
+					CHAIN_SURF_B2F(surf, alphachain);
+				}
+				else if (r_drawflat_enable.value == 1 && surf->is_drawflat)
+				{
+					CHAIN_SURF_F2B(surf, drawflatchain_tail);
+				}
+				else
+				{
+					underwater = (flags & SURF_UNDERWATER) ? 1 : 0;
+					CHAIN_SURF_F2B(surf, surf->texinfo->texture->texturechain_tail[underwater]);
+				}
 			}
 		}
+
+		// recurse down the back side
+		R_RecursiveWorldNode(model, node->childrennum[!side], clipflags);
 	}
-	// recurse down the back side
-	R_RecursiveWorldNode (node->children[!side], clipflags);
 }
 
 void R_DrawWorld (void)
@@ -1589,7 +1632,8 @@ void R_DrawWorld (void)
 	currenttexture = -1;
 
 	//set up texture chains for the world
-	R_RecursiveWorldNode (cl.worldmodel->nodes, 15);
+	memset(cl.worldmodel->surfvisible, 0, ((cl.worldmodel->numsurfaces+31)/32)*sizeof(*cl.worldmodel->surfvisible));
+	R_RecursiveWorldNode(cl.worldmodel, 0, 15);
 
 	//draw the world sky
 	if (r_skyboxloaded)
@@ -1649,17 +1693,21 @@ void R_MarkLeaves (void)
 		}
 	}
 
-	for (i = 0; i < cl.worldmodel->numleafs; i++)	{
+	for (i = 0; i < cl.worldmodel->numleafs; i++)
+	{
 		if (vis[i >> 3] & (1 << (i & 7)))
 		{
 			node = (mnode_t *)&cl.worldmodel->leafs[i + 1];
-			do
+			while(1)
 			{
 				if (node->visframe == r_visframecount)
 					break;
 				node->visframe = r_visframecount;
-				node = node->parent;
-			} while (node);
+				if (node->parentnum == 0xffff)
+					break;
+
+				node = NODENUM_TO_NODE(cl.worldmodel, node->parentnum);
+			}
 		}
 	}
 }
@@ -1935,7 +1983,7 @@ void GL_BuildLightmaps (void)
 
 		for (i = 0; i < m->numsurfaces; i++)
 		{
-			if (m->surfaces[i].flags & (SURF_DRAWTURB | SURF_DRAWSKY))
+			if (m->surfflags[i] & (SURF_DRAWTURB | SURF_DRAWSKY))
 				continue;
 			if (m->surfaces[i].texinfo->flags & TEX_SPECIAL)
 				continue;

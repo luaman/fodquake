@@ -61,6 +61,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "d_local.h"
 #endif
 
+#ifdef FOD_PPC
+int altivec_available;
+#endif
+
 int movementkey;
 
 static qboolean net_maxfps_callback(cvar_t *var, char *string);
@@ -110,7 +114,7 @@ cvar_t	cl_filterdrawviewmodel = {"cl_filterdrawviewmodel", "0"};
 cvar_t	cl_oldPL = {"cl_oldPL", "0"};
 cvar_t	cl_demoPingInterval = {"cl_demoPingInterval", "5"};
 cvar_t	cl_chatsound = {"cl_chatsound", "1"};
-cvar_t	cl_confirmquit = {"cl_confirmquit", "1", CVAR_INIT};
+cvar_t	cl_confirmquit = {"cl_confirmquit", "1"};
 cvar_t	default_fov = {"default_fov", "0"};
 cvar_t	qizmo_dir = {"qizmo_dir", "qizmo"};
 
@@ -169,6 +173,7 @@ centity_t		cl_entities[CL_MAX_EDICTS];
 efrag_t			cl_efrags[MAX_EFRAGS];
 lightstyle_t	cl_lightstyle[MAX_LIGHTSTYLES];
 dlight_t		cl_dlights[MAX_DLIGHTS];
+unsigned int cl_dlight_active[MAX_DLIGHTS/32];
 
 // draw flat globals
 static float draw_flat[3][3];
@@ -546,7 +551,7 @@ static void R_DrawFlatShoot_f(void)
 		return;
 	}
 
-	for (i=0, surface = leaf->firstmarksurface; i<leaf->nummarksurfaces; i++, surface++)
+	for (i=0, surface = model->marksurfaces + leaf->firstmarksurfacenum; i<leaf->nummarksurfaces; i++, surface++)
 	{
 		points = calloc((*surface)->numedges , sizeof(vec3_t));
 		if (points == NULL)
@@ -615,7 +620,7 @@ static void R_DrawFlatShootUnset_f(void)
 		return;
 	}
 
-	for (i=0, surface = leaf->firstmarksurface; i<leaf->nummarksurfaces; i++, surface++)
+	for (i=0, surface = model->marksurfaces + leaf->firstmarksurfacenum; i<leaf->nummarksurfaces; i++, surface++)
 	{
 		points = calloc((*surface)->numedges , sizeof(vec3_t));
 		if (points == NULL)
@@ -1249,7 +1254,7 @@ void CL_ClearState(void)
 
 	// clear other arrays
 	memset(cl_efrags, 0, sizeof(cl_efrags));
-	memset(cl_dlights, 0, sizeof(cl_dlights));
+	memset(cl_dlight_active, 0, sizeof(cl_dlight_active));
 	memset(cl_lightstyle, 0, sizeof(cl_lightstyle));
 	memset(cl_entities, 0, sizeof(cl_entities));
 
@@ -2123,6 +2128,8 @@ void CL_Frame (double time)
 
 	focuschanged = VID_FocusChanged();
 
+	M_PerFramePreRender();
+
 	while(VID_GetKeyEvent(&key, &down))
 		Key_Event(key, down);
 
@@ -2132,8 +2139,10 @@ void CL_Frame (double time)
 	// process console commands
 	Cbuf_Execute();
 
+#ifndef CLIENTONLY
 	if (com_serveractive)
 		SV_Frame(cls.frametime);
+#endif
 
 	// fetch results from server
 	CL_ReadPackets();
@@ -2144,7 +2153,7 @@ void CL_Frame (double time)
 		MVD_Interpolate();
 
 	// process stuffed commands
-	Cbuf_ExecuteEx(&cbuf_svc);
+	Cbuf_ExecuteEx(cbuf_svc);
 
 	if (!cls.demoplayback || cls.mvdplayback)
 		Mouse_GetViewAngles(cl.viewangles);

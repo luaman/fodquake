@@ -250,7 +250,7 @@ void Skin_NextDownload(void)
 		sc->skin = NULL;
 	}
 
-	if (cls.state == ca_onserver && cbuf_current != &cbuf_main)	//only download when connecting
+	if (cls.state == ca_onserver && cbuf_current != cbuf_main)	//only download when connecting
 	{
 #ifdef NETQW
 		if (cls.netqw)

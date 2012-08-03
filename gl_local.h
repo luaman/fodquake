@@ -135,8 +135,6 @@ extern	int underwatertexture, detailtexture;
 
 extern	int		lightmode;		// set to gl_lightmode on mapchange
 
-extern	float	r_world_matrix[16];
-
 extern	const char *gl_vendor;
 extern	const char *gl_renderer;
 extern	const char *gl_version;
@@ -164,7 +162,7 @@ void R_BrightenScreen (void);
 void R_DrawEntitiesOnList (visentlist_t *vislist);
 
 // gl_rlight.c
-void R_MarkLights (dlight_t *light, int bit, mnode_t *node);
+void R_MarkLights(model_t *model, dlight_t *light, int bit, unsigned int nodenum);
 void R_AnimateLight (void);
 void R_RenderDlights (void);
 int R_LightPoint (vec3_t p);
@@ -240,11 +238,39 @@ extern void (*qglBindBufferARB)(GLenum, GLuint);
 extern void (*qglBufferDataARB)(GLenum, GLsizeiptrARB, const GLvoid *, GLenum);
 #endif
 
+/* GLSL stuff */
+#define GL_FRAGMENT_SHADER_ARB        0x8B30
+#define GL_OBJECT_COMPILE_STATUS_ARB  0x8B81
+#define GL_OBJECT_INFO_LOG_LENGTH_ARB 0x8B84
+#define GL_OBJECT_LINK_STATUS_ARB     0x8B82
+#define GL_VERTEX_SHADER_ARB          0x8B31
+
+#ifndef __MACOSX__
+typedef char GLcharARB;
+typedef unsigned int GLhandleARB;
+#endif
+
+extern void (*qglAttachObjectARB)(GLhandleARB, GLhandleARB);
+extern void (*qglCompileShaderARB)(GLhandleARB);
+extern GLhandleARB (*qglCreateProgramObjectARB)(void);
+extern GLhandleARB (*qglCreateShaderObjectARB)(GLenum);
+extern void (*qglDeleteObjectARB)(GLhandleARB);
+extern void (*qglGetInfoLogARB)(GLhandleARB, GLsizei, GLsizei *, GLcharARB *);
+extern void (*qglGetObjectParameterivARB)(GLhandleARB, GLenum, GLint *);
+extern GLint (*qglGetUniformLocationARB)(GLhandleARB, const GLcharARB *);
+extern void (*qglLinkProgramARB)(GLhandleARB);
+extern void (*qglShaderSourceARB)(GLhandleARB, GLsizei, const GLcharARB* *, const GLint *);
+extern void (*qglUniform1fARB)(GLint, GLfloat);
+extern void (*qglUseProgramObjectARB)(GLhandleARB);
+
+extern void (*qglBindAttribLocationARB)(GLhandleARB, GLuint, const GLcharARB *);
+extern void (*qglVertexAttribPointerARB)(GLuint, GLint, GLenum, GLboolean, GLsizei, const GLvoid *);
+
 extern float gldepthmin, gldepthmax;
 extern byte color_white[4], color_black[4];
 extern qboolean gl_mtexable;
 extern int gl_textureunits;
-extern qboolean gl_combine, gl_add_ext, gl_npot, gl_vbo;
+extern qboolean gl_combine, gl_add_ext, gl_npot, gl_vbo, gl_fs;
 
 extern int vbo_number;
 
@@ -253,4 +279,5 @@ void Check_Gamma (unsigned char *pal);
 void VID_SetPalette (unsigned char *palette);
 void GL_CvarInit(void);
 void GL_Init (void);
+int GL_SetupShaderProgram(int vertexobject, const char *vertexshader, int fragmentobject, const char *fragmentshader);
 

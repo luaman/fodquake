@@ -31,6 +31,8 @@ d*_t structures are on-disk representations
 m*_t structures are in-memory
 */
 
+#define NODENUM_TO_NODE(__model,__nodenum) ({ model_t *_model = (__model); unsigned int _nodenum = (__nodenum); mnode_t *node; if (_nodenum >= _model->numnodes) { node = (mnode_t *)(_model->leafs + (_nodenum - _model->numnodes)); } else { node = _model->nodes + _nodenum; } node; })
+
 // entity effects
 
 #define	EF_BRIGHTFIELD			1
@@ -82,14 +84,13 @@ typedef struct texture_s {
 } texture_t;
 
 
-#define	SURF_PLANEBACK		2
-#define	SURF_DRAWSKY		4
-#define SURF_DRAWSPRITE		8
-#define SURF_DRAWTURB		0x10
-#define SURF_DRAWTILED		0x20
-#define SURF_DRAWBACKGROUND	0x40
-#define SURF_UNDERWATER		0x80
-#define SURF_DRAWALPHA		0x100
+#define SURF_PLANEBACK          (1<<1)
+#define SURF_DRAWSKY            (1<<2)
+#define SURF_DRAWTURB           (1<<3)
+#define SURF_DRAWTILED          (1<<4)
+#define SURF_DRAWBACKGROUND     (1<<5)
+#define SURF_UNDERWATER         (1<<6)
+#define SURF_DRAWALPHA          (1<<7)
 
 // !!! if this is changed, it must be changed in asm_draw.h too !!!
 typedef struct {
@@ -128,10 +129,7 @@ typedef struct glpoly_s
 } glpoly_t;
 
 typedef struct msurface_s {
-	int			visframe;		// should be drawn when node is crossed
-
 	mplane_t	*plane;
-	int			flags;
 
 	int			firstedge;	// look up in model->surfedges[], negative numbers
 	int			numedges;	// are backwards edges
@@ -147,6 +145,7 @@ typedef struct msurface_s {
 	struct glwarppoly *warppolys;
 	glpoly_t	*polys;				// multiple if warped
 	float *fastpolys;
+	float *shadertexcoords;
 	struct	msurface_s	*texturechain;
 
 	mtexinfo_t	*texinfo;
@@ -164,16 +163,15 @@ typedef struct msurface_s {
 
 typedef struct mnode_s {
 // common with leaf
-	int			contents;		// 0, to differentiate from leafs
 	int			visframe;		// node needs to be traversed if current
 	
 	float		minmaxs[6];		// for bounding box culling
 
-	struct mnode_s	*parent;
+	unsigned short parentnum;
 
 // node specific
-	mplane_t	*plane;
-	struct mnode_s	*children[2];	
+	unsigned short planenum;
+	unsigned short childrennum[2];
 
 	unsigned short		firstsurface;
 	unsigned short		numsurfaces;
@@ -181,18 +179,19 @@ typedef struct mnode_s {
 
 typedef struct mleaf_s {
 // common with node
-	int			contents;		// wil be a negative contents number
 	int			visframe;		// node needs to be traversed if current
 
 	float		minmaxs[6];		// for bounding box culling
 
-	struct mnode_s	*parent;
+	unsigned short parentnum;
 
 // leaf specific
+	short			contents;		// wil be a negative contents number
+
 	byte		*compressed_vis;
 	struct efrag_s	*efrags;
 
-	msurface_t	**firstmarksurface;
+	unsigned short	firstmarksurfacenum;
 	int			nummarksurfaces;
 	byte		ambient_sound_level[NUM_AMBIENTS];
 } mleaf_t;
@@ -332,7 +331,10 @@ typedef enum {MOD_NORMAL, MOD_PLAYER, MOD_EYES, MOD_FLAME, MOD_THUNDERBOLT, MOD_
 #define	EF_TRACER2	64			// orange split trail + rotate
 #define	EF_TRACER3	128			// purple trail
 
-typedef struct model_s {
+typedef struct model_s
+{
+	struct model_s *next;
+
 	char		name[MAX_QPATH];
 	qboolean	needload;		// bmodels and sprites don't cache normally
 
@@ -382,7 +384,7 @@ typedef struct model_s {
 	dclipnode_t	*clipnodes;
 
 	int			nummarksurfaces;
-	msurface_t	**marksurfaces;
+	unsigned short	*marksurfaces;
 
 	hull_t		hulls[MAX_MAP_HULLS];
 
@@ -398,6 +400,13 @@ typedef struct model_s {
 
 	int			bspversion;
 	qboolean	isworldmodel;
+
+	unsigned int *surfvisibleunaligned;
+	unsigned int *surfvisible;
+	unsigned char *surfflags;
+
+	unsigned int *leafsolidunaligned;
+	unsigned int *leafsolid;
 
 	// additional model data
 	void *extradata;

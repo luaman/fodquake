@@ -19,6 +19,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 // gl_model.c  -- model loading and caching
 
+#include <inttypes.h>
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
@@ -43,9 +44,7 @@ static void Mod_LoadAliasModel (model_t *mod, void *buffer);
 
 byte	mod_novis[MAX_MAP_LEAFS/8];
 
-#define	MAX_MOD_KNOWN	512
-model_t	mod_known[MAX_MOD_KNOWN];
-int		mod_numknown;
+static model_t *firstmodel;
 
 //Caches the data if needed
 void *Mod_Extradata(model_t *mod)
@@ -61,20 +60,22 @@ void *Mod_Extradata(model_t *mod)
 mleaf_t *Mod_PointInLeaf (vec3_t p, model_t *model)
 {
 	mnode_t *node;
+	unsigned int nodenum;
 	float d;
 	mplane_t *plane;
 
 	if (!model || !model->nodes)
 		Sys_Error ("Mod_PointInLeaf: bad model");
 
-	node = model->nodes;
+	nodenum = 0;
 	while (1)
 	{
-		if (node->contents < 0)
+		node = NODENUM_TO_NODE(model, nodenum);
+		if (nodenum >= model->numnodes)
 			return (mleaf_t *)node;
-		plane = node->plane;
+		plane = model->planes + node->planenum;
 		d = PlaneDiff(p, plane);
-		node = (d > 0) ? node->children[0] : node->children[1];
+		nodenum = (d > 0) ? node->childrennum[0] : node->childrennum[1];
 	}
 
 	return NULL;	// never reached
@@ -206,6 +207,13 @@ static void Mod_FreeBrushData(model_t *model)
 	free(model->surfaces);
 	model->surfaces = 0;
 
+	free(model->surfvisibleunaligned);
+	model->surfvisibleunaligned = 0;
+	model->surfvisible = 0;
+
+	free(model->surfflags);
+	model->surfflags = 0;
+
 	free(model->visdata);
 	model->visdata = 0;
 
@@ -236,6 +244,10 @@ static void Mod_FreeBrushData(model_t *model)
 	free(model->nodes);
 	model->nodes = 0;
 
+	free(model->leafsolidunaligned);
+	model->leafsolidunaligned = 0;
+	model->leafsolid = 0;
+
 	free(model->leafs);
 	model->leafs = 0;
 
@@ -248,11 +260,16 @@ static void Mod_FreeBrushData(model_t *model)
 
 void Mod_ClearBrushesSprites(void)
 {
-	int i;
 	model_t	*mod;
+	model_t *next;
+	model_t *prev;
 
-	for (i = 0, mod = mod_known; i < mod_numknown; i++, mod++)
+	prev = 0;
+	next = firstmodel;
+	while((mod = next))
 	{
+		next = mod->next;
+
 		if (mod->type != mod_alias)
 		{
 			if (mod->type == mod_brush)
@@ -260,18 +277,28 @@ void Mod_ClearBrushesSprites(void)
 			else if (mod->type == mod_sprite)
 				Mod_FreeSpriteData(mod);
 
-			mod->needload = true;
+			if (prev)
+				prev->next = mod->next;
+			else
+				firstmodel = mod->next;
+
+			free(mod);
 		}
+		else
+			prev = mod;
 	}
 }
 
 void Mod_ClearAll(void)
 {
-	int i;
 	model_t	*mod;
+	model_t *next;
 
-	for (i = 0, mod = mod_known; i < mod_numknown; i++, mod++)
+	next = firstmodel;
+	while((mod = next))
 	{
+		next = mod->next;
+
 		if (mod->type == mod_alias)
 		{
 			Mod_FreeAliasData(mod);
@@ -285,13 +312,14 @@ void Mod_ClearAll(void)
 			Mod_FreeBrushData(mod);
 		}
 
-		mod->needload = true;
+		free(mod);
 	}
+
+	firstmodel = 0;
 }
 
 static model_t *Mod_FindName(const char *name)
 {
-	int i;
 	model_t	*mod;
 	char namebuf[MAX_QPATH];
 	const char *p;
@@ -311,13 +339,18 @@ static model_t *Mod_FindName(const char *name)
 		Sys_Error ("Mod_ForName: NULL name");
 
 	// search the currently loaded models
-	for (i = 0, mod = mod_known; i < mod_numknown; i++, mod++)
+	mod = firstmodel;
+	while(mod)
+	{
 		if (strcmp(mod->name, searchname) == 0)
 			break;
 
+		mod = mod->next;
+	}
+
 	if (p)
 	{
-		if (i == mod_numknown)
+		if (!mod)
 			Sys_Error("Mod_FindName: Submodel for non-existant model %s requested\n", searchname);
 
 		submodel = atoi(p + 1);
@@ -326,15 +359,21 @@ static model_t *Mod_FindName(const char *name)
 
 		mod = &mod->submodels[submodel-1];
 	}
-
-	if (i == mod_numknown)
+	else if (mod == 0)
 	{
-		if (mod_numknown == MAX_MOD_KNOWN)
-			Sys_Error ("mod_numknown == MAX_MOD_KNOWN");
-		strcpy (mod->name, name);
+		mod = malloc(sizeof(*mod));
+		if (mod == 0)
+			Sys_Error("Mod_FindName: Out of memory\n");
+
+		memset(mod, 0, sizeof(*mod));
+
+		strcpy(mod->name, name);
 		mod->needload = true;
-		mod_numknown++;
+
+		mod->next = firstmodel;
+		firstmodel = mod;
 	}
+
 	return mod;
 }
 
@@ -1129,7 +1168,7 @@ static void Mod_LoadTexinfo(model_t *model, lump_t *l)
 {
 	texinfo_t *in;
 	mtexinfo_t *out;
-	int i, j, count, miptex;
+	int i, count, miptex;
 
 	in = (void *) (mod_base + l->fileofs);
 	if (l->filelen % sizeof(*in))
@@ -1144,8 +1183,14 @@ static void Mod_LoadTexinfo(model_t *model, lump_t *l)
 
 	for (i = 0; i < count; i++, in++, out++)
 	{
-		for (j = 0; j < 8; j++)
-			out->vecs[0][j] = LittleFloat (in->vecs[0][j]);
+		out->vecs[0][0] = LittleFloat(in->vecs[0][0]);
+		out->vecs[0][1] = LittleFloat(in->vecs[0][1]);
+		out->vecs[0][2] = LittleFloat(in->vecs[0][2]);
+		out->vecs[0][3] = LittleFloat(in->vecs[0][3]);
+		out->vecs[1][0] = LittleFloat(in->vecs[1][0]);
+		out->vecs[1][1] = LittleFloat(in->vecs[1][1]);
+		out->vecs[1][2] = LittleFloat(in->vecs[1][2]);
+		out->vecs[1][3] = LittleFloat(in->vecs[1][3]);
 
 		miptex = LittleLong (in->miptex);
 		out->flags = LittleLong (in->flags);
@@ -1223,30 +1268,41 @@ static void Mod_LoadFaces(model_t *model, lump_t *l)
 	dface_t *in;
 	msurface_t *out;
 	int i, count, surfnum, planenum, side;
+	unsigned char flags;
 
 	in = (void *)(mod_base + l->fileofs);
 	if (l->filelen % sizeof(*in))
 		Host_Error ("Mod_LoadFaces: funny lump size in %s", model->name);
 	count = l->filelen / sizeof(*in);
+
+	if (count > 65535)
+		Sys_Error("Mod_LoadFaces: count > 65535");
+
 	out = malloc(count*sizeof(*out));
-	if (out == 0)
+	model->surfvisibleunaligned = malloc((((count+31)/32)*sizeof(*model->surfvisibleunaligned)) + 127);
+	model->surfflags = malloc(count*sizeof(*model->surfflags));
+	if (out == 0 || model->surfvisibleunaligned == 0 || model->surfflags == 0)
 		Sys_Error("Mod_LoadBrushModel: Out of memory\n");
 
 	memset(out, 0, count*sizeof(*out));
+	memset(model->surfflags, 0, count*sizeof(*model->surfflags));
+
+	model->surfvisible = (void *)((((uintptr_t)model->surfvisibleunaligned)+127)&~127);
 
 	model->surfaces = out;
 	model->numsurfaces = count;
 
 	for (surfnum = 0; surfnum < count; surfnum++, in++, out++)
 	{
+		flags = 0;
+
 		out->firstedge = LittleLong(in->firstedge);
 		out->numedges = LittleShort(in->numedges);
-		out->flags = 0;
 
 		planenum = LittleShort(in->planenum);
 		side = LittleShort(in->side);
 		if (side)
-			out->flags |= SURF_PLANEBACK;
+			flags |= SURF_PLANEBACK;
 
 		out->plane = model->planes + planenum;
 
@@ -1268,35 +1324,44 @@ static void Mod_LoadFaces(model_t *model, lump_t *l)
 
 		if (ISSKYTEX(out->texinfo->texture->name))
 		{	// sky
-			out->flags |= (SURF_DRAWSKY | SURF_DRAWTILED);
+			flags |= (SURF_DRAWSKY | SURF_DRAWTILED);
 			GL_SubdivideSurface(model, out);	// cut up polygon for warps
+			model->surfflags[surfnum] = flags;
 			continue;
 		}
 
 		if (ISTURBTEX(model, out->texinfo->texture->name))
 		{	// turbulent
-			out->flags |= (SURF_DRAWTURB | SURF_DRAWTILED);
+			flags |= (SURF_DRAWTURB | SURF_DRAWTILED);
 			for (i = 0; i < 2; i++)
 			{
 				out->extents[i] = 16384;
 				out->texturemins[i] = -8192;
 			}
 			GL_SubdivideSurface(model, out);	// cut up polygon for warps
+			model->surfflags[surfnum] = flags;
 			continue;
 		}
 
 		if (ISALPHATEX(model, out->texinfo->texture->name))
-			out->flags |= SURF_DRAWALPHA;
+			flags |= SURF_DRAWALPHA;
+
+		model->surfflags[surfnum] = flags;
 	}
 }
 
-static void Mod_SetParent(mnode_t *node, mnode_t *parent)
+static void Mod_SetParent(model_t *model, unsigned int nodenum, unsigned int parentnum)
 {
-	node->parent = parent;
-	if (node->contents < 0)
+	mnode_t *node;
+
+	node = NODENUM_TO_NODE(model, nodenum);
+
+	node->parentnum = parentnum;
+	if (nodenum >= model->numnodes)
 		return;
-	Mod_SetParent (node->children[0], node);
-	Mod_SetParent (node->children[1], node);
+
+	Mod_SetParent(model, node->childrennum[0], nodenum);
+	Mod_SetParent(model, node->childrennum[1], nodenum);
 }
 
 static void Mod_LoadNodes(model_t *model, lump_t *l)
@@ -1327,7 +1392,7 @@ static void Mod_LoadNodes(model_t *model, lump_t *l)
 		}
 
 		p = LittleLong(in->planenum);
-		out->plane = model->planes + p;
+		out->planenum = p;
 
 		out->firstsurface = LittleShort (in->firstface);
 		out->numsurfaces = LittleShort (in->numfaces);
@@ -1336,30 +1401,35 @@ static void Mod_LoadNodes(model_t *model, lump_t *l)
 		{
 			p = LittleShort (in->children[j]);
 			if (p >= 0)
-				out->children[j] = model->nodes + p;
+				out->childrennum[j] = p;
 			else
-				out->children[j] = (mnode_t *) (model->leafs + (-1 - p));
+				out->childrennum[j] = model->numnodes + (-1 - p);
 		}
 	}
 
-	Mod_SetParent (model->nodes, NULL);	// sets nodes and leafs
+	Mod_SetParent(model, 0, 0xffff);	// sets nodes and leafs
 }
 
 static void Mod_LoadLeafs(model_t *model, lump_t *l)
 {
 	dleaf_t *in;
 	mleaf_t *out;
-	int i, j, count, p;
+	unsigned int i;
+	int j, count, p;
 
 	in = (void *)(mod_base + l->fileofs);
 	if (l->filelen % sizeof(*in))
 		Host_Error ("Mod_LoadLeafs: funny lump size in %s", model->name);
 	count = l->filelen / sizeof(*in);
 	out = malloc(count*sizeof(*out));
-	if (out == 0)
+	model->leafsolidunaligned = malloc((((count+31)/32)*sizeof(*model->leafsolidunaligned)) + 127);
+	if (out == 0 || model->leafsolidunaligned == 0)
 		Sys_Error("Mod_LoadLeafs: Out of memory\n");
 
 	memset(out, 0, count*sizeof(*out));
+
+	model->leafsolid = (void *)((((uintptr_t)model->leafsolidunaligned)+127)&~127);
+	memset(model->leafsolid, 0, ((count+31)/32)*sizeof(*model->leafsolid));
 
 	model->leafs = out;
 	model->numleafs = count;
@@ -1374,8 +1444,10 @@ static void Mod_LoadLeafs(model_t *model, lump_t *l)
 		p = LittleLong(in->contents);
 		out->contents = p;
 
-		out->firstmarksurface = model->marksurfaces +
-			LittleShort(in->firstmarksurface);
+		if (p == CONTENTS_SOLID)
+			model->leafsolid[i/32] |= (1<<(i%32));
+
+		out->firstmarksurfacenum = LittleShort(in->firstmarksurface);
 		out->nummarksurfaces = LittleShort(in->nummarksurfaces);
 
 		p = LittleLong(in->visofs);
@@ -1388,7 +1460,7 @@ static void Mod_LoadLeafs(model_t *model, lump_t *l)
 		if (!dedicated && out->contents != CONTENTS_EMPTY)
 		{
 			for (j = 0; j < out->nummarksurfaces; j++)
-				out->firstmarksurface[j]->flags |= SURF_UNDERWATER;
+				model->surfflags[model->marksurfaces[out->firstmarksurfacenum + j]] |= SURF_UNDERWATER;
 		}
 	}
 }
@@ -1506,14 +1578,14 @@ static void Mod_MakeHull0(model_t *model)
 
 	for (i = 0; i < count; i++, out++, in++)
 	{
-		out->planenum = in->plane - model->planes;
+		out->planenum = in->planenum;
 		for (j = 0; j < 2; j++)
 		{
-			child = in->children[j];
-			if (child->contents < 0)
-				out->children[j] = child->contents;
+			child = NODENUM_TO_NODE(model, in->childrennum[j]);
+			if (in->childrennum[j] >= model->numnodes)
+				out->children[j] = ((mleaf_t *)child)->contents;
 			else
-				out->children[j] = child - model->nodes;
+				out->children[j] = in->childrennum[j];
 		}
 	}
 }
@@ -1522,7 +1594,7 @@ static void Mod_LoadMarksurfaces(model_t *model, lump_t *l)
 {
 	int i, j, count;
 	short *in;
-	msurface_t **out;
+	unsigned short *out;
 
 	in = (void *)(mod_base + l->fileofs);
 	if (l->filelen % sizeof(*in))
@@ -1540,7 +1612,7 @@ static void Mod_LoadMarksurfaces(model_t *model, lump_t *l)
 		j = LittleShort(in[i]);
 		if (j >= model->numsurfaces)
 			Host_Error ("Mod_LoadMarksurfaces: bad surface number");
-		out[i] = model->surfaces + j;
+		out[i] = j;
 	}
 }
 
@@ -1573,6 +1645,10 @@ static void Mod_LoadPlanes(model_t *model, lump_t *l)
 	if (l->filelen % sizeof(*in))
 		Host_Error ("Mod_LoadPlanes: funny lump size in %s", model->name);
 	count = l->filelen / sizeof(*in);
+
+	if (count > 65535)
+		Sys_Error("Mod_LoadPlanes: count > 65535");
+
 	out = malloc(count*sizeof(*out));
 	if (out == 0)
 		Sys_Error("Mod_LoadPlanes: Out of memory\n");
@@ -1697,6 +1773,8 @@ static void Mod_LoadBrushModel (model_t *mod, void *buffer)
 			if (mod->submodels == 0)
 				Sys_Error("Mod_LoadBrushModel: Out of memory\n");
 		}
+		else
+			mod->submodels = 0;
 
 		mainmodel = mod;
 

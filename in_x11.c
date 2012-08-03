@@ -77,6 +77,8 @@ struct inputdata
 	int keyq_head;
 	int keyq_tail;
 
+	unsigned int shift_down;
+
 	int mousex;
 	int mousey;
 
@@ -860,6 +862,22 @@ static void GetEvents(struct inputdata *id)
 			case KeyPress:
 				id->keyq[id->keyq_head].key = XLateKey(id, &event.xkey);
 				id->keyq[id->keyq_head].down = true;
+				if (id->keyq[id->keyq_head].key == K_LSHIFT)
+					id->shift_down |= 1;
+				else if (id->keyq[id->keyq_head].key == K_RSHIFT)
+					id->shift_down |= 2;
+
+				if (id->keyq[id->keyq_head].key == K_INS && id->shift_down)
+				{
+					id->keyq[id->keyq_head].key = K_PASTE;
+					id->keyq_head = (id->keyq_head + 1) & 63;
+					id->keyq[id->keyq_head].key = K_PASTE;
+					id->keyq[id->keyq_head].down = false;
+					id->keyq_head = (id->keyq_head + 1) & 63;
+					id->keyq[id->keyq_head].key = K_INS;
+					id->keyq[id->keyq_head].down = true;
+				}
+
 				if (id->keyq_tail != id->keyq_head && id->keyq[id->keyq_head].key == id->keyq[(id->keyq_head - 1) & 63].key && !id->keyq[(id->keyq_head - 1) & 63].down)
 				{
 					id->keyq[(id->keyq_head - 1) & 63].key = id->keyq[id->keyq_head].key;
@@ -872,6 +890,11 @@ static void GetEvents(struct inputdata *id)
 				break;
 			case KeyRelease:
 				id->keyq[id->keyq_head].key = XLateKey(id, &event.xkey);
+				if (id->keyq[id->keyq_head].key == K_LSHIFT)
+					id->shift_down &= ~1;
+				else if (id->keyq[id->keyq_head].key == K_RSHIFT)
+					id->shift_down &= ~2;
+
 				id->keyq[id->keyq_head].down = false;
 				id->keyq_head = (id->keyq_head + 1) & 63;
 				break;
@@ -1049,6 +1072,7 @@ void *X11_Input_Init(Window x_win, unsigned int windowwidth, unsigned int window
 				id->config_notify = 0;
 				id->keyq_head = 0;
 				id->keyq_tail = 0;
+				id->shift_down = 0;
 				id->mousex = 0;
 				id->mousey = 0;
 				id->grab_mouse = 0;

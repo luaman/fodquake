@@ -4,15 +4,70 @@
 #import <stdio.h>
 #import <stdlib.h>
 #import <stdarg.h>
+#import <dlfcn.h>
 
 #undef true
 #undef false
 
 #import "common.h"
+#import "vid_macosx_bc.h"
 
 static mach_timebase_info_data_t tbinfo;
 static int randomfd;
 static NSAutoreleasePool *pool;
+static void *CoreGraphicsLibrary = NULL;
+
+bc_func_ptrs_t bc_func_ptrs;
+
+static int load_missing_osx_symbols()
+{
+	memset(&bc_func_ptrs, 0, sizeof(bc_func_ptrs_t));
+	
+	if (NSAppKitVersionNumber < NSAppKitVersionNumber10_6)
+		return 0;
+	
+	CoreGraphicsLibrary = dlopen("/System/Library/Frameworks/ApplicationServices.framework/Frameworks/CoreGraphics.framework/CoreGraphics", RTLD_NOW);
+	if (!CoreGraphicsLibrary)
+		return 1;
+	
+	bc_func_ptrs.CGDisplayCopyDisplayMode = dlsym(CoreGraphicsLibrary, "CGDisplayCopyDisplayMode");
+	if (!bc_func_ptrs.CGDisplayCopyDisplayMode)
+		return 1;
+	
+	bc_func_ptrs.CGBeginDisplayConfiguration = dlsym(CoreGraphicsLibrary, "CGBeginDisplayConfiguration");
+	if (!bc_func_ptrs.CGBeginDisplayConfiguration)
+		return 1;
+	
+	bc_func_ptrs.CGConfigureDisplayWithDisplayMode = dlsym(CoreGraphicsLibrary, "CGConfigureDisplayWithDisplayMode");
+	if (!bc_func_ptrs.CGConfigureDisplayWithDisplayMode)
+		return 1;
+	
+	bc_func_ptrs.CGCompleteDisplayConfiguration = dlsym(CoreGraphicsLibrary, "CGCompleteDisplayConfiguration");
+	if (!bc_func_ptrs.CGCompleteDisplayConfiguration)
+		return 1;
+	
+	bc_func_ptrs.CGCancelDisplayConfiguration = dlsym(CoreGraphicsLibrary, "CGCancelDisplayConfiguration");
+	if (!bc_func_ptrs.CGCancelDisplayConfiguration)
+		return 1;
+	
+	bc_func_ptrs.CGDisplayCopyAllDisplayModes = dlsym(CoreGraphicsLibrary, "CGDisplayCopyAllDisplayModes");
+	if (!bc_func_ptrs.CGDisplayCopyAllDisplayModes)
+		return 1;
+	
+	bc_func_ptrs.CGDisplayModeGetWidth = dlsym(CoreGraphicsLibrary, "CGDisplayModeGetWidth");
+	if (!bc_func_ptrs.CGDisplayModeGetWidth)
+		return 1;
+	
+	bc_func_ptrs.CGDisplayModeGetHeight = dlsym(CoreGraphicsLibrary, "CGDisplayModeGetHeight");
+	if (!bc_func_ptrs.CGDisplayModeGetHeight)
+		return 1;
+	
+	bc_func_ptrs.CGDisplayModeGetIOFlags = dlsym(CoreGraphicsLibrary, "CGDisplayModeGetIOFlags");
+	if (!bc_func_ptrs.CGDisplayModeGetIOFlags)
+		return 1;
+	
+	return 0;
+}
 
 static unsigned long long monotonictime()
 {
@@ -110,6 +165,12 @@ void Sys_Printf(char *fmt, ...)
 
 void Sys_Quit(void)
 {
+	if (CoreGraphicsLibrary)
+	{
+		dlclose(CoreGraphicsLibrary);
+		CoreGraphicsLibrary = NULL;
+	}
+    
 	exit(0);
 }
 
@@ -149,6 +210,12 @@ void Sys_Error(char *error, ...)
 		
 		[NSApp release];
 	}
+    
+	if (CoreGraphicsLibrary)
+	{
+		dlclose(CoreGraphicsLibrary);
+		CoreGraphicsLibrary = NULL;
+	}
 
 	exit(1);
 }
@@ -177,13 +244,11 @@ int main(int argc, char **argv)
 
 	COM_InitArgv(argc, argv);
 
-/* Because Apple's Mac OS X 10.6 headers don't have this... */
-#ifndef NSAppKitVersionNumber10_5
-#define NSAppKitVersionNumber10_5 949
-#endif
-
 	if (NSAppKitVersionNumber < NSAppKitVersionNumber10_5)
 		Sys_Error("Fodquake requires Mac OS X 10.5 or higher");
+	
+	if (load_missing_osx_symbols() != 0)
+		Sys_Error("Error loading CoreGraphics symbols");
 	
 	randomfd = open("/dev/urandom", O_RDONLY);
 	if (randomfd == -1)
@@ -201,6 +266,12 @@ int main(int argc, char **argv)
 		Host_Frame(time);
 	}
 
+	if (CoreGraphicsLibrary)
+	{
+		dlclose(CoreGraphicsLibrary);
+		CoreGraphicsLibrary = NULL;
+	}
+	
 	return 0;
 }
 

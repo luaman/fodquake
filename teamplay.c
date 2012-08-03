@@ -245,7 +245,7 @@ void TP_ExecTrigger (char *trigger)
 	{
 		if (Ruleset_AllowFTrigger(trigger))
 		{
-			Cbuf_AddTextEx (&cbuf_main, va("%s\n", alias->value));
+			Cbuf_AddTextEx (cbuf_main, va("%s\n", alias->value));
 		}
 	}
 }
@@ -2018,7 +2018,7 @@ void TP_SearchForMsgTriggers (char *s, int level)
 			if ((string = Cmd_AliasString (t->name)))
 			{
 				Q_strncpyz(vars.lasttrigger_match, s, sizeof(vars.lasttrigger_match));
-				Cbuf_AddTextEx (&cbuf_safe, string);
+				Cbuf_AddTextEx (cbuf_safe, string);
 			}
 			else
 			{
@@ -3110,7 +3110,6 @@ qboolean TP_CheckSoundTrigger (char *str)
 {
 	int i, j, start, length;
 	char soundname[MAX_OSPATH];
-	FILE *f;
 
 	if (!tp_soundtrigger.string[0])
 		return false;
@@ -3150,10 +3149,8 @@ qboolean TP_CheckSoundTrigger (char *str)
 				COM_DefaultExtension (soundname, ".wav");
 
 				// make sure we have it on disk (FIXME)
-				FS_FOpenFile (va("sound/%s", soundname), &f);
-				if (!f)
+				if (!FS_FileExists(va("sound/%s", soundname)))
 					return false;
-				fclose (f);
 
 				// now play the sound
 				S_LocalSound (soundname);

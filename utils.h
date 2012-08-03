@@ -65,12 +65,6 @@ struct directory_list *Util_Dir_Recursive_Read_Filter(char *dir, char **filters)
 void Util_Dir_Delete(struct directory_list *dlist);
 void Util_Dir_Sort(struct directory_list *dlist);
 
-struct directory_entry
-{
-	enum directory_entry_type type;
-	char *name;
-};
-
 struct directory_list
 {
 	char *base_dir;

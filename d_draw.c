@@ -198,6 +198,8 @@ struct Picture *Draw_LoadPicture(const char *name, enum Draw_LoadPicture_Fallbac
 
 			strcpy(newnameextension, ".pcx");
 			data = Image_LoadPCX(0, newname, 0, 0, &width, &height);
+
+			free(newname);
 		}
 
 		if (data && width <= 32768 && height <= 32728)
@@ -520,7 +522,15 @@ void Draw_Fill(int x, int y, int width, int height, int c)
 	}
 }
 
+void Draw_Line(int x1, int y1, int x2, int y2, float width, float r, float g, float b, float alpha)
+{
+}
+
 void Draw_AlphaFill(int x, int y, int w, int h, int c, float alpha)
+{
+}
+
+void Draw_AlphaFillRGB(int x, int y, int w, int h, float r, float g, float b, float alpha)
 {
 }
 

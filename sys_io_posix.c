@@ -9,93 +9,65 @@
 #include "dirent.h"
 #include "sys/stat.h"
 
+struct SysFile
+{
+	FILE *f;
+	unsigned int length;
+};
+
 void Sys_IO_Create_Directory(const char *path)
 {
 	mkdir(path, 0777);
 }
 
-int Sys_Read_Dir(char *dir, char *subdir, int *gcount, struct directory_entry_temp **list, struct directory_entry_temp *(*add_det)(struct directory_entry_temp **tmp))
+int Sys_IO_Read_Dir(const char *basedir, const char *subdir, int (*callback)(void *opaque, struct directory_entry *de), void *opaque)
 {
-	enum directory_entry_type type;
-	char dir_buf[4096];
-	char file_buf[4096];
-	struct directory_entry_temp *detc;
-	int count;
+	DIR *dir;
+	struct dirent dirent;
+	struct dirent *posix_is_braindead;
+	struct directory_entry de;
+	struct stat st;
+	char buf[4096];
+	int r;
+	int ret;
 
-	DIR *DIR_dir;
-	struct dirent *dirent;
-	struct stat fileinfo;
+	ret = 0;
 
+	snprintf(buf, sizeof(buf), "%s%s%s", basedir, subdir?"/":"", subdir?subdir:"");
 
-	if (dir == NULL || list == NULL)
-		return 1;
-
-
-	if (subdir == NULL)
-		snprintf(dir_buf, sizeof(dir_buf), "%s/", dir);
-	else
-		snprintf(dir_buf, sizeof(dir_buf), "%s/%s/", dir, subdir);
-
-	DIR_dir = opendir(dir_buf);
-	
-	if (DIR_dir == NULL)
-		return 1;
-
-	dirent = readdir(DIR_dir);
-	if (dirent == NULL)
-#warning leaks DIR_dir
-		return 1;
-
-	count = 0;
-	do
+	dir = opendir(buf);
+	if (dir)
 	{
-		snprintf(file_buf, sizeof(file_buf), "%s/%s", dir_buf, dirent->d_name);
-		if (stat(file_buf, &fileinfo) < 0)
-		{
-			closedir(DIR_dir);
-			return 1;
-		}
+		de.name = buf;
 
-		if (S_ISDIR(fileinfo.st_mode))
+		while((r = readdir_r(dir, &dirent, &posix_is_braindead)) == 0 && posix_is_braindead)
 		{
-			if (!strcmp(dirent->d_name, ".") || !strcmp(dirent->d_name, ".."))
+			if (strcmp(dirent.d_name, ".") == 0 || strcmp(dirent.d_name, "..") == 0)
 				continue;
 
-			type = et_dir;
+			snprintf(buf, sizeof(buf), "%s/%s%s%s", basedir, subdir?subdir:"", subdir?"/":"", dirent.d_name);
+			if (stat(buf, &st) == -1)
+				continue;
+
+			snprintf(buf, sizeof(buf), "%s%s%s", subdir?subdir:"", subdir?"/":"", dirent.d_name);
+
+			de.type = S_ISDIR(st.st_mode)?et_dir:et_file;
+			de.size = st.st_size;
+
+			if (!callback(opaque, &de))
+			{
+				r = 1;
+				break;
+			}
 		}
-		else
-		{
-			type = et_file;
-		}
 
-		detc = add_det(list);
-		if (detc == NULL)
-		{
-			closedir(DIR_dir);
-			return 1;
-		}
+		if (r == 0)
+			ret = 1;
 
-		detc->type = type;
+		closedir(dir);
+	}
 
-		if (subdir)
-			snprintf(file_buf, sizeof(file_buf), "%s/%s", subdir, dirent->d_name);
-		else
-			snprintf(file_buf, sizeof(file_buf), "%s", dirent->d_name);
-
-		detc->name = strdup(file_buf);
-		if (detc->name == NULL)
-		{
-			closedir(DIR_dir);
-			return 1;
-		}
-		count++;
-	} while ((dirent = readdir(DIR_dir)));
-	closedir(DIR_dir);
-
-	if (gcount)
-		*gcount = *gcount + count;
-
-	return 0;
+	return ret;
 }
 
 int Sys_IO_Path_Exists(const char *path)
@@ -106,5 +78,62 @@ int Sys_IO_Path_Exists(const char *path)
 int Sys_IO_Path_Writable(const char *path)
 {
 	return access(path, W_OK) == 0;
+}
+
+struct SysFile *Sys_IO_Open_File_Read(const char *path, enum Sys_IO_File_Status *filestatus)
+{
+	struct SysFile *sysfile;
+	struct stat st;
+
+	if (filestatus)
+		*filestatus = SIOFS_NOT_FOUND;
+
+	if (stat(path, &st) != 0)
+		return 0;
+
+	sysfile = malloc(sizeof(*sysfile));
+	if (sysfile)
+	{
+		sysfile->f = fopen(path, "r");
+		if (sysfile->f)
+		{
+			sysfile->length = st.st_size;
+
+			if (filestatus)
+				*filestatus = SIOFS_OK;
+
+			return sysfile;
+		}
+
+		free(sysfile);
+	}
+
+	return 0;
+}
+
+void Sys_IO_Close_File(struct SysFile *sysfile)
+{
+	fclose(sysfile->f);
+	free(sysfile);
+}
+
+int Sys_IO_Get_File_Length(struct SysFile *sysfile)
+{
+	return sysfile->length;
+}
+
+int Sys_IO_Get_File_Position(struct SysFile *sysfile)
+{
+	return ftell(sysfile->f);
+}
+
+void Sys_IO_Set_File_Position(struct SysFile *sysfile, int position)
+{
+	return fseek(sysfile->f, position, SEEK_SET);
+}
+
+int Sys_IO_Read_File(struct SysFile *sysfile, void *buffer, int length)
+{
+	return fread(buffer, 1, length, sysfile->f);
 }
 

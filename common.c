@@ -295,20 +295,20 @@ float FloatSwap (float f)
 
 //===========================================================================
 
-void SZ_Init (sizebuf_t *buf, byte *data, int length)
+void SZ_Init(sizebuf_t *buf, void *data, int length)
 {
-	memset (buf, 0, sizeof(*buf));
+	memset(buf, 0, sizeof(*buf));
 	buf->data = data;
 	buf->maxsize = length;
 }
 
-void SZ_Clear (sizebuf_t *buf)
+void SZ_Clear(sizebuf_t *buf)
 {
 	buf->cursize = 0;
 	buf->overflowed = false;
 }
 
-void *SZ_GetSpace (sizebuf_t *buf, int length)
+void *SZ_GetSpace(sizebuf_t *buf, int length)
 {
 	void *data;
 
@@ -331,12 +331,12 @@ void *SZ_GetSpace (sizebuf_t *buf, int length)
 	return data;
 }
 
-void SZ_Write (sizebuf_t *buf, void *data, int length)
+void SZ_Write(sizebuf_t *buf, void *data, int length)
 {
 	memcpy (SZ_GetSpace(buf,length),data,length);		
 }
 
-void SZ_Print (sizebuf_t *buf, char *data)
+void SZ_Print(sizebuf_t *buf, char *data)
 {
 	int len;
 
@@ -510,16 +510,11 @@ skipwhite:
 	return data;
 }
 
-void COM_CheckRegistered (void)
+void COM_CheckRegistered(void)
 {
-	FILE *h;
-
-	FS_FOpenFile ("gfx/pop.lmp", &h);
-
-	if (h)
+	if (FS_FileExists("gfx/pop.lmp"))
 	{
-		Cvar_Set (&registered, "1");
-		fclose (h);
+		Cvar_Set(&registered, "1");
 	}
 }
 

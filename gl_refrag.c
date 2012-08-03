@@ -75,20 +75,26 @@ void R_RemoveEfrags(entity_t *ent)
 	ent->efrag = NULL;
 }
 
-void R_SplitEntityOnNode(mnode_t *node)
+static void R_SplitEntityOnNode(model_t *model, unsigned int nodenum)
 {
 	efrag_t *ef;
 	mplane_t *splitplane;
+	mnode_t *node;
 	mleaf_t *leaf;
 	int sides;
-
-	if (node->contents == CONTENTS_SOLID)
-		return;
+	unsigned int leafnum;
 
 	// add an efrag if the node is a leaf
 
-	if (node->contents < 0)
+	if (nodenum >= model->numnodes)
 	{
+		leafnum = nodenum - model->numnodes;
+
+		if ((model->leafsolid[leafnum/32] & (1<<(leafnum%32))))
+			return;
+
+		node = (mnode_t *)(model->leafs + leafnum);
+
 		if (!r_pefragtopnode)
 			r_pefragtopnode = node;
 
@@ -119,7 +125,9 @@ void R_SplitEntityOnNode(mnode_t *node)
 
 	// NODE_MIXED
 
-	splitplane = node->plane;
+	node = model->nodes + nodenum;
+
+	splitplane = model->planes + node->planenum;
 	sides = BOX_ON_PLANE_SIDE(r_emins, r_emaxs, splitplane);
 
 	if (sides == 3)
@@ -132,10 +140,10 @@ void R_SplitEntityOnNode(mnode_t *node)
 
 	// recurse down the contacted sides
 	if (sides & 1)
-		R_SplitEntityOnNode (node->children[0]);
+		R_SplitEntityOnNode(model, node->childrennum[0]);
 
 	if (sides & 2)
-		R_SplitEntityOnNode (node->children[1]);
+		R_SplitEntityOnNode(model, node->childrennum[1]);
 }
 
 void R_AddEfrags(entity_t *ent)
@@ -159,7 +167,7 @@ void R_AddEfrags(entity_t *ent)
 		r_emaxs[i] = ent->origin[i] + entmodel->maxs[i];
 	}
 
-	R_SplitEntityOnNode (cl.worldmodel->nodes);
+	R_SplitEntityOnNode(cl.worldmodel, 0);
 
 	ent->topnode = r_pefragtopnode;
 }

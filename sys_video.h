@@ -40,6 +40,7 @@ int Sys_Video_FocusChanged(void *display);
 void Sys_Video_BeginFrame(void *display, unsigned int *x, unsigned int *y, unsigned int *width, unsigned int *height);
 void Sys_Video_SetGamma(void *display, unsigned short *ramps);
 qboolean Sys_Video_HWGammaSupported(void *display);
+void *Sys_Video_GetProcAddress(void *display, const char *name);
 #else
 void Sys_Video_SetPalette(void *display, unsigned char *palette);
 unsigned int Sys_Video_GetBytesPerRow(void *display);

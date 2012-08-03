@@ -25,9 +25,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "ruleset.h"
 
-char *Skin_FindName (player_info_t *sc) ;
+char *Skin_FindName(player_info_t *sc);
 
-void R_TranslatePlayerSkin (int playernum) {
+void R_TranslatePlayerSkin(int playernum)
+{
 	char s[512];
 	int i, j, top, bottom;
 	byte *dest, *source;
@@ -44,7 +45,8 @@ void R_TranslatePlayerSkin (int playernum) {
 	if (player->skin && Q_strcasecmp(s, player->skin->name))
 		player->skin = NULL;
 
-	if (player->_topcolor != player->topcolor || player->_bottomcolor != player->bottomcolor || !player->skin) {
+	if (player->_topcolor != player->topcolor || player->_bottomcolor != player->bottomcolor || !player->skin)
+	{
 
 		player->_topcolor = player->topcolor;
 		player->_bottomcolor = player->bottomcolor;
@@ -56,16 +58,22 @@ void R_TranslatePlayerSkin (int playernum) {
 		top = bound(0, player->topcolor, 13) * 16;
 		bottom = bound(0, player->bottomcolor, 13) * 16;
 
-		for (i = 0; i < VID_GRADES; i++, dest += 256, source += 256) {
+		for (i = 0; i < VID_GRADES; i++, dest += 256, source += 256)
+		{
 			if (top < 128)	{ // the artists made some backwards ranges.  sigh.
 				memcpy(dest + TOP_RANGE, source + top, 16);
-			} else {
+			}
+			else
+			{
 				for (j = 0; j < 16; j++)
 					dest[TOP_RANGE + j] = source[top + 15 - j];
 			}					
-			if (bottom < 128) {
+			if (bottom < 128)
+			{
 				memcpy(dest + BOTTOM_RANGE, source + bottom, 16);
-			} else {
+			}
+			else
+			{
 				for (j = 0 ; j < 16 ; j++)
 					dest[BOTTOM_RANGE + j] = source[bottom + 15 - j];
 			}
@@ -73,19 +81,21 @@ void R_TranslatePlayerSkin (int playernum) {
 	}
 }
 
-void R_CheckVariables (void) {
+void R_CheckVariables(void)
+{
 #if 0
 	static float	oldbright;
 
 	if (r_fullbright.value != oldbright)
 	{
 		oldbright = r_fullbright.value;
-		D_FlushCaches ();	// so all lighting changes
+		D_FlushCaches();	// so all lighting changes
 	}
 #endif
 }
 
-void R_TimeRefresh_f (void) {
+void R_TimeRefresh_f(void)
+{
 	int i, startangle;
 	float start, stop, time;
 	vrect_t vr;
@@ -93,7 +103,8 @@ void R_TimeRefresh_f (void) {
 	if (cls.state != ca_active)
 		return;
 
-	if (!(cl.spectator || cls.demoplayback || cl.standby) && !Ruleset_AllowTimeRefresh()) {
+	if (!(cl.spectator || cls.demoplayback || cl.standby) && !Ruleset_AllowTimeRefresh())
+	{
 		Com_Printf("Timerefresh's disabled during match\n");
 		return;
 	}
@@ -101,7 +112,8 @@ void R_TimeRefresh_f (void) {
 	startangle = r_refdef.viewangles[1];
 
 	start = Sys_DoubleTime ();
-	for (i = 0; i < 128; i++) {
+	for (i = 0; i < 128; i++)
+	{
 		r_refdef.viewangles[1] = i/128.0*360.0;
 
 		VID_LockBuffer ();
@@ -125,7 +137,8 @@ void R_TimeRefresh_f (void) {
 }
 
 //Only called by R_DisplayTime
-void R_LineGraph (int x, int y, int h) {
+void R_LineGraph(int x, int y, int h)
+{
 	int i, s, color;
 	byte *dest;
 
@@ -149,8 +162,9 @@ void R_LineGraph (int x, int y, int h) {
 
 	if (h > s)
 		h = s;
-	
-	for (i = 0; i < h; i++, dest -= vid.rowbytes * 2) {
+
+	for (i = 0; i < h; i++, dest -= vid.rowbytes * 2)
+	{
 		dest[0] = color;
 //		*(dest-vid.rowbytes) = 0x30;
 	}
@@ -160,7 +174,8 @@ void R_LineGraph (int x, int y, int h) {
 #define	MAX_TIMINGS		100
 extern float mouse_x, mouse_y;
 int		graphval;
-void R_TimeGraph (void) {
+void R_TimeGraph(void)
+{
 	static int timex;
 	int a, x;
 	float r_time2;
@@ -185,7 +200,8 @@ void R_TimeGraph (void) {
 		x = r_refdef.vrect.width - 1;
 	else
 		x = r_refdef.vrect.width - (r_refdef.vrect.width - MAX_TIMINGS)/2;
-	do {
+	do
+	{
 		R_LineGraph (x, r_refdef.vrect.height-2, r_timings[a]);
 		if (x==0)
 			break;		// screen too small to hold entire thing
@@ -198,7 +214,8 @@ void R_TimeGraph (void) {
 	timex = (timex + 1)%MAX_TIMINGS;
 }
 
-void R_NetGraph (void) {
+void R_NetGraph(void)
+{
 	extern cvar_t r_netgraph;
 	int a, x, y, y2, w, i, lost;
 	char st[80];
@@ -219,18 +236,21 @@ void R_NetGraph (void) {
 
 	x = 8;
 	lost = CL_CalcNet();
-	for (a = NET_TIMINGS - w; a < w; a++) {
+	for (a = NET_TIMINGS - w; a < w; a++)
+	{
 		i = (cls.netchan.outgoing_sequence - a) & NET_TIMINGSMASK;
 		R_LineGraph (x + w - 1 - a, y, packet_latency[i]);
 	}
 
-	if (r_netgraph.value != 3) {
+	if (r_netgraph.value != 3)
+	{
 		sprintf(st, "%3i%% packet loss", lost);
 		Draw_String(8, y2, st);
 	}
 }
 
-void R_ZGraph (void) {
+void R_ZGraph (void)
+{
 	int a, x, w, i;
 	static int	height[256];
 
@@ -242,24 +262,27 @@ void R_ZGraph (void) {
 	height[r_framecount&255] = ((int)r_origin[2]) & 31;
 
 	x = 0;
-	for (a = 0; a < w; a++) {
+	for (a = 0; a < w; a++)
+	{
 		i = (r_framecount - a) & 255;
 		R_LineGraph (x + w - 1 - a, r_refdef.vrect.height - 2, height[i]);
 	}
 }
 
-void R_PrintTimes (void) {
+void R_PrintTimes(void)
+{
 	float r_time2, ms;
 
 	r_time2 = Sys_DoubleTime ();
 
 	ms = 1000 * (r_time2 - r_time1);
-	
+
 	Com_Printf ("%5.1f ms %3i/%3i/%3i poly %3i surf\n", ms, c_faceclip, r_polycount, r_drawnpolycount, c_surf);
 	c_surf = 0;
 }
 
-void R_PrintDSpeeds (void) {
+void R_PrintDSpeeds(void)
+{
 	float ms, dp_time, r_time2, rw_time, db_time, se_time, de_time, dv_time;
 
 	r_time2 = Sys_DoubleTime ();
@@ -276,15 +299,18 @@ void R_PrintDSpeeds (void) {
 				(int)ms, dp_time, (int)rw_time, db_time, (int)se_time, de_time, dv_time);
 }
 
-void R_PrintAliasStats (void) {
+void R_PrintAliasStats(void)
+{
 	Com_Printf ("%3i polygon model drawn\n", r_amodels_drawn);
 }
 
-void R_TransformFrustum (void) {
+void R_TransformFrustum(void)
+{
 	int i;
 	vec3_t v, v2;
-	
-	for (i = 0; i < 4; i++) {
+
+	for (i = 0; i < 4; i++)
+	{
 		v[0] = screenedge[i].normal[2];
 		v[1] = -screenedge[i].normal[0];
 		v[2] = screenedge[i].normal[1];
@@ -302,7 +328,8 @@ void R_TransformFrustum (void) {
 
 #if !id386
 
-void TransformVector (vec3_t in, vec3_t out) {
+void TransformVector(vec3_t in, vec3_t out)
+{
 	out[0] = DotProduct(in, vright);
 	out[1] = DotProduct(in, vup);
 	out[2] = DotProduct(in, vpn);		
@@ -310,23 +337,30 @@ void TransformVector (vec3_t in, vec3_t out) {
 
 #endif
 
-void R_TransformPlane (mplane_t *p, float *normal, float *dist) {	
+void R_TransformPlane (mplane_t *p, float *normal, float *dist)
+{
 	*dist = -PlaneDiff(r_origin, p);;
 // TODO: when we have rotating entities, this will need to use the view matrix
 	TransformVector (p->normal, normal);
 }
 
-void R_SetUpFrustumIndexes (void) {
+void R_SetUpFrustumIndexes(void)
+{
 	int i, j, *pindex;
 
 	pindex = r_frustum_indexes;
 
-	for (i = 0; i < 4; i++) {
-		for (j = 0; j < 3; j++) {
-			if (view_clipplanes[i].normal[j] < 0) {
+	for (i = 0; i < 4; i++)
+	{
+		for (j = 0; j < 3; j++)
+		{
+			if (view_clipplanes[i].normal[j] < 0)
+			{
 				pindex[j] = j;
 				pindex[j+3] = j + 3;
-			} else {
+			}
+			else
+			{
 				pindex[j] = j + 3;
 				pindex[j+3] = j;
 			}
@@ -338,7 +372,8 @@ void R_SetUpFrustumIndexes (void) {
 	}
 }
 
-void R_SetupFrame (void) {
+void R_SetupFrame(void)
+{
 	int edgecount;
 	vrect_t vrect;
 	float w, h;
@@ -349,13 +384,16 @@ void R_SetupFrame (void) {
 	r_ambient.value = 0;
 	r_draworder.value = 0;	// don't let cheaters look behind walls
 
-	if (r_numsurfs.value) {
-		if ((surface_p - surfaces) > r_maxsurfsseen) r_maxsurfsseen = surface_p - surfaces;
+	if (r_numsurfs.value)
+	{
+		if (surf_cur > r_maxsurfsseen)
+			r_maxsurfsseen = surf_cur;
 
-		Com_Printf ("Used %d of %d surfs; %d max\n", surface_p - surfaces, surf_max - surfaces, r_maxsurfsseen);
+		Com_Printf("Used %d of %d surfs; %d max\n", surf_cur, surf_max, r_maxsurfsseen);
 	}
 
-	if (r_numedges.value) {
+	if (r_numedges.value)
+	{
 		edgecount = edge_p - r_edges;
 
 		if (edgecount > r_maxedgesseen)
@@ -369,17 +407,17 @@ void R_SetupFrame (void) {
 	if (r_refdef.ambientlight < 0)
 		r_refdef.ambientlight = 0;
 
-	R_CheckVariables ();
+	R_CheckVariables();
 
-	R_AnimateLight ();
+	R_AnimateLight();
 
 	r_framecount++;
 
 	// build the transformation matrix for the given view angles
-	VectorCopy (r_refdef.vieworg, modelorg);
-	VectorCopy (r_refdef.vieworg, r_origin);
+	VectorCopy(r_refdef.vieworg, modelorg);
+	VectorCopy(r_refdef.vieworg, r_origin);
 
-	AngleVectors (r_refdef.viewangles, vpn, vright, vup);
+	AngleVectors(r_refdef.viewangles, vpn, vright, vup);
 
 	// current viewleaf
 	r_oldviewleaf = r_viewleaf;
@@ -388,25 +426,32 @@ void R_SetupFrame (void) {
 	r_dowarpold = r_dowarp;
 	r_dowarp = r_waterwarp.value && (r_viewleaf->contents <= CONTENTS_WATER);
 
-	if (r_dowarp != r_dowarpold || r_viewchanged) {
-		if (r_dowarp) {
-			if (vid.displaywidth <= vid.maxwarpwidth && vid.displayheight <= vid.maxwarpheight) {
+	if (r_dowarp != r_dowarpold || r_viewchanged)
+	{
+		if (r_dowarp)
+		{
+			if (vid.displaywidth <= vid.maxwarpwidth && vid.displayheight <= vid.maxwarpheight)
+			{
 				vrect.x = 0;
 				vrect.y = 0;
 				vrect.width = vid.displaywidth;
 				vrect.height = vid.displayheight;
 
 				R_ViewChanged (&vrect, sb_lines, vid.aspect);
-			} else {
+			}
+			else
+			{
 				w = vid.displaywidth;
 				h = vid.displayheight;
 
-				if (w > vid.maxwarpwidth) {
+				if (w > vid.maxwarpwidth)
+				{
 					h *= (float)vid.maxwarpwidth / w;
 					w = vid.maxwarpwidth;
 				}
 
-				if (h > vid.maxwarpheight) {
+				if (h > vid.maxwarpheight)
+				{
 					h = vid.maxwarpheight;
 					w *= (float)vid.maxwarpheight / h;
 				}
@@ -421,7 +466,9 @@ void R_SetupFrame (void) {
 								vid.aspect * (h / w) *
 								((float) vid.displaywidth / (float) vid.displayheight));
 			}
-		} else {
+		}
+		else
+		{
 			vrect.x = 0;
 			vrect.y = 0;
 			vrect.width = vid.displaywidth;
@@ -434,17 +481,17 @@ void R_SetupFrame (void) {
 	}
 
 // start off with just the four screen edge clip planes
-	R_TransformFrustum ();
+	R_TransformFrustum();
 
 // save base values
-	VectorCopy (vpn, base_vpn);
-	VectorCopy (vright, base_vright);
-	VectorCopy (vup, base_vup);
-	VectorCopy (modelorg, base_modelorg);
+	VectorCopy(vpn, base_vpn);
+	VectorCopy(vright, base_vright);
+	VectorCopy(vup, base_vup);
+	VectorCopy(modelorg, base_modelorg);
 
-	R_SetSkyFrame ();
+	R_SetSkyFrame();
 
-	R_SetUpFrustumIndexes ();
+	R_SetUpFrustumIndexes();
 
 	r_cache_thrash = false;
 
@@ -458,5 +505,5 @@ void R_SetupFrame (void) {
 	r_outofsurfaces = 0;
 	r_outofedges = 0;
 
-	D_SetupFrame ();
+	D_SetupFrame();
 }

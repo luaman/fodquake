@@ -115,9 +115,9 @@ extern	qboolean		insubmodel;
 
 
 void R_DrawSprite (void);
-void R_RenderFace (msurface_t *fa, int clipflags);
+void R_RenderFace(model_t *model, unsigned int surfnum, int clipflags);
 void R_RenderPoly (msurface_t *fa, int clipflags);
-void R_RenderBmodelFace (bedge_t *pedges, msurface_t *psurf);
+void R_RenderBmodelFace(model_t *model, bedge_t *pedges, unsigned int surfnum);
 void R_TransformPlane (mplane_t *p, float *normal, float *dist);
 void R_TransformFrustum (void);
 void R_SetSkyFrame (void);
@@ -139,7 +139,7 @@ void R_DrawSubmodelPolygons (model_t *pmodel, int clipflags);
 void R_DrawSolidClippedSubmodelPolygons (model_t *pmodel);
 
 void R_AddPolygonEdges (emitpoint_t *pverts, int numverts, int miplevel);
-surf_t *R_GetSurf (void);
+struct surface *R_GetSurf (void);
 void R_AliasDrawModel (entity_t *ent);
 void R_BeginEdgeFrame (void);
 void R_ScanEdges (void);
@@ -246,9 +246,7 @@ void R_PrintDSpeeds (void);
 void R_AnimateLight (void);
 int R_LightPoint (vec3_t p);
 void R_SetupFrame (void);
-void R_EmitEdge (mvertex_t *pv0, mvertex_t *pv1);
-void R_ClipEdge (mvertex_t *pv0, mvertex_t *pv1, clipplane_t *clip);
-void R_MarkLights (dlight_t *light, int bit, mnode_t *node);
+void R_MarkLights(model_t *model, dlight_t *light, int bit, unsigned int nodenum);
 
 // !!! if this is changed, it must be changed in d_ifacea.h too !!!
 #define CACHE_SIZE      32              // used to align key data structures

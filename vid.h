@@ -80,8 +80,8 @@ void VID_Update (vrect_t *rects);
 
 int VID_GetKeyEvent(keynum_t *key, qboolean *down);
 
-void VID_LockBuffer (void);
-void VID_UnlockBuffer (void);
+void VID_LockBuffer(void);
+void VID_UnlockBuffer(void);
 
 void VID_SetCaption(const char *text);
 
@@ -95,6 +95,7 @@ void VID_SetClipboardText(const char *text);
 void VID_BeginFrame(int *x, int *y, int *width, int *height);
 void VID_SetDeviceGammaRamp (unsigned short *ramps);
 qboolean VID_HWGammaSupported(void);
+void *VID_GetProcAddress(const char *name);
 #endif
 
 unsigned int VID_GetWidth(void);

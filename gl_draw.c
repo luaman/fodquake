@@ -814,7 +814,7 @@ void Draw_Crosshair(void)
 	}
 }
 
-void Draw_AlphaFill(int x, int y, int w, int h, int c, float alpha)
+void Draw_AlphaFillRGB(int x, int y, int w, int h, float r, float g, float b, float alpha)
 {
 	float coords[4*2];
 
@@ -827,11 +827,11 @@ void Draw_AlphaFill(int x, int y, int w, int h, int c, float alpha)
 	GL_SetAlphaTestBlend(0, alpha < 1);
 	if (alpha < 1)
 	{
-		glColor4f(host_basepal[c * 3] / 255.0,  host_basepal[c * 3 + 1] / 255.0, host_basepal[c * 3 + 2] / 255.0, alpha);
+		glColor4f(r, g, b, alpha);
 	}
 	else
 	{
-		glColor3f(host_basepal[c * 3] / 255.0, host_basepal[c * 3 + 1] / 255.0, host_basepal[c * 3 + 2]  /255.0);
+		glColor3f(r, g, b);
 	}
 
 	coords[0 + 0] = x;
@@ -855,9 +855,56 @@ void Draw_AlphaFill(int x, int y, int w, int h, int c, float alpha)
 	glColor3ubv(color_white);
 }
 
+void Draw_AlphaFill(int x, int y, int w, int h, int c, float alpha)
+{
+	float r;
+	float g;
+	float b;
+
+	r = host_basepal[c * 3 + 0] / 255.0;
+	g = host_basepal[c * 3 + 1] / 255.0;
+	b = host_basepal[c * 3 + 2] / 255.0;
+
+	Draw_AlphaFillRGB(x, y, w, h, r, g, b, alpha);
+}
+
 void Draw_Fill(int x, int y, int w, int h, int c)
 {
 	Draw_AlphaFill(x, y, w, h, c, 1);
+}
+
+void Draw_Line(int x1, int y1, int x2, int y2, float width, float r, float g, float b, float a)
+{
+	float coords[4];
+	float colours[8];
+
+	coords[0 + 0] = x1;
+	coords[0 + 1] = y1;
+	coords[2 + 0] = x2;
+	coords[2 + 1] = y2;
+
+	colours[0 + 0] = r;
+	colours[0 + 1] = g;
+	colours[0 + 2] = b;
+	colours[0 + 3] = a;
+
+	colours[4 + 0] = r;
+	colours[4 + 1] = g;
+	colours[4 + 2] = b;
+	colours[4 + 3] = a;
+
+	GL_SetAlphaTestBlend(0, 1);
+	glDisable(GL_TEXTURE_2D);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+	GL_SetArrays(FQ_GL_VERTEX_ARRAY|FQ_GL_COLOR_ARRAY);
+
+	glVertexPointer(2, GL_FLOAT, 0, coords);
+	glColorPointer(4, GL_FLOAT, 0, colours);
+
+	glDrawArrays(GL_LINES, 0, 2);
+
+	glEnable(GL_TEXTURE_2D);
 }
 
 //=============================================================================

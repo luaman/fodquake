@@ -77,7 +77,9 @@ void Host_Abort(void)
 
 void Host_EndGame(void)
 {
+#ifndef CLIENTONLY
 	SV_Shutdown ("Server was killed");
+#endif
 	CL_Disconnect();
 	// clear disconnect messages from loopback
 	NET_ClearLoopback();
@@ -103,7 +105,9 @@ void Host_Error(char *error, ...)
 	Com_Printf("Host_Error: %s\n",string);
 	Com_Printf("===========================\n\n");
 
+#ifndef CLIENTONLY
 	SV_Shutdown(va("server crashed: %s\n", string));
+#endif
 	CL_Disconnect();
 
 	if (dedicated)
@@ -153,9 +157,11 @@ void Host_Frame(double time)
 
 	curtime += time;
 
+#ifndef CLIENTONLY
 	if (dedicated)
 		SV_Frame(time);
 	else
+#endif
 		CL_Frame(time);	// will also call SV_Frame
 }
 
@@ -190,8 +196,6 @@ int cvarsregged;
 
 void Host_Init(int argc, char **argv)
 {
-	FILE *f;
-
 	srand(time(0));
 
 	COM_InitArgv(argc, argv);
@@ -228,7 +232,9 @@ void Host_Init(int argc, char **argv)
 	ConfigManager_CvarInit();
 	Movie_CvarInit();
 	MT_CvarInit();
+#ifndef CLIENTONLY
 	SV_CvarInit();
+#endif
 	Sbar_CvarInit();
 	TP_CvarInit();
 	Ignore_CvarInit();
@@ -239,7 +245,9 @@ void Host_Init(int argc, char **argv)
 	Draw_CvarInit();
 	Key_CvarInit();
 	M_CvarInit();
+#ifndef CLIENTONLY
 	PR_CvarInit();
+#endif
 	FMod_CvarInit();
 	FChecks_CvarInit();
 	Sys_CvarInit();
@@ -265,15 +273,13 @@ void Host_Init(int argc, char **argv)
 	else
 	{
 		Cbuf_AddText("exec default.cfg\n");
-		if (FS_FOpenFile("config.cfg", &f) != -1)
+		if (FS_FileExists("config.cfg"))
 		{
 			Cbuf_AddText("exec config.cfg\n");
-			fclose(f);
 		}
-		if (FS_FOpenFile("autoexec.cfg", &f) != -1)
+		if (FS_FileExists("autoexec.cfg"))
 		{
-			Cbuf_AddText ("exec autoexec.cfg\n");
-			fclose(f);
+			Cbuf_AddText("exec autoexec.cfg\n");
 		}
 		Cbuf_AddText("cfg_load default.cfg\n");
 		Cbuf_Execute();
@@ -298,7 +304,9 @@ void Host_Init(int argc, char **argv)
 	Mod_Init();
 
 	SB_Init();
+#ifndef CLIENTONLY
 	SV_Init();
+#endif
 	CL_Init();
 
 	Context_Weighting_Init();
@@ -344,7 +352,9 @@ void Host_Shutdown(void)
 	Context_Weighting_Shutdown();
 
 	SB_Quit();
+#ifndef CLIENTONLY
 	SV_Shutdown("Server quit\n");
+#endif
 	QLib_Shutdown();
 	CL_Shutdown();
 	Mod_Shutdown();
@@ -358,6 +368,7 @@ void Host_Shutdown(void)
 
 	Cvar_Shutdown();
 	Cmd_Shutdown();
+	Cbuf_Shutdown();
 	CSTC_Shutdown();
 
 	Host_ShutdownMemory();

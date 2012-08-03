@@ -659,10 +659,10 @@ no_lf:
 				key_linepos = strlen(key_lines[edit_line]);
 			return;
 	}
-	if ((key == 'V' || key == 'v') && keydown[K_CTRL])
+	if (((key == 'V' || key == 'v') && keydown[K_CTRL]) || key == K_PASTE)
 	{
 		const char *clipText;
-	
+
 		if ((clipText = VID_GetClipboardText()))
 		{
 			len = strlen(clipText);
@@ -1067,6 +1067,7 @@ void Key_Init(void)
 	consolekeys[K_RSHIFT] = true;
 	consolekeys[K_MWHEELUP] = true;
 	consolekeys[K_MWHEELDOWN] = true;
+	consolekeys[K_PASTE] = true;
 	consolekeys['`'] = false;
 	consolekeys['~'] = false;
 

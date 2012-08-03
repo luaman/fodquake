@@ -741,14 +741,6 @@ void Sys_Video_Update(void *display, vrect_t *rects)
 	}
 }
 
-void VID_LockBuffer(void)
-{
-}
-
-void VID_UnlockBuffer(void)
-{
-}
-
 void Sys_Video_SetWindowTitle(void *display, const char *text)
 {
 	struct display *d;

@@ -27,6 +27,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 extern struct netaddr cl_net_from;
 extern sizebuf_t cl_net_message;
 
+#ifdef FOD_PPC
+extern int altivec_available;
+#endif
+
 #define	MAX_PROJECTILES	32 
 
 typedef struct {
@@ -464,6 +468,7 @@ extern	centity_t		cl_entities[CL_MAX_EDICTS];
 extern	efrag_t			cl_efrags[MAX_EFRAGS];
 extern	lightstyle_t	cl_lightstyle[MAX_LIGHTSTYLES];
 extern	dlight_t		cl_dlights[MAX_DLIGHTS];
+extern unsigned int cl_dlight_active[MAX_DLIGHTS/32];
 
 extern byte		*host_basepal;
 extern byte		*host_colormap;
