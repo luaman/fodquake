@@ -142,9 +142,6 @@ static void Host_ShutdownMemory()
 //Can only be called when changing levels!
 void Host_ClearMemory(void)
 {
-#ifndef GLQUAKE
-	D_FlushCaches();
-#endif
 	Mod_ClearBrushesSprites();
 }
 

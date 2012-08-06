@@ -382,10 +382,6 @@ void VID_Close()
 	Draw_Shutdown();
 	CSTC_PictureShutdown();
 
-#ifndef GLQUAKE
-	D_FlushCaches();
-#endif
-
 	if (display)
 	{
 		R_Shutdown();
