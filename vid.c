@@ -210,12 +210,11 @@ void VID_Restart(void)
 			Host_EndGame();
 			return;
 		}
-
-		cl.worldmodel = cl.model_precache[i];
 	}
 
 	if (cl.model_precache[1])
 	{
+		cl.worldmodel = cl.model_precache[1];
 		R_NewMap();
 		R_DrawFlat_NewMap();
 	}
