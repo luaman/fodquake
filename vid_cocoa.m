@@ -683,7 +683,7 @@ qboolean Sys_Video_HWGammaSupported(void *display)
 	return true;
 }
 
-void *Sys_Video_GetProcAddress(void *display, const char *p);
+void *Sys_Video_GetProcAddress(void *display, const char *p)
 {
 	NSSymbol symbol = NULL;
 	char *symbolName;
