@@ -34,7 +34,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "keys.h"
 #include "gl_local.h"
 #include "in_morphos.h"
-#include "vid_tinygl.h"
 #include "vid_mode_morphos.h"
 
 #ifndef SA_GammaControl
@@ -410,7 +409,7 @@ qboolean Sys_Video_HWGammaSupported(void *display)
 	return d->gammaenabled;
 }
 
-void *Sys_Video_GetProcAddress(void *display, const char *name);
+void *Sys_Video_GetProcAddress(void *display, const char *name)
 {
 	return 0;
 }
