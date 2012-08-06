@@ -291,7 +291,7 @@ void SV_SpawnServer (char *server, qboolean devmap)
 
 	SV_KillServer();
 
-	Host_ClearMemory();
+	Mod_ClearAll();
 
 	if (deathmatch.value)
 		Cvar_Set (&coop, "0");

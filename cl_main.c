@@ -1225,9 +1225,6 @@ void CL_ClearState(void)
 
 	Com_DPrintf("Clearing memory\n");
 
-	if (!com_serveractive)
-		Host_ClearMemory();
-
 	CL_ClearTEnts();
 	CL_ClearScene();
 
