@@ -307,6 +307,11 @@ void Mod_ClearBrushesSprites(void)
 			else if (mod->type == mod_sprite)
 				Mod_FreeSpriteData(mod);
 
+			if (prev)
+				prev->next = mod->next;
+			else
+				firstmodel = mod->next;
+
 			free(mod);
 		}
 		else
