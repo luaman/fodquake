@@ -191,11 +191,6 @@ void VID_Restart(void)
 		return;
 
 	VID_Close();
-#ifdef CLIENTONLY
-	Host_ClearMemory();
-#else
-	Mod_ClearAll();
-#endif
 	VID_Open();
 	
 	for(i=1;i < MAX_MODELS;i++)
@@ -377,6 +372,7 @@ void VID_Close()
 {
 	Sys_Thread_LockMutex(display_mutex);
 
+	Mod_ClearAll();
 	SCR_Shutdown();
 	Sbar_Shutdown();
 	M_VidShutdown();
