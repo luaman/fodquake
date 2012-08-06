@@ -288,37 +288,6 @@ static void Mod_FreeBrushData(model_t *model)
 	}
 }
 
-void Mod_ClearBrushesSprites(void)
-{
-	model_t	*mod;
-	model_t *next;
-	model_t *prev;
-
-	prev = 0;
-	next = firstmodel;
-	while((mod = next))
-	{
-		next = mod->next;
-
-		if (mod->type != mod_alias)
-		{
-			if (mod->type == mod_brush)
-				Mod_FreeBrushData(mod);
-			else if (mod->type == mod_sprite)
-				Mod_FreeSpriteData(mod);
-
-			if (prev)
-				prev->next = mod->next;
-			else
-				firstmodel = mod->next;
-
-			free(mod);
-		}
-		else
-			prev = mod;
-	}
-}
-
 void Mod_ClearAll(void)
 {
 	model_t	*mod;
