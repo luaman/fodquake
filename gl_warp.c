@@ -220,15 +220,15 @@ __inline static float SINTABLE_APPROX(float time)
 static void EmitFlatPoly(msurface_t *fa)
 {
 	GL_SetArrays(FQ_GL_VERTEX_ARRAY);
-	glVertexPointer(3, GL_FLOAT, 0, fa->fastpolys);
+	GL_VertexPointer(3, GL_FLOAT, 0, fa->fastpolys);
 	glDrawArrays(GL_POLYGON, 0, fa->numedges);
 }
 
 static void EmitShaderPoly(msurface_t *fa)
 {
 	GL_SetArrays(FQ_GL_VERTEX_ARRAY | FQ_GL_TEXTURE_COORD_ARRAY);
-	glVertexPointer(3, GL_FLOAT, 0, fa->fastpolys);
-	glTexCoordPointer(2, GL_FLOAT, 0, fa->shadertexcoords);
+	GL_VertexPointer(3, GL_FLOAT, 0, fa->fastpolys);
+	GL_TexCoordPointer(0, 2, GL_FLOAT, 0, fa->shadertexcoords);
 	glDrawArrays(GL_POLYGON, 0, fa->numedges);
 }
 
