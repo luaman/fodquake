@@ -255,12 +255,15 @@ extern void (*qglCompileShaderARB)(GLhandleARB);
 extern GLhandleARB (*qglCreateProgramObjectARB)(void);
 extern GLhandleARB (*qglCreateShaderObjectARB)(GLenum);
 extern void (*qglDeleteObjectARB)(GLhandleARB);
+extern void (*qglDisableVertexAttribArrayARB)(GLuint index);
+extern void (*qglEnableVertexAttribArrayARB)(GLuint index);
 extern void (*qglGetInfoLogARB)(GLhandleARB, GLsizei, GLsizei *, GLcharARB *);
 extern void (*qglGetObjectParameterivARB)(GLhandleARB, GLenum, GLint *);
 extern GLint (*qglGetUniformLocationARB)(GLhandleARB, const GLcharARB *);
 extern void (*qglLinkProgramARB)(GLhandleARB);
 extern void (*qglShaderSourceARB)(GLhandleARB, GLsizei, const GLcharARB* *, const GLint *);
 extern void (*qglUniform1fARB)(GLint, GLfloat);
+extern void (*qglUniformMatrix4fvARB)(GLint, GLsizei, GLboolean, const GLfloat *);
 extern void (*qglUseProgramObjectARB)(GLhandleARB);
 
 extern void (*qglBindAttribLocationARB)(GLhandleARB, GLuint, const GLcharARB *);

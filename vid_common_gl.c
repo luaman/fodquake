@@ -44,12 +44,15 @@ void (*qglCompileShaderARB)(GLhandleARB);
 GLhandleARB (*qglCreateProgramObjectARB)(void);
 GLhandleARB (*qglCreateShaderObjectARB)(GLenum);
 void (*qglDeleteObjectARB)(GLhandleARB);
+void (*qglDisableVertexAttribArrayARB)(GLuint index);
+void (*qglEnableVertexAttribArrayARB)(GLuint index);
 void (*qglGetInfoLogARB)(GLhandleARB, GLsizei, GLsizei *, GLcharARB *);
 void (*qglGetObjectParameterivARB)(GLhandleARB, GLenum, GLint *);
 GLint (*qglGetUniformLocationARB)(GLhandleARB, const GLcharARB *);
 void (*qglLinkProgramARB)(GLhandleARB);
 void (*qglShaderSourceARB)(GLhandleARB, GLsizei, const GLcharARB* *, const GLint *);
 void (*qglUniform1fARB)(GLint, GLfloat);
+void (*qglUniformMatrix4fvARB)(GLint, GLsizei, GLboolean, const GLfloat *);
 void (*qglUseProgramObjectARB)(GLhandleARB);
 
 void (*qglBindAttribLocationARB)(GLhandleARB, GLuint, const GLcharARB *);
@@ -165,6 +168,7 @@ void GL_CheckExtensions (void)
 		qglLinkProgramARB = VID_GetProcAddress("glLinkProgramARB");
 		qglShaderSourceARB = VID_GetProcAddress("glShaderSourceARB");
 		qglUniform1fARB = VID_GetProcAddress("glUniform1fARB");
+		qglUniformMatrix4fvARB = VID_GetProcAddress("glUniformMatrix4fvARB");
 		qglUseProgramObjectARB = VID_GetProcAddress("glUseProgramObjectARB");
 
 		if (qglAttachObjectARB == 0
@@ -178,6 +182,7 @@ void GL_CheckExtensions (void)
 		 || qglLinkProgramARB == 0
 		 || qglShaderSourceARB == 0
 		 || qglUniform1fARB == 0
+		 || qglUniformMatrix4fvARB == 0
 		 || qglUseProgramObjectARB == 0)
 		{
 			gl_vs = 0;
@@ -186,9 +191,13 @@ void GL_CheckExtensions (void)
 		else if (gl_vs)
 		{
 			qglBindAttribLocationARB = VID_GetProcAddress("glBindAttribLocationARB");
+			qglDisableVertexAttribArrayARB = VID_GetProcAddress("glDisableVertexAttribArrayARB");
+			qglEnableVertexAttribArrayARB = VID_GetProcAddress("glEnableVertexAttribArrayARB");
 			qglVertexAttribPointerARB = VID_GetProcAddress("glVertexAttribPointerARB");
 
 			if (qglBindAttribLocationARB == 0
+			 || qglDisableVertexAttribArrayARB == 0
+			 || qglEnableVertexAttribArrayARB == 0
 			 || qglVertexAttribPointerARB == 0)
 			{
 				gl_vs = 0;
