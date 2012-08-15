@@ -282,5 +282,4 @@ void Check_Gamma (unsigned char *pal);
 void VID_SetPalette (unsigned char *palette);
 void GL_CvarInit(void);
 void GL_Init (void);
-int GL_SetupShaderProgram(int vertexobject, const char *vertexshader, int fragmentobject, const char *fragmentshader);
 
