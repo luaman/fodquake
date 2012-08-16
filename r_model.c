@@ -1668,7 +1668,7 @@ static void *Mod_LoadAliasSkin(model_t *model, mdl_t *mdl, unsigned int skinnum,
 	unsigned int skinheight;
 	unsigned int skinsize;
 	byte *pskin;
-	int w, h;
+	unsigned int w, h;
 
 	skinwidth = mdl->skinwidth;
 	skinheight = mdl->skinheight;

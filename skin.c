@@ -139,7 +139,7 @@ byte *Skin_Cache(skin_t *skin)
 	int y;
 	byte *pic, *out, *pix;
 	char name[MAX_OSPATH];
-	int imagewidth, imageheight;
+	unsigned int imagewidth, imageheight;
 	float rgb[3];
 	unsigned char clearvalue;
 

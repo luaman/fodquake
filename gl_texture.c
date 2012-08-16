@@ -483,7 +483,7 @@ static qboolean CheckTextureLoaded(int mode)
 	return false;
 }
 
-byte *GL_LoadImagePixels(char *filename, int matchwidth, int matchheight, int *imagewidth, int *imageheight, int mode)
+byte *GL_LoadImagePixels(char *filename, int matchwidth, int matchheight, unsigned int *imagewidth, unsigned int *imageheight, int mode)
 {
 	char basename[MAX_QPATH], name[MAX_QPATH];
 	char *c;
@@ -565,7 +565,7 @@ int GL_LoadTextureImage(char *filename, char *identifier, int matchwidth, int ma
 	int texnum;
 	byte *data;
 	struct gltexture *gltexture;
-	int imagewidth, imageheight;
+	unsigned int imagewidth, imageheight;
 
 	if (no24bit)
 		return 0;
@@ -593,7 +593,7 @@ int GL_LoadCharsetImage(char *filename, char *identifier)
 {
 	int i, texnum, image_size;
 	byte *data, *buf, *dest, *src;
-	int imagewidth, imageheight;
+	unsigned int imagewidth, imageheight;
 
 	if (no24bit)
 		return 0;

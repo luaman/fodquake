@@ -52,10 +52,10 @@ void GL_Upload32 (unsigned *data, int width, int height, int mode);
 int GL_LoadTexture (char *identifier, int width, int height, byte *data, int mode, int bpp);
 
 
-byte *GL_LoadImagePixels (char *, int, int, int *imagewidth, int *imageheight, int);
-int GL_LoadTexturePixels (byte *, char *, int, int, int);
-int GL_LoadTextureImage (char * , char *, int, int, int);
-int GL_LoadCharsetImage (char *, char *);
+byte *GL_LoadImagePixels(char *, int, int, unsigned int *imagewidth, unsigned int *imageheight, int);
+int GL_LoadTexturePixels(byte *, char *, int, int, int);
+int GL_LoadTextureImage(char * , char *, int, int, int);
+int GL_LoadCharsetImage(char *, char *);
 
 void GL_Texture_CvarInit(void);
 void GL_Texture_Init(void);
