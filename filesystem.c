@@ -257,7 +257,7 @@ int FS_FileExists(const char *filename)
 		}
 	}
 
-	return -1;
+	return 0;
 }
 
 //Filename are relative to the quake directory.
