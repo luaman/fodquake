@@ -372,6 +372,10 @@ void VID_Close()
 {
 	Sys_Thread_LockMutex(display_mutex);
 
+#ifndef GLQUAKE
+	VID_SW_FreeBuffers();
+#endif
+
 	Mod_ClearAll();
 	SCR_Shutdown();
 	Sbar_Shutdown();
@@ -383,10 +387,6 @@ void VID_Close()
 	{
 		R_Shutdown();
 		Sys_Video_Close(display);
-
-#ifndef GLQUAKE
-		VID_SW_FreeBuffers();
-#endif
 
 		display = 0;
 	}
