@@ -1449,7 +1449,7 @@ static void R_SetupGL (void)
 	w = x2 - x;
 	h = y - y2;
 
-	glViewport (glx + x, gly + y2, w, h);
+	glViewport(x, y2, w, h);
 	screenaspect = (float)r_refdef.vrect.width/r_refdef.vrect.height;
 	farclip = max((int) r_farclip.value, 4096);
 	MYgluPerspective (r_refdef.fov_y, screenaspect, 4, farclip);

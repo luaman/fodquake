@@ -1280,7 +1280,10 @@ void SCR_UpdateScreen (void) {
 		Sbar_Changed ();
 
 	// do 3D refresh drawing, and then update the screen
-	VID_BeginFrame(&glx, &gly, &glwidth, &glheight);
+	VID_BeginFrame();
+
+	glwidth = VID_GetWidth();
+	glheight = VID_GetHeight();
 
 	SCR_SetUpToDrawConsole ();
 

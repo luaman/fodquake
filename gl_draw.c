@@ -963,7 +963,7 @@ void Draw_SetSize(unsigned int width, unsigned int height)
 
 void GL_Set2D(void)
 {
-	glViewport(glx, gly, glwidth, glheight);
+	glViewport(0, 0, glwidth, glheight);
 
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
