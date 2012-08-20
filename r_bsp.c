@@ -379,7 +379,7 @@ void R_DrawSolidClippedSubmodelPolygons(model_t *pmodel)
 
 				pbedge[j-1].pnext = NULL;	// mark end of edges
 
-				R_RecursiveClipBPoly(pmodel, pbedge, currententity->topnode, pmodel->firstmodelsurface + i);
+				R_RecursiveClipBPoly(cl.worldmodel, pbedge, currententity->topnode, pmodel->firstmodelsurface + i);
 			}
 			else
 			{
