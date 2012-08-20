@@ -37,7 +37,7 @@ const char *Sys_Video_GetMode(void *display);
 int Sys_Video_FocusChanged(void *display);
 
 #ifdef GLQUAKE
-void Sys_Video_BeginFrame(void *display, unsigned int *x, unsigned int *y, unsigned int *width, unsigned int *height);
+void Sys_Video_BeginFrame(void *display);
 void Sys_Video_SetGamma(void *display, unsigned short *ramps);
 qboolean Sys_Video_HWGammaSupported(void *display);
 void *Sys_Video_GetProcAddress(void *display, const char *name);

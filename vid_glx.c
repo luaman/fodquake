@@ -221,7 +221,7 @@ static void RestoreHWGamma(struct display *d)
 
 /************************************* GL *************************************/
 
-void Sys_Video_BeginFrame(void *display, unsigned int *x, unsigned int *y, unsigned int *width, unsigned int *height)
+void Sys_Video_BeginFrame(void *display)
 {
 	struct display *d;
 	XEvent event;
@@ -245,11 +245,6 @@ void Sys_Video_BeginFrame(void *display, unsigned int *x, unsigned int *y, unsig
 				break;
 		}
 	}
-
-	*x = 0;
-	*y = 0;
-	*width = d->width;
-	*height = d->height;
 }
 
 void Sys_Video_Update(void *display, vrect_t *rects)

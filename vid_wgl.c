@@ -326,18 +326,13 @@ void Sys_Video_SetGamma(void *display, unsigned short *ramps)
 		SetDeviceGammaRamp(d->dc, ramps);
 }
 
-void Sys_Video_BeginFrame(void *display, unsigned int *x, unsigned int *y, unsigned int *width, unsigned int *height)
+void Sys_Video_BeginFrame(void *display)
 {
 	struct display *d = display;
 
 	ProcessMessages();
 
 	Sys_Input_MainThreadFrameStart(d->inputdata);
-
-	*x = 0;
-	*y = 0;
-	*width = d->width;
-	*height = d->height;
 }
 
 unsigned int Sys_Video_GetNumBuffers(void *display)

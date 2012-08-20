@@ -395,10 +395,9 @@ void VID_Close()
 }
 
 #ifdef GLQUAKE
-#warning Should fix this junk some day.
-void VID_BeginFrame(int *x, int *y, int *width, int *height)
+void VID_BeginFrame()
 {
-	Sys_Video_BeginFrame(display, x, y, width, height);
+	Sys_Video_BeginFrame(display);
 }
 #endif
 

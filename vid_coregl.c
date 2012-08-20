@@ -194,16 +194,8 @@ const char *Sys_Video_GetMode(void *display)
 	return 0;
 }
 
-void Sys_Video_BeginFrame(void *display, unsigned int *x, unsigned int *y, unsigned int *width, unsigned int *height)
+void Sys_Video_BeginFrame(void *display)
 {
-	struct display *d;
-
-	d = display;
-
-	*x = 0;
-	*y = 0;
-	*width = d->width;
-	*height = d->height;
 }
 
 void Sys_Video_Update(void *display, vrect_t *rects)
