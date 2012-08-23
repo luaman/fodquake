@@ -203,7 +203,7 @@ qboolean CL_CheckOrDownloadFile (char *filename)
 	// download to a temp name, and only rename
 	// to the real name when done, so if interrupted
 	// a runt file wont be left
-	COM_StripExtension (cls.downloadname, cls.downloadtempname);
+	COM_CopyAndStripExtension(cls.downloadname, cls.downloadtempname, sizeof(cls.downloadtempname));
 	strcat (cls.downloadtempname, ".tmp");
 
 #ifdef NETQW
@@ -251,7 +251,7 @@ void Model_NextDownload (void)
 
 	if (!com_serveractive)
 	{
-		COM_StripExtension (COM_SkipPath(cl.model_name[1]), mapnamestr);
+		COM_CopyAndStripExtension(COM_SkipPath(cl.model_name[1]), mapnamestr, sizeof(mapnamestr));
 		Cvar_ForceSet(&mapname, mapnamestr);
 		R_PreMapLoad();
 	}

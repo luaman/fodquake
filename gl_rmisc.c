@@ -97,7 +97,7 @@ void R_TranslatePlayerSkin (int playernum)
 		return;
 
 	Q_strncpyz(s, Skin_FindName(player), sizeof(s));
-	COM_StripExtension(s, s);
+	COM_StripExtension(s);
 
 	if (player->skin && Q_strcasecmp(s, player->skin->name))
 		player->skin = NULL;

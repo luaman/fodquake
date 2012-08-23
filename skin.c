@@ -107,7 +107,7 @@ void Skin_Find(player_info_t *sc)
 	char name[MAX_OSPATH];
 
 	Q_strncpyz(name, Skin_FindName(sc), sizeof(name));
-	COM_StripExtension(name, name);
+	COM_StripExtension(name);
 
 	for (i = 0; i < numskins; i++)
 	{

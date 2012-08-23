@@ -1674,7 +1674,7 @@ static void *Mod_LoadAliasSkin(model_t *model, mdl_t *mdl, unsigned int skinnum,
 	skinheight = mdl->skinheight;
 	skinsize = skinwidth * skinheight;
 
-	COM_StripExtension(COM_SkipPath(model->name), basename);
+	COM_CopyAndStripExtension(COM_SkipPath(model->name), basename, sizeof(basename));
 
 	snprintf(identifier, sizeof(identifier), "textures/models/%s_%i.pcx", basename, skinnum);
 	pskin = Image_LoadPCX(0, identifier, skinwidth, skinheight, &w, &h);

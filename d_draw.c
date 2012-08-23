@@ -192,7 +192,7 @@ struct Picture *Draw_LoadPicture(const char *name, enum Draw_LoadPicture_Fallbac
 		newname = malloc(namelen + 4 + 1);
 		if (newname)
 		{
-			COM_StripExtension(name, newname);
+			COM_CopyAndStripExtension(name, newname, namelen + 1);
 
 			newnameextension = newname + strlen(newname);
 

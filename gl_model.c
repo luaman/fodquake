@@ -1983,7 +1983,7 @@ static void *Mod_LoadAllSkins(model_t *model, aliashdr_t *pheader, int numskins,
 
 	s = pheader->skinwidth * pheader->skinheight;
 
-	COM_StripExtension(COM_SkipPath(model->name), basename);
+	COM_CopyAndStripExtension(COM_SkipPath(model->name), basename, sizeof(basename));
 
 	texmode = TEX_MIPMAP;
 	if (!gl_scaleModelTextures.value && !model->isworldmodel)
@@ -2275,7 +2275,7 @@ static void *Mod_LoadSpriteFrame(model_t *model, void * pin, mspriteframe_t **pp
 	if (!gl_scaleModelTextures.value && !model->isworldmodel)
 		texmode |= TEX_NOSCALE;
 
-	COM_StripExtension(COM_SkipPath(model->name), basename);
+	COM_CopyAndStripExtension(COM_SkipPath(model->name), basename, sizeof(basename));
 
 	pinframe = (dspriteframe_t *) pin;
 
