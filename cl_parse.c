@@ -383,7 +383,7 @@ void CL_RequestNextDownload (void)
 
 static qboolean CL_OpenDownloadFile()
 {
-	byte name[1024];
+	char name[1024];
 
 	if (strncmp(cls.downloadtempname,"skins/",6))
 		Q_snprintfz(name, sizeof(name), "%s/%s", cls.gamedir, cls.downloadtempname);
