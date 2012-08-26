@@ -487,10 +487,10 @@ void Draw_Fill(int x, int y, int width, int height, int c)
 
 	if (displayx < 0)
 	{
-		displaywidth += displayx;
+		displaywidth -= displayx;
 		displayx = 0;
 	}
-	else if (displayx >= vid.displaywidth)
+	else if (displayx >= vid.displaywidth || displaywidth <= 0)
 		return;
 
 	if (displayx + displaywidth > vid.displaywidth)
@@ -498,10 +498,10 @@ void Draw_Fill(int x, int y, int width, int height, int c)
 
 	if (displayy < 0)
 	{
-		displaywidth += displayy;
+		displayheight -= displayy;
 		displayy = 0;
 	}
-	else if (displayy >= vid.displayheight)
+	else if (displayy >= vid.displayheight || displayheight <= 0)
 		return;
 
 	if (displayy + displayheight > vid.displayheight)
