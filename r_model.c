@@ -288,32 +288,6 @@ static void Mod_FreeBrushData(model_t *model)
 	}
 }
 
-void Mod_ClearBrushesSprites(void)
-{
-	model_t	*mod;
-	model_t *next;
-	model_t *prev;
-
-	prev = 0;
-	next = firstmodel;
-	while((mod = next))
-	{
-		next = mod->next;
-
-		if (mod->type != mod_alias)
-		{
-			if (mod->type == mod_brush)
-				Mod_FreeBrushData(mod);
-			else if (mod->type == mod_sprite)
-				Mod_FreeSpriteData(mod);
-
-			free(mod);
-		}
-		else
-			prev = mod;
-	}
-}
-
 void Mod_ClearAll(void)
 {
 	model_t	*mod;
@@ -1694,13 +1668,13 @@ static void *Mod_LoadAliasSkin(model_t *model, mdl_t *mdl, unsigned int skinnum,
 	unsigned int skinheight;
 	unsigned int skinsize;
 	byte *pskin;
-	int w, h;
+	unsigned int w, h;
 
 	skinwidth = mdl->skinwidth;
 	skinheight = mdl->skinheight;
 	skinsize = skinwidth * skinheight;
 
-	COM_StripExtension(COM_SkipPath(model->name), basename);
+	COM_CopyAndStripExtension(COM_SkipPath(model->name), basename, sizeof(basename));
 
 	snprintf(identifier, sizeof(identifier), "textures/models/%s_%i.pcx", basename, skinnum);
 	pskin = Image_LoadPCX(0, identifier, skinwidth, skinheight, &w, &h);

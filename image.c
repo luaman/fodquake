@@ -809,7 +809,7 @@ static void PNG_IO_user_flush_data(png_structp png_ptr)
 }
 
 
-byte *Image_LoadPNG (FILE *fin, char *filename, int matchwidth, int matchheight, int *imagewidth, int *imageheight)
+byte *Image_LoadPNG(FILE *fin, char *filename, int matchwidth, int matchheight, unsigned int *imagewidth, unsigned int *imageheight)
 {
 	byte header[8], **rowpointers, *data;
 	png_structp png_ptr;
@@ -1123,7 +1123,7 @@ static unsigned short BuffLittleShort(const byte *buffer)
 	return (buffer[1] << 8) | buffer[0];
 }
 
-byte *Image_LoadTGA(FILE *fin, char *filename, int matchwidth, int matchheight, int *imagewidth, int *imageheight)
+byte *Image_LoadTGA(FILE *fin, char *filename, int matchwidth, int matchheight, unsigned int *imagewidth, unsigned int *imageheight)
 {
 	TGAHeader_t header;
 	int i, x, y, bpp, alphabits, compressed, mytype, row_inc, runlen, readpixelcount;
@@ -1600,7 +1600,7 @@ typedef struct pcx_s
     byte			data;
 } pcx_t;
 
-byte *Image_LoadPCX (FILE *fin, char *filename, int matchwidth, int matchheight, int *imagewidth, int *imageheight)
+byte *Image_LoadPCX(FILE *fin, char *filename, int matchwidth, int matchheight, unsigned int *imagewidth, unsigned int *imageheight)
 {
 	pcx_t *pcx;
 	byte *pcxbuf, *data, *out, *pix;

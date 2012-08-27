@@ -515,7 +515,8 @@ static void R_DrawFlatShoot_f(void)
 	vec3_t *points;
 	pmtrace_t trace;
 	mleaf_t	*leaf;
-	msurface_t **surface;
+	msurface_t *surface;
+	unsigned int marksurface;
 	mvertex_t *vertex;
 	int e, x, i;
 	float color[3];
@@ -551,17 +552,19 @@ static void R_DrawFlatShoot_f(void)
 		return;
 	}
 
-	for (i=0, surface = model->marksurfaces + leaf->firstmarksurfacenum; i<leaf->nummarksurfaces; i++, surface++)
+	for (i=0, marksurface = leaf->firstmarksurfacenum; i<leaf->nummarksurfaces; i++, marksurface++)
 	{
-		points = calloc((*surface)->numedges , sizeof(vec3_t));
+		surface = model->surfaces + model->marksurfaces[marksurface];
+
+		points = calloc(surface->numedges , sizeof(vec3_t));
 		if (points == NULL)
 		{
 			Com_Printf("alloc error\n");
 			return;
 		}
-		for (x=0;x<(*surface)->numedges;x++)
+		for (x=0;x<surface->numedges;x++)
 		{
-			e = model->surfedges[(*surface)->firstedge + x];
+			e = model->surfedges[surface->firstedge + x];
 			if (abs(e) >= model->numedges)
 				return;
 
@@ -574,14 +577,14 @@ static void R_DrawFlatShoot_f(void)
 			points[x][2] = vertex->position[2];
 		}
 
-		if (Point_On_Surface(points, (*surface)->numedges, trace.endpos) && trace.draw_plane == (*surface)->plane )
+		if (Point_On_Surface(points, surface->numedges, trace.endpos) && trace.draw_plane == surface->plane )
 		{
-			(*surface)->is_drawflat = 1;
-			(*surface)->color[0] = color[0];
-			(*surface)->color[1] = color[1];
-			(*surface)->color[2] = color[2];
+			surface->is_drawflat = 1;
+			surface->color[0] = color[0];
+			surface->color[1] = color[1];
+			surface->color[2] = color[2];
 
-			R_DrawFlat_UpdateSurface(model, *surface);
+			R_DrawFlat_UpdateSurface(model, surface);
 		}
 		free(points);
 	}
@@ -595,7 +598,8 @@ static void R_DrawFlatShootUnset_f(void)
 	vec3_t *points;
 	pmtrace_t trace;
 	mleaf_t	*leaf;
-	msurface_t **surface;
+	msurface_t *surface;
+	unsigned int marksurface;
 	mvertex_t *vertex;
 	int e, x, i;
 
@@ -620,17 +624,19 @@ static void R_DrawFlatShootUnset_f(void)
 		return;
 	}
 
-	for (i=0, surface = model->marksurfaces + leaf->firstmarksurfacenum; i<leaf->nummarksurfaces; i++, surface++)
+	for (i=0, marksurface = leaf->firstmarksurfacenum; i<leaf->nummarksurfaces; i++, marksurface++)
 	{
-		points = calloc((*surface)->numedges , sizeof(vec3_t));
+		surface = model->surfaces + model->marksurfaces[marksurface];
+
+		points = calloc(surface->numedges , sizeof(vec3_t));
 		if (points == NULL)
 		{
 			Com_Printf("alloc error\n");
 			return;
 		}
-		for (x=0;x<(*surface)->numedges;x++)
+		for (x=0;x<surface->numedges;x++)
 		{
-			e = model->surfedges[(*surface)->firstedge + x];
+			e = model->surfedges[surface->firstedge + x];
 			if (abs(e) >= model->numedges)
 				return;
 
@@ -643,9 +649,11 @@ static void R_DrawFlatShootUnset_f(void)
 			points[x][2] = vertex->position[2];
 		}
 
-		if (Point_On_Surface(points, (*surface)->numedges, trace.endpos) && trace.draw_plane == (*surface)->plane )
+		if (Point_On_Surface(points, surface->numedges, trace.endpos) && trace.draw_plane == surface->plane )
 		{
-			(*surface)->is_drawflat = 0;
+			surface->is_drawflat = 0;
+
+			R_DrawFlat_UpdateSurface(model, surface);
 		}
 		free(points);
 	}
@@ -1238,9 +1246,6 @@ void CL_ClearState(void)
 	S_StopAllSounds(true);
 
 	Com_DPrintf("Clearing memory\n");
-
-	if (!com_serveractive)
-		Host_ClearMemory();
 
 	CL_ClearTEnts();
 	CL_ClearScene();

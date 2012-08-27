@@ -655,14 +655,8 @@ int Sys_Video_FocusChanged(void *display)
 }
 
 #ifdef GLQUAKE
-void Sys_Video_BeginFrame(void *display, unsigned int *x, unsigned int *y, unsigned int *width, unsigned int *height)
+void Sys_Video_BeginFrame(void *display)
 {
-	struct display *d = (struct display*)display;
-	
-	*x = 0;
-	*y = 0;
-	*width = d->width;
-	*height = d->height;
 }
 
 void Sys_Video_SetGamma(void *display, unsigned short *ramps)
@@ -683,7 +677,7 @@ qboolean Sys_Video_HWGammaSupported(void *display)
 	return true;
 }
 
-void *Sys_Video_GetProcAddress(void *display, const char *p);
+void *Sys_Video_GetProcAddress(void *display, const char *p)
 {
 	NSSymbol symbol = NULL;
 	char *symbolName;

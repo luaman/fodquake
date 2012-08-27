@@ -88,3 +88,19 @@ void GL_SetArrays(unsigned int arrays)
 	}
 }
 
+void GL_VertexPointer(GLint size, GLenum type, GLsizei stride, const GLvoid *pointer)
+{
+	glVertexPointer(size, type, stride, pointer);
+}
+
+void GL_ColorPointer(GLint size, GLenum type, GLsizei stride, const GLvoid *pointer)
+{
+	glColorPointer(size, type, stride, pointer);
+}
+
+void GL_TexCoordPointer(unsigned int tmu, GLint size, GLenum type, GLsizei stride, const GLvoid *pointer)
+{
+	glClientActiveTexture(GL_TEXTURE0_ARB + tmu);
+	glTexCoordPointer(size, type, stride, pointer);
+}
+

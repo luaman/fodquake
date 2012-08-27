@@ -258,37 +258,6 @@ static void Mod_FreeBrushData(model_t *model)
 	model->hulls[0].clipnodes = 0;
 }
 
-void Mod_ClearBrushesSprites(void)
-{
-	model_t	*mod;
-	model_t *next;
-	model_t *prev;
-
-	prev = 0;
-	next = firstmodel;
-	while((mod = next))
-	{
-		next = mod->next;
-
-		if (mod->type != mod_alias)
-		{
-			if (mod->type == mod_brush)
-				Mod_FreeBrushData(mod);
-			else if (mod->type == mod_sprite)
-				Mod_FreeSpriteData(mod);
-
-			if (prev)
-				prev->next = mod->next;
-			else
-				firstmodel = mod->next;
-
-			free(mod);
-		}
-		else
-			prev = mod;
-	}
-}
-
 void Mod_ClearAll(void)
 {
 	model_t	*mod;
@@ -2014,7 +1983,7 @@ static void *Mod_LoadAllSkins(model_t *model, aliashdr_t *pheader, int numskins,
 
 	s = pheader->skinwidth * pheader->skinheight;
 
-	COM_StripExtension(COM_SkipPath(model->name), basename);
+	COM_CopyAndStripExtension(COM_SkipPath(model->name), basename, sizeof(basename));
 
 	texmode = TEX_MIPMAP;
 	if (!gl_scaleModelTextures.value && !model->isworldmodel)
@@ -2306,7 +2275,7 @@ static void *Mod_LoadSpriteFrame(model_t *model, void * pin, mspriteframe_t **pp
 	if (!gl_scaleModelTextures.value && !model->isworldmodel)
 		texmode |= TEX_NOSCALE;
 
-	COM_StripExtension(COM_SkipPath(model->name), basename);
+	COM_CopyAndStripExtension(COM_SkipPath(model->name), basename, sizeof(basename));
 
 	pinframe = (dspriteframe_t *) pin;
 

@@ -293,8 +293,8 @@ static void R_DrawSpriteModel (entity_t *e)
 	coords[9 + 1] = point[1];
 	coords[9 + 2] = point[2];
 
-	glVertexPointer(3, GL_FLOAT, 0, coords);
-	glTexCoordPointer(2, GL_FLOAT, 0, texcoords);
+	GL_VertexPointer(3, GL_FLOAT, 0, coords);
+	GL_TexCoordPointer(0, 2, GL_FLOAT, 0, texcoords);
 	glDrawArrays(GL_QUADS, 0, 4);
 }
 
@@ -666,15 +666,15 @@ static void GL_DrawAliasFrame2(aliashdr_t *paliashdr, int pose1, int pose2, qboo
 	else
 		GL_SetArrays(FQ_GL_VERTEX_ARRAY | FQ_GL_COLOR_ARRAY | FQ_GL_TEXTURE_COORD_ARRAY);
 
-	glColorPointer(4, GL_UNSIGNED_BYTE, 0, lightdest);
+	GL_ColorPointer(4, GL_UNSIGNED_BYTE, 0, lightdest);
 
 	if (gl_vbo && !dolerp)
 	{
 		qglBindBufferARB(GL_ARRAY_BUFFER_ARB, paliashdr->vert_vbo_number[pose1]);
-		glVertexPointer(3, GL_FLOAT, 0, 0);
+		GL_VertexPointer(3, GL_FLOAT, 0, 0);
 	}
 	else
-		glVertexPointer(3, GL_FLOAT, 0, posedest);
+		GL_VertexPointer(3, GL_FLOAT, 0, posedest);
 
 	if (gl_vbo)
 	{
@@ -682,12 +682,10 @@ static void GL_DrawAliasFrame2(aliashdr_t *paliashdr, int pose1, int pose2, qboo
 
 		if (mtex)
 		{
-			glClientActiveTexture(GL_TEXTURE1_ARB);
-			glTexCoordPointer(2, GL_FLOAT, 0, 0);
+			GL_TexCoordPointer(1, 2, GL_FLOAT, 0, 0);
 		}
 
-		glClientActiveTexture(GL_TEXTURE0_ARB);
-		glTexCoordPointer(2, GL_FLOAT, 0, 0);
+		GL_TexCoordPointer(0, 2, GL_FLOAT, 0, 0);
 
 		qglBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
 	}
@@ -695,12 +693,10 @@ static void GL_DrawAliasFrame2(aliashdr_t *paliashdr, int pose1, int pose2, qboo
 	{
 		if (mtex)
 		{
-			glClientActiveTexture(GL_TEXTURE1_ARB);
-			glTexCoordPointer(2, GL_FLOAT, 0, paliashdr->texcoords);
+			GL_TexCoordPointer(1, 2, GL_FLOAT, 0, paliashdr->texcoords);
 		}
 
-		glClientActiveTexture(GL_TEXTURE0_ARB);
-		glTexCoordPointer(2, GL_FLOAT, 0, paliashdr->texcoords);
+		GL_TexCoordPointer(0, 2, GL_FLOAT, 0, paliashdr->texcoords);
 	}
 
 	glDrawRangeElements(GL_TRIANGLES, paliashdr->indexmin, paliashdr->indexmax, paliashdr->numtris*3, GL_UNSIGNED_SHORT, paliashdr->indices);
@@ -1322,7 +1318,7 @@ void R_PolyBlend (void)
 
 	GL_SetArrays(FQ_GL_VERTEX_ARRAY);
 
-	glVertexPointer(2, GL_FLOAT, 0, coords);
+	GL_VertexPointer(2, GL_FLOAT, 0, coords);
 
 	glDrawArrays(GL_QUADS, 0, 4);
 
@@ -1365,8 +1361,8 @@ void R_BrightenScreen (void)
 	coords[3*2 + 1] = vid.conheight;
 
 	GL_SetArrays(FQ_GL_VERTEX_ARRAY | FQ_GL_TEXTURE_COORD_ARRAY);
-	glVertexPointer(2, GL_FLOAT, 0, coords);
-	glColorPointer(4, GL_UNSIGNED_BYTE, 0, colours);
+	GL_VertexPointer(2, GL_FLOAT, 0, coords);
+	GL_ColorPointer(4, GL_UNSIGNED_BYTE, 0, colours);
 
 	if (f > 2)
 	{
@@ -1519,7 +1515,7 @@ static void R_SetupGL (void)
 	w = x2 - x;
 	h = y - y2;
 
-	glViewport (glx + x, gly + y2, w, h);
+	glViewport(x, y2, w, h);
 	screenaspect = (float)r_refdef.vrect.width/r_refdef.vrect.height;
 	farclip = max((int) r_farclip.value, 4096);
 	MYgluPerspective (r_refdef.fov_y, screenaspect, 4, farclip);

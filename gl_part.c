@@ -52,16 +52,16 @@ void GL_DrawParticleBegin()
 	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 
 	GL_SetArrays(FQ_GL_VERTEX_ARRAY | FQ_GL_COLOR_ARRAY | FQ_GL_TEXTURE_COORD_ARRAY);
-	glVertexPointer(3, GL_FLOAT, 0, particlevertices);
+	GL_VertexPointer(3, GL_FLOAT, 0, particlevertices);
 	if (gl_vbo)
 	{
 		qglBindBufferARB(GL_ARRAY_BUFFER_ARB, particletexcoords_vbo_number);
-		glTexCoordPointer(2, GL_FLOAT, 0, 0);
+		GL_TexCoordPointer(0, 2, GL_FLOAT, 0, 0);
 		qglBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
 	}
 	else
-		glTexCoordPointer(2, GL_FLOAT, 0, particletexcoords);
-	glColorPointer(4, GL_UNSIGNED_BYTE, 0, particlecolours);
+		GL_TexCoordPointer(0, 2, GL_FLOAT, 0, particletexcoords);
+	GL_ColorPointer(4, GL_UNSIGNED_BYTE, 0, particlecolours);
 
 	particleindex = 0;
 

@@ -915,7 +915,7 @@ static qboolean CL_RecordDemo(char *dir, char *name, qboolean autorecord)
 	}
 	else
 	{
-		COM_StripExtension(name, strippedname);
+		COM_CopyAndStripExtension(name, strippedname, sizeof(strippedname));
 		fullname = va("%s/%s", dir, strippedname);
 		if ((num = Util_Extend_Filename(fullname, exts)) == -1)
 		{

@@ -489,8 +489,8 @@ __inline static void Draw_CharPoly(int x, int y, int num)
 	texcoords[3*2 + 1] = frow + 0.03125;
 
 	GL_SetArrays(FQ_GL_VERTEX_ARRAY | FQ_GL_TEXTURE_COORD_ARRAY);
-	glVertexPointer(2, GL_FLOAT, 0, coords);
-	glTexCoordPointer(2, GL_FLOAT, 0, texcoords);
+	GL_VertexPointer(2, GL_FLOAT, 0, coords);
+	GL_TexCoordPointer(0, 2, GL_FLOAT, 0, texcoords);
 	glDrawArrays(GL_QUADS, 0, 4);
 }
 
@@ -650,8 +650,8 @@ void Draw_BeginTextRendering()
 		GL_SetArrays(FQ_GL_VERTEX_ARRAY | FQ_GL_TEXTURE_COORD_ARRAY);
 
 		glColor3f(1, 1, 1);
-		glVertexPointer(2, GL_FLOAT, 0, fontvertices);
-		glTexCoordPointer(2, GL_FLOAT, 0, fonttexcoords);
+		GL_VertexPointer(2, GL_FLOAT, 0, fontvertices);
+		GL_TexCoordPointer(0, 2, GL_FLOAT, 0, fonttexcoords);
 
 		fontindex = 0;
 	}
@@ -682,9 +682,9 @@ void Draw_BeginColoredTextRendering()
 		GL_SetArrays(FQ_GL_VERTEX_ARRAY | FQ_GL_COLOR_ARRAY | FQ_GL_TEXTURE_COORD_ARRAY);
 		glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 
-		glVertexPointer(2, GL_FLOAT, 0, fontvertices);
-		glTexCoordPointer(2, GL_FLOAT, 0, fonttexcoords);
-		glColorPointer(4, GL_UNSIGNED_BYTE, 0, fontcolours);
+		GL_VertexPointer(2, GL_FLOAT, 0, fontvertices);
+		GL_TexCoordPointer(0, 2, GL_FLOAT, 0, fonttexcoords);
+		GL_ColorPointer(4, GL_UNSIGNED_BYTE, 0, fontcolours);
 
 		fontindex = 0;
 
@@ -799,9 +799,9 @@ void Draw_Crosshair(void)
 
 		GL_SetArrays(FQ_GL_VERTEX_ARRAY | FQ_GL_COLOR_ARRAY | FQ_GL_TEXTURE_COORD_ARRAY);
 
-		glVertexPointer(2, GL_FLOAT, 0, crosshairvertices);
-		glColorPointer(4, GL_UNSIGNED_BYTE, 0, crosshaircolours);
-		glTexCoordPointer(2, GL_FLOAT, 0, crosshairtexcoords);
+		GL_VertexPointer(2, GL_FLOAT, 0, crosshairvertices);
+		GL_ColorPointer(4, GL_UNSIGNED_BYTE, 0, crosshaircolours);
+		GL_TexCoordPointer(0, 2, GL_FLOAT, 0, crosshairtexcoords);
 
 		glDrawArrays(GL_QUADS, 0, 4);
 
@@ -847,7 +847,7 @@ void Draw_AlphaFillRGB(int x, int y, int w, int h, float r, float g, float b, fl
 	coords[6 + 1] = y + h;
 
 	GL_SetArrays(FQ_GL_VERTEX_ARRAY);
-	glVertexPointer(2, GL_FLOAT, 0, coords);
+	GL_VertexPointer(2, GL_FLOAT, 0, coords);
 	glDrawArrays(GL_QUADS, 0, 4);
 
 	glEnable(GL_TEXTURE_2D);
@@ -899,8 +899,8 @@ void Draw_Line(int x1, int y1, int x2, int y2, float width, float r, float g, fl
 
 	GL_SetArrays(FQ_GL_VERTEX_ARRAY|FQ_GL_COLOR_ARRAY);
 
-	glVertexPointer(2, GL_FLOAT, 0, coords);
-	glColorPointer(4, GL_FLOAT, 0, colours);
+	GL_VertexPointer(2, GL_FLOAT, 0, coords);
+	GL_ColorPointer(4, GL_FLOAT, 0, colours);
 
 	glDrawArrays(GL_LINES, 0, 2);
 
@@ -943,7 +943,7 @@ void Draw_FadeScreen(void)
 	coords[6 + 1] = vid.conheight;
 
 	GL_SetArrays(FQ_GL_VERTEX_ARRAY);
-	glVertexPointer(2, GL_FLOAT, 0, coords);
+	GL_VertexPointer(2, GL_FLOAT, 0, coords);
 	glDrawArrays(GL_QUADS, 0, 4);
 
 	glColor3ubv(color_white);
@@ -963,7 +963,7 @@ void Draw_SetSize(unsigned int width, unsigned int height)
 
 void GL_Set2D(void)
 {
-	glViewport(glx, gly, glwidth, glheight);
+	glViewport(0, 0, glwidth, glheight);
 
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
@@ -1209,7 +1209,7 @@ struct Picture *Draw_LoadPicture(const char *name, enum Draw_LoadPicture_Fallbac
 		newname = malloc(namelen + 4 + 1);
 		if (newname)
 		{
-			COM_StripExtension(name, newname);
+			COM_CopyAndStripExtension(name, newname, namelen + 1);
 
 			newnameextension = newname + strlen(newname);
 
@@ -1362,8 +1362,8 @@ void Draw_DrawPicture(struct Picture *picture, int x, int y, unsigned int width,
 	coords[3*2 + 1] = y + height;
 
 	GL_SetArrays(FQ_GL_VERTEX_ARRAY | FQ_GL_TEXTURE_COORD_ARRAY);
-	glVertexPointer(2, GL_FLOAT, 0, coords);
-	glTexCoordPointer(2, GL_FLOAT, 0, picture->texcoords);
+	GL_VertexPointer(2, GL_FLOAT, 0, coords);
+	GL_TexCoordPointer(0, 2, GL_FLOAT, 0, picture->texcoords);
 
 	glDrawArrays(GL_QUADS, 0, 4);
 }
@@ -1411,9 +1411,9 @@ void Draw_DrawPictureAlpha(struct Picture *picture, int x, int y, unsigned int w
 	colours[3] = col.ui;
 
 	GL_SetArrays(FQ_GL_VERTEX_ARRAY | FQ_GL_COLOR_ARRAY | FQ_GL_TEXTURE_COORD_ARRAY);
-	glVertexPointer(2, GL_FLOAT, 0, coords);
-	glColorPointer(4, GL_UNSIGNED_BYTE, 0, colours);
-	glTexCoordPointer(2, GL_FLOAT, 0, picture->texcoords);
+	GL_VertexPointer(2, GL_FLOAT, 0, coords);
+	GL_ColorPointer(4, GL_UNSIGNED_BYTE, 0, colours);
+	GL_TexCoordPointer(0, 2, GL_FLOAT, 0, picture->texcoords);
 
 	glDrawArrays(GL_QUADS, 0, 4);
 
@@ -1446,8 +1446,8 @@ void Draw_DrawSubPicture(struct Picture *picture, float sx, float sy, float swid
 	texcoords[3*2 + 1] = (sy + sheight) * picture->glheightscale;
 
 	GL_SetArrays(FQ_GL_VERTEX_ARRAY | FQ_GL_TEXTURE_COORD_ARRAY);
-	glVertexPointer(2, GL_FLOAT, 0, coords);
-	glTexCoordPointer(2, GL_FLOAT, 0, texcoords);
+	GL_VertexPointer(2, GL_FLOAT, 0, coords);
+	GL_TexCoordPointer(0, 2, GL_FLOAT, 0, texcoords);
 
 	glDrawArrays(GL_QUADS, 0, 4);
 }

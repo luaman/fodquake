@@ -50,7 +50,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 void GL_BeginRendering (int *x, int *y, int *width, int *height);
 void GL_EndRendering (void);
 
-extern	int glx, gly, glwidth, glheight;
+extern int glwidth, glheight;
 
 #define ALIAS_BASE_SIZE_RATIO		(1.0 / 11.0)
 					// normalizing factor so player model works out to about
@@ -255,12 +255,15 @@ extern void (*qglCompileShaderARB)(GLhandleARB);
 extern GLhandleARB (*qglCreateProgramObjectARB)(void);
 extern GLhandleARB (*qglCreateShaderObjectARB)(GLenum);
 extern void (*qglDeleteObjectARB)(GLhandleARB);
+extern void (*qglDisableVertexAttribArrayARB)(GLuint index);
+extern void (*qglEnableVertexAttribArrayARB)(GLuint index);
 extern void (*qglGetInfoLogARB)(GLhandleARB, GLsizei, GLsizei *, GLcharARB *);
 extern void (*qglGetObjectParameterivARB)(GLhandleARB, GLenum, GLint *);
 extern GLint (*qglGetUniformLocationARB)(GLhandleARB, const GLcharARB *);
 extern void (*qglLinkProgramARB)(GLhandleARB);
 extern void (*qglShaderSourceARB)(GLhandleARB, GLsizei, const GLcharARB* *, const GLint *);
 extern void (*qglUniform1fARB)(GLint, GLfloat);
+extern void (*qglUniformMatrix4fvARB)(GLint, GLsizei, GLboolean, const GLfloat *);
 extern void (*qglUseProgramObjectARB)(GLhandleARB);
 
 extern void (*qglBindAttribLocationARB)(GLhandleARB, GLuint, const GLcharARB *);
@@ -279,5 +282,4 @@ void Check_Gamma (unsigned char *pal);
 void VID_SetPalette (unsigned char *palette);
 void GL_CvarInit(void);
 void GL_Init (void);
-int GL_SetupShaderProgram(int vertexobject, const char *vertexshader, int fragmentobject, const char *fragmentshader);
 

@@ -366,23 +366,25 @@ char *COM_SkipPath (char *pathname)
 }
 
 
-void COM_StripExtension(char *in, char *out)
+void COM_StripExtension(char *s)
+{
+	char *dot;
+
+	dot = strrchr(s, '.');
+	if (dot)
+		*dot = 0;
+}
+
+void COM_CopyAndStripExtension(const char *in, char *out, unsigned int maxlength)
 {
 	char *dot;
 
 	dot = strrchr(in, '.');
-	if (in == out)
-	{
-		if (dot)
-			*dot = 0;
-	}
-	else
-	{
-		if (dot)
-			strlcpy(out, in, dot-in+1);
-		else
-			strcpy(out, in);
-	}
+
+	if (dot && (dot - in) + 1 < maxlength)
+		maxlength = (dot - in) + 1;
+
+	strlcpy(out, in, maxlength);
 }
 
 

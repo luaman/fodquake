@@ -234,10 +234,11 @@ void COM_AddParm (char *parm);
 int COM_Init (void);
 void COM_Shutdown (void);
 
-char *COM_SkipPath (char *pathname);
-void COM_StripExtension (char *in, char *out);
-void COM_DefaultExtension (char *path, char *extension);
-void COM_ForceExtension (char *path, char *extension);
+char *COM_SkipPath(char *pathname);
+void COM_StripExtension(char *s);
+void COM_CopyAndStripExtension(const char *in, char *out, unsigned int maxlength);
+void COM_DefaultExtension(char *path, char *extension);
+void COM_ForceExtension(char *path, char *extension);
 
 char	*va(char *format, ...);
 // does a varargs printf into a temp buffer
@@ -348,7 +349,6 @@ extern double		curtime;	// not bounded or scaled, shared by local client and ser
 extern qboolean		host_initialized;
 
 void Host_Init (int argc, char **argv);
-void Host_ClearMemory ();
 void Host_Shutdown (void);
 void Host_Frame (double time);
 void Host_Abort (void);			// longjmp() to Host_Frame

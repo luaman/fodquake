@@ -92,7 +92,7 @@ void VID_FreeClipboardText(const char *text);
 void VID_SetClipboardText(const char *text);
 
 #ifdef GLQUAKE
-void VID_BeginFrame(int *x, int *y, int *width, int *height);
+void VID_BeginFrame(void);
 void VID_SetDeviceGammaRamp (unsigned short *ramps);
 qboolean VID_HWGammaSupported(void);
 void *VID_GetProcAddress(const char *name);

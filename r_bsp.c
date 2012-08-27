@@ -169,6 +169,9 @@ static void R_RecursiveClipBPoly(model_t *model, bedge_t *pedges, mnode_t *pnode
 	unsigned int nodenum;
 	unsigned int leafnum;
 	mnode_t *pn;
+	model_t *worldmodel;
+
+	worldmodel = cl.worldmodel;
 
 	psideedges[0] = psideedges[1] = NULL;
 
@@ -176,7 +179,7 @@ static void R_RecursiveClipBPoly(model_t *model, bedge_t *pedges, mnode_t *pnode
 
 	// transform the BSP plane into model space
 	// FIXME: cache these?
-	splitplane = model->planes + pnode->planenum;
+	splitplane = worldmodel->planes + pnode->planenum;
 	tplane.dist = -PlaneDiff(r_entorigin, splitplane);
 	tplane.normal[0] = PlaneDist (entity_rotation[0], splitplane);
 	tplane.normal[1] = PlaneDist (entity_rotation[1], splitplane);
@@ -288,16 +291,16 @@ static void R_RecursiveClipBPoly(model_t *model, bedge_t *pedges, mnode_t *pnode
 			// draw if we've reached a non-solid leaf, done if all that's left is a
 			// solid leaf, and continue down the tree if it's not a leaf
 			nodenum = pnode->childrennum[i];
-			pn = NODENUM_TO_NODE(model, nodenum);
+			pn = NODENUM_TO_NODE(worldmodel, nodenum);
 
 			// we're done with this branch if the node or leaf isn't in the PVS
 			if (pn->visframe == r_visframecount)
 			{
-				if (nodenum >= model->numnodes)
+				if (nodenum >= worldmodel->numnodes)
 				{
-					leafnum = nodenum - model->numnodes;
+					leafnum = nodenum - worldmodel->numnodes;
 
-					if (!(model->leafsolid[leafnum/32] & (1<<(leafnum%32))))
+					if (!(worldmodel->leafsolid[leafnum/32] & (1<<(leafnum%32))))
 					{
 						r_currentbkey = ((mleaf_t *)pn)->key;
 						R_RenderBmodelFace(model, psideedges[i], surfnum);

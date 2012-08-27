@@ -423,7 +423,7 @@ int Utils_TF_TeamToColor(char *team)
 #define HEXTOINT(x) ((x) >= '0' && (x) <= '9'?(x)-'0':(x) >= 'a' && (x) <= 'f'?(x)-'a'+10:(x) >= 'A' && (x) <= 'F'?(x)-'A'+10:0)
 
 // maybe make this a macro?
-static int is_valid_color_info (char *c)
+static int is_valid_color_info(const char *c)
 {
 	if (ISHEX(c[0]) && ISHEX(c[1]) && ISHEX(c[2]))
 		return 1;

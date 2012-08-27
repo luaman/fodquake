@@ -1652,6 +1652,9 @@ qboolean TP_LoadLocFile (char *path, qboolean quiet)
 			sign = 1;
 			while (1)
 			{
+				if (*p == 0)
+					break;
+
 				switch (*p++)
 				{
 				case ' ': case '\t':
@@ -1681,6 +1684,9 @@ _next:
 
 			SKIPBLANKS(p);
 		}
+
+		if (*p == 0)
+			break;
 
 		// parse location name
 		overflow = nameindex = 0;

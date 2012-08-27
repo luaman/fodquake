@@ -362,6 +362,7 @@ GLOBJS= \
 	gl_rmisc.o \
 	gl_rpart.o \
 	gl_rsurf.o \
+	gl_shader.o \
 	gl_state.o \
 	gl_texture.o \
 	gl_warp.o \

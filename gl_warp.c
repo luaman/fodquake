@@ -26,6 +26,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "quakedef.h"
 #include "gl_local.h"
 #include "gl_state.h"
+#include "gl_shader.h"
 
 #include "utils.h"
 
@@ -220,15 +221,15 @@ __inline static float SINTABLE_APPROX(float time)
 static void EmitFlatPoly(msurface_t *fa)
 {
 	GL_SetArrays(FQ_GL_VERTEX_ARRAY);
-	glVertexPointer(3, GL_FLOAT, 0, fa->fastpolys);
+	GL_VertexPointer(3, GL_FLOAT, 0, fa->fastpolys);
 	glDrawArrays(GL_POLYGON, 0, fa->numedges);
 }
 
 static void EmitShaderPoly(msurface_t *fa)
 {
 	GL_SetArrays(FQ_GL_VERTEX_ARRAY | FQ_GL_TEXTURE_COORD_ARRAY);
-	glVertexPointer(3, GL_FLOAT, 0, fa->fastpolys);
-	glTexCoordPointer(2, GL_FLOAT, 0, fa->shadertexcoords);
+	GL_VertexPointer(3, GL_FLOAT, 0, fa->fastpolys);
+	GL_TexCoordPointer(0, 2, GL_FLOAT, 0, fa->shadertexcoords);
 	glDrawArrays(GL_POLYGON, 0, fa->numedges);
 }
 
@@ -472,7 +473,7 @@ int R_SetSky(char *skyname)
 {
 	int i, error = 0;
 	byte *data[6] = {NULL, NULL, NULL, NULL, NULL, NULL};
-	int imagewidth, imageheight;
+	unsigned int imagewidth, imageheight;
 
 	
 	for (i = 0; i < 6; i++)

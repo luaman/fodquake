@@ -138,16 +138,6 @@ static void Host_ShutdownMemory()
 	Memory_Shutdown();
 }
 
-//Free hunk memory up to host_hunklevel
-//Can only be called when changing levels!
-void Host_ClearMemory(void)
-{
-#ifndef GLQUAKE
-	D_FlushCaches();
-#endif
-	Mod_ClearBrushesSprites();
-}
-
 void Host_Frame(double time)
 {
 	if (setjmp(host_abort))

@@ -7,4 +7,7 @@
 
 void GL_SetAlphaTestBlend(int alphatest, int blend);
 void GL_SetArrays(unsigned int arrays);
+void GL_VertexPointer(GLint size, GLenum type, GLsizei stride, const GLvoid *pointer);
+void GL_ColorPointer(GLint size, GLenum type, GLsizei stride, const GLvoid *pointer);
+void GL_TexCoordPointer(unsigned int tmu, GLint size, GLenum type, GLsizei stride, const GLvoid *pointer);
 

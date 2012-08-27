@@ -191,11 +191,6 @@ void VID_Restart(void)
 		return;
 
 	VID_Close();
-#ifdef CLIENTONLY
-	Host_ClearMemory();
-#else
-	Mod_ClearAll();
-#endif
 	VID_Open();
 	
 	for(i=1;i < MAX_MODELS;i++)
@@ -214,6 +209,7 @@ void VID_Restart(void)
 
 	if (cl.model_precache[1])
 	{
+		cl.worldmodel = cl.model_precache[1];
 		R_NewMap();
 		R_DrawFlat_NewMap();
 	}
@@ -376,24 +372,21 @@ void VID_Close()
 {
 	Sys_Thread_LockMutex(display_mutex);
 
+#ifndef GLQUAKE
+	VID_SW_FreeBuffers();
+#endif
+
+	Mod_ClearAll();
 	SCR_Shutdown();
 	Sbar_Shutdown();
 	M_VidShutdown();
 	Draw_Shutdown();
 	CSTC_PictureShutdown();
 
-#ifndef GLQUAKE
-	D_FlushCaches();
-#endif
-
 	if (display)
 	{
 		R_Shutdown();
 		Sys_Video_Close(display);
-
-#ifndef GLQUAKE
-		VID_SW_FreeBuffers();
-#endif
 
 		display = 0;
 	}
@@ -402,10 +395,9 @@ void VID_Close()
 }
 
 #ifdef GLQUAKE
-#warning Should fix this junk some day.
-void VID_BeginFrame(int *x, int *y, int *width, int *height)
+void VID_BeginFrame()
 {
-	Sys_Video_BeginFrame(display, x, y, width, height);
+	Sys_Video_BeginFrame(display);
 }
 #endif
 

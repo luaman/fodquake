@@ -34,7 +34,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "keys.h"
 #include "gl_local.h"
 #include "in_morphos.h"
-#include "vid_tinygl.h"
 #include "vid_mode_morphos.h"
 
 #ifndef SA_GammaControl
@@ -341,16 +340,8 @@ const char *Sys_Video_GetMode(void *display)
 	return d->used_mode;
 }
 
-void Sys_Video_BeginFrame(void *display, unsigned int *x, unsigned int *y, unsigned int *width, unsigned int *height)
+void Sys_Video_BeginFrame(void *display)
 {
-	struct display *d;
-
-	d = display;
-
-	*x = 0;
-	*y = 0;
-	*width = d->width;
-	*height = d->height;
 }
 
 void Sys_Video_Update(void *display, vrect_t *rects)
@@ -410,7 +401,7 @@ qboolean Sys_Video_HWGammaSupported(void *display)
 	return d->gammaenabled;
 }
 
-void *Sys_Video_GetProcAddress(void *display, const char *name);
+void *Sys_Video_GetProcAddress(void *display, const char *name)
 {
 	return 0;
 }
