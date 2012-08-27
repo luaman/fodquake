@@ -54,7 +54,7 @@ void GL_SetArrays(unsigned int arrays)
 
 		if ((diff & FQ_GL_TEXTURE_COORD_ARRAY))
 		{
-			glClientActiveTexture(GL_TEXTURE0_ARB);
+			glClientActiveTexture(GL_TEXTURE0);
 
 			if ((arrays & FQ_GL_TEXTURE_COORD_ARRAY))
 				glEnableClientState(GL_TEXTURE_COORD_ARRAY);
@@ -64,7 +64,7 @@ void GL_SetArrays(unsigned int arrays)
 
 		if ((diff & FQ_GL_TEXTURE_COORD_ARRAY_1))
 		{
-			glClientActiveTexture(GL_TEXTURE1_ARB);
+			glClientActiveTexture(GL_TEXTURE1);
 
 			if ((arrays & FQ_GL_TEXTURE_COORD_ARRAY_1))
 				glEnableClientState(GL_TEXTURE_COORD_ARRAY);
@@ -74,7 +74,7 @@ void GL_SetArrays(unsigned int arrays)
 
 		if ((diff & FQ_GL_TEXTURE_COORD_ARRAY_2))
 		{
-			glClientActiveTexture(GL_TEXTURE2_ARB);
+			glClientActiveTexture(GL_TEXTURE2);
 
 			if ((arrays & FQ_GL_TEXTURE_COORD_ARRAY_2))
 				glEnableClientState(GL_TEXTURE_COORD_ARRAY);
@@ -84,7 +84,7 @@ void GL_SetArrays(unsigned int arrays)
 
 		old_arrays = arrays;
 
-		glClientActiveTexture(GL_TEXTURE0_ARB);
+		glClientActiveTexture(GL_TEXTURE0);
 	}
 }
 
@@ -100,7 +100,7 @@ void GL_ColorPointer(GLint size, GLenum type, GLsizei stride, const GLvoid *poin
 
 void GL_TexCoordPointer(unsigned int tmu, GLint size, GLenum type, GLsizei stride, const GLvoid *pointer)
 {
-	glClientActiveTexture(GL_TEXTURE0_ARB + tmu);
+	glClientActiveTexture(GL_TEXTURE0 + tmu);
 	glTexCoordPointer(size, type, stride, pointer);
 }
 
