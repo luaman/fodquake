@@ -1,6 +1,6 @@
 #include "qstring.h"
 
-static inline mytolower(char c)
+static inline char mytolower(char c)
 {
 	if (c >= 'A' && c <= 'Z')
 		return c + ('a' - 'A');
