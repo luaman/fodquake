@@ -432,7 +432,7 @@ static void NetQW_Thread_Disconnect(struct NetQW *netqw)
 			disconnectmessage[9] = netqw->qport>>8;
 
 			disconnectmessage[10] = clc_stringcmd;
-			strcpy(disconnectmessage + 11, "drop");
+			strcpy((char *)(disconnectmessage + 11), "drop");
 
 			NetQW_Thread_SendPacket(netqw, disconnectmessage, 16, &netqw->addr, 1);
 
@@ -519,7 +519,7 @@ void NetQW_Thread_HandleReceivedPacket(struct NetQW *netqw, struct NetPacket *ne
 }
 #endif
 
-static int NetQW_Thread_DoReceive(struct NetQW *netqw)
+static void NetQW_Thread_DoReceive(struct NetQW *netqw)
 {
 	struct netaddr addr;
 	unsigned char buf[1500];
@@ -577,7 +577,7 @@ static int NetQW_Thread_DoReceive(struct NetQW *netqw)
 					memcpy(challengebuf, buf + 5, i);
 					challengebuf[i] = 0;
 
-					netqw->challenge = atoi(challengebuf);
+					netqw->challenge = atoi((char *)challengebuf);
 
 					if (len)
 					{
@@ -641,7 +641,7 @@ static int NetQW_Thread_DoReceive(struct NetQW *netqw)
 					Com_Printf("Connected.\n");
 
 					buf[0] = clc_stringcmd;
-					strcpy(buf + 1, "new");
+					strcpy((char *)(buf + 1), "new");
 					NetQW_AppendReliableBuffer(netqw, buf, 5);
 
 					netqw->lastmovesendtime = Sys_IntTime() - netqw->microsecondsperframe;
@@ -729,7 +729,7 @@ static int NetQW_Thread_DoReceive(struct NetQW *netqw)
 	} while(r > 0);
 }
 
-static int NetQW_Thread_DoSend(struct NetQW *netqw)
+static void NetQW_Thread_DoSend(struct NetQW *netqw)
 {
 	static const char *getchallenge = "\xff\xff\xff\xff" "getchallenge\n";
 	unsigned char buf[1500];
@@ -860,11 +860,11 @@ static int NetQW_Thread_DoSend(struct NetQW *netqw)
 			}
 			else
 			{
-				i = snprintf(buf, sizeof(buf), "\xff\xff\xff\xff" "connect %d %d %d \"%s\"\n", PROTOCOL_VERSION, netqw->qport, netqw->challenge, netqw->userinfo);
+				i = snprintf((char *)buf, sizeof(buf), "\xff\xff\xff\xff" "connect %d %d %d \"%s\"\n", PROTOCOL_VERSION, netqw->qport, netqw->challenge, netqw->userinfo);
 
 				if (netqw->huffcontext)
 				{
-					i += snprintf(buf + i, sizeof(buf) - i, "0x%08x 0x%08x\n", QW_PROTOEXT_HUFF, netqw->huffcrc);
+					i += snprintf((char *)(buf + i), sizeof(buf) - i, "0x%08x 0x%08x\n", QW_PROTOEXT_HUFF, netqw->huffcrc);
 				}
 
 				if (i < sizeof(buf))
@@ -991,8 +991,8 @@ static void NetQW_Thread(void *arg)
 				Sys_Net_Wait(netqw->netdata, netqw->socket, waittime);
 			}
 
-			r = NetQW_Thread_DoReceive(netqw);
-			r = NetQW_Thread_DoSend(netqw);
+			NetQW_Thread_DoReceive(netqw);
+			NetQW_Thread_DoSend(netqw);
 		}
 
 		NetQW_Thread_Disconnect(netqw);
