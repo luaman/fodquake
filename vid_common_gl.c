@@ -35,8 +35,12 @@ const char *gl_extensions;
 
 qboolean gl_mtexable = false;
 int gl_textureunits = 1;
+
+/* VBO stuff */
 void (*qglBindBufferARB)(GLenum, GLuint);
 void (*qglBufferDataARB)(GLenum, GLsizeiptrARB, const GLvoid *, GLenum);
+void (*qglBufferSubDataARB)(GLenum, GLintptr, GLsizeiptr, const GLvoid *);
+
 
 /* GLSL stuff */
 void (*qglAttachObjectARB)(GLhandleARB, GLhandleARB);
@@ -150,8 +154,9 @@ void GL_CheckExtensions (void)
 	{
 		qglBindBufferARB = VID_GetProcAddress("glBindBufferARB");
 		qglBufferDataARB = VID_GetProcAddress("glBufferDataARB");
+		qglBufferSubDataARB = VID_GetProcAddress("glBufferSubDataARB");
 
-		if (qglBindBufferARB == 0 || qglBufferDataARB == 0)
+		if (qglBindBufferARB == 0 || qglBufferDataARB == 0 || qglBufferSubDataARB == 0)
 			gl_vbo = false;
 	}
 

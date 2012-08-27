@@ -236,6 +236,7 @@ void glActiveTexture(GLenum texture);
 typedef ptrdiff_t GLsizeiptrARB;
 extern void (*qglBindBufferARB)(GLenum, GLuint);
 extern void (*qglBufferDataARB)(GLenum, GLsizeiptrARB, const GLvoid *, GLenum);
+extern void (*qglBufferSubDataARB)(GLenum, GLintptr, GLsizeiptr, const GLvoid *);
 #endif
 
 /* GLSL stuff */
