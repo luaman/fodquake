@@ -2129,6 +2129,8 @@ int TP_CategorizeMessage (char *s, int *offset)
 		team = cl.players[tracknum].team;
 	else if (!cl.spectator)
 		team = cl.players[cl.playernum].team;
+	else
+		team = "";
 
 	flags = 0;
 	*offset = 0;
@@ -2838,7 +2840,7 @@ void TP_FindPoint (void)
 	entity_state_t *ent;
 	int	i, j, pointflags_dmm;
 	float best = -1, rank;
-	entity_state_t *bestent;
+	entity_state_t *bestent = 0;
 	vec3_t ang;
 	item_t *item, *bestitem = NULL;
 	player_state_t *state, *beststate = NULL;

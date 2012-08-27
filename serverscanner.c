@@ -155,14 +155,14 @@ static void ServerScanner_Thread_ParseQWServerReply(struct ServerScanner *server
 	unsigned int j;
 	unsigned int k;
 	unsigned int extralength;
-	unsigned char *p;
-	unsigned char *p2;
-	unsigned char *key;
-	unsigned char *value;
+	char *p;
+	char *p2;
+	char *key;
+	char *value;
 	unsigned int numplayers;
 	unsigned int numspectators;
-	unsigned char *name[32];
-	unsigned char *team[32];
+	char *name[32];
+	char *team[32];
 	int spectator[32];
 	int frags[32];
 	int time[32];
@@ -188,7 +188,7 @@ static void ServerScanner_Thread_ParseQWServerReply(struct ServerScanner *server
 
 	*p = 0;
 
-	p = data + 1;
+	p = (char *)(data + 1);
 	while(*p)
 	{
 		key = p;
@@ -233,8 +233,8 @@ static void ServerScanner_Thread_ParseQWServerReply(struct ServerScanner *server
 	if (!p)
 		return;
 
-	datalen -= (p - data);
-	data = p;
+	datalen -= (p - (char *)data);
+	data = (unsigned char *)p;
 
 	if (datalen == 0)
 		return;
@@ -268,7 +268,7 @@ static void ServerScanner_Thread_ParseQWServerReply(struct ServerScanner *server
 		printf("%s\n", data);
 #endif
 
-		p2 = data;
+		p2 = (char *)data;
 
 		p2 = strchr(p2, ' ');
 		if (!p2)
@@ -375,8 +375,8 @@ static void ServerScanner_Thread_ParseQWServerReply(struct ServerScanner *server
 		if (team[i])
 			extralength += strlen(team[i]) + 1;
 
-		datalen -= (p - data) + 1;
-		data = p + 1;
+		datalen -= (p - (char *)data) + 1;
+		data = (unsigned char *)(p + 1);
 
 		i++;
 	}

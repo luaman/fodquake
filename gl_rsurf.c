@@ -834,8 +834,8 @@ static void R_DrawAlphaChain (void)
 		{
 			if (gl_mtexable)
 			{
-				glMultiTexCoord2f (GL_TEXTURE0_ARB, v[3], v[4]);
-				glMultiTexCoord2f (GL_TEXTURE1_ARB, v[5], v[6]);
+				glMultiTexCoord2f (GL_TEXTURE0, v[3], v[4]);
+				glMultiTexCoord2f (GL_TEXTURE1, v[5], v[6]);
 			}
 			else
 			{
@@ -980,7 +980,7 @@ static void DrawTextureChains (model_t *model)
 
 		t = R_TextureAnimation (model->textures[i]);
 		//bind the world texture
-		GL_SelectTexture(GL_TEXTURE0_ARB);
+		GL_SelectTexture(GL_TEXTURE0);
 		GL_Bind (t->gl_texturenum);
 
 		draw_fbs = t->isLumaTexture || gl_fb_bmodels.value;
@@ -993,8 +993,8 @@ static void DrawTextureChains (model_t *model)
 				if (gl_add_ext)
 				{
 					doMtex1 = true;
-					GL_EnableTMU(GL_TEXTURE1_ARB);
-					GL_FB_TEXTURE = GL_TEXTURE1_ARB;
+					GL_EnableTMU(GL_TEXTURE1);
+					GL_FB_TEXTURE = GL_TEXTURE1;
 					extraarrays |= FQ_GL_TEXTURE_COORD_ARRAY_1;
 					glTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_ADD);
 					GL_Bind (t->fb_texturenum);
@@ -1005,7 +1005,7 @@ static void DrawTextureChains (model_t *model)
 					if (mtex_lightmaps)
 					{
 						doMtex2 = true;
-						GL_LIGHTMAP_TEXTURE = GL_TEXTURE2_ARB;
+						GL_LIGHTMAP_TEXTURE = GL_TEXTURE2;
 						extraarrays |= FQ_GL_TEXTURE_COORD_ARRAY_2;
 						GL_EnableTMU(GL_LIGHTMAP_TEXTURE);
 						glTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, gl_invlightmaps ? GL_BLEND : GL_MODULATE);
@@ -1018,7 +1018,7 @@ static void DrawTextureChains (model_t *model)
 				}
 				else
 				{
-					GL_DisableTMU(GL_TEXTURE1_ARB);
+					GL_DisableTMU(GL_TEXTURE1);
 					render_lightmaps = true;
 					doMtex1 = doMtex2 = mtex_lightmaps = mtex_fbs = false;
 				}
@@ -1026,8 +1026,8 @@ static void DrawTextureChains (model_t *model)
 			else
 			{
 				doMtex1 = true;
-				GL_EnableTMU(GL_TEXTURE1_ARB);
-				GL_LIGHTMAP_TEXTURE = GL_TEXTURE1_ARB;
+				GL_EnableTMU(GL_TEXTURE1);
+				GL_LIGHTMAP_TEXTURE = GL_TEXTURE1;
 				extraarrays |= FQ_GL_TEXTURE_COORD_ARRAY_1;
 				glTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, gl_invlightmaps ? GL_BLEND : GL_MODULATE);
 
@@ -1037,7 +1037,7 @@ static void DrawTextureChains (model_t *model)
 				if (mtex_fbs)
 				{
 					doMtex2 = true;
-					GL_FB_TEXTURE = GL_TEXTURE2_ARB;
+					GL_FB_TEXTURE = GL_TEXTURE2;
 					extraarrays |= FQ_GL_TEXTURE_COORD_ARRAY_2;
 					GL_EnableTMU(GL_FB_TEXTURE);
 					GL_Bind (t->fb_texturenum);
@@ -1224,13 +1224,13 @@ static void DrawTextureChains (model_t *model)
 		FinishDraw(glindices, &numglelements);
 
 		if (doMtex1)
-			GL_DisableTMU(GL_TEXTURE1_ARB);
+			GL_DisableTMU(GL_TEXTURE1);
 		if (doMtex2)
-			GL_DisableTMU(GL_TEXTURE2_ARB);
+			GL_DisableTMU(GL_TEXTURE2);
 	}
 
 	if (gl_mtexable)
-		GL_SelectTexture(GL_TEXTURE0_ARB);
+		GL_SelectTexture(GL_TEXTURE0);
 
 	if (drawLumasGlowing)
 	{
@@ -1283,7 +1283,7 @@ static void R_DrawFlat (model_t *model)
 
 	glTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_BLEND);
 
-	GL_SelectTexture(GL_TEXTURE0_ARB);
+	GL_SelectTexture(GL_TEXTURE0);
 
 	if (model->vertcoords)
 	{

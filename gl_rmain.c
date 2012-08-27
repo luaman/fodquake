@@ -863,9 +863,9 @@ static void R_DrawAliasModelList2TMU(entity_t *ent, unsigned int entcount)
 	anim = (int) (cl.time * 10) & 3;
 
 	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-	GL_SelectTexture(GL_TEXTURE1_ARB);
+	GL_SelectTexture(GL_TEXTURE1);
 	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
-	GL_SelectTexture(GL_TEXTURE0_ARB);
+	GL_SelectTexture(GL_TEXTURE0);
 
 	/* Stuff that depends on the entity itself. */
 
@@ -987,14 +987,14 @@ static void R_DrawAliasModelList2TMU(entity_t *ent, unsigned int entcount)
 
 			if (texture != oldtexture)
 			{
-				GL_SelectTexture(GL_TEXTURE0_ARB);
+				GL_SelectTexture(GL_TEXTURE0);
 				GL_Bind(texture);
 				oldtexture = texture;
 			}
 
 			if (fb_texture != oldfb_texture)
 			{
-				GL_SelectTexture(GL_TEXTURE1_ARB);
+				GL_SelectTexture(GL_TEXTURE1);
 				GL_Bind(fb_texture);
 				oldfb_texture = fb_texture;
 			}
@@ -1005,7 +1005,7 @@ static void R_DrawAliasModelList2TMU(entity_t *ent, unsigned int entcount)
 		{
 			if (oldmtex != 0)
 			{
-				GL_SelectTexture(GL_TEXTURE1_ARB);
+				GL_SelectTexture(GL_TEXTURE1);
 				GL_DisableMultitexture();
 				oldmtex = 0;
 			}
@@ -1026,7 +1026,7 @@ static void R_DrawAliasModelList2TMU(entity_t *ent, unsigned int entcount)
 
 	if (oldmtex == 1)
 	{
-		GL_SelectTexture(GL_TEXTURE1_ARB);
+		GL_SelectTexture(GL_TEXTURE1);
 		GL_DisableMultitexture();
 	}
 
