@@ -59,8 +59,11 @@ cvar_t match_name_spec = {"match_name_spec", "(SPEC)"};
 
 static char *MT_CleanString(char *string, qboolean allow_spaces_and_slashes)
 {
-	byte *in, *out, c, d, *disallowed;
-	static byte buf[MAX_STATIC_STRING], badchars[] = {' ', '\\', '/', '?', '*', ':', '<', '>', '"', '|'};
+	char *in, *out;
+	byte c, d;
+	char *disallowed;
+	static char buf[MAX_STATIC_STRING];
+	char badchars[] = {' ', '\\', '/', '?', '*', ':', '<', '>', '"', '|'};
 
 	disallowed = allow_spaces_and_slashes ? badchars + 3 : badchars;
 
