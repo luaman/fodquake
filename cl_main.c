@@ -1000,6 +1000,7 @@ void CL_UserinfoChanged(char *key, char *string)
 	}
 }
 
+#ifndef NETQW
 //called by CL_Connect_f and CL_CheckResend
 static void CL_SendConnectPacket(void)
 {
@@ -1063,6 +1064,7 @@ static void CL_CheckForResend (void)
 	Q_snprintfz(data, sizeof(data), "\xff\xff\xff\xff" "getchallenge\n");
 	NET_SendPacket(NS_CLIENT, strlen(data), data, &cls.server_adr);
 }
+#endif
 
 static void CL_BeginServerConnect(void)
 {
@@ -1287,7 +1289,7 @@ void CL_Disconnect(void)
 	else if (cls.state != ca_disconnected)
 	{
 		final[0] = clc_stringcmd;
-		strcpy(final + 1, "drop");
+		strcpy((char *)(final + 1), "drop");
 		Netchan_Transmit(&cls.netchan, 6, final);
 		Netchan_Transmit(&cls.netchan, 6, final);
 		Netchan_Transmit(&cls.netchan, 6, final);
@@ -1532,7 +1534,7 @@ void CL_DoNetQWStuff()
 	unsigned int startframe, numframes;
 
 	NetQW_GenerateFrames(cls.netqw);
-	NetQW_CopyFrames(cls.netqw, cl.frames, &cls.netchan.outgoing_sequence, &startframe, &numframes);
+	NetQW_CopyFrames(cls.netqw, cl.frames, (unsigned int *)&cls.netchan.outgoing_sequence, &startframe, &numframes);
 
 	while(numframes)
 	{
@@ -1695,8 +1697,6 @@ extern char key_lines[32][MAXCMDLINE];
 
 void ToggleConsole_f(void)
 {
-	extern int edit_line;
-
 	Key_ClearTyping();
 
 	if (key_dest == key_console)
@@ -2016,7 +2016,7 @@ void CL_BeginLocalConnection(void)
 
 static double CL_MinFrameTime(void)
 {
-	double fps, fpscap;
+	double fps;
 
 	if (cls.timedemo || Movie_IsCapturing())
 		return 0;
@@ -2035,6 +2035,8 @@ static double CL_MinFrameTime(void)
 			return 0;
 		fps = max(30.0, cl_maxfps.value);
 #else
+		double fpscap;
+
 		fpscap = cl.maxfps ? max(30.0, cl.maxfps) : 72;
 
 		fps = cl_maxfps.value ? bound(30.0, cl_maxfps.value, fpscap) : com_serveractive ? fpscap : bound(30.0, rate.value / 80.0, fpscap);
