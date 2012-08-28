@@ -43,6 +43,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "vid_mode_x11.h"
 #include "vid_mode_xf86vm.h"
 #include "vid_mode_xrandr.h"
+#include "sys_thread.h"
 
 struct display
 {
@@ -73,6 +74,7 @@ struct display
 	int fullscreen;
 	char used_mode[256];
 	void *buffer;
+	unsigned int curframe;
 
 	byte current_palette[768];
 
@@ -80,6 +82,14 @@ struct display
 	unsigned int st2d_8to24table[256];
 	long r_shift, g_shift, b_shift;
 	unsigned long r_mask, g_mask, b_mask;
+
+	struct SysThread *updatethread;
+
+	/* Update thread shared vars, be careful, etc. */
+	struct SysMutex *updatethread_mutex;
+	struct SysSignal *updatethread_signal;
+	unsigned int updatethread_frame;
+	int updatethread_quit;
 };
 
 static void shiftmask_init(struct display *d)
@@ -206,7 +216,7 @@ static void st2_fixup(struct display *d, unsigned char *src, XImage * framebuf, 
 
 	for (yi = y; yi < y + height; yi++)
 	{
-		dest = &framebuf->data[yi * framebuf->bytes_per_line];
+		dest = (unsigned short *)(&framebuf->data[yi * framebuf->bytes_per_line]);
 		for (xi = (x + width - 1); xi >= x; xi--)
 		{
 			dest[xi] = d->st2d_8to16table[src[xi]];
@@ -225,7 +235,7 @@ static void st3_fixup(struct display *d, unsigned char *src, XImage * framebuf, 
 
 	for (yi = y; yi < y + height; yi++)
 	{
-		dest = &framebuf->data[yi * framebuf->bytes_per_line];
+		dest = (unsigned int *)(&framebuf->data[yi * framebuf->bytes_per_line]);
 		for (xi = (x + width - 1); xi >= x; xi--)
 		{
 			dest[xi] = d->st2d_8to24table[src[xi]];
@@ -233,6 +243,67 @@ static void st3_fixup(struct display *d, unsigned char *src, XImage * framebuf, 
 
 		src += d->width;
 	}
+}
+
+static void updatethread(void *arg)
+{
+	Display *x_disp;
+	struct display *d;
+	struct SysSignal *signal;
+	XEvent event;
+	void *buffer;
+
+	d = arg;
+
+	Sys_Thread_LockMutex(d->updatethread_mutex);
+
+	x_disp = XOpenDisplay(0);
+	if (x_disp)
+	{
+		signal = Sys_Thread_CreateSignal();
+		if (signal)
+		{
+			d->updatethread_signal = signal;
+			while(!d->updatethread_quit)
+			{
+				Sys_Thread_UnlockMutex(d->updatethread_mutex);
+				Sys_Thread_WaitSignal(signal);
+				Sys_Thread_LockMutex(d->updatethread_mutex);
+
+				buffer = d->buffer + d->updatethread_frame * d->width * d->height;
+
+				if (d->x_visinfo->depth == 24)
+				{
+					st3_fixup(d, buffer, d->x_framebuffer[d->current_framebuffer], 0, 0, d->width, d->height);
+				}
+				else
+				{
+					st2_fixup(d, buffer, d->x_framebuffer[d->current_framebuffer], 0, 0, d->width, d->height);
+				}
+
+				if (d->doShm)
+				{
+					XShmPutImage(x_disp, d->x_win, d->x_gc, d->x_framebuffer[d->current_framebuffer], 0, 0, 0, 0, d->width, d->height, True);
+
+					do
+					{
+						XNextEvent(x_disp, &event);
+					} while(event.type != d->x_shmeventtype);
+				}
+				else
+				{
+					XPutImage(x_disp, d->x_win, d->x_gc, d->x_framebuffer[0], 0, 0, 0, 0, d->width, d->height);
+				}
+
+				XSync(x_disp, False);
+			}
+
+			d->updatethread_signal = 0;
+			Sys_Thread_DeleteSignal(signal);
+		}
+	}
+
+	Sys_Thread_UnlockMutex(d->updatethread_mutex);
 }
 
 // ========================================================================
@@ -430,7 +501,7 @@ void *Sys_Video_Open(const char *mode, unsigned int width, unsigned int height, 
 		d->height = height;
 		d->fullscreen = fullscreen;
 
-		d->buffer = malloc(width*height);
+		d->buffer = malloc(width*height*2);
 		if (d->buffer)
 		{
 			template.visualid = XVisualIDFromVisual(XDefaultVisual(d->x_disp, d->scrnum));
@@ -569,8 +640,18 @@ void *Sys_Video_Open(const char *mode, unsigned int width, unsigned int height, 
 			shiftmask_init(d);
 
 			d->inputdata = X11_Input_Init(d->x_win, width, height, fullscreen);
-		
-			return d;
+			if (d->inputdata)
+			{
+				d->updatethread_mutex = Sys_Thread_CreateMutex();
+				if (d->updatethread_mutex)
+				{
+					d->updatethread = Sys_Thread_CreateThread(updatethread, d);
+				}
+
+				return d;
+			}
+
+			free(d->buffer);
 		}
 
 		free(d);
@@ -640,6 +721,18 @@ void Sys_Video_Close(void *display)
 {
 	struct display *d = display;
 
+	if (d->updatethread)
+	{
+		Sys_Thread_LockMutex(d->updatethread_mutex);
+
+		d->updatethread_quit = 1;
+		Sys_Thread_SendSignal(d->updatethread_signal);
+
+		Sys_Thread_UnlockMutex(d->updatethread_mutex);
+
+		Sys_Thread_DeleteThread(d->updatethread);
+	}
+
 	X11_Input_Shutdown(d->inputdata);
 
 	XDestroyWindow(d->x_disp, d->x_win);
@@ -694,39 +787,51 @@ void Sys_Video_Update(void *display, vrect_t *rects)
 		return;
 	}
 
-	if (d->doShm)
+	if (d->updatethread_signal)
 	{
-		while (rects)
-		{
-			if (d->x_visinfo->depth == 24)
-				st3_fixup(d, d->buffer, d->x_framebuffer[d->current_framebuffer], rects->x, rects->y, rects->width, rects->height);
-			else if (d->x_visinfo->depth == 16)
-				st2_fixup(d, d->buffer, d->x_framebuffer[d->current_framebuffer], rects->x, rects->y, rects->width, rects->height);
-			if (!XShmPutImage(d->x_disp, d->x_win, d->x_gc, d->x_framebuffer[d->current_framebuffer], rects->x, rects->y, rects->x, rects->y, rects->width, rects->height, True))
-				Sys_Error("VID_Update: XShmPutImage failed\n");
+		Sys_Thread_LockMutex(d->updatethread_mutex);
+		d->updatethread_frame = d->curframe;
+		Sys_Thread_SendSignal(d->updatethread_signal);
+		Sys_Thread_UnlockMutex(d->updatethread_mutex);
 
-			do
-			{
-				XNextEvent(d->x_disp, &event);
-			} while(event.type != d->x_shmeventtype);
-
-			rects = rects->pnext;
-		}
-		d->current_framebuffer = !d->current_framebuffer;
-		XSync(d->x_disp, False);
+		d->curframe ^= 1;
 	}
 	else
 	{
-		while (rects)
+		if (d->doShm)
 		{
-			if (d->x_visinfo->depth == 24)
-				st3_fixup(d, d->buffer, d->x_framebuffer[d->current_framebuffer], rects->x, rects->y, rects->width, rects->height);
-			else if (d->x_visinfo->depth == 16)
-				st2_fixup(d, d->buffer, d->x_framebuffer[d->current_framebuffer], rects->x, rects->y, rects->width, rects->height);
-			XPutImage(d->x_disp, d->x_win, d->x_gc, d->x_framebuffer[0], rects->x, rects->y, rects->x, rects->y, rects->width, rects->height);
-			rects = rects->pnext;
+			while (rects)
+			{
+				if (d->x_visinfo->depth == 24)
+					st3_fixup(d, d->buffer, d->x_framebuffer[d->current_framebuffer], rects->x, rects->y, rects->width, rects->height);
+				else if (d->x_visinfo->depth == 16)
+					st2_fixup(d, d->buffer, d->x_framebuffer[d->current_framebuffer], rects->x, rects->y, rects->width, rects->height);
+				if (!XShmPutImage(d->x_disp, d->x_win, d->x_gc, d->x_framebuffer[d->current_framebuffer], rects->x, rects->y, rects->x, rects->y, rects->width, rects->height, True))
+					Sys_Error("VID_Update: XShmPutImage failed\n");
+
+				do
+				{
+					XNextEvent(d->x_disp, &event);
+				} while(event.type != d->x_shmeventtype);
+
+				rects = rects->pnext;
+			}
+			d->current_framebuffer = !d->current_framebuffer;
+			XSync(d->x_disp, False);
 		}
-		XSync(d->x_disp, False);
+		else
+		{
+			while (rects)
+			{
+				if (d->x_visinfo->depth == 24)
+					st3_fixup(d, d->buffer, d->x_framebuffer[d->current_framebuffer], rects->x, rects->y, rects->width, rects->height);
+				else if (d->x_visinfo->depth == 16)
+					st2_fixup(d, d->buffer, d->x_framebuffer[d->current_framebuffer], rects->x, rects->y, rects->width, rects->height);
+				XPutImage(d->x_disp, d->x_win, d->x_gc, d->x_framebuffer[0], rects->x, rects->y, rects->x, rects->y, rects->width, rects->height);
+				rects = rects->pnext;
+			}
+			XSync(d->x_disp, False);
+		}
 	}
 }
 
@@ -790,7 +895,7 @@ void *Sys_Video_GetBuffer(void *display)
 
 	d = display;
 
-	return d->buffer;
+	return d->buffer + d->curframe * d->width * d->height;
 }
 
 int Sys_Video_FocusChanged(void *display)
