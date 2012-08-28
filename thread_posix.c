@@ -34,6 +34,13 @@ struct SysMutex
 	pthread_mutex_t mutex;
 };
 
+struct SysSignal
+{
+	pthread_mutex_t mutex;
+	pthread_cond_t cond;
+	int signalled;
+};
+
 struct SysThread *Sys_Thread_CreateThread(void (*entrypoint)(void *), void *argument)
 {
 	struct SysThread *thread;
@@ -135,5 +142,58 @@ void Sys_Thread_LockMutex(struct SysMutex *mutex)
 void Sys_Thread_UnlockMutex(struct SysMutex *mutex)
 {
 	pthread_mutex_unlock(&mutex->mutex);
+}
+
+struct SysSignal *Sys_Thread_CreateSignal(void)
+{
+	struct SysSignal *signal;
+	int r;
+
+	signal = malloc(sizeof(*signal));
+	if (signal)
+	{
+		r = pthread_mutex_init(&signal->mutex, 0);
+		if (r == 0)
+		{
+			r = pthread_cond_init(&signal->cond, 0);
+			if (r == 0)
+			{
+				signal->signalled = 0;
+
+				return signal;
+			}
+
+			pthread_mutex_destroy(&signal->mutex);
+		}
+
+		free(signal);
+	}
+
+	return 0;
+}
+
+void Sys_Thread_DeleteSignal(struct SysSignal *signal)
+{
+	pthread_cond_destroy(&signal->cond);
+	pthread_mutex_destroy(&signal->mutex);
+	free(signal);
+}
+
+void Sys_Thread_WaitSignal(struct SysSignal *signal)
+{
+	pthread_mutex_lock(&signal->mutex);
+	if (!signal->signalled)
+		pthread_cond_wait(&signal->cond, &signal->mutex);
+
+	signal->signalled = 0;
+	pthread_mutex_unlock(&signal->mutex);
+}
+
+void Sys_Thread_SendSignal(struct SysSignal *signal)
+{
+	pthread_mutex_lock(&signal->mutex);
+	signal->signalled = 1;
+	pthread_cond_signal(&signal->cond);
+	pthread_mutex_unlock(&signal->mutex);
 }
 
