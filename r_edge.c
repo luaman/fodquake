@@ -57,9 +57,9 @@ float	fv;
 void R_GenerateSpans (void);
 void R_GenerateSpansBackward (void);
 
-void R_LeadingEdge (edge_t *edge);
-void R_LeadingEdgeBackwards (edge_t *edge);
-void R_TrailingEdge (struct surf *surf, edge_t *edge);
+static void R_LeadingEdge (edge_t *edge);
+static void R_LeadingEdgeBackwards (edge_t *edge);
+static void R_TrailingEdge (struct surf *surf, edge_t *edge);
 
 
 //=============================================================================
@@ -279,7 +279,7 @@ void R_CleanupSpan ()
 R_LeadingEdgeBackwards
 ==============
 */
-void R_LeadingEdgeBackwards (edge_t *edge)
+static void R_LeadingEdgeBackwards (edge_t *edge)
 {
 	espan_t			*span;
 	struct surf			*surf, *surf2;
@@ -359,7 +359,7 @@ gotposition:
 R_TrailingEdge
 ==============
 */
-void R_TrailingEdge (struct surf *surf, edge_t *edge)
+static void R_TrailingEdge (struct surf *surf, edge_t *edge)
 {
 	espan_t			*span;
 	int				iu;
@@ -403,7 +403,7 @@ void R_TrailingEdge (struct surf *surf, edge_t *edge)
 R_LeadingEdge
 ==============
 */
-void R_LeadingEdge (edge_t *edge)
+static void R_LeadingEdge (edge_t *edge)
 {
 	espan_t			*span;
 	struct surf			*surf, *surf2;
