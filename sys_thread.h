@@ -1,6 +1,7 @@
 
 struct SysThread;
 struct SysMutex;
+struct SysSignal;
 
 enum SysThreadPriority
 {
@@ -17,4 +18,9 @@ struct SysMutex *Sys_Thread_CreateMutex(void);
 void Sys_Thread_DeleteMutex(struct SysMutex *mutex);
 void Sys_Thread_LockMutex(struct SysMutex *mutex);
 void Sys_Thread_UnlockMutex(struct SysMutex *mutex);
+
+struct SysSignal *Sys_Thread_CreateSignal(void);
+void Sys_Thread_DeleteSignal(struct SysSignal *signal);
+void Sys_Thread_WaitSignal(struct SysSignal *signal);
+void Sys_Thread_SendSignal(struct SysSignal *signal);
 
