@@ -54,8 +54,6 @@ static int allocated[MAX_LIGHTMAPS][BLOCK_WIDTH];
 // main memory so texsubimage can update properly
 byte	lightmaps[3 * MAX_LIGHTMAPS * BLOCK_WIDTH * BLOCK_HEIGHT];
 
-static qboolean	gl_invlightmaps = true;
-
 msurface_t	*skychain = NULL;
 msurface_t	**skychain_tail = &skychain;
 
@@ -400,57 +398,7 @@ static void AddAllLightMaps(byte *lightmap, msurface_t *surf, int blocksize)
 	}
 }
 
-static void lightmapstore_inv_mode2(int stride, int smax, int tmax, byte *dest)
-{
-	unsigned int *bl;
-	int i;
-	int j;
-	int t;
-
-	bl = blocklights;
-
-	for (i = 0; i < tmax; i++, dest += stride)
-	{
-		for (j = smax; j; j--)
-		{
-			t = bl[0]; t = (t >> 8) + (t >> 9); if (t > 255) t = 255;
-			dest[0] = 255 - t;
-			t = bl[1]; t = (t >> 8) + (t >> 9); if (t > 255) t = 255;
-			dest[1] = 255 - t;
-			t = bl[2]; t = (t >> 8) + (t >> 9); if (t > 255) t = 255;
-			dest[2] = 255 - t;
-			bl += 3;
-			dest += 3;
-		}
-	}
-}
-
-static void lightmapstore_inv_mode0(int stride, int smax, int tmax, byte *dest)
-{
-	unsigned int *bl;
-	int i;
-	int j;
-	int t;
-
-	bl = blocklights;
-
-	for (i = 0; i < tmax; i++, dest += stride)
-	{
-		for (j = smax; j; j--)
-		{
-			t = bl[0]; t = t >> 7; if (t > 255) t = 255;
-			dest[0] = 255 - t;
-			t = bl[1]; t = t >> 7; if (t > 255) t = 255;
-			dest[1] = 255 - t;
-			t = bl[2]; t = t >> 7; if (t > 255) t = 255;
-			dest[2] = 255 - t;
-			bl += 3;
-			dest += 3;
-		}
-	}
-}
-
-static void lightmapstore_ninv_mode2(int stride, int smax, int tmax, byte *dest)
+static void lightmapstore_mode2(int stride, int smax, int tmax, byte *dest)
 {
 	unsigned int *bl;
 	int i;
@@ -475,7 +423,7 @@ static void lightmapstore_ninv_mode2(int stride, int smax, int tmax, byte *dest)
 	}
 }
 
-static void lightmapstore_ninv_mode0(int stride, int smax, int tmax, byte *dest)
+static void lightmapstore_mode0(int stride, int smax, int tmax, byte *dest)
 {
 	unsigned int *bl;
 	int i;
@@ -502,27 +450,13 @@ static void lightmapstore_ninv_mode0(int stride, int smax, int tmax, byte *dest)
 
 static void StoreLightMap(int stride, int smax, int tmax, byte *dest)
 {
-	if (gl_invlightmaps)
+	if (lightmode == 2)
 	{
-		if (lightmode == 2)
-		{
-			lightmapstore_inv_mode2(stride, smax, tmax, dest);
-		}
-		else
-		{
-			lightmapstore_inv_mode0(stride, smax, tmax, dest);
-		}
+		lightmapstore_mode2(stride, smax, tmax, dest);
 	}
 	else
 	{
-		if (lightmode == 2)
-		{
-			lightmapstore_ninv_mode2(stride, smax, tmax, dest);
-		}
-		else
-		{
-			lightmapstore_ninv_mode0(stride, smax, tmax, dest);
-		}
+		lightmapstore_mode0(stride, smax, tmax, dest);
 	}
 }
 
@@ -619,10 +553,7 @@ static void R_BlendLightmaps (void)
 	float *v;
 
 	glDepthMask (GL_FALSE);		// don't bother writing Z
-	if (gl_invlightmaps)
-		glBlendFunc (GL_ZERO, GL_ONE_MINUS_SRC_COLOR);
-	else
-		glBlendFunc (GL_ZERO, GL_SRC_COLOR);
+	glBlendFunc (GL_ZERO, GL_SRC_COLOR);
 
 	GL_SetAlphaTestBlend(0, !r_lightmap.value);
 
@@ -821,7 +752,7 @@ static void R_DrawAlphaChain (void)
 			//bind the lightmap texture
 			GL_EnableMultitexture();
 			GL_Bind (lightmap_textures + s->lightmaptexturenum);
-			glTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, gl_invlightmaps ? GL_BLEND : GL_MODULATE);
+			glTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 			//update lightmap if its modified by dynamic lights
 			k = s->lightmaptexturenum;
 			if (lightmap_modified[k])
@@ -1006,7 +937,7 @@ static void DrawTextureChains (model_t *model)
 						GL_LIGHTMAP_TEXTURE = GL_TEXTURE2;
 						extraarrays |= FQ_GL_TEXTURE_COORD_ARRAY_2;
 						GL_EnableTMU(GL_LIGHTMAP_TEXTURE);
-						glTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, gl_invlightmaps ? GL_BLEND : GL_MODULATE);
+						glTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 					}
 					else
 					{
@@ -1027,7 +958,7 @@ static void DrawTextureChains (model_t *model)
 				GL_EnableTMU(GL_TEXTURE1);
 				GL_LIGHTMAP_TEXTURE = GL_TEXTURE1;
 				extraarrays |= FQ_GL_TEXTURE_COORD_ARRAY_1;
-				glTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, gl_invlightmaps ? GL_BLEND : GL_MODULATE);
+				glTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 
 				mtex_lightmaps = true;
 				mtex_fbs = t->fb_texturenum && draw_mtex_fbs;
@@ -1275,7 +1206,7 @@ static void R_DrawFlat (model_t *model)
 
 	GL_DisableMultitexture();
 
-	glTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_BLEND);
+	glTexEnvf (GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 
 	GL_SelectTexture(GL_TEXTURE0);
 
@@ -1958,8 +1889,6 @@ void GL_BuildLightmaps (void)
 	model_t	*m;
 
 	memset (allocated, 0, sizeof(allocated));
-
-	gl_invlightmaps = !COM_CheckParm("-noinvlmaps");
 
 	r_framecount = 1;		// no dlightcache
 
