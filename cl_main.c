@@ -492,14 +492,17 @@ static void R_DrawFlat_UpdateSurface(model_t *model, msurface_t *surface)
 
 	if (model->vertcolours)
 	{
-		for(i=surface->polys->firstindex;i<surface->polys->firstindex+surface->polys->numverts;i++)
+		if (surface->polys)
 		{
-			model->vertcolours[i*3+0] = surface->color[0];
-			model->vertcolours[i*3+1] = surface->color[1];
-			model->vertcolours[i*3+2] = surface->color[2];
-		}
+			for(i=surface->polys->firstindex;i<surface->polys->firstindex+surface->polys->numverts;i++)
+			{
+				model->vertcolours[i*3+0] = surface->color[0];
+				model->vertcolours[i*3+1] = surface->color[1];
+				model->vertcolours[i*3+2] = surface->color[2];
+			}
 
-		model->surface_colours_dirty = 1;
+			model->surface_colours_dirty = 1;
+		}
 	}
 #else
 	surface->palcolor = V_LookUpColour(surface->color[0], surface->color[1], surface->color[2]);
