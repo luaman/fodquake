@@ -307,6 +307,9 @@ void Sys_Video_SetGamma(void *display, unsigned short *ramps)
 
 	d = display;
 
+	if (!d->gammaworks)
+		return;
+
 	for(i=0;i<128;i++)
 	{
 		for(j=0;j<3;j++)

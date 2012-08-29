@@ -20,11 +20,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 // vid_x11.c -- general x video driver
 
-#define _BSD
-
-typedef unsigned short PIXEL16;
-typedef unsigned int PIXEL24;
-
 #include <ctype.h>
 #include <sys/time.h>
 #include <sys/types.h>
@@ -48,6 +43,7 @@ typedef unsigned int PIXEL24;
 #include "vid_mode_x11.h"
 #include "vid_mode_xf86vm.h"
 #include "vid_mode_xrandr.h"
+#include "sys_thread.h"
 
 struct display
 {
@@ -77,13 +73,23 @@ struct display
 	int height;
 	int fullscreen;
 	char used_mode[256];
+	void *buffer;
+	unsigned int curframe;
 
 	byte current_palette[768];
 
-	PIXEL16 st2d_8to16table[256];
-	PIXEL24 st2d_8to24table[256];
+	unsigned short st2d_8to16table[256];
+	unsigned int st2d_8to24table[256];
 	long r_shift, g_shift, b_shift;
 	unsigned long r_mask, g_mask, b_mask;
+
+	struct SysThread *updatethread;
+
+	/* Update thread shared vars, be careful, etc. */
+	struct SysMutex *updatethread_mutex;
+	struct SysSignal *updatethread_signal;
+	unsigned int updatethread_frame;
+	int updatethread_quit;
 };
 
 static void shiftmask_init(struct display *d)
@@ -104,9 +110,9 @@ static void shiftmask_init(struct display *d)
 		d->b_shift++;
 }
 
-static PIXEL16 xlib_rgb16(struct display *d, int r, int g, int b)
+static unsigned short xlib_rgb16(struct display *d, int r, int g, int b)
 {
-	PIXEL16 p;
+	unsigned short p;
 
 	p = 0;
 
@@ -152,9 +158,9 @@ static PIXEL16 xlib_rgb16(struct display *d, int r, int g, int b)
 	return p;
 }
 
-static PIXEL24 xlib_rgb24(struct display *d, int r, int g, int b)
+static unsigned int xlib_rgb24(struct display *d, int r, int g, int b)
 {
-	PIXEL24 p;
+	unsigned int p;
 
 	p = 0;
 
@@ -200,44 +206,104 @@ static PIXEL24 xlib_rgb24(struct display *d, int r, int g, int b)
 	return p;
 }
 
-static void st2_fixup(struct display *d, XImage * framebuf, int x, int y, int width, int height)
+static void st2_fixup(struct display *d, unsigned char *src, XImage * framebuf, int x, int y, int width, int height)
 {
 	int xi, yi;
-	unsigned char *src;
-	PIXEL16 *dest;
+	unsigned short *dest;
 
 	if (x < 0 || y < 0)
 		return;
 
 	for (yi = y; yi < y + height; yi++)
 	{
-		src = &framebuf->data[yi * framebuf->bytes_per_line];
-		dest = (PIXEL16 *) src;
+		dest = (unsigned short *)(&framebuf->data[yi * framebuf->bytes_per_line]);
 		for (xi = (x + width - 1); xi >= x; xi--)
 		{
 			dest[xi] = d->st2d_8to16table[src[xi]];
 		}
+		src += d->width;
 	}
 }
 
-static void st3_fixup(struct display *d, XImage * framebuf, int x, int y, int width, int height)
+static void st3_fixup(struct display *d, unsigned char *src, XImage * framebuf, int x, int y, int width, int height)
 {
 	int xi, yi;
-	unsigned char *src;
-	PIXEL24 *dest;
+	unsigned int *dest;
 
 	if (x < 0 || y < 0)
 		return;
 
 	for (yi = y; yi < y + height; yi++)
 	{
-		src = &framebuf->data[yi * framebuf->bytes_per_line];
-		dest = (PIXEL24 *) src;
+		dest = (unsigned int *)(&framebuf->data[yi * framebuf->bytes_per_line]);
 		for (xi = (x + width - 1); xi >= x; xi--)
 		{
 			dest[xi] = d->st2d_8to24table[src[xi]];
 		}
+
+		src += d->width;
 	}
+}
+
+static void updatethread(void *arg)
+{
+	Display *x_disp;
+	struct display *d;
+	struct SysSignal *signal;
+	XEvent event;
+	void *buffer;
+
+	d = arg;
+
+	Sys_Thread_LockMutex(d->updatethread_mutex);
+
+	x_disp = XOpenDisplay(0);
+	if (x_disp)
+	{
+		signal = Sys_Thread_CreateSignal();
+		if (signal)
+		{
+			d->updatethread_signal = signal;
+			while(!d->updatethread_quit)
+			{
+				Sys_Thread_UnlockMutex(d->updatethread_mutex);
+				Sys_Thread_WaitSignal(signal);
+				Sys_Thread_LockMutex(d->updatethread_mutex);
+
+				buffer = d->buffer + d->updatethread_frame * d->width * d->height;
+
+				if (d->x_visinfo->depth == 24)
+				{
+					st3_fixup(d, buffer, d->x_framebuffer[d->current_framebuffer], 0, 0, d->width, d->height);
+				}
+				else
+				{
+					st2_fixup(d, buffer, d->x_framebuffer[d->current_framebuffer], 0, 0, d->width, d->height);
+				}
+
+				if (d->doShm)
+				{
+					XShmPutImage(x_disp, d->x_win, d->x_gc, d->x_framebuffer[d->current_framebuffer], 0, 0, 0, 0, d->width, d->height, True);
+
+					do
+					{
+						XNextEvent(x_disp, &event);
+					} while(event.type != d->x_shmeventtype);
+				}
+				else
+				{
+					XPutImage(x_disp, d->x_win, d->x_gc, d->x_framebuffer[0], 0, 0, 0, 0, d->width, d->height);
+				}
+
+				XSync(x_disp, False);
+			}
+
+			d->updatethread_signal = 0;
+			Sys_Thread_DeleteSignal(signal);
+		}
+	}
+
+	Sys_Thread_UnlockMutex(d->updatethread_mutex);
 }
 
 // ========================================================================
@@ -435,158 +501,160 @@ void *Sys_Video_Open(const char *mode, unsigned int width, unsigned int height, 
 		d->height = height;
 		d->fullscreen = fullscreen;
 
-		template.visualid = XVisualIDFromVisual(XDefaultVisual(d->x_disp, d->scrnum));
-		template_mask = VisualIDMask;
-
-		// pick a visual- warn if more than one was available
-		d->x_visinfo = XGetVisualInfo(d->x_disp, template_mask, &template, &num_visuals);
-		if (num_visuals > 1)
+		d->buffer = malloc(width*height*2);
+		if (d->buffer)
 		{
-			printf("Found more than one visual id at depth %d:\n", template.depth);
-			for (i = 0; i < num_visuals; i++)
-				printf("	-visualid %d\n", (int) (d->x_visinfo[i].visualid));
-		}
-		else if (num_visuals == 0)
-		{
-			if (template_mask == VisualIDMask)
-				Sys_Error("VID: Bad visual id %d\n", template.visualid);
-			else
-				Sys_Error("VID: No visuals at depth %d\n", template.depth);
-		}
+			template.visualid = XVisualIDFromVisual(XDefaultVisual(d->x_disp, d->scrnum));
+			template_mask = VisualIDMask;
 
-#if 0
-		if (verbose)
-		{
-			printf("Using visualid %d:\n", (int) (d->x_visinfo->visualid));
-			printf("	screen %d\n", d->x_visinfo->screen);
-			printf("	red_mask 0x%x\n", (int) (d->x_visinfo->red_mask));
-			printf("	green_mask 0x%x\n", (int) (d->x_visinfo->green_mask));
-			printf("	blue_mask 0x%x\n", (int) (d->x_visinfo->blue_mask));
-			printf("	colormap_size %d\n", d->x_visinfo->colormap_size);
-			printf("	bits_per_rgb %d\n", d->x_visinfo->bits_per_rgb);
-		}
-#endif
-
-		d->x_vis = d->x_visinfo->visual;
-
-		// setup attributes for main window
-		{
-			int attribmask = CWEventMask | CWColormap | CWBorderPixel;
-			XSetWindowAttributes attribs;
-			Colormap tmpcmap;
-
-			tmpcmap = XCreateColormap(d->x_disp, XRootWindow(d->x_disp, d->x_visinfo->screen), d->x_vis, AllocNone);
-
-			attribs.event_mask = StructureNotifyMask | ExposureMask;
-			attribs.border_pixel = 0;
-			attribs.colormap = tmpcmap;
-
-			if (fullscreen)
+			// pick a visual- warn if more than one was available
+			d->x_visinfo = XGetVisualInfo(d->x_disp, template_mask, &template, &num_visuals);
+			if (num_visuals > 1)
 			{
-				attribmask = CWColormap | CWEventMask | CWSaveUnder | CWBackingStore | CWOverrideRedirect;
-				attribs.override_redirect = 1;
-				attribs.backing_store = NotUseful;
-				attribs.save_under = 0;
+				printf("Found more than one visual id at depth %d:\n", template.depth);
+				for (i = 0; i < num_visuals; i++)
+					printf("	-visualid %d\n", (int) (d->x_visinfo[i].visualid));
 			}
+			else if (num_visuals == 0)
+			{
+				if (template_mask == VisualIDMask)
+					Sys_Error("VID: Bad visual id %d\n", template.visualid);
+				else
+					Sys_Error("VID: No visuals at depth %d\n", template.depth);
+			}
+
+			d->x_vis = d->x_visinfo->visual;
+
+			// setup attributes for main window
+			{
+				int attribmask = CWEventMask | CWColormap | CWBorderPixel;
+				XSetWindowAttributes attribs;
+				Colormap tmpcmap;
+
+				tmpcmap = XCreateColormap(d->x_disp, XRootWindow(d->x_disp, d->x_visinfo->screen), d->x_vis, AllocNone);
+
+				attribs.event_mask = StructureNotifyMask | ExposureMask;
+				attribs.border_pixel = 0;
+				attribs.colormap = tmpcmap;
+
+				if (fullscreen)
+				{
+					attribmask = CWColormap | CWEventMask | CWSaveUnder | CWBackingStore | CWOverrideRedirect;
+					attribs.override_redirect = 1;
+					attribs.backing_store = NotUseful;
+					attribs.save_under = 0;
+				}
 
 // create the main window
-			d->x_win = XCreateWindow(d->x_disp, XRootWindow(d->x_disp, d->x_visinfo->screen), 0, 0,	// x, y
-					      d->width, d->height, 0,	// borderwidth
-					      d->x_visinfo->depth, InputOutput, d->x_vis, attribmask, &attribs);
-			XStoreName(d->x_disp, d->x_win, "Fodquake");
+				d->x_win = XCreateWindow(d->x_disp, XRootWindow(d->x_disp, d->x_visinfo->screen), 0, 0,	// x, y
+						      d->width, d->height, 0,	// borderwidth
+						      d->x_visinfo->depth, InputOutput, d->x_vis, attribmask, &attribs);
+				XStoreName(d->x_disp, d->x_win, "Fodquake");
 
-			if (d->x_visinfo->class != TrueColor)
-				XFreeColormap(d->x_disp, tmpcmap);
-
-		}
-
-
-		if (d->x_visinfo->depth == 8)
-		{
-			// create and upload the palette
-			if (d->x_visinfo->class == PseudoColor)
-			{
-				d->x_cmap = XCreateColormap(d->x_disp, d->x_win, d->x_vis, AllocAll);
-				Sys_Video_SetPalette(d, palette);
-				XSetWindowColormap(d->x_disp, d->x_win, d->x_cmap);
+				if (d->x_visinfo->class != TrueColor)
+					XFreeColormap(d->x_disp, tmpcmap);
 			}
 
-		}
 
-		// inviso cursor
-		XDefineCursor(d->x_disp, d->x_win, (d->x_cursor = CreateNullCursor(d->x_disp, d->x_win)));
+			if (d->x_visinfo->depth == 8)
+			{
+				// create and upload the palette
+				if (d->x_visinfo->class == PseudoColor)
+				{
+					d->x_cmap = XCreateColormap(d->x_disp, d->x_win, d->x_vis, AllocAll);
+					Sys_Video_SetPalette(d, palette);
+					XSetWindowColormap(d->x_disp, d->x_win, d->x_cmap);
+				}
+			}
 
-		// create the GC
-		{
-			XGCValues xgcvalues;
-			int valuemask = GCGraphicsExposures;
-			xgcvalues.graphics_exposures = False;
-			d->x_gc = XCreateGC(d->x_disp, d->x_win, valuemask, &xgcvalues);
-		}
+			// inviso cursor
+			XDefineCursor(d->x_disp, d->x_win, (d->x_cursor = CreateNullCursor(d->x_disp, d->x_win)));
 
-		// map the window
-		XMapWindow(d->x_disp, d->x_win);
+			// create the GC
+			{
+				XGCValues xgcvalues;
+				int valuemask = GCGraphicsExposures;
+				xgcvalues.graphics_exposures = False;
+				d->x_gc = XCreateGC(d->x_disp, d->x_win, valuemask, &xgcvalues);
+			}
+
+			// map the window
+			XMapWindow(d->x_disp, d->x_win);
 
 #if USE_VMODE
-		if (fullscreen)
-		{
-			XSync(d->x_disp, 0);
-			XRaiseWindow(d->x_disp, d->x_win);
-			XWarpPointer(d->x_disp, None, d->x_win, 0, 0, 0, 0, 0, 0);
-			XSync(d->x_disp, 0);
-			// Move the viewport to top left
-			XF86VidModeSetViewPort(d->x_disp, d->scrnum, 0, 0);
-		}
+			if (fullscreen)
+			{
+				XSync(d->x_disp, 0);
+				XRaiseWindow(d->x_disp, d->x_win);
+				XWarpPointer(d->x_disp, None, d->x_win, 0, 0, 0, 0, 0, 0);
+				XSync(d->x_disp, 0);
+				// Move the viewport to top left
+				XF86VidModeSetViewPort(d->x_disp, d->scrnum, 0, 0);
+			}
 #endif
 
-		// wait for first exposure event
-		{
-			XEvent event;
-			while(1)
+			// wait for first exposure event
 			{
-				XNextEvent(d->x_disp, &event);
-				if (event.type == Expose && !event.xexpose.count)
-					break;
+				XEvent event;
+				while(1)
+				{
+					XNextEvent(d->x_disp, &event);
+					if (event.type == Expose && !event.xexpose.count)
+						break;
+				}
 			}
-		}
-		// now safe to draw
+			// now safe to draw
 
-		// even if MITSHM is available, make sure it's a local connection
-		if (XShmQueryExtension(d->x_disp))
-		{
-			char displayname[MAX_OSPATH], *dn;
-			d->doShm = true;
-			if ((dn = (char *) getenv("DISPLAY")))
+			// even if MITSHM is available, make sure it's a local connection
+			if (XShmQueryExtension(d->x_disp))
 			{
-				Q_strncpyz(displayname, dn, sizeof(displayname));
-				for (dn = displayname; *dn && (*dn != ':'); dn++)
-					;
-				*dn = 0;
-				if (!(!Q_strcasecmp(displayname, "unix") || !*displayname))
-					d->doShm = false;
+				char displayname[MAX_OSPATH], *dn;
+				d->doShm = true;
+				if ((dn = (char *) getenv("DISPLAY")))
+				{
+					Q_strncpyz(displayname, dn, sizeof(displayname));
+					for (dn = displayname; *dn && (*dn != ':'); dn++)
+						;
+					*dn = 0;
+					if (!(!Q_strcasecmp(displayname, "unix") || !*displayname))
+						d->doShm = false;
+				}
 			}
+
+			if (d->doShm)
+			{
+				d->x_shmeventtype = XShmGetEventBase(d->x_disp) + ShmCompletion;
+				ResetSharedFrameBuffers(d);
+			}
+			else
+			{
+				Com_Printf("Unable to initialise X11 shared memory support.\n");
+				d->x_shmeventtype = 0;
+				ResetFrameBuffer(d);
+			}
+
+			d->current_framebuffer = 0;
+
+			//XSynchronize(d->x_disp, False);
+
+			shiftmask_init(d);
+
+			d->inputdata = X11_Input_Init(d->x_win, width, height, fullscreen);
+			if (d->inputdata)
+			{
+				d->updatethread_mutex = Sys_Thread_CreateMutex();
+				if (d->updatethread_mutex)
+				{
+					d->updatethread = Sys_Thread_CreateThread(updatethread, d);
+				}
+
+				return d;
+			}
+
+			free(d->buffer);
 		}
-		if (d->doShm)
-		{
-			d->x_shmeventtype = XShmGetEventBase(d->x_disp) + ShmCompletion;
-			ResetSharedFrameBuffers(d);
-		}
-		else
-		{
-			Com_Printf("Unable to initialise X11 shared memory support.\n");
-			d->x_shmeventtype = 0;
-			ResetFrameBuffer(d);
-		}
 
-		d->current_framebuffer = 0;
-
-		//XSynchronize(d->x_disp, False);
-
-		shiftmask_init(d);
-
-		d->inputdata = X11_Input_Init(d->x_win, width, height, fullscreen);
-		
-		return d;
+		free(d);
 	}
 
 	return 0;
@@ -626,8 +694,10 @@ void Sys_Video_SetPalette(void *display, unsigned char *palette)
 	
 	for (i = 0; i < 256; i++)
 	{
-		d->st2d_8to16table[i] = xlib_rgb16(d, palette[i * 3], palette[i * 3 + 1], palette[i * 3 + 2]);
-		d->st2d_8to24table[i] = xlib_rgb24(d, palette[i * 3], palette[i * 3 + 1], palette[i * 3 + 2]);
+		if (d->x_visinfo->depth == 24)
+			d->st2d_8to24table[i] = xlib_rgb24(d, palette[i * 3], palette[i * 3 + 1], palette[i * 3 + 2]);
+		else
+			d->st2d_8to16table[i] = xlib_rgb16(d, palette[i * 3], palette[i * 3 + 1], palette[i * 3 + 2]);
 	}
 
 	if (d->x_visinfo->class == PseudoColor && d->x_visinfo->depth == 8)
@@ -650,6 +720,18 @@ void Sys_Video_SetPalette(void *display, unsigned char *palette)
 void Sys_Video_Close(void *display)
 {
 	struct display *d = display;
+
+	if (d->updatethread)
+	{
+		Sys_Thread_LockMutex(d->updatethread_mutex);
+
+		d->updatethread_quit = 1;
+		Sys_Thread_SendSignal(d->updatethread_signal);
+
+		Sys_Thread_UnlockMutex(d->updatethread_mutex);
+
+		Sys_Thread_DeleteThread(d->updatethread);
+	}
 
 	X11_Input_Shutdown(d->inputdata);
 
@@ -705,39 +787,51 @@ void Sys_Video_Update(void *display, vrect_t *rects)
 		return;
 	}
 
-	if (d->doShm)
+	if (d->updatethread_signal)
 	{
-		while (rects)
-		{
-			if (d->x_visinfo->depth == 24)
-				st3_fixup(d, d->x_framebuffer[d->current_framebuffer], rects->x, rects->y, rects->width, rects->height);
-			else if (d->x_visinfo->depth == 16)
-				st2_fixup(d, d->x_framebuffer[d->current_framebuffer], rects->x, rects->y, rects->width, rects->height);
-			if (!XShmPutImage(d->x_disp, d->x_win, d->x_gc, d->x_framebuffer[d->current_framebuffer], rects->x, rects->y, rects->x, rects->y, rects->width, rects->height, True))
-				Sys_Error("VID_Update: XShmPutImage failed\n");
+		Sys_Thread_LockMutex(d->updatethread_mutex);
+		d->updatethread_frame = d->curframe;
+		Sys_Thread_SendSignal(d->updatethread_signal);
+		Sys_Thread_UnlockMutex(d->updatethread_mutex);
 
-			do
-			{
-				XNextEvent(d->x_disp, &event);
-			} while(event.type != d->x_shmeventtype);
-
-			rects = rects->pnext;
-		}
-		d->current_framebuffer = !d->current_framebuffer;
-		XSync(d->x_disp, False);
+		d->curframe ^= 1;
 	}
 	else
 	{
-		while (rects)
+		if (d->doShm)
 		{
-			if (d->x_visinfo->depth == 24)
-				st3_fixup(d, d->x_framebuffer[d->current_framebuffer], rects->x, rects->y, rects->width, rects->height);
-			else if (d->x_visinfo->depth == 16)
-				st2_fixup(d, d->x_framebuffer[d->current_framebuffer], rects->x, rects->y, rects->width, rects->height);
-			XPutImage(d->x_disp, d->x_win, d->x_gc, d->x_framebuffer[0], rects->x, rects->y, rects->x, rects->y, rects->width, rects->height);
-			rects = rects->pnext;
+			while (rects)
+			{
+				if (d->x_visinfo->depth == 24)
+					st3_fixup(d, d->buffer, d->x_framebuffer[d->current_framebuffer], rects->x, rects->y, rects->width, rects->height);
+				else if (d->x_visinfo->depth == 16)
+					st2_fixup(d, d->buffer, d->x_framebuffer[d->current_framebuffer], rects->x, rects->y, rects->width, rects->height);
+				if (!XShmPutImage(d->x_disp, d->x_win, d->x_gc, d->x_framebuffer[d->current_framebuffer], rects->x, rects->y, rects->x, rects->y, rects->width, rects->height, True))
+					Sys_Error("VID_Update: XShmPutImage failed\n");
+
+				do
+				{
+					XNextEvent(d->x_disp, &event);
+				} while(event.type != d->x_shmeventtype);
+
+				rects = rects->pnext;
+			}
+			d->current_framebuffer = !d->current_framebuffer;
+			XSync(d->x_disp, False);
 		}
-		XSync(d->x_disp, False);
+		else
+		{
+			while (rects)
+			{
+				if (d->x_visinfo->depth == 24)
+					st3_fixup(d, d->buffer, d->x_framebuffer[d->current_framebuffer], rects->x, rects->y, rects->width, rects->height);
+				else if (d->x_visinfo->depth == 16)
+					st2_fixup(d, d->buffer, d->x_framebuffer[d->current_framebuffer], rects->x, rects->y, rects->width, rects->height);
+				XPutImage(d->x_disp, d->x_win, d->x_gc, d->x_framebuffer[0], rects->x, rects->y, rects->x, rects->y, rects->width, rects->height);
+				rects = rects->pnext;
+			}
+			XSync(d->x_disp, False);
+		}
 	}
 }
 
@@ -792,7 +886,7 @@ unsigned int Sys_Video_GetBytesPerRow(void *display)
 
 	d = display;
 
-	return d->x_framebuffer[0]->bytes_per_line;
+	return d->width;
 }
 
 void *Sys_Video_GetBuffer(void *display)
@@ -801,7 +895,7 @@ void *Sys_Video_GetBuffer(void *display)
 
 	d = display;
 
-	return d->x_framebuffer[d->current_framebuffer]->data;
+	return d->buffer + d->curframe * d->width * d->height;
 }
 
 int Sys_Video_FocusChanged(void *display)
