@@ -961,7 +961,7 @@ static void DrawTextureChains (model_t *model)
 		{
 			glVertexPointer(3, GL_FLOAT, 0, model->vertcoords);
 
-			glClientActiveTexture(GL_TEXTURE0_ARB);
+			glClientActiveTexture(GL_TEXTURE0);
 			glTexCoordPointer(2, GL_FLOAT, 0, model->verttexcoords[0]);
 		}
 
@@ -1143,7 +1143,7 @@ static void DrawTextureChains (model_t *model)
 					{
 						if (doMtex1)
 						{
-							glMultiTexCoord2f(GL_TEXTURE0_ARB, v[3], v[4]);
+							glMultiTexCoord2f(GL_TEXTURE0, v[3], v[4]);
 
 							if (mtex_lightmaps)
 								glMultiTexCoord2f(GL_LIGHTMAP_TEXTURE, v[5], v[6]);
@@ -1281,7 +1281,7 @@ static void R_DrawFlat (model_t *model)
 
 	if (model->vertcoords)
 	{
-		glClientActiveTexture(GL_TEXTURE0_ARB);
+		glClientActiveTexture(GL_TEXTURE0);
 
 		if (gl_vbo)
 		{
