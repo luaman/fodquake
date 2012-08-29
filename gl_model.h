@@ -415,9 +415,11 @@ typedef struct model_s
 
 	qboolean surface_colours_dirty;
 
-	unsigned int vertcoords_vbo_number;
-	unsigned int vertcolours_vbo_number;
-	unsigned int verttexcoords_vbo_number[3];
+	unsigned int vbo_number;
+
+	unsigned int coords_vbo_offset;
+	unsigned int colours_vbo_offset;
+	unsigned int texcoords_vbo_offset[3];
 
 	float *vertcoords;
 	float *vertcolours;

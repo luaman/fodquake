@@ -947,15 +947,13 @@ static void DrawTextureChains (model_t *model)
 	{
 		if (gl_vbo)
 		{
-			qglBindBufferARB(GL_ARRAY_BUFFER_ARB, model->vertcoords_vbo_number);
-			glVertexPointer(3, GL_FLOAT, 0, 0);
+			qglBindBufferARB(GL_ARRAY_BUFFER_ARB, model->vbo_number);
+			GL_VertexPointer(3, GL_FLOAT, 0, 0);
 #if 0
-			glColorPointer(4, GL_FLOAT, 0, model->colouroffset);
+			GL_ColorPointer(4, GL_FLOAT, 0, model->colouroffset);
 #endif
 
-			qglBindBufferARB(GL_ARRAY_BUFFER_ARB, model->verttexcoords_vbo_number[0]);
-			glClientActiveTexture(GL_TEXTURE0_ARB);
-			glTexCoordPointer(2, GL_FLOAT, 0, 0);
+			GL_TexCoordPointer(0, 2, GL_FLOAT, 0, (void *)(intptr_t)model->texcoords_vbo_offset[0]);
 
 			qglBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
 		}
@@ -1062,18 +1060,16 @@ static void DrawTextureChains (model_t *model)
 		{
 			if (gl_vbo)
 			{
+				qglBindBufferARB(GL_ARRAY_BUFFER_ARB, model->vbo_number);
+
 				if (mtex_fbs)
 				{
-					qglBindBufferARB(GL_ARRAY_BUFFER_ARB, model->verttexcoords_vbo_number[0]);
-					glClientActiveTexture(GL_FB_TEXTURE);
-					glTexCoordPointer(2, GL_FLOAT, 0, 0);
+					GL_TexCoordPointer(GL_FB_TEXTURE - GL_TEXTURE0, 2, GL_FLOAT, 0, (void *)(intptr_t)model->texcoords_vbo_offset[0]);
 				}
 
 				if (mtex_lightmaps)
 				{
-					qglBindBufferARB(GL_ARRAY_BUFFER_ARB, model->verttexcoords_vbo_number[1]);
-					glClientActiveTexture(GL_LIGHTMAP_TEXTURE);
-					glTexCoordPointer(2, GL_FLOAT, 0, 0);
+					GL_TexCoordPointer(GL_LIGHTMAP_TEXTURE - GL_TEXTURE0, 2, GL_FLOAT, 0, (void *)(intptr_t)model->texcoords_vbo_offset[1]);
 				}
 
 				qglBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
@@ -1082,14 +1078,12 @@ static void DrawTextureChains (model_t *model)
 			{
 				if (mtex_fbs)
 				{
-					glClientActiveTexture(GL_FB_TEXTURE);
-					glTexCoordPointer(2, GL_FLOAT, 0, model->verttexcoords[0]);
+					GL_TexCoordPointer(GL_FB_TEXTURE - GL_TEXTURE0, 2, GL_FLOAT, 0, model->verttexcoords[0]);
 				}
 
 				if (mtex_lightmaps)
 				{
-					glClientActiveTexture(GL_LIGHTMAP_TEXTURE);
-					glTexCoordPointer(2, GL_FLOAT, 0, model->verttexcoords[1]);
+					GL_TexCoordPointer(GL_LIGHTMAP_TEXTURE - GL_TEXTURE0, 2, GL_FLOAT, 0, model->verttexcoords[1]);
 				}
 			}
 		}
@@ -1259,8 +1253,8 @@ static void R_UpdateFlatColours(model_t *model)
 {
 	if (model->surface_colours_dirty && model->vertcolours && gl_vbo)
 	{
-		qglBindBufferARB(GL_ARRAY_BUFFER_ARB, model->vertcolours_vbo_number);
-		qglBufferDataARB(GL_ARRAY_BUFFER_ARB, sizeof(*model->vertcolours)*3*model->num_vertices, model->vertcolours, GL_STATIC_DRAW_ARB);
+		qglBindBufferARB(GL_ARRAY_BUFFER_ARB, model->vbo_number);
+		qglBufferSubDataARB(GL_ARRAY_BUFFER_ARB, model->colours_vbo_offset, sizeof(*model->vertcolours)*3*model->num_vertices, model->vertcolours);
 		qglBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
 
 		model->surface_colours_dirty = 0;
@@ -1291,22 +1285,17 @@ static void R_DrawFlat (model_t *model)
 
 		if (gl_vbo)
 		{
-			qglBindBufferARB(GL_ARRAY_BUFFER_ARB, model->vertcoords_vbo_number);
-			glVertexPointer(3, GL_FLOAT, 0, 0);
-
-			qglBindBufferARB(GL_ARRAY_BUFFER_ARB, model->vertcolours_vbo_number);
-			glColorPointer(3, GL_FLOAT, 0, 0);
-
-			qglBindBufferARB(GL_ARRAY_BUFFER_ARB, model->verttexcoords_vbo_number[1]);
-			glTexCoordPointer(2, GL_FLOAT, 0, 0);
-
+			qglBindBufferARB(GL_ARRAY_BUFFER_ARB, model->vbo_number);
+			GL_VertexPointer(3, GL_FLOAT, 0, (void *)(intptr_t)model->coords_vbo_offset);
+			GL_ColorPointer(3, GL_FLOAT, 0, (void *)(intptr_t)model->colours_vbo_offset);
+			GL_TexCoordPointer(0, 2, GL_FLOAT, 0, (void *)(intptr_t)model->texcoords_vbo_offset[1]);
 			qglBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
 		}
 		else
 		{
-			glVertexPointer(3, GL_FLOAT, 0, model->vertcoords);
-			glColorPointer(3, GL_FLOAT, 0, model->vertcolours);
-			glTexCoordPointer(2, GL_FLOAT, 0, model->verttexcoords[1]);
+			GL_VertexPointer(3, GL_FLOAT, 0, model->vertcoords);
+			GL_ColorPointer(3, GL_FLOAT, 0, model->vertcolours);
+			GL_TexCoordPointer(0, 2, GL_FLOAT, 0, model->verttexcoords[1]);
 		}
 
 		GL_SetArrays(FQ_GL_VERTEX_ARRAY | FQ_GL_COLOR_ARRAY | FQ_GL_TEXTURE_COORD_ARRAY);
@@ -1871,7 +1860,7 @@ static void BuildGLArrays(model_t *model)
 #error Fix this up.
 #endif
 
-	/* Performance-wise this doesn't make sense unless VBO-support is available, so... */
+	/* Performance-wise this doesn't make sense unless VBO support is available, so... */
 	if (!gl_vbo && 0)
 		return;
 
@@ -1926,19 +1915,21 @@ static void BuildGLArrays(model_t *model)
 
 			if (gl_vbo)
 			{
-				model->vertcoords_vbo_number = vbo_number++;
-				qglBindBufferARB(GL_ARRAY_BUFFER_ARB, model->vertcoords_vbo_number);
-				qglBufferDataARB(GL_ARRAY_BUFFER_ARB, sizeof(*model->vertcoords)*3*totalverts, model->vertcoords, GL_STATIC_DRAW_ARB);
+				model->vbo_number = vbo_number++;
+				model->coords_vbo_offset = 0;
+				model->colours_vbo_offset = model->coords_vbo_offset + sizeof(*model->vertcoords)*3*totalverts;
+				model->texcoords_vbo_offset[0] = model->colours_vbo_offset + sizeof(*model->vertcolours)*3*totalverts;
+				model->texcoords_vbo_offset[1] = model->texcoords_vbo_offset[0] + sizeof(**model->verttexcoords)*2*totalverts;
+				model->texcoords_vbo_offset[2] = model->texcoords_vbo_offset[1] + sizeof(**model->verttexcoords)*2*totalverts;
 
-				model->vertcolours_vbo_number = vbo_number++;
-				model->surface_colours_dirty = true;
+				qglBindBufferARB(GL_ARRAY_BUFFER_ARB, model->vbo_number);
 
-				for(i=0;i<3;i++)
-				{
-					model->verttexcoords_vbo_number[i] = vbo_number++;
-					qglBindBufferARB(GL_ARRAY_BUFFER_ARB, model->verttexcoords_vbo_number[i]);
-					qglBufferDataARB(GL_ARRAY_BUFFER_ARB, sizeof(**model->verttexcoords)*2*totalverts, model->verttexcoords[i], GL_STATIC_DRAW_ARB);
-				}
+				qglBufferDataARB(GL_ARRAY_BUFFER_ARB, model->texcoords_vbo_offset[2] + sizeof(**model->verttexcoords)*2*totalverts, 0, GL_STATIC_DRAW_ARB);
+
+				qglBufferSubDataARB(GL_ARRAY_BUFFER_ARB, model->coords_vbo_offset, sizeof(*model->vertcoords)*3*totalverts, model->vertcoords);
+				qglBufferSubDataARB(GL_ARRAY_BUFFER_ARB, model->texcoords_vbo_offset[0], sizeof(**model->verttexcoords)*2*totalverts, model->verttexcoords[0]);
+				qglBufferSubDataARB(GL_ARRAY_BUFFER_ARB, model->texcoords_vbo_offset[1], sizeof(**model->verttexcoords)*2*totalverts, model->verttexcoords[1]);
+				qglBufferSubDataARB(GL_ARRAY_BUFFER_ARB, model->texcoords_vbo_offset[2], sizeof(**model->verttexcoords)*2*totalverts, model->verttexcoords[2]);
 
 				qglBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
 			}
