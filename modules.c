@@ -86,6 +86,8 @@ qboolean QLib_ProcessProcdef(struct SysLib *lib, qlib_dllfunction_t *procdefs, i
 	{
 		if (!(*procdefs[i].function = Sys_Lib_GetAddressByName(lib, procdefs[i].name)))
 		{
+			Com_ErrorPrintf("Unable to find function \"%s\"\n", procdefs[i].name);
+
 			for (i = 0; i < size; i++)
 				procdefs[i].function = NULL;
 
