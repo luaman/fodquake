@@ -3161,7 +3161,7 @@ qboolean TP_CheckSoundTrigger (char *str)
 					return false;
 
 				// now play the sound
-				S_LocalSound (soundname);
+				S_LocalSound(soundname);
 				return true;
 			}
 			if (str[j] == '\\')
