@@ -1719,6 +1719,9 @@ void CL_ParseServerMessage (void)
 	int cmd, i, j;
 	extern int mvd_fixangle;
 	int msg_svc_start;
+	int prevcmd;
+
+	prevcmd = -1;
 
 	if (cl_shownet.value == 1)
 		Com_Printf ("%i ", cl_net_message.cursize);
@@ -1735,7 +1738,7 @@ void CL_ParseServerMessage (void)
 	{
 		if (msg_badread)
 		{
-			Host_Error ("CL_ParseServerMessage: Bad server message");
+			Host_Error ("CL_ParseServerMessage: Bad server message (while parsing %d)", prevcmd);
 			break;
 		}
 
