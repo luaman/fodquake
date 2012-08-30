@@ -24,6 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <stdio.h>
 #include <string.h>
 
+#include "common.h"
 #include "sys_lib.h"
 
 struct
@@ -62,6 +63,10 @@ struct SysLib *Sys_Lib_Open(const char *libname)
 				if (lib->elf_handle)
 				{
 					return lib;
+				}
+				else
+				{
+					Com_ErrorPrintf("Failed to open %s: %s\n", libname_translation_table[i].libname, dlerror());
 				}
 			}
 		}
