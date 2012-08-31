@@ -47,9 +47,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define APIENTRY
 #endif
 
-void GL_BeginRendering (int *x, int *y, int *width, int *height);
-void GL_EndRendering (void);
-
 extern int glwidth, glheight;
 
 #define ALIAS_BASE_SIZE_RATIO		(1.0 / 11.0)
