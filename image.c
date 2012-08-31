@@ -502,6 +502,8 @@ void Image_MipReduce (byte *in, byte *out, int *width, int *height, int bpp)
 
 #if USE_PNG
 
+const char *claimtobepngversion = PNG_LIBPNG_VER_STRING;
+
 #ifdef __MORPHOS__
 struct Library *PNGBase;
 
@@ -691,10 +693,12 @@ static png_byte (*qpng_get_bit_depth)(png_structp, png_infop);
 static png_uint_32 (*qpng_get_IHDR)(png_structp, png_infop, png_uint_32 *, png_uint_32 *, int *, int *, int *, int *, int *);
 static void (*qpng_set_IHDR)(png_structp, png_infop, png_uint_32, png_uint_32, int, int, int, int, int);
 static void (*qpng_set_PLTE)(png_structp, png_infop, png_colorp, int);
+static jmp_buf *(*qpng_set_longjmp_fn)(png_structp png_ptr, void *longjmp_fn, size_t jmp_buf_size);
 
-#define NUM_PNGPROCS	(sizeof(pngprocs)/sizeof(pngprocs[0]))
+#define NUM_PNG12PROCS	(sizeof(png12procs)/sizeof(png12procs[0]))
+#define NUM_PNG14PROCS	(sizeof(png14procs)/sizeof(png14procs[0]))
 
-qlib_dllfunction_t pngprocs[] =
+qlib_dllfunction_t png12procs[] =
 {
 	{"png_set_sig_bytes", (void **) &qpng_set_sig_bytes},
 	{"png_sig_cmp", (void **) &qpng_sig_cmp},
@@ -730,6 +734,43 @@ qlib_dllfunction_t pngprocs[] =
 	{"png_set_PLTE", (void **) &qpng_set_PLTE},
 };
 
+qlib_dllfunction_t png14procs[] =
+{
+	{"png_set_sig_bytes", (void **) &qpng_set_sig_bytes},
+	{"png_sig_cmp", (void **) &qpng_sig_cmp},
+	{"png_create_read_struct", (void **) &qpng_create_read_struct},
+	{"png_create_write_struct", (void **) &qpng_create_write_struct},
+	{"png_create_info_struct", (void **) &qpng_create_info_struct},
+	{"png_write_info", (void **) &qpng_write_info},
+	{"png_read_info", (void **) &qpng_read_info},
+	{"png_set_expand", (void **) &qpng_set_expand},
+	{"png_set_expand_gray_1_2_4_to_8", (void **) &qpng_set_gray_1_2_4_to_8},
+	{"png_set_palette_to_rgb", (void **) &qpng_set_palette_to_rgb},
+	{"png_set_tRNS_to_alpha", (void **) &qpng_set_tRNS_to_alpha},
+	{"png_set_gray_to_rgb", (void **) &qpng_set_gray_to_rgb},
+	{"png_set_filler", (void **) &qpng_set_filler},
+	{"png_set_strip_16", (void **) &qpng_set_strip_16},
+	{"png_read_update_info", (void **) &qpng_read_update_info},
+	{"png_read_image", (void **) &qpng_read_image},
+	{"png_write_image", (void **) &qpng_write_image},
+	{"png_write_end", (void **) &qpng_write_end},
+	{"png_read_end", (void **) &qpng_read_end},
+	{"png_destroy_read_struct", (void **) &qpng_destroy_read_struct},
+	{"png_destroy_write_struct", (void **) &qpng_destroy_write_struct},
+	{"png_set_compression_level", (void **) &qpng_set_compression_level},
+	{"png_set_write_fn", (void **) &qpng_set_write_fn},
+	{"png_set_read_fn", (void **) &qpng_set_read_fn},
+	{"png_get_io_ptr", (void **) &qpng_get_io_ptr},
+	{"png_get_valid", (void **) &qpng_get_valid},
+	{"png_get_rowbytes", (void **) &qpng_get_rowbytes},
+	{"png_get_channels", (void **) &qpng_get_channels},
+	{"png_get_bit_depth", (void **) &qpng_get_bit_depth},
+	{"png_get_IHDR", (void **) &qpng_get_IHDR},
+	{"png_set_IHDR", (void **) &qpng_set_IHDR},
+	{"png_set_PLTE", (void **) &qpng_set_PLTE},
+	{"png_set_longjmp_fn", (void **) &qpng_set_longjmp_fn},
+};
+
 static void PNG_FreeLibrary(void)
 {
 	if (png_handle)
@@ -747,13 +788,47 @@ static void PNG_FreeLibrary(void)
 
 static qboolean PNG_LoadLibrary(void)
 {
+	qlib_dllfunction_t *procs;
+	unsigned int numprocs;
+
 	while(1)
 	{
-		if (PNG_LIBPNG_VER_MINOR == 2)
-			png_handle = Sys_Lib_Open("png12");
+		if (png_handle == 0)
+		{
+			png_handle = Sys_Lib_Open("png15");
+			if (png_handle)
+			{
+				procs = png14procs;
+				numprocs = NUM_PNG14PROCS;
+				claimtobepngversion = "1.5.12";
+			}
+		}
 
 		if (png_handle == 0)
-			png_handle = Sys_Lib_Open("png");
+		{
+			png_handle = Sys_Lib_Open("png14");
+			if (png_handle)
+			{
+				procs = png14procs;
+				numprocs = NUM_PNG14PROCS;
+				claimtobepngversion = "1.4.12";
+			}
+		}
+
+		if (png_handle == 0)
+		{
+			png_handle = Sys_Lib_Open("png12");
+			if (png_handle == 0)
+				png_handle = Sys_Lib_Open("png");
+
+			if (png_handle)
+			{
+				procs = png12procs;
+				numprocs = NUM_PNG12PROCS;
+				claimtobepngversion = "1.2.44";
+				qpng_set_longjmp_fn = 0;
+			}
+		}
 
 		if (png_handle)
 			break;
@@ -768,7 +843,7 @@ static qboolean PNG_LoadLibrary(void)
 
 	if (png_handle)
 	{
-		if (QLib_ProcessProcdef(png_handle, pngprocs, NUM_PNGPROCS))
+		if (QLib_ProcessProcdef(png_handle, procs, numprocs))
 		{
 			return true;
 		}
@@ -817,6 +892,7 @@ byte *Image_LoadPNG(FILE *fin, char *filename, int matchwidth, int matchheight, 
 	int y, bitdepth, colortype, interlace, compression, filter, bytesperpixel;
 	png_uint_32 width, height;
 	unsigned long rowbytes;
+	jmp_buf *jmpbuf;
 
 	if (!png_handle)
 		return NULL;
@@ -833,7 +909,7 @@ byte *Image_LoadPNG(FILE *fin, char *filename, int matchwidth, int matchheight, 
 		return NULL;
 	}
 
-	if (!(png_ptr = qpng_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL)))
+	if (!(png_ptr = qpng_create_read_struct(claimtobepngversion, NULL, NULL, NULL)))
 	{
 		fclose(fin);
 		return NULL;
@@ -846,14 +922,23 @@ byte *Image_LoadPNG(FILE *fin, char *filename, int matchwidth, int matchheight, 
 		return NULL;
 	}
 
-	if (setjmp(png_ptr->jmpbuf))
+	if (qpng_set_longjmp_fn)
+	{
+		jmpbuf = qpng_set_longjmp_fn(png_ptr, longjmp, sizeof(jmp_buf));
+	}
+	else
+	{
+		jmpbuf = &png_ptr->jmpbuf;
+	}
+
+	if (setjmp(*jmpbuf))
 	{
 		qpng_destroy_read_struct(&png_ptr, &pnginfo, NULL);
 		fclose(fin);
 		return NULL;
 	}
 
-    qpng_set_read_fn(png_ptr, fin, PNG_IO_user_read_data);
+	qpng_set_read_fn(png_ptr, fin, PNG_IO_user_read_data);
 	qpng_set_sig_bytes(png_ptr, 8);
 	qpng_read_info(png_ptr, pnginfo);
 	qpng_get_IHDR(png_ptr, pnginfo, &width, &height, &bitdepth,
@@ -937,6 +1022,8 @@ int Image_WritePNG (char *filename, int compression, byte *pixels, int width, in
 	png_structp png_ptr;
 	png_infop info_ptr;
 	png_byte **rowpointers;
+	jmp_buf *jmpbuf;
+
 	Q_snprintfz (name, sizeof(name), "%s/%s", com_basedir, filename);
 
 	if (!png_handle)
@@ -952,7 +1039,7 @@ int Image_WritePNG (char *filename, int compression, byte *pixels, int width, in
 			return false;
 	}
 
-	if (!(png_ptr = qpng_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL)))
+	if (!(png_ptr = qpng_create_write_struct(claimtobepngversion, NULL, NULL, NULL)))
 	{
 		fclose(fp);
 		return false;
@@ -965,14 +1052,23 @@ int Image_WritePNG (char *filename, int compression, byte *pixels, int width, in
 		return false;
 	}
 
-	if (setjmp(png_ptr->jmpbuf))
+	if (qpng_set_longjmp_fn)
+	{
+		jmpbuf = qpng_set_longjmp_fn(png_ptr, longjmp, sizeof(jmp_buf));
+	}
+	else
+	{
+		jmpbuf = &png_ptr->jmpbuf;
+	}
+
+	if (setjmp(*jmpbuf))
 	{
 		qpng_destroy_write_struct(&png_ptr, &info_ptr);
 		fclose(fp);
 		return false;
 	}
 
-    qpng_set_write_fn(png_ptr, fp, PNG_IO_user_write_data, PNG_IO_user_flush_data);
+	qpng_set_write_fn(png_ptr, fp, PNG_IO_user_write_data, PNG_IO_user_flush_data);
 	qpng_set_compression_level(png_ptr, bound(Z_NO_COMPRESSION, compression, Z_BEST_COMPRESSION));
 
 	pngformat = (bpp == 4) ? PNG_COLOR_TYPE_RGBA : PNG_COLOR_TYPE_RGB;
@@ -1008,6 +1104,7 @@ int Image_WritePNGPLTE (char *filename, int compression,
 	png_structp png_ptr;
 	png_infop info_ptr;
 	png_byte **rowpointers;
+	jmp_buf *jmpbuf;
 
 	if (!png_handle)
 		return false;
@@ -1021,7 +1118,7 @@ int Image_WritePNGPLTE (char *filename, int compression,
 			return false;
 	}
 
-	if (!(png_ptr = qpng_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL)))
+	if (!(png_ptr = qpng_create_write_struct(claimtobepngversion, NULL, NULL, NULL)))
 	{
 		fclose(fp);
 		return false;
@@ -1034,14 +1131,23 @@ int Image_WritePNGPLTE (char *filename, int compression,
 		return false;
 	}
 
-	if (setjmp(png_ptr->jmpbuf))
+	if (qpng_set_longjmp_fn)
+	{
+		jmpbuf = qpng_set_longjmp_fn(png_ptr, longjmp, sizeof(jmp_buf));
+	}
+	else
+	{
+		jmpbuf = &png_ptr->jmpbuf;
+	}
+
+	if (setjmp(*jmpbuf))
 	{
 		qpng_destroy_write_struct(&png_ptr, &info_ptr);
 		fclose(fp);
 		return false;
 	}
 
-    qpng_set_write_fn(png_ptr, fp, PNG_IO_user_write_data, PNG_IO_user_flush_data);
+	qpng_set_write_fn(png_ptr, fp, PNG_IO_user_write_data, PNG_IO_user_flush_data);
 	qpng_set_compression_level(png_ptr, bound(Z_NO_COMPRESSION, compression, Z_BEST_COMPRESSION));
 
 	qpng_set_IHDR(png_ptr, info_ptr, width, height, 8, PNG_COLOR_TYPE_PALETTE,

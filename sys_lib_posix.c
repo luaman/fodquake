@@ -34,6 +34,8 @@ struct
 } libname_translation_table[] =
 {
 	{ "png12", "libpng12.so.0" },
+	{ "png14", "libpng14.so" },
+	{ "png15", "libpng15.so" },
 	{ "z", "libz.so.1" },
 	{ "jpeg", "libjpeg.so.62" },
 	{ "Xxf86vm", "libXxf86vm.so.1" },
