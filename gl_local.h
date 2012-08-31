@@ -206,8 +206,12 @@ void R_InitOtherTextures(void);
 #define GL_ARRAY_BUFFER_ARB                             0x8892
 #define GL_STATIC_DRAW_ARB                              0x88E4
 
-//fuck windows
+#ifdef _WIN32
 #define GL_CLAMP_TO_EDGE 0x812F
+#define GL_TEXTURE0 0x84C0
+#define GL_TEXTURE1 0x84C1
+#define GL_TEXTURE2 0x84C2
+#endif
 
 #ifdef __MORPHOS__
 #define GL_MAX_TEXTURE_UNITS GL_MAX_TEXTURE_UNITS_ARB
