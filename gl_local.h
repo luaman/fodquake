@@ -226,7 +226,9 @@ void glActiveTexture(GLenum texture);
 #endif
 
 #ifndef __MACOSX__
+typedef ptrdiff_t GLintptr;
 typedef ptrdiff_t GLsizeiptrARB;
+
 extern void (*qglBindBufferARB)(GLenum, GLuint);
 extern void (*qglBufferDataARB)(GLenum, GLsizeiptrARB, const GLvoid *, GLenum);
 extern void (*qglBufferSubDataARB)(GLenum, GLintptr, GLsizeiptr, const GLvoid *);
