@@ -233,11 +233,11 @@ void glActiveTexture(GLenum texture);
 #ifndef __MACOSX__
 typedef ptrdiff_t GLintptrARB;
 typedef ptrdiff_t GLsizeiptrARB;
+#endif
 
 extern void (*qglBindBufferARB)(GLenum, GLuint);
 extern void (*qglBufferDataARB)(GLenum, GLsizeiptrARB, const GLvoid *, GLenum);
 extern void (*qglBufferSubDataARB)(GLenum, GLintptrARB, GLsizeiptrARB, const GLvoid *);
-#endif
 
 /* GLSL stuff */
 #define GL_FRAGMENT_SHADER_ARB        0x8B30
