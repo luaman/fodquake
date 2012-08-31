@@ -66,10 +66,6 @@ struct SysLib *Sys_Lib_Open(const char *libname)
 				{
 					return lib;
 				}
-				else
-				{
-					Com_ErrorPrintf("Failed to open %s: %s\n", libname_translation_table[i].libname, dlerror());
-				}
 			}
 		}
 
