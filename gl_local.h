@@ -210,6 +210,8 @@ void R_InitOtherTextures(void);
 #define GL_CLAMP_TO_EDGE 0x812F
 
 #ifdef __MORPHOS__
+#define GL_MAX_TEXTURE_UNITS GL_MAX_TEXTURE_UNITS_ARB
+
 #define glMultiTexCoord2f glMultiTexCoord2fARB
 #define glClientActiveTexture glClientActiveTextureARB
 #define glActiveTexture glActiveTextureARB
