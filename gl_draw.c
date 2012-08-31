@@ -1368,7 +1368,7 @@ void Draw_DrawPicture(struct Picture *picture, int x, int y, unsigned int width,
 	glDrawArrays(GL_QUADS, 0, 4);
 }
 
-void Draw_DrawPictureAlpha(struct Picture *picture, int x, int y, unsigned int width, unsigned int height, float alpha)
+void Draw_DrawPictureModulated(struct Picture *picture, int x, int y, unsigned int width, unsigned int height, float r, float g, float b, float alpha)
 {
 	float coords[4*2];
 	unsigned int colours[4];
@@ -1384,9 +1384,9 @@ void Draw_DrawPictureAlpha(struct Picture *picture, int x, int y, unsigned int w
 	if (alpha > 1)
 		alpha = 1;
 
-	col.uc[0] = 0xff;
-	col.uc[1] = 0xff;
-	col.uc[2] = 0xff;
+	col.uc[0] = r*255;
+	col.uc[1] = g*255;
+	col.uc[2] = b*255;
 	col.uc[3] = alpha*255;
 
 	GL_SetAlphaTestBlend(0, 1);

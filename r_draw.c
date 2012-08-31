@@ -346,7 +346,7 @@ void Draw_ConsoleBackground(int lines)
 	}
 	else
 	{
-		Draw_DrawPictureAlpha(conbackpic, 0, lines - vid.conheight, vid.conwidth, vid.conheight, scr_conalpha.value);
+		Draw_DrawPictureModulated(conbackpic, 0, lines - vid.conheight, vid.conwidth, vid.conheight, 1, 1, 1, scr_conalpha.value);
 	}
 
 	sprintf(ver, "Fodquake %s", FODQUAKE_VERSION);

@@ -436,7 +436,7 @@ void Draw_DrawPicture(struct Picture *picture, int x, int y, unsigned int width,
 	}
 }
 
-void Draw_DrawPictureAlpha(struct Picture *picture, int x, int y, unsigned int width, unsigned int height, float alpha)
+void Draw_DrawPictureModulated(struct Picture *picture, int x, int y, unsigned int width, unsigned int height, float r, float g, float b, float alpha)
 {
 	if (alpha <= 0)
 		return;
