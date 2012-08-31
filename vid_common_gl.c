@@ -39,7 +39,7 @@ int gl_textureunits = 1;
 /* VBO stuff */
 void (*qglBindBufferARB)(GLenum, GLuint);
 void (*qglBufferDataARB)(GLenum, GLsizeiptrARB, const GLvoid *, GLenum);
-void (*qglBufferSubDataARB)(GLenum, GLintptr, GLsizeiptr, const GLvoid *);
+void (*qglBufferSubDataARB)(GLenum, GLintptrARB, GLsizeiptrARB, const GLvoid *);
 
 
 /* GLSL stuff */
