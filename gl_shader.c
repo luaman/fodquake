@@ -94,14 +94,21 @@ int GL_SetupShaderProgram(int vertexobject, const char *vertexshader, int fragme
 			fprintf(stderr, "Fragment shader:\n%s\n", fragmentshader);
 
 		qglGetObjectParameterivARB(programobject, GL_OBJECT_INFO_LOG_LENGTH_ARB, &loglength);
-		log = malloc(loglength);
-		if (log)
+		if (loglength)
 		{
-			qglGetInfoLogARB(programobject, loglength, NULL, log);
+			log = malloc(loglength);
+			if (log)
+			{
+				qglGetInfoLogARB(programobject, loglength, NULL, log);
 
-			fprintf(stderr, "OpenGL returned:\n%s\n", log);
+				fprintf(stderr, "OpenGL returned:\n%s\n", log);
 
-			free(log);
+				free(log);
+			}
+		}
+		else
+		{
+			fprintf(stderr, "OpenGL returned fuck all\n");
 		}
 
 		qglDeleteObjectARB(programobject);
