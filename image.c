@@ -658,6 +658,8 @@ static void PNG_FreeLibrary(void)
 
 #else
 
+#define PNG14SUPPORT 1
+
 static struct SysLib *png_handle;
 static struct SysLib *zlib_handle;
 
@@ -922,11 +924,13 @@ byte *Image_LoadPNG(FILE *fin, char *filename, int matchwidth, int matchheight, 
 		return NULL;
 	}
 
+#if PNG14SUPPORT
 	if (qpng_set_longjmp_fn)
 	{
 		jmpbuf = qpng_set_longjmp_fn(png_ptr, longjmp, sizeof(jmp_buf));
 	}
 	else
+#endif
 	{
 		jmpbuf = &png_ptr->jmpbuf;
 	}
@@ -1052,11 +1056,13 @@ int Image_WritePNG (char *filename, int compression, byte *pixels, int width, in
 		return false;
 	}
 
+#if PNG14SUPPORT
 	if (qpng_set_longjmp_fn)
 	{
 		jmpbuf = qpng_set_longjmp_fn(png_ptr, longjmp, sizeof(jmp_buf));
 	}
 	else
+#endif
 	{
 		jmpbuf = &png_ptr->jmpbuf;
 	}
@@ -1131,11 +1137,13 @@ int Image_WritePNGPLTE (char *filename, int compression,
 		return false;
 	}
 
+#if PNG14SUPPORT
 	if (qpng_set_longjmp_fn)
 	{
 		jmpbuf = qpng_set_longjmp_fn(png_ptr, longjmp, sizeof(jmp_buf));
 	}
 	else
+#endif
 	{
 		jmpbuf = &png_ptr->jmpbuf;
 	}
