@@ -233,8 +233,18 @@ static void EmitShaderPoly(msurface_t *fa)
 	glDrawArrays(GL_POLYGON, 0, fa->numedges);
 }
 
+static void EmitShaderVBOPoly(model_t *model, msurface_t *fa)
+{
+	GL_SetArrays(FQ_GL_VERTEX_ARRAY | FQ_GL_TEXTURE_COORD_ARRAY);
+	qglBindBufferARB(GL_ARRAY_BUFFER_ARB, model->warp_vbo_number);
+	GL_VertexPointer(3, GL_FLOAT, 0, (void *)(intptr_t)(fa->fastpolyfirstindex*3*4));
+	GL_TexCoordPointer(0, 2, GL_FLOAT, 0, (void *)(intptr_t)(model->warp_texcoords_vbo_offset + fa->fastpolyfirstindex*2*4));
+	glDrawArrays(GL_TRIANGLE_FAN, 0, fa->numedges);
+	qglBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
+}
+
 //Does a water warp on the pre-fragmented struct glwarppoly chain
-void EmitWaterPolys(msurface_t *fa)
+void EmitWaterPolys(model_t *model, msurface_t *fa)
 {
 	struct glwarppoly *p;
 	float *v, s, t, os, ot;
@@ -262,7 +272,12 @@ void EmitWaterPolys(msurface_t *fa)
 		qglUseProgramObjectARB(waterprogram);
 		cltimeloc = qglGetUniformLocationARB(waterprogram, "cltime");
 		qglUniform1fARB(cltimeloc, cl.time * (20.0/64.0));
-		EmitShaderPoly(fa);
+
+		if (model->warp_vbo_number)
+			EmitShaderVBOPoly(model, fa);
+		else
+			EmitShaderPoly(fa);
+
 		qglUseProgramObjectARB(0);
 	}
 	else

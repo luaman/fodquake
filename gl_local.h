@@ -140,7 +140,7 @@ extern	const char *gl_extensions;
 // gl_warp.c
 void GL_SubdivideSurface(model_t *model, msurface_t *fa);
 void EmitBothSkyLayers (msurface_t *fa);
-void EmitWaterPolys (msurface_t *fa);
+void EmitWaterPolys(model_t *model, msurface_t *fa);
 void EmitCausticsPolys (void);
 void R_DrawSkyChain (void);
 void R_LoadSky_f(void);

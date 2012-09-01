@@ -709,7 +709,7 @@ void R_DrawWaterSurfaces (void)
 	for (s = waterchain; s; s = s->texturechain)
 	{
 		GL_Bind (s->texinfo->texture->gl_texturenum);
-		EmitWaterPolys (s);
+		EmitWaterPolys(cl.worldmodel, s);
 	}
 	waterchain = NULL;
 	waterchain_tail = &waterchain;
@@ -1373,7 +1373,7 @@ void R_DrawBrushModel (entity_t *e)
 			}
 			else if (flags & SURF_DRAWTURB)
 			{
-				EmitWaterPolys (psurf);
+				EmitWaterPolys(clmodel, psurf);
 			}
 			else if (flags & SURF_DRAWALPHA)
 			{
@@ -1883,6 +1883,71 @@ static void BuildGLArrays(model_t *model)
 	}
 }
 
+static void BuildWarpVBOArrays(model_t *model)
+{
+	unsigned int totalverts;
+	unsigned int vert;
+	unsigned int i;
+	unsigned int j;
+	float *fastpolys;
+	float *shadertexcoords;
+	float *vertexdata;
+	unsigned int texcoordoffset;
+
+	if (!gl_vbo)
+		return;
+
+	totalverts = 0;
+	for(i=0;i<model->numsurfaces;i++)
+	{
+		if (model->surfaces[i].fastpolys)
+			totalverts += model->surfaces[i].numedges;
+	}
+
+	if (totalverts && totalverts <= 131072)
+	{
+		vertexdata = malloc(sizeof(*vertexdata)*5*totalverts);
+
+		if (vertexdata)
+		{
+			vert = 0;
+			texcoordoffset = totalverts*3;
+
+			for(i=0;i<model->numsurfaces;i++)
+			{
+				fastpolys = model->surfaces[i].fastpolys;
+
+				if (!fastpolys)
+					continue;
+
+				shadertexcoords = model->surfaces[i].shadertexcoords;
+
+				model->surfaces[i].fastpolyfirstindex = vert;
+				for(j=0;j<model->surfaces[i].numedges;j++)
+				{
+					vertexdata[vert*3 + 0] = *fastpolys++;
+					vertexdata[vert*3 + 1] = *fastpolys++;
+					vertexdata[vert*3 + 2] = *fastpolys++;
+
+					vertexdata[texcoordoffset + vert*2 + 0] = *shadertexcoords++;
+					vertexdata[texcoordoffset + vert*2 + 1] = *shadertexcoords++;
+
+					vert++;
+				}
+			}
+
+			model->warp_vbo_number = vbo_number++;
+			model->warp_texcoords_vbo_offset = texcoordoffset * 4;
+
+			qglBindBufferARB(GL_ARRAY_BUFFER_ARB, model->warp_vbo_number);
+			qglBufferDataARB(GL_ARRAY_BUFFER_ARB, totalverts * 5 * 4, vertexdata, GL_STATIC_DRAW_ARB);
+			qglBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
+
+			free(vertexdata);
+		}
+	}
+}
+
 //Builds the lightmap texture with all the surfaces from all brush models
 void GL_BuildLightmaps (void)
 {
@@ -1913,6 +1978,7 @@ void GL_BuildLightmaps (void)
 		}
 
 		BuildGLArrays(m);
+		BuildWarpVBOArrays(m);
 	}
 
  	if (gl_mtexable)

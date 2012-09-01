@@ -146,6 +146,7 @@ typedef struct msurface_s {
 	glpoly_t	*polys;				// multiple if warped
 	float *fastpolys;
 	float *shadertexcoords;
+	unsigned int fastpolyfirstindex;
 	struct	msurface_s	*texturechain;
 
 	mtexinfo_t	*texinfo;
@@ -420,6 +421,9 @@ typedef struct model_s
 	unsigned int coords_vbo_offset;
 	unsigned int colours_vbo_offset;
 	unsigned int texcoords_vbo_offset[3];
+
+	unsigned int warp_vbo_number;
+	unsigned int warp_texcoords_vbo_offset;
 
 	float *vertcoords;
 	float *vertcolours;
