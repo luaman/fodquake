@@ -240,41 +240,46 @@ extern void (*qglBufferDataARB)(GLenum, GLsizeiptrARB, const GLvoid *, GLenum);
 extern void (*qglBufferSubDataARB)(GLenum, GLintptrARB, GLsizeiptrARB, const GLvoid *);
 
 /* GLSL stuff */
-#define GL_FRAGMENT_SHADER_ARB        0x8B30
-#define GL_OBJECT_COMPILE_STATUS_ARB  0x8B81
-#define GL_OBJECT_INFO_LOG_LENGTH_ARB 0x8B84
-#define GL_OBJECT_LINK_STATUS_ARB     0x8B82
-#define GL_VERTEX_SHADER_ARB          0x8B31
+#define GL_FRAGMENT_SHADER 0x8B30
+#define GL_VERTEX_SHADER 0x8B31
+#define GL_COMPILE_STATUS 0x8B81
+#define GL_LINK_STATUS 0x8B82
+#define GL_INFO_LOG_LENGTH 0x8B84
 
 #ifndef __MACOSX__
-typedef char GLcharARB;
-typedef unsigned int GLhandleARB;
+typedef char GLchar;
 #endif
 
-extern void (*qglAttachObjectARB)(GLhandleARB, GLhandleARB);
-extern void (*qglCompileShaderARB)(GLhandleARB);
-extern GLhandleARB (*qglCreateProgramObjectARB)(void);
-extern GLhandleARB (*qglCreateShaderObjectARB)(GLenum);
-extern void (*qglDeleteObjectARB)(GLhandleARB);
-extern void (*qglDisableVertexAttribArrayARB)(GLuint index);
-extern void (*qglEnableVertexAttribArrayARB)(GLuint index);
-extern void (*qglGetInfoLogARB)(GLhandleARB, GLsizei, GLsizei *, GLcharARB *);
-extern void (*qglGetObjectParameterivARB)(GLhandleARB, GLenum, GLint *);
-extern GLint (*qglGetUniformLocationARB)(GLhandleARB, const GLcharARB *);
-extern void (*qglLinkProgramARB)(GLhandleARB);
-extern void (*qglShaderSourceARB)(GLhandleARB, GLsizei, const GLcharARB* *, const GLint *);
-extern void (*qglUniform1fARB)(GLint, GLfloat);
-extern void (*qglUniformMatrix4fvARB)(GLint, GLsizei, GLboolean, const GLfloat *);
-extern void (*qglUseProgramObjectARB)(GLhandleARB);
+extern void (*qglAttachShader)(GLuint program, GLuint shader);
+extern void (*qglCompileShader)(GLuint shader);
+extern GLuint (*qglCreateProgram)(void);
+extern GLuint (*qglCreateShader)(GLenum shaderType);
+extern void (*qglDeleteProgram)(GLuint program);
+extern void (*qglDeleteShader)(GLuint shader);
+extern void (*qglGetProgramInfoLog)(GLuint program, GLsizei maxLength, GLsizei *length, GLchar *infoLog);
+extern void (*qglGetProgramiv)(GLuint program,  GLenum pname, GLint *params);
+extern void (*qglGetShaderInfoLog)(GLuint shader, GLsizei maxLength, GLsizei *length, GLchar *infoLog);
+extern void (*qglGetShaderiv)(GLuint shader,  GLenum pname, GLint *params);
+extern GLint (*qglGetUniformLocation)(GLuint program, const GLchar *name);
+extern void (*qglLinkProgram)(GLuint program);
+extern void (*qglShaderSource)(GLuint shader, GLsizei count, const GLchar **string, const GLint *length);
+extern void (*qglUniform1f)(GLint location, GLfloat v0);
+extern void (*qglUniform1i)(GLint location, GLint v0);
+extern void (*qglUniformMatrix4fv)(GLint location, GLsizei count, GLboolean transpose, const GLfloat *value);
+extern void (*qglUseProgram)(GLuint program);
 
-extern void (*qglBindAttribLocationARB)(GLhandleARB, GLuint, const GLcharARB *);
-extern void (*qglVertexAttribPointerARB)(GLuint, GLint, GLenum, GLboolean, GLsizei, const GLvoid *);
+extern void (*qglBindAttribLocation)(GLuint program, GLuint index, const GLchar *name);
+extern void (*qglDisableVertexAttribArray)(GLuint index);
+extern void (*qglEnableVertexAttribArray)(GLuint index);
+extern void (*qglVertexAttribPointer)(GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const GLvoid *pointer);
+
+
 
 extern float gldepthmin, gldepthmax;
 extern byte color_white[4], color_black[4];
 extern qboolean gl_mtexable;
 extern int gl_textureunits;
-extern qboolean gl_combine, gl_add_ext, gl_npot, gl_vbo, gl_fs;
+extern qboolean gl_combine, gl_add_ext, gl_npot, gl_vbo, gl_vs, gl_fs;
 
 extern int vbo_number;
 

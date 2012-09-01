@@ -32,6 +32,8 @@ const char *gl_vendor;
 const char *gl_renderer;
 const char *gl_version;
 const char *gl_extensions;
+unsigned int gl_version_number;
+unsigned int gl_revision_number;
 
 qboolean gl_mtexable = false;
 int gl_textureunits = 1;
@@ -41,26 +43,70 @@ void (*qglBindBufferARB)(GLenum, GLuint);
 void (*qglBufferDataARB)(GLenum, GLsizeiptrARB, const GLvoid *, GLenum);
 void (*qglBufferSubDataARB)(GLenum, GLintptrARB, GLsizeiptrARB, const GLvoid *);
 
-
 /* GLSL stuff */
-void (*qglAttachObjectARB)(GLhandleARB, GLhandleARB);
-void (*qglCompileShaderARB)(GLhandleARB);
-GLhandleARB (*qglCreateProgramObjectARB)(void);
-GLhandleARB (*qglCreateShaderObjectARB)(GLenum);
+void (*qglAttachShader)(GLuint program, GLuint shader);
+void (*qglCompileShader)(GLuint shader);
+GLuint (*qglCreateProgram)(void);
+GLuint (*qglCreateShader)(GLenum shaderType);
+void (*qglDeleteProgram)(GLuint program);
+void (*qglDeleteShader)(GLuint shader);
+void (*qglGetProgramInfoLog)(GLuint program, GLsizei maxLength, GLsizei *length, GLchar *infoLog);
+void (*qglGetProgramiv)(GLuint program, GLenum pname, GLint *params);
+void (*qglGetShaderInfoLog)(GLuint shader, GLsizei maxLength, GLsizei *length, GLchar *infoLog);
+void (*qglGetShaderiv)(GLuint shader, GLenum pname, GLint *params);
+GLint (*qglGetUniformLocation)(GLuint program, const GLchar *name);
+void (*qglLinkProgram)(GLuint program);
+void (*qglShaderSource)(GLuint shader, GLsizei count, const GLchar **string, const GLint *length);
+void (*qglUniform1f)(GLint location, GLfloat v0);
+void (*qglUniform1i)(GLint location, GLint v0);
+void (*qglUniformMatrix4fv)(GLint location, GLsizei count, GLboolean transpose, const GLfloat *value);
+void (*qglUseProgram)(GLuint program);
+
+void (*qglBindAttribLocation)(GLuint program, GLuint index, const GLchar *name);
+void (*qglDisableVertexAttribArray)(GLuint index);
+void (*qglEnableVertexAttribArray)(GLuint index);
+void (*qglVertexAttribPointer)(GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const GLvoid *pointer);
+
+
+/* GLSL stuff, ARB version */
+#ifndef __MACOSX__
+typedef char GLcharARB;
+typedef unsigned int GLhandleARB;
+#endif
+
 void (*qglDeleteObjectARB)(GLhandleARB);
-void (*qglDisableVertexAttribArrayARB)(GLuint index);
-void (*qglEnableVertexAttribArrayARB)(GLuint index);
 void (*qglGetInfoLogARB)(GLhandleARB, GLsizei, GLsizei *, GLcharARB *);
 void (*qglGetObjectParameterivARB)(GLhandleARB, GLenum, GLint *);
-GLint (*qglGetUniformLocationARB)(GLhandleARB, const GLcharARB *);
-void (*qglLinkProgramARB)(GLhandleARB);
-void (*qglShaderSourceARB)(GLhandleARB, GLsizei, const GLcharARB* *, const GLint *);
-void (*qglUniform1fARB)(GLint, GLfloat);
-void (*qglUniformMatrix4fvARB)(GLint, GLsizei, GLboolean, const GLfloat *);
-void (*qglUseProgramObjectARB)(GLhandleARB);
 
-void (*qglBindAttribLocationARB)(GLhandleARB, GLuint, const GLcharARB *);
-void (*qglVertexAttribPointerARB)(GLuint, GLint, GLenum, GLboolean, GLsizei, const GLvoid *);
+void qglDeleteProgramARBEmulation(GLuint program)
+{
+	qglDeleteObjectARB(program);
+}
+
+void qglDeleteShaderARBEmulation(GLuint shader)
+{
+	qglDeleteObjectARB(shader);
+}
+
+void qglGetProgramInfoLogARBEmulation(GLuint program, GLsizei maxLength, GLsizei *length, GLchar *infoLog)
+{
+	qglGetInfoLogARB(program, maxLength, length, infoLog);
+}
+
+void qglGetProgramivARBEmulation(GLuint program, GLenum pname, GLint *params)
+{
+	qglGetObjectParameterivARB(program, pname, params);
+}
+
+void qglGetShaderInfoLogARBEmulation(GLuint shader, GLsizei maxLength, GLsizei *length, GLchar *infoLog)
+{
+	qglGetInfoLogARB(shader, maxLength, length, infoLog);
+}
+
+void qglGetShaderivARBEmulation(GLuint shader, GLenum pname, GLint *params)
+{
+	qglGetObjectParameterivARB(shader, pname, params);
+}
 
 qboolean gl_combine = false;
 
@@ -146,15 +192,24 @@ void GL_CheckExtensions (void)
 	gl_combine = CheckExtension("GL_ARB_texture_env_combine");
 	gl_add_ext = CheckExtension("GL_ARB_texture_env_add");
 	gl_npot = CheckExtension("GL_ARB_texture_non_power_of_two");
-	gl_vbo = CheckExtension("GL_ARB_vertex_buffer_object");
-	gl_vs = CheckExtension("GL_ARB_vertex_shader");
-	gl_fs = CheckExtension("GL_ARB_fragment_shader");
+	gl_vbo = gl_version_number >= 2 || CheckExtension("GL_ARB_vertex_buffer_object");
+	gl_vs = gl_version_number >= 2 || CheckExtension("GL_ARB_vertex_shader");
+	gl_fs = gl_version_number >= 2 || CheckExtension("GL_ARB_fragment_shader");
 
 	if (gl_vbo)
 	{
-		qglBindBufferARB = VID_GetProcAddress("glBindBufferARB");
-		qglBufferDataARB = VID_GetProcAddress("glBufferDataARB");
-		qglBufferSubDataARB = VID_GetProcAddress("glBufferSubDataARB");
+		if (gl_version_number >= 2)
+		{
+			qglBindBufferARB = VID_GetProcAddress("glBindBuffer");
+			qglBufferDataARB = VID_GetProcAddress("glBufferData");
+			qglBufferSubDataARB = VID_GetProcAddress("glBufferSubData");
+		}
+		else
+		{
+			qglBindBufferARB = VID_GetProcAddress("glBindBufferARB");
+			qglBufferDataARB = VID_GetProcAddress("glBufferDataARB");
+			qglBufferSubDataARB = VID_GetProcAddress("glBufferSubDataARB");
+		}
 
 		if (qglBindBufferARB == 0 || qglBufferDataARB == 0 || qglBufferSubDataARB == 0)
 			gl_vbo = false;
@@ -162,50 +217,117 @@ void GL_CheckExtensions (void)
 
 	if (gl_vs || gl_fs)
 	{
-		qglAttachObjectARB = VID_GetProcAddress("glAttachObjectARB");
-		qglCompileShaderARB = VID_GetProcAddress("glCompileShaderARB");
-		qglCreateProgramObjectARB = VID_GetProcAddress("glCreateProgramObjectARB");
-		qglCreateShaderObjectARB = VID_GetProcAddress("glCreateShaderObjectARB");
-		qglDeleteObjectARB = VID_GetProcAddress("glDeleteObjectARB");
-		qglGetInfoLogARB = VID_GetProcAddress("glGetInfoLogARB");
-		qglGetObjectParameterivARB = VID_GetProcAddress("glGetObjectParameterivARB");
-		qglGetUniformLocationARB = VID_GetProcAddress("glGetUniformLocationARB");
-		qglLinkProgramARB = VID_GetProcAddress("glLinkProgramARB");
-		qglShaderSourceARB = VID_GetProcAddress("glShaderSourceARB");
-		qglUniform1fARB = VID_GetProcAddress("glUniform1fARB");
-		qglUniformMatrix4fvARB = VID_GetProcAddress("glUniformMatrix4fvARB");
-		qglUseProgramObjectARB = VID_GetProcAddress("glUseProgramObjectARB");
-
-		if (qglAttachObjectARB == 0
-		 || qglCompileShaderARB == 0
-		 || qglCreateProgramObjectARB == 0
-		 || qglCreateShaderObjectARB == 0
-		 || qglDeleteObjectARB == 0
-		 || qglGetInfoLogARB == 0
-		 || qglGetObjectParameterivARB == 0
-		 || qglGetUniformLocationARB == 0
-		 || qglLinkProgramARB == 0
-		 || qglShaderSourceARB == 0
-		 || qglUniform1fARB == 0
-		 || qglUniformMatrix4fvARB == 0
-		 || qglUseProgramObjectARB == 0)
+		if (gl_version_number >= 2)
 		{
-			gl_vs = 0;
-			gl_fs = 0;
-		}
-		else if (gl_vs)
-		{
-			qglBindAttribLocationARB = VID_GetProcAddress("glBindAttribLocationARB");
-			qglDisableVertexAttribArrayARB = VID_GetProcAddress("glDisableVertexAttribArrayARB");
-			qglEnableVertexAttribArrayARB = VID_GetProcAddress("glEnableVertexAttribArrayARB");
-			qglVertexAttribPointerARB = VID_GetProcAddress("glVertexAttribPointerARB");
+			qglAttachShader = VID_GetProcAddress("glAttachShader");
+			qglCompileShader = VID_GetProcAddress("glCompileShader");
+			qglCreateProgram = VID_GetProcAddress("glCreateProgram");
+			qglCreateShader = VID_GetProcAddress("glCreateShader");
+			qglDeleteProgram = VID_GetProcAddress("glDeleteProgram");
+			qglDeleteShader = VID_GetProcAddress("glDeleteShader");
+			qglGetProgramInfoLog = VID_GetProcAddress("glGetProgramInfoLog");
+			qglGetProgramiv = VID_GetProcAddress("glGetProgramiv");
+			qglGetShaderInfoLog = VID_GetProcAddress("glGetShaderInfoLog");
+			qglGetShaderiv = VID_GetProcAddress("glGetShaderiv");
+			qglGetUniformLocation = VID_GetProcAddress("glGetUniformLocation");
+			qglLinkProgram = VID_GetProcAddress("glLinkProgram");
+			qglShaderSource = VID_GetProcAddress("glShaderSource");
+			qglUniform1f = VID_GetProcAddress("glUniform1f");
+			qglUniform1i = VID_GetProcAddress("glUniform1i");
+			qglUniformMatrix4fv = VID_GetProcAddress("glUniformMatrix4fv");
+			qglUseProgram = VID_GetProcAddress("glUseProgram");
 
-			if (qglBindAttribLocationARB == 0
-			 || qglDisableVertexAttribArrayARB == 0
-			 || qglEnableVertexAttribArrayARB == 0
-			 || qglVertexAttribPointerARB == 0)
+			if (qglAttachShader == 0
+			 || qglCompileShader == 0
+			 || qglCreateProgram == 0
+			 || qglCreateShader == 0
+			 || qglDeleteProgram == 0
+			 || qglDeleteShader == 0
+			 || qglGetProgramInfoLog == 0
+			 || qglGetProgramiv == 0
+			 || qglGetUniformLocation == 0
+			 || qglLinkProgram == 0
+			 || qglShaderSource == 0
+			 || qglUniform1f == 0
+			 || qglUniform1i == 0
+			 || qglUniformMatrix4fv == 0
+			 || qglUseProgram == 0)
 			{
 				gl_vs = 0;
+				gl_fs = 0;
+			}
+			else if (gl_vs)
+			{
+				qglBindAttribLocation = VID_GetProcAddress("glBindAttribLocation");
+				qglDisableVertexAttribArray = VID_GetProcAddress("glDisableVertexAttribArray");
+				qglEnableVertexAttribArray = VID_GetProcAddress("glEnableVertexAttribArray");
+				qglVertexAttribPointer = VID_GetProcAddress("glVertexAttribPointer");
+
+				if (qglBindAttribLocation == 0
+				 || qglDisableVertexAttribArray == 0
+				 || qglEnableVertexAttribArray == 0
+				 || qglVertexAttribPointer == 0)
+				{
+					gl_vs = 0;
+				}
+			}
+		}
+		else
+		{
+			qglAttachShader = VID_GetProcAddress("glAttachObjectARB");
+			qglCompileShader = VID_GetProcAddress("glCompileShaderARB");
+			qglCreateProgram = VID_GetProcAddress("glCreateProgramObjectARB");
+			qglCreateShader = VID_GetProcAddress("glCreateShaderObjectARB");
+			qglDeleteObjectARB = VID_GetProcAddress("glDeleteObjectARB");
+			qglGetInfoLogARB = VID_GetProcAddress("glGetInfoLogARB");
+			qglGetObjectParameterivARB = VID_GetProcAddress("glGetObjectParameterivARB");
+			qglGetUniformLocation = VID_GetProcAddress("glGetUniformLocationARB");
+			qglLinkProgram = VID_GetProcAddress("glLinkProgramARB");
+			qglShaderSource = VID_GetProcAddress("glShaderSourceARB");
+			qglUniform1f = VID_GetProcAddress("glUniform1fARB");
+			qglUniform1i = VID_GetProcAddress("glUniform1iARB");
+			qglUniformMatrix4fv = VID_GetProcAddress("glUniformMatrix4fvARB");
+			qglUseProgram = VID_GetProcAddress("glUseProgramObjectARB");
+
+			if (qglAttachShader == 0
+			 || qglCompileShader == 0
+			 || qglCreateProgram == 0
+			 || qglCreateShader == 0
+			 || qglDeleteObjectARB == 0
+			 || qglGetInfoLogARB == 0
+			 || qglGetObjectParameterivARB == 0
+			 || qglGetUniformLocation == 0
+			 || qglLinkProgram == 0
+			 || qglShaderSource == 0
+			 || qglUniform1f == 0
+			 || qglUniform1i == 0
+			 || qglUniformMatrix4fv == 0
+			 || qglUseProgram == 0)
+			{
+				gl_vs = 0;
+				gl_fs = 0;
+			}
+			else if (gl_vs)
+			{
+				qglDeleteProgram = qglDeleteProgramARBEmulation;
+				qglDeleteShader = qglDeleteShaderARBEmulation;
+				qglGetProgramInfoLog = qglGetProgramInfoLogARBEmulation;
+				qglGetProgramiv = qglGetProgramivARBEmulation;
+				qglGetShaderInfoLog = qglGetShaderInfoLogARBEmulation;
+				qglGetShaderiv = qglGetShaderivARBEmulation;
+
+				qglBindAttribLocation = VID_GetProcAddress("glBindAttribLocationARB");
+				qglDisableVertexAttribArray = VID_GetProcAddress("glDisableVertexAttribArrayARB");
+				qglEnableVertexAttribArray = VID_GetProcAddress("glEnableVertexAttribArrayARB");
+				qglVertexAttribPointer = VID_GetProcAddress("glVertexAttribPointerARB");
+
+				if (qglBindAttribLocation == 0
+				 || qglDisableVertexAttribArray == 0
+				 || qglEnableVertexAttribArray == 0
+				 || qglVertexAttribPointer == 0)
+				{
+					gl_vs = 0;
+				}
 			}
 		}
 	}
@@ -241,6 +363,8 @@ void GL_CvarInit()
 
 void GL_Init (void)
 {
+	const char *p;
+
 	gl_vendor = (char *)glGetString(GL_VENDOR);
 	Com_Printf("GL_VENDOR: %s\n", gl_vendor);
 	gl_renderer = (char *)glGetString(GL_RENDERER);
@@ -253,6 +377,17 @@ void GL_Init (void)
 
 	Cvar_ForceSet (&gl_strings, va("GL_VENDOR: %s\nGL_RENDERER: %s\n"
 		"GL_VERSION: %s\nGL_EXTENSIONS: %s", gl_vendor, gl_renderer, gl_version, gl_extensions));
+
+	gl_version_number = atoi(gl_version);
+
+	p = gl_version;
+	while(*p >= 0 && *p <= '9')
+		p++;
+
+	if (*p == '.')
+		gl_revision_number = atoi(p+1);
+	else
+		gl_revision_number = 0;
 
 	glClearColor (1,0,0,0);
 	glCullFace(GL_FRONT);

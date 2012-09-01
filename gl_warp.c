@@ -20,6 +20,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // gl_warp.c -- sky and water polygons
 
 #include <stdlib.h>
+#include <stdint.h>
 #include <string.h>
 #include <math.h>
 
@@ -269,16 +270,16 @@ void EmitWaterPolys(model_t *model, msurface_t *fa)
 	else if (waterprogram)
 	{
 		GL_Bind (fa->texinfo->texture->gl_texturenum);
-		qglUseProgramObjectARB(waterprogram);
-		cltimeloc = qglGetUniformLocationARB(waterprogram, "cltime");
-		qglUniform1fARB(cltimeloc, cl.time * (20.0/64.0));
+		qglUseProgram(waterprogram);
+		cltimeloc = qglGetUniformLocation(waterprogram, "cltime");
+		qglUniform1f(cltimeloc, cl.time * (20.0/64.0));
 
 		if (model->warp_vbo_number)
 			EmitShaderVBOPoly(model, fa);
 		else
 			EmitShaderPoly(fa);
 
-		qglUseProgramObjectARB(0);
+		qglUseProgram(0);
 	}
 	else
 	{
@@ -919,7 +920,7 @@ void GL_Warp_Shutdown()
 {
 	if (waterprogram)
 	{
-		qglDeleteObjectARB(waterprogram);
+		qglDeleteProgram(waterprogram);
 		waterprogram = 0;
 	}
 }

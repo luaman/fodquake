@@ -8,10 +8,10 @@ static int GL_CompileShader(GLenum type, const char *shader)
 	int object;
 	int compiled;
 
-	object = qglCreateShaderObjectARB(type);
-	qglShaderSourceARB(object, 1, &shader, 0);
-	qglCompileShaderARB(object);
-	qglGetObjectParameterivARB(object, GL_OBJECT_COMPILE_STATUS_ARB, &compiled);
+	object = qglCreateShader(type);
+	qglShaderSource(object, 1, &shader, 0);
+	qglCompileShader(object);
+	qglGetShaderiv(object, GL_COMPILE_STATUS, &compiled);
 	if (!compiled)
 	{
 		char *log;
@@ -19,18 +19,18 @@ static int GL_CompileShader(GLenum type, const char *shader)
 
 		fprintf(stderr, "Failed to compile the following shader:\n%s\n", shader);
 
-		qglGetObjectParameterivARB(object, GL_OBJECT_INFO_LOG_LENGTH_ARB, &loglength);
+		qglGetShaderiv(object, GL_INFO_LOG_LENGTH, &loglength);
 		log = malloc(loglength);
 		if (log)
 		{
-			qglGetInfoLogARB(object, loglength, NULL, log);
+			qglGetShaderInfoLog(object, loglength, NULL, log);
 
 			fprintf(stderr, "OpenGL returned:\n%s\n", log);
 
 			free(log);
 		}
 
-		qglDeleteObjectARB(object);
+		qglDeleteShader(object);
 
 		return 0;
 	}
@@ -48,38 +48,38 @@ int GL_SetupShaderProgram(int vertexobject, const char *vertexshader, int fragme
 
 	if (vertexshader)
 	{
-		vertexobject = GL_CompileShader(GL_VERTEX_SHADER_ARB, vertexshader);
+		vertexobject = GL_CompileShader(GL_VERTEX_SHADER, vertexshader);
 	}
 
 	if (fragmentshader)
 	{
-		fragmentobject = GL_CompileShader(GL_FRAGMENT_SHADER_ARB, fragmentshader);
+		fragmentobject = GL_CompileShader(GL_FRAGMENT_SHADER, fragmentshader);
 	}
 
 	if ((vertexobject || vertexshader == 0) && (fragmentobject || fragmentshader == 0))
 	{
-		programobject = qglCreateProgramObjectARB();
+		programobject = qglCreateProgram();
 
 		if (vertexobject)
-			qglAttachObjectARB(programobject, vertexobject);
+			qglAttachShader(programobject, vertexobject);
 
 		if (fragmentobject)
-			qglAttachObjectARB(programobject, fragmentobject);
+			qglAttachShader(programobject, fragmentobject);
 	}
 	else
 		programobject = 0;
 
 	if (vertexshader && vertexobject)
-		qglDeleteObjectARB(vertexobject);
+		qglDeleteShader(vertexobject);
 
 	if (fragmentshader && fragmentobject)
-		qglDeleteObjectARB(fragmentobject);
+		qglDeleteShader(fragmentobject);
 
 	if (!programobject)
 		return 0;
 
-	qglLinkProgramARB(programobject);
-	qglGetObjectParameterivARB(programobject, GL_OBJECT_LINK_STATUS_ARB, &linked);
+	qglLinkProgram(programobject);
+	qglGetProgramiv(programobject, GL_LINK_STATUS, &linked);
 
 	if (!linked)
 	{
@@ -93,13 +93,13 @@ int GL_SetupShaderProgram(int vertexobject, const char *vertexshader, int fragme
 		if (fragmentshader)
 			fprintf(stderr, "Fragment shader:\n%s\n", fragmentshader);
 
-		qglGetObjectParameterivARB(programobject, GL_OBJECT_INFO_LOG_LENGTH_ARB, &loglength);
+		qglGetProgramiv(programobject, GL_INFO_LOG_LENGTH, &loglength);
 		if (loglength)
 		{
 			log = malloc(loglength);
 			if (log)
 			{
-				qglGetInfoLogARB(programobject, loglength, NULL, log);
+				qglGetProgramInfoLog(programobject, loglength, NULL, log);
 
 				fprintf(stderr, "OpenGL returned:\n%s\n", log);
 
@@ -111,7 +111,7 @@ int GL_SetupShaderProgram(int vertexobject, const char *vertexshader, int fragme
 			fprintf(stderr, "OpenGL returned fuck all\n");
 		}
 
-		qglDeleteObjectARB(programobject);
+		qglDeleteProgram(programobject);
 
 		return 0;
 	}
