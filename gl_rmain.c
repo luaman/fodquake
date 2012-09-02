@@ -31,6 +31,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "gl_state.h"
 #include "gl_warp.h"
 #include "gl_rsurf.h"
+#include "gl_shader.h"
 #include "sound.h"
 #include "utils.h"
 
@@ -1631,6 +1632,8 @@ int R_Init(void)
 
 	GL_Texture_Init();
 
+	GL_Shader_Init();
+
 	GL_RSurf_Init();
 
 	GL_Warp_Init();
@@ -1670,6 +1673,7 @@ void R_Shutdown()
 	GL_RSurf_Shutdown();
 	GL_Warp_Shutdown();
 	GL_Texture_Shutdown();
+	GL_Shader_Shutdown();
 }
 
 void R_InitGL(void)

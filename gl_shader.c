@@ -122,3 +122,12 @@ int GL_SetupShaderProgram(int vertexobject, const char *vertexshader, int fragme
 	return programobject;
 }
 
+int GL_Shader_Init()
+{
+	return 1;
+}
+
+void GL_Shader_Shutdown()
+{
+}
+
