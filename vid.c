@@ -214,6 +214,8 @@ void VID_Restart(void)
 		R_DrawFlat_NewMap();
 	}
 
+	CL_ClearTEnts(); /* Not the prettiest, but the safest for now... */
+
 	Skin_Reload();
 
 	vid_restarted = 1;
