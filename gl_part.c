@@ -47,8 +47,6 @@ void GL_DrawParticleBegin()
 	GL_Bind(particletexture);
 
 	GL_SetAlphaTestBlend(0, 1);
-	if (!gl_solidparticles.value)
-		glDepthMask (GL_FALSE);
 	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 
 	GL_SetArrays(FQ_GL_VERTEX_ARRAY | FQ_GL_COLOR_ARRAY | FQ_GL_TEXTURE_COORD_ARRAY);
