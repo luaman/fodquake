@@ -20,14 +20,17 @@ static int GL_CompileShader(GLenum type, const char *shader)
 		fprintf(stderr, "Failed to compile the following shader:\n%s\n", shader);
 
 		qglGetShaderiv(object, GL_INFO_LOG_LENGTH, &loglength);
-		log = malloc(loglength);
-		if (log)
+		if (loglength)
 		{
-			qglGetShaderInfoLog(object, loglength, NULL, log);
+			log = malloc(loglength);
+			if (log)
+			{
+				qglGetShaderInfoLog(object, loglength, NULL, log);
 
-			fprintf(stderr, "OpenGL returned:\n%s\n", log);
+				fprintf(stderr, "OpenGL returned:\n%s\n", log);
 
-			free(log);
+				free(log);
+			}
 		}
 
 		qglDeleteShader(object);
