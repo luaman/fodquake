@@ -710,8 +710,8 @@ void CL_LinkPacketEntities (void)
 		 state->modelindex == cl_modelindices[mi_gib1] || state->modelindex == cl_modelindices[mi_gib2] || state->modelindex == cl_modelindices[mi_gib3]))
 			continue;
 
-		if (!(model = cl.model_precache[state->modelindex]))
-			Host_Error ("CL_LinkPacketEntities: bad modelindex");
+		if (state->modelindex < 0 || state->modelindex >= MAX_MODELS || !(model = cl.model_precache[state->modelindex]))
+			Host_Error("CL_LinkPacketEntities: bad modelindex");
 
 		ent.model = model;
 		if (state->modelindex == cl_modelindices[mi_rocket])
