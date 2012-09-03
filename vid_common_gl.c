@@ -39,33 +39,33 @@ qboolean gl_mtexable = false;
 int gl_textureunits = 1;
 
 /* VBO stuff */
-void (*qglBindBufferARB)(GLenum, GLuint);
-void (*qglBufferDataARB)(GLenum, GLsizeiptrARB, const GLvoid *, GLenum);
-void (*qglBufferSubDataARB)(GLenum, GLintptrARB, GLsizeiptrARB, const GLvoid *);
+void (APIENTRY *qglBindBufferARB)(GLenum, GLuint);
+void (APIENTRY *qglBufferDataARB)(GLenum, GLsizeiptrARB, const GLvoid *, GLenum);
+void (APIENTRY *qglBufferSubDataARB)(GLenum, GLintptrARB, GLsizeiptrARB, const GLvoid *);
 
 /* GLSL stuff */
-void (*qglAttachShader)(GLuint program, GLuint shader);
-void (*qglCompileShader)(GLuint shader);
-GLuint (*qglCreateProgram)(void);
-GLuint (*qglCreateShader)(GLenum shaderType);
-void (*qglDeleteProgram)(GLuint program);
-void (*qglDeleteShader)(GLuint shader);
-void (*qglGetProgramInfoLog)(GLuint program, GLsizei maxLength, GLsizei *length, GLchar *infoLog);
-void (*qglGetProgramiv)(GLuint program, GLenum pname, GLint *params);
-void (*qglGetShaderInfoLog)(GLuint shader, GLsizei maxLength, GLsizei *length, GLchar *infoLog);
-void (*qglGetShaderiv)(GLuint shader, GLenum pname, GLint *params);
-GLint (*qglGetUniformLocation)(GLuint program, const GLchar *name);
-void (*qglLinkProgram)(GLuint program);
-void (*qglShaderSource)(GLuint shader, GLsizei count, const GLchar **string, const GLint *length);
-void (*qglUniform1f)(GLint location, GLfloat v0);
-void (*qglUniform1i)(GLint location, GLint v0);
-void (*qglUniformMatrix4fv)(GLint location, GLsizei count, GLboolean transpose, const GLfloat *value);
-void (*qglUseProgram)(GLuint program);
+void (APIENTRY *qglAttachShader)(GLuint program, GLuint shader);
+void (APIENTRY *qglCompileShader)(GLuint shader);
+GLuint (APIENTRY *qglCreateProgram)(void);
+GLuint (APIENTRY *qglCreateShader)(GLenum shaderType);
+void (APIENTRY *qglDeleteProgram)(GLuint program);
+void (APIENTRY *qglDeleteShader)(GLuint shader);
+void (APIENTRY *qglGetProgramInfoLog)(GLuint program, GLsizei maxLength, GLsizei *length, GLchar *infoLog);
+void (APIENTRY *qglGetProgramiv)(GLuint program, GLenum pname, GLint *params);
+void (APIENTRY *qglGetShaderInfoLog)(GLuint shader, GLsizei maxLength, GLsizei *length, GLchar *infoLog);
+void (APIENTRY *qglGetShaderiv)(GLuint shader, GLenum pname, GLint *params);
+GLint (APIENTRY *qglGetUniformLocation)(GLuint program, const GLchar *name);
+void (APIENTRY *qglLinkProgram)(GLuint program);
+void (APIENTRY *qglShaderSource)(GLuint shader, GLsizei count, const GLchar **string, const GLint *length);
+void (APIENTRY *qglUniform1f)(GLint location, GLfloat v0);
+void (APIENTRY *qglUniform1i)(GLint location, GLint v0);
+void (APIENTRY *qglUniformMatrix4fv)(GLint location, GLsizei count, GLboolean transpose, const GLfloat *value);
+void (APIENTRY *qglUseProgram)(GLuint program);
 
-void (*qglBindAttribLocation)(GLuint program, GLuint index, const GLchar *name);
-void (*qglDisableVertexAttribArray)(GLuint index);
-void (*qglEnableVertexAttribArray)(GLuint index);
-void (*qglVertexAttribPointer)(GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const GLvoid *pointer);
+void (APIENTRY *qglBindAttribLocation)(GLuint program, GLuint index, const GLchar *name);
+void (APIENTRY *qglDisableVertexAttribArray)(GLuint index);
+void (APIENTRY *qglEnableVertexAttribArray)(GLuint index);
+void (APIENTRY *qglVertexAttribPointer)(GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const GLvoid *pointer);
 
 
 /* GLSL stuff, ARB version */
