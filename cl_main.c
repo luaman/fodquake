@@ -1207,6 +1207,19 @@ void CL_Observe_f(void)
 		Cbuf_AddText(va("%s\n", proxy ? "say ,reconnect" : "reconnect"));
 }
 
+void CL_QTVPlay_f()
+{
+	char buf[512];
+
+	if (Cmd_Argc() != 2)
+	{
+		Com_Printf("Usage: %s <stream>\n", Cmd_Argv(0));
+		return;
+	}
+
+	snprintf(buf, sizeof(buf), "alias f_qtv \"say .qtv %s\"; connect $sb_qtv_proxy\n", Cmd_Argv(1));
+	Cbuf_AddText(buf);
+}
 
 void CL_DNS_f()
 {
@@ -1913,6 +1926,8 @@ void CL_CvarInit(void)
 
 	Cmd_AddCommand("join", CL_Join_f);
 	Cmd_AddCommand("observe", CL_Observe_f);
+
+	Cmd_AddCommand("qtvplay", CL_QTVPlay_f);
 
 	Cmd_AddCommand("dns", CL_DNS_f);
 
