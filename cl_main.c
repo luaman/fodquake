@@ -1170,6 +1170,12 @@ void CL_Join_f(void)
 {
 	qboolean proxy;
 
+	if (cls.demoplayback)
+	{
+		Com_Printf("Playing a demo, can't join.\n");
+		return;
+	}
+
 	proxy = cl_useproxy.value && CL_ConnectedToProxy();
 
 	if (Cmd_Argc() > 2)
@@ -1182,6 +1188,8 @@ void CL_Join_f(void)
 
 	if (Cmd_Argc() == 2)
 		Cbuf_AddText(va("%s %s\n", proxy ? "say ,connect" : "connect", Cmd_Argv(1)));
+	else if (cl.z_ext & Z_EXT_JOIN_OBSERVE)
+		Cbuf_AddText("cmd join\n");
 	else
 		Cbuf_AddText(va("%s\n", proxy ? "say ,reconnect" : "reconnect"));
 }
@@ -1189,6 +1197,12 @@ void CL_Join_f(void)
 void CL_Observe_f(void)
 {
 	qboolean proxy;
+
+	if (cls.demoplayback)
+	{
+		Com_Printf("Playing a demo, can't observe.\n");
+		return;
+	}
 
 	proxy = cl_useproxy.value && CL_ConnectedToProxy();
 
@@ -1203,6 +1217,8 @@ void CL_Observe_f(void)
 
 	if (Cmd_Argc() == 2)
 		Cbuf_AddText(va("%s %s\n", proxy ? "say ,connect" : "connect", Cmd_Argv(1)));
+	else if (cl.z_ext & Z_EXT_JOIN_OBSERVE)
+		Cbuf_AddText("cmd observe\n");
 	else
 		Cbuf_AddText(va("%s\n", proxy ? "say ,reconnect" : "reconnect"));
 }
