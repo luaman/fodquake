@@ -30,6 +30,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #if USE_PNG
 #include "png.h"
+#include <zlib.h>
 #endif
 
 #if USE_JPEG
@@ -42,6 +43,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #endif
 
 #include "sys_lib.h"
+
+#if PNG_LIBPNG_VER_SONUM < 15
+#define PNG12SUPPORT 1
+#else
+#define PNG12SUPPORT 0
+#endif
 
 #define	IMAGE_MAX_DIMENSIONS	4096
 
@@ -795,6 +802,7 @@ static qboolean PNG_LoadLibrary(void)
 
 	while(1)
 	{
+#if PNG14SUPPORT
 		if (png_handle == 0)
 		{
 			png_handle = Sys_Lib_Open("png15");
@@ -816,7 +824,9 @@ static qboolean PNG_LoadLibrary(void)
 				claimtobepngversion = "1.4.12";
 			}
 		}
+#endif
 
+#if PNG12SUPPORT
 		if (png_handle == 0)
 		{
 			png_handle = Sys_Lib_Open("png12");
@@ -831,6 +841,7 @@ static qboolean PNG_LoadLibrary(void)
 				qpng_set_longjmp_fn = 0;
 			}
 		}
+#endif
 
 		if (png_handle)
 			break;
@@ -865,6 +876,10 @@ static qboolean PNG_LoadLibrary(void)
 
 	return false;
 }
+#endif
+
+#if PNG12SUPPORT + PNG14SUPPORT == 0
+#error Sad bunny
 #endif
 
 static void PNG_IO_user_read_data(png_structp png_ptr, png_bytep data, png_size_t length)
@@ -929,11 +944,15 @@ byte *Image_LoadPNG(FILE *fin, char *filename, int matchwidth, int matchheight, 
 	{
 		jmpbuf = qpng_set_longjmp_fn(png_ptr, longjmp, sizeof(jmp_buf));
 	}
+#endif
+#if PNG12SUPPORT && PNG14SUPPORT
 	else
 #endif
+#if PNG12SUPPORT
 	{
 		jmpbuf = &png_ptr->jmpbuf;
 	}
+#endif
 
 	if (setjmp(*jmpbuf))
 	{
@@ -1061,11 +1080,15 @@ int Image_WritePNG (char *filename, int compression, byte *pixels, int width, in
 	{
 		jmpbuf = qpng_set_longjmp_fn(png_ptr, longjmp, sizeof(jmp_buf));
 	}
+#endif
+#if PNG12SUPPORT && PNG14SUPPORT
 	else
 #endif
+#if PNG12SUPPORT
 	{
 		jmpbuf = &png_ptr->jmpbuf;
 	}
+#endif
 
 	if (setjmp(*jmpbuf))
 	{
@@ -1142,11 +1165,15 @@ int Image_WritePNGPLTE (char *filename, int compression,
 	{
 		jmpbuf = qpng_set_longjmp_fn(png_ptr, longjmp, sizeof(jmp_buf));
 	}
+#endif
+#if PNG12SUPPORT && PNG14SUPPORT
 	else
 #endif
+#if PNG12SUPPORT
 	{
 		jmpbuf = &png_ptr->jmpbuf;
 	}
+#endif
 
 	if (setjmp(*jmpbuf))
 	{
