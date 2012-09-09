@@ -79,6 +79,8 @@ int xrandr_init()
 		}
 
 		free(xrandr);
+
+		xrandr = 0;
 	}
 
 	return 0;

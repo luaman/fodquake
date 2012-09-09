@@ -68,6 +68,8 @@ int xf86vm_init()
 		}
 
 		free(xf86vm);
+
+		xf86vm = 0;
 	}
 
 	return 0;
