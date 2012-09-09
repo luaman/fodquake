@@ -121,6 +121,7 @@ ifeq ($(OS), openbsd)
 		net_posix.o \
 		thread_posix.o \
 		cd_null.o \
+		sys_io_posix.o \
 		sys_lib_posix.o \
 #		snd_oss.o
 
