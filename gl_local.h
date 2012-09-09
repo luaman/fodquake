@@ -230,7 +230,7 @@ void glClientActiveTexture(GLenum texture);
 void glActiveTexture(GLenum texture);
 #endif
 
-#ifndef __MACOSX__
+#ifndef GL_VERSION_1_5
 typedef ptrdiff_t GLintptrARB;
 typedef ptrdiff_t GLsizeiptrARB;
 #endif
@@ -246,7 +246,7 @@ extern void (APIENTRY *qglBufferSubDataARB)(GLenum, GLintptrARB, GLsizeiptrARB, 
 #define GL_LINK_STATUS 0x8B82
 #define GL_INFO_LOG_LENGTH 0x8B84
 
-#ifndef __MACOSX__
+#ifndef GL_VERSION_2_0
 typedef char GLchar;
 #endif
 

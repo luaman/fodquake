@@ -69,7 +69,7 @@ void (APIENTRY *qglVertexAttribPointer)(GLuint index, GLint size, GLenum type, G
 
 
 /* GLSL stuff, ARB version */
-#ifndef __MACOSX__
+#ifndef GL_ARB_shader_objects
 typedef char GLcharARB;
 typedef unsigned int GLhandleARB;
 #endif
