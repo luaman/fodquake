@@ -109,7 +109,6 @@ cvar_t	gl_smoothmodels = {"gl_smoothmodels", "1"};
 cvar_t	gl_polyblend = {"gl_polyblend", "1"};
 cvar_t	gl_flashblend = {"gl_flashblend", "0"};
 cvar_t	gl_playermip = {"gl_playermip", "0"};
-cvar_t	gl_nocolors = {"gl_nocolors", "0"};
 cvar_t	gl_finish = {"gl_finish", "0"};
 cvar_t	gl_fb_bmodels = {"gl_fb_bmodels", "1"};
 cvar_t	gl_fb_models = {"gl_fb_models", "1"};
@@ -962,7 +961,7 @@ static void R_DrawAliasModelList2TMU(entity_t *ent, unsigned int entcount)
 		r_modelalpha = ((ent->flags & RF_WEAPONMODEL) && gl_mtexable) ? bound(0, cl_drawgun.value, 1) : 1;
 
 		// we can't dynamically colormap textures, so they are cached separately for the players.  Heads are just uncolored.
-		if (ent->scoreboard && !gl_nocolors.value)
+		if (ent->scoreboard)
 		{
 			i = ent->scoreboard - cl.players;
 			if (i >= 0 && i < MAX_CLIENTS)
@@ -1142,7 +1141,7 @@ static void R_DrawAliasModel(entity_t *ent)
 	r_modelalpha = ((ent->flags & RF_WEAPONMODEL) && gl_mtexable) ? bound(0, cl_drawgun.value, 1) : 1;
 
 	// we can't dynamically colormap textures, so they are cached separately for the players.  Heads are just uncolored.
-	if (ent->scoreboard && !gl_nocolors.value)
+	if (ent->scoreboard)
 	{
 		i = ent->scoreboard - cl.players;
 		if (i >= 0 && i < MAX_CLIENTS)
@@ -1606,7 +1605,6 @@ void R_CvarInit(void)
 	Cvar_Register (&gl_clearColor);
 	Cvar_Register (&gl_cull);
 	Cvar_Register (&gl_ztrick);
-	Cvar_Register (&gl_nocolors);
 	Cvar_Register (&gl_finish);
 
 	Cvar_SetCurrentGroup(CVAR_GROUP_SCREEN);
