@@ -29,8 +29,6 @@ struct SkinImp *SkinImp_CreateSolidColour(float *colours)
 	struct SkinImp *skinimp;
 	unsigned char tex[3];
 
-	printf("SkinImp_CreateSolidColour\n");
-
 	skinimp = malloc(sizeof(*skinimp));
 	if (skinimp)
 	{
@@ -60,8 +58,6 @@ struct SkinImp *SkinImp_CreateTexturePaletted(void *data, unsigned int width, un
 	unsigned int x;
 	unsigned int y;
 
-	printf("SkinImp_CreateTexturePaletted\n");
-
 	skinimp = malloc(sizeof(*skinimp));
 	if (skinimp)
 	{
@@ -72,8 +68,6 @@ struct SkinImp *SkinImp_CreateTexturePaletted(void *data, unsigned int width, un
 			{
 				src = data;
 				dst = skinmem;
-
-				printf("%dx%d\n", width, height);
 
 				for(y=0;y<height;y++)
 				{
