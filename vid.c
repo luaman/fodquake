@@ -32,10 +32,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #endif
 
 #include "menu.h"
-
-#ifndef CLIENTONLY
-#include "server.h"
-#endif
+#include "skin.h"
 
 #include "sys_thread.h"
 
@@ -216,8 +213,6 @@ void VID_Restart(void)
 
 	CL_ClearTEnts(); /* Not the prettiest, but the safest for now... */
 
-	Skin_Reload();
-
 	vid_restarted = 1;
 }
 
@@ -354,6 +349,7 @@ void VID_Open()
 			Sbar_Init();
 			SCR_Init();
 			CSTC_PictureInit();
+			Skin_Init();
 
 			return;
 		}
@@ -378,6 +374,7 @@ void VID_Close()
 	VID_SW_FreeBuffers();
 #endif
 
+	Skin_Shutdown();
 	Mod_ClearAll();
 	SCR_Shutdown();
 	Sbar_Shutdown();

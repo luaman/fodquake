@@ -36,8 +36,9 @@ typedef struct
 {
 	void			*pdest;
 	short			*pz;
-	int				count;
 	byte			*ptex;
+	int				count;
+	unsigned int colour;
 	int				sfrac, tfrac, light, zi;
 } spanpackage_t;
 
@@ -89,6 +90,7 @@ spanpackage_t			*a_spans;
 spanpackage_t			*d_pedgespanpackage;
 static int				ystart;
 byte					*d_pdest, *d_ptex;
+static unsigned int d_colour;
 short					*d_pz;
 int						d_sfrac, d_tfrac, d_light, d_zi;
 int						d_ptexextrastep, d_sfracextrastep;
@@ -113,7 +115,7 @@ byte	*skintable[MAX_LBM_HEIGHT];
 int		skinwidth;
 byte	*skinstart;
 
-void D_PolysetDrawSpans8 (spanpackage_t *pspanpackage);
+static void D_PolysetDrawSpans8 (spanpackage_t *pspanpackage);
 void D_PolysetCalcGradients (int skinwidth);
 void D_DrawSubdiv (void);
 void D_DrawNonSubdiv (void);
@@ -434,6 +436,7 @@ void D_PolysetScanLeftEdge (int height)
 		d_pedgespanpackage->pz = d_pz;
 		d_pedgespanpackage->count = d_aspancount;
 		d_pedgespanpackage->ptex = d_ptex;
+		d_pedgespanpackage->colour = d_colour;
 
 		d_pedgespanpackage->sfrac = d_sfrac;
 		d_pedgespanpackage->tfrac = d_tfrac;
@@ -450,16 +453,19 @@ void D_PolysetScanLeftEdge (int height)
 			d_pdest += d_pdestextrastep;
 			d_pz += d_pzextrastep;
 			d_aspancount += d_countextrastep;
-			d_ptex += d_ptexextrastep;
-			d_sfrac += d_sfracextrastep;
-			d_ptex += d_sfrac >> 16;
-
-			d_sfrac &= 0xFFFF;
-			d_tfrac += d_tfracextrastep;
-			if (d_tfrac & 0x10000)
+			if (d_ptex)
 			{
-				d_ptex += r_affinetridesc.skinwidth;
-				d_tfrac &= 0xFFFF;
+				d_ptex += d_ptexextrastep;
+				d_sfrac += d_sfracextrastep;
+				d_ptex += d_sfrac >> 16;
+
+				d_sfrac &= 0xFFFF;
+				d_tfrac += d_tfracextrastep;
+				if (d_tfrac & 0x10000)
+				{
+					d_ptex += r_affinetridesc.skinwidth;
+					d_tfrac &= 0xFFFF;
+				}
 			}
 			d_light += d_lightextrastep;
 			d_zi += d_ziextrastep;
@@ -470,15 +476,18 @@ void D_PolysetScanLeftEdge (int height)
 			d_pdest += d_pdestbasestep;
 			d_pz += d_pzbasestep;
 			d_aspancount += ubasestep;
-			d_ptex += d_ptexbasestep;
-			d_sfrac += d_sfracbasestep;
-			d_ptex += d_sfrac >> 16;
-			d_sfrac &= 0xFFFF;
-			d_tfrac += d_tfracbasestep;
-			if (d_tfrac & 0x10000)
+			if (d_ptex)
 			{
-				d_ptex += r_affinetridesc.skinwidth;
-				d_tfrac &= 0xFFFF;
+				d_ptex += d_ptexbasestep;
+				d_sfrac += d_sfracbasestep;
+				d_ptex += d_sfrac >> 16;
+				d_sfrac &= 0xFFFF;
+				d_tfrac += d_tfracbasestep;
+				if (d_tfrac & 0x10000)
+				{
+					d_ptex += r_affinetridesc.skinwidth;
+					d_tfrac &= 0xFFFF;
+				}
 			}
 			d_light += d_lightbasestep;
 			d_zi += d_zibasestep;
@@ -608,15 +617,7 @@ void InitGel (byte *palette)
 	}
 }
 
-
-#if	!id386
-
-/*
-================
-D_PolysetDrawSpans8
-================
-*/
-void D_PolysetDrawSpans8 (spanpackage_t *pspanpackage)
+static void D_PolysetDrawSpansSkin8(spanpackage_t *pspanpackage)
 {
 	int		lcount;
 	byte	*lpdest;
@@ -625,62 +626,128 @@ void D_PolysetDrawSpans8 (spanpackage_t *pspanpackage)
 	int		llight;
 	int		lzi;
 	short	*lpz;
+	byte *colormap;
 
+	colormap = vid.colormap;
+
+	lcount = d_aspancount - pspanpackage->count;
+
+	errorterm += erroradjustup;
+	if (errorterm >= 0)
+	{
+		d_aspancount += d_countextrastep;
+		errorterm -= erroradjustdown;
+	}
+	else
+	{
+		d_aspancount += ubasestep;
+	}
+
+	if (lcount)
+	{
+		lpdest = pspanpackage->pdest;
+		lptex = pspanpackage->ptex;
+		lpz = pspanpackage->pz;
+		lsfrac = pspanpackage->sfrac;
+		ltfrac = pspanpackage->tfrac;
+		llight = pspanpackage->light;
+		lzi = pspanpackage->zi;
+
+		do
+		{
+			if ((lzi >> 16) >= *lpz)
+			{
+				*lpdest = colormap[*lptex | (llight & 0xff00)];
+				*lpz = lzi >> 16;
+			}
+			lpdest++;
+			lzi += r_zistepx;
+			lpz++;
+			llight += r_lstepx;
+			lptex += a_ststepxwhole;
+			lsfrac += a_sstepxfrac;
+			lptex += lsfrac >> 16;
+			lsfrac &= 0xFFFF;
+			ltfrac += a_tstepxfrac;
+			if (ltfrac & 0x10000)
+			{
+				lptex += r_affinetridesc.skinwidth;
+				ltfrac &= 0xFFFF;
+			}
+		} while (--lcount);
+	}
+}
+
+static void D_PolysetDrawSpansSolidColour(spanpackage_t *pspanpackage)
+{
+	int		lcount;
+	byte	*lpdest;
+	int		lsfrac, ltfrac;
+	int		llight;
+	int		lzi;
+	short	*lpz;
+	byte *colormap;
+	unsigned int colour;
+
+	colormap = vid.colormap;
+
+	lcount = d_aspancount - pspanpackage->count;
+
+	errorterm += erroradjustup;
+	if (errorterm >= 0)
+	{
+		d_aspancount += d_countextrastep;
+		errorterm -= erroradjustdown;
+	}
+	else
+	{
+		d_aspancount += ubasestep;
+	}
+
+	if (lcount)
+	{
+		lpdest = pspanpackage->pdest;
+		lpz = pspanpackage->pz;
+		lsfrac = pspanpackage->sfrac;
+		ltfrac = pspanpackage->tfrac;
+		llight = pspanpackage->light;
+		lzi = pspanpackage->zi;
+		colour = pspanpackage->colour;
+
+		do
+		{
+			if ((lzi >> 16) >= *lpz)
+			{
+				*lpdest = colormap[colour | (llight & 0xff00)];
+				*lpz = lzi >> 16;
+			}
+			lpdest++;
+			lzi += r_zistepx;
+			lpz++;
+			llight += r_lstepx;
+			lsfrac += a_sstepxfrac;
+			lsfrac &= 0xFFFF;
+			ltfrac += a_tstepxfrac;
+			if (ltfrac & 0x10000)
+			{
+				ltfrac &= 0xFFFF;
+			}
+		} while (--lcount);
+	}
+}
+
+static void D_PolysetDrawSpans(spanpackage_t *pspanpackage)
+{
 	do
 	{
-		lcount = d_aspancount - pspanpackage->count;
-
-		errorterm += erroradjustup;
-		if (errorterm >= 0)
-		{
-			d_aspancount += d_countextrastep;
-			errorterm -= erroradjustdown;
-		}
+		if (pspanpackage->ptex)
+			D_PolysetDrawSpansSkin8(pspanpackage);
 		else
-		{
-			d_aspancount += ubasestep;
-		}
-
-		if (lcount)
-		{
-			lpdest = pspanpackage->pdest;
-			lptex = pspanpackage->ptex;
-			lpz = pspanpackage->pz;
-			lsfrac = pspanpackage->sfrac;
-			ltfrac = pspanpackage->tfrac;
-			llight = pspanpackage->light;
-			lzi = pspanpackage->zi;
-
-			do
-			{
-				if ((lzi >> 16) >= *lpz)
-				{
-					*lpdest = ((byte *)acolormap)[*lptex + (llight & 0xFF00)];
-// gel mapping					*lpdest = gelmap[*lpdest];
-					*lpz = lzi >> 16;
-				}
-				lpdest++;
-				lzi += r_zistepx;
-				lpz++;
-				llight += r_lstepx;
-				lptex += a_ststepxwhole;
-				lsfrac += a_sstepxfrac;
-				lptex += lsfrac >> 16;
-				lsfrac &= 0xFFFF;
-				ltfrac += a_tstepxfrac;
-				if (ltfrac & 0x10000)
-				{
-					lptex += r_affinetridesc.skinwidth;
-					ltfrac &= 0xFFFF;
-				}
-			} while (--lcount);
-		}
+			D_PolysetDrawSpansSolidColour(pspanpackage);
 
 		pspanpackage++;
 	} while (pspanpackage->count != -999999);
 }
-#endif	// !id386
-
 
 /*
 ================
@@ -723,8 +790,17 @@ void D_RasterizeAliasPolySmooth (void)
 	ystart = plefttop[1];
 	d_aspancount = plefttop[0] - prighttop[0];
 
-	d_ptex = (byte *)r_affinetridesc.pskin + (plefttop[2] >> 16) +
-			(plefttop[3] >> 16) * r_affinetridesc.skinwidth;
+	if (r_affinetridesc.pskin)
+	{
+		d_ptex = (byte *)r_affinetridesc.pskin + (plefttop[2] >> 16) +
+				(plefttop[3] >> 16) * r_affinetridesc.skinwidth;
+	}
+	else
+	{
+		d_ptex = 0;
+		d_colour = r_affinetridesc.colour;
+	}
+
 #if	id386
 	d_sfrac = (plefttop[2] & 0xFFFF) << 16;
 	d_tfrac = (plefttop[3] & 0xFFFF) << 16;
@@ -803,8 +879,16 @@ void D_RasterizeAliasPolySmooth (void)
 
 		ystart = plefttop[1];
 		d_aspancount = plefttop[0] - prighttop[0];
-		d_ptex = (byte *)r_affinetridesc.pskin + (plefttop[2] >> 16) +
-				(plefttop[3] >> 16) * r_affinetridesc.skinwidth;
+		if (r_affinetridesc.pskin)
+		{
+			d_ptex = (byte *)r_affinetridesc.pskin + (plefttop[2] >> 16) +
+					(plefttop[3] >> 16) * r_affinetridesc.skinwidth;
+		}
+		else
+		{
+			d_ptex = 0;
+			d_colour = r_affinetridesc.colour;
+		}
 		d_sfrac = 0;
 		d_tfrac = 0;
 		d_light = plefttop[4];
@@ -867,7 +951,7 @@ void D_RasterizeAliasPolySmooth (void)
 	d_countextrastep = ubasestep + 1;
 	originalcount = a_spans[initialrightheight].count;
 	a_spans[initialrightheight].count = -999999; // mark end of the spanpackages
-	D_PolysetDrawSpans8 (a_spans);
+	D_PolysetDrawSpans(a_spans);
 
 // scan out the bottom part of the right edge, if it exists
 	if (pedgetable->numrightedges == 2)
@@ -891,7 +975,7 @@ void D_RasterizeAliasPolySmooth (void)
 		d_countextrastep = ubasestep + 1;
 		a_spans[initialrightheight + height].count = -999999;
 											// mark end of the spanpackages
-		D_PolysetDrawSpans8 (pstart);
+		D_PolysetDrawSpans(pstart);
 	}
 }
 

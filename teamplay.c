@@ -1,5 +1,6 @@
 /*
-	Copyright (C) 2000-2003       Anton Gavrilov, A Nourai
+Copyright (C) 2000-2003       Anton Gavrilov, A Nourai
+Copyright (C) 2005-2012 Mark Olsen
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -37,7 +38,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "strl.h"
 
-qboolean OnChangeSkinForcing(cvar_t *var, char *string);
+void OnChangeSkinForcing(cvar_t *var);
 
 cvar_t	cl_parseSay = {"cl_parseSay", "1"};
 cvar_t	cl_parseFunChars = {"cl_parseFunChars", "1"};
@@ -48,14 +49,14 @@ cvar_t	cl_nofake = {"cl_nofake", "0"};
 cvar_t	tp_loadlocs = {"tp_loadlocs", "1"};
 
 
-cvar_t	cl_teamskin = {"teamskin", "", 0, OnChangeSkinForcing};
-cvar_t	cl_enemyskin = {"enemyskin", "", 0, OnChangeSkinForcing};
-cvar_t	cl_teamquadskin = {"teamquadskin", "", 0, OnChangeSkinForcing};
-cvar_t	cl_enemyquadskin = {"enemyquadskin", "", 0, OnChangeSkinForcing};
-cvar_t	cl_teampentskin = {"teampentskin", "", 0, OnChangeSkinForcing};
-cvar_t	cl_enemypentskin = {"enemypentskin", "", 0, OnChangeSkinForcing};
-cvar_t	cl_teambothskin = {"teambothskin", "", 0, OnChangeSkinForcing};
-cvar_t	cl_enemybothskin = {"enemybothskin", "", 0, OnChangeSkinForcing};
+cvar_t	cl_teamskin = {"teamskin", "", 0, 0, OnChangeSkinForcing};
+cvar_t	cl_enemyskin = {"enemyskin", "", 0, 0, OnChangeSkinForcing};
+cvar_t	cl_teamquadskin = {"teamquadskin", "", 0, 0, OnChangeSkinForcing};
+cvar_t	cl_enemyquadskin = {"enemyquadskin", "", 0, 0, OnChangeSkinForcing};
+cvar_t	cl_teampentskin = {"teampentskin", "", 0, 0, OnChangeSkinForcing};
+cvar_t	cl_enemypentskin = {"enemypentskin", "", 0, 0, OnChangeSkinForcing};
+cvar_t	cl_teambothskin = {"teambothskin", "", 0, 0, OnChangeSkinForcing};
+cvar_t	cl_enemybothskin = {"enemybothskin", "", 0, 0, OnChangeSkinForcing};
 
 
 cvar_t  tp_soundtrigger = {"tp_soundtrigger", "~"};
@@ -1412,84 +1413,167 @@ skip:
 
 /************************* SKIN FORCING & REFRESHING *************************/
 
+static int ourlastplayernum = -1;
 
-
-char *Skin_FindName (player_info_t *sc);
-
-static qboolean need_skin_refresh;
-void TP_UpdateSkins(void)
+void TP_CalculateSkinForPlayer(unsigned int slot)
 {
-	int slot;
+	int ourplayernum;
+	int isteam;
+	const char *skin;
+	player_state_t *state;
+	unsigned int effects;
 
-	if (!need_skin_refresh)
-		return;
+	skin = Info_ValueForKey(cl.players[slot].userinfo, "skin");
+	if (skin == 0)
+		skin = "";
 
-	need_skin_refresh = false;
+	if (cl.spectator)
+		ourplayernum = Cam_TrackNum();
+	else
+		ourplayernum = cl.playernum;
 
-	for (slot = 0; slot < MAX_CLIENTS; slot++)
+	if (!cl.teamfortress && !(cl.fpd & FPD_NO_FORCE_SKIN))
 	{
-		if (cl.players[slot].skin_refresh)
+		if (ourplayernum == -1)
+			ourplayernum = ourlastplayernum;
+		else
+			ourlastplayernum = ourplayernum;
+
+		if (ourplayernum == -1)
 		{
-			CL_NewTranslation(slot);
-			cl.players[slot].skin_refresh = false;
+			isteam = 0;
+		}
+		else
+		{
+			isteam = cl.teamplay && strcmp(cl.players[ourplayernum].team, cl.players[slot].team) == 0;
+		}
+
+		if (isteam && cl_teamskin.string[0])
+			skin = cl_teamskin.string;
+		else if (!isteam && cl_enemyskin.string[0])
+			skin = cl_enemyskin.string;
+
+		state = cl.frames[cl.parsecount & UPDATE_MASK].playerstate + slot;
+		if (state->messagenum == cl.parsecount)
+		{
+			effects = state->effects;
+
+			if ((effects & (EF_BLUE|EF_RED)) == (EF_BLUE|EF_RED))
+			{
+				if (isteam && cl_teambothskin.string[0])
+					skin = cl_teambothskin.string;
+				else if (!isteam && cl_enemybothskin.string[0])
+					skin = cl_enemybothskin.string;
+			}
+			else if ((effects & EF_BLUE))
+			{
+				if (isteam && cl_teamquadskin.string[0])
+					skin = cl_teamquadskin.string;
+				else if (!isteam && cl_enemyquadskin.string[0])
+					skin = cl_enemyquadskin.string;
+			}
+			else if ((effects & EF_RED))
+			{
+				if (isteam && cl_teampentskin.string[0])
+					skin = cl_teampentskin.string;
+				else if (!isteam && cl_enemypentskin.string[0])
+					skin = cl_enemypentskin.string;
+			}
+		}
+	}
+
+	strlcpy(cl.players[slot].skin, skin, sizeof(cl.players[slot].skin));
+}
+
+void TP_CalculateColoursForPlayer(unsigned int slot)
+{
+	int ourplayernum;
+	int isteam;
+
+	if (cl.spectator)
+		ourplayernum = Cam_TrackNum();
+	else
+		ourplayernum = cl.playernum;
+
+	if (ourplayernum == -1)
+		ourplayernum = ourlastplayernum;
+	else
+		ourlastplayernum = ourplayernum;
+
+	if (ourplayernum == -1)
+	{
+		isteam = 0;
+	}
+	else
+	{
+		isteam = strcmp(cl.players[ourplayernum].team, cl.players[slot].team) == 0;
+	}
+
+	if (isteam)
+	{
+		if (cl_teamtopcolor != -1)
+		{
+			cl.players[slot].topcolor = cl_teamtopcolor;
+			cl.players[slot].bottomcolor = cl_teambottomcolor;
+		}
+		else
+		{
+			cl.players[slot].topcolor = cl.players[slot].real_topcolor;
+			cl.players[slot].bottomcolor = cl.players[slot].real_bottomcolor;
+		}
+	}
+	else
+	{
+		if (cl_enemytopcolor != -1)
+		{
+			cl.players[slot].topcolor = cl_enemytopcolor;
+			cl.players[slot].bottomcolor = cl_enemybottomcolor;
+		}
+		else
+		{
+			cl.players[slot].topcolor = cl.players[slot].real_topcolor;
+			cl.players[slot].bottomcolor = cl.players[slot].real_bottomcolor;
 		}
 	}
 }
 
-qboolean TP_NeedRefreshSkins(void)
+void TP_RecalculateSkins()
 {
-	if (cl.teamfortress)
-		return false;
+	unsigned int i;
 
-	if ((cl_enemyskin.string[0] || cl_teamskin.string[0] || cl_enemypentskin.string[0] || cl_teampentskin.string[0] ||
-	 cl_enemyquadskin.string[0] || cl_teamquadskin.string[0] || cl_enemybothskin.string[0] || cl_teambothskin.string[0])
-	 && !(cl.fpd & FPD_NO_FORCE_SKIN))
-		return true;
-
-	if ((cl_teamtopcolor >= 0 || cl_enemytopcolor >= 0) && !(cl.fpd & FPD_NO_FORCE_COLOR))
-		return true;
-
-	return false;
-}
-
-void TP_RefreshSkin(int slot)
-{
-	if (cls.state < ca_connected || slot < 0 || slot >= MAX_CLIENTS || !cl.players[slot].name[0] || cl.players[slot].spectator)
-		return;
-
-	cl.players[slot].skin_refresh = true;
-	need_skin_refresh = true;
-}
-
-void TP_RefreshSkins(void)
-{
-	int i;
-
-	for (i = 0; i < MAX_CLIENTS; i++)
-		TP_RefreshSkin(i);
-}
-
-qboolean OnChangeSkinForcing(cvar_t *var, char *string)
-{
-	extern cvar_t noskins;
-
-	if (cl.teamfortress || (cl.fpd & FPD_NO_FORCE_SKIN))
-		return false;
-
-	if (cls.state == ca_active)
+	for(i=0;i<MAX_CLIENTS;i++)
 	{
-		float oldskins;
-
-		Cvar_Set(var, string);
-		oldskins = noskins.value;
-		noskins.value = 2;
-		Con_Suppress();
-		Skin_Skins_f();
-		Con_Unsuppress();
-		noskins.value = oldskins;
-		return true;
+		if (cl.players[i].name[0] && !cl.players[i].spectator)
+			TP_CalculateSkinForPlayer(i);
 	}
-	return false;
+}
+
+static void TP_RecalculateColours()
+{
+	unsigned int i;
+
+	for(i=0;i<MAX_CLIENTS;i++)
+	{
+		if (cl.players[i].name[0] && !cl.players[i].spectator)
+			TP_CalculateColoursForPlayer(i);
+	}
+}
+
+void OnChangeSkinForcing(cvar_t *var)
+{
+	TP_RecalculateSkins();
+}
+
+void TP_Frame()
+{
+	int num;
+
+	if (cl.spectator)
+	{
+		num = Cam_TrackNum();
+		if (num != -1 && num != ourlastplayernum)
+			TP_RecalculateSkins();
+	}
 }
 
 int cl_teamtopcolor = -1, cl_teambottomcolor, cl_enemytopcolor = -1, cl_enemybottomcolor;
@@ -1510,7 +1594,8 @@ void TP_ColorForcing (int *topcolor, int *bottomcolor)
 	if (!Q_strcasecmp(Cmd_Argv(1), "off"))
 	{
 		*topcolor = -1;
-		TP_RefreshSkins();
+
+		TP_RecalculateColours();
 		return;
 	}
 
@@ -1532,7 +1617,7 @@ void TP_ColorForcing (int *topcolor, int *bottomcolor)
 	*topcolor = top;
 	*bottomcolor = bottom;
 
-	TP_RefreshSkins();
+	TP_RecalculateColours();
 }
 
 void TP_TeamColor_f(void)
@@ -2649,11 +2734,8 @@ static void ExecTookTrigger (char *s, int flag, vec3_t org)
 
 void TP_ParsePlayerInfo(player_state_t *oldstate, player_state_t *state, player_info_t *info)
 {
-	if (TP_NeedRefreshSkins())
-	{
-		if ((state->effects & (EF_BLUE|EF_RED) ) != (oldstate->effects & (EF_BLUE|EF_RED)))
-			TP_RefreshSkin(info - cl.players);
-	}
+	if ((state->effects & (EF_BLUE|EF_RED) ) != (oldstate->effects & (EF_BLUE|EF_RED)))
+		TP_CalculateSkinForPlayer(info - cl.players);
 
 	if (!cl.spectator && cl.teamplay && strcmp(info->team, TP_PlayerTeam()))
 	{
@@ -3300,14 +3382,14 @@ void TP_CvarInit(void)
 	Cvar_Register (&cl_nofake);
 
 	Cvar_SetCurrentGroup(CVAR_GROUP_SKIN);
-	Cvar_Register (&cl_enemybothskin);
-	Cvar_Register (&cl_teambothskin);
-	Cvar_Register (&cl_enemypentskin);
-	Cvar_Register (&cl_teampentskin);
-	Cvar_Register (&cl_enemyquadskin);
-	Cvar_Register (&cl_teamquadskin);
-	Cvar_Register (&cl_enemyskin);
-	Cvar_Register (&cl_teamskin);
+	Cvar_Register(&cl_enemybothskin);
+	Cvar_Register(&cl_teambothskin);
+	Cvar_Register(&cl_enemypentskin);
+	Cvar_Register(&cl_teampentskin);
+	Cvar_Register(&cl_enemyquadskin);
+	Cvar_Register(&cl_teamquadskin);
+	Cvar_Register(&cl_enemyskin);
+	Cvar_Register(&cl_teamskin);
 
 	Cvar_SetCurrentGroup(CVAR_GROUP_COMMUNICATION);
 	Cvar_Register (&tp_triggers);

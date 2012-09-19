@@ -25,6 +25,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "quakedef.h"
 #include "sys_io.h"
 #include "menu.h"
+#include "skin.h"
 #include "teamplay.h"
 #include "ignore.h"
 #include "version.h"
@@ -578,6 +579,31 @@ void CL_WriteConfig_f (void) {
 	Com_Printf ("Writing %s\n", name);
 
 	CL_WriteConfig (name);
+}
+
+void Skin_Skins_f(void)
+{
+	char buf[128];
+	int i;
+
+	if (cls.state == ca_onserver && cbuf_current != cbuf_main)	//only download when connecting
+	{
+#ifdef NETQW
+		if (cls.netqw)
+		{
+			i = snprintf(buf, sizeof(buf), "%cbegin %i", clc_stringcmd, cl.servercount);
+			if (i < sizeof(buf))
+				NetQW_AppendReliableBuffer(cls.netqw, buf, i + 1);
+		}
+#else
+		MSG_WriteByte(&cls.netchan.message, clc_stringcmd);
+		MSG_WriteString(&cls.netchan.message, va("begin %i", cl.servercount));
+#endif
+	}
+	else
+	{
+		Skin_FreeAll();
+	}
 }
 
 void CL_InitCommands (void) {

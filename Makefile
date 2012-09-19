@@ -330,6 +330,7 @@ SWOBJS= \
 	d_part.o \
 	d_polyse.o \
 	d_scan.o \
+	d_skinimp.o \
 	d_sky.o \
 	d_sprite.o \
 	d_surf.o \
@@ -364,6 +365,7 @@ GLOBJS= \
 	gl_rpart.o \
 	gl_rsurf.o \
 	gl_shader.o \
+	gl_skinimp.o \
 	gl_state.o \
 	gl_texture.o \
 	gl_warp.o \

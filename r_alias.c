@@ -20,6 +20,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "quakedef.h"
 #include "r_local.h"
+#include "skin.h"
+#include "d_skinimp.h"
 
 #define LIGHT_MIN	5		// lowest light value we'll allow, to avoid the need for inner-loop light clamping
 
@@ -511,7 +513,6 @@ void R_AliasPrepareUnclippedPoints (void)
 
 void R_AliasSetupSkin (entity_t *ent)
 {
-	byte *base;
 	int skinnum, i, numskins;
 	maliasskindesc_t *pskindesc;
 	maliasskingroup_t *paliasskingroup;
@@ -557,14 +558,19 @@ void R_AliasSetupSkin (entity_t *ent)
 
 	if (ent->scoreboard)
 	{
-		if (!ent->scoreboard->skin)
-			Skin_Find (ent->scoreboard);
-		base = Skin_Cache (ent->scoreboard->skin);
-		if (base)
+		i = ent->scoreboard - cl.players;
+		if (i >= 0 && i < MAX_CLIENTS)
 		{
-			r_affinetridesc.pskin = base;
-			r_affinetridesc.skinwidth = 320;
-			r_affinetridesc.skinheight = 200;
+			struct SkinImp *skinimp;
+
+			skinimp = Skin_GetTranslation(cl.players[i].skin, cl.players[i].topcolor, cl.players[i].bottomcolor);
+			if (skinimp)
+			{
+				r_affinetridesc.pskin = skinimp->data;
+				r_affinetridesc.skinwidth = skinimp->width;
+				r_affinetridesc.skinheight = skinimp->height;
+				r_affinetridesc.colour = skinimp->colour;
+			}
 		}
 	}
 }

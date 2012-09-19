@@ -133,9 +133,6 @@ void Cam_Unlock(void) {
 	autocam = CAM_NONE;
 	locked = false;
 	Sbar_Changed();
-
-	if (TP_NeedRefreshSkins())
-		TP_RefreshSkins();
 }
 
 void Cam_Lock(int playernum) {
@@ -166,9 +163,6 @@ void Cam_Lock(int playernum) {
 	spec_track = playernum;
 	locked = false;
 	Sbar_Changed();
-
-	if (TP_NeedRefreshSkins())
-		TP_RefreshSkins();
 }
 
 pmtrace_t Cam_DoTrace(vec3_t vec1, vec3_t vec2) {
@@ -529,9 +523,6 @@ void Cam_TryLock (void) {
 
 	if (autocam != old_autocam || spec_track != old_spec_track) {
 		Sbar_Changed ();
-
-		if (TP_NeedRefreshSkins())
-			TP_RefreshSkins();
 	}
 }
 

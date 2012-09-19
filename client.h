@@ -33,12 +33,6 @@ extern int altivec_available;
 
 #define	MAX_PROJECTILES	32 
 
-typedef struct {
-	char		name[16];
-	qboolean	failedload;		// the name isn't a valid skin
-	void *data;
-} skin_t;
-
 // player_state_t is the information needed by a player entity
 // to do move prediction and to generate a drawable entity
 typedef struct {
@@ -84,13 +78,8 @@ struct player_info_s
 	unsigned char	topcolor;
 	unsigned char	bottomcolor;
 
-	unsigned char	_topcolor;
-	unsigned char	_bottomcolor;
-
 	unsigned char	real_topcolor;
 	unsigned char	real_bottomcolor;
-
-	skin_t	*skin;
 
 	qboolean	skin_refresh;	
 	qboolean	ignored;		//for ignore
@@ -100,7 +89,7 @@ struct player_info_s
 	byte	translations[VID_GRADES*256];
 	char	userinfo[MAX_INFO_STRING];
 	char	team[MAX_INFO_STRING];
-	char	_team[MAX_INFO_STRING];
+	char skin[64];
 } __attribute__ ((aligned (64)));
 
 typedef struct player_info_s player_info_t;
@@ -210,7 +199,6 @@ typedef enum {
 	dl_none,
 	dl_model,
 	dl_sound,
-	dl_skin,
 	dl_single
 } dltype_t;		// download type
 
@@ -517,7 +505,6 @@ extern float nextdemotime, olddemotime;
 extern int	packet_latency[NET_TIMINGS];
 int CL_CalcNet (void);
 void CL_ParseServerMessage (void);
-void CL_NewTranslation (int slot);
 qboolean CL_CheckOrDownloadFile (char *filename);
 qboolean CL_IsUploading(void);
 void CL_NextUpload(void);
@@ -595,15 +582,6 @@ void Cam_TryLock (void);
 
 int Cam_TrackNum(void);
 void Cam_Lock(int playernum);
-
-
-// skin.c
-void	Skin_Find (player_info_t *sc);
-byte	*Skin_Cache (skin_t *skin);
-void	Skin_Skins_f (void);
-void	Skin_NextDownload (void);
-void Skin_Reload(void);
-void Skin_Shutdown(void);
 
 
 // match_tools.c

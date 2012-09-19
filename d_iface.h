@@ -71,6 +71,7 @@ typedef struct finalvert_s {
 // !!! if this is changed, it must be changed in d_ifacea.h too !!!
 typedef struct {
 	void				*pskin;
+	unsigned int colour;
 	maliasskindesc_t	*pskindesc;
 	int					skinwidth;
 	int					skinheight;

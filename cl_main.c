@@ -31,6 +31,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "keys.h"
 #include "menu.h"
 #include "sbar.h"
+#include "skin.h"
 #include "sound.h"
 #include "version.h"
 #include "teamplay.h"
@@ -1818,8 +1819,6 @@ void huff_save_f(void)
 
 void CL_CvarInit(void)
 {
-	extern cvar_t baseskin, noskins;
-
 	Cvar_SetCurrentGroup(CVAR_GROUP_CHAT);
 	Cvar_Register(&cl_parseWhiteText);
 	Cvar_Register(&cl_chatsound);
@@ -1858,10 +1857,6 @@ void CL_CvarInit(void)
 	Cvar_Register(&r_explosionlightcolor);
 	Cvar_Register(&r_flagcolor);
 	Cvar_Register(&cl_trueLightning);
-
-	Cvar_SetCurrentGroup(CVAR_GROUP_SKIN);
-	Cvar_Register(&noskins);
-	Cvar_Register(&baseskin);
 
 	Cvar_SetCurrentGroup(CVAR_GROUP_DEMO);
 	Cvar_Register(&cl_demospeed);
@@ -2188,8 +2183,6 @@ void CL_Frame (double time)
 	// fetch results from server
 	CL_ReadPackets();
 
-	TP_UpdateSkins();
-
 	if (cls.mvdplayback)
 		MVD_Interpolate();
 
@@ -2233,6 +2226,8 @@ void CL_Frame (double time)
 #else
 	CL_SendToServer();
 #endif
+
+	TP_Frame();
 
 	if (cls.state >= ca_onserver) {	// !!! Tonik
 		Cam_SetViewPlayer();

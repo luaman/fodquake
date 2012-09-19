@@ -32,6 +32,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "gl_warp.h"
 #include "gl_rsurf.h"
 #include "gl_shader.h"
+#include "gl_skinimp.h"
+#include "skin.h"
 #include "sound.h"
 #include "utils.h"
 
@@ -960,16 +962,19 @@ static void R_DrawAliasModelList2TMU(entity_t *ent, unsigned int entcount)
 
 		r_modelalpha = ((ent->flags & RF_WEAPONMODEL) && gl_mtexable) ? bound(0, cl_drawgun.value, 1) : 1;
 
-		// we can't dynamically colormap textures, so they are cached separately for the players.  Heads are just uncolored.
 		if (ent->scoreboard)
 		{
 			i = ent->scoreboard - cl.players;
 			if (i >= 0 && i < MAX_CLIENTS)
 			{
-				if (!ent->scoreboard->skin)
-					CL_NewTranslation(i);
-				texture = playertextures + i;
-				fb_texture = playerfbtextures[i];
+				struct SkinImp *skinimp;
+
+				skinimp = Skin_GetTranslation(cl.players[i].skin, cl.players[i].topcolor, cl.players[i].bottomcolor);
+				if (skinimp)
+				{
+					texture = skinimp->texid;
+					fb_texture = 0;
+				}
 			}
 		}
 
@@ -1140,16 +1145,19 @@ static void R_DrawAliasModel(entity_t *ent)
 
 	r_modelalpha = ((ent->flags & RF_WEAPONMODEL) && gl_mtexable) ? bound(0, cl_drawgun.value, 1) : 1;
 
-	// we can't dynamically colormap textures, so they are cached separately for the players.  Heads are just uncolored.
 	if (ent->scoreboard)
 	{
 		i = ent->scoreboard - cl.players;
 		if (i >= 0 && i < MAX_CLIENTS)
 		{
-			if (!ent->scoreboard->skin)
-				CL_NewTranslation(i);
-			texture = playertextures + i;
-			fb_texture = playerfbtextures[i];
+			struct SkinImp *skinimp;
+
+			skinimp = Skin_GetTranslation(cl.players[i].skin, cl.players[i].topcolor, cl.players[i].bottomcolor);
+			if (skinimp)
+			{
+				texture = skinimp->texid;
+				fb_texture = 0;
+			}
 		}
 	}
 

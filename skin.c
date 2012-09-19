@@ -1,5 +1,5 @@
 /*
-Copyright (C) 1996-1997 Id Software, Inc.
+Copyright (C) 2012 Mark Olsen
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -15,279 +15,371 @@ See the GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
-
 */
 
-#include <stdlib.h>
 #include <string.h>
+#include <stdlib.h>
 
-#include "quakedef.h"
-#include "image.h"
-#include "teamplay.h"
-#ifdef NETQW
-#include "netqw.h"
-#endif
+#include "common.h"
 #include "utils.h"
+#include "image.h"
+#include "skinimp.h"
+#include "skin.h"
 
-cvar_t baseskin = {"baseskin", "base"};
-cvar_t noskins = {"noskins", "0"};
+static cvar_t baseskin = { "baseskin", "base" };
+static cvar_t noskins = { "noskins", "0" };
 
-#define	MAX_CACHED_SKINS	128
-skin_t skins[MAX_CACHED_SKINS];
-
-int numskins;
-
-char *Skin_FindName(player_info_t *sc)
+enum SkinSourceType
 {
-	int tracknum;
-	char *s;
-	static char name[MAX_OSPATH];
+	SKINSOURCE_SOLIDCOLOUR,
+	SKINSOURCE_TEXTURE_PALETTED,
+	SKINSOURCE_TEXTURE_PALETTED_TRANSLATED,
+};
 
-	s = Info_ValueForKey(sc->userinfo, "skin");
-	if (s && s[0])
-		Q_strncpyz(name, s, sizeof(name));
-	else
-		Q_strncpyz(name, baseskin.string, sizeof(name));
-
-	if (cl.spectator && (tracknum = Cam_TrackNum()) != -1)
-		skinforcing_team = cl.players[tracknum].team;
-	else if (!cl.spectator)
-		skinforcing_team = cl.players[cl.playernum].team;
-
-	if (!cl.teamfortress && !(cl.fpd & FPD_NO_FORCE_SKIN))
-	{
-		char *skinname = NULL;
-		player_state_t *state;
-		qboolean teammate;
-
-		teammate = (cl.teamplay && !strcmp(sc->team, skinforcing_team)) ? true : false;
-
-		if (!cl.validsequence)
-			goto nopowerups;
-
-		state = cl.frames[cl.parsecount & UPDATE_MASK].playerstate + (sc - cl.players);
-
-		if (state->messagenum != cl.parsecount)
-			goto nopowerups;
-
-		if ((state->effects & (EF_BLUE | EF_RED)) == (EF_BLUE | EF_RED) )
-			skinname = teammate ? cl_teambothskin.string : cl_enemybothskin.string;
-		else if (state->effects & EF_BLUE)
-			skinname = teammate ? cl_teamquadskin.string : cl_enemyquadskin.string;
-		else if (state->effects & EF_RED)
-			skinname = teammate ? cl_teampentskin.string : cl_enemypentskin.string;
-
-	nopowerups:
-		if (!skinname || !skinname[0])
-			skinname = teammate ? cl_teamskin.string : cl_enemyskin.string;
-		if (skinname[0])
-			Q_strncpyz(name, skinname, sizeof(name));
-	}
-
-	if (strstr(name, "..") || *name == '.')
-		Q_strncpyz(name, baseskin.string, sizeof(name));
-
-	return name;
-}
-
-//Determines the best skin for the given scoreboard slot, and sets scoreboard->skin
-void Skin_Find(player_info_t *sc)
+struct SkinSource
 {
-	skin_t *skin;
-	int i;
-	char name[MAX_OSPATH];
+	struct SkinSource *next;
 
-	Q_strncpyz(name, Skin_FindName(sc), sizeof(name));
-	COM_StripExtension(name);
+	enum SkinSourceType type;
 
-	for (i = 0; i < numskins; i++)
+	struct SkinTranslation *translations;
+
+	char *skinname;
+
+	union
 	{
-		if (!strcmp(name, skins[i].name))
+		struct
 		{
-			sc->skin = &skins[i];
-			Skin_Cache(sc->skin);
-			return;
-		}
-	}
+			float colours[3];
+		} solidcolour;
 
-	if (numskins == MAX_CACHED_SKINS)	// ran out of spots, so flush everything
-	{
-		Skin_Skins_f();
-		return;
-	}
-
-	skin = &skins[numskins];
-	sc->skin = skin;
-	numskins++;
-
-	memset (skin, 0, sizeof(*skin));
-	Q_strncpyz(skin->name, name, sizeof(skin->name));
-}
-
-//Returns a pointer to the skin bitmap, or NULL to use the default
-byte *Skin_Cache(skin_t *skin)
-{
-	int y;
-	byte *pic, *out, *pix;
-	char name[MAX_OSPATH];
-	unsigned int imagewidth, imageheight;
-	float rgb[3];
-	unsigned char clearvalue;
-
-	if (cls.downloadtype == dl_skin)
-		return NULL;		// use base until downloaded
-	if (noskins.value == 1) // JACK: So NOSKINS > 1 will show skins, but
-		return NULL;		// not download new ones.
-	if (skin->failedload)
-		return NULL;
-
-	if (skin->data)
-		return skin->data;
-
-	if (ParseColourDescription(skin->name, rgb))
-	{
-		clearvalue = V_LookUpColourNoFullbright(rgb[0], rgb[1], rgb[2]);
-		imagewidth = 0;
-		imageheight = 0;
-		pic = 0;
-	}
-	else
-	{
-		clearvalue = 0;
-
-		// load the pic from disk
-		Q_snprintfz(name, sizeof(name), "skins/%s.pcx", skin->name);
-		if (!(pic = Image_LoadPCX(NULL, name, 0, 0, &imagewidth, &imageheight)) || imagewidth > 320 || imageheight > 200)
+		struct
 		{
-			free(pic);
+			unsigned int width;
+			unsigned int height;
+			void *data;
+		} texture;
+	} data;
+};
 
-			Com_Printf("Couldn't load skin %s\n", name);
+struct SkinTranslation
+{
+	struct SkinTranslation *next;
 
-			Q_snprintfz(name, sizeof(name), "skins/%s.pcx", baseskin.string);
-			if (!(pic = Image_LoadPCX (NULL, name, 0, 0, &imagewidth, &imageheight)) || imagewidth > 320 || imageheight > 200)
+	unsigned int topcolour;
+	unsigned int bottomcolour;
+
+	struct SkinImp *skinimp;
+};
+
+struct SkinSource *skinsources;
+
+static void Skin_SetupTexture(struct SkinSource *source)
+{
+	unsigned int x;
+	unsigned int y;
+	unsigned int width;
+	unsigned int height;
+	const char *p;
+
+	width = source->data.texture.width;
+	height = source->data.texture.height;
+
+	if (width > 296)
+		width = 296;
+
+	if (height > 194)
+		height = 194;
+
+	source->type = SKINSOURCE_TEXTURE_PALETTED;
+
+	p = source->data.texture.data;
+	for(y=0;y<height;y++)
+	{
+		for(x=0;x<width;x++)
+		{
+			if ((p[x] >= 16 && p[x] < 32) || (p[x] >= 96 && p[x] < 112))
 			{
-				free(pic);
-
-				skin->failedload = true;
-				return NULL;
+				source->type = SKINSOURCE_TEXTURE_PALETTED_TRANSLATED;
+				break;
 			}
 		}
+
+		p += source->data.texture.width;
 	}
-
-	if (!(out = pix = malloc(320 * 200)))
-		Sys_Error ("Skin_Cache: couldn't allocate");
-
-	skin->data = out;
-
-	memset(out, clearvalue, 320 * 200);
-	if (imagewidth && imageheight)
-	{
-		for (y = 0; y < imageheight; y++, pix += 320)
-			memcpy(pix, pic + y * imagewidth, imagewidth);
-	}
-
-	free(pic);
-	skin->failedload = false;
-
-	return out;
 }
 
-static void Skin_UncacheAll()
+static struct SkinSource *Skin_GetSource(const char *skinname)
 {
-	int i;
+	struct SkinSource *source;
+	int ok;
 
-	for (i = 0; i < numskins; i++)
-		free(skins[i].data);
+	if (skinname[0] == 0 || noskins.value == 1)
+		skinname = baseskin.string;
 
-	numskins = 0;
-}
-
-void Skin_NextDownload(void)
-{
-	char buf[128];
-	player_info_t *sc;
-	int i;
-
-	if (cls.downloadnumber == 0)
-		Com_Printf ("Checking skins...\n");
-
-	cls.downloadtype = dl_skin;
-
-	for ( ; cls.downloadnumber != MAX_CLIENTS; cls.downloadnumber++)
+	source = skinsources;
+	while(source)
 	{
-		sc = &cl.players[cls.downloadnumber];
-		if (!sc->name[0])
-			continue;
+		if (strcmp(source->skinname, skinname) == 0)
+			return source;
 
-		Skin_Find(sc);
-
-		if (noskins.value)
-			continue;
-
-		if (!CL_CheckOrDownloadFile(va("skins/%s.pcx", sc->skin->name)))
-			return;		// started a download
+		source = source->next;
 	}
 
-	cls.downloadtype = dl_none;
+	ok = 0;
 
-	// now load them in for real
-	for (i = 0; i < MAX_CLIENTS; i++)
+	source = malloc(sizeof(*source));
+	if (source)
 	{
-		sc = &cl.players[i];
-		if (!sc->name[0])
-			continue;
+		memset(source, 0, sizeof(*source));
 
-		Skin_Cache(sc->skin);
-		sc->skin = NULL;
-	}
-
-	if (cls.state == ca_onserver && cbuf_current != cbuf_main)	//only download when connecting
-	{
-#ifdef NETQW
-		if (cls.netqw)
+		source->skinname = strdup(skinname);
+		if (source->skinname)
 		{
-			i = snprintf(buf, sizeof(buf), "%cbegin %i", clc_stringcmd, cl.servercount);
-			if (i < sizeof(buf))
-				NetQW_AppendReliableBuffer(cls.netqw, buf, i + 1);
+			if (ParseColourDescription(skinname, source->data.solidcolour.colours))
+			{
+				source->type = SKINSOURCE_SOLIDCOLOUR;
+			}
+			else if (skinname[0] && (source->data.texture.data = Image_LoadPCX(0, va("skins/%s.pcx", skinname), 0, 0, &source->data.texture.width, &source->data.texture.height)))
+			{
+				Skin_SetupTexture(source);
+			}
+			else if ((source->data.texture.data = Image_LoadPCX(0, "skins/base.pcx", 0, 0, &source->data.texture.width, &source->data.texture.height)))
+			{
+				Skin_SetupTexture(source);
+			}
+			else
+			{
+				source->type = SKINSOURCE_SOLIDCOLOUR;
+				source->data.solidcolour.colours[0] = 1;
+				source->data.solidcolour.colours[1] = 0;
+				source->data.solidcolour.colours[2] = 1;
+			}
+
+			source->next = skinsources;
+			skinsources = source;
+
+			return source;
 		}
-#else
-		MSG_WriteByte(&cls.netchan.message, clc_stringcmd);
-		MSG_WriteString(&cls.netchan.message, va("begin %i", cl.servercount));
-#endif
+
+		free(source);
 	}
+
+	return 0;
 }
 
-//Refind all skins, downloading if needed.
-void Skin_Skins_f(void)
+static void Skin_DeleteSource(struct SkinSource *source)
 {
-	Skin_UncacheAll();
+	struct SkinSource *s;
+	struct SkinTranslation *translation;
+	struct SkinTranslation *next;
 
-	cls.downloadnumber = 0;
-	cls.downloadtype = dl_skin;
-	Skin_NextDownload ();
-}
-
-void Skin_Reload()
-{
-	player_info_t *sc;
-	int i;
-
-	Skin_UncacheAll();
-
-	for(i=0;i<MAX_CLIENTS;i++)
+	next = source->translations;
+	while((translation = next))
 	{
-		sc = &cl.players[i];
-		if (sc->name[0])
+		next = translation->next;
+
+		SkinImp_Destroy(translation->skinimp);
+		free(translation);
+	}
+
+	if (source == skinsources)
+		skinsources = source->next;
+	else
+	{
+		s = skinsources;
+		while(s)
 		{
-			Skin_Find(sc);
-			Skin_Cache(sc->skin);
-			sc->skin = 0;
+			if (s->next == source)
+			{
+				s->next = source->next;
+				break;
+			}
+
+			s = s->next;
 		}
 	}
+}
+
+struct SkinImp *Skin_GetTranslation(const char *skinname, unsigned int topcolour, unsigned int bottomcolour)
+{
+	struct SkinSource *source;
+	struct SkinTranslation *translation;
+	struct SkinImp *skinimp;
+
+	source = Skin_GetSource(skinname);
+	if (!source)
+		return 0;
+
+	if (topcolour > 13)
+		topcolour = 13;
+
+	if (bottomcolour > 13)
+		bottomcolour = 13;
+
+	translation = source->translations;
+	while(translation)
+	{
+		if ((translation->topcolour == topcolour && translation->bottomcolour == bottomcolour)
+		 || source->type == SKINSOURCE_SOLIDCOLOUR
+		 || source->type == SKINSOURCE_TEXTURE_PALETTED)
+		{
+			return translation->skinimp;
+		}
+
+		translation = translation->next;
+	}
+
+	translation = malloc(sizeof(*translation));
+	if (translation)
+	{
+		memset(translation, 0, sizeof(*translation));
+
+		skinimp = 0;
+
+		if (source->type == SKINSOURCE_SOLIDCOLOUR)
+			skinimp = SkinImp_CreateSolidColour(source->data.solidcolour.colours);
+		else if (source->type == SKINSOURCE_TEXTURE_PALETTED)
+			skinimp = SkinImp_CreateTexturePaletted(source->data.texture.data, 296, 194, source->data.texture.width);
+		else if (source->type == SKINSOURCE_TEXTURE_PALETTED_TRANSLATED)
+		{
+			unsigned char table[256];
+			unsigned char *translated;
+			unsigned char *src;
+			unsigned char *dst;
+			unsigned int top;
+			unsigned int bottom;
+			unsigned int width;
+			unsigned int height;
+			unsigned int x;
+			unsigned int y;
+			unsigned int i;
+
+			translated = malloc(296*194);
+			if (translated)
+			{
+				top = topcolour * 16;
+				bottom = bottomcolour * 16;
+
+				for(i=0;i<16;i++)
+				{
+					table[i] = i;
+				}
+
+				if (top < 128)
+				{
+					for(i=0;i<16;i++)
+					{
+						table[i + 16] = top + i;
+					}
+				}
+				else
+				{
+					for(i=0;i<16;i++)
+					{
+						table[i + 16] = top + 15 - i;
+					}
+				}
+
+				for(i=32;i<96;i++)
+				{
+					table[i] = i;
+				}
+
+				if (bottom < 128)
+				{
+					for(i=0;i<16;i++)
+					{
+						table[i + 96] = bottom + i;
+					}
+				}
+				else
+				{
+					for(i=0;i<16;i++)
+					{
+						table[i + 96] = bottom + 15 - i;
+					}
+				}
+
+				for(i=112;i<256;i++)
+				{
+					table[i] = i;
+				}
+
+				src = source->data.texture.data;
+				dst = translated;
+
+				width = source->data.texture.width;
+				if (width > 296)
+					width = 296;
+
+				height = source->data.texture.height;
+				if (height > 194)
+					height = 194;
+
+				for(y=0;y<height;y++)
+				{
+					for(x=0;x<width;x++)
+					{
+						dst[x] = table[src[x]];
+					}
+
+					for(;x<296;x++)
+					{
+						dst[x] = 0;
+					}
+
+					src += source->data.texture.width;
+					dst += 296;
+				}
+
+				if (y != 194)
+					memset(dst, 0, (194-y)*296);
+
+				skinimp = SkinImp_CreateTexturePaletted(translated, 296, 194, 296);
+
+				free(translated);
+			}
+		}
+
+		if (skinimp)
+		{
+			translation->topcolour = topcolour;
+			translation->bottomcolour = bottomcolour;
+			translation->skinimp = skinimp;
+
+			translation->next = source->translations;
+			source->translations = translation;
+
+			return skinimp; 
+		}
+
+		free(translation);
+	}
+
+	return 0;
+}
+
+void Skin_FreeAll()
+{
+	while(skinsources)
+		Skin_DeleteSource(skinsources);
+}
+
+void Skin_CvarInit()
+{
+	Cvar_SetCurrentGroup(CVAR_GROUP_SKIN);
+	Cvar_Register(&baseskin);
+	Cvar_Register(&noskins);
+	Cvar_ResetCurrentGroup();
+}
+
+void Skin_Init()
+{
 }
 
 void Skin_Shutdown()
 {
-	Skin_UncacheAll();
+	Skin_FreeAll();
 }
 

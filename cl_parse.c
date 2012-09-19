@@ -41,7 +41,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 extern cvar_t net_maxfps;
 
-void R_TranslatePlayerSkin (int playernum);
 void R_PreMapLoad(void);
 
 char *svc_strings[] =
@@ -365,9 +364,6 @@ void CL_RequestNextDownload (void)
 	switch (cls.downloadtype)
 	{
 	case dl_single:
-		break;
-	case dl_skin:
-		Skin_NextDownload ();
 		break;
 	case dl_model:
 		Model_NextDownload ();
@@ -1229,54 +1225,12 @@ void CL_ParseClientdata (void)
 	}
 }
 
-void CL_NewTranslation (int slot)
-{
-	player_info_t *player;
-	int tracknum;
-
-	if (cls.state < ca_connected)
-		return;
-
-	if (slot >= MAX_CLIENTS)
-		Sys_Error ("CL_NewTranslation: slot >= MAX_CLIENTS");
-
-	player = &cl.players[slot];
-	if (!player->name[0] || player->spectator)
-		return;
-
-	player->topcolor = player->real_topcolor;
-	player->bottomcolor = player->real_bottomcolor;
-
-
-	if (cl.spectator && (tracknum = Cam_TrackNum()) != -1)
-		skinforcing_team =  cl.players[tracknum].team;
-	else if (!cl.spectator)
-		skinforcing_team = cl.players[cl.playernum].team;
-
-
-	if (!cl.teamfortress && !(cl.fpd & FPD_NO_FORCE_COLOR))
-	{
-		qboolean teammate;
-
-		teammate = (cl.teamplay && !strcmp(player->team, skinforcing_team)) ? true : false;
-		if (cl_teamtopcolor >= 0 && teammate)
-		{
-			player->topcolor = cl_teamtopcolor;
-			player->bottomcolor = cl_teambottomcolor;
-		}
-		else if (cl_enemytopcolor >= 0 && slot != cl.playernum && !teammate)	{
-			player->topcolor = cl_enemytopcolor;
-			player->bottomcolor = cl_enemybottomcolor;
-		}
-	}
-
-	R_TranslatePlayerSkin(slot);
-}
-
 void CL_ProcessUserInfo (int slot, player_info_t *player, char *key)
 {
 	qboolean update_skin;
 	int mynum;
+	int colourschanged;
+	int teamchanged;
 
 	Q_strncpyz (player->name, Info_ValueForKey (player->userinfo, "name"), sizeof(player->name));
 	if (!player->name[0] && player->userid && strlen(player->userinfo) >= MAX_INFO_STRING - 17)
@@ -1305,17 +1259,18 @@ void CL_ProcessUserInfo (int slot, player_info_t *player, char *key)
 	if (!cl.spectator || (mynum = Cam_TrackNum()) == -1)
 		mynum = cl.playernum;
 
-	update_skin = !key ||	(!player->spectator && ( !strcmp(key, "skin") || !strcmp(key, "topcolor") ||
-													 !strcmp(key, "bottomcolor") || !strcmp(key, "team")
-													)
-							);
+	colourschanged = !key || strcmp(key, "topcolor") == 0 || strcmp(key, "bottomcolor") == 0;
+	teamchanged = !key || strcmp(key, "team") == 0;
 
-	if (slot == mynum && TP_NeedRefreshSkins() && strcmp(player->team, player->_team))
-		TP_RefreshSkins();
-	else if (update_skin)
-		TP_RefreshSkin(slot);
+	update_skin = !key
+	            || (!player->spectator && (!strcmp(key, "skin") || colourschanged || teamchanged)
+	              );
 
-	strcpy (player->_team, player->team);
+	if (update_skin)
+		TP_CalculateSkinForPlayer(slot);
+
+	if (colourschanged || teamchanged)
+		TP_CalculateColoursForPlayer(slot);
 }
 
 void CL_PlayerEnterSlot(player_info_t *player)
@@ -1466,7 +1421,7 @@ void CL_ProcessServerInfo (void)
 	cl.teamplay = teamplay;
 	cl.fpd = fpd;
 	if (skin_refresh)
-		TP_RefreshSkins();
+		TP_RecalculateSkins();
 }
 
 void CL_ParseServerInfoChange (void)

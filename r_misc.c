@@ -25,62 +25,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "ruleset.h"
 
-char *Skin_FindName(player_info_t *sc);
-
-void R_TranslatePlayerSkin(int playernum)
-{
-	char s[512];
-	int i, j, top, bottom;
-	byte *dest, *source;
-	player_info_t *player;
-
-	player = &cl.players[playernum];
-
-	if (!player->name[0])
-		return;
-
-	Q_strncpyz(s, Skin_FindName(player), sizeof(s));
-	COM_StripExtension(s);
-
-	if (player->skin && Q_strcasecmp(s, player->skin->name))
-		player->skin = NULL;
-
-	if (player->_topcolor != player->topcolor || player->_bottomcolor != player->bottomcolor || !player->skin)
-	{
-
-		player->_topcolor = player->topcolor;
-		player->_bottomcolor = player->bottomcolor;
-
-		dest = player->translations;
-		source = vid.colormap;
-		memcpy (dest, vid.colormap, sizeof(player->translations));
-
-		top = bound(0, player->topcolor, 13) * 16;
-		bottom = bound(0, player->bottomcolor, 13) * 16;
-
-		for (i = 0; i < VID_GRADES; i++, dest += 256, source += 256)
-		{
-			if (top < 128)	{ // the artists made some backwards ranges.  sigh.
-				memcpy(dest + TOP_RANGE, source + top, 16);
-			}
-			else
-			{
-				for (j = 0; j < 16; j++)
-					dest[TOP_RANGE + j] = source[top + 15 - j];
-			}					
-			if (bottom < 128)
-			{
-				memcpy(dest + BOTTOM_RANGE, source + bottom, 16);
-			}
-			else
-			{
-				for (j = 0 ; j < 16 ; j++)
-					dest[BOTTOM_RANGE + j] = source[bottom + 15 - j];
-			}
-		}
-	}
-}
-
 void R_CheckVariables(void)
 {
 #if 0

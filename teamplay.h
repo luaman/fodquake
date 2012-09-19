@@ -74,14 +74,13 @@ void TP_ParseWeaponModel(model_t *model);
 char *TP_ParseWhiteText(char *s, qboolean team, int offset);
 
 
-
-void TP_UpdateSkins(void);
-void TP_RefreshSkin(int);
-void TP_RefreshSkins(void);
-qboolean TP_NeedRefreshSkins(void);
+void TP_CalculateSkinForPlayer(unsigned int slot);
+void TP_CalculateColoursForPlayer(unsigned int slot);
+void TP_RecalculateSkins(void);
 
 extern char *skinforcing_team;
 
+void TP_Frame(void);
 
 void TP_CvarInit(void);
 void TP_Shutdown(void);

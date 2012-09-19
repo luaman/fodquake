@@ -1,5 +1,5 @@
 /*
-Copyright (C) 1996-1997 Id Software, Inc.
+Copyright (C) 2012 Mark Olsen
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -15,28 +15,9 @@ See the GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
-
 */
 
-#include "cvar.h"
-
-#ifdef GLQUAKE
-extern float v_blend[4];
-void V_AddLightBlend (float r, float g, float b, float a2);
-#endif
-
-extern cvar_t v_gamma;
-extern cvar_t v_contrast;
-
-void V_CvarInit(void);
-void V_Init (void);
-void V_RenderView (void);
-void V_UpdatePalette(qboolean force_update);
-unsigned char V_LookUpColour(float r, float g, float b);
-unsigned char V_LookUpColourNoFullbright(float r, float g, float b);
-void V_ParseDamage (void);
-void V_SetContentsColor (int contents);
-void V_CalcBlend (void);
-
-float V_CalcRoll (vec3_t angles, vec3_t velocity);
+struct SkinImp *SkinImp_CreateSolidColour(float *colours);
+struct SkinImp *SkinImp_CreateTexturePaletted(void *data, unsigned int width, unsigned int height, unsigned int modulo);
+void SkinImp_Destroy(struct SkinImp *skinimp);
 
