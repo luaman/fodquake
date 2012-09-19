@@ -32,8 +32,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 cvar_t baseskin = {"baseskin", "base"};
 cvar_t noskins = {"noskins", "0"};
 
-char allskins[MAX_OSPATH];
-
 #define	MAX_CACHED_SKINS	128
 skin_t skins[MAX_CACHED_SKINS];
 
@@ -45,18 +43,11 @@ char *Skin_FindName(player_info_t *sc)
 	char *s;
 	static char name[MAX_OSPATH];
 
-	if (allskins[0])
-	{
-		Q_strncpyz(name, allskins, sizeof(name));
-	}
+	s = Info_ValueForKey(sc->userinfo, "skin");
+	if (s && s[0])
+		Q_strncpyz(name, s, sizeof(name));
 	else
-	{
-		s = Info_ValueForKey(sc->userinfo, "skin");
-		if (s && s[0])
-			Q_strncpyz(name, s, sizeof(name));
-		else
-			Q_strncpyz(name, baseskin.string, sizeof(name));
-	}
+		Q_strncpyz(name, baseskin.string, sizeof(name));
 
 	if (cl.spectator && (tracknum = Cam_TrackNum()) != -1)
 		skinforcing_team = cl.players[tracknum].team;
@@ -274,23 +265,6 @@ void Skin_Skins_f(void)
 	cls.downloadnumber = 0;
 	cls.downloadtype = dl_skin;
 	Skin_NextDownload ();
-}
-
-//Sets all skins to one specific one
-void Skin_AllSkins_f(void)
-{
-	if (Cmd_Argc() == 1)
-	{
-		Com_Printf("allskins set to \"%s\"\n", allskins);
-		return;
-	}
-	if (Cmd_Argc() != 2)
-	{
-		Com_Printf("Usage: %s [skin]\n", Cmd_Argv(0));
-		return;
-	}
-	Q_strncpyz(allskins, Cmd_Argv(1), sizeof(allskins));
-	Skin_Skins_f();
 }
 
 void Skin_Reload()

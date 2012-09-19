@@ -57,7 +57,6 @@ extern kbutton_t	in_use, in_jump, in_attack, in_up,	in_down;
 extern qboolean		sb_showscores, sb_showteamscores;
 
 extern int		cl_teamtopcolor, cl_teambottomcolor, cl_enemytopcolor, cl_enemybottomcolor;
-extern char		allskins[128];
 
 cvar_t	cfg_save_unchanged	=	{"cfg_save_unchanged", "0"};
 cvar_t	cfg_save_userinfo	=	{"cfg_save_userinfo", "2"};
@@ -396,9 +395,6 @@ static void DumpColorForcing(FILE *f, char *name, int topcolor, int bottomcolor)
 
 static void DumpTeamplay(FILE *f)
 {
-	if (allskins[0])
-		fprintf(f, "allskins \"%s\"\n", allskins);
-
 	DumpColorForcing(f, "teamcolor", cl_teamtopcolor, cl_teambottomcolor);
 	DumpColorForcing(f, "enemycolor", cl_enemytopcolor, cl_enemybottomcolor);
 
@@ -512,7 +508,6 @@ static void ResetPlusCommands(void)
 
 static void ResetTeamplayCommands(void)
 {
-	allskins[0] = 0;
 	Cbuf_AddText("enemycolor off\nteamcolor	off\n");
 	Cbuf_AddText("filter clear\n");
 	TP_ResetAllTriggers();

@@ -592,7 +592,6 @@ void CL_InitCommands (void) {
 	Cmd_AddCommand ("say_team", CL_Say_f);
 	Cmd_AddCommand ("serverinfo", CL_Serverinfo_f);
 	Cmd_AddCommand ("skins", Skin_Skins_f);
-	Cmd_AddCommand ("allskins", Skin_AllSkins_f);
 	Cmd_AddCommand ("user", CL_User_f);
 	Cmd_AddCommand ("users", CL_Users_f);
 	Cmd_AddCommand ("version", CL_Version_f);
