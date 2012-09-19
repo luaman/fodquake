@@ -49,14 +49,19 @@ struct SkinImp *SkinImp_CreateTexturePaletted(void *data, unsigned int width, un
 	unsigned int x;
 	unsigned int y;
 
+	if (width > 296)
+		width = 296;
+	if (height > 194)
+		height = 194;
+
 	skinimp = malloc(sizeof(*skinimp));
 	if (skinimp)
 	{
-		skinimp->data = malloc(width*height);
+		skinimp->data = malloc(296*194);
 		if (skinimp->data)
 		{
-			skinimp->width = width;
-			skinimp->height = height;
+			skinimp->width = 296;
+			skinimp->height = 194;
 
 			src = data;
 			dst = skinimp->data;
@@ -68,9 +73,15 @@ struct SkinImp *SkinImp_CreateTexturePaletted(void *data, unsigned int width, un
 					dst[x] = src[x];
 				}
 
+				for(;x<296;x++)
+					dst[x] = 0;
+
 				src += modulo;
-				dst += width;
+				dst += 296;
 			}
+
+			if (height != 194)
+				memset(dst, 0, (194-height)*296);
 
 			return skinimp;
 		}
