@@ -353,7 +353,7 @@ void SafeRead (FILE *f, void *buffer, int count)
 void SafeWrite (FILE *f, void *buffer, int count)
 {
 	if (fwrite (buffer, 1, count, f) != (size_t)count)
-		Error ("File read failure");
+		Error ("File write failure");
 }
 
 
