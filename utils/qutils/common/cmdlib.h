@@ -45,8 +45,6 @@ int Q_strncasecmp (char *s1, char *s2, int n);
 int Q_strcasecmp (char *s1, char *s2);
 void Q_getwd (char *out);
 
-int filelength (FILE *f);
-
 void	Q_mkdir (char *path);
 
 extern	char		qdir[1024];
