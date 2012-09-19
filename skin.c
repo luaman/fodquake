@@ -105,6 +105,9 @@ static void Skin_SetupTexture(struct SkinSource *source)
 			}
 		}
 
+		if (source->type == SKINSOURCE_TEXTURE_PALETTED_TRANSLATED)
+			break;
+
 		p += source->data.texture.width;
 	}
 }
