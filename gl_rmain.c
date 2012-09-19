@@ -973,7 +973,7 @@ static void R_DrawAliasModelList2TMU(entity_t *ent, unsigned int entcount)
 				if (skinimp)
 				{
 					texture = skinimp->texid;
-					fb_texture = 0;
+					fb_texture = skinimp->fbtexid;
 				}
 			}
 		}
@@ -1156,7 +1156,7 @@ static void R_DrawAliasModel(entity_t *ent)
 			if (skinimp)
 			{
 				texture = skinimp->texid;
-				fb_texture = 0;
+				fb_texture = skinimp->fbtexid;
 			}
 		}
 	}

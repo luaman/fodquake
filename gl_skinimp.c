@@ -57,6 +57,26 @@ struct SkinImp *SkinImp_CreateTexturePaletted(void *data, unsigned int width, un
 	unsigned int *dst;
 	unsigned int x;
 	unsigned int y;
+	unsigned int dofullbright;
+
+	dofullbright = 0;
+	src = data;
+	for(y=0;y<height;y++)
+	{
+		for(x=0;x<width;x++)
+		{
+			if (src[x] >= 224)
+			{
+				dofullbright = 1;
+				break;
+			}
+		}
+
+		if (dofullbright)
+			break;
+
+		src += modulo;
+	}
 
 	skinimp = malloc(sizeof(*skinimp));
 	if (skinimp)
@@ -80,14 +100,39 @@ struct SkinImp *SkinImp_CreateTexturePaletted(void *data, unsigned int width, un
 					dst += width;
 				}
 
-				dst = skinmem;
-
 				skinimp->texid = texture_extension_number++;
 
 				GL_Bind(skinimp->texid);
 				glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, skinmem);
 				glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 				glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+				if (dofullbright)
+				{
+					src = data;
+					dst = skinmem;
+
+					for(y=0;y<height;y++)
+					{
+						for(x=0;x<width;x++)
+						{
+							if (src[x] < 224)
+								dst[x] = 0;
+						}
+
+						src += modulo;
+						dst += width;
+					}
+
+					skinimp->fbtexid = texture_extension_number++;
+
+					GL_Bind(skinimp->fbtexid);
+					glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, skinmem);
+					glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+					glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+				}
+				else
+					skinimp->fbtexid = 0;
 
 				free(skinmem);
 
