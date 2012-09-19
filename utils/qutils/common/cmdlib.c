@@ -301,10 +301,10 @@ char *strlower (char *start)
 
 /*
 ================
-filelength
+Q_filelength
 ================
 */
-int filelength (FILE *f)
+static int Q_filelength (FILE *f)
 {
 	int		pos;
 	int		end;
@@ -370,7 +370,7 @@ int    LoadFile (char *filename, void **bufferptr)
 	void    *buffer;
 
 	f = SafeOpenRead (filename);
-	length = filelength (f);
+	length = Q_filelength (f);
 	buffer = malloc (length+1);
 	((char *)buffer)[length] = 0;
 	SafeRead (f, buffer, length);
