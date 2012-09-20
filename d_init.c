@@ -35,8 +35,6 @@ float			d_scalemip[NUM_MIPS-1];
 
 static float	basemip[NUM_MIPS-1] = {1.0, 0.5*0.8, 0.25*0.8};
 
-extern int		d_aflatcolor;
-
 void (*d_drawspans) (espan_t *pspan);
 
 void D_CvarInit(void)
@@ -85,7 +83,5 @@ void D_SetupFrame (void)
 	else
 #endif
 		d_drawspans = D_DrawSpans8;
-
-	d_aflatcolor = 0;
 }
 
