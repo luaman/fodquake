@@ -55,15 +55,16 @@ typedef struct
 	int		*prightedgevert2;
 } edgetable;
 
-int	r_p0[6], r_p1[6], r_p2[6];
+static int	r_p0[6], r_p1[6], r_p2[6];
 
-byte		*d_pcolormap;
+static byte		*d_pcolormap;
 
-int			d_xdenom;
+static int			d_aflatcolor;
+static int			d_xdenom;
 
-edgetable	*pedgetable;
+static edgetable	*pedgetable;
 
-edgetable	edgetables[12] =
+static edgetable	edgetables[12] =
 {
 	{0, 1, r_p0, r_p2, NULL, 2, r_p0, r_p1, r_p2 },
 	{0, 2, r_p1, r_p0, r_p2,   1, r_p1, r_p2, NULL},
@@ -80,24 +81,24 @@ edgetable	edgetables[12] =
 };
 
 // FIXME: some of these can become statics
-int				a_sstepxfrac, a_tstepxfrac, r_lstepx, a_ststepxwhole;
-int				r_sstepx, r_tstepx, r_lstepy, r_sstepy, r_tstepy;
-int				r_zistepx, r_zistepy;
-int				d_aspancount, d_countextrastep;
+static int				a_sstepxfrac, a_tstepxfrac, r_lstepx, a_ststepxwhole;
+static int				r_sstepx, r_tstepx, r_lstepy, r_sstepy, r_tstepy;
+static int				r_zistepx, r_zistepy;
+static int				d_aspancount, d_countextrastep;
 
-spanpackage_t			*a_spans;
-spanpackage_t			*d_pedgespanpackage;
+static spanpackage_t			*a_spans;
+static spanpackage_t			*d_pedgespanpackage;
 static int				ystart;
-byte					*d_pdest, *d_ptex;
+static byte					*d_pdest, *d_ptex;
 static unsigned int d_colour;
-short					*d_pz;
-int						d_sfrac, d_tfrac, d_light, d_zi;
-int						d_ptexextrastep, d_sfracextrastep;
-int						d_tfracextrastep, d_lightextrastep, d_pdestextrastep;
-int						d_lightbasestep, d_pdestbasestep, d_ptexbasestep;
-int						d_sfracbasestep, d_tfracbasestep;
-int						d_ziextrastep, d_zibasestep;
-int						d_pzextrastep, d_pzbasestep;
+static short					*d_pz;
+static int						d_sfrac, d_tfrac, d_light, d_zi;
+static int						d_ptexextrastep, d_sfracextrastep;
+static int						d_tfracextrastep, d_lightextrastep, d_pdestextrastep;
+static int						d_lightbasestep, d_pdestbasestep, d_ptexbasestep;
+static int						d_sfracbasestep, d_tfracbasestep;
+static int						d_ziextrastep, d_zibasestep;
+static int						d_pzextrastep, d_pzbasestep;
 
 typedef struct
 {
@@ -110,18 +111,18 @@ static adivtab_t	adivtab[32*32] =
 #include "adivtab.h"
 };
 
-byte	*skintable[MAX_LBM_HEIGHT];
-int		skinwidth;
-byte	*skinstart;
+static byte	*skintable[MAX_LBM_HEIGHT];
+static int		skinwidth;
+static byte	*skinstart;
 
 static void D_PolysetDrawSpans8 (spanpackage_t *pspanpackage);
-void D_PolysetCalcGradients (int skinwidth);
-void D_DrawSubdiv (void);
-void D_DrawNonSubdiv (void);
-void D_PolysetRecursiveTriangle (int *p1, int *p2, int *p3);
-void D_PolysetSetEdgeTable (void);
-void D_RasterizeAliasPolySmooth (void);
-void D_PolysetScanLeftEdge (int height);
+static void D_PolysetCalcGradients (int skinwidth);
+static void D_DrawSubdiv (void);
+static void D_DrawNonSubdiv (void);
+static void D_PolysetRecursiveTriangle (int *p1, int *p2, int *p3);
+static void D_PolysetSetEdgeTable (void);
+static void D_RasterizeAliasPolySmooth (void);
+static void D_PolysetScanLeftEdge (int height);
 
 #if	!id386
 
@@ -188,7 +189,7 @@ void D_PolysetDrawFinalVerts (finalvert_t *fv, int numverts)
 D_DrawSubdiv
 ================
 */
-void D_DrawSubdiv (void)
+static void D_DrawSubdiv (void)
 {
 	mtriangle_t		*ptri;
 	finalvert_t		*pfv, *index0, *index1, *index2;
@@ -249,7 +250,7 @@ void D_DrawSubdiv (void)
 D_DrawNonSubdiv
 ================
 */
-void D_DrawNonSubdiv (void)
+static void D_DrawNonSubdiv (void)
 {
 	mtriangle_t		*ptri;
 	finalvert_t		*pfv, *index0, *index1, *index2;
@@ -317,7 +318,7 @@ void D_DrawNonSubdiv (void)
 D_PolysetRecursiveTriangle
 ================
 */
-void D_PolysetRecursiveTriangle (int *lp1, int *lp2, int *lp3)
+static void D_PolysetRecursiveTriangle (int *lp1, int *lp2, int *lp3)
 {
 	int		*temp;
 	int		d;
@@ -426,7 +427,7 @@ void D_PolysetUpdateTables (void)
 D_PolysetScanLeftEdge
 ====================
 */
-void D_PolysetScanLeftEdge (int height)
+static void D_PolysetScanLeftEdge (int height)
 {
 
 	do
@@ -502,7 +503,7 @@ void D_PolysetScanLeftEdge (int height)
 D_PolysetSetUpForLineScan
 ====================
 */
-void D_PolysetSetUpForLineScan(fixed8_t startvertu, fixed8_t startvertv,
+static void D_PolysetSetUpForLineScan(fixed8_t startvertu, fixed8_t startvertv,
 		fixed8_t endvertu, fixed8_t endvertv)
 {
 	double		dm, dn;
@@ -543,7 +544,7 @@ void D_PolysetSetUpForLineScan(fixed8_t startvertu, fixed8_t startvertv,
 D_PolysetCalcGradients
 ================
 */
-void D_PolysetCalcGradients (int skinwidth)
+static void D_PolysetCalcGradients (int skinwidth)
 {
 	float	xstepdenominv, ystepdenominv, t0, t1;
 	float	p01_minus_p21, p11_minus_p21, p00_minus_p20, p10_minus_p20;
@@ -753,7 +754,7 @@ static void D_PolysetDrawSpans(spanpackage_t *pspanpackage)
 D_RasterizeAliasPolySmooth
 ================
 */
-void D_RasterizeAliasPolySmooth (void)
+static void D_RasterizeAliasPolySmooth (void)
 {
 	int				initialleftheight, initialrightheight;
 	int				*plefttop, *prighttop, *pleftbottom, *prightbottom;
@@ -984,7 +985,7 @@ void D_RasterizeAliasPolySmooth (void)
 D_PolysetSetEdgeTable
 ================
 */
-void D_PolysetSetEdgeTable (void)
+static void D_PolysetSetEdgeTable (void)
 {
 	int			edgetableindex;
 
