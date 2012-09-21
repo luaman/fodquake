@@ -202,6 +202,13 @@ static void Skin_DeleteSource(struct SkinSource *source)
 			s = s->next;
 		}
 	}
+
+	free(source->skinname);
+	if (source->type == SKINSOURCE_TEXTURE_PALETTED || source->type == SKINSOURCE_TEXTURE_PALETTED_TRANSLATED)
+	{
+		free(source->data.texture.data);
+	}
+	free(source);
 }
 
 struct SkinImp *Skin_GetTranslation(const char *skinname, unsigned int topcolour, unsigned int bottomcolour)

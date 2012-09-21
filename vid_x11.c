@@ -301,6 +301,8 @@ static void updatethread(void *arg)
 			d->updatethread_signal = 0;
 			Sys_Thread_DeleteSignal(signal);
 		}
+
+		XCloseDisplay(x_disp);
 	}
 
 	Sys_Thread_UnlockMutex(d->updatethread_mutex);
@@ -732,6 +734,8 @@ void Sys_Video_Close(void *display)
 
 		Sys_Thread_DeleteThread(d->updatethread);
 	}
+
+	Sys_Thread_DeleteMutex(d->updatethread_mutex);
 
 	X11_Input_Shutdown(d->inputdata);
 
