@@ -294,15 +294,15 @@ static qboolean alsa_init(struct SoundCard *sc, int rate, int channels, int bits
 
 		prevattempt = "default";
 		ret = alsa_init_internal(sc, "default", rate, channels, bits);
-        }
+	}
 	if (ret == 0 && strcmp(snd_alsa_device.string, "hw") != 0)
 	{
 		Com_Printf("ALSA: Opening \"%s\" failed, trying \"hw\"\n", prevattempt);
 
 		ret = alsa_init_internal(sc, "hw", rate, channels, bits);
-        }
+	}
 
-        return ret;
+	return ret;
 }
 
 SoundCvarInitFunc ALSA_CvarInit = alsa_cvarinit;
