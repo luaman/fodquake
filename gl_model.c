@@ -30,6 +30,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "gl_local.h"
 #include "crc.h"
 #include "wad.h"
+#include "skin.h"
 #include "teamplay.h"
 #include "filesystem.h"
 #ifdef NETQW
@@ -1798,8 +1799,6 @@ mtriangle_t	triangles[MAXALIASTRIS];
 trivertx_t	*poseverts[MAXALIASFRAMES];
 int			posenum;
 
-byte		player_8bit_texels[320 * 200];
-
 static void *Mod_LoadAliasFrame(aliashdr_t *pheader, void * pin, maliasframedesc_t *frame)
 {
 	trivertx_t *pinframe;
@@ -1998,9 +1997,7 @@ static void *Mod_LoadAllSkins(model_t *model, aliashdr_t *pheader, int numskins,
 			// save 8 bit texels for the player model to remap
 			if (model->modhint == MOD_PLAYER)
 			{
-				if (s > sizeof(player_8bit_texels))
-					Host_Error ("Mod_LoadAllSkins: Player skin too large");
-				memcpy (player_8bit_texels, (byte *) (pskintype + 1), s);
+				Skin_SetDefault(pskintype + 1, pheader->skinwidth, pheader->skinheight);
 			}
 
 			Q_snprintfz (identifier, sizeof(identifier), "%s_%i", basename, i);

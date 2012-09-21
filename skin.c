@@ -29,6 +29,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 static cvar_t baseskin = { "baseskin", "base" };
 static cvar_t noskins = { "noskins", "0" };
 
+static void *defaultskin;
+
 enum SkinSourceType
 {
 	SKINSOURCE_SOLIDCOLOUR,
@@ -129,8 +131,6 @@ static struct SkinSource *Skin_GetSource(const char *skinname)
 		source = source->next;
 	}
 
-	ok = 0;
-
 	source = malloc(sizeof(*source));
 	if (source)
 	{
@@ -139,6 +139,8 @@ static struct SkinSource *Skin_GetSource(const char *skinname)
 		source->skinname = strdup(skinname);
 		if (source->skinname)
 		{
+			ok = 1;
+
 			if (ParseColourDescription(skinname, source->data.solidcolour.colours))
 			{
 				source->type = SKINSOURCE_SOLIDCOLOUR;
@@ -151,22 +153,44 @@ static struct SkinSource *Skin_GetSource(const char *skinname)
 			{
 				Skin_SetupTexture(source);
 			}
+			else if (strcmp(skinname, "base") == 0)
+			{
+				if (defaultskin && (source->data.texture.data = malloc(296*194)))
+				{
+					memcpy(source->data.texture.data, defaultskin, 296*194);
+					source->data.texture.width = 296;
+					source->data.texture.height = 194;
+					Skin_SetupTexture(source);
+				}
+				else
+				{
+					source->type = SKINSOURCE_SOLIDCOLOUR;
+					source->data.solidcolour.colours[0] = 1;
+					source->data.solidcolour.colours[1] = 0;
+					source->data.solidcolour.colours[2] = 1;
+				}
+			}
 			else
 			{
-				source->type = SKINSOURCE_SOLIDCOLOUR;
-				source->data.solidcolour.colours[0] = 1;
-				source->data.solidcolour.colours[1] = 0;
-				source->data.solidcolour.colours[2] = 1;
+				ok = 0;
 			}
 
-			source->next = skinsources;
-			skinsources = source;
+			if (ok)
+			{
+				source->next = skinsources;
+				skinsources = source;
 
-			return source;
+				return source;
+			}
+
+			free(source->skinname);
 		}
 
 		free(source);
 	}
+
+	if (strcmp(skinname, "base") != 0)
+		return Skin_GetSource("base");
 
 	return 0;
 }
@@ -370,6 +394,37 @@ struct SkinImp *Skin_GetTranslation(const char *skinname, unsigned int topcolour
 	return 0;
 }
 
+void Skin_SetDefault(void *data, unsigned int width, unsigned int height)
+{
+	unsigned int x;
+	unsigned int y;
+	unsigned char *src;
+	unsigned char *dst;
+
+	if (width < 296 || height < 194)
+		return;
+
+	if (!defaultskin)
+		defaultskin = malloc(296*194);
+
+	if (!defaultskin)
+		return;
+
+	src = data;
+	dst = defaultskin;
+
+	for(y=0;y<194;y++)
+	{
+		for(x=0;x<296;x++)
+		{
+			dst[x] = src[x];
+		}
+
+		src += width;
+		dst += 296;
+	}
+}
+
 void Skin_FreeAll()
 {
 	while(skinsources)
@@ -391,5 +446,8 @@ void Skin_Init()
 void Skin_Shutdown()
 {
 	Skin_FreeAll();
+
+	free(defaultskin);
+	defaultskin = 0;
 }
 

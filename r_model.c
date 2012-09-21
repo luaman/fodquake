@@ -29,6 +29,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "quakedef.h"
 #include "crc.h"
 #include "r_local.h"
+#include "skin.h"
 #include "filesystem.h"
 #include "image.h"
 #ifdef NETQW
@@ -1673,6 +1674,9 @@ static void *Mod_LoadAliasSkin(model_t *model, mdl_t *mdl, unsigned int skinnum,
 	skinwidth = mdl->skinwidth;
 	skinheight = mdl->skinheight;
 	skinsize = skinwidth * skinheight;
+
+	if (model->modhint == MOD_PLAYER)
+		Skin_SetDefault(pin, skinwidth, skinheight);
 
 	COM_CopyAndStripExtension(COM_SkipPath(model->name), basename, sizeof(basename));
 
