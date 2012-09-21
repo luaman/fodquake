@@ -32,6 +32,8 @@ void V_CvarInit(void);
 void V_Init (void);
 void V_RenderView (void);
 void V_UpdatePalette(qboolean force_update);
+unsigned char V_LookUpColourInt(unsigned int r, unsigned int g, unsigned int b);
+unsigned char V_LookUpColourIntNoFullbright(unsigned int r, unsigned int g, unsigned int b);
 unsigned char V_LookUpColour(float r, float g, float b);
 unsigned char V_LookUpColourNoFullbright(float r, float g, float b);
 void V_ParseDamage (void);
