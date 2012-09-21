@@ -18,6 +18,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 
 struct SkinImp *Skin_GetTranslation(const char *skinname, unsigned int topcolour, unsigned int bottomcolour);
+void Skin_SetDefault(void *data, unsigned int width, unsigned int height);
 void Skin_FreeAll(void);
 void Skin_CvarInit(void);
 void Skin_Init(void);
