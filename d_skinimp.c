@@ -93,6 +93,56 @@ struct SkinImp *SkinImp_CreateTexturePaletted(void *data, unsigned int width, un
 	return 0;
 }
 
+static unsigned char findcolour(unsigned int abgr)
+{
+	return V_LookUpColourIntNoFullbright(((abgr>>0)&0xff), ((abgr>>8)&0xff), ((abgr>>16)&0xff));
+}
+
+struct SkinImp *SkinImp_CreateTextureTruecolour(void *data, unsigned int width, unsigned int height)
+{
+	struct SkinImp *skinimp;
+	unsigned int *src;
+	unsigned char *dst;
+	unsigned int srcstepx;
+	unsigned int srcstepy;
+	unsigned int x;
+	unsigned int y;
+
+	skinimp = malloc(sizeof(*skinimp));
+	if (skinimp)
+	{
+		skinimp->data = malloc(296*194);
+		if (skinimp->data)
+		{
+			memset(skinimp->data, 192, 296*194);
+
+			skinimp->width = 296;
+			skinimp->height = 194;
+
+			srcstepx = (width*(1<<16))/296;
+			srcstepy = (height*(1<<16))/194;
+
+			dst = skinimp->data;
+			for(y=0;y<194;y++)
+			{
+				src = data;
+				src += ((0x8000 + srcstepy * y) >> 16)*width;
+
+				for(x=0;x<296;x++)
+				{
+					dst[x] = findcolour(src[(0x8000 + srcstepx * x) >> 16]);
+				}
+
+				dst += 296;
+			}
+
+			return skinimp;
+		}
+	}
+
+	return 0;
+}
+
 void SkinImp_Destroy(struct SkinImp *skinimp)
 {
 	free(skinimp->data);

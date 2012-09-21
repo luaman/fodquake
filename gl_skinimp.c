@@ -146,6 +146,32 @@ struct SkinImp *SkinImp_CreateTexturePaletted(void *data, unsigned int width, un
 	return 0;
 }
 
+struct SkinImp *SkinImp_CreateTextureTruecolour(void *data, unsigned int width, unsigned int height)
+{
+	struct SkinImp *skinimp;
+
+	skinimp = malloc(sizeof(*skinimp));
+	if (skinimp)
+	{
+		if (gl_npot || (ISPOT(width) && ISPOT(height)))
+		{
+			skinimp->texid = texture_extension_number++;
+			skinimp->fbtexid = 0;
+
+			GL_Bind(skinimp->texid);
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+			return skinimp;
+		}
+
+		free(skinimp);
+	}
+
+	return 0;
+}
+
 void SkinImp_Destroy(struct SkinImp *skinimp)
 {
 	glDeleteTextures(1, &skinimp->texid);

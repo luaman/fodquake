@@ -19,5 +19,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 struct SkinImp *SkinImp_CreateSolidColour(float *colours);
 struct SkinImp *SkinImp_CreateTexturePaletted(void *data, unsigned int width, unsigned int height, unsigned int modulo);
+struct SkinImp *SkinImp_CreateTextureTruecolour(void *data, unsigned int width, unsigned int height);
 void SkinImp_Destroy(struct SkinImp *skinimp);
 

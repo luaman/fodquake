@@ -36,6 +36,7 @@ enum SkinSourceType
 	SKINSOURCE_SOLIDCOLOUR,
 	SKINSOURCE_TEXTURE_PALETTED,
 	SKINSOURCE_TEXTURE_PALETTED_TRANSLATED,
+	SKINSOURCE_TEXTURE_TRUECOLOUR,
 };
 
 struct SkinSource
@@ -145,6 +146,10 @@ static struct SkinSource *Skin_GetSource(const char *skinname)
 			{
 				source->type = SKINSOURCE_SOLIDCOLOUR;
 			}
+			else if (skinname[0] && (source->data.texture.data = Image_LoadPNG(0, va("skins/%s.png", skinname), 0, 0, &source->data.texture.width, &source->data.texture.height)))
+			{
+				source->type = SKINSOURCE_TEXTURE_TRUECOLOUR;
+			}
 			else if (skinname[0] && (source->data.texture.data = Image_LoadPCX(0, va("skins/%s.pcx", skinname), 0, 0, &source->data.texture.width, &source->data.texture.height)))
 			{
 				Skin_SetupTexture(source);
@@ -228,9 +233,12 @@ static void Skin_DeleteSource(struct SkinSource *source)
 	}
 
 	free(source->skinname);
-	if (source->type == SKINSOURCE_TEXTURE_PALETTED || source->type == SKINSOURCE_TEXTURE_PALETTED_TRANSLATED)
+	if (source->type == SKINSOURCE_TEXTURE_PALETTED || source->type == SKINSOURCE_TEXTURE_PALETTED_TRANSLATED || source->type == SKINSOURCE_TEXTURE_TRUECOLOUR)
 	{
-		free(source->data.texture.data);
+		if (source->data.texture.data && source->data.texture.data != defaultskin)
+		{
+			free(source->data.texture.data);
+		}
 	}
 	free(source);
 }
@@ -375,6 +383,8 @@ struct SkinImp *Skin_GetTranslation(const char *skinname, unsigned int topcolour
 				free(translated);
 			}
 		}
+		else if (source->type == SKINSOURCE_TEXTURE_TRUECOLOUR)
+			skinimp = SkinImp_CreateTextureTruecolour(source->data.texture.data, source->data.texture.width, source->data.texture.height);
 
 		if (skinimp)
 		{
