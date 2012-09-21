@@ -18,12 +18,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */
 
+#include <string.h>
 #include <stdlib.h>
 #include <math.h>
 
 #include "quakedef.h"
 #include "pmove.h"
 #include "teamplay.h"
+#include "filesystem.h"
 
 #include "utils.h"
 
@@ -181,6 +183,9 @@ cvar_t		v_contrast = {"sw_contrast", "1", CVAR_ARCHIVE};
 
 #endif
 
+static float old_gamma;
+static float old_contrast;
+
 #ifndef GLQUAKE
 void BuildGammaTable(float g, float c)
 {
@@ -206,9 +211,6 @@ void BuildGammaTable(float g, float c)
 
 qboolean V_CheckGamma(void)
 {
-	static float old_gamma;
-	static float old_contrast;
-
 	if (v_gamma.value == old_gamma && v_contrast.value == old_contrast)
 		return false;
 	old_gamma = v_gamma.value;
@@ -487,7 +489,7 @@ void V_UpdatePalette(qboolean force_update)
 	qboolean new;
 	float current_gamma, current_contrast, a, rgb[3];
 	static float prev_blend[4];
-	static float old_gamma, old_contrast, old_hwblend;
+	static float old_hwblend;
 	extern float vid_gamma;
 
 	new = false;
@@ -641,7 +643,79 @@ void V_UpdatePalette(qboolean force_update)
 
 #endif	// !GLQUAKE
 
-static unsigned char V_LookUpColourInternal(float r, float g, float b, unsigned int maxindex)
+static unsigned char *rgbmapcounts;
+static unsigned int *rgbmapoffsets;
+static unsigned char *rgbmapcolours;
+
+static unsigned char V_LookUpColourInternal_RGBMap(int r, int g, int b)
+{
+	double bestdistance;
+	double distance;
+	unsigned int bestfit;
+	unsigned int i;
+	unsigned int p;
+	unsigned int count;
+	unsigned int offset;
+	unsigned int box;
+
+	bestdistance = 256*256*256;
+	bestfit = 0;
+
+	box = ((r >> 5)<<6) + ((g >> 5)<<3) + ((b >> 5) << 0);
+
+	count = rgbmapcounts[box];
+	offset = rgbmapoffsets[box];
+
+	for(i=0;i<count;i++)
+	{
+		p = rgbmapcolours[offset + i];
+		distance = sqrt(pow(r-host_basepal[p*3+0], 2) + pow(g-host_basepal[p*3+1], 2) + pow(b-host_basepal[p*3+2], 2));
+		if (distance < bestdistance)
+		{
+			bestfit = p;
+			bestdistance = distance;
+		}
+	}
+
+	return bestfit;
+}
+
+static unsigned char V_LookUpColourInternal_RGBMap_NoFullBright(int r, int g, int b)
+{
+	double bestdistance;
+	double distance;
+	unsigned int bestfit;
+	unsigned int i;
+	unsigned int p;
+	unsigned int count;
+	unsigned int offset;
+	unsigned int box;
+
+	bestdistance = 256*256*256;
+	bestfit = 0;
+
+	box = ((r >> 5)<<6) + ((g >> 5)<<3) + ((b >> 5) << 0);
+
+	box += 8 * 8 * 8;
+
+	count = rgbmapcounts[box];
+	offset = rgbmapoffsets[box];
+
+	for(i=0;i<count;i++)
+	{
+		p = rgbmapcolours[offset + i];
+		distance = sqrt(pow(r-host_basepal[p*3+0], 2) + pow(g-host_basepal[p*3+1], 2) + pow(b-host_basepal[p*3+2], 2));
+		if (distance < bestdistance)
+		{
+			bestfit = p;
+			bestdistance = distance;
+		}
+	}
+
+	return bestfit;
+}
+
+static unsigned char V_LookUpColourInternal_Brute(int r, int g, int b, unsigned int maxindex)
 {
 	double bestdistance;
 	double distance;
@@ -650,10 +724,6 @@ static unsigned char V_LookUpColourInternal(float r, float g, float b, unsigned 
 
 	bestdistance = 256*256*256;
 	bestfit = 0;
-
-	r = r * 255 + 0.5;
-	g = g * 255 + 0.5;
-	b = b * 255 + 0.5;
 
 	for(i=0;i<maxindex;i++)
 	{
@@ -668,14 +738,36 @@ static unsigned char V_LookUpColourInternal(float r, float g, float b, unsigned 
 	return bestfit;
 }
 
+unsigned char V_LookUpColourInt(unsigned int r, unsigned int g, unsigned int b)
+{
+	if (rgbmapcounts)
+		return V_LookUpColourInternal_RGBMap(r, g, b);
+	else
+		return V_LookUpColourInternal_Brute(r, g, b, 256);
+}
+
+unsigned char V_LookUpColourIntNoFullbright(unsigned int r, unsigned int g, unsigned int b)
+{
+	if (rgbmapcounts)
+		return V_LookUpColourInternal_RGBMap_NoFullBright(r, g, b);
+	else
+		return V_LookUpColourInternal_Brute(r, g, b, 224);
+}
+
 unsigned char V_LookUpColour(float r, float g, float b)
 {
-	return V_LookUpColourInternal(r, g, b, 256);
+	if (rgbmapcounts)
+		return V_LookUpColourInternal_RGBMap(r * 256, g * 256, b * 256);
+	else
+		return V_LookUpColourInternal_Brute(r * 255, g * 255, b * 255, 256);
 }
 
 unsigned char V_LookUpColourNoFullbright(float r, float g, float b)
 {
-	return V_LookUpColourInternal(r, g, b, 224);
+	if (rgbmapcounts)
+		return V_LookUpColourInternal_RGBMap_NoFullBright(r * 256, g * 256, b * 256);
+	else
+		return V_LookUpColourInternal_Brute(r * 255, g * 255, b * 255, 224);
 }
 
 /*
@@ -1012,10 +1104,88 @@ void V_CvarInit(void)
 	Cmd_AddLegacyCommand("contrast", v_contrast.name);
 }
 
+static void setuprgbmap(void *rgbmap, unsigned int size)
+{
+	unsigned int counts;
+	unsigned int numbits;
+	unsigned int numboxes;
+	unsigned int i;
+	unsigned char *uc;
+	unsigned int *ui;
+
+	if (size >= 768 + 1)
+	{
+		uc = rgbmap + 768;
+
+		numbits = *uc++;
+
+		numboxes = (1<<numbits) * (1<<numbits) * (1<<numbits) * 2;
+
+		if (size >= 768 + 1 + numboxes)
+		{
+			counts = 0;
+			for(i=0;i<numboxes;i++)
+			{
+				counts += uc[i];
+			}
+
+			if (size >= 768 + 1 + numboxes + counts)
+			{
+				rgbmapcounts = malloc(numboxes*sizeof(*rgbmapcounts));
+				rgbmapoffsets = malloc(numboxes*sizeof(*rgbmapoffsets));
+				rgbmapcolours = malloc(counts*sizeof(*rgbmapcolours));
+
+				if (rgbmapcounts && rgbmapoffsets && rgbmapcolours)
+				{
+					ui = rgbmapoffsets;
+					counts = 0;
+
+					for(i=0;i<numboxes;i++)
+					{
+						ui[i] = counts;
+						counts += uc[i];
+					}
+
+					memcpy(rgbmapcounts, rgbmap + 768 + 1, numboxes);
+					memcpy(rgbmapcolours, rgbmap + 768 + 1 + numboxes, counts);
+
+					return;
+				}
+
+				free(rgbmapcounts);
+				free(rgbmapoffsets);
+				free(rgbmapcolours);
+
+				rgbmapcounts = 0;
+				rgbmapoffsets = 0;
+				rgbmapcolours = 0;
+			}
+		}
+	}
+}
+
+void V_Shutdown(void)
+{
+	free(rgbmapcounts);
+	free(rgbmapoffsets);
+	free(rgbmapcolours);
+	rgbmapcounts = 0;
+	rgbmapoffsets = 0;
+	rgbmapcolours = 0;
+}
+
 void V_Init(void)
 {
-#ifndef GLQUAKE
-	BuildGammaTable(v_gamma.value, v_contrast.value);
-#endif
+	void *rgbmap;
+
+	old_gamma = old_contrast = 42.42;
+
+	rgbmap = FS_LoadMallocFile("gfx/rgbmap");
+	if (rgbmap)
+	{
+		setuprgbmap(rgbmap, com_filesize);
+
+		free(rgbmap);
+	}
 }
 
