@@ -1572,7 +1572,10 @@ void TP_Frame()
 	{
 		num = Cam_TrackNum();
 		if (num != -1 && num != ourlastplayernum)
+		{
 			TP_RecalculateSkins();
+			TP_RecalculateColours();
+		}
 	}
 }
 
