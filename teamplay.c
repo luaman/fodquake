@@ -1506,7 +1506,7 @@ void TP_CalculateColoursForPlayer(unsigned int slot)
 	}
 	else
 	{
-		isteam = strcmp(cl.players[ourplayernum].team, cl.players[slot].team) == 0;
+		isteam = cl.teamplay && strcmp(cl.players[ourplayernum].team, cl.players[slot].team) == 0;
 	}
 
 	if (isteam)
