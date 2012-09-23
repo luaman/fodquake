@@ -1,5 +1,6 @@
 /*
 Copyright (C) 1996-1997 Id Software, Inc.
+Copyright (C) 2005-2012 Mark Olsen
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -86,24 +87,27 @@ struct SoundDriver
 };
 
 SoundCvarInitFunc AHI_CvarInit;
-SoundCvarInitFunc OSS_CvarInit;
-SoundCvarInitFunc WaveOut_CvarInit;
-SoundCvarInitFunc DS7_CvarInit;
 SoundCvarInitFunc ALSA_CvarInit;
 SoundCvarInitFunc CoreAudio_CvarInit;
+SoundCvarInitFunc DS7_CvarInit;
+SoundCvarInitFunc OSS_CvarInit;
 SoundCvarInitFunc PulseAudio_CvarInit;
+SoundCvarInitFunc SNDIO_CvarInit;
+SoundCvarInitFunc WaveOut_CvarInit;
 
 SoundInitFunc AHI_Init;
-SoundInitFunc OSS_Init;
-SoundInitFunc WaveOut_Init;
-SoundInitFunc DS7_Init;
 SoundInitFunc ALSA_Init;
 SoundInitFunc CoreAudio_Init;
+SoundInitFunc DS7_Init;
+SoundInitFunc OSS_Init;
 SoundInitFunc PulseAudio_Init;
+SoundInitFunc SNDIO_Init;
+SoundInitFunc WaveOut_Init;
 
 const static struct SoundDriver sounddrivers[] =
 {
 	{ "AHI", &AHI_Init, &AHI_CvarInit },
+	{ "SNDIO", &SNDIO_Init, &SNDIO_CvarInit },
 	{ "OSS", &OSS_Init, &OSS_CvarInit },
 	{ "ALSA", &ALSA_Init, &ALSA_CvarInit },
 	{ "PulseAudio", &PulseAudio_Init, &PulseAudio_CvarInit },

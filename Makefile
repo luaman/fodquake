@@ -123,10 +123,10 @@ ifeq ($(OS), openbsd)
 		cd_null.o \
 		sys_io_posix.o \
 		sys_lib_posix.o \
-#		snd_oss.o
+		snd_sndio.o
 
 	OSCFLAGS=-I/usr/X11R6/include -I/usr/local/include -I/usr/local/include/libpng -I/usr/local/include/gtk-2.0
-	OSLDFLAGS=-lpthread -lossaudio
+	OSLDFLAGS=-lpthread
 
 	OSSWOBJS=vid_x11.o vid_mode_x11.o vid_mode_xf86vm.o vid_mode_xrandr.o in_x11.o
 	OSSWLDFLAGS=-L/usr/X11R6/lib -lX11 -lXext -lXxf86dga
