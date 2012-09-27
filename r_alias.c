@@ -502,7 +502,12 @@ void R_AliasPrepareUnclippedPoints (void)
 	R_AliasTransformAndProjectFinalVerts(pfinalverts, pstverts);
 
 	if (r_affinetridesc.drawtype)
-		D_PolysetDrawFinalVerts (pfinalverts, r_anumverts);
+	{
+		if (r_affinetridesc.pskin)
+			D_PolysetDrawFinalSkinVerts(pfinalverts, r_anumverts);
+		else
+			D_PolysetDrawFinalSolidColourVerts(pfinalverts, r_anumverts, r_affinetridesc.colour);
+	}
 
 	r_affinetridesc.pfinalverts = pfinalverts;
 	r_affinetridesc.ptriangles = (mtriangle_t *) ((byte *)paliashdr + paliashdr->triangles);
