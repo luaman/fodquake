@@ -1266,11 +1266,22 @@ void CL_ProcessUserInfo (int slot, player_info_t *player, char *key)
 	            || (!player->spectator && (!strcmp(key, "skin") || colourschanged || teamchanged)
 	              );
 
-	if (update_skin)
-		TP_CalculateSkinForPlayer(slot);
+	if ((cl.spectator && Cam_TrackNum() == slot) || cl.playernum == -1 || slot == cl.playernum)
+	{
+		if (teamchanged)
+		{
+			TP_RecalculateSkins();
+			TP_RecalculateColours();
+		}
+	}
+	else
+	{
+		if (update_skin)
+			TP_CalculateSkinForPlayer(slot);
 
-	if (colourschanged || teamchanged)
-		TP_CalculateColoursForPlayer(slot);
+		if (colourschanged || teamchanged)
+			TP_CalculateColoursForPlayer(slot);
+	}
 }
 
 void CL_PlayerEnterSlot(player_info_t *player)
@@ -1421,7 +1432,10 @@ void CL_ProcessServerInfo (void)
 	cl.teamplay = teamplay;
 	cl.fpd = fpd;
 	if (skin_refresh)
+	{
+		TP_RecalculateColours();
 		TP_RecalculateSkins();
+	}
 }
 
 void CL_ParseServerInfoChange (void)

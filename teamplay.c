@@ -1548,7 +1548,7 @@ void TP_RecalculateSkins()
 	}
 }
 
-static void TP_RecalculateColours()
+void TP_RecalculateColours()
 {
 	unsigned int i;
 

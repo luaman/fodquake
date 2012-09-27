@@ -77,6 +77,7 @@ char *TP_ParseWhiteText(char *s, qboolean team, int offset);
 void TP_CalculateSkinForPlayer(unsigned int slot);
 void TP_CalculateColoursForPlayer(unsigned int slot);
 void TP_RecalculateSkins(void);
+void TP_RecalculateColours(void);
 
 extern char *skinforcing_team;
 
