@@ -756,16 +756,24 @@ unsigned char V_LookUpColourIntNoFullbright(unsigned int r, unsigned int g, unsi
 
 unsigned char V_LookUpColour(float r, float g, float b)
 {
+	r = bound(0, r, 1);
+	g = bound(0, g, 1);
+	b = bound(0, b, 1);
+
 	if (rgbmapcounts)
-		return V_LookUpColourInternal_RGBMap(r * 256, g * 256, b * 256);
+		return V_LookUpColourInternal_RGBMap(r * 255, g * 255, b * 255);
 	else
 		return V_LookUpColourInternal_Brute(r * 255, g * 255, b * 255, 256);
 }
 
 unsigned char V_LookUpColourNoFullbright(float r, float g, float b)
 {
+	r = bound(0, r, 1);
+	g = bound(0, g, 1);
+	b = bound(0, b, 1);
+
 	if (rgbmapcounts)
-		return V_LookUpColourInternal_RGBMap_NoFullBright(r * 256, g * 256, b * 256);
+		return V_LookUpColourInternal_RGBMap_NoFullBright(r * 255, g * 255, b * 255);
 	else
 		return V_LookUpColourInternal_Brute(r * 255, g * 255, b * 255, 224);
 }
