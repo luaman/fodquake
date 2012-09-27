@@ -740,9 +740,6 @@ void R_AliasDrawModel (entity_t *ent)
 	R_AliasSetupLighting (ent);
 	R_AliasSetupFrame (ent);
 
-	if (!ent->colormap)
-		Sys_Error ("R_AliasDrawModel: !ent->colormap");
-
 	r_affinetridesc.drawtype = (ent->trivial_accept == 3);
 
 	if (r_affinetridesc.drawtype)

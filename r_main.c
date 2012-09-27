@@ -576,7 +576,6 @@ static void R_DrawViewModel(void)
 
 	VectorCopy(cent->current.origin, gun.origin);
 	VectorCopy(cent->current.angles, gun.angles);
-	gun.colormap = vid.colormap;
 	gun.flags = RF_WEAPONMODEL | RF_NOSHADOW;
 	if (r_lerpmuzzlehack.value)
 	{

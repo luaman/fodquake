@@ -1103,7 +1103,6 @@ static int CL_ParseStatic (void)
 
 		ent->model = cl.model_precache[es.modelindex];
 		ent->frame = es.frame;
-		ent->colormap = vid.colormap;
 		ent->skinnum = es.skinnum;
 
 		VectorCopy (es.origin, ent->origin);

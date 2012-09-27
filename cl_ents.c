@@ -734,6 +734,7 @@ void CL_LinkPacketEntities (void)
 		}
 
 
+#if 0
 		if (state->colormap >=1 && state->colormap <= MAX_CLIENTS && ent.model->modhint == MOD_PLAYER)
 		{
 			ent.colormap = cl.players[state->colormap - 1].translations;
@@ -744,6 +745,15 @@ void CL_LinkPacketEntities (void)
 			ent.colormap = vid.colormap;
 			ent.scoreboard = NULL;
 		}
+#else
+		/* The skin system works differently these days, so entity
+		 * colour maps aren't supported anymore. */
+
+		if (state->colormap >=1 && state->colormap <= MAX_CLIENTS && ent.model->modhint == MOD_PLAYER)
+			ent.scoreboard = &cl.players[state->colormap - 1];
+		else
+			ent.scoreboard = NULL;
+#endif
 
 
 		if ((cl_nolerp.value && !cls.mvdplayback) || cent->deltalerp <= 0)
@@ -968,7 +978,6 @@ void CL_LinkProjectiles (void)
 	entity_t ent;
 
 	memset (&ent, 0, sizeof(entity_t));
-	ent.colormap = vid.colormap;
 
 	for (i = 0, pr = cl_projectiles; i < cl_num_projectiles; i++, pr++)	{
 		if (pr->modelindex < 1)
@@ -1264,7 +1273,6 @@ void CL_AddFlagModels (entity_t *ent, int team)
 	memset (&newent, 0, sizeof(entity_t));
 	newent.model = cl.model_precache[cl_modelindices[mi_flag]];
 	newent.skinnum = team;
-	newent.colormap = vid.colormap;
 
 	AngleVectors (ent->angles, v_forward, v_right, NULL);
 	v_forward[2] = -v_forward[2]; // reverse z component
@@ -1370,7 +1378,6 @@ void CL_LinkPlayers (void)
 		if (!(ent.model = cl.model_precache[state->modelindex]))
 			Host_Error ("CL_LinkPlayers: bad modelindex");
 		ent.skinnum = state->skinnum;
-		ent.colormap = info->translations;
 		ent.scoreboard = (state->modelindex == cl_modelindices[mi_player]) ? info : NULL;
 		ent.frame = state->frame;
 		if (cent->frametime >= 0 && cent->frametime <= cl.time)

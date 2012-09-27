@@ -350,7 +350,6 @@ void CL_UpdateBeams (void)
 	extern cvar_t v_viewheight;
 
 	memset (&ent, 0, sizeof(entity_t));
-	ent.colormap = vid.colormap;
 
 	truelightning = bound(0, cl_trueLightning.value, cl.truelightning);
 
@@ -473,7 +472,6 @@ void CL_UpdateExplosions (void) {
 	entity_t ent;
 
 	memset (&ent, 0, sizeof(entity_t));
-	ent.colormap = vid.colormap;
 
 	hnode = &cl_explosions_headnode;
 	for (ex = hnode->next; ex != hnode; ex = next) {
