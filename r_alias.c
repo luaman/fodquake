@@ -751,7 +751,7 @@ void R_AliasDrawModel (entity_t *ent)
 #endif
 	}
 
-	acolormap = ent->colormap;
+	acolormap = vid.colormap;
 
 	if (!(ent->flags & RF_WEAPONMODEL))
 		ziscale = (float) 0x8000 * (float) 0x10000;
