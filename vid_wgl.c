@@ -586,17 +586,6 @@ void Sys_Video_Close(void *display)
 	free(d);
 }
 
-const char *Sys_Video_GetClipboardText(void *display)
-{
-	return NULL;
-}
-void Sys_Video_FreeClipboardText(void *display, const char *text)	//is text technically a const here?...
-{
-}
-void Sys_Video_SetClipboardText(void *display, const char *text)
-{
-}
-
 unsigned int Sys_Video_GetWidth(void *display)
 {
 	struct display *d;
