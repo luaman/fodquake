@@ -19,6 +19,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 // sys.h -- non-portable functions
 
+#include "compiler.h"
+
 void Sys_MicroSleep(unsigned int microseconds);
 
 void Sys_RandomBytes(void *target, unsigned int numbytes);
@@ -27,10 +29,10 @@ void Sys_RandomBytes(void *target, unsigned int numbytes);
 void Sys_MakeCodeWriteable (unsigned long startaddr, unsigned long length);
 
 // an error will cause the entire program to exit
-void Sys_Error (char *error, ...) __attribute__((noreturn));
+void Sys_Error (char *error, ...) PRINTFWARNING(1, 2) __attribute__((noreturn));
 
 // send text to the console
-void Sys_Printf (char *fmt, ...);
+void Sys_Printf (char *fmt, ...) PRINTFWARNING(1, 2);
 
 void Sys_Quit (void);
 

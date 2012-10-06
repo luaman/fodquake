@@ -238,7 +238,7 @@ void COM_CopyAndStripExtension(const char *in, char *out, unsigned int maxlength
 void COM_DefaultExtension(char *path, char *extension);
 void COM_ForceExtension(char *path, char *extension);
 
-char	*va(char *format, ...);
+char	*va(char *format, ...) PRINTFWARNING(1, 2);
 // does a varargs printf into a temp buffer
 
 char *CopyString(char *s);
