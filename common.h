@@ -24,9 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include <stddef.h>
 
-#ifdef _MSC_VER
-#pragma warning( disable : 4244 4127 4201 4214 4514 4305 4115 4018)
-#endif
+#include "compiler.h"
 
 #include "qtypes.h"
 
@@ -210,7 +208,7 @@ int	Q_atoi (char *str);
 float Q_atof (char *str);
 
 void Q_strncpyz (char *dest, char *src, size_t size);
-int Q_snprintfz (char *dest, size_t size, char *fmt, ...);
+int Q_snprintfz (char *dest, size_t size, char *fmt, ...) __attribute__((deprecated));
 
 int Com_HashKey (char *name);
 
@@ -271,9 +269,9 @@ byte COM_BlockSequenceCRCByte (byte *base, int length, int sequence);
 
 void Com_BeginRedirect(void (*RedirectedPrint) (char *));
 void Com_EndRedirect (void);
-void Com_Printf(const char *fmt, ...);
-void Com_ErrorPrintf(const char *fmt, ...);
-void Com_DPrintf(const char *fmt, ...);
+void Com_Printf(const char *fmt, ...) PRINTFWARNING(1, 2);
+void Com_ErrorPrintf(const char *fmt, ...) PRINTFWARNING(1, 2);
+void Com_DPrintf(const char *fmt, ...) PRINTFWARNING(1,2);
 
 //============================================================================
 
@@ -353,7 +351,7 @@ void Host_Shutdown (void);
 void Host_Frame (double time);
 void Host_Abort (void);			// longjmp() to Host_Frame
 void Host_EndGame (void);		// kill local client and server
-void Host_Error (char *error, ...);
+void Host_Error (char *error, ...) PRINTFWARNING(1,2);
 void Host_Quit (void);
 
 void CL_Init (void);
