@@ -553,7 +553,7 @@ static void Menu_HandleKey(struct Menu *menu, int key)
 
 		case K_END:
 		case K_PGDN:
-			menu->cursor = menu->numselectableitems = 1;
+			menu->cursor = menu->numselectableitems - 1;
 
 			break;
 
