@@ -3967,7 +3967,7 @@ static void M_Quit_Draw()
 		"0",
 		"1Based on:",
 		"0FuhQuake by A Nourai",
-		"0ZQuake by Anton Garilov",
+		"0ZQuake by Anton Gavrilov",
 		"0Quakeworld by Id Software",
 		"0",
 		"1Press 'y' to exit Fodquake",
