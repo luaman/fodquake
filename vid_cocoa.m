@@ -674,6 +674,13 @@ void Sys_Video_SetGamma(void *display, unsigned short *ramps)
 
 qboolean Sys_Video_HWGammaSupported(void *display)
 {
+	struct display *d = (struct display*)display;
+	
+	if (!d->fullscreen)
+	{
+		return false;
+	}
+	
 	return true;
 }
 
