@@ -38,6 +38,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 //key up events are sent even if in console mode
 
 cvar_t	cl_chatmode = {"cl_chatmode", "2"};
+cvar_t m_wheel_factor = { "m_wheel_factor", "0" };
 
 #define		MAXCMDLINE	256
 char	key_lines[32][MAXCMDLINE];
@@ -1027,6 +1028,9 @@ void Key_CvarInit(void)
 	Cvar_SetCurrentGroup(CVAR_GROUP_CONSOLE);
 	Cvar_Register (&cl_chatmode);
 
+	Cvar_SetCurrentGroup(CVAR_GROUP_INPUT_MOUSE);
+	Cvar_Register(&m_wheel_factor);
+
 	Cvar_ResetCurrentGroup();
 }
 
@@ -1125,9 +1129,38 @@ void Key_Event(int key, qboolean down)
 {
 	char *kb, cmd[1024];
 	extern int movementkey;
+	int mwheelfactor;
+	static int mwheelstate;
 
 	//	Com_Printf("%i : %i\n", key, down); //@@@
 
+	if (key == K_MWHEELDOWN || key == K_MWHEELUP)
+	{
+		mwheelfactor = m_wheel_factor.value;
+		if (mwheelfactor > 0)
+		{
+			if (key == K_MWHEELDOWN)
+			{
+				if (down)
+					mwheelstate--;
+
+				if (mwheelstate > -mwheelfactor)
+					return;
+			}
+
+			if (key == K_MWHEELUP)
+			{
+				if (down)
+					mwheelstate++;
+
+				if (mwheelstate < mwheelfactor)
+					return;
+			}
+
+			if (!down)
+				mwheelstate = 0;
+		}
+	}
 
 	if (key == K_LALT || key == K_RALT)
 		Key_Event(K_ALT, down);
