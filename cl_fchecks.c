@@ -45,9 +45,10 @@ void FChecks_FServerResponse (void) {
 	if (!NET_StringToAdr(0, cls.servername, &adr))
 		return;
 
-#warning Only works with IPv4
-	if (adr.addr.ipv4.port == 0)
+	if (adr.type == NA_IPV4 && adr.addr.ipv4.port == 0)
 		adr.addr.ipv4.port = BigShort (PORT_SERVER);
+	else if (adr.type == NA_IPV6 && adr.addr.ipv6.port == 0)
+		adr.addr.ipv6.port = BigShort (PORT_SERVER);
 
 	Cbuf_AddText(va("say Fodquake f_server response: %s\n", NET_AdrToString(&adr)));
 }
