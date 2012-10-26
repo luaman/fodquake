@@ -88,7 +88,6 @@ typedef struct texture_s {
 #define SURF_DRAWSKY            (1<<2)
 #define SURF_DRAWTURB           (1<<3)
 #define SURF_DRAWTILED          (1<<4)
-#define SURF_DRAWBACKGROUND     (1<<5)
 #define SURF_UNDERWATER         (1<<6)
 #define SURF_DRAWALPHA          (1<<7)
 
