@@ -96,8 +96,6 @@ cvar_t	r_skycolor = {"r_skycolor", "4"};
 cvar_t	gl_colorlights		= {"gl_colorlights", "1"};
 
 cvar_t	r_farclip			= {"r_farclip", "4096"};
-qboolean OnChange_r_skyname(cvar_t *v, char *s);
-cvar_t	r_skyname			= {"r_skyname", "", 0, OnChange_r_skyname};
 cvar_t	gl_detail			= {"gl_detail","0"};
 cvar_t	gl_caustics			= {"gl_caustics", "0"};
 
@@ -1568,7 +1566,6 @@ void R_CvarInit(void)
 	Cvar_Register (&gl_part_inferno);
 
 	Cvar_SetCurrentGroup(CVAR_GROUP_TURB);
-	Cvar_Register (&r_skyname);
 	Cvar_Register (&r_fastsky);
 	Cvar_Register (&r_skycolor);
 	Cvar_Register (&r_wateralpha);
@@ -1621,6 +1618,7 @@ void R_CvarInit(void)
 	Cvar_ResetCurrentGroup();
 
 	GL_Particles_CvarInit();
+	GL_Warp_CvarInit();
 }
 
 int R_Init(void)

@@ -45,6 +45,9 @@ static float speedscale, speedscale2;		// for top sky and bottom sky
 
 qboolean r_skyboxloaded;
 
+static qboolean OnChange_r_skyname(cvar_t *v, char *s);
+cvar_t r_skyname = { "r_skyname", "", 0, OnChange_r_skyname };
+
 static void BoundPoly(int numverts, float *verts, vec3_t mins, vec3_t maxs)
 {
 	int i, j;
@@ -426,8 +429,6 @@ void R_DrawSkyChain(void)
 	skychain_tail = &skychain;
 }
 
-qboolean OnChange_r_skyname(cvar_t *v, char *skyname);
-
 //A sky texture is 256 * 128, with the right side being a masked overlay
 void R_InitSky(void *texturedata)
 {
@@ -528,7 +529,7 @@ cleanup:
 	return error;
 }
 
-qboolean OnChange_r_skyname(cvar_t *v, char *skyname)
+static qboolean OnChange_r_skyname(cvar_t *v, char *skyname)
 {
 	if (!sky_initialised)
 		return false;
@@ -884,6 +885,13 @@ void EmitCausticsPolys(void)
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	caustics_polys = NULL;
+}
+
+void GL_Warp_CvarInit()
+{
+	Cvar_SetCurrentGroup(CVAR_GROUP_TURB);
+	Cvar_Register(&r_skyname);
+	Cvar_ResetCurrentGroup();
 }
 
 void GL_Warp_Init()
