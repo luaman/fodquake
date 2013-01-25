@@ -222,9 +222,8 @@ typedef struct dlightinfo_s
 } dlightinfo_t;
 
 static dlightinfo_t dlightlist[MAX_DLIGHTS];
-static int numdlights;
 
-static void R_BuildDlightList (msurface_t *surf)
+static int R_BuildDlightList (msurface_t *surf)
 {
 	float dist;
 	vec3_t impact;
@@ -232,9 +231,9 @@ static void R_BuildDlightList (msurface_t *surf)
 	int lnum, i, smax, tmax, irad, iminlight, local[2], tdmin, sdmin, distmin;
 	dlightinfo_t *light;
 	unsigned int dlightbits;
-	int lnumdlights;
+	int numdlights;
 
-	lnumdlights = 0;
+	numdlights = 0;
 
 	smax = (surf->extents[0]>>4)+1;
 	tmax = (surf->extents[1]>>4)+1;
@@ -294,17 +293,17 @@ static void R_BuildDlightList (msurface_t *surf)
 		if (distmin < iminlight)
 		{
 			// save dlight info
-			light = &dlightlist[lnumdlights];
+			light = &dlightlist[numdlights];
 			light->minlight = iminlight;
 			light->rad = irad;
 			light->local[0] = local[0];
 			light->local[1] = local[1];
 			light->type = cl_dlights[lnum].type;
-			lnumdlights++;
+			numdlights++;
 		}
 	}
 
-	numdlights = lnumdlights;
+	return numdlights;
 }
 
 static const int dlightcolor[NUM_DLIGHTTYPES][3] =
@@ -322,7 +321,7 @@ static const int dlightcolor[NUM_DLIGHTTYPES][3] =
 
 
 //R_BuildDlightList must be called first!
-static void R_AddDynamicLights (msurface_t *surf)
+static void R_AddDynamicLights(msurface_t *surf, int numdlights)
 {
 	int i, smax, tmax, s, t, sd, td, _sd, _td, irad, idist, iminlight, color[3], tmp;
 	dlightinfo_t *light;
@@ -462,7 +461,7 @@ static void StoreLightMap(int stride, int smax, int tmax, byte *dest)
 }
 
 //Combine and scale multiple lightmaps into the 8.8 format in blocklights
-static void R_BuildLightMap (msurface_t *surf, byte *dest, int stride)
+static void R_BuildLightMap(msurface_t *surf, byte *dest, int stride, int numdlights)
 {
 	int smax, tmax, size, i, blocksize;
 	byte *lightmap;
@@ -491,7 +490,7 @@ static void R_BuildLightMap (msurface_t *surf, byte *dest, int stride)
 
 	// add all the dynamic lights
 	if (numdlights)
-		R_AddDynamicLights (surf);
+		R_AddDynamicLights(surf, numdlights);
 
 	// bound, invert, and shift
 store:
@@ -598,6 +597,7 @@ static void R_RenderDynamicLightmaps (msurface_t *fa)
 	int maps, smax, tmax;
 	glRect_t *theRect;
 	qboolean lightstyle_modified = false;
+	int numdlights;
 
 	c_brush_polys++;
 
@@ -615,7 +615,7 @@ static void R_RenderDynamicLightmaps (msurface_t *fa)
 	}
 
 	if (fa->dlightframe == r_framecount)
-		R_BuildDlightList (fa);
+		numdlights = R_BuildDlightList (fa);
 	else
 		numdlights = 0;
 
@@ -644,7 +644,7 @@ static void R_RenderDynamicLightmaps (msurface_t *fa)
 		theRect->h = fa->light_t - theRect->t + tmax;
 	base = lightmaps + fa->lightmaptexturenum * BLOCK_WIDTH * BLOCK_HEIGHT * 3;
 	base += (fa->light_t * BLOCK_WIDTH + fa->light_s) * 3;
-	R_BuildLightMap (fa, base, BLOCK_WIDTH * 3);
+	R_BuildLightMap(fa, base, BLOCK_WIDTH * 3, numdlights);
 }
 
 static void R_RenderAllDynamicLightmaps(model_t *model)
@@ -1776,8 +1776,7 @@ static void GL_CreateSurfaceLightmap (msurface_t *surf)
 	surf->lightmaptexturenum = AllocBlock (smax, tmax, &surf->light_s, &surf->light_t);
 	base = lightmaps + surf->lightmaptexturenum * BLOCK_WIDTH * BLOCK_HEIGHT * 3;
 	base += (surf->light_t * BLOCK_WIDTH + surf->light_s) * 3;
-	numdlights = 0;
-	R_BuildLightMap (surf, base, BLOCK_WIDTH * 3);
+	R_BuildLightMap(surf, base, BLOCK_WIDTH * 3, 0);
 }
 
 static void BuildGLArrays(model_t *model)
