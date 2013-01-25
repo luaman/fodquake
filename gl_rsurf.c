@@ -601,7 +601,7 @@ static void R_RenderDynamicLightmaps (msurface_t *fa)
 
 	c_brush_polys++;
 
-	if (!r_dynamic.value)
+	if (!r_dynamic.value && !fa->cached_dlight)
 		return;
 
 	// check for lightmap modification
@@ -614,13 +614,18 @@ static void R_RenderDynamicLightmaps (msurface_t *fa)
 		}
 	}
 
-	if (fa->dlightframe == r_framecount)
-		numdlights = R_BuildDlightList (fa);
+	if (r_dynamic.value)
+	{
+		if (fa->dlightframe == r_framecount)
+			numdlights = R_BuildDlightList (fa);
+		else
+			numdlights = 0;
+
+		if (numdlights == 0 && !fa->cached_dlight && !lightstyle_modified)
+			return;
+	}
 	else
 		numdlights = 0;
-
-	if (numdlights == 0 && !fa->cached_dlight && !lightstyle_modified)
-		return;
 
 	lightmap_modified[fa->lightmaptexturenum] = true;
 	theRect = &lightmap_rectchange[fa->lightmaptexturenum];
