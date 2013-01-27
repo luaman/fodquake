@@ -47,6 +47,7 @@ qboolean r_skyboxloaded;
 
 static qboolean OnChange_r_skyname(cvar_t *v, char *s);
 cvar_t r_skyname = { "r_skyname", "", 0, OnChange_r_skyname };
+cvar_t gl_water_program = { "gl_water_program", "1" };
 
 static void BoundPoly(int numverts, float *verts, vec3_t mins, vec3_t maxs)
 {
@@ -891,6 +892,7 @@ void GL_Warp_CvarInit()
 {
 	Cvar_SetCurrentGroup(CVAR_GROUP_TURB);
 	Cvar_Register(&r_skyname);
+	Cvar_Register(&gl_water_program);
 	Cvar_ResetCurrentGroup();
 }
 
@@ -899,7 +901,7 @@ void GL_Warp_Init()
 	solidskytexture = texture_extension_number++;
 	alphaskytexture = texture_extension_number++;
 
-	if (gl_fs)
+	if (gl_fs && gl_water_program.value)
 	{
 		const char *prog = "#version 120\n"
 		"uniform sampler2D mytex;\n"
