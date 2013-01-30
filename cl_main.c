@@ -1318,6 +1318,7 @@ void CL_Disconnect(void)
 	connect_time = 0;
 	cl.teamfortress = false;
 	cls.ftexsupported = 0;
+	cls.fte2supported = 0;
 
 	VID_SetCaption("Fodquake");
 
