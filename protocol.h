@@ -138,6 +138,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  ******************/
 
 #define svcfte_lightstylecol    57 /* FTEX_LIGHTSTYLECOLOUR */
+#define svcfte_updatestatfloat  79 /* FTEX_CSQC */
 
 /********************
  * Qizmo extensions *
@@ -279,6 +280,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #define FTEX_LIGHTSTYLECOLOUR 0x00000004
 #define FTEX_CHUNKEDDOWNLOADS 0x20000000
+#define FTEX_CSQC             0x40000000
 
 #define FTEX_SUPPORTED (FTEX_CHUNKEDDOWNLOADS)
 

@@ -2017,6 +2017,15 @@ void CL_ParseServerMessage (void)
 			cl_lightstyle[i].length = strlen(cl_lightstyle[i].map);
 			break;
 
+		case svcfte_updatestatfloat:
+			if (!(cls.ftexsupported & FTEX_CSQC))
+				Host_Error("Got unexpected svcfte_updatestatfloat");
+
+			i = MSG_ReadByte();
+			f = MSG_ReadFloat();
+			CL_SetStat(i, f);
+			break;
+
 		case svc_qizmovoice:
 			CL_ParseQizmoVoice ();
 			break;
