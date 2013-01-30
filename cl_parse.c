@@ -1689,6 +1689,7 @@ void CL_ParseQizmoVoice (void)
 void CL_ParseServerMessage (void)
 {
 	int cmd, i, j;
+	float f;
 	extern int mvd_fixangle;
 	int msg_svc_start;
 	int prevcmd;
