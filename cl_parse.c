@@ -793,7 +793,7 @@ void CL_ParseServerData (void)
 		}
 		else if (protover == QW_PROTOEXT_FTE2)
 		{
-			MSG_ReadLong();
+			cls.fte2supported = MSG_ReadLong();
 		}
 		else
 		{

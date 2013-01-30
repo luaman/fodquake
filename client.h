@@ -262,6 +262,7 @@ typedef struct {
 
 	unsigned int hufftablecrc;
 	unsigned int ftexsupported;
+	unsigned int fte2supported;
 } clientPersistent_t;
 
 extern clientPersistent_t	cls;
