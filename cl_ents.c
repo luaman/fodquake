@@ -422,6 +422,9 @@ void CL_ParseDelta (entity_state_t *from, entity_state_t *to, int bits)
 	{
 		// FIXME
 	}
+
+	if (to->modelindex >= cl_num_modelindices)
+		Host_Error("Model index %d out of range\n", to->modelindex);
 }
 
 void FlushEntityPacket (void)
