@@ -489,7 +489,7 @@ void CL_ParseDelta (entity_state_t *from, entity_state_t *to, int bits)
 		MSG_ReadByte();
 	}
 
-	if (to->modelindex >= cl_num_modelindices)
+	if (to->modelindex >= MAX_MODELS)
 		Host_Error("Model index %d out of range", to->modelindex);
 }
 
