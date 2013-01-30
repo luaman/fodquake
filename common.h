@@ -288,8 +288,10 @@ void Com_DPrintf(const char *fmt, ...) PRINTFWARNING(1,2);
 //============================================================================
 
 struct usercmd_s;
+struct entity_state_s;
 
 extern struct usercmd_s nullcmd;
+extern struct entity_state_s nullentitystate;
 
 void MSG_WriteChar (sizebuf_t *sb, int c);
 void MSG_WriteByte (sizebuf_t *sb, int c);

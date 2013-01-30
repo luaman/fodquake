@@ -138,6 +138,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  ******************/
 
 #define svcfte_lightstylecol    57 /* FTEX_LIGHTSTYLECOLOUR */
+#define svcfte_spawnbaseline2   66 /* FTEX_SPAWNSTATIC2 || FTEX_REPLACEMENTDELTAS */
 #define svcfte_updatestatfloat  79 /* FTEX_CSQC */
 
 /********************
@@ -307,6 +308,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define FTEX_FATNESS          0x00000100
 #define FTEX_MODELDOUBLE      0x00001000
 #define FTEX_COLOURMOD        0x00080000
+#define FTEX_SPAWNBASELINE2   0x00400000
 #define FTEX_CHUNKEDDOWNLOADS 0x20000000
 #define FTEX_CSQC             0x40000000
 

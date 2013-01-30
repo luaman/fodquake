@@ -1667,6 +1667,15 @@ void CL_MuzzleFlash (void)
 	dl->type = lt_muzzleflash;
 }
 
+void CL_ParseFTESpawnBaseLine2()
+{
+	unsigned short bits;
+
+	bits = MSG_ReadShort();
+
+	CL_ParseDelta(&nullentitystate, &cl_entities[bits&512].baseline, bits);
+}
+
 void CL_ParseQizmoVoice (void)
 {
 	int i, seq, bits, num, unknown;
@@ -2016,6 +2025,13 @@ void CL_ParseServerMessage (void)
 			MSG_ReadByte(); /* Discard the colour */
 			Q_strncpyz (cl_lightstyle[i].map,  MSG_ReadString(), sizeof(cl_lightstyle[i].map));
 			cl_lightstyle[i].length = strlen(cl_lightstyle[i].map);
+			break;
+
+		case svcfte_spawnbaseline2:
+			if (!(cls.ftexsupported & FTEX_SPAWNBASELINE2))
+				Host_Error("Got unexpected svcfte_spawnbaseline2");
+
+			CL_ParseFTESpawnBaseLine2();
 			break;
 
 		case svcfte_updatestatfloat:

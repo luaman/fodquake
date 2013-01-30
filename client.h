@@ -549,6 +549,7 @@ void CL_SetSolidPlayers (int playernum);
 void CL_SetUpPlayerPrediction(qboolean dopred);
 void CL_EmitEntities (void);
 void CL_ClearProjectiles (void);
+void CL_ParseDelta (entity_state_t *from, entity_state_t *to, int bits);
 void CL_ParsePacketEntities (qboolean delta);
 void CL_SetSolidEntities (void);
 void CL_ParsePlayerinfo (void);
