@@ -2005,6 +2005,18 @@ void CL_ParseServerMessage (void)
 				CDAudio_Resume ();
 			break;
 
+		case svcfte_lightstylecol:
+			if (!(cls.ftexsupported & FTEX_LIGHTSTYLECOLOUR))
+				Host_Error("Got unexpected svcfte_lightstylecol");
+
+			i = MSG_ReadByte ();
+			if (i >= MAX_LIGHTSTYLES)
+				Host_Error ("svc_lightstyle > MAX_LIGHTSTYLES");
+			MSG_ReadByte(); /* Discard the colour */
+			Q_strncpyz (cl_lightstyle[i].map,  MSG_ReadString(), sizeof(cl_lightstyle[i].map));
+			cl_lightstyle[i].length = strlen(cl_lightstyle[i].map);
+			break;
+
 		case svc_qizmovoice:
 			CL_ParseQizmoVoice ();
 			break;

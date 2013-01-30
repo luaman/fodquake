@@ -132,8 +132,18 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define svc_serverinfo		52		// serverinfo
 #define svc_updatepl		53		// [byte] [byte]
 #define svc_nails2			54		
-#define svc_qizmovoice		83
 
+/******************
+ * FTE extensions *
+ ******************/
+
+#define svcfte_lightstylecol    57 /* FTEX_LIGHTSTYLECOLOUR */
+
+/********************
+ * Qizmo extensions *
+ ********************/
+
+#define svc_qizmovoice		83
 //==============================================
 
 // client to server
@@ -267,6 +277,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define QW_PROTOEXT_FTEX 0x58455446
 #define QW_PROTOEXT_FTE2 0x32455446
 
+#define FTEX_LIGHTSTYLECOLOUR 0x00000004
 #define FTEX_CHUNKEDDOWNLOADS 0x20000000
 
 #define FTEX_SUPPORTED (FTEX_CHUNKEDDOWNLOADS)
