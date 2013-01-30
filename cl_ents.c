@@ -371,6 +371,7 @@ void CL_SetupPacketEntity (int number, entity_state_t *state, qboolean changed)
 void CL_ParseDelta (entity_state_t *from, entity_state_t *to, int bits)
 {
 	int i;
+	unsigned short morebits;
 
 	// set everything to the state we are delta'ing from
 	*to = *from;
@@ -381,12 +382,41 @@ void CL_ParseDelta (entity_state_t *from, entity_state_t *to, int bits)
 	if (bits & U_MOREBITS) {	// read in the low order bits
 		i = MSG_ReadByte ();
 		bits |= i;
+
+		fprintf(stderr, "More bits, bits are now 0x%04x\n", bits);
 	}
+
+	if (bits & FTE_U_EVENMORE)
+	{
+		morebits = MSG_ReadByte();
+		if (morebits & FTE_U2_YETMORE)
+			morebits |= MSG_ReadByte()<<8;
+
+		fprintf(stderr, "Even more bits 0x%04x\n", morebits);
+
+		if (morebits & (FTE_U2_UNUSED1|FTE_U2_ENTITYDBL|FTE_U2_ENTITYDBL2|FTE_U2_DRAWFLAGS|FTE_U2_ABSLIGHT|FTE_U2_DPFLAGS|FTE_U2_TAGINFO|FTE_U2_LIGHT|FTE_U2_EFFECT16|FTE_U2_FARMORE))
+		{
+			Host_Error("Unsupported FTE delta morebits 0x%02x\n", morebits);
+		}
+	}
+	else
+		morebits = 0;
 
 	to->flags = bits;
 
 	if (bits & U_MODEL)
 		to->modelindex = MSG_ReadByte ();
+
+	if (morebits & FTE_U2_MODELDBL)
+	{
+		if (!(cls.ftexsupported & FTEX_MODELDOUBLE))
+			Host_Error("Got unexpected FTE_U2_MODELDBL bit");
+
+		if (bits & U_MODEL)
+			to->modelindex += 256;
+		else
+			to->modelindex = MSG_ReadShort();
+	}
 
 	if (bits & U_FRAME)
 		to->frame = MSG_ReadByte ();
@@ -423,8 +453,42 @@ void CL_ParseDelta (entity_state_t *from, entity_state_t *to, int bits)
 		// FIXME
 	}
 
+	if (morebits & FTE_U2_SCALE)
+	{
+		if (!(cls.ftexsupported & FTEX_SCALE))
+			Host_Error("Got unexpected FTE_U2_SCALE");
+
+		MSG_ReadByte();
+	}
+
+	if (morebits & FTE_U2_TRANS)
+	{
+		if (!(cls.ftexsupported & FTEX_TRANS))
+			Host_Error("Got unexpected FTE_U2_TRANS");
+
+		MSG_ReadByte();
+	}
+
+	if (morebits & FTE_U2_FATNESS)
+	{
+		if (!(cls.ftexsupported & FTEX_FATNESS))
+			Host_Error("Got unexpected FTE_U2_FATNESS");
+
+		MSG_ReadByte();
+	}
+
+	if (morebits & FTE_U2_COLOURMOD)
+	{
+		if (!(cls.ftexsupported & FTEX_COLOURMOD))
+			Host_Error("Got unexpected FTE_U2_COLOURMOD");
+
+		MSG_ReadByte();
+		MSG_ReadByte();
+		MSG_ReadByte();
+	}
+
 	if (to->modelindex >= cl_num_modelindices)
-		Host_Error("Model index %d out of range\n", to->modelindex);
+		Host_Error("Model index %d out of range", to->modelindex);
 }
 
 void FlushEntityPacket (void)

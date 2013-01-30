@@ -231,6 +231,29 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define	U_EFFECTS       (1 << 5)
 #define	U_SOLID         (1 << 6)		// the entity should be solid for prediction
 
+/******************
+ * FTE extensions *
+ ******************/
+
+#define FTE_U_EVENMORE      (1 << 7)		/* Used by FTEX_SCALE, FTEX_TRANS, FTEX_FATNESS, FTEX_MODELDOUBLE, FTEX_HEXEN2, FTEX_COLOURMOD, FTEX_DPFLAGS, FTEX_ENTITYDBL, FTEX_ENTITYDBL2 and probably a lot more... */
+
+#define FTE_U2_SCALE        (1 << 0)
+#define FTE_U2_TRANS        (1 << 1)
+#define FTE_U2_FATNESS      (1 << 2)
+#define FTE_U2_MODELDBL     (1 << 3)
+#define FTE_U2_UNUSED1      (1 << 4)
+#define FTE_U2_ENTITYDBL    (1 << 5)
+#define FTE_U2_ENTITYDBL2   (1 << 6)
+#define FTE_U2_YETMORE      (1 << 7)
+#define FTE_U2_DRAWFLAGS    (1 << 8)
+#define FTE_U2_ABSLIGHT     (1 << 9)
+#define FTE_U2_COLOURMOD    (1 << 10)
+#define FTE_U2_DPFLAGS      (1 << 11)
+#define FTE_U2_TAGINFO      (1 << 12)
+#define FTE_U2_LIGHT        (1 << 13)
+#define FTE_U2_EFFECT16     (1 << 14)
+#define FTE_U2_FARMORE      (1 << 15)
+
 //==============================================
 
 // a sound with no channel is a local only sound
@@ -278,7 +301,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define QW_PROTOEXT_FTEX 0x58455446
 #define QW_PROTOEXT_FTE2 0x32455446
 
+#define FTEX_SCALE            0x00000002
 #define FTEX_LIGHTSTYLECOLOUR 0x00000004
+#define FTEX_TRANS            0x00000008
+#define FTEX_FATNESS          0x00000100
+#define FTEX_MODELDOUBLE      0x00001000
+#define FTEX_COLOURMOD        0x00080000
 #define FTEX_CHUNKEDDOWNLOADS 0x20000000
 #define FTEX_CSQC             0x40000000
 
