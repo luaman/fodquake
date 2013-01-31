@@ -384,8 +384,6 @@ void CL_ParseDelta (entity_state_t *from, entity_state_t *to, int bits)
 	if (bits & U_MOREBITS) {	// read in the low order bits
 		i = MSG_ReadByte ();
 		bits |= i;
-
-		fprintf(stderr, "More bits, bits are now 0x%04x\n", bits);
 	}
 
 	if (bits & FTE_U_EVENMORE)
@@ -393,8 +391,6 @@ void CL_ParseDelta (entity_state_t *from, entity_state_t *to, int bits)
 		morebits = MSG_ReadByte();
 		if (morebits & FTE_U2_YETMORE)
 			morebits |= MSG_ReadByte()<<8;
-
-		fprintf(stderr, "Even more bits 0x%04x\n", morebits);
 
 		if (morebits & (FTE_U2_UNUSED1|FTE_U2_ENTITYDBL|FTE_U2_ENTITYDBL2|FTE_U2_DRAWFLAGS|FTE_U2_ABSLIGHT|FTE_U2_DPFLAGS|FTE_U2_TAGINFO|FTE_U2_LIGHT|FTE_U2_EFFECT16|FTE_U2_FARMORE))
 		{
