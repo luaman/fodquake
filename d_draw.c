@@ -179,6 +179,7 @@ struct Picture *Draw_LoadPicture(const char *name, enum Draw_LoadPicture_Fallbac
 	unsigned int height;
 	void *data;
 
+	data = 0;
 	picture = 0;
 
 	if (strncmp(name, "wad:", 4) == 0)
