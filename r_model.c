@@ -1751,7 +1751,7 @@ static void *Mod_LoadAliasSkinGroup(model_t *model, mdl_t *mdl, unsigned int ski
 
 static void Mod_LoadAliasModel(model_t *mod, void *buffer)
 {
-	int i, j, version, numframes, numskins, size, skinsize;
+	int i, j, version, numframes, numskins, size;
 	mdl_t *pmodel, *pinmodel;
 	stvert_t *pstverts, *pinstverts;
 	aliashdr_t *pheader;
@@ -1877,9 +1877,6 @@ static void Mod_LoadAliasModel(model_t *mod, void *buffer)
 		Host_Error("Mod_LoadAliasModel: skinwidth not multiple of 4");
 
 	pheader->model = (byte *) pmodel - (byte *)pheader;
-
-	// load the skins
-	skinsize = pmodel->skinheight * pmodel->skinwidth;
 
 	if (numskins < 1)
 		Host_Error("Mod_LoadAliasModel: Invalid # of skins: %d\n", numskins);
