@@ -474,49 +474,46 @@ static matchinfo_t *MT_GetMatchInfo(void) {
 	return &matchinfo;
 }
 
-void MT_Macrolist_f(void) {
+void MT_Macrolist_f(void)
+{
 	int argc;
 
-	switch((argc = Cmd_Argc())) {
-	case 1:
-		Com_Printf("\x02The following macros can be used to name your matches\n");
-		Com_Printf("\x02The square brackets apply when spectating a match\n\n");
-		Com_Printf("\x02%%n"); Com_Printf(" - your nick [followed by match_name_spec]\n");
-		Com_Printf("\x02%%p"); Com_Printf(" - your name [player1's name]\n");
-		Com_Printf("\x02%%t"); Com_Printf(" - your team [team1's name]\n");
-		Com_Printf("\x02%%e"); Com_Printf(" - enemy nick in duels, enemy team in tp [player2/team2]\n");
+	if (Cmd_Argc() != 1)
+		Com_Printf("%s: no arguments expected\n", Cmd_Argv(0));
 
-		Com_Printf("\x02%%k"); Com_Printf(" - names of players on your team [team1]\n");
-		Com_Printf("\x02%%l"); Com_Printf(" - names of players on enemy team [team2]\n");
+	Com_Printf("\x02The following macros can be used to name your matches\n");
+	Com_Printf("\x02The square brackets apply when spectating a match\n\n");
+	Com_Printf("\x02%%n"); Com_Printf(" - your nick [followed by match_name_spec]\n");
+	Com_Printf("\x02%%p"); Com_Printf(" - your name [player1's name]\n");
+	Com_Printf("\x02%%t"); Com_Printf(" - your team [team1's name]\n");
+	Com_Printf("\x02%%e"); Com_Printf(" - enemy nick in duels, enemy team in tp [player2/team2]\n");
 
-		Com_Printf("\x02%%O"); Com_Printf(" - number of teammates [number on team1]\n");
-		Com_Printf("\x02%%E"); Com_Printf(" - number of enemies [number on team2]\n");
-		Com_Printf("\x02%%C"); Com_Printf(" - number of players on the server\n");
+	Com_Printf("\x02%%k"); Com_Printf(" - names of players on your team [team1]\n");
+	Com_Printf("\x02%%l"); Com_Printf(" - names of players on enemy team [team2]\n");
 
-		Com_Printf("\x02%%a"); Com_Printf(" - team counts separated by match_name_on (eg 4on3on4)\n");
-		Com_Printf("\x02%%b"); Com_Printf(" - team names separated by match_name_versus\n");
-		Com_Printf("\x02%%v"); Com_Printf(" - shortcut for $match_name_versus\n");
+	Com_Printf("\x02%%O"); Com_Printf(" - number of teammates [number on team1]\n");
+	Com_Printf("\x02%%E"); Com_Printf(" - number of enemies [number on team2]\n");
+	Com_Printf("\x02%%C"); Com_Printf(" - number of players on the server\n");
 
-		Com_Printf("\x02%%T"); Com_Printf(" - timelimit on the server\n");
-		Com_Printf("\x02%%F"); Com_Printf(" - fraglimit n the server\n");
-		Com_Printf("\x02%%p"); Com_Printf(" - teamplay setting on the server\n");
-		Com_Printf("\x02%%D"); Com_Printf(" - deathmatch mode on the server\n");
+	Com_Printf("\x02%%a"); Com_Printf(" - team counts separated by match_name_on (eg 4on3on4)\n");
+	Com_Printf("\x02%%b"); Com_Printf(" - team names separated by match_name_versus\n");
+	Com_Printf("\x02%%v"); Com_Printf(" - shortcut for $match_name_versus\n");
 
-		Com_Printf("\x02%%M"); Com_Printf(" - mapname\n");
-		Com_Printf("\x02%%G"); Com_Printf(" - gamedir (eg. qw, fortress, arena, etc)\n");
+	Com_Printf("\x02%%T"); Com_Printf(" - timelimit on the server\n");
+	Com_Printf("\x02%%F"); Com_Printf(" - fraglimit n the server\n");
+	Com_Printf("\x02%%p"); Com_Printf(" - teamplay setting on the server\n");
+	Com_Printf("\x02%%D"); Com_Printf(" - deathmatch mode on the server\n");
 
-		Com_Printf("\x02%%d"); Com_Printf(" - day\n");
-		Com_Printf("\x02%%m"); Com_Printf(" - month\n");
-		Com_Printf("\x02%%H"); Com_Printf(" - hour\n");
-		Com_Printf("\x02%%Q"); Com_Printf(" - minute\n");
-		Com_Printf("\x02%%S"); Com_Printf(" - second\n");
-		Com_Printf("\x02%%y"); Com_Printf(" - year (without century)\n");
-		Com_Printf("\x02%%Y"); Com_Printf(" - year (with century)\n");
-		break;
-	default:
-		Com_Printf("%s : no arguments expected\n", Cmd_Argv(0));
-		break;
-	}
+	Com_Printf("\x02%%M"); Com_Printf(" - mapname\n");
+	Com_Printf("\x02%%G"); Com_Printf(" - gamedir (eg. qw, fortress, arena, etc)\n");
+
+	Com_Printf("\x02%%d"); Com_Printf(" - day\n");
+	Com_Printf("\x02%%m"); Com_Printf(" - month\n");
+	Com_Printf("\x02%%H"); Com_Printf(" - hour\n");
+	Com_Printf("\x02%%Q"); Com_Printf(" - minute\n");
+	Com_Printf("\x02%%S"); Com_Printf(" - second\n");
+	Com_Printf("\x02%%y"); Com_Printf(" - year (without century)\n");
+	Com_Printf("\x02%%Y"); Com_Printf(" - year (with century)\n");
 }
 
 static char *MT_ParseFormat(char *format, matchinfo_t *matchinfo) {
