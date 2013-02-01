@@ -350,7 +350,6 @@ static void IN_WeaponDown()
 	}
 
 	idleindex = 0;
-	index = Cmd_Argc() - 1;
 	weapon = 0;
 
 	for(index=1,max=Cmd_Argc();index<max;index++)
