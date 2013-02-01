@@ -797,7 +797,7 @@ qboolean Cmd_IsLegacyCommand (char *oldname)
 
 static qboolean Cmd_LegacyCommand (void)
 {
-	qboolean recursive = false;
+	static qboolean recursive = false;
 	legacycmd_t *cmd;
 	char text[1024];
 
@@ -899,8 +899,9 @@ void Cmd_TokenizeString (char *text)
 		while (*text == ' ' || *text == '\t' || *text == '\r')
 			text++;
 
-		if (*text == '\n') {	// a newline separates commands in the buffer
-			text++;
+		if (*text == '\n')
+		{
+			/* a newline separates commands in the buffer */
 			break;
 		}
 
@@ -1075,7 +1076,10 @@ void Cmd_CmdList_f (void)
 
 	sorted_cmds = malloc(count * sizeof(*sorted_cmds));
 	if (sorted_cmds == 0)
+	{
 		Com_ErrorPrintf("cmdlist: out of memory\n");
+		return;
+	}
 
 	for (cmd = cmd_functions, count = 0; cmd; cmd = cmd->next, count++)
 		sorted_cmds[count] = cmd;
@@ -1136,7 +1140,6 @@ char *Cmd_MacroString (char *s, int *macro_length)
 			*macro_length = strlen(macro->name);
 			return macro->func();
 		}
-		macro++;
 	}
 	*macro_length = 0;
 	return NULL;
@@ -1727,7 +1730,9 @@ static int cstc_exec_get_results(struct cst_info *self, int *results, int get_re
 				count++;
 			}
 		}
-		*results = count;
+		if (results)
+			*results = count;
+
 		data->initialized = true;
 		return 0;
 	}
