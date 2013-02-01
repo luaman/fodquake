@@ -1771,7 +1771,7 @@ void CL_SaveArgv(int argc, char **argv)
 	int i, total_length, length;
 	qboolean first = true;
 
-	length = total_length = saved_args[0] = 0;
+	total_length = saved_args[0] = 0;
 	for (i = 0; i < argc; i++)
 	{
 		if (!argv[i][0])
