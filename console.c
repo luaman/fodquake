@@ -1,5 +1,5 @@
 /*
-Copyright (C) 2010-2011 Mark Olsen
+Copyright (C) 2010-2013 Mark Olsen
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -242,8 +242,6 @@ static void Con_LayoutLine(unsigned int offset)
 
 	do
 	{
-		j = i;
-
 		j = Con_BufferFindLinebreak(offset, i, &lastcolour);
 
 		if ((lastline+2)%maxlines == firstline)
@@ -411,7 +409,6 @@ static void Con_DrawTextLines(unsigned int y, unsigned int maxlinestodraw, unsig
 	if (!con_parsecolors.value)
 		Draw_BeginTextRendering();
 
-	i = firstline;
 	y += maxlinestodraw * 8;
 
 	j = lastlinetodraw;
