@@ -57,7 +57,7 @@ cvar_t *Cvar_FindVar (char *var_name)
 
 void Cvar_ResetVar (cvar_t *var)
 {
-	if (var && strcmp(var->string, var->defaultvalue))
+	if (strcmp(var->string, var->defaultvalue))
 		Cvar_Set(var, var->defaultvalue);
 
 	var->flags&= ~CVAR_CHANGED;
@@ -69,7 +69,7 @@ void Cvar_Reset_f (void)
 	cvar_t *var;
 	char *s;
 
-	if ((c = Cmd_Argc()) != 2)
+	if (Cmd_Argc() != 2)
 	{
 		Com_Printf("Usage: %s <variable>\n", Cmd_Argv(0));
 		return;
@@ -502,7 +502,10 @@ void Cvar_CvarList_f (void)
 
 	sorted_cvars = malloc(count * sizeof(*sorted_cvars));
 	if (sorted_cvars == 0)
+	{
 		Com_ErrorPrintf("cvarlist: out of memory\n");
+		return;
+	}
 
 	for (var = cvar_vars, count = 0; var; var = var->next, count++)
 		sorted_cvars[count] = var;
