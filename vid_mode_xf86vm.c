@@ -252,8 +252,6 @@ const char * const *xf86vm_GetModeList(void)
 		{
 			if (xf86vm->XF86VidModeGetAllModeLines(disp, scrnum, &num_vidmodes, &vidmodes))
 			{
-				i = 0;
-
 				if (num_vidmodes < 65536)
 				{
 					ret = malloc(sizeof(*ret) * (num_vidmodes + 1));
