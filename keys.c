@@ -396,8 +396,8 @@ void RemoveColors(char *name) {
 		s++;
 	}
 	// get rid of whitespace
-	s = name;
 	for (s = name; *s == '_'; s++) ;
+
 	memmove(name, s, strlen(s) + 1);
 	
 	for (s = name + strlen(name); s > name  &&  (*(s - 1) == '_'); s--) ;
