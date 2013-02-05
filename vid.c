@@ -46,8 +46,12 @@ static void *display;
 static char *windowtitle;
 
 static void set_up_conwidth_conheight(void);
+static void refresh_mouse_grab_state(void);
 
 static int vid_restarted;
+
+static int mouse_grab_wanted;
+static int mouse_grabbed;
 
 static qboolean vid_conwidth_callback(cvar_t *var, char *value)
 {
@@ -69,8 +73,9 @@ static qboolean vid_conheight_callback(cvar_t *var, char *value)
 
 static qboolean in_grab_windowed_mouse_callback(cvar_t *var, char *value)
 {
-	if (display)
-		Sys_Video_GrabMouse(display, Sys_Video_GetFullscreen(display) || atoi(value));
+	var->value = atof(value);
+
+	refresh_mouse_grab_state();
 
 	return false;
 }
@@ -150,6 +155,25 @@ static void set_up_conwidth_conheight()
 		vid.conheight = vid.displayheight;
 
 	vid.recalc_refdef = 1;
+}
+
+static void refresh_mouse_grab_state()
+{
+	int newstate;
+
+	if (!display)
+		return;
+
+	newstate = 0;
+
+	if (Sys_Video_GetFullscreen(display) || (mouse_grab_wanted && in_grab_windowed_mouse.value))
+		newstate = 1;
+
+	if (newstate != mouse_grabbed)
+	{
+		mouse_grabbed = newstate;
+		Sys_Video_GrabMouse(display, mouse_grabbed);
+	}
 }
 
 void VID_Init(unsigned char *palette)
@@ -329,7 +353,8 @@ void VID_Open()
 			if (windowtitle)
 				Sys_Video_SetWindowTitle(display, windowtitle);
 
-			Sys_Video_GrabMouse(display, Sys_Video_GetFullscreen(display) || in_grab_windowed_mouse.value);
+			mouse_grabbed = 2;
+			refresh_mouse_grab_state();
 
 			R_Init();
 
@@ -437,6 +462,13 @@ void VID_GetMouseMovement(int *mousex, int *mousey)
 	}
 
 	Sys_Thread_UnlockMutex(display_mutex);
+}
+
+void VID_SetMouseGrab(int on)
+{
+	mouse_grab_wanted = !!on;
+
+	refresh_mouse_grab_state();
 }
 
 #ifdef GLQUAKE

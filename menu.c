@@ -231,10 +231,12 @@ void M_ToggleMenu_f()
 		}
 		key_dest = key_game;
 		m_state = m_none;
+		VID_SetMouseGrab(1);
 		return;
 	}
 	else
 	{
+		VID_SetMouseGrab(0);
 		M_Menu_Main_f ();
 	}
 }
@@ -265,6 +267,7 @@ static void M_LeaveMenu(int parent)
 	{
 		m_state = m_none;
 		key_dest = key_game;
+		VID_SetMouseGrab(1);
 	}
 	else
 	{
@@ -984,6 +987,7 @@ static void M_Main_Key(int key)
 	case K_ESCAPE:
 		key_dest = key_game;
 		m_state = m_none;
+		VID_SetMouseGrab(1);
 		break;
 
 	case K_UPARROW:
@@ -1930,6 +1934,7 @@ static void M_Quit_Key(int key)
 		{
 			key_dest = key_game;
 			m_state = m_none;
+			VID_SetMouseGrab(1);
 		}
 		break;
 
@@ -2256,6 +2261,7 @@ static void M_Load_Key(int key)
 			return;
 		m_state = m_none;
 		key_dest = key_game;
+		VID_SetMouseGrab(1);
 
 #if 0
 		// issue the load command
@@ -2296,6 +2302,7 @@ static void M_Save_Key(int key)
 	case K_ENTER:
 		m_state = m_none;
 		key_dest = key_game;
+		VID_SetMouseGrab(1);
 		Cbuf_AddText (va("save s%i\n", load_cursor));
 		return;
 
@@ -2331,6 +2338,7 @@ static void M_MultiPlayer_ServerBrowser()
 {
 	key_dest = key_game;
 	m_state = m_none;
+	VID_SetMouseGrab(1);
 	SB_Activate_f();
 }
 
@@ -3373,6 +3381,7 @@ static void M_Demos_Key(int key)
 		{
 			key_dest = key_game;
 			m_state = m_none;
+			VID_SetMouseGrab(1);
 			if (keydown[K_CTRL])
 				Cbuf_AddText (va("timedemo \"..%s/%s\"\n", demo_currentdir, demolist[demo_cursor + demo_base]->name));
 			else
@@ -3725,6 +3734,7 @@ static void M_GameOptions_Key(int key)
 //		if (gameoptions_cursor == 0)
 		{
 			key_dest = key_game;
+			VID_SetMouseGrab(1);
 
 			// Kill the server, unless we continue playing
 			// deathmatch on another level

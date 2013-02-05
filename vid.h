@@ -87,6 +87,8 @@ void VID_SetCaption(const char *text);
 
 void VID_GetMouseMovement(int *mousex, int *mousey);
 
+void VID_SetMouseGrab(int on);
+
 const char *VID_GetClipboardText(void);
 void VID_FreeClipboardText(const char *text);
 void VID_SetClipboardText(const char *text);

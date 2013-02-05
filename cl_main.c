@@ -983,6 +983,9 @@ void CL_MakeActive(void)
 	TP_ExecTrigger("f_spawn");
 
 	Ignore_PostNewMap();
+
+	if (key_dest == key_game)
+		VID_SetMouseGrab(1);
 }
 
 //Cvar system calls this when a CVAR_USERINFO cvar changes
@@ -1346,6 +1349,7 @@ void CL_Disconnect(void)
 	memset(&cls.netchan, 0, sizeof(cls.netchan));
 	memset(&cls.server_adr, 0, sizeof(cls.server_adr));
 	cls.state = ca_disconnected;
+	VID_SetMouseGrab(0);
 	connect_time = 0;
 
 #ifdef NETQW
@@ -1750,11 +1754,15 @@ void ToggleConsole_f(void)
 	if (key_dest == key_console)
 	{
 		if (!SCR_NEED_CONSOLE_BACKGROUND)
+		{
 			key_dest = key_game;
+			VID_SetMouseGrab(1);
+		}
 	}
 	else
 	{
 		key_dest = key_console;
+		VID_SetMouseGrab(0);
 	}
 
 	CSTC_Console_Close();
