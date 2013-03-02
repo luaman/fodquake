@@ -10,7 +10,7 @@ STRIPFLAGS=--strip-unneeded --remove-section=.comment
 
 TARGETSYSTEM:=$(shell $(CC) -dumpmachine)
 
-OS=$(shell echo $(TARGETSYSTEM) | sed "s/-gnu//" | sed "s/.*-//" | tr [A-Z] [a-z] | sed s/^mingw.*/win32/ | sed s/^openbsd.*/openbsd/ | sed s/^freebsd.*/freebsd/ | sed s/^darwin.*/macosx/)
+OS=$(shell echo $(TARGETSYSTEM) | sed "s/-linux-.*/-linux/" | sed "s/-gnu//" | sed "s/.*-//" | tr [A-Z] [a-z] | sed s/^mingw.*/win32/ | sed s/^openbsd.*/openbsd/ | sed s/^freebsd.*/freebsd/ | sed s/^darwin.*/macosx/)
 CPU=$(shell echo $(TARGETSYSTEM) | cut -d '-' -f 1 | tr [A-Z] [a-z] | sed "s/powerpc/ppc/")
 
 TARGETS=sw gl
@@ -363,6 +363,7 @@ GLOBJS= \
 	gl_rlight.o \
 	gl_rmain.o \
 	gl_rmisc.o \
+	gl_rollyourown.o \
 	gl_rpart.o \
 	gl_rsurf.o \
 	gl_shader.o \
