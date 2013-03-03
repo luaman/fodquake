@@ -63,7 +63,7 @@ static char *MT_CleanString(char *string, qboolean allow_spaces_and_slashes)
 	byte c, d;
 	char *disallowed;
 	static char buf[MAX_STATIC_STRING];
-	char badchars[] = {' ', '\\', '/', '?', '*', ':', '<', '>', '"', '|'};
+	char badchars[] = { ' ', '\\', '/', '?', '*', ':', '<', '>', '"', '|', 0 };
 
 	disallowed = allow_spaces_and_slashes ? badchars + 3 : badchars;
 
