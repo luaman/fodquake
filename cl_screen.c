@@ -40,6 +40,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "server_browser.h"
 #include "context_sensitive_tab.h"
+#include "lua.h"
 
 #ifdef GLQUAKE
 #include "gl_local.h"
@@ -1305,6 +1306,8 @@ void SCR_UpdateScreen (void) {
 
 	SB_Frame();
 
+	Lua_Frame_2D();
+
 	R_BrightenScreen ();
 
 	V_UpdatePalette(false);
@@ -1383,6 +1386,9 @@ void SCR_UpdateScreen (void) {
 	SCR_DrawElements();
 
 	SB_Frame();
+
+	Lua_Frame_2D();
+
 	D_DisableBackBufferAccess ();	// for adapters that can't stay mapped in for linear writes all the time
 	V_UpdatePalette(false);
 

@@ -55,6 +55,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "server_browser.h"
 #include "ruleset.h"
 #include "context_sensitive_tab.h"
+#include "lua.h"
 
 #ifndef CLIENTONLY
 #include "server.h"
@@ -242,6 +243,7 @@ void Host_Init(int argc, char **argv)
 	FChecks_CvarInit();
 	Sys_CvarInit();
 	SB_CvarInit();
+	Lua_CvarInit();
 	Ruleset_CvarInit();
 	Context_Sensitive_Tab_Completion_CvarInit();
 
@@ -293,6 +295,7 @@ void Host_Init(int argc, char **argv)
 	PM_Init();
 	Mod_Init();
 
+	Lua_Init();
 	SB_Init();
 #ifndef CLIENTONLY
 	SV_Init();
@@ -342,6 +345,7 @@ void Host_Shutdown(void)
 	Context_Weighting_Shutdown();
 
 	SB_Quit();
+	Lua_Shutdown();
 #ifndef CLIENTONLY
 	SV_Shutdown("Server quit\n");
 #endif

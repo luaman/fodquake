@@ -57,6 +57,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "ruleset.h"
 #include "tokenize_string.h"
 #include "context_sensitive_tab.h"
+#include "lua.h"
 
 #ifndef GLQUAKE
 #include "d_local.h"
@@ -2268,6 +2269,7 @@ void CL_Frame (double time)
 	CDAudio_Update();
 	MP3_Frame();
 	MT_Frame();
+	Lua_Frame();
 
 	if (Movie_IsCapturing())
 		Movie_FinishFrame();

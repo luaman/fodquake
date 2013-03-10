@@ -38,6 +38,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifdef NETQW
 #include "netqw.h"
 #endif
+#include "lua.h"
 
 extern cvar_t net_maxfps;
 
@@ -1487,6 +1488,7 @@ void CL_ParsePrint (void)
 
 	level = MSG_ReadByte ();
 	s = MSG_ReadString ();
+	Lua_MessageFunctions(level, s);
 
 	if (level == PRINT_CHAT)
 	{

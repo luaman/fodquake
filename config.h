@@ -5,4 +5,5 @@
 #else
 #define USE_JPEG 1
 #endif
+#define USE_LUA 0
 

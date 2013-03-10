@@ -176,7 +176,7 @@ typedef enum {
 } keynum_t;
 
 
-typedef enum {key_game, key_console, key_message, key_menu, key_serverbrowser} keydest_t;
+typedef enum {key_game, key_console, key_message, key_menu, key_serverbrowser, key_lua} keydest_t;
 
 extern keydest_t	key_dest;
 extern char 	*keybindings[256];

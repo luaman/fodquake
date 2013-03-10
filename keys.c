@@ -26,6 +26,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "menu.h"
 #include "readablechars.h"
 #include "tableprint.h"
+#include "lua.h"
 
 #ifdef _WINDOWS
 #include <windows.h>
@@ -1232,6 +1233,10 @@ void Key_Event(int key, qboolean down)
 			case key_serverbrowser:
 				SB_Key(key);
 				break;
+
+			case key_lua:
+				Lua_Key(key);
+				break;
 		}
 
 		return;
@@ -1324,6 +1329,10 @@ void Key_Event(int key, qboolean down)
 
 		case key_serverbrowser:
 			SB_Key(key);
+			break;
+
+		case key_lua:
+			Lua_Key(key);
 			break;
 	}
 }

@@ -284,6 +284,7 @@ OBJS= \
 	image.o \
 	keys.o \
 	linked_list.o \
+	lua.o \
 	match_tools.o \
 	mathlib.o \
 	md5.o \

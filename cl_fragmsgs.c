@@ -804,6 +804,48 @@ void Stats_GetBasicStats(int num, int *playerstats)
 	playerstats[3] = fragstats[num].totalsuicides;
 }
 
+int Stats_GetWeaponKills(int num, int count, int *weaponstats)
+{
+	int i;
+	if (num < 0 || num >= MAX_CLIENTS)
+		Sys_Error("Stats_EnterSlot: num < 0 || num >= MAX_CLIENTS");
+
+	if (count < 0 || count > num_wclasses)
+	{
+		return 1;
+	}
+
+	for (i=0; i<count; i++)
+		weaponstats[i] = fragstats[num].wkills[i];
+
+	return 0;
+}
+
+int Stats_GetWeaponKill(int num, char *weapon)
+{
+	int i;
+
+	if (num < 0 || num >= MAX_CLIENTS)
+		return 0;
+	if (weapon == NULL)
+		return 0;
+
+	for (i=0; i<num_wclasses;i++)
+	{
+		if (wclasses[i].shortname)
+		{
+			if (strcmp(wclasses[i].shortname, weapon) == 0)
+				return fragstats[num].wkills[i];
+		}
+		else
+		{
+			if (strcmp(wclasses[i].name, weapon) == 0)
+				return fragstats[num].wkills[i];
+		}
+	}
+	return 0;
+}
+
 void Stats_GetFlagStats(int num, int *playerstats)
 {
 	if (num < 0 || num >= MAX_CLIENTS)
