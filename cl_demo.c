@@ -1490,7 +1490,7 @@ struct cstc_demoinfo
 static int cstc_playdemo_data(struct cst_info *self, int remove)
 {
 	struct cstc_demoinfo *data;
-	char *demo_endings[] = { ".qwd", ".mvd", NULL};
+	const char * const demo_endings[] = { ".qwd", ".mvd", NULL};
 
 	if (!self)
 		return 1;

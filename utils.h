@@ -60,8 +60,8 @@ int Colored_String_Length(char *string);
 int Colored_String_Offset(char *string, unsigned int maxlen, unsigned short *lastcolour);
 
 //struct directory_list *Util_Dir_Read(char *dir, int recursive, char **filters);
-struct directory_list *Util_Dir_Read(char *dir, int recursive, int remove_dirs, char **filter);
-struct directory_list *Util_Dir_Recursive_Read_Filter(char *dir, char **filters);
+struct directory_list *Util_Dir_Read(char *dir, int recursive, int remove_dirs, const char * const *filter);
+struct directory_list *Util_Dir_Recursive_Read_Filter(char *dir, const char * const *filters);
 void Util_Dir_Delete(struct directory_list *dlist);
 void Util_Dir_Sort(struct directory_list *dlist);
 

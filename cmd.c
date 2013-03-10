@@ -1658,7 +1658,7 @@ struct cstc_cfginfo
 static int cstc_exec_get_data(struct cst_info *self, int remove)
 {
 	struct cstc_cfginfo *data;
-	char *cfg_endings[] = { ".cfg", NULL};
+	const char * const cfg_endings[] = { ".cfg", NULL};
 
 	if (!self)
 		return 1;

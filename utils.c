@@ -656,10 +656,10 @@ static void remove_dirs_from_det(struct directory_entry_temp **list)
 	}
 }
 
-static void filter_det(struct directory_entry_temp **list, char **filter)
+static void filter_det(struct directory_entry_temp **list, const char * const *filter)
 {
 	struct directory_entry_temp *tmp, *tmpn, *tmpp;
-	char **cfilter;
+	const char * const *cfilter;
 	int remove;
 
 	tmp = *list;
@@ -706,7 +706,7 @@ static void filter_det(struct directory_entry_temp **list, char **filter)
 	}
 }
 
-struct directory_list *Util_Dir_Read(char *dir, int recursive, int remove_dirs, char **filters)
+struct directory_list *Util_Dir_Read(char *dir, int recursive, int remove_dirs, const char * const *filters)
 {
 	struct directory_list *dlist;
 	struct directory_entry_temp *det, *cdet, *osdet, *osdet2;

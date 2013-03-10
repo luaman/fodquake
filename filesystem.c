@@ -69,7 +69,7 @@ struct searchpath
 static struct searchpath *com_searchpaths;
 static struct searchpath *com_base_searchpaths;	// without gamedirs
 
-static char *skins_endings[] = { ".pcx", ".png", NULL};	//endings for skins files
+static const char * const skins_endings[] = { ".pcx", ".png", NULL};	//endings for skins files
 
 static int FS_FileLength(FILE * f)
 {
