@@ -661,6 +661,8 @@ static void filter_det(struct directory_entry_temp **list, const char * const *f
 	struct directory_entry_temp *tmp, *tmpn, *tmpp;
 	const char * const *cfilter;
 	int remove;
+	int match;
+	int i;
 
 	tmp = *list;
 	tmpp = NULL;
@@ -678,11 +680,35 @@ static void filter_det(struct directory_entry_temp **list, const char * const *f
 		{
 			while (*cfilter)
 			{
-				if (Util_strcasestr(tmp->directory_entry.name, *cfilter) != NULL)
+				if ((*cfilter)[0] == '^')
+					match = 1;
+				if ((*cfilter)[0] == '$')
+					match = 2;
+				else
+					match = 0;
+
+				switch (match)
 				{
-					remove = 0;
-					break;
+					case 0:
+						if (Util_strcasestr(tmp->directory_entry.name, *cfilter) != NULL)
+							remove = 0;
+						break;
+					case 1:
+						if (strncasecmp(tmp->directory_entry.name, (*cfilter + 1), strlen(*cfilter + 1)) == 0)
+							remove = 0;
+						break;
+					case 2:
+						i = strlen(tmp->directory_entry.name) - strlen(*cfilter + 1);
+						if (i <= 0)
+							break;
+						if (strncasecmp(tmp->directory_entry.name + i, (*cfilter + 1), strlen(*cfilter + 1)) == 0)
+							remove = 0;
+						break;
 				}
+
+				if (remove == 0)
+					break;
+
 				cfilter++;
 			}
 		}
