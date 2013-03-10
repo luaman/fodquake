@@ -757,6 +757,8 @@ void Sys_Video_Close(void *display)
 
 	XCloseDisplay(d->x_disp);
 
+	free(d->buffer);
+
 	free(d);
 }
 
