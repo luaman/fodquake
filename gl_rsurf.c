@@ -796,7 +796,7 @@ static void R_DrawAlphaChain (void)
 
 static void R_ClearTextureChains(model_t *clmodel)
 {
-	int i, waterline;
+	int i;
 	texture_t *texture;
 
 	memset (lightmap_polys_used, 0, sizeof(lightmap_polys_used));
@@ -844,13 +844,12 @@ static void DrawTextureChains (model_t *model)
 	msurface_t *sprev;
 	texture_t *t;
 	float *v;
-	int lightmapprevtexturenum;
 	unsigned int glindices[300];
 	unsigned int numglelements;
 	unsigned int basearrays;
 	unsigned int extraarrays;
 
-	qboolean render_lightmaps = false, render_caustics = false, render_details = false;
+	qboolean render_lightmaps = false;
 	qboolean drawLumasGlowing, doMtex1, doMtex2;
 
 	qboolean draw_fbs, draw_caustics, draw_details;
@@ -865,6 +864,9 @@ static void DrawTextureChains (model_t *model)
 
 	draw_caustics = underwatertexture && gl_caustics.value;
 	draw_details = detailtexture && gl_detail.value;
+
+	GL_LIGHTMAP_TEXTURE = 0;
+	GL_FB_TEXTURE = 0;
 
 	if (drawLumasGlowing)
 	{
@@ -907,7 +909,6 @@ static void DrawTextureChains (model_t *model)
 
 	for (i = 0; i < model->numtextures; i++)
 	{
-		lightmapprevtexturenum = -1;
 		extraarrays = 0;
 
 		if (!model->textures[i] || (!model->textures[i]->texturechain[0] && !model->textures[i]->texturechain[1]))
@@ -1040,7 +1041,6 @@ static void DrawTextureChains (model_t *model)
 
 				if (mtex_lightmaps)
 				{
-					lightmapprevtexturenum = s->lightmaptexturenum;
 					//bind the lightmap texture
 					GL_SelectTexture(GL_LIGHTMAP_TEXTURE);
 					GL_Bind (lightmap_textures + s->lightmaptexturenum);
@@ -1689,7 +1689,7 @@ static int AllocBlock (int w, int h, int *x, int *y)
 
 static void BuildSurfaceDisplayList(model_t *model, msurface_t *fa)
 {
-	int i, lindex, lnumverts, vertpage;
+	int i, lindex, lnumverts;
 	medge_t *pedges, *r_pedge;
 	float *vec, s, t;
 	glpoly_t *poly;
@@ -1700,7 +1700,6 @@ static void BuildSurfaceDisplayList(model_t *model, msurface_t *fa)
 	// reconstruct the polygon
 	pedges = model->edges;
 	lnumverts = fa->numedges;
-	vertpage = 0;
 
 	// draw texture
 	poly = malloc(sizeof(glpoly_t) + (lnumverts - 4) * VERTEXSIZE*sizeof(float));
