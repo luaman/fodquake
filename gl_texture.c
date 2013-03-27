@@ -495,7 +495,7 @@ byte *GL_LoadImagePixels(char *filename, int matchwidth, int matchheight, unsign
 		if (*c == '*')
 			*c = '#';
 
-	Q_snprintfz(name, sizeof(name), "%s.tga", basename);
+	snprintf(name, sizeof(name), "%s.tga", basename);
 	if (FS_FOpenFile(name, &f) != -1)
 	{
 		CHECK_TEXTURE_ALREADY_LOADED;
@@ -504,7 +504,7 @@ byte *GL_LoadImagePixels(char *filename, int matchwidth, int matchheight, unsign
 	}
 
 #if USE_PNG
-	Q_snprintfz(name, sizeof(name), "%s.png", basename);
+	snprintf(name, sizeof(name), "%s.png", basename);
 	if (FS_FOpenFile(name, &f) != -1)
 	{
 		CHECK_TEXTURE_ALREADY_LOADED;
@@ -604,8 +604,13 @@ int GL_LoadCharsetImage(char *filename, char *identifier)
 	if (!identifier)
 		identifier = filename;
 
-#warning Integer overflow vulnerability.
+	if (imagewidth >= 32768 || imageheight >= 32768)
+		return 0;
+
 	image_size = imagewidth * imageheight;
+
+	if (image_size >= 256*1024*1024)
+		return 0;
 
 	buf = dest = Q_Calloc(image_size * 2, 4); 
 	src = data;
