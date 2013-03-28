@@ -62,7 +62,7 @@ cvar_t	gl_crosshairimage   = {"crosshairimage", "", 0, OnChange_gl_crosshairimag
 qboolean OnChange_gl_consolefont (cvar_t *, char *);
 cvar_t	gl_consolefont		= {"gl_consolefont", "original", 0, OnChange_gl_consolefont};
 
-cvar_t	gl_crosshairalpha	= {"crosshairalpha", "1", 0, PostChange_crosshairstuff};
+cvar_t	gl_crosshairalpha	= {"crosshairalpha", "1", 0, 0, PostChange_crosshairstuff};
 
 qboolean OnChange_gl_smoothfont (cvar_t *var, char *string);
 cvar_t gl_smoothfont = {"gl_smoothfont", "0", 0, OnChange_gl_smoothfont};
@@ -280,7 +280,7 @@ static int Draw_LoadCharset(char *name)
 	if (!Q_strcasecmp(name, "original"))
 	{
 		int i;
-		char buf[128 * 256], *src, *dest;
+		byte buf[128 * 256], *src, *dest;
 
 		memset (buf, 255, sizeof(buf));
 		src = draw_chars;
@@ -1102,7 +1102,6 @@ static void *Draw_8to32(unsigned char *source, unsigned int width, unsigned int 
 {
 	unsigned int *dst;
 	unsigned int *ndst;
-	int doalpha;
 	unsigned int i;
 	unsigned int j;
 
@@ -1330,7 +1329,7 @@ void Draw_FreePicture(struct Picture *picture)
 {
 	if (picture != dummypicture)
 	{
-		glDeleteTextures(1, &picture->texnum);
+		glDeleteTextures(1, (GLuint *)&picture->texnum);
 
 		free(picture);
 	}
