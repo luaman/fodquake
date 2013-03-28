@@ -476,8 +476,6 @@ static matchinfo_t *MT_GetMatchInfo(void) {
 
 void MT_Macrolist_f(void)
 {
-	int argc;
-
 	if (Cmd_Argc() != 1)
 		Com_Printf("%s: no arguments expected\n", Cmd_Argv(0));
 
@@ -750,7 +748,7 @@ char *MT_TempDirectory(void) {
 	static char dir[MAX_OSPATH * 2] = {0};
 
 	if (!dir[0])
-		Q_snprintfz(dir, sizeof(dir), "%s/fodquake/temp", com_basedir);
+		snprintf(dir, sizeof(dir), "%s/fodquake/temp", com_basedir);
 
 	return dir;
 }
