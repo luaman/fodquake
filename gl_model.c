@@ -162,7 +162,7 @@ static void Mod_FreeSpriteData(model_t *model)
 			}
 			else
 			{
-				spritegroup = sprite->frames[i].frameptr;
+				spritegroup = (mspritegroup_t *)sprite->frames[i].frameptr;
 
 				for(j=0;j<spritegroup->numframes;j++)
 					free(spritegroup->frames[j]);
@@ -560,7 +560,7 @@ static void Mod_LoadTextures(model_t *model, lump_t *l)
 		memcpy (tx->name, mt->name, sizeof(tx->name));
 		if (!tx->name[0])
 		{
-			Q_snprintfz(tx->name, sizeof(tx->name), "unnamed%d", i);
+			snprintf(tx->name, sizeof(tx->name), "unnamed%d", i);
 			Com_DPrintf("Warning: unnamed texture in %s, renaming to %s\n", model->name, tx->name);
 		}
 
@@ -1954,12 +1954,12 @@ static int Mod_LoadExternalSkin(model_t *model, char *identifier, int *fb_texnum
 	if (!gl_scaleModelTextures.value)
 		texmode |= TEX_NOSCALE;
 
-	Q_snprintfz (loadpath, sizeof(loadpath), "textures/models/%s", identifier);
+	snprintf(loadpath, sizeof(loadpath), "textures/models/%s", identifier);
 	texnum = GL_LoadTextureImage (loadpath, identifier, 0, 0, texmode);
 
 	if (!texnum)
 	{
-		Q_snprintfz (loadpath, sizeof(loadpath), "textures/%s", identifier);
+		snprintf(loadpath, sizeof(loadpath), "textures/%s", identifier);
 		texnum = GL_LoadTextureImage (loadpath, identifier, 0, 0, texmode);
 	}
 
@@ -2000,7 +2000,7 @@ static void *Mod_LoadAllSkins(model_t *model, aliashdr_t *pheader, int numskins,
 				Skin_SetDefault(pskintype + 1, pheader->skinwidth, pheader->skinheight);
 			}
 
-			Q_snprintfz (identifier, sizeof(identifier), "%s_%i", basename, i);
+			snprintf(identifier, sizeof(identifier), "%s_%i", basename, i);
 
 			gl_texnum = fb_texnum = 0;
 			if (!(gl_texnum = Mod_LoadExternalSkin(model, identifier, &fb_texnum)))
@@ -2035,7 +2035,7 @@ static void *Mod_LoadAllSkins(model_t *model, aliashdr_t *pheader, int numskins,
 			{
 				Mod_FloodFillSkin (skin, pheader->skinwidth, pheader->skinheight);
 
-				Q_snprintfz (identifier, sizeof(identifier), "%s_%i_%i", basename, i, j);
+				snprintf(identifier, sizeof(identifier), "%s_%i_%i", basename, i, j);
 
 				gl_texnum = fb_texnum = 0;
 				if (!(gl_texnum = Mod_LoadExternalSkin(model, identifier, &fb_texnum)))
@@ -2249,12 +2249,12 @@ static int Mod_LoadExternalSpriteSkin(model_t *model, char *identifier, int fram
 	if (!gl_scaleModelTextures.value && !model->isworldmodel)
 		texmode |= TEX_NOSCALE;
 
-	Q_snprintfz (loadpath, sizeof(loadpath), "textures/sprites/%s", identifier);
+	snprintf(loadpath, sizeof(loadpath), "textures/sprites/%s", identifier);
 	texnum = GL_LoadTextureImage (loadpath, identifier, 0, 0, texmode);
 
 	if (!texnum)
 	{
-		Q_snprintfz (loadpath, sizeof(loadpath), "textures/%s", identifier);
+		snprintf(loadpath, sizeof(loadpath), "textures/%s", identifier);
 		texnum = GL_LoadTextureImage (loadpath, identifier, 0, 0, texmode);
 	}
 
@@ -2298,7 +2298,7 @@ static void *Mod_LoadSpriteFrame(model_t *model, void * pin, mspriteframe_t **pp
 	pspriteframe->left = origin[0];
 	pspriteframe->right = width + origin[0];
 
-	Q_snprintfz (identifier, sizeof(identifier), "sprites/%s_%i", basename, framenum);
+	snprintf(identifier, sizeof(identifier), "sprites/%s_%i", basename, framenum);
 	if (!(texnum = Mod_LoadExternalSpriteSkin(model, identifier, framenum)))
 		texnum = GL_LoadTexture (identifier, width, height, (byte *) (pinframe + 1), texmode, 1);
 
