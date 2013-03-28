@@ -313,7 +313,7 @@ void Log_AutoLogging_SaveMatch(void)
 		Com_Printf("Error: no available filenames\n");
 		return;
 	}
-	Q_snprintfz (savedname, sizeof(savedname), "%s_%03i.log", auto_matchname, num);
+	snprintf(savedname, sizeof(savedname), "%s_%03i.log", auto_matchname, num);
 
 	fullsavedname = va("%s/%s", dir, savedname);
 
