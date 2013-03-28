@@ -172,6 +172,6 @@ void Cmd_WriteAliases(FILE *f);
 
 void DeleteServerAliases(void);
 
-void Cmd_AddMacro(char *s, char *(*f)(void)); 
+void Cmd_AddMacro(char *s, const char *(*f)(void));
 void Cmd_AddMacroEx(char *s, char *(*f)(void), qboolean teamplay);
 char *Cmd_MacroString (char *s, int *macro_length);
