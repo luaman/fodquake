@@ -1101,14 +1101,14 @@ void Cmd_CmdList_f (void)
 typedef struct
 {
 	char		name[32];
-	char		*(*func) (void);
+	const char		*(*func) (void);
 	qboolean	teamplay;
 } macro_command_t;
 
 static macro_command_t macro_commands[MAX_MACROS];
 static int macro_count = 0;
 
-void Cmd_AddMacroEx(char *s, char *(*f)(void), qboolean teamplay)
+void Cmd_AddMacroEx(char *s, const char *(*f)(void), qboolean teamplay)
 {
 	if (macro_count == MAX_MACROS)
 		Sys_Error("Cmd_AddMacro: macro_count == MAX_MACROS");
@@ -1118,7 +1118,7 @@ void Cmd_AddMacroEx(char *s, char *(*f)(void), qboolean teamplay)
 	macro_count++;
 }
 
-void Cmd_AddMacro(char *s, char *(*f)(void))
+void Cmd_AddMacro(char *s, const char *(*f)(void))
 {
 	Cmd_AddMacroEx(s, f, false);
 }
