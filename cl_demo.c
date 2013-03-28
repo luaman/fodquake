@@ -854,7 +854,7 @@ void CL_Record_f (void)
 		Q_strncpyz(nameext, Cmd_Argv(1), sizeof(nameext));
 		COM_ForceExtension (nameext, ".qwd");
 
-		Q_snprintfz (name, sizeof(name), "%s/%s", cls.gamedir, nameext);
+		snprintf(name, sizeof(name), "%s/%s", cls.gamedir, nameext);
 		if (!CL_Demo_Open(name))
 		{
 			Com_Printf ("Error: Couldn't record to %s. Make sure path exists.\n", name);
@@ -922,7 +922,7 @@ static qboolean CL_RecordDemo(char *dir, char *name, qboolean autorecord)
 			Com_Printf("Error: no available filenames\n");
 			return false;
 		}
-		Q_snprintfz (extendedname, sizeof(extendedname), "%s_%03i.qwd", strippedname, num);
+		snprintf(extendedname, sizeof(extendedname), "%s_%03i.qwd", strippedname, num);
 	}
 
 	fullname = va("%s/%s", dir, extendedname);
@@ -1085,7 +1085,7 @@ void CL_AutoRecord_SaveMatch(void)
 		Com_Printf("Error: no available filenames\n");
 		return;
 	}
-	Q_snprintfz (savedname, sizeof(savedname), "%s_%03i.qwd", auto_matchname, num);
+	snprintf(savedname, sizeof(savedname), "%s_%03i.qwd", auto_matchname, num);
 
 	fullsavedname = va("%s/%s", dir, savedname);
 
