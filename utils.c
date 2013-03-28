@@ -42,7 +42,7 @@ char *SecondsToMinutesString(int print_time)
 	minutes = fmod (print_time / 60, 10);
 	tens_seconds = fmod (print_time / 10, 6);
 	seconds = fmod (print_time, 10);
-	Q_snprintfz (time, sizeof(time), "%i%i:%i%i", tens_minutes, minutes, tens_seconds, seconds);
+	snprintf(time, sizeof(time), "%i%i:%i%i", tens_minutes, minutes, tens_seconds, seconds);
 	return time;
 }
 
@@ -57,7 +57,7 @@ char *SecondsToHourString(int print_time)
 	minutes = fmod (print_time / 60, 10);
 	tens_seconds = fmod (print_time / 10, 6);
 	seconds = fmod (print_time, 10);
-	Q_snprintfz (time, sizeof(time), "%i%i:%i%i:%i%i", tens_hours, hours, tens_minutes, minutes, tens_seconds, seconds);
+	snprintf(time, sizeof(time), "%i%i:%i%i:%i%i", tens_hours, hours, tens_minutes, minutes, tens_seconds, seconds);
 	return time;
 }
 
@@ -119,7 +119,7 @@ int Util_Extend_Filename(char *filename, char **ext)
 			break;
 		for (s = ext; *s; s++)
 		{
-			Q_snprintfz (extendedname + offset, sizeof(extendedname) - offset, "_%03i.%s", i, *s);
+			snprintf(extendedname + offset, sizeof(extendedname) - offset, "_%03i.%s", i, *s);
 			if ((f = fopen(extendedname, "rb")))
 			{
 				fclose(f);
@@ -173,7 +173,7 @@ char *Util_Invalid_Filename_Msg(char *s)
 	if (!s)
 		return NULL;
 
-	Q_snprintfz(err, sizeof(err), "%s is not a valid filename (?*:<>\" are illegal characters)\n", s);
+	snprintf(err, sizeof(err), "%s is not a valid filename (?*:<>\" are illegal characters)\n", s);
 	return err;
 }
 
