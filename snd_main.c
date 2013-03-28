@@ -135,7 +135,7 @@ void S_SoundInfo_f (void)
 	Com_Printf ("%5d samplepos\n", soundcard->samplepos);
 	Com_Printf ("%5d samplebits\n", soundcard->samplebits);
 	Com_Printf ("%5d speed\n", soundcard->speed);
-	Com_Printf ("0x%x dma buffer\n", soundcard->buffer);
+	Com_Printf ("0x%p dma buffer\n", soundcard->buffer);
 	Com_Printf ("%5d total_channels\n", total_channels);
 }
 
@@ -410,7 +410,6 @@ void SND_Spatialize (channel_t *ch)
 {
 	vec_t dot, dist, lscale, rscale, scale;
 	vec3_t source_vec;
-	sfx_t *snd;
 
 	// anything coming from the view entity will always be full volume
 	if (ch->entnum == cl.playernum + 1)
@@ -422,7 +421,6 @@ void SND_Spatialize (channel_t *ch)
 
 	// calculate stereo seperation and distance attenuation
 
-	snd = ch->sfx;
 	VectorSubtract(ch->origin, listener_origin, source_vec);
 
 	dist = VectorNormalize(source_vec) * ch->dist_mult;
@@ -576,7 +574,7 @@ void S_ClearBuffer (void)
 	else
 		buffer = soundcard->buffer;
 
-	memset(soundcard->buffer, clear, soundcard->samples * soundcard->samplebits/8);
+	memset(buffer, clear, soundcard->samples * soundcard->samplebits/8);
 
 	if (soundcard->Unlock)
 		soundcard->Unlock(soundcard);
