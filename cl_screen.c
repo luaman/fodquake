@@ -527,7 +527,7 @@ void SCR_DrawFPS (void)
 		lastframetime = t;
 	}
 
-	Q_snprintfz(str, sizeof(str), "%3.1f%s", lastfps + 0.05, show_fps.value == 2 ? " FPS" : "");
+	snprintf(str, sizeof(str), "%3.1f%s", lastfps + 0.05, show_fps.value == 2 ? " FPS" : "");
 	x = ELEMENT_X_COORD(show_fps);
 	y = ELEMENT_Y_COORD(show_fps);
 	Draw_String (x, y, str);
@@ -558,7 +558,7 @@ void SCR_DrawFrameStdDev (void)
 		lastframetime = t;
 	}
 
-	Q_snprintfz(str, sizeof(str), "%3.1f%s", lastframestddev, show_framestddev.value == 2 ? " frame stddev" : "");
+	snprintf(str, sizeof(str), "%3.1f%s", lastframestddev, show_framestddev.value == 2 ? " frame stddev" : "");
 	x = ELEMENT_X_COORD(show_framestddev);
 	y = ELEMENT_Y_COORD(show_framestddev);
 	Draw_String (x, y, str);
@@ -603,7 +603,7 @@ void SCR_DrawSpeed (void)
 
 	if (display_speed >= 0)
 	{
-		Q_snprintfz(str, sizeof(str), "%3d%s", (int) display_speed, show_speed.value == 2 ? " SPD" : "");
+		snprintf(str, sizeof(str), "%3d%s", (int) display_speed, show_speed.value == 2 ? " SPD" : "");
 		x = ELEMENT_X_COORD(show_speed);
 		y = ELEMENT_Y_COORD(show_speed);
 		Draw_String (x, y, str);
@@ -1662,7 +1662,7 @@ void SCR_ScreenShot_f (void) {
 			Q_strncpyz(ext, DEFAULT_SSHOT_FORMAT, 4);
 
 		for (i = 0; i < 999; i++) {
-			Q_snprintfz(name, sizeof(name), "fodquake%03i.%s", i, ext);
+			snprintf(name, sizeof(name), "fodquake%03i.%s", i, ext);
 			if (!(f = fopen (va("%s/%s/%s", com_basedir, sshot_dir, name), "rb")))
 				break;  // file doesn't exist
 			fclose(f);
@@ -1786,7 +1786,7 @@ static void SCR_CheckAutoScreenshot(void) {
 		return;
 	}
 
-	Q_snprintfz (savedname, sizeof(savedname), "%s_%03i%s", auto_matchname, num, ext);
+	snprintf(savedname, sizeof(savedname), "%s_%03i%s", auto_matchname, num, ext);
 	fullsavedname = va("%s/%s", sshot_dir, savedname);
 
 #ifdef GLQUAKE
