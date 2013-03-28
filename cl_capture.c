@@ -147,11 +147,11 @@ void Movie_FinishFrame(void) {
 		return;
 
 #ifdef _WIN32
-	Q_snprintfz(fname, sizeof(fname), "%s/capture_%02d-%02d-%04d_%02d-%02d-%02d/shot-%06d.%s",
+	snprintf(fname, sizeof(fname), "%s/capture_%02d-%02d-%04d_%02d-%02d-%02d/shot-%06d.%s",
 	movie_dir.string, movie_start_date.wDay, movie_start_date.wMonth, movie_start_date.wYear,
 	movie_start_date.wHour,	movie_start_date.wMinute, movie_start_date.wSecond,	movie_frame_count, image_ext);
 #else
-	Q_snprintfz(fname, sizeof(fname), "%s/capture_%02d-%02d-%04d_%02d-%02d-%02d/shot-%06d.%s",
+	snprintf(fname, sizeof(fname), "%s/capture_%02d-%02d-%04d_%02d-%02d-%02d/shot-%06d.%s",
 	movie_dir.string, movie_start_date.tm_mday, movie_start_date.tm_mon, movie_start_date.tm_year,
 	movie_start_date.tm_hour, movie_start_date.tm_min, movie_start_date.tm_sec,	movie_frame_count, image_ext);
 #endif
