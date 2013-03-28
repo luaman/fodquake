@@ -240,9 +240,10 @@ void CL_Packet_f(void) {
 		return;
 	}
 
-#warning Only works with IPv4... but this function must die anyway.
-	if (adr.addr.ipv4.port == 0)
+	if (adr.type == NA_IPV4 && adr.addr.ipv4.port == 0)
 		adr.addr.ipv4.port = BigShort(PORT_SERVER);
+	else if (adr.type == NA_IPV6 && adr.addr.ipv4.port == 0)
+		adr.addr.ipv6.port = BigShort(PORT_SERVER);
 
 	send[0] = send[1] = send[2] = send[3] = 0xFF;
 
@@ -312,9 +313,10 @@ void CL_Rcon_f (void)
 			return;
 		}
 		NET_StringToAdr(0, rcon_address.string, &to);
-#warning Only works with IPv4
-		if (to.addr.ipv4.port == 0)
+		if (to.type == NA_IPV4 && to.addr.ipv4.port == 0)
 			to.addr.ipv4.port = BigShort (PORT_SERVER);
+		else if (to.type == NA_IPV6 && to.addr.ipv6.port == 0)
+			to.addr.ipv6.port = BigShort(PORT_SERVER);
 	}
 
 	NET_SendPacket (NS_CLIENT, strlen(message)+1, message, &to);
@@ -342,7 +344,7 @@ void CL_Download_f (void)
 		return;
 	}
 
-	Q_snprintfz (cls.downloadname, sizeof(cls.downloadname), "%s", Cmd_Argv(1));
+	snprintf(cls.downloadname, sizeof(cls.downloadname), "%s", Cmd_Argv(1));
 
 	p = cls.downloadname;
 	while (1)
