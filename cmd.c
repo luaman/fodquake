@@ -813,7 +813,7 @@ static qboolean Cmd_LegacyCommand (void)
 		return true;		// just ignore this command
 
 	// build new command string
-	Q_snprintfz(text, sizeof(text), "%s %s", cmd->newname, Cmd_Args());
+	snprintf(text, sizeof(text), "%s %s", cmd->newname, Cmd_Args());
 
 	if (recursive)
 		Sys_Error("Cmd_LegacyCommand: Called recursively");
