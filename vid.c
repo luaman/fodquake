@@ -219,10 +219,10 @@ void VID_Restart(void)
 		if (cl.model_name[i][0] == 0)
 			break;
 
-		cl.model_precache[i] = Mod_ForName (cl.model_name[i], false);
+		cl.model_precache[i] = Mod_ForName(cl.model_name[i], false);
 		if (!cl.model_precache[i])
 		{
-			Com_Printf("Unable to reload model '%s'.\n", cl.model_precache[i]);
+			Com_Printf("Unable to reload model '%s'.\n", cl.model_name[i]);
 			Host_EndGame();
 			return;
 		}
