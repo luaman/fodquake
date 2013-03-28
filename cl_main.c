@@ -884,7 +884,7 @@ static qboolean cl_imitate_client_callback(cvar_t *var, char *string)
 
 	if (i == NUMVALIDCLIENTNAMES)
 	{
-		Com_Printf("Client name \"%s\" is invalid. Valid client names are:\n");
+		Com_Printf("Client name \"%s\" is invalid. Valid client names are:\n", string);
 		for(i=0;i<NUMVALIDCLIENTNAMES;i++)
 			Com_Printf(" - %s\n", validclientnames[i]);
 
@@ -913,7 +913,7 @@ static qboolean cl_imitate_os_callback(cvar_t *var, char *string)
 
 	if (i == NUMVALIDOSNAMES)
 	{
-		Com_Printf("OS name \"%s\" is invalid. Valid OS names are:\n");
+		Com_Printf("OS name \"%s\" is invalid. Valid OS names are:\n", string);
 		for(i=0;i<NUMVALIDOSNAMES;i++)
 			Com_Printf(" - %s\n", validosnames[i]);
 
