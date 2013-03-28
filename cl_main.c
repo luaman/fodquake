@@ -930,7 +930,7 @@ char pmodel_name[] = "pmodel";
 
 //============================================================================
 
-char *CL_Macro_ConnectionType(void)
+const char *CL_Macro_ConnectionType(void)
 {
 	char *s;
 	static char macrobuf[16];
@@ -941,7 +941,7 @@ char *CL_Macro_ConnectionType(void)
 	return macrobuf;
 }
 
-char *CL_Macro_Demoplayback(void)
+const char *CL_Macro_Demoplayback(void)
 {
 	char *s;
 	static char macrobuf[16];
@@ -952,7 +952,7 @@ char *CL_Macro_Demoplayback(void)
 	return macrobuf;
 }
 
-char *CL_Macro_Serverstatus(void)
+const char *CL_Macro_Serverstatus(void)
 {
 	char *s;
 	static char macrobuf[16];
