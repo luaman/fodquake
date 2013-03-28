@@ -2181,7 +2181,7 @@ static void M_ScanSaves(char *sp_gamedir)
 	{
 		strcpy (m_filenames[i], "--- UNUSED SLOT ---");
 		loadable[i] = false;
-		Q_snprintfz (name, sizeof(name), "%s/save/s%i.sav", sp_gamedir, i);
+		snprintf(name, sizeof(name), "%s/save/s%i.sav", sp_gamedir, i);
 		if (!(f = fopen (name, "r")))
 			continue;
 		fscanf (f, "%i\n", &version);
@@ -2427,7 +2427,7 @@ static void M_MP3_Control_Draw()
 	}
 	else
 	{
-		Q_snprintfz(lastsonginfo, sizeof(lastsonginfo), "%s  ***  ", s);
+		snprintf(lastsonginfo, sizeof(lastsonginfo), "%s  ***  ", s);
 		Q_strncpyz(last_title, s, sizeof(last_title));
 		last_length = strlen(lastsonginfo);
 		initial_time = realtime;
@@ -3209,9 +3209,9 @@ static void M_Demos_Draw()
 		case dt_file:
 			M_Print (24, y, demoname);
 			if (d->size > 99999 * 1024)
-				Q_snprintfz(demosize, sizeof(demosize), "%5iM", d->size >> 20);
+				snprintf(demosize, sizeof(demosize), "%5iM", d->size >> 20);
 			else
-				Q_snprintfz(demosize, sizeof(demosize), "%5iK", d->size >> 10);
+				snprintf(demosize, sizeof(demosize), "%5iK", d->size >> 10);
 			Demo_FormatSize(demosize);
 			M_PrintWhite (24 + 8 * DEMOLIST_NAME_WIDTH, y, demosize);
 			break;
@@ -3243,7 +3243,7 @@ static void M_Demos_Draw()
 			last_demo_index = demoindex;
 			last_demo_time = time;
 			frac = scroll_index = 0;
-			Q_snprintfz(last_demo_name, sizeof(last_demo_name), "%s  ***  ", demolist[demoindex]->name);
+			snprintf(last_demo_name, sizeof(last_demo_name), "%s  ***  ", demolist[demoindex]->name);
 			last_demo_length = strlen(last_demo_name);
 		}
 		else
