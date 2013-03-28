@@ -616,14 +616,14 @@ static char *MT_NameForMatchInfo(matchinfo_t *matchinfo) {
 	return MT_CleanString(MT_ParseFormat(format, matchinfo), true);
 }
 
-char *Macro_MatchName(void) {
+const char *Macro_MatchName(void) {
 	return (cls.state < ca_active) ? "No match in progress" : MT_NameForMatchInfo(MT_GetMatchInfo());
 }
 
 char *MT_MatchName(void) {
 	static char buf[MAX_STATIC_STRING];
 
-	Q_strncpyz(buf, Macro_MatchName(), sizeof(buf));
+	strlcpy(buf, Macro_MatchName(), sizeof(buf));
 	return buf;
 }
 
@@ -1082,7 +1082,7 @@ void DumpMapGroups(FILE *f) {
 	}
 }
 
-char *Macro_MatchType(void) {
+const char *Macro_MatchType(void) {
 	matchinfo_t *matchinfo;
 
 	if (cls.state < ca_active)
