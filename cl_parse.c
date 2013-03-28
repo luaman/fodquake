@@ -383,9 +383,9 @@ static qboolean CL_OpenDownloadFile()
 	char name[1024];
 
 	if (strncmp(cls.downloadtempname,"skins/",6))
-		Q_snprintfz(name, sizeof(name), "%s/%s", cls.gamedir, cls.downloadtempname);
+		snprintf(name, sizeof(name), "%s/%s", cls.gamedir, cls.downloadtempname);
 	else
-		Q_snprintfz(name, sizeof(name), "qw/%s", cls.downloadtempname);
+		snprintf(name, sizeof(name), "qw/%s", cls.downloadtempname);
 
 	FS_CreatePath(name);
 
@@ -410,13 +410,13 @@ static void CL_FinishDownloadFile()
 	{
 		if (strncmp(cls.downloadtempname,"skins/",6))
 		{
-			Q_snprintfz(oldn, sizeof(oldn), "%s/%s", cls.gamedir, cls.downloadtempname);
-			Q_snprintfz(newn, sizeof(newn), "%s/%s", cls.gamedir, cls.downloadname);
+			snprintf(oldn, sizeof(oldn), "%s/%s", cls.gamedir, cls.downloadtempname);
+			snprintf(newn, sizeof(newn), "%s/%s", cls.gamedir, cls.downloadname);
 		}
 		else
 		{
-			Q_snprintfz(oldn, sizeof(oldn), "qw/%s", cls.downloadtempname);
-			Q_snprintfz(newn, sizeof(newn), "qw/%s", cls.downloadname);
+			snprintf(oldn, sizeof(oldn), "qw/%s", cls.downloadtempname);
+			snprintf(newn, sizeof(newn), "qw/%s", cls.downloadname);
 		}
 		r = rename (oldn, newn);
 		if (r)
@@ -832,7 +832,7 @@ void CL_ParseServerData (void)
 		// save current config
 		CL_WriteConfiguration ();
 		Q_strncpyz (cls.gamedirfile, str, sizeof(cls.gamedirfile));
-		Q_snprintfz (cls.gamedir, sizeof(cls.gamedir),
+		snprintf(cls.gamedir, sizeof(cls.gamedir),
 			"%s/%s", com_basedir, cls.gamedirfile);
 		cflag = true;
 	}
@@ -847,7 +847,7 @@ void CL_ParseServerData (void)
 
 	if (cfg_legacy_exec.value && (cflag || cfg_legacy_exec.value >= 2))
 	{
-		Q_snprintfz (fn, sizeof(fn), "%s/%s", cls.gamedir, "config.cfg");
+		snprintf(fn, sizeof(fn), "%s/%s", cls.gamedir, "config.cfg");
 		Cbuf_AddText ("cl_warncmd 0\n");
 		if ((f = fopen(fn, "r")) != NULL)
 		{
@@ -859,14 +859,14 @@ void CL_ParseServerData (void)
 		}
 		else if (cfg_legacy_exec.value == 3 && strcmp(cls.gamedir, "qw")){
 
-			Q_snprintfz (fn, sizeof(fn), "qw/%s", "config.cfg");
+			snprintf(fn, sizeof(fn), "qw/%s", "config.cfg");
 			if ((f = fopen(fn, "r")) != NULL)
 			{
 				fclose(f);
 				Cbuf_AddText ("exec config.cfg\n");
 			}
 		}
-		Q_snprintfz (fn, sizeof(fn), "%s/%s", cls.gamedir, "frontend.cfg");
+		snprintf(fn, sizeof(fn), "%s/%s", cls.gamedir, "frontend.cfg");
 		if ((f = fopen(fn, "r")) != NULL)
 		{
 			fclose(f);
@@ -877,7 +877,7 @@ void CL_ParseServerData (void)
 		}
 		else if (cfg_legacy_exec.value == 3 && strcmp(cls.gamedir, "qw")){
 
-			Q_snprintfz (fn, sizeof(fn), "qw/%s", "frontend.cfg");
+			snprintf(fn, sizeof(fn), "qw/%s", "frontend.cfg");
 			if ((f = fopen(fn, "r")) != NULL)
 			{
 				fclose(f);
