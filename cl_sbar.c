@@ -1058,7 +1058,7 @@ static void Sbar_DrawCompact(void)
 	align = scr_compactHudAlign.value ? 1 : 0;
 	for (i = 0; i < 4; i++)
 	{
-		Q_snprintfz(str, sizeof(str), "%d", cl.stats[STAT_SHELLS + i]);
+		snprintf(str, sizeof(str), "%d", cl.stats[STAT_SHELLS + i]);
 		if (cl.stats[STAT_SHELLS + i] < 5)
 			Sbar_DrawAltString(align * 8 * (3 - strlen(str)) + 174 + 32 * i, 3, str);
 		else
@@ -1100,7 +1100,7 @@ static void Sbar_DrawCompact_TF(void)
 	Sbar_DrawNum (86, 0, cl.stats[STAT_HEALTH], 3, cl.stats[STAT_HEALTH] <= 25);
 	for (i = 0; i < 4; i++)
 	{
-			Q_snprintfz(str, sizeof(str), "%d", cl.stats[STAT_SHELLS + i]);
+			snprintf(str, sizeof(str), "%d", cl.stats[STAT_SHELLS + i]);
 			if (cl.stats[STAT_SHELLS + i] < 5)
 				Sbar_DrawAltString(align * 8 * (3 - strlen(str)) + 166 + 32 * (i % 2), i >= 2 ? 14 : 3, str);
 			else
@@ -1143,10 +1143,10 @@ static void Sbar_SoloScoreboard (void)
 
 	if (cl.gametype == GAME_COOP)
 	{
-		Q_snprintfz(str, sizeof(str), "Monsters:%3i /%3i", cl.stats[STAT_MONSTERS], cl.stats[STAT_TOTALMONSTERS]);
+		snprintf(str, sizeof(str), "Monsters:%3i /%3i", cl.stats[STAT_MONSTERS], cl.stats[STAT_TOTALMONSTERS]);
 		Sbar_DrawString (8, 4, str);
 
-		Q_snprintfz(str, sizeof(str), "Secrets :%3i /%3i", cl.stats[STAT_SECRETS], cl.stats[STAT_TOTALSECRETS]);
+		snprintf(str, sizeof(str), "Secrets :%3i /%3i", cl.stats[STAT_SECRETS], cl.stats[STAT_TOTALSECRETS]);
 		Sbar_DrawString (8, 12, str);
 	}
 
@@ -1166,7 +1166,7 @@ static void Sbar_SoloScoreboard (void)
 	seconds = time - 60 * minutes;
 	tens = seconds / 10;
 	units = seconds - 10 * tens;
-	Q_snprintfz (str, sizeof(str), "Time :%3i:%i%i", minutes, tens, units);
+	snprintf(str, sizeof(str), "Time :%3i:%i%i", minutes, tens, units);
 	Sbar_DrawString (184, 4, str);
 
 	if (cl.gametype == GAME_COOP)
@@ -1402,7 +1402,7 @@ static void Sbar_DeathmatchOverlay()
 		if (p < 0 || p > 999)
 			p = 999;
 
-		Q_snprintfz (num, sizeof(num), "&cAAD%4i", p);
+		snprintf(num, sizeof(num), "&cAAD%4i", p);
 		Draw_ColoredString(x, y, num, 0);
 		x += 32; // move it forward, ready to print next column
 
@@ -1411,12 +1411,12 @@ static void Sbar_DeathmatchOverlay()
 
 		if (p > 25)
 		{
-			Q_snprintfz (num, sizeof(num), "&cD33%3i", p);
+			snprintf(num, sizeof(num), "&cD33%3i", p);
 			Draw_ColoredString (x, y, num, 1);
 		}
 		else
 		{
-			Q_snprintfz (num, sizeof(num), "&cDB0%3i", p);
+			snprintf(num, sizeof(num), "&cDB0%3i", p);
 			Draw_ColoredString (x, y, num, 0);
 		}
 
@@ -1466,11 +1466,11 @@ static void Sbar_DeathmatchOverlay()
 			if (cl.teamplay)
 			{
 				Q_strncpyz  (team, s->team, sizeof(team));
-				Q_snprintfz (scorerow, sizeof(scorerow), " %3i %c%3i%c %-4s %s", minutes, k==mynum?16:' ', s->frags, k==mynum?17:' ', team, name);
+				snprintf(scorerow, sizeof(scorerow), " %3i %c%3i%c %-4s %s", minutes, k==mynum?16:' ', s->frags, k==mynum?17:' ', team, name);
 			}
 			else
 			{
-				Q_snprintfz (scorerow, sizeof(scorerow), " %3i %c%3i%c %s", minutes, k==mynum?16:' ', s->frags, k==mynum?17:' ', name);
+				snprintf(scorerow, sizeof(scorerow), " %3i %c%3i%c %s", minutes, k==mynum?16:' ', s->frags, k==mynum?17:' ', name);
 			}
 
 			Draw_String (x, y, scorerow);
@@ -1484,9 +1484,9 @@ static void Sbar_DeathmatchOverlay()
 				scorerow[0] = 0;
 
 				if (stats_team)
-					Q_snprintfz (scorerow, sizeof(scorerow), " &c0B4%3i  &cF60%3i &cF00%3i ", playerstats[0], playerstats[2], playerstats[1]);
+					snprintf(scorerow, sizeof(scorerow), " &c0B4%3i  &cF60%3i &cF00%3i ", playerstats[0], playerstats[2], playerstats[1]);
 				else
-					Q_snprintfz (scorerow, sizeof(scorerow), " &c0B4%3i  &cF00%3i ", playerstats[0], playerstats[1]);
+					snprintf(scorerow, sizeof(scorerow), " &c0B4%3i  &cF00%3i ", playerstats[0], playerstats[1]);
 
 				if (stats_touches)
 					strcat (scorerow, va("  &cFD0%2i ", playerstats[4]));
@@ -1514,7 +1514,7 @@ static void Sbar_DeathmatchOverlay()
 
 static int Sbar_TeamOverlay(void)
 {
-	int i, k, l, x, y, xofs, plow, phigh, pavg, rank_width, skip = 10;
+	int i, k, x, y, xofs, plow, phigh, pavg, rank_width, skip = 10;
 	char num[12], team[5];
 	team_t *tm;
 	int topy;
@@ -1557,8 +1557,6 @@ static int Sbar_TeamOverlay(void)
 
 	Sbar_SortTeams();		// sort the teams
 
-	l = scoreboardlines;	// draw the text
-
 	for (i = 0; i < scoreboardteams && y <= SCOREBOARD_LASTROW; i++)
 	{
 		k = teamsort[i];
@@ -1579,7 +1577,7 @@ static int Sbar_TeamOverlay(void)
 		if (pavg < 0 || pavg > 999)
 			pavg = 999;
 
-		Q_snprintfz (num, sizeof(num), "%3i/%3i/%3i", plow, pavg, phigh);
+		snprintf(num, sizeof(num), "%3i/%3i/%3i", plow, pavg, phigh);
 		Draw_String (x, y, num);
 
 		// draw team
@@ -1587,11 +1585,11 @@ static int Sbar_TeamOverlay(void)
 		Draw_String (x + 104, y, team);
 
 		// draw total
-		Q_snprintfz (num, sizeof(num), "%5i", tm->frags);
+		snprintf(num, sizeof(num), "%5i", tm->frags);
 		Draw_String (x + 104 + 40, y, num);
 
 		// draw players
-		Q_snprintfz (num, sizeof(num), "%5i", tm->players);
+		snprintf(num, sizeof(num), "%5i", tm->players);
 		Draw_String (x + 104 + 88, y, num);
 
 		if (tm->myteam)
@@ -1682,7 +1680,7 @@ static void Sbar_MiniDeathmatchOverlay (void)
 		Draw_Fill (x, y + 4, 40, 4, Sbar_ColorForMap (bottom));
 
 		// draw number
-		Q_snprintfz (num, sizeof(num), "%c%3i%c", k==mynum?16:' ', s->frags, k==mynum?17:' ');
+		snprintf(num, sizeof(num), "%c%3i%c", k==mynum?16:' ', s->frags, k==mynum?17:' ');
 
 		Draw_String(x, y, num);
 
@@ -1734,7 +1732,7 @@ drawteams:
 		// draw total
 		Draw_Fill (x + 40, y + 1, 48, 3, Sbar_ColorForMap (tm->topcolor));
 		Draw_Fill (x + 40, y + 4, 48, 4, Sbar_ColorForMap (tm->bottomcolor));
-		Q_snprintfz (num, sizeof(num), "%4i", tm->frags);
+		snprintf(num, sizeof(num), "%4i", tm->frags);
 		Draw_Character (x + 40 + 8 , y, num[0]);
 		Draw_Character (x + 40 + 16, y, num[1]);
 		Draw_Character (x + 40 + 24, y, num[2]);
@@ -1888,7 +1886,7 @@ void Sbar_Draw(void)
 				else
 					Sbar_DrawNormal();
 
-				Q_snprintfz(st, sizeof(st), "Tracking %-.13s", cl.players[spec_track].name);
+				snprintf(st, sizeof(st), "Tracking %-.13s", cl.players[spec_track].name);
 				if (!cls.demoplayback)
 					strlcat(st, ", [JUMP] for next", sizeof(st));
 
