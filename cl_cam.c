@@ -607,11 +607,11 @@ void CL_Track_f(void) {
 	char *arg;
 
 	if (cls.state < ca_connected) {
-		Com_Printf("You must be connected to track\n", Cmd_Argv(0));
+		Com_Printf("You must be connected to track\n");
 		return;
 	}
 	if (!cl.spectator) {
-		Com_Printf("You can only track in spectator mode\n", Cmd_Argv(0));
+		Com_Printf("You can only track in spectator mode\n");
 		return;
 	}
 	if (Cmd_Argc() != 2) {
@@ -633,7 +633,7 @@ void CL_Track_f(void) {
 	}
 
 	if (cl.players[slot].spectator) {
-		Com_Printf("You cannot track a spectator\n", Cmd_Argv(0));
+		Com_Printf("You cannot track a spectator\n");
 	} else if (Cam_TrackNum() != slot) {
 		autocam = CAM_TRACK;
 		Cam_Lock(slot);
