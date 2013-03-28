@@ -1285,7 +1285,7 @@ void SB_Key(int key)
 			{
 				tab->player_filter = strdup(sb_player_filter_entry);
 				if (tab->player_filter == NULL)
-					Com_Printf("warning: strdup failed in \"%s\", line: %s.\n", __func__, __LINE__);
+					Com_Printf("warning: strdup failed in \"%s\", line: %d.\n", __func__, __LINE__);
 				update_tab(tab);
 			}
 			if (update)
@@ -1319,7 +1319,7 @@ void SB_Key(int key)
 			{
 				tab->text_filter = strdup(sb_text_filter_entry);
 				if (tab->text_filter == NULL)
-					Com_Printf("warning: strdup failed in \"%s\", line: %s.\n", __func__, __LINE__);
+					Com_Printf("warning: strdup failed in \"%s\", line: %d.\n", __func__, __LINE__);
 				update_tab(tab);
 			}
 			if (update)
@@ -1492,9 +1492,9 @@ void SB_Key(int key)
 				{
 					server = sb_qw_server[tab->sb_position];
 				}
-			}
 
-			ServerScanner_RescanServer(serverscanner, server);
+				ServerScanner_RescanServer(serverscanner, server);
+			}
 		}
 	}
 
@@ -1607,7 +1607,7 @@ static void SB_Add_Filter_To_Tab(struct tab *tab, int key , int type, char *valu
 
 	if (f->keyword == NULL)
 	{
-		Com_Printf("error: strdup failed in \"%s\", line: %s\n.", __func__, __LINE__);
+		Com_Printf("error: strdup failed in \"%s\", line: %d\n.", __func__, __LINE__);
 		free(f);
 		return;
 	}	
@@ -1617,7 +1617,7 @@ static void SB_Add_Filter_To_Tab(struct tab *tab, int key , int type, char *valu
 	f->value = strdup(value);
 	if (f->value == NULL)
 	{
-		Com_Printf("error: strdup failed in \"%s\", line: %s\n.", __func__, __LINE__);
+		Com_Printf("error: strdup failed in \"%s\", line: %d\n.", __func__, __LINE__);
 		free(f->keyword);
 		free(f);
 		return;
@@ -2483,7 +2483,7 @@ static void SB_Add_Filter_f(void)
 {
 	struct tab *tab;
 	int filter, operator, i, x;
-	char **operators;
+	const char **operators;
 
 	if (Cmd_Argc() != 5)
 	{
@@ -2519,7 +2519,7 @@ static void SB_Add_Filter_f(void)
 	if (filter == -1)
 	{
 		Com_Printf("%s: filter type %s not found.\n", Cmd_Argv(0), Cmd_Argv(2));
-		Com_Printf("use sb_list_filter_types to get a list of available filters.\n", Cmd_Argv(0), Cmd_Argv(2));
+		Com_Printf("use sb_list_filter_types to get a list of available filters.\n");
 		return;
 	}
 
@@ -2548,7 +2548,7 @@ static void SB_Add_Filter_f(void)
 	if (operator == -1)
 	{
 		Com_Printf("%s: filter operator %s not found.\n", Cmd_Argv(0), Cmd_Argv(3));
-		Com_Printf("use sb_list_filter_types to get a list of available filters and operators.\n", Cmd_Argv(0), Cmd_Argv(2));
+		Com_Printf("use sb_list_filter_types to get a list of available filters and operators.\n");
 		return;
 	}
 
@@ -2831,7 +2831,7 @@ struct cstc_sbdata
 	int count;
 };
 
-static qboolean cstc_connect_check(struct cst_info *self, struct QWServer *server, struct tokenized_string *ts)
+static qboolean cstc_connect_check(struct cst_info *self, const struct QWServer *server, struct tokenized_string *ts)
 {
 	int i;
 	extern cvar_t context_sensitive_tab_completion_connect_show_empty;
@@ -2853,7 +2853,7 @@ static qboolean cstc_connect_check(struct cst_info *self, struct QWServer *serve
 
 static int cstc_connect_get_results(struct cst_info *self, int *results, int get_result, int result_type, char **result)
 {
-	int count, i, j;
+	int count, i;
 	struct QWServer *server;
 	struct cstc_sbdata *data;
 	qboolean resort = false;
@@ -2966,9 +2966,9 @@ static void cstc_connect_get_data(struct cst_info *self, int remove)
 
 static void cstc_connect_draw(struct cst_info *self)
 {
-	char *s;
+	const char *s;
 	int x, y, i, j;
-	struct QWServer *server;
+	const struct QWServer *server;
 	struct cstc_sbdata *data;
 
 	if (self->data == NULL)
@@ -3107,7 +3107,7 @@ void Dump_SB_Config(FILE *f)
 	}
 }
 
-char *SB_Macro_Ip(void)
+const char *SB_Macro_Ip(void)
 {
 	if (current_selected_server)
 		return NET_AdrToString(&current_selected_server->addr);
@@ -3115,7 +3115,7 @@ char *SB_Macro_Ip(void)
 		return "none";
 }
 
-char *SB_Macro_Hostname(void)
+const char *SB_Macro_Hostname(void)
 {
 	if (current_selected_server)
 	{
@@ -3128,7 +3128,7 @@ char *SB_Macro_Hostname(void)
 		return "none";
 }
 
-char *SB_Macro_Map(void)
+const char *SB_Macro_Map(void)
 {
 	if (current_selected_server)
 	{
@@ -3141,7 +3141,7 @@ char *SB_Macro_Map(void)
 		return "none";
 }
 
-char *SB_Macro_Player(void)
+const char *SB_Macro_Player(void)
 {
 	if (current_selected_server)
 		snprintf(sb_macro_buf, sizeof(sb_macro_buf), "%i", current_selected_server->numplayers);
@@ -3150,7 +3150,7 @@ char *SB_Macro_Player(void)
 	return sb_macro_buf;
 }
 
-char *SB_Macro_Max_Player(void)
+const char *SB_Macro_Max_Player(void)
 {
 	if (current_selected_server)
 		snprintf(sb_macro_buf, sizeof(sb_macro_buf), "%i", current_selected_server->maxclients);
@@ -3159,7 +3159,7 @@ char *SB_Macro_Max_Player(void)
 	return sb_macro_buf;
 }
 
-char *SB_Macro_Ping(void)
+const char *SB_Macro_Ping(void)
 {
 	if (current_selected_server)
 		snprintf(sb_macro_buf, sizeof(sb_macro_buf), "%i", current_selected_server->pingtime / 1000);
@@ -3168,9 +3168,9 @@ char *SB_Macro_Ping(void)
 	return sb_macro_buf;
 }
 
-char *SB_Macro_Player_Names(void)
+const char *SB_Macro_Player_Names(void)
 {
-	struct QWPlayer *player;
+	const struct QWPlayer *player;
 	int i;
 
 	if (current_selected_server)
