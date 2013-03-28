@@ -131,8 +131,8 @@ void TP_FindModelNumbers (void);
 void TP_FindPoint (void);
 char *TP_LocationName (vec3_t location);
 static void CountNearbyPlayers(qboolean dead);
-char *Macro_LastTookOrPointed (void);
-char *Macro_LastTookOrPointed2 (void);
+const char *Macro_LastTookOrPointed (void);
+const char *Macro_LastTookOrPointed2 (void);
 
 #define	POINT_TYPE_ITEM			1
 #define POINT_TYPE_POWERUP		2
@@ -256,54 +256,54 @@ void TP_ExecTrigger (char *trigger)
 #define MAX_MACRO_VALUE	256
 static char	macro_buf[MAX_MACRO_VALUE] = "";
 
-char *Macro_Quote_f (void)
+const char *Macro_Quote_f (void)
 {
 	return "\"";
 }
 
-char *Macro_Latency (void)
+const char *Macro_Latency (void)
 {
 	snprintf(macro_buf, sizeof(macro_buf), "%i", Q_rint(cls.latency * 1000));
 	return macro_buf;
 }
 
-char *Macro_Health (void)
+const char *Macro_Health (void)
 {
 	snprintf(macro_buf, sizeof(macro_buf), "%i", cl.stats[STAT_HEALTH]);
 	return macro_buf;
 }
 
-char *Macro_Armor (void)
+const char *Macro_Armor (void)
 {
 	snprintf(macro_buf, sizeof(macro_buf), "%i", cl.stats[STAT_ARMOR]);
 	return macro_buf;
 }
 
-char *Macro_Shells (void)
+const char *Macro_Shells (void)
 {
 	snprintf(macro_buf, sizeof(macro_buf), "%i", cl.stats[STAT_SHELLS]);
 	return macro_buf;
 }
 
-char *Macro_Nails (void)
+const char *Macro_Nails (void)
 {
 	snprintf(macro_buf, sizeof(macro_buf), "%i", cl.stats[STAT_NAILS]);
 	return macro_buf;
 }
 
-char *Macro_Rockets (void)
+const char *Macro_Rockets (void)
 {
 	snprintf(macro_buf, sizeof(macro_buf), "%i", cl.stats[STAT_ROCKETS]);
 	return macro_buf;
 }
 
-char *Macro_Cells (void)
+const char *Macro_Cells (void)
 {
 	snprintf(macro_buf, sizeof(macro_buf), "%i", cl.stats[STAT_CELLS]);
 	return macro_buf;
 }
 
-char *Macro_Ammo (void)
+const char *Macro_Ammo (void)
 {
 	snprintf(macro_buf, sizeof(macro_buf), "%i", cl.stats[STAT_AMMO]);
 	return macro_buf;
@@ -325,12 +325,12 @@ static char *Weapon_NumToString(int num)
 	}
 }
 
-char *Macro_Weapon (void)
+const char *Macro_Weapon (void)
 {
 	return Weapon_NumToString(cl.stats[STAT_ACTIVEWEAPON]);
 }
 
-char *Macro_WeaponAndAmmo (void)
+const char *Macro_WeaponAndAmmo (void)
 {
 	char buf[MAX_MACRO_VALUE];
 	snprintf(buf, sizeof(buf), "%s:%s", Macro_Weapon(), Macro_Ammo());
@@ -338,7 +338,7 @@ char *Macro_WeaponAndAmmo (void)
 	return macro_buf;
 }
 
-char *Macro_WeaponNum (void)
+const char *Macro_WeaponNum (void)
 {
 	switch (cl.stats[STAT_ACTIVEWEAPON])
 	{
@@ -381,7 +381,7 @@ static int BestWeapon (void)
 	return 0;
 }
 
-char *Macro_BestWeapon (void)
+const char *Macro_BestWeapon (void)
 {
 	switch (BestWeapon())
 	{
@@ -397,7 +397,7 @@ char *Macro_BestWeapon (void)
 	}
 }
 
-char *Macro_BestAmmo (void)
+const char *Macro_BestAmmo (void)
 {
 	switch (BestWeapon())
 	{
@@ -422,7 +422,7 @@ char *Macro_BestAmmo (void)
 }
 
 // needed for %b parsing
-char *Macro_BestWeaponAndAmmo (void)
+const char *Macro_BestWeaponAndAmmo (void)
 {
 	char buf[MAX_MACRO_VALUE];
 
@@ -431,7 +431,7 @@ char *Macro_BestWeaponAndAmmo (void)
 	return macro_buf;
 }
 
-char *Macro_ArmorType (void)
+const char *Macro_ArmorType (void)
 {
 	if (cl.stats[STAT_ITEMS] & IT_ARMOR1)
 		return tp_name_armortype_ga.string;
@@ -446,7 +446,7 @@ char *Macro_ArmorType (void)
 
 #define Q_strncatz(dest, src) strlcat(dest, src, sizeof(dest))
 
-char *Macro_Powerups (void)
+const char *Macro_Powerups (void)
 {
 	int effects;
 
@@ -484,18 +484,18 @@ char *Macro_Powerups (void)
 	return macro_buf;
 }
 
-char *Macro_Location (void)
+const char *Macro_Location (void)
 {
 	Q_strncpyz(vars.lastreportedloc, TP_LocationName (cl.simorg), sizeof(vars.lastreportedloc));
 	return vars.lastreportedloc;
 }
 
-char *Macro_LastDeath (void)
+const char *Macro_LastDeath (void)
 {
 	return vars.deathtrigger_time ? vars.lastdeathloc : tp_name_someplace.string;
 }
 
-char *Macro_Last_Location (void)
+const char *Macro_Last_Location (void)
 {
 	if (vars.deathtrigger_time && cls.realtime - vars.deathtrigger_time <= 5)
 		Q_strncpyz(vars.lastreportedloc, vars.lastdeathloc, sizeof(vars.lastreportedloc));
@@ -504,14 +504,14 @@ char *Macro_Last_Location (void)
 	return vars.lastreportedloc;
 }
 
-char *Macro_LastReportedLoc(void)
+const char *Macro_LastReportedLoc(void)
 {
 	if (!vars.lastreportedloc[0])
 		return tp_name_someplace.string;
 	return vars.lastreportedloc;
 }
 
-char *Macro_Time (void)
+const char *Macro_Time (void)
 {
 	time_t t;
 	struct tm *ptm;
@@ -523,7 +523,7 @@ char *Macro_Time (void)
 	return macro_buf;
 }
 
-char *Macro_Date (void)
+const char *Macro_Date (void)
 {
 	time_t t;
 	struct tm *ptm;
@@ -536,7 +536,7 @@ char *Macro_Date (void)
 }
 
 // returns the last item picked up
-char *Macro_Took (void)
+const char *Macro_Took (void)
 {
 	if (!vars.tooktime || cls.realtime > vars.tooktime + TP_TOOK_EXPIRE_TIME)
 		Q_strncpyz (macro_buf, tp_name_nothing.string, sizeof(macro_buf));
@@ -546,7 +546,7 @@ char *Macro_Took (void)
 }
 
 // returns location of the last item picked up
-char *Macro_TookLoc (void)
+const char *Macro_TookLoc (void)
 {
 	if (!vars.tooktime || cls.realtime > vars.tooktime + TP_TOOK_EXPIRE_TIME)
 		Q_strncpyz (macro_buf, tp_name_someplace.string, sizeof(macro_buf));
@@ -556,7 +556,7 @@ char *Macro_TookLoc (void)
 }
 
 // %i macro - last item picked up in "name at location" style
-char *Macro_TookAtLoc (void)
+const char *Macro_TookAtLoc (void)
 {
 	if (!vars.tooktime || cls.realtime > vars.tooktime + TP_TOOK_EXPIRE_TIME)
 		Q_strncpyz (macro_buf, tp_name_nothing.string, sizeof(macro_buf));
@@ -569,19 +569,19 @@ char *Macro_TookAtLoc (void)
 
 // pointing calculations are CPU expensive, so the results are cached
 // in vars.pointname & vars.pointloc
-char *Macro_PointName (void)
+const char *Macro_PointName (void)
 {
 	TP_FindPoint ();
 	return vars.pointname;
 }
 
-char *Macro_PointLocation (void)
+const char *Macro_PointLocation (void)
 {
 	TP_FindPoint ();
 	return vars.pointloc[0] ? vars.pointloc : Macro_Location();
 }
 
-char *Macro_LastPointAtLoc (void)
+const char *Macro_LastPointAtLoc (void)
 {
 	if (!vars.pointtime || cls.realtime - vars.pointtime > TP_POINT_EXPIRE_TIME)
 		Q_strncpyz (macro_buf, tp_name_nothing.string, sizeof(macro_buf));
@@ -590,13 +590,13 @@ char *Macro_LastPointAtLoc (void)
 	return macro_buf;
 }
 
-char *Macro_PointNameAtLocation(void)
+const char *Macro_PointNameAtLocation(void)
 {
 	TP_FindPoint();
 	return Macro_LastPointAtLoc();
 }
 
-char *Macro_Weapons (void)
+const char *Macro_Weapons (void)
 {
 	macro_buf[0] = 0;
 
@@ -674,12 +674,12 @@ static char *Skin_To_TFSkin (char *myskin)
 	return macro_buf;
 }
 
-char *Macro_TF_Skin (void)
+const char *Macro_TF_Skin (void)
 {
 	return Skin_To_TFSkin(Info_ValueForKey(cl.players[cl.playernum].userinfo, "skin"));
 }
 
-char *Macro_LastDrop (void)
+const char *Macro_LastDrop (void)
 {
 	if (vars.lastdrop_time)
 		return vars.lastdroploc;
@@ -687,12 +687,12 @@ char *Macro_LastDrop (void)
 		return tp_name_someplace.string;
 }
 
-char *Macro_LastTrigger_Match(void)
+const char *Macro_LastTrigger_Match(void)
 {
 	return vars.lasttrigger_match;
 }
 
-char *Macro_LastDropTime (void)	{
+const char *Macro_LastDropTime (void)	{
 	if (vars.lastdrop_time)
 		snprintf(macro_buf, 32, "%d", (int) (cls.realtime - vars.lastdrop_time));
 	else
@@ -700,7 +700,7 @@ char *Macro_LastDropTime (void)	{
 	return macro_buf;
 }
 
-char *Macro_Need (void)
+const char *Macro_Need (void)
 {
 	int i, weapon;
 	char *needammo = NULL;
@@ -812,7 +812,7 @@ done:
 	return macro_buf;
 }
 
-char *Macro_Point_LED(void)
+const char *Macro_Point_LED(void)
 {
 	TP_FindPoint();
 
@@ -830,11 +830,12 @@ char *Macro_Point_LED(void)
 
 
 
-char *Macro_MyStatus_LED(void)
+const char *Macro_MyStatus_LED(void)
 {
 	int count;
 	float save_need_rl;
-	char *s, *save_separator;
+	const char *s;
+	char *save_separator;
 	static char separator[] = {'/', '\0'};
 
 	save_need_rl = tp_need_rl.value;
@@ -866,7 +867,7 @@ char *Macro_MyStatus_LED(void)
 	return macro_buf;
 }
 
-char *Macro_EnemyStatus_LED(void)
+const char *Macro_EnemyStatus_LED(void)
 {
 	CountNearbyPlayers(false);
 	if (vars.numenemies == 0)
@@ -885,7 +886,7 @@ char *Macro_EnemyStatus_LED(void)
 #define TP_QUAD 2
 #define TP_RING 4
 
-char *Macro_LastSeenPowerup(void)
+const char *Macro_LastSeenPowerup(void)
 {
 	if (!vars.enemy_powerups_time || cls.realtime - vars.enemy_powerups_time > 5)
 	{
@@ -1044,7 +1045,7 @@ static void CountNearbyPlayers(qboolean dead)
 }
 
 
-char *Macro_CountNearbyEnemyPlayers (void)
+const char *Macro_CountNearbyEnemyPlayers (void)
 {
 	CountNearbyPlayers(false);
 	sprintf(macro_buf, "\xffz%d\xff", vars.numenemies);
@@ -1053,7 +1054,7 @@ char *Macro_CountNearbyEnemyPlayers (void)
 }
 
 
-char *Macro_Count_Last_NearbyEnemyPlayers (void)
+const char *Macro_Count_Last_NearbyEnemyPlayers (void)
 {
 	if (vars.deathtrigger_time && cls.realtime - vars.deathtrigger_time <= 5)
 	{
@@ -1069,7 +1070,7 @@ char *Macro_Count_Last_NearbyEnemyPlayers (void)
 }
 
 
-char *Macro_CountNearbyFriendlyPlayers (void)
+const char *Macro_CountNearbyFriendlyPlayers (void)
 {
 	CountNearbyPlayers(false);
 	sprintf(macro_buf, "\xffz%d\xff", vars.numfriendlies);
@@ -1078,7 +1079,7 @@ char *Macro_CountNearbyFriendlyPlayers (void)
 }
 
 
-char *Macro_Count_Last_NearbyFriendlyPlayers (void)
+const char *Macro_Count_Last_NearbyFriendlyPlayers (void)
 {
 	if (vars.deathtrigger_time && cls.realtime - vars.deathtrigger_time <= 5)
 	{
@@ -1193,7 +1194,7 @@ char *TP_ParseMacroString (char *s)
 {
 	static char	buf[MAX_MACRO_STRING];
 	int i = 0;
-	char *macro_string;
+	const char *macro_string;
 
 	if (!cl_parseSay.value)
 		return s;
@@ -1244,7 +1245,7 @@ char *TP_ParseMacroString (char *s)
 			}
 			if (i + strlen(macro_string) >= MAX_MACRO_STRING - 1)
 				Sys_Error("TP_ParseMacroString: macro string length > MAX_MACRO_STRING)");
-			Q_strncpyz (&buf[i], macro_string, MAX_MACRO_STRING - i);
+			strlcpy(&buf[i], macro_string, MAX_MACRO_STRING - i);
 			i += strlen(macro_string);
 			s += 4;	// skip %[<char>]
 			continue;
@@ -1293,7 +1294,7 @@ char *TP_ParseMacroString (char *s)
 			}
 			if (i + strlen(macro_string) >= MAX_MACRO_STRING - 1)
 				Sys_Error("TP_ParseMacroString: macro string length > MAX_MACRO_STRING)");
-			Q_strncpyz (&buf[i], macro_string, MAX_MACRO_STRING - i);
+			strlcpy(&buf[i], macro_string, MAX_MACRO_STRING - i);
 			i += strlen(macro_string);
 			s += 2;	// skip % and letter
 			continue;
@@ -2672,7 +2673,7 @@ static int FindNearestItem (int flags, item_t **pitem)
 	return bestent ? bestent->modelindex : 0;
 }
 
-char *Macro_LastTookOrPointed (void)
+const char *Macro_LastTookOrPointed (void)
 {
 	if (vars.tooktime && vars.tooktime > vars.pointtime && cls.realtime - vars.tooktime < 5)
 		return Macro_TookAtLoc();
