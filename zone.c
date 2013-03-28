@@ -204,44 +204,6 @@ void *Z_TagMalloc (int size, int tag)
 	return (void *) ((byte *)base + sizeof(memblock_t));
 }
 
-static void Z_Print(memzone_t *zone)
-{
-	memblock_t	*block;
-
-	Com_Printf ("zone size: %i  location: %p\n",mainzone->size,mainzone);
-
-	for (block = zone->blocklist.next; ; block = block->next)
-	{
-		Com_Printf ("block:%p    size:%7i    tag:%3i\n", block, block->size, block->tag);
-
-		if (block->next == &zone->blocklist)
-			break;			// all blocks have been hit
-		if ( (byte *) block + block->size != (byte *)block->next)
-			Com_Printf ("ERROR: block size does not touch the next block\n");
-		if (block->next->prev != block)
-			Com_Printf ("ERROR: next block doesn't have proper back link\n");
-		if (!block->tag && !block->next->tag)
-			Com_Printf ("ERROR: two consecutive free blocks\n");
-	}
-}
-
-static void Z_CheckHeap(void)
-{
-	memblock_t *block;
-
-	for (block = mainzone->blocklist.next; ; block = block->next)
-	{
-		if (block->next == &mainzone->blocklist)
-			break;			// all blocks have been hit
-		if ( (byte *)block + block->size != (byte *)block->next)
-			Sys_Error ("Z_CheckHeap: block size does not touch the next block");
-		if ( block->next->prev != block)
-			Sys_Error ("Z_CheckHeap: next block doesn't have proper back link");
-		if (!block->tag && !block->next->tag)
-			Sys_Error ("Z_CheckHeap: two consecutive free blocks");
-	}
-}
-
 //============================================================================
 
 
