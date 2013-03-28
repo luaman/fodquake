@@ -103,7 +103,7 @@ qboolean FS_WriteFile(const char *filename, void *data, int len)
 	FILE *f;
 	char name[MAX_OSPATH];
 
-	Q_snprintfz(name, sizeof(name), "%s/%s", com_basedir, filename);
+	snprintf(name, sizeof(name), "%s/%s", com_basedir, filename);
 
 	if (!(f = fopen(name, "wb")))
 	{
@@ -196,13 +196,13 @@ int FS_FOpenFile(const char *filename, FILE ** file)
 				com_filesize = pakfile->filelen;
 
 				file_from_pak = 1;
-				Q_snprintfz(com_netpath, sizeof(com_netpath), "%s#%i", pak->filename, pakfile - pak->files);
+				snprintf(com_netpath, sizeof(com_netpath), "%s#%i", pak->filename, pakfile - pak->files);
 				return com_filesize;
 			}
 		}
 		else
 		{
-			Q_snprintfz(com_netpath, sizeof(com_netpath), "%s/%s", search->filename, filename);
+			snprintf(com_netpath, sizeof(com_netpath), "%s/%s", search->filename, filename);
 
 			if (!(*file = fopen(com_netpath, "rb")))
 				continue;
@@ -246,7 +246,7 @@ int FS_FileExists(const char *filename)
 		}
 		else
 		{
-			Q_snprintfz(com_netpath, sizeof(com_netpath), "%s/%s", search->filename, filename);
+			snprintf(com_netpath, sizeof(com_netpath), "%s/%s", search->filename, filename);
 
 			if (!(f = fopen(com_netpath, "rb")))
 				continue;
@@ -469,7 +469,7 @@ static void FS_AddGameDirectory_NoReally(const char *dir)
 				break;
 			}
 
-			Q_snprintfz(pakfile, sizeof(pakfile), "%s/pak%i.pak", dir, i);
+			snprintf(pakfile, sizeof(pakfile), "%s/pak%i.pak", dir, i);
 			if (!(pak = FS_LoadPackFile(pakfile)))
 			{
 				free(search);
