@@ -499,7 +499,7 @@ void Image_MipReduce (byte *in, byte *out, int *width, int *height, int bpp)
 	}
 	else
 	{
-		Sys_Error("Image_MipReduce: Input texture has dimensions %dx%d", width, height);
+		Sys_Error("Image_MipReduce: Input texture has dimensions %dx%d", *width, *height);
 	}
 }
 
@@ -1047,7 +1047,7 @@ int Image_WritePNG (char *filename, int compression, byte *pixels, int width, in
 	png_byte **rowpointers;
 	jmp_buf *jmpbuf;
 
-	Q_snprintfz (name, sizeof(name), "%s/%s", com_basedir, filename);
+	snprintf(name, sizeof(name), "%s/%s", com_basedir, filename);
 
 	if (!png_handle)
 		return false;
@@ -1138,7 +1138,7 @@ int Image_WritePNGPLTE (char *filename, int compression,
 	if (!png_handle)
 		return false;
 
-	Q_snprintfz (name, sizeof(name), "%s/%s", com_basedir, filename);
+	snprintf(name, sizeof(name), "%s/%s", com_basedir, filename);
 
 	if (!(fp = fopen (name, "wb")))
 	{
@@ -1678,7 +1678,7 @@ int Image_WriteJPEG(char *filename, int quality, byte *pixels, int width, int he
 	if (!jpeg_handle)
 		return false;
 
-	Q_snprintfz (name, sizeof(name), "%s/%s", com_basedir, filename);
+	snprintf(name, sizeof(name), "%s/%s", com_basedir, filename);
 	if (!(outfile = fopen (name, "wb")))
 	{
 		FS_CreatePath (name);
