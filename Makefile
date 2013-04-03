@@ -8,7 +8,7 @@ AR=ar
 CFLAGS=-O2 -g -Wall -Werror-implicit-function-declaration -fno-strict-aliasing -DCLIENTONLY -DNETQW -I../thirdparty/include -L../thirdparty/lib $(OSCFLAGS) $(CPUCFLAGS) $(RENDERERCFLAGS)
 STRIPFLAGS=--strip-unneeded --remove-section=.comment
 
-TARGETSYSTEM:=$(shell $(CC) -dumpmachine)
+TARGETSYSTEM:=$(shell $(CC) -dumpmachine | sed "s/^mingw32$$/i586-mingw32msvc/")
 
 OS=$(shell echo $(TARGETSYSTEM) | sed "s/-linux-.*/-linux/" | sed "s/-gnu//" | sed "s/.*-//" | tr [A-Z] [a-z] | sed s/^mingw.*/win32/ | sed s/^openbsd.*/openbsd/ | sed s/^freebsd.*/freebsd/ | sed s/^darwin.*/macosx/)
 CPU=$(shell echo $(TARGETSYSTEM) | cut -d '-' -f 1 | tr [A-Z] [a-z] | sed "s/powerpc/ppc/")
