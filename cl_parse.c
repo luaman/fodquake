@@ -39,6 +39,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "netqw.h"
 #endif
 #include "lua.h"
+#include "strl.h"
 
 extern cvar_t net_maxfps;
 
@@ -831,7 +832,7 @@ void CL_ParseServerData (void)
 	{
 		// save current config
 		CL_WriteConfiguration ();
-		Q_strncpyz (cls.gamedirfile, str, sizeof(cls.gamedirfile));
+		strlcpy(cls.gamedirfile, str, sizeof(cls.gamedirfile));
 		snprintf(cls.gamedir, sizeof(cls.gamedir),
 			"%s/%s", com_basedir, cls.gamedirfile);
 		cflag = true;
@@ -908,7 +909,7 @@ void CL_ParseServerData (void)
 
 	// get the full level name
 	str = MSG_ReadString ();
-	Q_strncpyz (cl.levelname, str, sizeof(cl.levelname));
+	strlcpy(cl.levelname, str, sizeof(cl.levelname));
 
 	// get the movevars
 	movevars.gravity			= MSG_ReadFloat();
@@ -966,7 +967,7 @@ void CL_ParseSoundlist (void)
 		numsounds++;
 		if (numsounds == MAX_SOUNDS)
 			Host_Error ("Server sent too many sound_precache");
-		Q_strncpyz (cl.sound_name[numsounds], str, sizeof(cl.sound_name[numsounds]));
+		strlcpy(cl.sound_name[numsounds], str, sizeof(cl.sound_name[numsounds]));
 	}
 
 	n = MSG_ReadByte();
@@ -1019,7 +1020,7 @@ void CL_ParseModellist(void)
 		}
 		else
 		{
-			Q_strncpyz (cl.model_name[nummodels], str, sizeof(cl.model_name[nummodels]));
+			strlcpy(cl.model_name[nummodels], str, sizeof(cl.model_name[nummodels]));
 
 			for (i = 0; i < cl_num_modelindices; i++)
 			{
@@ -1236,7 +1237,7 @@ void CL_ProcessUserInfo (int slot, player_info_t *player, char *key)
 	int colourschanged;
 	int teamchanged;
 
-	Q_strncpyz (player->name, Info_ValueForKey (player->userinfo, "name"), sizeof(player->name));
+	strlcpy(player->name, Info_ValueForKey (player->userinfo, "name"), sizeof(player->name));
 	if (!player->name[0] && player->userid && strlen(player->userinfo) >= MAX_INFO_STRING - 17)
 	{
 		// somebody's trying to hide himself by overloading userinfo
@@ -1317,7 +1318,7 @@ void CL_UpdateUserinfo (void)
 	was_empty_slot = player->name[0] ? false : true;
 
 	player->userid = MSG_ReadLong ();
-	Q_strncpyz (player->userinfo, MSG_ReadString(), sizeof(player->userinfo));
+	strlcpy(player->userinfo, MSG_ReadString(), sizeof(player->userinfo));
 
 	CL_ProcessUserInfo (slot, player, NULL);
 
@@ -1339,8 +1340,8 @@ void CL_SetInfo (void)
 
 	player = &cl.players[slot];
 
-	Q_strncpyz (key, MSG_ReadString(), sizeof(key));
-	Q_strncpyz (value, MSG_ReadString(), sizeof(value));
+	strlcpy(key, MSG_ReadString(), sizeof(key));
+	strlcpy(value, MSG_ReadString(), sizeof(value));
 
 	if (!cl.teamfortress)	// don't allow cheating in TF
 		Com_DPrintf ("SETINFO %s: %s=%s\n", player->name, key, value);
@@ -1446,8 +1447,8 @@ void CL_ParseServerInfoChange (void)
 {
 	char key[MAX_INFO_STRING], value[MAX_INFO_STRING];
 
-	Q_strncpyz (key, MSG_ReadString(), sizeof(key));
-	Q_strncpyz (value, MSG_ReadString(), sizeof(value));
+	strlcpy(key, MSG_ReadString(), sizeof(key));
+	strlcpy(value, MSG_ReadString(), sizeof(value));
 
 	Com_DPrintf ("SERVERINFO: %s=%s\n", key, value);
 
@@ -1544,8 +1545,7 @@ void CL_ParsePrint (void)
 		return;
 	}
 
-	strncat (cl.sprint_buf, s, sizeof(cl.sprint_buf) - strlen(cl.sprint_buf) - 1);
-	cl.sprint_buf[sizeof(cl.sprint_buf) - 1] = 0;
+	strlcat(cl.sprint_buf, s, sizeof(cl.sprint_buf));
 	cl.sprint_level = level;
 
 	if ((p = strrchr(cl.sprint_buf, '\n')))
@@ -1553,7 +1553,7 @@ void CL_ParsePrint (void)
 		len = p - cl.sprint_buf + 1;
 		memcpy(str, cl.sprint_buf, len);
 		str[len] = '\0';
-		Q_strncpyz (cl.sprint_buf, p + 1, sizeof(cl.sprint_buf));
+		strcpy(cl.sprint_buf, p + 1);
 		FlushString (str, level, (flags == 2), offset);
 	}
 }
@@ -1815,7 +1815,7 @@ void CL_ParseServerMessage (void)
 			i = MSG_ReadByte ();
 			if (i >= MAX_LIGHTSTYLES)
 				Host_Error ("svc_lightstyle > MAX_LIGHTSTYLES");
-			Q_strncpyz (cl_lightstyle[i].map,  MSG_ReadString(), sizeof(cl_lightstyle[i].map));
+			strlcpy(cl_lightstyle[i].map,  MSG_ReadString(), sizeof(cl_lightstyle[i].map));
 			cl_lightstyle[i].length = strlen(cl_lightstyle[i].map);
 			break;
 
@@ -2025,7 +2025,7 @@ void CL_ParseServerMessage (void)
 			if (i >= MAX_LIGHTSTYLES)
 				Host_Error ("svc_lightstyle > MAX_LIGHTSTYLES");
 			MSG_ReadByte(); /* Discard the colour */
-			Q_strncpyz (cl_lightstyle[i].map,  MSG_ReadString(), sizeof(cl_lightstyle[i].map));
+			strlcpy(cl_lightstyle[i].map,  MSG_ReadString(), sizeof(cl_lightstyle[i].map));
 			cl_lightstyle[i].length = strlen(cl_lightstyle[i].map);
 			break;
 
