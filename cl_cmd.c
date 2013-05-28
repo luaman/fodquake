@@ -438,6 +438,11 @@ void CL_Color_f (void) {
 
 	Cvar_SetValue (&topcolor, top);
 	Cvar_SetValue (&bottomcolor, bottom);
+
+	cl.players[cl.playernum].real_topcolor = top;
+	cl.players[cl.playernum].real_bottomcolor = bottom;
+
+	TP_CalculateColoursForPlayer(cl.playernum);
 }
 
 //usage: fullinfo \name\unnamed\topcolor\0\bottomcolor\1, etc
