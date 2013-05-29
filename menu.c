@@ -1570,6 +1570,8 @@ struct
 	{ 1440, 900 },
 	{ 1600, 1200 },
 	{ 1680, 1050 },
+	{ 1920, 1080 },
+	{ 2560, 1440 },
 };
 
 static const char *windowedresolutionnames[] =
@@ -1586,6 +1588,8 @@ static const char *windowedresolutionnames[] =
 	"1440x900",
 	"1600x1200",
 	"1680x1050",
+	"1920x1080",
+	"2560x1440",
 };
 
 #define NUMWINDOWEDRESOLUTIONS (sizeof(windowedresolutions)/sizeof(*windowedresolutions))
