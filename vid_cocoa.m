@@ -34,6 +34,9 @@
 extern cvar_t in_grab_windowed_mouse;
 extern bc_func_ptrs_t bc_func_ptrs;
 
+static int mouse_grab = 0;
+static int mouse_is_hidden = 0;
+
 static CGError switch_display_mode(CGDisplayModeRef new_mode, CGDisplayModeRef *current_mode)
 {
 	CGError err = kCGErrorSuccess;
@@ -103,6 +106,32 @@ struct display
 #endif
 };
 
+static void hide_mouse_cursor(struct display *d)
+{
+	if (mouse_grab && !mouse_is_hidden)
+	{
+		[NSCursor hide];
+		CGAssociateMouseAndMouseCursorPosition(NO);
+		
+		Sys_Input_GrabMouse(d->input, 1);
+		
+		mouse_is_hidden = 1;
+	}
+}
+
+static void unhide_mouse_cursor(struct display *d)
+{
+	if (mouse_is_hidden)
+	{
+		[NSCursor unhide];
+		CGAssociateMouseAndMouseCursorPosition(YES);
+		
+		Sys_Input_GrabMouse(d->input, 0);
+		
+		mouse_is_hidden = 0;
+	}
+}
+
 @interface NSMyWindow : NSWindow
 {
 	struct display *d;
@@ -166,6 +195,8 @@ struct display
 			[self setLevel:NSMainMenuWindowLevel + 1];
 		}
 	}
+	
+	hide_mouse_cursor(d);
 }
 - (void)applicationDidResignActive:(NSNotification*)notification
 {
@@ -173,6 +204,8 @@ struct display
 	{
 		[self setLevel:NSNormalWindowLevel - 1];
 	}
+	
+	unhide_mouse_cursor(d);
 }
 - (void)applicationDidUnhide:(NSNotification*)notification
 {
@@ -209,11 +242,7 @@ struct display
 		}
 	}
 	
-	if (d->fullscreen)
-	{
-		CGWarpMouseCursorPosition(point);
-	}
-	else if (in_grab_windowed_mouse.value == 1)
+	if (d->fullscreen || in_grab_windowed_mouse.value == 1)
 	{
 		CGWarpMouseCursorPosition(point);
 	}
@@ -597,18 +626,21 @@ void Sys_Video_GrabMouse(void *display, int dograb)
 {
 	struct display *d = (struct display*)display;
 	
+	mouse_grab = dograb;
+	
+	if (![NSApp isActive])
+	{
+		return;
+	}
+	
 	if (dograb)
 	{
-		[NSCursor hide];
-		CGAssociateMouseAndMouseCursorPosition(NO);
+		hide_mouse_cursor(d);
 	}
 	else
 	{
-		[NSCursor unhide];
-		CGAssociateMouseAndMouseCursorPosition(YES);
+		unhide_mouse_cursor(d);
 	}
-	
-	Sys_Input_GrabMouse(d->input, dograb);
 }
 
 void Sys_Video_SetWindowTitle(void *display, const char *text)
