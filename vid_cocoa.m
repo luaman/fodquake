@@ -31,11 +31,7 @@
 #import "in_macosx.h"
 #import "vid_macosx_bc.h"
 
-extern cvar_t in_grab_windowed_mouse;
 extern bc_func_ptrs_t bc_func_ptrs;
-
-static int mouse_grab = 0;
-static int mouse_is_hidden = 0;
 
 static CGError switch_display_mode(CGDisplayModeRef new_mode, CGDisplayModeRef *current_mode)
 {
@@ -97,6 +93,8 @@ struct display
 	CFDictionaryRef orig_display_mode_legacy;
 	unsigned int width;
 	unsigned int height;
+	int mouse_grab;
+	int mouse_is_hidden;
 	
 #ifndef GLQUAKE
 	unsigned char *rgb_buf;
@@ -108,27 +106,27 @@ struct display
 
 static void hide_mouse_cursor(struct display *d)
 {
-	if (mouse_grab && !mouse_is_hidden)
+	if (d->mouse_grab && !d->mouse_is_hidden)
 	{
 		[NSCursor hide];
 		CGAssociateMouseAndMouseCursorPosition(NO);
 		
 		Sys_Input_GrabMouse(d->input, 1);
 		
-		mouse_is_hidden = 1;
+		d->mouse_is_hidden = 1;
 	}
 }
 
 static void unhide_mouse_cursor(struct display *d)
 {
-	if (mouse_is_hidden)
+	if (d->mouse_is_hidden)
 	{
 		[NSCursor unhide];
 		CGAssociateMouseAndMouseCursorPosition(YES);
 		
 		Sys_Input_GrabMouse(d->input, 0);
 		
-		mouse_is_hidden = 0;
+		d->mouse_is_hidden = 0;
 	}
 }
 
@@ -209,8 +207,6 @@ static void unhide_mouse_cursor(struct display *d)
 }
 - (void)applicationDidUnhide:(NSNotification*)notification
 {
-	CGPoint point = { -1.0, -1.0 };
-	
 	if (d->orig_display_mode)
 	{
 		CGDisplayModeRef tmp;
@@ -240,11 +236,6 @@ static void unhide_mouse_cursor(struct display *d)
 				d->orig_display_mode_legacy = tmp;
 			}
 		}
-	}
-	
-	if (d->fullscreen || in_grab_windowed_mouse.value == 1)
-	{
-		CGWarpMouseCursorPosition(point);
 	}
 }
 @end
@@ -529,6 +520,8 @@ void Sys_Video_Close(void *display)
 		}
 	}
 	
+	unhide_mouse_cursor(d);
+	
 #ifndef GLQUAKE
 	free(d->rgb_buf);
 	free(d->buf);
@@ -626,7 +619,7 @@ void Sys_Video_GrabMouse(void *display, int dograb)
 {
 	struct display *d = (struct display*)display;
 	
-	mouse_grab = dograb;
+	d->mouse_grab = dograb;
 	
 	if (![NSApp isActive])
 	{
