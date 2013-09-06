@@ -295,6 +295,13 @@ void Model_NextDownload (void)
 	cl.worldmodel = cl.model_precache[1];
 	if (!cl.worldmodel)
 		Host_Error ("Model_NextDownload: NULL worldmodel");
+
+	/* Clear out leaf efrag stuff */
+	for(i=1;i<cl.worldmodel->numleafs + 1;i++)
+	{
+		cl.worldmodel->leafs[i].efrags = 0;
+	}
+
 	R_NewMap ();
 	TP_NewMap();
 	MT_NewMap();
