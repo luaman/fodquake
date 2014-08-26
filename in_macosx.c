@@ -456,7 +456,7 @@ static void input_callback(void *context, IOReturn result, void *sender, IOHIDVa
 				input->repeatkey = 0;
 				input->nextrepeattime = 0;
 			}
-			
+
 			pthread_mutex_unlock(&input->key_mutex);
 		}
 	}
