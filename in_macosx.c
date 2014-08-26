@@ -424,7 +424,7 @@ static void input_callback(void *context, IOReturn result, void *sender, IOHIDVa
 			input->right_cmd_key_active = val ? true : false;
 		}
 		
-		if (input->left_cmd_key_active || input->right_cmd_key_active)
+		if (usage < sizeof(keytable) && (input->left_cmd_key_active || input->right_cmd_key_active))
 		{
 			if (keytable[usage] == 'c' && val)
 			{
