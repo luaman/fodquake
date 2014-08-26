@@ -1,5 +1,5 @@
 /*
-Copyright (C) 2011 Florian Zwoch
+Copyright (C) 2011-2014 Florian Zwoch
 Copyright (C) 2011-2014 Mark Olsen
 
 This program is free software; you can redistribute it and/or
