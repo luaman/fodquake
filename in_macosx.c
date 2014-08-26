@@ -324,7 +324,7 @@ struct input_data
     
 	unsigned char repeatkey;
 	unsigned long long nextrepeattime;
-	
+
 	int key_repeat_initial_delay;
 	int key_repeat_delay;
 };
@@ -423,7 +423,7 @@ static void input_callback(void *context, IOReturn result, void *sender, IOHIDVa
 		{
 			input->right_cmd_key_active = val ? true : false;
 		}
-		
+	
 		if (usage < sizeof(keytable) && (input->left_cmd_key_active || input->right_cmd_key_active))
 		{
 			if (keytable[usage] == 'c' && val)
@@ -436,14 +436,14 @@ static void input_callback(void *context, IOReturn result, void *sender, IOHIDVa
 				add_to_event_queue(input, K_PASTE, true);
 				add_to_event_queue(input, K_PASTE, false);
 			}
-			
+
 			return;
 		}
-		
+
 		if (usage < sizeof(keytable))
 		{
 			add_to_event_queue(input, keytable[usage], val ? true : false);
-			
+
 			pthread_mutex_lock(&input->key_mutex);
 
 			if (val)
