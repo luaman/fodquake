@@ -306,6 +306,9 @@ struct input_data
 	pthread_mutex_t key_mutex;
 
 	CFRunLoopRef threadrunloop;
+	pthread_mutex_t thread_mutex;
+	pthread_cond_t thread_has_spawned;
+	qboolean thread_shutdown;
 
 	IOHIDManagerRef hid_manager;
 
@@ -321,7 +324,7 @@ struct input_data
 	struct buttonevent buttonevents[NUMBUTTONEVENTS];
 	unsigned int buttoneventhead;
 	unsigned int buttoneventtail;
-    
+
 	unsigned char repeatkey;
 	unsigned long long nextrepeattime;
 
@@ -476,7 +479,10 @@ static void *Sys_Input_Thread(void *inarg)
 
 	input = inarg;
 
+	pthread_mutex_lock(&input->thread_mutex);
 	input->threadrunloop = CFRunLoopGetCurrent();
+	pthread_cond_signal(&input->thread_has_spawned);
+	pthread_mutex_unlock(&input->thread_mutex);
 
 	input->hid_manager = IOHIDManagerCreate(kCFAllocatorSystemDefault, kIOHIDOptionsTypeNone);
 	if (input->hid_manager)
@@ -488,7 +494,11 @@ static void *Sys_Input_Thread(void *inarg)
 		tIOReturn = IOHIDManagerOpen(input->hid_manager, kIOHIDOptionsTypeNone);
 		if (tIOReturn == kIOReturnSuccess)
 		{
-			CFRunLoopRun();
+			do
+			{
+				CFRunLoopRunInMode(kCFRunLoopDefaultMode, 1, true);
+			}
+			while (!input->thread_shutdown);
 		}
 
 		IOHIDManagerUnscheduleFromRunLoop(input->hid_manager, CFRunLoopGetCurrent(), kCFRunLoopDefaultMode);
@@ -526,9 +536,25 @@ struct input_data *Sys_Input_Init()
 		{
 			if (pthread_mutex_init(&input->key_mutex, 0) == 0)
 			{
-				if (pthread_create(&input->thread, 0, Sys_Input_Thread, input) == 0)
+				if (pthread_mutex_init(&input->thread_mutex, 0) == 0)
 				{
-					return input;
+					if (pthread_cond_init(&input->thread_has_spawned, 0) == 0)
+					{
+						pthread_mutex_lock(&input->thread_mutex);
+
+						if (pthread_create(&input->thread, 0, Sys_Input_Thread, input) == 0)
+						{
+							pthread_cond_wait(&input->thread_has_spawned, &input->thread_mutex);
+							pthread_mutex_unlock(&input->thread_mutex);
+
+							return input;
+						}
+
+						pthread_mutex_unlock(&input->thread_mutex);
+						pthread_cond_destroy(&input->thread_has_spawned);
+					}
+
+					pthread_mutex_destroy(&input->thread_mutex);
 				}
 
 				pthread_mutex_destroy(&input->key_mutex);
@@ -545,13 +571,15 @@ struct input_data *Sys_Input_Init()
 
 void Sys_Input_Shutdown(struct input_data *input)
 {
-#warning Race conditions'r'us
+	input->thread_shutdown = true;
 	CFRunLoopStop(input->threadrunloop);
 
 	pthread_join(input->thread, 0);
 
 	pthread_mutex_destroy(&input->mouse_mutex);
 	pthread_mutex_destroy(&input->key_mutex);
+	pthread_mutex_destroy(&input->thread_mutex);
+	pthread_cond_destroy(&input->thread_has_spawned);
 
 	free(input);
 }
