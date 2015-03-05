@@ -2951,7 +2951,7 @@ static int cstc_connect_condition(void)
 	return 1;
 }
 
-static void cstc_connect_get_data(struct cst_info *self, int remove)
+static int cstc_connect_get_data(struct cst_info *self, int remove)
 {
 	struct cstc_sbdata *data;
 
