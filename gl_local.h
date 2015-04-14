@@ -230,7 +230,7 @@ void glClientActiveTexture(GLenum texture);
 void glActiveTexture(GLenum texture);
 #endif
 
-#ifndef GL_VERSION_1_5
+#if !defined(GL_VERSION_1_5) && !defined(__MORPHOS__)
 typedef ptrdiff_t GLintptrARB;
 typedef ptrdiff_t GLsizeiptrARB;
 #endif
