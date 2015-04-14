@@ -246,7 +246,7 @@ extern void (APIENTRY *qglBufferSubDataARB)(GLenum, GLintptrARB, GLsizeiptrARB, 
 #define GL_LINK_STATUS 0x8B82
 #define GL_INFO_LOG_LENGTH 0x8B84
 
-#ifndef GL_VERSION_2_0
+#if !defined(GL_VERSION_2_0) && !defined(__MORPHOS__)
 typedef char GLchar;
 #endif
 
