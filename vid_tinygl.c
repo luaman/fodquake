@@ -401,8 +401,33 @@ qboolean Sys_Video_HWGammaSupported(void *display)
 	return d->gammaenabled;
 }
 
+static void stub_glBindBuffer(GLenum target, GLuint buffer)
+{
+	glBindBuffer(target, buffer);
+}
+
+static void stub_glBufferData(GLenum target, GLsizeiptr size, const GLvoid *data, GLenum usage)
+{
+	glBufferData(target, size, data, usage);
+}
+
+static void stub_glBufferSubData(GLenum target, GLintptr offset, GLsizeiptr size, const GLvoid *data)
+{
+	glBufferSubData(target, offset, size, data);
+}
+
 void *Sys_Video_GetProcAddress(void *display, const char *name)
 {
+	if (TinyGLBase->lib_Version > 52 || (TinyGLBase->lib_Version == 52 && TinyGLBase->lib_Revision >= 5))
+	{
+		if (strcmp(name, "glBindBuffer") == 0 || strcmp(name, "glBindBufferARB") == 0)
+			return stub_glBindBuffer;
+		else if (strcmp(name, "glBufferData") == 0 || strcmp(name, "glBufferDataARB") == 0)
+			return stub_glBufferData;
+		else if (strcmp(name, "glBufferSubData") == 0 || strcmp(name, "glBufferSubDataARB") == 0)
+			return stub_glBufferSubData;
+	}
+
 	return 0;
 }
 
