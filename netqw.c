@@ -80,6 +80,7 @@ struct NetQW
 #warning Not really used for anything.
 	int error;
 	unsigned short qport;
+	unsigned int ftex;
 	int challenge;
 	unsigned long long resendtime;
 	unsigned char packetloss;
@@ -603,6 +604,10 @@ static void NetQW_Thread_DoReceive(struct NetQW *netqw)
 									netqw->huffcrc = value;
 								}
 							}
+							else if (extension == QW_PROTOEXT_FTEX)
+							{
+								netqw->ftex &= value;
+							}
 							else
 							{
 								Com_Printf("Unknown protocol extension: %08x\n", extension);
@@ -867,6 +872,11 @@ static void NetQW_Thread_DoSend(struct NetQW *netqw)
 					i += snprintf((char *)(buf + i), sizeof(buf) - i, "0x%08x 0x%08x\n", QW_PROTOEXT_HUFF, netqw->huffcrc);
 				}
 
+				if (netqw->ftex)
+				{
+					i += snprintf((char *)(buf + i), sizeof(buf) - i, "0x%08x 0x%08x\n", QW_PROTOEXT_FTEX, netqw->ftex);
+				}
+
 				if (i < sizeof(buf))
 				{
 					Sys_Net_Send(netqw->netdata, netqw->socket, buf, i, &netqw->addr);
@@ -1001,7 +1011,7 @@ static void NetQW_Thread(void *arg)
 	}
 }
 
-struct NetQW *NetQW_Create(const char *hoststring, const char *userinfo, unsigned short qport)
+struct NetQW *NetQW_Create(const char *hoststring, const char *userinfo, unsigned short qport, unsigned int ftex)
 {
 	struct NetQW *netqw;
 	int r;
@@ -1011,6 +1021,7 @@ struct NetQW *NetQW_Create(const char *hoststring, const char *userinfo, unsigne
 	{
 		netqw->quit = 0;
 		netqw->qport = qport;
+		netqw->ftex = ftex;
 		netqw->mutex = 0;
 		netqw->thread = 0;
 		netqw->reliable_buffers_sent = 0;
@@ -1360,6 +1371,16 @@ void NetQW_SetLagEzcheat(struct NetQW *netqw, int enabled)
 unsigned long long NetQW_GetTimeSinceLastPacketFromServer(struct NetQW *netqw)
 {
 	return Sys_IntTime() - netqw->lastserverpackettime;
+}
+
+int NetQW_GetExtensions(struct NetQW *netqw, unsigned int *ftex)
+{
+	if (netqw->state < state_sendconnection)
+		return 0;
+
+	*ftex = netqw->ftex;
+
+	return 1;
 }
 
 void NetQW_SetForwardSpeed(struct NetQW *netqw, float value)
