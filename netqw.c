@@ -120,7 +120,10 @@ struct NetQW
 	unsigned long long movetimecounter;
 	int send_tmove;
 	int movement_locked;
-	unsigned char tmove_buffer[6];
+	union {
+		unsigned char buffer[6];
+		float bufferf[3];
+	} tmove;
 	float forwardspeed;
 	float sidespeed;
 	float upspeed;
@@ -803,9 +806,16 @@ static void NetQW_Thread_DoSend(struct NetQW *netqw)
 			if (netqw->send_tmove)
 			{
 				buf[i++] = clc_tmove;
-				memcpy(buf + i, netqw->tmove_buffer, 6);
-				i += 6;
-
+				if ((cls.ftexsupported & FTEX_FLOATCOORDS))
+				{
+					memcpy(buf + i, netqw->tmove.bufferf, 12);
+					i += 12;
+				}
+				else
+				{
+					memcpy(buf + i, netqw->tmove.buffer, 6);
+					i += 6;
+				}
 				netqw->send_tmove = 0;
 			}
 
@@ -1324,23 +1334,32 @@ void NetQW_SetDeltaPoint(struct NetQW *netqw, int delta_sequence_number)
 
 void NetQW_SetTeleport(struct NetQW *netqw, float *position)
 {
-	unsigned int temp;
-
 	Sys_Thread_LockMutex(netqw->mutex);
 
 	netqw->send_tmove = 1;
 
-	temp = (int)(position[0] * 8);
-	netqw->tmove_buffer[0] = temp;
-	netqw->tmove_buffer[1] = temp>>8;
+	if ((cls.ftexsupported & FTEX_FLOATCOORDS))
+	{
+		netqw->tmove.bufferf[0] = LittleFloat(position[0]);
+		netqw->tmove.bufferf[1] = LittleFloat(position[1]);
+		netqw->tmove.bufferf[2] = LittleFloat(position[2]);
+	}
+	else
+	{
+		unsigned int temp;
 
-	temp = (int)(position[1] * 8);
-	netqw->tmove_buffer[2] = temp;
-	netqw->tmove_buffer[3] = temp>>8;
+		temp = (int)(position[0] * 8);
+		netqw->tmove.buffer[0] = temp;
+		netqw->tmove.buffer[1] = temp>>8;
 
-	temp = (int)(position[2] * 8);
-	netqw->tmove_buffer[4] = temp;
-	netqw->tmove_buffer[5] = temp>>8;
+		temp = (int)(position[1] * 8);
+		netqw->tmove.buffer[2] = temp;
+		netqw->tmove.buffer[3] = temp>>8;
+
+		temp = (int)(position[2] * 8);
+		netqw->tmove.buffer[4] = temp;
+		netqw->tmove.buffer[5] = temp>>8;
+	}
 
 	Sys_Thread_UnlockMutex(netqw->mutex);
 }
